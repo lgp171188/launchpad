@@ -4,7 +4,8 @@ Source package changelog
 Browse the changelog of a sourcepackage..
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/hoary/+source/pmount/+changelog")
+    ...     "http://launchpad.test/ubuntu/hoary/+source/pmount/+changelog"
+    ... )
     >>> print_location(user_browser.contents)
     Hierarchy: Ubuntu > ...pmount... package > Hoary (5.04) > Change log
     Tabs:
@@ -16,8 +17,9 @@ Browse the changelog of a sourcepackage..
     * Answers - http://answers.launchpad.test/ubuntu/+source/pmount
     Main heading: Change logs for ...pmount... in Hoary
 
-    >>> print(extract_text(
-    ...           find_tag_by_id(user_browser.contents, 'changelogs')))
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "changelogs"))
+    ... )
     This is a placeholder changelog for pmount 0.1-2
     pmount (0.1-1) hoary; urgency=low
     * Fix description (Malone #1)
@@ -29,9 +31,11 @@ Browse the changelog of a sourcepackage..
 
     >>> user_browser.open(
     ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/"
-    ...     "+changelog")
-    >>> print(extract_text(
-    ...           find_tag_by_id(user_browser.contents, 'changelogs')))
+    ...     "+changelog"
+    ... )
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "changelogs"))
+    ... )
     alsa-utils (1.0.9a-4ubuntu1) hoary; urgency=low
     * Placeholder
     LP: #10
@@ -46,24 +50,24 @@ Browse the changelog of a sourcepackage..
 
 The LP: #<number> entries are also linkified:
 
-    >>> user_browser.getLink('#10').url
+    >>> user_browser.getLink("#10").url
     'http://launchpad.test/bugs/10'
 
-    >>> user_browser.getLink('#999').url
+    >>> user_browser.getLink("#999").url
     'http://launchpad.test/bugs/999'
 
-    >>> user_browser.getLink('#badid').url
+    >>> user_browser.getLink("#badid").url
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> user_browser.getLink('#7').url
+    >>> user_browser.getLink("#7").url
     'http://launchpad.test/bugs/7'
 
-    >>> user_browser.getLink('#8').url
+    >>> user_browser.getLink("#8").url
     'http://launchpad.test/bugs/8'
 
-    >>> user_browser.getLink('#11').url
+    >>> user_browser.getLink("#11").url
     'http://launchpad.test/bugs/11'
 
 The output above shows email addresses, however any email addresses in
@@ -72,7 +76,8 @@ bots from picking them up):
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/ubuntu/hoary/+source/alsa-utils/"
-    ...     "+changelog")
+    ...     "+changelog"
+    ... )
     >>> print(extract_text(find_main_content(anon_browser.contents)))  # noqa
     Change logs for ...alsa-utils... in Hoary
     ...
@@ -86,23 +91,29 @@ address is linkified to point to the person's profile page.  Here,
 'commercialpackage' has a known email address in its changelog:
 
     >>> user_browser.open(
-    ...           "http://launchpad.test/ubuntu/breezy-autotest/+source/"
-    ...           "commercialpackage/+changelog")
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/+source/"
+    ...     "commercialpackage/+changelog"
+    ... )
     >>> changelog = find_tag_by_id(
-    ...           user_browser.contents, 'commercialpackage_1.0-1')
-    >>> print(extract_text(changelog.find('a')))
+    ...     user_browser.contents, "commercialpackage_1.0-1"
+    ... )
+    >>> print(extract_text(changelog.find("a")))
     foo.bar@canonical.com
 
 Browsing the individual sourcepackage changelog.
 
     >>> user_browser.open(
-    ...    "http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1")
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1"
+    ... )
 
 The changelog is still linkified here so that the bug links work,
 although the version link will point to the same page we're already on.
 
-    >>> print(find_tag_by_id(
-    ...           user_browser.contents, 'alsa-utils_1.0.9a-4ubuntu1'))
+    >>> print(
+    ...     find_tag_by_id(
+    ...         user_browser.contents, "alsa-utils_1.0.9a-4ubuntu1"
+    ...     )
+    ... )
     <pre ... id="alsa-utils_1.0.9a-4ubuntu1">alsa-utils (1.0.9a-4ubuntu1) ...
     <BLANKLINE>
     ...

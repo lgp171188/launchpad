@@ -8,10 +8,11 @@ branch.
     >>> from lp.app.enums import ServiceUsage
 
     >>> login(ANONYMOUS)
-    >>> owner = factory.makePerson(email='x@example.com')
-    >>> product = factory.makeProduct(owner=owner,
-    ...     translations_usage=ServiceUsage.LAUNCHPAD)
-    >>> productseries = product.getSeries('trunk')
+    >>> owner = factory.makePerson(email="x@example.com")
+    >>> product = factory.makeProduct(
+    ...     owner=owner, translations_usage=ServiceUsage.LAUNCHPAD
+    ... )
+    >>> productseries = product.getSeries("trunk")
     >>> branch = factory.makeBranch(product=product, owner=owner)
     >>> branch_name = branch.name
     >>> foreign_branch = factory.makeBranch(product=product)
@@ -24,30 +25,33 @@ branch.
     ...     page.  Afterwards, it will point at the translations
     ...     settings page.
     ...     """
-    ...     branch_widget = browser.getControl('Translations export branch')
+    ...     branch_widget = browser.getControl("Translations export branch")
     ...     branch_widget.value = branch_name
-    ...     update_widget = browser.getControl('Update')
+    ...     update_widget = browser.getControl("Update")
     ...     update_widget.click()
+    ...
 
     >>> def get_translations_branch_paragraph(browser):
     ...     """Return text for current translations branch.
     ...
     ...     The browser must be pointing at the settings page.
     ...     """
-    ...     tag = find_tag_by_id(browser.contents, 'translations-branch')
+    ...     tag = find_tag_by_id(browser.contents, "translations-branch")
     ...     return tag.decode_contents()
+    ...
 
 A project owner sets a translations branch from the series' translations
 settings page.
 
     >>> productseries_url = str(
-    ...     'http://translations.launchpad.test/%s/trunk' %
-    ...         productseries.product.name)
-    >>> settings_page = productseries_url + '/+translations-settings'
-    >>> link_page = productseries_url + '/+link-translations-branch'
+    ...     "http://translations.launchpad.test/%s/trunk"
+    ...     % productseries.product.name
+    ... )
+    >>> settings_page = productseries_url + "/+translations-settings"
+    >>> link_page = productseries_url + "/+link-translations-branch"
     >>> logout()
 
-    >>> owner_browser = setupBrowser(auth='Basic x@example.com:test')
+    >>> owner_browser = setupBrowser(auth="Basic x@example.com:test")
     >>> owner_browser.open(settings_page)
 
 The settings page currently shows that no branch has been selected.
@@ -58,7 +62,7 @@ The settings page currently shows that no branch has been selected.
 
 The notice links to a page where a translations branch can be selected.
 
-    >>> owner_browser.getLink('Choose a target branch').click()
+    >>> owner_browser.getLink("Choose a target branch").click()
     >>> print(owner_browser.url)
     http://translations.launchpad.test/.../trunk/+link-translations-branch
 
@@ -77,7 +81,7 @@ It shows the changed setting.
 The notice links to the branch, and to the page where the setting can be
 changed.
 
-    >>> edit_link = owner_browser.getLink(id='translations-branch-edit-link')
+    >>> edit_link = owner_browser.getLink(id="translations-branch-edit-link")
     >>> print(edit_link.url)
     http://translations.launchpad.test/.../trunk/+link-translations-branch
 
@@ -90,7 +94,8 @@ changed.
     >>> branch_page = owner_browser.url
 
     >>> back_reference = find_tag_by_id(
-    ...     owner_browser.contents, 'translations-sources')
+    ...     owner_browser.contents, "translations-sources"
+    ... )
     >>> print(back_reference)
     <div ...>
     <h2>Automatic translations commits</h2>
@@ -106,7 +111,7 @@ Disabling exports
 The field can also be cleared in order to disable the exports.
 
     >>> owner_browser.open(link_page)
-    >>> set_translations_branch(owner_browser, '')
+    >>> set_translations_branch(owner_browser, "")
 
     >>> print(owner_browser.url)
     http://translations.launchpad.test/.../trunk/+translations-settings
@@ -122,7 +127,8 @@ overview as a translations source.
 
     >>> owner_browser.open(branch_page)
     >>> back_reference = find_tag_by_id(
-    ...     owner_browser.contents, 'translations-sources')
+    ...     owner_browser.contents, "translations-sources"
+    ... )
     >>> print(back_reference)
     None
 

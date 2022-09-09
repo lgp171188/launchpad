@@ -16,10 +16,10 @@ the bug to series for which they are drivers.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> from lp.testing.sampledata import (ADMIN_EMAIL)
+    >>> from lp.testing.sampledata import ADMIN_EMAIL
 
     >>> login(ADMIN_EMAIL)
-    >>> nominator = factory.makePerson(name='nominator')
+    >>> nominator = factory.makePerson(name="nominator")
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu = removeSecurityProxy(ubuntu)
     >>> ubuntu.bug_supervisor = nominator
@@ -36,7 +36,8 @@ the bug to series for which they are drivers.
     mozilla-firefox (Ubuntu)
 
     >>> nomination_view = getMultiAdapter(
-    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate")
+    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate"
+    ... )
     >>> launchbag = getUtility(IOpenLaunchBag)
 
 
@@ -52,11 +53,15 @@ Here's an example of nominating a bug for a distroseries.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={"field.actions.submit": "Submit Nominations",
-    ...           "field.nominatable_series": ["warty"]})
+    ...     form={
+    ...         "field.actions.submit": "Submit Nominations",
+    ...         "field.nominatable_series": ["warty"],
+    ...     },
+    ... )
 
     >>> nomination_view = getMultiAdapter(
-    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate")
+    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate"
+    ... )
 
 (Add objects to the LaunchBag that will be used by the view.)
 
@@ -95,11 +100,15 @@ Here's an example of nominating a bug for a productseries.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={"field.actions.submit": "Submit Nominations",
-    ...           "field.nominatable_series": ["trunk"]})
+    ...     form={
+    ...         "field.actions.submit": "Submit Nominations",
+    ...         "field.nominatable_series": ["trunk"],
+    ...     },
+    ... )
 
     >>> nomination_view = getMultiAdapter(
-    ...     (bug_one_in_firefox, request), name="+nominate")
+    ...     (bug_one_in_firefox, request), name="+nominate"
+    ... )
 
 (Add objects to the LaunchBag that will be used by the view.)
 
@@ -147,7 +156,8 @@ buttons for a user with release management privileges.
     >>> login("foo.bar@canonical.com")
 
     >>> hoary_nomination_edit_form = getMultiAdapter(
-    ...     (hoary_nomination, request), name="+edit-form")
+    ...     (hoary_nomination, request), name="+edit-form"
+    ... )
 
     >>> hoary_nomination_edit_form.shouldShowApproveButton(None)
     True
@@ -180,6 +190,7 @@ For example, bug one is currently nominated for Hoary and Warty.
     >>> ubuntu_nominations = bug_one.getNominations(ubuntu)
     >>> for nomination in ubuntu_nominations:
     ...     print(nomination.target.bugtargetdisplayname)
+    ...
     Ubuntu Hoary
     Ubuntu Warty
 
@@ -187,6 +198,7 @@ Bug #1 currently has three tasks.
 
     >>> for bugtask in bug_one.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Debian)
@@ -209,20 +221,29 @@ launchpad.Driver permission on the nomination.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={"field.actions.submit": "Submit Nominations",
-    ...           "field.nominatable_series": ["grumpy"]})
+    ...     form={
+    ...         "field.actions.submit": "Submit Nominations",
+    ...         "field.nominatable_series": ["grumpy"],
+    ...     },
+    ... )
 
     >>> nomination_view = getMultiAdapter(
-    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate")
+    ...     (bug_one_in_ubuntu_firefox, request), name="+nominate"
+    ... )
     >>> launchbag.clear()
     >>> launchbag.add(bug_one_in_ubuntu_firefox)
     >>> launchbag.add(bug_one_in_ubuntu_firefox.distribution)
 
     >>> def print_nominations(nominations):
     ...     for nomination in nominations:
-    ...         print("%s, %s" % (
-    ...             nomination.target.bugtargetdisplayname,
-    ...             nomination.status.title))
+    ...         print(
+    ...             "%s, %s"
+    ...             % (
+    ...                 nomination.target.bugtargetdisplayname,
+    ...                 nomination.status.title,
+    ...             )
+    ...         )
+    ...
     >>> print_nominations(bug_one.getNominations(ubuntu))
     Ubuntu Hoary, Declined
     Ubuntu Warty, Nominated
@@ -241,6 +262,7 @@ bugtask has been added.
 
     >>> for bugtask in bug_one.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Ubuntu Grumpy)

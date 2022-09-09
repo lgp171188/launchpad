@@ -8,23 +8,28 @@ polls.
     >>> from datetime import timedelta
 
     >>> user = factory.makePerson()
-    >>> team = factory.makeTeam(name='team')
+    >>> team = factory.makeTeam(name="team")
     >>> owner = team.teamowner
 
     >>> def create_team_view(team, name=None, principal=None):
     ...     # XRDS inheritance requires a lot of setup.
-    ...     path_info = '/~%s' % team.name
-    ...     server_url = 'http://launchpad.test'
+    ...     path_info = "/~%s" % team.name
+    ...     server_url = "http://launchpad.test"
     ...     view = create_view(
-    ...         team, name=name, principal=principal,
-    ...         server_url=server_url, path_info=path_info)
+    ...         team,
+    ...         name=name,
+    ...         principal=principal,
+    ...         server_url=server_url,
+    ...         path_info=path_info,
+    ...     )
     ...     view.initialize()
     ...     return view
+    ...
 
 The portlet does not render any markup when there are no polls...
 
     >>> ignored = login_person(user)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=user)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=user)
     >>> view.has_current_polls
     False
 
@@ -37,7 +42,7 @@ The portlet does not render any markup when there are no polls...
 Unless the user is a team owner.
 
     >>> ignored = login_person(owner)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=owner)
     >>> view.has_current_polls
     False
 
@@ -60,11 +65,17 @@ has not opened.
     >>> close_date = open_date + timedelta(weeks=1)
     >>> poll_subset = IPollSubset(team)
     >>> poll = poll_subset.new(
-    ...     u'name', u'title', u'proposition', open_date, close_date,
-    ...     PollSecrecy.OPEN, False)
+    ...     "name",
+    ...     "title",
+    ...     "proposition",
+    ...     open_date,
+    ...     close_date,
+    ...     PollSecrecy.OPEN,
+    ...     False,
+    ... )
 
     >>> ignored = login_person(user)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=user)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=user)
     >>> view.has_current_polls
     True
 
@@ -78,7 +89,7 @@ has not opened.
 The portlet shows more details to the poll owner.
 
     >>> ignored = login_person(owner)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=owner)
     >>> view.has_current_polls
     True
 
@@ -97,7 +108,7 @@ and an owner is the owner has a link to create more polls.
     >>> poll.dateopens = open_date - timedelta(weeks=2)
 
     >>> ignored = login_person(user)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=user)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=user)
     >>> print(extract_text(view.render()))
     Polls
     title - closes on ...
@@ -105,7 +116,7 @@ and an owner is the owner has a link to create more polls.
     Show polls
 
     >>> ignored = login_person(owner)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=owner)
     >>> print(extract_text(view.render()))
     Polls
     title - closes on ...
@@ -119,14 +130,14 @@ see the polls.
     >>> poll.datecloses = close_date - timedelta(weeks=2)
 
     >>> ignored = login_person(user)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=user)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=user)
     >>> print(extract_text(view.render()))
     Polls
     No current polls.
     Show polls
 
     >>> ignored = login_person(owner)
-    >>> view = create_team_view(team, name='+portlet-polls', principal=owner)
+    >>> view = create_team_view(team, name="+portlet-polls", principal=owner)
     >>> print(extract_text(view.render()))
     Polls
     No current polls.

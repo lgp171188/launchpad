@@ -9,52 +9,53 @@ for the agenda.
     >>> from datetime import (
     ...     datetime,
     ...     timedelta,
-    ...     )
+    ... )
     >>> import pytz
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> _ = factory.makeSprint(
-    ...     name='uds-guacamole',
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    ...     name="uds-guacamole",
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ... )
     >>> logout()
 
 First we open the page for the spec on Support <canvas> objects from the
 sample data. We will use Sample Person, who has no special privileges.
 
-    >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://blueprints.launchpad.test/firefox/+spec/canvas')
+    >>> browser.addHeader("Authorization", "Basic test@canonical.com:test")
+    >>> browser.open("http://blueprints.launchpad.test/firefox/+spec/canvas")
     >>> browser.isHtml
     True
 
 Then we are going to propose it for the meeting agenda:
 
-    >>> browser.getLink('Propose for sprint').click()
+    >>> browser.getLink("Propose for sprint").click()
     >>> browser.title
     'Propose specification for...
 
 The page contains a link back to the blueprint, in case we change our
 mind.
 
-    >>> back_link = browser.getLink('Support <canvas> Objects')
+    >>> back_link = browser.getLink("Support <canvas> Objects")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/canvas'
 
 Now  with a POST, we try to Add the spec to the Guacamole sprint.
 
-    >>> sprint_field = browser.getControl(name='field.sprint')
-    >>> sprint_field.value = ['uds-guacamole']
-    >>> browser.getControl('Continue').click()
-    >>> browser.url # we should have been redirected to the spec page
+    >>> sprint_field = browser.getControl(name="field.sprint")
+    >>> sprint_field.value = ["uds-guacamole"]
+    >>> browser.getControl("Continue").click()
+    >>> browser.url  # we should have been redirected to the spec page
     'http://.../firefox/+spec/canvas'
 
 Now we test to see if the sprint was added correctly to the
 specification page.
 
-    >>> 'uds-guacamole' in browser.contents
+    >>> "uds-guacamole" in browser.contents
     True
-    >>> 'Accepted' in browser.contents
+    >>> "Accepted" in browser.contents
     False
-    >>> 'Proposed' in browser.contents
+    >>> "Proposed" in browser.contents
     True
 
 
@@ -78,59 +79,60 @@ classes don't know about their own permissions and security).
     >>> from pytz import UTC
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('test@canonical.com')
-    >>> rome_sprint = factory.makeSprint(name='rome')
+    >>> login("test@canonical.com")
+    >>> rome_sprint = factory.makeSprint(name="rome")
     >>> logout()
     >>> ignored = login_person(rome_sprint.owner)
     >>> rome_sprint.time_ends = dt.datetime.now(UTC) + dt.timedelta(30)
     >>> rome_sprint.time_starts = dt.datetime.now(UTC) + dt.timedelta(20)
-    >>> sample_person = getUtility(IPersonSet).getByName('name12')
+    >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> rome_sprint.driver = sample_person
     >>> logout()
 
     >>> browser.open(
-    ...     'http://blueprints.launchpad.test/'
-    ...     'kubuntu/+spec/kde-desktopfile-langpacks')
-    >>> 'Approved for the meeting agenda' in browser.contents
+    ...     "http://blueprints.launchpad.test/"
+    ...     "kubuntu/+spec/kde-desktopfile-langpacks"
+    ... )
+    >>> "Approved for the meeting agenda" in browser.contents
     False
-    >>> browser.getLink('Propose for sprint').click()
-    >>> sprint_field = browser.getControl(name='field.sprint')
-    >>> sprint_field.value = ['rome']
-    >>> browser.getControl('Continue').click()
-    >>> 'rome' in browser.contents
+    >>> browser.getLink("Propose for sprint").click()
+    >>> sprint_field = browser.getControl(name="field.sprint")
+    >>> sprint_field.value = ["rome"]
+    >>> browser.getControl("Continue").click()
+    >>> "rome" in browser.contents
     True
-    >>> 'Approved for the meeting agenda' in browser.contents
+    >>> "Approved for the meeting agenda" in browser.contents
     True
 
 Now, if we change our mind, we can go and decline the spec.
 
 First, make sure the page has no "Declined" text.
 
-    >>> 'Declined' not in browser.contents
+    >>> "Declined" not in browser.contents
     True
 
 Now go and change that and verify.
 
-    >>> browser.getLink('Approved').click()
+    >>> browser.getLink("Approved").click()
     >>> browser.url
     'http://.../kubuntu/+spec/kde-desktopfile-langpacks/rome'
-    >>> back_link = browser.getLink('KDE Desktop File Language Packs')
+    >>> back_link = browser.getLink("KDE Desktop File Language Packs")
     >>> back_link.url
     'http://blueprints.launchpad.test/kubuntu/+spec/kde-desktopfile-langpacks'
-    >>> browser.getControl('Decline').click()
-    >>> 'Declined for the meeting' not in browser.contents
+    >>> browser.getControl("Decline").click()
+    >>> "Declined for the meeting" not in browser.contents
     False
 
 Alright. Now lets go accept it again.
 
-    >>> browser.getLink('Declined').click()
-    >>> browser.getControl('Accept').click()
-    >>> 'Declined for the meeting' not in browser.contents
+    >>> browser.getLink("Declined").click()
+    >>> browser.getControl("Accept").click()
+    >>> "Declined for the meeting" not in browser.contents
     True
 
 And finally, we will test the Cancel button on that page.
 
-    >>> browser.getLink('Approved').click()
-    >>> browser.getControl('Cancel').click()
-    >>> 'Declined for the meeting' not in browser.contents
+    >>> browser.getLink("Approved").click()
+    >>> browser.getControl("Cancel").click()
+    >>> "Declined for the meeting" not in browser.contents
     True

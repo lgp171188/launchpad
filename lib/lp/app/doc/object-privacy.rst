@@ -17,8 +17,8 @@ IObjectPrivacy and check its is_private attribute.
     False
     >>> IObjectPrivacy(bug).is_private
     False
-    >>> login('salgado@ubuntu.com')
-    >>> bug.setPrivate(True, getUtility(IPersonSet).getByName('salgado'))
+    >>> login("salgado@ubuntu.com")
+    >>> bug.setPrivate(True, getUtility(IPersonSet).getByName("salgado"))
     True
     >>> bug.private
     True

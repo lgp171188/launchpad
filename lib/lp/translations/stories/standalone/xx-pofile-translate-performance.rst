@@ -18,8 +18,9 @@ number of queries issued is relatively low.  Mileage may vary, but consider
 this test a tripwire for the number potentially getting out of hand.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ... )
     >>> anon_browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
     >>> print(anon_browser.contents)
@@ -36,8 +37,9 @@ option to make suggestions, but existing suggestions as well.  It takes more
 queries, but it still shouldn't run in the hundreds.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/+translate"
+    ... )
     >>> admin_browser.url  # noqa
     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
 

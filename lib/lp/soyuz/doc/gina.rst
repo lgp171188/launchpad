@@ -12,11 +12,11 @@ Get the current counts of stuff in the database:
     >>> from lp.soyuz.interfaces.publishing import active_publishing_status
     >>> from lp.soyuz.model.publishing import (
     ...     BinaryPackagePublishingHistory,
-    ...     SourcePackagePublishingHistory)
+    ...     SourcePackagePublishingHistory,
+    ... )
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.teammembership import TeamParticipation
-    >>> from lp.registry.interfaces.pocket import (
-    ...     PackagePublishingPocket)
+    >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -32,7 +32,8 @@ Get the current counts of stuff in the database:
     >>> orig_build_count = BinaryPackageBuild.select().count()
     >>> orig_sbpph_count = SBPPH.select().count()
     >>> orig_sspph_main_count = SSPPH.selectBy(
-    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE).count()
+    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE
+    ... ).count()
 
 Create a distribution release and an arch release for breezy:
 
@@ -45,15 +46,23 @@ Create a distribution release and an arch release for breezy:
     # Only the distro owner and admins can create a new series.
     >>> ignored = login_person(ubuntu.owner.activemembers[0])
     >>> breezy = ubuntu.newSeries(
-    ...     "breezy", "Breezy Badger", "My title",
-    ...     "My summary", "My description", "5.10",
-    ...     hoary, celebs.launchpad_developers)
+    ...     "breezy",
+    ...     "Breezy Badger",
+    ...     "My title",
+    ...     "My summary",
+    ...     "My description",
+    ...     "5.10",
+    ...     hoary,
+    ...     celebs.launchpad_developers,
+    ... )
     >>> login(ANONYMOUS)
 
     >>> breezy_i386 = breezy.newArch(
-    ...     processor=getUtility(IProcessorSet).getByName('386'),
-    ...     architecturetag="i386", official=True,
-    ...     owner=celebs.launchpad_developers)
+    ...     processor=getUtility(IProcessorSet).getByName("386"),
+    ...     architecturetag="i386",
+    ...     official=True,
+    ...     owner=celebs.launchpad_developers,
+    ... )
     >>> import transaction
     >>> transaction.commit()
 
@@ -114,19 +123,22 @@ Let's set up the filesystem:
     ...     os.unlink("/var/lock/launchpad-gina.lock")
     ... except OSError:
     ...     pass
+    ...
     >>> try:
-    ...     os.remove('/tmp/gina_test_archive')
+    ...     os.remove("/tmp/gina_test_archive")
     ... except OSError:
     ...     pass
-    >>> relative_path = ('lib/lp/soyuz/scripts/tests/gina_test_archive')
+    ...
+    >>> relative_path = "lib/lp/soyuz/scripts/tests/gina_test_archive"
     >>> path = os.path.join(os.getcwd(), relative_path)
-    >>> os.symlink(path, '/tmp/gina_test_archive')
+    >>> os.symlink(path, "/tmp/gina_test_archive")
 
 And give it a spin:
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'hoary', 'breezy']
+    >>> gina_proc = ["scripts/gina.py", "-q", "hoary", "breezy"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
 
 Check STDERR for the errors we expected:
 
@@ -219,8 +231,9 @@ Check that x11proto-damage has its Build-Depends-Indep value correctly set:
 
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> n = SourcePackageName.selectOneBy(name="x11proto-damage")
-    >>> x11p = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id,
-    ...                                         version="6.8.99.7-2")
+    >>> x11p = SourcePackageRelease.selectOneBy(
+    ...     sourcepackagenameID=n.id, version="6.8.99.7-2"
+    ... )
 
     >>> print(x11p.builddependsindep)
     debhelper (>= 4.0.0)
@@ -301,10 +314,14 @@ only imported one:
 Test ubuntu-meta in breezy, which was forcefully imported.
 
     >>> n = SourcePackageName.selectOneBy(name="ubuntu-meta")
-    >>> um = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id,
-    ...         version="0.80")
-    >>> print(um.section.name, um.architecturehintlist,
-    ...       um.upload_distroseries.name)
+    >>> um = SourcePackageRelease.selectOneBy(
+    ...     sourcepackagenameID=n.id, version="0.80"
+    ... )
+    >>> print(
+    ...     um.section.name,
+    ...     um.architecturehintlist,
+    ...     um.upload_distroseries.name,
+    ... )
     base any breezy
 
 And check that its files actually ended up in the librarian (these sha1sums
@@ -312,9 +329,11 @@ were calculated directly on the files):
 
     >>> from lp.soyuz.model.files import SourcePackageReleaseFile
     >>> files = SourcePackageReleaseFile.selectBy(
-    ...     sourcepackagereleaseID=cap.id, orderBy="libraryfile")
+    ...     sourcepackagereleaseID=cap.id, orderBy="libraryfile"
+    ... )
     >>> for f in files:
     ...     print(f.libraryfile.content.sha1)
+    ...
     107d5478e72385f714523bad5359efedb5dcc8b2
     0083da007d44c02fd861c1d21579f716490cab02
     e6661aec051ccb201061839d275f2282968d8b93
@@ -347,10 +366,16 @@ Testing Source Package Publishing
 We check that the source package publishing override facility works:
 
     >>> for pub in SSPPH.selectBy(
-    ...     sourcepackagereleaseID=db1.id, orderBy='distroseries'):
-    ...     print("%s %s %s" % (
-    ...         pub.distroseries.name, pub.section.name,
-    ...         pub.archive.purpose.name))
+    ...     sourcepackagereleaseID=db1.id, orderBy="distroseries"
+    ... ):
+    ...     print(
+    ...         "%s %s %s"
+    ...         % (
+    ...             pub.distroseries.name,
+    ...             pub.section.name,
+    ...             pub.archive.purpose.name,
+    ...         )
+    ...     )
     hoary libs PRIMARY
     breezy oldlibs PRIMARY
 
@@ -367,8 +392,8 @@ successfully processed.
     21
 
     >>> new_count = SSPPH.selectBy(
-    ...     component_id=1,
-    ...     pocket=PackagePublishingPocket.RELEASE).count()
+    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE
+    ... ).count()
     >>> print(new_count - orig_sspph_main_count)
     21
 
@@ -428,8 +453,9 @@ priority was correctly munged to "extra":
 
 We now check if the Breezy publication record has the correct priority:
 
-    >>> ed_pub = SBPPH.selectOneBy(binarypackagereleaseID=ed.id,
-    ...                            distroarchseriesID=breezy_i386.id)
+    >>> ed_pub = SBPPH.selectOneBy(
+    ...     binarypackagereleaseID=ed.id, distroarchseriesID=breezy_i386.id
+    ... )
     >>> print(ed_pub.priority)
     Standard
 
@@ -437,8 +463,9 @@ Check binary package libgjc-dev in Breezy. Its version number must differ from
 its source version number.
 
     >>> n = BinaryPackageName.selectOneBy(name="libgcj-dev")
-    >>> lib = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...         version="4:4.0.1-3")
+    >>> lib = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="4:4.0.1-3"
+    ... )
     >>> print(lib.version)
     4:4.0.1-3
     >>> print(lib.build.source_package_release.version)
@@ -449,8 +476,9 @@ its source version number.
 Check if the udeb was properly parsed and identified:
 
     >>> n = BinaryPackageName.selectOneBy(name="archive-copier")
-    >>> ac = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...         version="0.1.5")
+    >>> ac = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="0.1.5"
+    ... )
     >>> print(ac.version)
     0.1.5
     >>> print(ac.priority)
@@ -467,14 +495,22 @@ Check if the udeb was properly parsed and identified:
 We check that the binary package publishing override facility works:
 
     >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
-    >>> db1 = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...         version="2.1.3-7")
-    >>> for pub in IStore(BinaryPackagePublishingHistory).find(
-    ...         BinaryPackagePublishingHistory,
-    ...         binarypackagerelease=db1).order_by('distroarchseries'):
-    ...     print("%s %s %s" % (
-    ...         pub.distroarchseries.distroseries.name, pub.priority,
-    ...         pub.archive.purpose.name))
+    >>> db1 = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="2.1.3-7"
+    ... )
+    >>> for pub in (
+    ...     IStore(BinaryPackagePublishingHistory)
+    ...     .find(BinaryPackagePublishingHistory, binarypackagerelease=db1)
+    ...     .order_by("distroarchseries")
+    ... ):
+    ...     print(
+    ...         "%s %s %s"
+    ...         % (
+    ...             pub.distroarchseries.distroseries.name,
+    ...             pub.priority,
+    ...             pub.archive.purpose.name,
+    ...         )
+    ...     )
     hoary Required PRIMARY
     breezy Optional PRIMARY
 
@@ -490,7 +526,7 @@ and that we imported exactly 9 people (13 packages with 3 being uploaded by
 Kamion, 2 being uploaded by mdz and 2 by doko).
 
     >>> from lp.services.database.sqlobject import LIKE
-    >>> p = Person.selectOne(LIKE(Person.q.name, u"cjwatson%"))
+    >>> p = Person.selectOne(LIKE(Person.q.name, "cjwatson%"))
     >>> print(p.name)
     cjwatson
     >>> print(Person.select().count() - orig_person_count)
@@ -516,20 +552,22 @@ overrides):
 
 Link to the "later" archive:
 
-    >>> os.remove('/tmp/gina_test_archive')
-    >>> relative_path = ('lib/lp/soyuz/scripts/'
-    ...                  'tests/gina_test_archive_2nd_run')
+    >>> os.remove("/tmp/gina_test_archive")
+    >>> relative_path = (
+    ...     "lib/lp/soyuz/scripts/" "tests/gina_test_archive_2nd_run"
+    ... )
     >>> path = os.path.join(os.getcwd(), relative_path)
-    >>> os.symlink(path, '/tmp/gina_test_archive')
+    >>> os.symlink(path, "/tmp/gina_test_archive")
 
 We do a re-run over the same components. We should get ERRORs indicating
 packages that failed to import the last time. Overrides should also have
 been updated for packages in breezy which have changed since the last
 run.
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'hoary', 'breezy']
+    >>> gina_proc = ["scripts/gina.py", "-q", "hoary", "breezy"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
     >>> print(proc.stderr.read())
     ERROR   Error processing package files for clearlooks
     ...
@@ -607,34 +645,41 @@ selectOneBy because, of course, there may be multiple rows published for that
 package -- that's what overrides actually do.
 
     >>> from lp.services.database.sqlbase import sqlvalues
-    >>> x11_pub = SSPPH.select("""
+    >>> x11_pub = SSPPH.select(
+    ...     """
     ...     sourcepackagerelease = %s AND
     ...     distroseries = %s AND
     ...     status in %s
-    ...     """ % sqlvalues(
-    ...         x11p, breezy, active_publishing_status),
-    ...     orderBy=["-datecreated"])[0]
+    ...     """
+    ...     % sqlvalues(x11p, breezy, active_publishing_status),
+    ...     orderBy=["-datecreated"],
+    ... )[0]
     >>> print(x11_pub.section.name)
     net
-    >>> ed_pub = SBPPH.select("""
+    >>> ed_pub = SBPPH.select(
+    ...     """
     ...     binarypackagerelease = %s AND
     ...     distroarchseries = %s AND
     ...     status in %s
-    ...     """ % sqlvalues(
-    ...         ed, breezy_i386, active_publishing_status),
-    ...     orderBy=["-datecreated"])[0]
+    ...     """
+    ...     % sqlvalues(ed, breezy_i386, active_publishing_status),
+    ...     orderBy=["-datecreated"],
+    ... )[0]
     >>> print(ed_pub.priority)
     Extra
     >>> n = SourcePackageName.selectOneBy(name="archive-copier")
-    >>> ac = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id,
-    ...         version="0.3.6")
-    >>> ac_pub = SSPPH.select("""
+    >>> ac = SourcePackageRelease.selectOneBy(
+    ...     sourcepackagenameID=n.id, version="0.3.6"
+    ... )
+    >>> ac_pub = SSPPH.select(
+    ...     """
     ...     sourcepackagerelease = %s AND
     ...     distroseries = %s AND
     ...     status in %s
-    ...     """ % sqlvalues(
-    ...         ac, breezy, active_publishing_status),
-    ...     orderBy=["-datecreated"])[0]
+    ...     """
+    ...     % sqlvalues(ac, breezy, active_publishing_status),
+    ...     orderBy=["-datecreated"],
+    ... )[0]
     >>> print(ac_pub.component.name)
     universe
 
@@ -648,20 +693,23 @@ partner archive.
 
 First get a set of existing publishings for both source and binary:
 
-    >>> comm_archive = ubuntu.getArchiveByComponent('partner')
-    >>> hoary = ubuntu['hoary']
-    >>> hoary_i386 = hoary['i386']
+    >>> comm_archive = ubuntu.getArchiveByComponent("partner")
+    >>> hoary = ubuntu["hoary"]
+    >>> hoary_i386 = hoary["i386"]
     >>> partner_source_set = set(
-    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary)))
+    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary))
+    ... )
 
     >>> partner_binary_set = set(
-    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386)))
+    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386))
+    ... )
 
 Now run gina to import packages and convert them to partner:
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'partner']
+    >>> gina_proc = ["scripts/gina.py", "-q", "partner"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
     >>> proc.wait()
     0
     >>> transaction.commit()
@@ -669,10 +717,12 @@ Now run gina to import packages and convert them to partner:
 There will now be a number of publishings in the partner archive:
 
     >>> partner_source_set_after = set(
-    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary)))
+    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary))
+    ... )
 
     >>> partner_binary_set_after = set(
-    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386)))
+    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386))
+    ... )
 
     >>> source_difference = partner_source_set_after - partner_source_set
     >>> len(source_difference)
@@ -687,19 +737,23 @@ partner archive:
 
     >>> for name in set(sspph.component.name for sspph in source_difference):
     ...     print(name)
+    ...
     partner
 
     >>> for name in set(sbpph.component.name for sbpph in binary_difference):
     ...     print(name)
+    ...
     partner
 
     >>> for name in set(
-    ...         sspph.archive.purpose.name for sspph in source_difference):
+    ...     sspph.archive.purpose.name for sspph in source_difference
+    ... ):
     ...     print(name)
     PARTNER
 
     >>> for name in set(
-    ...         sbpph.archive.purpose.name for sbpph in binary_difference):
+    ...     sbpph.archive.purpose.name for sbpph in binary_difference
+    ... ):
     ...     print(name)
     PARTNER
 
@@ -720,25 +774,30 @@ We will restore the initial 'gina_test_archive' because it contains a
 entry for a suite called 'testing' which contains only the source
 indexes from the 'hoary' suite.
 
-    >>> os.remove('/tmp/gina_test_archive')
-    >>> relative_path = ('lib/lp/soyuz/scripts/tests/gina_test_archive')
+    >>> os.remove("/tmp/gina_test_archive")
+    >>> relative_path = "lib/lp/soyuz/scripts/tests/gina_test_archive"
     >>> path = os.path.join(os.getcwd(), relative_path)
-    >>> os.symlink(path, '/tmp/gina_test_archive')
+    >>> os.symlink(path, "/tmp/gina_test_archive")
 
 We will also create the target distroseries for the imported
 sources. We will import them into Debian/Lenny distroseries as
 specified in the testing configuration.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
 
     # Only the distro owner and admins can create a new series.
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> lenny = debian.newSeries(
-    ...     "lenny", "lenny", "Lenny",
-    ...     "---", "!!!", "8.06",
-    ...     hoary, celebs.launchpad_developers)
+    ...     "lenny",
+    ...     "lenny",
+    ...     "Lenny",
+    ...     "---",
+    ...     "!!!",
+    ...     "8.06",
+    ...     hoary,
+    ...     celebs.launchpad_developers,
+    ... )
     >>> login(ANONYMOUS)
 
 Note that we will create a Lenny/i386 port (DistroArchSeries) to check
@@ -747,9 +806,11 @@ in production, i.e., just creating 'lenny' should suffice for the
 source-only import to happen.
 
     >>> lenny_i386 = lenny.newArch(
-    ...     processor=getUtility(IProcessorSet).getByName('386'),
-    ...     architecturetag="i386", official=True,
-    ...     owner=celebs.launchpad_developers)
+    ...     processor=getUtility(IProcessorSet).getByName("386"),
+    ...     architecturetag="i386",
+    ...     official=True,
+    ...     owner=celebs.launchpad_developers,
+    ... )
 
 We will also store the number of binaries already published in debian
 PRIMARY archive, so we can check later it was unaffected by the
@@ -762,9 +823,10 @@ Commit the changes and run the importer script.
 
     >>> transaction.commit()
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'lenny']
+    >>> gina_proc = ["scripts/gina.py", "-q", "lenny"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
     >>> proc.wait()
     0
 
@@ -779,6 +841,7 @@ targetted distroseries, 'lenny'.
 
     >>> for name in set([pub.status.name for pub in lenny_sources]):
     ...     print(name)
+    ...
     PUBLISHED
 
 As mentioned before, lenny/i386 is empty, no binaries were imported.
@@ -800,9 +863,10 @@ Processing multiple suites in the same batch
 Both, 'lenny' and 'hoary' (as partner) will be processed in the same
 batch.
 
-    >>> gina_proc = ['scripts/gina.py', 'lenny', 'partner']
+    >>> gina_proc = ["scripts/gina.py", "lenny", "partner"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
 
     >>> print(proc.stderr.read())
     INFO    Creating lockfile: /var/lock/launchpad-gina.lock
@@ -821,9 +885,10 @@ Other tests
 
 For kicks, finally, run gina on a configured but incomplete archive:
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'bogus']
+    >>> gina_proc = ["scripts/gina.py", "-q", "bogus"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
     >>> print(proc.stderr.read())
     ERROR   Failed to analyze archive for bogoland
     ...
@@ -837,5 +902,5 @@ Wrap up
 .......
 
 Remove the tmp link to the gina_test_archive
-    >>> os.remove('/tmp/gina_test_archive')
+    >>> os.remove("/tmp/gina_test_archive")
 

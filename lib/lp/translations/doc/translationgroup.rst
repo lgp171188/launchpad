@@ -4,12 +4,13 @@ Translation Groups
     >>> from zope.component import getUtility
 
     >>> from lp.testing import login
-    >>> login('daf@canonical.com')
+    >>> login("daf@canonical.com")
 
 Here are various sets of things that we'll need.
 
     >>> from lp.translations.interfaces.translationgroup import (
-    ...     ITranslationGroupSet)
+    ...     ITranslationGroupSet,
+    ... )
     >>> translation_group_set = getUtility(ITranslationGroupSet)
 
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -30,17 +31,18 @@ Here are various sets of things that we'll need.
 Here are Carlos and No Privileges Person. Carlos manages the translation group
 for Evolution, and No Privileges Person is a translator.
 
-    >>> carlos = person_set.getByName('carlos')
-    >>> no_priv = person_set.getByName('no-priv')
+    >>> carlos = person_set.getByName("carlos")
+    >>> no_priv = person_set.getByName("no-priv")
 
 Here's our translation group.
 
     >>> group = translation_group_set.new(
-    ...     name='foo-translators',
-    ...     title='Foo Translators',
-    ...     summary='Foo Translators',
-    ...     translation_guide_url='https://help.launchpad.net/',
-    ...     owner=carlos)
+    ...     name="foo-translators",
+    ...     title="Foo Translators",
+    ...     summary="Foo Translators",
+    ...     translation_guide_url="https://help.launchpad.net/",
+    ...     owner=carlos,
+    ... )
 
 We can access all details of the new TranslationGroup.
 
@@ -53,7 +55,7 @@ We can access all details of the new TranslationGroup.
 
 Let's make it the translation group for Evolution.
 
-    >>> evolution = product_set['evolution']
+    >>> evolution = product_set["evolution"]
     >>> evolution.translationgroup = group
 
 Let's only allow translators from that group to translate.
@@ -63,21 +65,20 @@ Let's only allow translators from that group to translate.
 
 No Privileges Person isn't allowed to translate into Welsh.
 
-    >>> series = evolution.getSeries('trunk')
+    >>> series = evolution.getSeries("trunk")
     >>> subset = potemplate_set.getSubset(productseries=series)
-    >>> potemplate = subset['evolution-2.2']
-    >>> pofile = potemplate.newPOFile('cy')
+    >>> potemplate = subset["evolution-2.2"]
+    >>> pofile = potemplate.newPOFile("cy")
     >>> pofile.canEditTranslations(no_priv)
     False
 
 Let's add them to the group.
 
-    >>> welsh = language_set['cy']
+    >>> welsh = language_set["cy"]
 
     >>> no_priv_translator = translator_set.new(
-    ...     translationgroup=group,
-    ...     language=welsh,
-    ...     translator=no_priv)
+    ...     translationgroup=group, language=welsh, translator=no_priv
+    ... )
 
 No Privileges Person *is* allowed to translate into Welsh.
 
@@ -125,6 +126,7 @@ us how many other projects are there (2).
     ...     product = factory.makeProduct()
     ...     product.translationgroup = group
     ...     goal -= 1
+    ...
     >>> len(group.top_projects) == limit
     True
     >>> group.number_of_remaining_projects
@@ -135,10 +137,12 @@ is a part of:
 
     >>> for group in translation_group_set.getByPerson(carlos):
     ...     print(group.name)
+    ...
     testing-translation-team
 
     >>> for group in translation_group_set.getByPerson(no_priv):
     ...     print(group.name)
+    ...
     foo-translators
 
     >>> translators = getUtility(ITranslatorSet)
@@ -146,6 +150,7 @@ is a part of:
     ...     print(trans.language.code)
     ...     print(trans.translationgroup.name)
     ...     print(trans.style_guide_url)
+    ...
     es
     testing-translation-team
     None
@@ -154,6 +159,7 @@ is a part of:
     ...     print(trans.language.code)
     ...     print(trans.translationgroup.name)
     ...     print(trans.style_guide_url)
+    ...
     cy
     foo-translators
     None
@@ -170,12 +176,12 @@ repeated querying.
     >>> list(group.fetchTranslatorData())
     []
 
-    >>> de_team = factory.makeTeam(name='de-team')
-    >>> nl_team = factory.makeTeam(name='nl-team')
-    >>> la_team = factory.makeTeam(name='la-team')
-    >>> de_translator = factory.makeTranslator('de', group, person=de_team)
-    >>> nl_translator = factory.makeTranslator('nl', group, person=nl_team)
-    >>> la_translator = factory.makeTranslator('la', group, person=la_team)
+    >>> de_team = factory.makeTeam(name="de-team")
+    >>> nl_team = factory.makeTeam(name="nl-team")
+    >>> la_team = factory.makeTeam(name="la-team")
+    >>> de_translator = factory.makeTranslator("de", group, person=de_team)
+    >>> nl_translator = factory.makeTranslator("nl", group, person=nl_team)
+    >>> la_translator = factory.makeTranslator("la", group, person=la_team)
     >>> transaction.commit()
 
 The method returns tuples of respectively a Translator ("translation
@@ -184,6 +190,7 @@ assigned to that language.
 
     >>> for (translator, language, team) in group.fetchTranslatorData():
     ...     print(translator.language.code, language.code, team.name)
+    ...
     nl nl nl-team
     de de de-team
     la la la-team
@@ -192,6 +199,7 @@ The members are sorted by language name in English.
 
     >>> for (translator, language, person) in group.fetchTranslatorData():
     ...     print(language.englishname)
+    ...
     Dutch
     German
     Latin

@@ -19,7 +19,7 @@ OpenPGP Signature Verification
     >>> bag.user is None
     True
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> print(bag.user.name)
     name12
 
@@ -227,6 +227,7 @@ itself.
     ...     print(e.code)
     ...     print(e.signatures)
     ...     print(e.source)
+    ...
     (7, 89, ...'Bad data')
     89
     [<gpgme.Signature object at ...>]

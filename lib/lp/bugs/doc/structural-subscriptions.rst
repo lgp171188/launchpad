@@ -13,27 +13,33 @@ distribution.
     >>> from lp.registry.interfaces.product import IProductSet
 
     >>> person_set = getUtility(IPersonSet)
-    >>> foobar = person_set.getByEmail('foo.bar@canonical.com')
-    >>> sampleperson = person_set.getByEmail('test@canonical.com')
+    >>> foobar = person_set.getByEmail("foo.bar@canonical.com")
+    >>> sampleperson = person_set.getByEmail("test@canonical.com")
     >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
     >>> with person_logged_in(foobar):
     ...     ff_sub = firefox.addBugSubscription(
-    ...         subscriber=sampleperson, subscribed_by=foobar)
+    ...         subscriber=sampleperson, subscribed_by=foobar
+    ...     )
+    ...
     >>> ff_sub.target
     <Product at ...>
 
     >>> with person_logged_in(foobar):
     ...     ubuntu_sub = ubuntu.addBugSubscription(
-    ...         subscriber=sampleperson, subscribed_by=foobar)
+    ...         subscriber=sampleperson, subscribed_by=foobar
+    ...     )
+    ...
     >>> ubuntu_sub.target
     <Distribution 'Ubuntu' (ubuntu)>
 
-    >>> evolution = ubuntu.getSourcePackage('evolution')
+    >>> evolution = ubuntu.getSourcePackage("evolution")
     >>> with person_logged_in(foobar):
     ...     evolution_sub = evolution.addBugSubscription(
-    ...         subscriber=sampleperson, subscribed_by=foobar)
+    ...         subscriber=sampleperson, subscribed_by=foobar
+    ...     )
+    ...
     >>> evolution_sub.target
     <DistributionSourcePackage 'evolution in Ubuntu'>
 
@@ -60,19 +66,19 @@ A target's parent can be retrieved using the
     >>> print(firefox.parent_subscription_target.displayname)
     The Mozilla Project
 
-    >>> ff_milestone = firefox.getMilestone('1.0')
+    >>> ff_milestone = firefox.getMilestone("1.0")
     >>> ff_milestone.parent_subscription_target == firefox
     True
     >>> print(ff_milestone.parent_subscription_target.displayname)
     Mozilla Firefox
 
-    >>> ff_trunk = firefox.getSeries('trunk')
+    >>> ff_trunk = firefox.getSeries("trunk")
     >>> ff_trunk.parent_subscription_target == firefox
     True
     >>> print(ff_trunk.parent_subscription_target.displayname)
     Mozilla Firefox
 
-    >>> warty = ubuntu.getSeries('warty')
+    >>> warty = ubuntu.getSeries("warty")
     >>> warty.parent_subscription_target == ubuntu
     True
     >>> print(warty.parent_subscription_target.displayname)

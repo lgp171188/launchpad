@@ -9,7 +9,7 @@ future, or to manually publish it later.
     >>> from lp.testing.pages import extract_text
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.app.widgets.announcementdate import AnnouncementDateWidget
-    >>> field = Field(__name__='foo', title='Foo')
+    >>> field = Field(__name__="foo", title="Foo")
     >>> widget = AnnouncementDateWidget(field, LaunchpadTestRequest())
     >>> print(extract_text(widget()))
     Publish this announcement:
@@ -22,9 +22,9 @@ When you choose to publish at a specific date in the future, the widget will
 return the date you specified.
 
     >>> action_widget = widget.action_widget
-    >>> action_widget.request.form[action_widget.name] = 'specific'
+    >>> action_widget.request.form[action_widget.name] = "specific"
     >>> date_widget = widget.announcement_date_widget
-    >>> date_widget.request.form[date_widget.name] = '2005-07-23'
+    >>> date_widget.request.form[date_widget.name] = "2005-07-23"
     >>> print(widget.getInputValue())
     2005-07-23 00:00:00+00:00
 
@@ -33,11 +33,11 @@ date and time.
 
     >>> from datetime import datetime, timedelta
     >>> import pytz
-    >>> action_widget.request.form[action_widget.name] = 'immediately'
-    >>> date_widget.request.form[date_widget.name] = ''
+    >>> action_widget.request.form[action_widget.name] = "immediately"
+    >>> date_widget.request.form[date_widget.name] = ""
     >>> now = datetime.now(pytz.utc)
-    >>> before = now - timedelta(1) # 1 day
-    >>> after = now + timedelta(1) # 1 day
+    >>> before = now - timedelta(1)  # 1 day
+    >>> after = now + timedelta(1)  # 1 day
     >>> immediate_date = widget.getInputValue()
     >>> print(repr(immediate_date))
     datetime.datetime(...)
@@ -47,15 +47,15 @@ date and time.
 When you choose to publish manually at some time in the future, the widget
 won't return a date.
 
-    >>> action_widget.request.form[action_widget.name] = 'sometime'
-    >>> date_widget.request.form[date_widget.name] = '2005-07-23'
+    >>> action_widget.request.form[action_widget.name] = "sometime"
+    >>> date_widget.request.form[date_widget.name] = "2005-07-23"
     >>> print(widget.getInputValue())
     None
 
 If you choose to publish immediately, the date field must be empty.
 
-    >>> action_widget.request.form[action_widget.name] = 'immediately'
-    >>> date_widget.request.form[date_widget.name] = '2005-07-23'
+    >>> action_widget.request.form[action_widget.name] = "immediately"
+    >>> date_widget.request.form[date_widget.name] = "2005-07-23"
     >>> print(widget.getInputValue())
     Traceback (most recent call last):
     ...
@@ -67,8 +67,8 @@ If you choose to publish immediately, the date field must be empty.
 If you choose to publish at a specific date in the future, the date field
 must be filled.
 
-    >>> action_widget.request.form[action_widget.name] = 'specific'
-    >>> date_widget.request.form[date_widget.name] = ''
+    >>> action_widget.request.form[action_widget.name] = "specific"
+    >>> date_widget.request.form[date_widget.name] = ""
     >>> print(widget.getInputValue())
     Traceback (most recent call last):
     ...

@@ -7,9 +7,9 @@ We can access them via XML-RPC:
     >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> lp_xmlrpc = xmlrpc.client.ServerProxy(
-    ...     'http://xmlrpc.launchpad.test/+opstats',
-    ...     transport=XMLRPCTestTransport()
-    ...     )
+    ...     "http://xmlrpc.launchpad.test/+opstats",
+    ...     transport=XMLRPCTestTransport(),
+    ... )
 
 We also emit similar metrics to statsd, so set that up.
 
@@ -20,10 +20,15 @@ We also emit similar metrics to statsd, so set that up.
     >>> from lp.services.config import config
     >>> from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
-    >>> config.push('statsd_test', dedent('''
+    >>> config.push(
+    ...     "statsd_test",
+    ...     dedent(
+    ...         """
     ...     [statsd]
     ...     environment: test
-    ...     '''))
+    ...     """
+    ...     ),
+    ... )
     >>> statsd_client = getUtility(IStatsdClient)
     >>> stats_client = mock.Mock()
 
@@ -32,6 +37,7 @@ Create a function to report our stats for these tests.
     >>> from collections import Counter
     >>> def reset():
     ...     from lp.services.webapp.opstats import OpStats
+    ...
     ...     OpStats.resetStats()
     ...     stats_client.reset_mock()
     ...
@@ -41,11 +47,14 @@ Create a function to report our stats for these tests.
     ...         value = stats[stat_key]
     ...         if value > 0:
     ...             print("%s: %d" % (stat_key, value))
-    ...     for statsd_key, value in sorted(Counter(
-    ...             call[0][0]
-    ...             for call in stats_client.incr.call_args_list).items()):
+    ...     for statsd_key, value in sorted(
+    ...         Counter(
+    ...             call[0][0] for call in stats_client.incr.call_args_list
+    ...         ).items()
+    ...     ):
     ...         print("statsd: %s: %d" % (statsd_key, value))
     ...     reset()
+    ...
 
 Number of requests and XML-RPC requests
 ---------------------------------------
@@ -56,12 +65,14 @@ the 'requests' and 'xml-rpc requests' statistics, but this will not be
 visible until the next time we access the statistics as the statistics
 are adjusted after the request has been served:
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     stats = lp_xmlrpc.opstats()
+    ...
     >>> for key in sorted(stats.keys()):
     ...     # Print all so new keys added to OpStats.stats will trigger
     ...     # failures in this test prompting developers to extend it.
-    ...     print('%s: %d' % (key, stats[key]))
+    ...     print("%s: %d" % (key, stats[key]))
+    ...
     1XXs: 0
     2XXs: 0
     3XXs: 0
@@ -88,8 +99,9 @@ are adjusted after the request has been served:
 Number of HTTP requests and success codes
 -----------------------------------------
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     output = http("GET / HTTP/1.1\nHost: bugs.launchpad.test\n")
+    ...
     >>> output.getStatus()
     200
     >>> report()
@@ -108,8 +120,9 @@ database policy, this request first uses the standby DB. The requested
 information is not found in there, so a retry is attempted against the
 master DB in case the information is missing due to replication lag.
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     output = http("GET http://launchpad.test/non-existent HTTP/1.1\n")
+    ...
     >>> output.getStatus()
     404
     >>> report()
@@ -138,14 +151,17 @@ particular need to differentiate these cases though:
 
     >>> class ErrorView:
     ...     """A broken view"""
+    ...
     ...     def __call__(self, *args, **kw):
-    ...         raise Exception('Oops')
+    ...         raise Exception("Oops")
     ...
     >>> error_view_fixture = ZopeAdapterFixture(
-    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test")
+    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test"
+    ... )
     >>> error_view_fixture.setUp()
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     output = http("GET /error-test HTTP/1.1\nHost: launchpad.test\n")
+    ...
     >>> output.getStatus()
     500
     >>> report()
@@ -163,12 +179,17 @@ web browsers (5XXs_b) - in the production environment we care more
 about errors returned to people than robots crawling obscure parts of
 the site.
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
-    ...     output = http(dedent("""\
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
+    ...     output = http(
+    ...         dedent(
+    ...             """\
     ...         GET /error-test HTTP/1.1
     ...         Host: launchpad.test
     ...         User-Agent: Mozilla/42.0
-    ...         """))
+    ...         """
+    ...         )
+    ...     )
+    ...
     >>> output.getStatus()
     500
     >>> report()
@@ -188,12 +209,13 @@ the site.
 Number of XML-RPC Faults
 ------------------------
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     try:
-    ...         opstats = lp_xmlrpc.invalid() # XXX: Need a HTTP test too
-    ...         print('Should have raised a Fault exception!')
+    ...         opstats = lp_xmlrpc.invalid()  # XXX: Need a HTTP test too
+    ...         print("Should have raised a Fault exception!")
     ...     except xmlrpc.client.Fault:
     ...         pass
+    ...
     >>> report()
     requests: 1
     xml-rpc faults: 1
@@ -206,16 +228,23 @@ Number of XML-RPC Faults
 Number of soft timeouts
 -----------------------
 
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     soft_request_timeout: 1
-    ...     """)
-    >>> config.push('base_test_data', test_data)
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
-    ...     output = http(dedent(r"""
+    ...     """
+    ... )
+    >>> config.push("base_test_data", test_data)
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
+    ...     output = http(
+    ...         dedent(
+    ...             r"""
     ...         GET /+soft-timeout HTTP/1.1
     ...         Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ...         """))
+    ...         """
+    ...         )
+    ...     )
+    ...
     >>> output.getStatus()
     200
     >>> report()
@@ -235,23 +264,30 @@ We can't reliably track this using the 503 response code as other
 Launchpad code may well return this status and an XML-RPC request may
 also return a timeout Fault:
 
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     db_statement_timeout: 1
     ...     soft_request_timeout: 2
-    ...     """)
-    >>> config.push('test_data', test_data)
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
-    ...     output = http(dedent(r"""
+    ...     """
+    ... )
+    >>> config.push("test_data", test_data)
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
+    ...     output = http(
+    ...         dedent(
+    ...             r"""
     ...         GET /+soft-timeout HTTP/1.1
     ...         Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ...         """))
+    ...         """
+    ...         )
+    ...     )
+    ...
     >>> output.getStatus()
     503
 
 Reset the timeouts so +opstats doesn't die.
 
-    >>> base_test_data = config.pop('base_test_data')
+    >>> base_test_data = config.pop("base_test_data")
     >>> report()
     503s: 1
     5XXs: 1
@@ -270,9 +306,10 @@ HTTP access for Cricket
 
 Stats can also be retrieved via HTTP in cricket-graph format:
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
     ...     output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
+    ...
     >>> print(http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n"))
     HTTP/1.1 200 Ok
     ...
@@ -315,7 +352,7 @@ to somewhere that doesn't exist.
     ...     [launchpad_session]
     ...     dbname: nonexistent
     ...     """
-    >>> config.push('no_db', no_db_overrides)
+    >>> config.push("no_db", no_db_overrides)
 
 Then we need to drop all our existing connections, so when we reconnect
 the new connection information is used.
@@ -335,11 +372,15 @@ We can still access the opstats page.
 
 This is also true if we are provide authentication.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+opstats HTTP/1.1
     ... Host: launchpad.test
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain;...charset=US-ASCII
@@ -351,18 +392,18 @@ But our database connections are broken.
 
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.registry.model.person import Person
-    >>> IStore(Person).find(Person, name='janitor')
+    >>> IStore(Person).find(Person, name="janitor")
     Traceback (most recent call last):
     ...
     storm.exceptions.DisconnectionError:
     FATAL:  database "nonexistent" does not exist
 
-    >>> dummy = config.pop('no_db')
+    >>> dummy = config.pop("no_db")
     >>> getUtility(IZStorm)._reset()
 
-    >>> print(IStore(Person).find(Person, name='janitor').one().name)
+    >>> print(IStore(Person).find(Person, name="janitor").one().name)
     janitor
 
 Clean up.
 
-    >>> _ = config.pop('statsd_test')
+    >>> _ = config.pop("statsd_test")

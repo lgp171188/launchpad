@@ -73,10 +73,10 @@ The LaunchpadConfig singleton is exposed as config in its module.
 
 The config can be accessed as a dictionary...
 
-    >>> 'launchpad' in config
+    >>> "launchpad" in config
     True
 
-    >>> config['launchpad']['default_batch_size']
+    >>> config["launchpad"]["default_batch_size"]
     5
 
 ...though it is commonly accessed as an object.
@@ -111,17 +111,17 @@ ConfigData. The configuration can be modified and safely restored.
 Tests can call push() with the configuration name and data to update
 the config singleton.
 
-    >>> test_data = ("""
+    >>> test_data = """
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.test""")
-    >>> config.push('test_data', test_data)
+    ...     email_domain: answers.launchpad.test"""
+    >>> config.push("test_data", test_data)
     >>> config.answertracker.email_domain
     'answers.launchpad.test'
 
 And tests can remove the data with pop() when they are done to restore
 the config.
 
-    >>> config.pop('test_data')
+    >>> config.pop("test_data")
     (<canonical.lazr.config.ConfigData ...>,)
     >>> config.answertracker.email_domain
     'answers.launchpad.net'

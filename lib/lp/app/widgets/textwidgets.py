@@ -119,7 +119,7 @@ class DelimitedListWidget(TextAreaWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DelimitedListWidget(field, None, TestRequest())
 
         The 'missing' value is converted to an empty string:
@@ -129,7 +129,7 @@ class DelimitedListWidget(TextAreaWidget):
 
         By default, lists are displayed one item on a line:
 
-          >>> names = ['fred', 'bob', 'harry']
+          >>> names = ["fred", "bob", "harry"]
           >>> widget._toFormValue(names)
           'fred\\r\\nbob\\r\\nharry'
         """
@@ -146,18 +146,19 @@ class DelimitedListWidget(TextAreaWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DelimitedListWidget(field, None, TestRequest())
 
         The widget converts an empty string to the missing value:
 
-          >>> widget._toFieldValue('') == field.missing_value
+          >>> widget._toFieldValue("") == field.missing_value
           True
 
         By default, lists are split by whitespace:
 
-          >>> for item in widget._toFieldValue(u'fred\\nbob harry'):
+          >>> for item in widget._toFieldValue("fred\\nbob harry"):
           ...     print("'%s'" % item)
+          ...
           'fred'
           'bob'
           'harry'

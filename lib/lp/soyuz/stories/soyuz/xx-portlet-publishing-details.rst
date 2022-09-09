@@ -6,7 +6,8 @@ package for each distroseries in which it is published.
 
     >>> browser.open(
     ...     "http://launchpad.test/ubuntu/+source/alsa-utils/"
-    ...     "+portlet-publishing-details")
+    ...     "+portlet-publishing-details"
+    ... )
 
 For each distroseries there is a line containing the distroseries name,
 the current version, the published component and the published section.
@@ -21,16 +22,17 @@ into account any overrides applied since the package was uploaded.
 
 Series and versions are linkified.
 
-    >>> print(browser.getLink('Hoary').url)
+    >>> print(browser.getLink("Hoary").url)
     http://bugs.launchpad.test/ubuntu/hoary/+source/alsa-utils
-    >>> print(browser.getLink('1.0.9a-4').url)
+    >>> print(browser.getLink("1.0.9a-4").url)
     http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4
 
 When a source package has never been published, the portlet will say so.
 
     >>> browser.open(
     ...     "http://launchpad.test/ubuntu/+source/a52dec/"
-    ...     "+portlet-publishing-details")
+    ...     "+portlet-publishing-details"
+    ... )
 
     >>> print(extract_text(browser.contents))
     "a52dec" versions published in Ubuntu
@@ -42,7 +44,8 @@ only Warty is active.
 
     >>> browser.open(
     ...     "http://launchpad.test/ubuntu/+source/cdrkit/"
-    ...     "+portlet-publishing-details")
+    ...     "+portlet-publishing-details"
+    ... )
 
     >>> print(extract_text(browser.contents))
     "cdrkit" versions published in Ubuntu

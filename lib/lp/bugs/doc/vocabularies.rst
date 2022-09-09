@@ -16,7 +16,7 @@ style widget) "speaks", i.e., its allowed values.
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> person_set = getUtility(IPersonSet)
     >>> product_set = getUtility(IProductSet)
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> launchbag = getUtility(IOpenLaunchBag)
     >>> launchbag.clear()
 
@@ -51,8 +51,8 @@ vocabulary registry.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> vocabulary_registry = getVocabularyRegistry()
     >>> def get_naked_vocab(context, name):
-    ...     return removeSecurityProxy(
-    ...         vocabulary_registry.get(context, name))
+    ...     return removeSecurityProxy(vocabulary_registry.get(context, name))
+    ...
     >>> product_vocabulary = vocabulary_registry.get(None, "Product")
     >>> product_vocabulary.displayname
     'Select a project'
@@ -68,11 +68,13 @@ DistributionUsingMaloneVocabulary
 All the distributions that use Malone as their main bug tracker.
 
     >>> using_malone_vocabulary = get_naked_vocab(
-    ...     None, 'DistributionUsingMalone')
+    ...     None, "DistributionUsingMalone"
+    ... )
     >>> len(using_malone_vocabulary)
     2
     >>> for term in using_malone_vocabulary:
     ...     print(term.token, term.value.displayname, term.title)
+    ...
     gentoo Gentoo Gentoo
     ubuntu Ubuntu Ubuntu
 
@@ -93,11 +95,11 @@ All the distributions that use Malone as their main bug tracker.
     ...
     LookupError:...
 
-    >>> term = using_malone_vocabulary.getTermByToken('ubuntu')
+    >>> term = using_malone_vocabulary.getTermByToken("ubuntu")
     >>> print(term.token, term.value.displayname, term.title)
     ubuntu Ubuntu Ubuntu
 
-    >>> term = using_malone_vocabulary.getTermByToken('debian')
+    >>> term = using_malone_vocabulary.getTermByToken("debian")
     Traceback (most recent call last):
     ...
     LookupError:...
@@ -114,7 +116,7 @@ series that haven't already been nominated.
 
 Let's start with putting a product in the launchbag.
 
-    >>> firefox = product_set.getByName('firefox')
+    >>> firefox = product_set.getByName("firefox")
     >>> getUtility(IOpenLaunchBag).clear()
     >>> getUtility(IOpenLaunchBag).add(firefox)
 
@@ -122,6 +124,7 @@ Firefox has the following series:
 
     >>> for series in firefox.series:
     ...     print(series.name)
+    ...
     1.0
     trunk
 
@@ -133,6 +136,7 @@ for any Firefox series yet:
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> for bugtask in bug_one.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Debian)
@@ -141,6 +145,7 @@ It has however been nominated for 1.0:
 
     >>> for nomination in bug_one.getNominations(firefox):
     ...     print(nomination.target.name)
+    ...
     1.0
 
 This means that if we iterate through the vocabulary with bug one, only
@@ -150,9 +155,11 @@ the trunk will be nominatable:
     >>> print(firefox_bug_one.target.name)
     firefox
     >>> series_vocabulary = vocabulary_registry.get(
-    ...     firefox_bug_one, 'BugNominatableSeries')
+    ...     firefox_bug_one, "BugNominatableSeries"
+    ... )
     >>> for term in series_vocabulary:
     ...     print("%s: %s" % (term.token, term.title))
+    ...
     trunk: Trunk
 
 No series is targeted or nominated on bug 4:
@@ -160,10 +167,12 @@ No series is targeted or nominated on bug 4:
     >>> bug_four = getUtility(IBugSet).get(4)
     >>> for bugtask in bug_four.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Mozilla Firefox
 
     >>> for nomination in bug_four.getNominations(firefox):
     ...     print(nomination.target.name)
+    ...
 
 So if we give bug four to the vocabulary, all series will be returned:
 
@@ -171,9 +180,11 @@ So if we give bug four to the vocabulary, all series will be returned:
     >>> print(firefox_bug_four.target.name)
     firefox
     >>> series_vocabulary = vocabulary_registry.get(
-    ...     firefox_bug_four, 'BugNominatableSeries')
+    ...     firefox_bug_four, "BugNominatableSeries"
+    ... )
     >>> for term in series_vocabulary:
     ...     print("%s: %s" % (term.token, term.title))
+    ...
     1.0: 1.0
     trunk: Trunk
 
@@ -187,12 +198,14 @@ Bug one is nominated for Ubuntu Hoary:
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> for bugtask in bug_one.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Debian)
 
     >>> for nomination in bug_one.getNominations(ubuntu):
     ...     print(nomination.target.name)
+    ...
     hoary
 
 So Hoary isn't included in the vocabulary:
@@ -201,9 +214,11 @@ So Hoary isn't included in the vocabulary:
     >>> print(ubuntu_bug_one.distribution.name)
     ubuntu
     >>> series_vocabulary = vocabulary_registry.get(
-    ...     ubuntu_bug_one, 'BugNominatableSeries')
+    ...     ubuntu_bug_one, "BugNominatableSeries"
+    ... )
     >>> for term in series_vocabulary:
     ...     print("%s: %s" % (term.token, term.title))
+    ...
     breezy-autotest: Breezy-autotest
     grumpy: Grumpy
     warty: Warty
@@ -213,6 +228,7 @@ The same is true for bug two, where the bug is targeted to Hoary.
     >>> bug_two = getUtility(IBugSet).get(2)
     >>> for bugtask in bug_two.bugtasks:
     ...     print(bugtask.bugtargetdisplayname)
+    ...
     Tomcat
     Ubuntu
     Ubuntu Hoary
@@ -221,29 +237,32 @@ The same is true for bug two, where the bug is targeted to Hoary.
 
     >>> for nomination in bug_two.getNominations(ubuntu):
     ...     print(nomination.target.name)
+    ...
     hoary
 
     >>> ubuntu_bug_two = bug_two.bugtasks[1]
     >>> print(ubuntu_bug_two.distribution.name)
     ubuntu
     >>> series_vocabulary = vocabulary_registry.get(
-    ...     ubuntu_bug_two, 'BugNominatableSeries')
+    ...     ubuntu_bug_two, "BugNominatableSeries"
+    ... )
     >>> for term in series_vocabulary:
     ...     print("%s: %s" % (term.token, term.title))
+    ...
     breezy-autotest: Breezy-autotest
     grumpy: Grumpy
     warty: Warty
 
 We can get a specific term by using the release name:
 
-    >>> term = series_vocabulary.getTermByToken('warty')
-    >>> term.value == ubuntu.getSeries('warty')
+    >>> term = series_vocabulary.getTermByToken("warty")
+    >>> term.value == ubuntu.getSeries("warty")
     True
 
 Trying to get a non-existent release will result in a
 NoSuchDistroSeries error.
 
-    >>> series_vocabulary.getTermByToken('non-such-release')
+    >>> series_vocabulary.getTermByToken("non-such-release")
     Traceback (most recent call last):
     ...
     lp.registry.errors.NoSuchDistroSeries: ...
@@ -255,16 +274,19 @@ ProjectProductsVocabularyUsingMalone
 All the products in a project using Malone.
 
 
-    >>> mozilla_project = getUtility(IProjectGroupSet).getByName('mozilla')
+    >>> mozilla_project = getUtility(IProjectGroupSet).getByName("mozilla")
     >>> for product in mozilla_project.products:
     ...     print("%s: %s" % (product.name, product.bug_tracking_usage.name))
+    ...
     firefox: LAUNCHPAD
     thunderbird: UNKNOWN
 
     >>> mozilla_products_vocabulary = vocabulary_registry.get(
-    ...     mozilla_project,'ProjectProductsUsingMalone')
+    ...     mozilla_project, "ProjectProductsUsingMalone"
+    ... )
     >>> for term in mozilla_products_vocabulary:
-    ...     print("%s: %s" %(term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     firefox: Mozilla Firefox
 
 
@@ -286,6 +308,7 @@ All bug watches associated with a bugtask's bug.
     >>> vocab = vocabulary_registry.get(bugtask, "BugWatch")
     >>> for term in vocab:
     ...     print(term.title)
+    ...
     The Mozilla.org Bug Tracker <a...>#123543</a>
     The Mozilla.org Bug Tracker <a...>#2000</a>
     The Mozilla.org Bug Tracker <a...>#42</a>
@@ -298,9 +321,10 @@ treated differently.
     >>> from lp.bugs.interfaces.bugwatch import IBugWatchSet
 
     >>> bug_twelve = getUtility(IBugSet).get(12)
-    >>> email_bugtracker = getUtility(IBugTrackerSet).getByName('email')
+    >>> email_bugtracker = getUtility(IBugTrackerSet).getByName("email")
     >>> email_bugwatch = getUtility(IBugWatchSet).createBugWatch(
-    ...     bug_twelve, launchbag.user, email_bugtracker, '')
+    ...     bug_twelve, launchbag.user, email_bugtracker, ""
+    ... )
     >>> print(email_bugwatch.url)
     mailto:bugs@example.com
 
@@ -310,17 +334,19 @@ The title is rendered differently compared to other bug watches.
     >>> vocab = vocabulary_registry.get(bugtask, "BugWatch")
     >>> for term in vocab:
     ...     print(term.title)
+    ...
     Email bugtracker &lt;<a...>bugs@example.com</a>&gt;
 
 Additionally, if the bug tracker's title contains the bug tracker's
 URL, then the title is linkified instead.
 
-    >>> email_bugtracker.title = (
-    ...     'Lionel Richtea (%s)' % (
-    ...         email_bugtracker.baseurl,))
+    >>> email_bugtracker.title = "Lionel Richtea (%s)" % (
+    ...     email_bugtracker.baseurl,
+    ... )
 
     >>> for term in vocab:
     ...     print(term.title)
+    ...
     Lionel Richtea (<a...>mailto:bugs@example.com</a>)
 
 When there is no logged-in user, the title is much different. The
@@ -331,4 +357,5 @@ email address is hidden, and there is no hyperlink.
 
     >>> for term in vocab:
     ...     print(term.title)
+    ...
     Lionel Richtea (mailto:&lt;email address hidden&gt;)

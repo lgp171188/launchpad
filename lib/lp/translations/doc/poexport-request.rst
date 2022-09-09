@@ -6,17 +6,18 @@ serve those requests properly.
 
     >>> from zope.component import getUtility
     >>> from lp.translations.interfaces.poexportrequest import (
-    ...     IPOExportRequestSet)
-    >>> from lp.translations.utilities.tests.helpers import (
-    ...     is_valid_mofile)
+    ...     IPOExportRequestSet,
+    ... )
+    >>> from lp.translations.utilities.tests.helpers import is_valid_mofile
     >>> from lp.testing.mail_helpers import pop_notifications, print_emails
 
 Here's somebody to make a request.
 
     >>> person = factory.makePerson(
-    ...     email='downloader@example.com',
-    ...     name='downloader',
-    ...     displayname='Happy Downloader')
+    ...     email="downloader@example.com",
+    ...     name="downloader",
+    ...     displayname="Happy Downloader",
+    ... )
 
 Requesting PO files
 -------------------
@@ -25,8 +26,8 @@ Our user requests the Catalan and Czech translations of a template.
 
     >>> from lp.translations.model.potemplate import POTemplate
     >>> potemplate = POTemplate.get(2)
-    >>> ca = potemplate.getPOFileByLang('ca')
-    >>> cs = potemplate.getPOFileByLang('cs')
+    >>> ca = potemplate.getPOFileByLang("ca")
+    >>> cs = potemplate.getPOFileByLang("cs")
 
     >>> request_set = getUtility(IPOExportRequestSet)
     >>> request_set.addRequest(person, None, [ca, cs])
@@ -77,8 +78,9 @@ The email contains a URL linking to where the exported file can be downloaded.
     >>> import re
 
     >>> def extract_url(text):
-    ...     urls = re.compile(r'^ *(http://.*)$', re.M).findall(text)
+    ...     urls = re.compile(r"^ *(http://.*)$", re.M).findall(text)
     ...     return urls[0]
+    ...
 
     >>> body = emails.pop().get_payload()
     >>> url = extract_url(body)
@@ -90,6 +92,7 @@ Let's download it and make sure the contents look ok.
     >>> tarball = bytes_to_tarfile(urlopen(url).read())
     >>> for name in sorted(tarball.getnames()):
     ...     print(name)
+    ...
     pmount
     pmount/pmount-ca.po
     pmount/pmount-cs.po
@@ -106,16 +109,20 @@ queue is initially empty.
     ...     if request.pofile is None:
     ...         return request.potemplate.name
     ...     else:
-    ...         return "%s:%s" % (request.potemplate.name,
-    ...                           request.pofile.language.code)
-    >>> from lp.translations.model.poexportrequest import (
-    ...     POExportRequest)
+    ...         return "%s:%s" % (
+    ...             request.potemplate.name,
+    ...             request.pofile.language.code,
+    ...         )
+    ...
+    >>> from lp.translations.model.poexportrequest import POExportRequest
     >>> def print_queue():
     ...     requests = [
     ...         render_request(request)
-    ...         for request in IStore(POExportRequest).find(POExportRequest)]
+    ...         for request in IStore(POExportRequest).find(POExportRequest)
+    ...     ]
     ...     for request in sorted(requests):
     ...         print(request)
+    ...
     >>> print_queue()
 
     >>> request_set.addRequest(person, None, [ca])
@@ -148,7 +155,7 @@ The user also requests the template again.
 The user now requests all of these files again, as well as the Spanish
 translation.
 
-    >>> es = potemplate.getPOFileByLang('es')
+    >>> es = potemplate.getPOFileByLang("es")
     >>> request_set.addRequest(person, potemplate, [ca, cs, es])
 
 Most of this request consists of duplications, and those are ignored.
@@ -164,6 +171,7 @@ Clean up the queue again.
 
     >>> for request in IStore(POExportRequest).find(POExportRequest):
     ...     request.destroySelf()
+    ...
 
 
 Requesting MO files
@@ -172,9 +180,11 @@ Requesting MO files
 Let's try requesting an export in MO format:
 
     >>> from lp.translations.interfaces.translationfileformat import (
-    ...     TranslationFileFormat)
+    ...     TranslationFileFormat,
+    ... )
     >>> request_set.addRequest(
-    ...     person, None, [cs, cs.potemplate], TranslationFileFormat.MO)
+    ...     person, None, [cs, cs.potemplate], TranslationFileFormat.MO
+    ... )
     >>> transaction.commit()
     >>> process_queue(transaction, FakeLogger())
     DEBUG Exporting objects for Happy Downloader, related to template pmount
@@ -235,23 +245,30 @@ just PO files.
     >>> product_template.productseries is None
     False
     >>> request_set.addRequest(person, product_template)
-    >>> alsa_template = IStore(POTemplate).find(
-    ...     POTemplate, path='po/alsa-utils.pot').one()
-    >>> alsa_es = alsa_template.getPOFileByLang('es')
-    >>> netapplet_template = IStore(POTemplate).find(
-    ...     POTemplate, path='po/netapplet.pot').one()
+    >>> alsa_template = (
+    ...     IStore(POTemplate)
+    ...     .find(POTemplate, path="po/alsa-utils.pot")
+    ...     .one()
+    ... )
+    >>> alsa_es = alsa_template.getPOFileByLang("es")
+    >>> netapplet_template = (
+    ...     IStore(POTemplate).find(POTemplate, path="po/netapplet.pot").one()
+    ... )
     >>> request_set.addRequest(
-    ...     person, [alsa_template, netapplet_template], [alsa_es])
+    ...     person, [alsa_template, netapplet_template], [alsa_es]
+    ... )
     >>> transaction.commit()
 
 The script is run.
 
     >>> import subprocess
-    >>> process = subprocess.Popen([
-    ...     'cronscripts/rosetta-export-queue.py', '-v'
-    ...     ], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.STDOUT, universal_newlines=True,
-    ...     )
+    >>> process = subprocess.Popen(
+    ...     ["cronscripts/rosetta-export-queue.py", "-v"],
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.STDOUT,
+    ...     universal_newlines=True,
+    ... )
     >>> (output, empty) = process.communicate()
     >>> print(output)
     INFO    Creating lockfile: /var/lock/launchpad-rosetta-export-queue.lock

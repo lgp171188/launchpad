@@ -6,11 +6,11 @@ software (e.g. in a bug import or a translation template upload). It's
 clearly stated that those people don't use Launchpad and why there's a
 profile for them.
 
-    >>> browser.open('http://launchpad.test/~matsubara')
+    >>> browser.open("http://launchpad.test/~matsubara")
     >>> browser.title
     'Diogo Matsubara does not use Launchpad'
 
-    >>> content = find_main_content(browser.contents).find('p')
+    >>> content = find_main_content(browser.contents).find("p")
     >>> print(extract_text(content))
     Diogo Matsubara does not use Launchpad. This page was created on
     2006-12-13 when importing the Portuguese...
@@ -22,32 +22,44 @@ Email address disclosure
 Mark has a registered email address, and he has chosen to disclose it to
 the world. Anonymous users cannot see Mark's address
 
-    >>> anon_browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'email-addresses')))
+    >>> anon_browser.open("http://launchpad.test/~mark")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "email-addresses")
+    ...     )
+    ... )
     Email: Log in for email information.
 
 A logged in user such as Sample Person, can see Mark's addresses.
 
-    >>> sample_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> sample_browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(
-    ...     find_tag_by_id(sample_browser.contents, 'email-addresses')))
+    >>> sample_browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> sample_browser.open("http://launchpad.test/~mark")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(sample_browser.contents, "email-addresses")
+    ...     )
+    ... )
     Email: mark@example.com
 
 As for Sample Person, they have chosen not to disclose their email addresses.
 Unprivileged users like No Privileges Person cannot see their addresses:
 
-    >>> user_browser.open('http://launchpad.test/~name12')
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'email-addresses')))
+    >>> user_browser.open("http://launchpad.test/~name12")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(user_browser.contents, "email-addresses")
+    ...     )
+    ... )
     Email: No public address provided.
 
 But Foo Bar can:
 
-    >>> admin_browser.open('http://launchpad.test/~name12')
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'email-addresses')))
+    >>> admin_browser.open("http://launchpad.test/~name12")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "email-addresses")
+    ...     )
+    ... )
     Email:
     test@canonical.com
     testing@canonical.com
@@ -60,26 +72,27 @@ Open ID link
 
 When a person visits their own page, they'll see their OpenID login URL.
 
-    >>> user_browser.open('http://launchpad.test/~no-priv')
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'openid-info')))
+    >>> user_browser.open("http://launchpad.test/~no-priv")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "openid-info"))
+    ... )
     OpenID login:
     http://launchpad.test/~no-priv...
 
 The URL is followed by a helpful link.
 
-    >>> print(user_browser.getLink('OpenID help').url)
+    >>> print(user_browser.getLink("OpenID help").url)
     http://launchpad.test/+help-registry/openid.html
 
 However, when the user visits someone else's page, they see no such URL.
 
-    >>> user_browser.open('http://launchpad.test/~salgado')
-    >>> print(find_tag_by_id(user_browser.contents, 'openid-info'))
+    >>> user_browser.open("http://launchpad.test/~salgado")
+    >>> print(find_tag_by_id(user_browser.contents, "openid-info"))
     None
 
 And there is no helpful link.
 
-    >>> print(user_browser.getLink('openid help').url)
+    >>> print(user_browser.getLink("openid help").url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -90,14 +103,16 @@ Jabber IDs
 
 A person's jabber IDs are only show to authenticated users.
 
-    >>> user_browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'jabber-ids')))
+    >>> user_browser.open("http://launchpad.test/~mark")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "jabber-ids"))
+    ... )
     Jabber: markshuttleworth@jabber.org
 
-    >>> anon_browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'jabber-ids')))
+    >>> anon_browser.open("http://launchpad.test/~mark")
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "jabber-ids"))
+    ... )
     Jabber: &lt;email address hidden&gt;
 
 
@@ -108,13 +123,13 @@ In order to avoid email harvesters to find a person's email addresses
 just by following the link to that person's OpenPGP keys, only
 authenticated users can see the key fingerprint with a link to the keyserver.
 
-    >>> user_browser.open('http://launchpad.test/~name16')
-    >>> print(find_tag_by_id(user_browser.contents, 'pgp-keys'))
+    >>> user_browser.open("http://launchpad.test/~name16")
+    >>> print(find_tag_by_id(user_browser.contents, "pgp-keys"))
     <dl...
     <a href="https://keyserver...
 
-    >>> anon_browser.open('http://launchpad.test/~name16')
-    >>> print(find_tag_by_id(anon_browser.contents, 'pgp-keys'))
+    >>> anon_browser.open("http://launchpad.test/~name16")
+    >>> print(find_tag_by_id(anon_browser.contents, "pgp-keys"))
     <dl...
     <dd> ABCDEF0123456789ABCDDCBA0000111112345678...
 
@@ -125,18 +140,20 @@ Languages
 The contact details portlet shows the languages that the user speaks. No
 Privileges Person can see the languages that mark speaks.
 
-    >>> user_browser.open('http://launchpad.test/~carlos')
-    >>> print(extract_text(find_tag_by_id(
-    ...     user_browser.contents, 'languages')))
+    >>> user_browser.open("http://launchpad.test/~carlos")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "languages"))
+    ... )
     Languages:
     Catalan, English, Spanish
 
 When viewing their own page, No Privileges Person sees their languages and
 can edit them.
 
-    >>> user_browser.open('http://launchpad.test/~no-priv')
-    >>> print(extract_text(find_tag_by_id(
-    ...     user_browser.contents, 'languages')))
+    >>> user_browser.open("http://launchpad.test/~no-priv")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "languages"))
+    ... )
     Languages: Set preferred languages
     English
 
@@ -146,37 +163,37 @@ Summary Pagelets
 
 A person's homepage also lists Karma and Time zone information:
 
-    >>> browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'karma')))
+    >>> browser.open("http://launchpad.test/~mark")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "karma")))
     Karma: 130 Karma help
 
-    >>> browser.open('http://launchpad.test/~ddaa')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'timezone')))
+    >>> browser.open("http://launchpad.test/~ddaa")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "timezone")))
     Time zone: UTC (UTC+0000)
 
 Negative Ubuntu Code of Conduct signatory status is only displayed for
 yourself; others won't see it:
 
-    >>> print(find_tag_by_id(browser.contents, 'ubuntu-coc'))
+    >>> print(find_tag_by_id(browser.contents, "ubuntu-coc"))
     None
 
-    >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.test/~mark')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'ubuntu-coc')))
+    >>> browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> browser.open("http://launchpad.test/~mark")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "ubuntu-coc")))
     Signed Ubuntu Code of Conduct: No
 
 You can grab certain bits of information programatically:
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'karma-total')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "karma-total")))
     130
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'member-since')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "member-since")))
     2005-06-06
 
 Teams don't have member-since; they have created-date:
 
-    >>> browser.open('http://launchpad.test/~guadamen')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'created-date')))
+    >>> browser.open("http://launchpad.test/~guadamen")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "created-date")))
     2005-06-06
 
 
@@ -187,14 +204,15 @@ A person's home page also displays a table with the contributions made
 by that person. This table includes 5 projects in which this person is
 most active and also the areas in which they worked on each project.
 
-    >>> anon_browser.open('http://launchpad.test/~name16')
-    >>> table = find_tag_by_id(anon_browser.contents, 'contributions')
-    >>> for tr in table.find_all('tr'):
-    ...     print(tr.find('th').find('a').decode_contents())
-    ...     for td in tr.find_all('td'):
-    ...         img = td.find('img')
+    >>> anon_browser.open("http://launchpad.test/~name16")
+    >>> table = find_tag_by_id(anon_browser.contents, "contributions")
+    >>> for tr in table.find_all("tr"):
+    ...     print(tr.find("th").find("a").decode_contents())
+    ...     for td in tr.find_all("td"):
+    ...         img = td.find("img")
     ...         if img is not None:
-    ...             print("\t", img['title'])
+    ...             print("\t", img["title"])
+    ...
     Evolution
        Bug Management
        Translations in Rosetta
@@ -209,20 +227,20 @@ most active and also the areas in which they worked on each project.
 
 The portlet also has a link to see the most recent karmic activity.
 
-    >>> anon_browser.getLink('Recent activities')
+    >>> anon_browser.getLink("Recent activities")
     <Link text='Recent activities' url='http://launchpad.test/~name16/+karma'>
 
 If the person hasn't made any contributions, the table is not present in
 its page.
 
-    >>> anon_browser.open('http://launchpad.test/~jdub')
-    >>> print(find_tag_by_id(anon_browser.contents, 'contributions'))
+    >>> anon_browser.open("http://launchpad.test/~jdub")
+    >>> print(find_tag_by_id(anon_browser.contents, "contributions"))
     None
 
 The same for teams.
 
-    >>> anon_browser.open('http://launchpad.test/~ubuntu-team')
-    >>> print(find_tag_by_id(anon_browser.contents, 'contributions'))
+    >>> anon_browser.open("http://launchpad.test/~ubuntu-team")
+    >>> print(find_tag_by_id(anon_browser.contents, "contributions"))
     None
 
 
@@ -233,7 +251,7 @@ Many profiles are created for users who contributed to projects that
 were imported into Launchpad. Any user can see an unclaimed profile and
 a link to request a claim the profile.
 
-    >>> anon_browser.open('https://launchpad.test/~jvprat')
+    >>> anon_browser.open("https://launchpad.test/~jvprat")
     >>> print(anon_browser.title)
     Jordi Vilalta does not use Launchpad
 
@@ -241,7 +259,7 @@ a link to request a claim the profile.
     Jordi Vilalta does not use Launchpad. This page was created on ...
     when importing the Catalan (ca) translation of pmount in Ubuntu Hoary...
 
-    >>> anon_browser.getLink('Are you Jordi Vilalta')
+    >>> anon_browser.getLink("Are you Jordi Vilalta")
     <Link text='Are you Jordi Vilalta?' url='.../people/+requestmerge...'>
 
 It is possible for the preferred email address to be set if it is
@@ -250,25 +268,30 @@ users cannot see this, but admins like Foo Bar can.
 
     >>> from zope.component import getUtility
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     EmailAddressStatus, IEmailAddressSet)
+    ...     EmailAddressStatus,
+    ...     IEmailAddressSet,
+    ... )
 
-    >>> login('admin@canonical.com')
-    >>> address = getUtility(IEmailAddressSet).getByEmail('jvprat@wanadoo.es')
+    >>> login("admin@canonical.com")
+    >>> address = getUtility(IEmailAddressSet).getByEmail("jvprat@wanadoo.es")
     >>> address.status = EmailAddressStatus.PREFERRED
     >>> transaction.commit()
     >>> logout()
 
-    >>> anon_browser.open('https://launchpad.test/~jvprat')
-    >>> print(find_tag_by_id(anon_browser.contents, 'email-addresses'))
+    >>> anon_browser.open("https://launchpad.test/~jvprat")
+    >>> print(find_tag_by_id(anon_browser.contents, "email-addresses"))
     None
 
-    >>> user_browser.open('https://launchpad.test/~jvprat')
-    >>> print(find_tag_by_id(user_browser.contents, 'email-addresses'))
+    >>> user_browser.open("https://launchpad.test/~jvprat")
+    >>> print(find_tag_by_id(user_browser.contents, "email-addresses"))
     None
 
-    >>> admin_browser.open('https://launchpad.test/~jvprat')
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'email-addresses')))
+    >>> admin_browser.open("https://launchpad.test/~jvprat")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "email-addresses")
+    ...     )
+    ... )
     jvprat@wanadoo.es
     Change email settings
 
@@ -282,23 +305,29 @@ better taste to make this clear on their profile page.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.services.identity.interfaces.account import AccountStatus
 
-    >>> anon_browser.open('https://launchpad.test/~name12')
-    >>> print(find_tag_by_id(anon_browser.contents, 'deceased-note'))
+    >>> anon_browser.open("https://launchpad.test/~name12")
+    >>> print(find_tag_by_id(anon_browser.contents, "deceased-note"))
     None
 
-    >>> login('admin@canonical.com')
-    >>> name12 = getUtility(IPersonSet).getByName('name12')
-    >>> name12.setAccountStatus(AccountStatus.DECEASED, None, 'RIP')
+    >>> login("admin@canonical.com")
+    >>> name12 = getUtility(IPersonSet).getByName("name12")
+    >>> name12.setAccountStatus(AccountStatus.DECEASED, None, "RIP")
     >>> transaction.commit()
     >>> logout()
 
-    >>> anon_browser.open('https://launchpad.test/~name12')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'deceased-note')))
+    >>> anon_browser.open("https://launchpad.test/~name12")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "deceased-note")
+    ...     )
+    ... )
     This account belonged to a deceased user and has been archived.
 
 Most of the rest of their profile page remains intact.
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'contact-details')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "contact-details")
+    ...     )
+    ... )
     User information...

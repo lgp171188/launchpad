@@ -6,7 +6,7 @@ special entry: the user account of the authenticated user. To avoid
 confusion when one program runs as different users, this is
 implemented as a redirect to that person's canonical URL.
 
-    >>> print(webservice.get('/people/+me'))
+    >>> print(webservice.get("/people/+me"))
     HTTP/1.1 303 See Other
     ...
     Location: http://.../~salgado

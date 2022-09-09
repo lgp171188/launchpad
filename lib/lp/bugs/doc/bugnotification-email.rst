@@ -30,12 +30,13 @@ that follow:
 
     >>> from zope.component import getUtility
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     IEmailAddressSet)
+    ...     IEmailAddressSet,
+    ... )
     >>> from lp.bugs.adapters.bugdelta import BugDelta
     >>> from lp.bugs.interfaces.bug import (
-    ...        IBugDelta,
-    ...        IBugSet,
-    ...        )
+    ...     IBugDelta,
+    ...     IBugSet,
+    ... )
     >>> from lp.app.enums import InformationType
     >>> from lp.registry.interfaces.person import IPersonSet
 
@@ -74,7 +75,7 @@ decided yet, so it would appear as Undecided.)
 If the filed bug would have tags, these are included in the notification
 as well.
 
-    >>> bug_four.tags = [u'foo', u'bar']
+    >>> bug_four.tags = ["foo", "bar"]
 
     >>> subject, body = generate_bug_add_email(bug_four)
     >>> print(subject)
@@ -95,7 +96,8 @@ as well.
 New security related bugs are sent with a prominent warning:
 
     >>> changed = bug_four.transitionToInformationType(
-    ...     InformationType.PUBLICSECURITY, getUtility(ILaunchBag).user)
+    ...     InformationType.PUBLICSECURITY, getUtility(ILaunchBag).user
+    ... )
 
     >>> subject, body = generate_bug_add_email(bug_four)
     >>> print(subject)
@@ -111,7 +113,8 @@ New security related bugs are sent with a prominent warning:
 Security related bugs can be embargoed:
 
     >>> bug_four.transitionToInformationType(
-    ...     InformationType.PRIVATESECURITY, getUtility(ILaunchBag).user)
+    ...     InformationType.PRIVATESECURITY, getUtility(ILaunchBag).user
+    ... )
     True
 
     >>> subject, body = generate_bug_add_email(bug_four)
@@ -136,33 +139,39 @@ generates IBugChange objects that describe the changes to the bug.
     >>> edited_bug.title = "the new title"
     >>> old_description = edited_bug.description
     >>> edited_bug.description = (
-    ...        "The Trash folder seems to have significant problems! At the"
-    ...        " moment, dragging an item to the Trash results in immediate"
-    ...        " deletion. The item does not appear in the Trash, it is just"
-    ...        " deleted from my hard disk. There is no undo or ability to"
-    ...        " recover the deleted file. Help!")
+    ...     "The Trash folder seems to have significant problems! At the"
+    ...     " moment, dragging an item to the Trash results in immediate"
+    ...     " deletion. The item does not appear in the Trash, it is just"
+    ...     " deleted from my hard disk. There is no undo or ability to"
+    ...     " recover the deleted file. Help!"
+    ... )
 
     >>> bug_delta = BugDelta(
-    ...        bug=edited_bug,
-    ...        bugurl="http://www.example.com/bugs/2",
-    ...        user=sample_person,
-    ...        title={'new': edited_bug.title, 'old': old_title},
-    ...        description={'new': edited_bug.description,
-    ...                     'old': old_description})
+    ...     bug=edited_bug,
+    ...     bugurl="http://www.example.com/bugs/2",
+    ...     user=sample_person,
+    ...     title={"new": edited_bug.title, "old": old_title},
+    ...     description={
+    ...         "new": edited_bug.description,
+    ...         "old": old_description,
+    ...     },
+    ... )
     >>> IBugDelta.providedBy(bug_delta)
     True
 
     >>> from lp.bugs.interfaces.bugchange import IBugChange
     >>> changes = get_bug_changes(bug_delta)
     >>> for change in changes:
-    ...        IBugChange.providedBy(change)
+    ...     IBugChange.providedBy(change)
+    ...
     True
     True
 
     >>> for change in get_bug_changes(bug_delta):
-    ...        notification = change.getBugNotification()
-    ...        print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
-    ...        print("-----------------------------")
+    ...     notification = change.getBugNotification()
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
+    ...     print("-----------------------------")
+    ...
     ** Summary changed:
     <BLANKLINE>
     - Blackhole Trash folder
@@ -181,28 +190,33 @@ Another edit, this time a long description, showing that the description
 is wrapped properly:
 
     >>> old_description = edited_bug.description
-    >>> edited_bug.description = ''.join([
-    ...     "A new description that is quite long. ",
-    ...     "But the nice thing is that the edit notification email ",
-    ...     "generator knows how to indent and wrap descriptions, so this ",
-    ...     "will appear quite nice in the actual email that gets sent.",
-    ...     "\n",
-    ...     "\n",
-    ...     "It's also smart enough to preserve whitespace, finally!",
-    ...     ])
+    >>> edited_bug.description = "".join(
+    ...     [
+    ...         "A new description that is quite long. ",
+    ...         "But the nice thing is that the edit notification email ",
+    ...         "generator knows how to indent and wrap descriptions, so ",
+    ...         "this will appear quite nice in the actual email that gets ",
+    ...         "sent.",
+    ...         "\n",
+    ...         "\n",
+    ...         "It's also smart enough to preserve whitespace, finally!",
+    ...     ]
+    ... )
 
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/2",
     ...     user=sample_person,
     ...     description={
-    ...         'new': edited_bug.description,
-    ...         'old': old_description,
-    ...     })
+    ...         "new": edited_bug.description,
+    ...         "old": old_description,
+    ...     },
+    ... )
     >>> for change in get_bug_changes(bug_delta):  # noqa
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Description changed:
     <BLANKLINE>
     - The Trash folder seems to have significant problems! At the moment,
@@ -227,74 +241,84 @@ logins to a user that is explicitly subscribed to this bug):
 
     >>> edited_bug = getUtility(IBugSet).get(6)
     >>> edited_bug.transitionToInformationType(
-    ...     InformationType.PRIVATESECURITY, getUtility(ILaunchBag).user)
+    ...     InformationType.PRIVATESECURITY, getUtility(ILaunchBag).user
+    ... )
     True
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     information_type = {
-    ...         'old': InformationType.PUBLIC,
-    ...         'new': InformationType.PRIVATESECURITY
-    ...     })
+    ...     information_type={
+    ...         "old": InformationType.PUBLIC,
+    ...         "new": InformationType.PRIVATESECURITY,
+    ...     },
+    ... )
 
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     text_representation = notification['text']
-    ...     print(text_representation) #doctest: -NORMALIZE_WHITESPACE
+    ...     text_representation = notification["text"]
+    ...     print(text_representation)  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Information type changed from Public to Private Security
     -----------------------------
 
 Now we set the bug back to public and check if the email sent changed as well.
 
     >>> changed = edited_bug.transitionToInformationType(
-    ...     InformationType.PUBLIC, getUtility(ILaunchBag).user)
+    ...     InformationType.PUBLIC, getUtility(ILaunchBag).user
+    ... )
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     private={'old': True, 'new': edited_bug.private},
+    ...     private={"old": True, "new": edited_bug.private},
     ...     information_type={
-    ...         'old': InformationType.PRIVATESECURITY,
-    ...         'new': InformationType.PUBLIC
-    ...         })
+    ...         "old": InformationType.PRIVATESECURITY,
+    ...         "new": InformationType.PUBLIC,
+    ...     },
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Information type changed from Private Security to Public
     -----------------------------
 
 Let's add some tags to a bug:
 
     >>> old_tags = []
-    >>> edited_bug.tags = [u'foo', u'bar']
+    >>> edited_bug.tags = ["foo", "bar"]
     >>> bug_delta = BugDelta(
-    ...        bug=edited_bug,
-    ...        bugurl="http://www.example.com/bugs/6",
-    ...        user=sample_person,
-    ...        tags={'old': old_tags, 'new': edited_bug.tags})
+    ...     bug=edited_bug,
+    ...     bugurl="http://www.example.com/bugs/6",
+    ...     user=sample_person,
+    ...     tags={"old": old_tags, "new": edited_bug.tags},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
-    ...        notification = change.getBugNotification()
-    ...        print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
-    ...        print("-----------------------------")
+    ...     notification = change.getBugNotification()
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
+    ...     print("-----------------------------")
+    ...
     ** Tags added: bar foo
     -----------------------------
 
 If we change one tag, it's basically removing one and adding another:
 
     >>> old_tags = edited_bug.tags
-    >>> edited_bug.tags = [u'foo', u'baz']
+    >>> edited_bug.tags = ["foo", "baz"]
     >>> bug_delta = BugDelta(
-    ...        bug=edited_bug,
-    ...        bugurl="http://www.example.com/bugs/2",
-    ...        user=sample_person,
-    ...        tags={'old': old_tags, 'new': edited_bug.tags})
+    ...     bug=edited_bug,
+    ...     bugurl="http://www.example.com/bugs/2",
+    ...     user=sample_person,
+    ...     tags={"old": old_tags, "new": edited_bug.tags},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
-    ...        notification = change.getBugNotification()
-    ...        print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
-    ...        print("-----------------------------")
+    ...     notification = change.getBugNotification()
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
+    ...     print("-----------------------------")
+    ...
     ** Tags removed: bar
     ** Tags added: baz
     -----------------------------
@@ -310,10 +334,10 @@ We use a BugTaskDelta to represent changes to a BugTask.
 
     >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.bugtask import (
-    ...        BugTaskStatus,
-    ...        IBugTaskDelta,
-    ...        IBugTaskSet,
-    ...        )
+    ...     BugTaskStatus,
+    ...     IBugTaskDelta,
+    ...     IBugTaskSet,
+    ... )
     >>> from lp.bugs.model.bugtask import BugTaskDelta
     >>> example_bug_task = factory.makeBugTask()
     >>> example_delta = BugTaskDelta(example_bug_task)
@@ -322,21 +346,25 @@ We use a BugTaskDelta to represent changes to a BugTask.
 
     >>> edited_bugtask = getUtility(IBugTaskSet).get(15)
     >>> edited_bugtask.transitionToStatus(
-    ...        BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ... )
     >>> edited_bugtask.transitionToAssignee(sample_person)
     >>> bugtask_delta = BugTaskDelta(
     ...     bugtask=edited_bugtask,
-    ...     status={'old' : BugTaskStatus.NEW, 'new' : edited_bugtask.status},
-    ...     assignee={'old' : None, 'new' : edited_bugtask.assignee})
+    ...     status={"old": BugTaskStatus.NEW, "new": edited_bugtask.status},
+    ...     assignee={"old": None, "new": edited_bugtask.assignee},
+    ... )
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     bugtask_deltas=bugtask_delta)
+    ...     bugtask_deltas=bugtask_delta,
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Changed in: firefox
            Status: New => Confirmed
     -----------------------------
@@ -354,16 +382,19 @@ edited:
     >>> debian_bugtask.transitionToAssignee(None)
     >>> bugtask_delta = BugTaskDelta(
     ...     bugtask=debian_bugtask,
-    ...     assignee={'old' : sample_person, 'new' : None})
+    ...     assignee={"old": sample_person, "new": None},
+    ... )
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     bugtask_deltas=bugtask_delta)
+    ...     bugtask_deltas=bugtask_delta,
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Changed in: mozilla-firefox (Debian)
          Assignee: Sample Person (name12) => (unassigned)
     -----------------------------
@@ -376,17 +407,20 @@ Adding an attachment will generate a notification that looks as follows:
 
     >>> attachment = factory.makeBugAttachment(
     ...     description="A screenshot of the problem",
-    ...     filename='screenshot.png')
+    ...     filename="screenshot.png",
+    ... )
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     attachment={'new' : attachment, 'old': None})
+    ...     attachment={"new": attachment, "old": None},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
     ... # noqa
+    ...
     ** Attachment added: "A screenshot of the problem"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/screenshot.png
     -----------------------------
@@ -397,12 +431,14 @@ Removing an attachment generates a notification, too.
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     attachment={'old' : attachment, 'new': None})
+    ...     attachment={"old": attachment, "new": None},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
     ... # noqa
+    ...
     ** Attachment removed: "A screenshot of the problem"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/screenshot.png
     -----------------------------
@@ -412,16 +448,20 @@ notification.
 
     >>> attachment = factory.makeBugAttachment(
     ...     description="A new icon for the application",
-    ...     filename='new-icon.png', is_patch=True)
+    ...     filename="new-icon.png",
+    ...     is_patch=True,
+    ... )
     >>> bug_delta = BugDelta(
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     attachment={'new' : attachment, 'old': None})
+    ...     attachment={"new": attachment, "old": None},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Patch added: "A new icon for the application"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/new-icon.png
     -----------------------------
@@ -432,11 +472,13 @@ Removing a patch also generates a different notification.
     ...     bug=edited_bug,
     ...     bugurl="http://www.example.com/bugs/6",
     ...     user=sample_person,
-    ...     attachment={'old' : attachment, 'new': None})
+    ...     attachment={"old": attachment, "new": None},
+    ... )
     >>> for change in get_bug_changes(bug_delta):
     ...     notification = change.getBugNotification()
-    ...     print(notification['text']) #doctest: -NORMALIZE_WHITESPACE
+    ...     print(notification["text"])  # doctest: -NORMALIZE_WHITESPACE
     ...     print("-----------------------------")
+    ...
     ** Patch removed: "A new icon for the application"
        http://bugs.launchpad.test/bugs/.../+attachment/.../+files/new-icon.png
     -----------------------------
@@ -449,7 +491,9 @@ The Reply-To: and From: addresses used to send email are generated in a
 pair of handy functions defined in mailnotification.py:
 
     >>> from lp.bugs.mail.bugnotificationbuilder import (
-    ...     get_bugmail_from_address, get_bugmail_replyto_address)
+    ...     get_bugmail_from_address,
+    ...     get_bugmail_replyto_address,
+    ... )
 
 The Reply-To address generation is straightforward:
 
@@ -465,6 +509,7 @@ This applies for all users.  For example, Stuart has four email addresses:
     >>> stub = getUtility(IPersonSet).getByName("stub")
     >>> for email in getUtility(IEmailAddressSet).getByPerson(stub):
     ...     print(email.email, email.status.name)
+    ...
     stuart.bishop@canonical.com PREFERRED
     stuart@stuartbishop.net VALIDATED
     stub@fastmail.fm NEW
@@ -480,7 +525,8 @@ email address:
 This also happens for users with hidden addresses:
 
     >>> private_person = factory.makePerson(
-    ...     email="hidden@example.com", displayname="Ford Prefect")
+    ...     email="hidden@example.com", displayname="Ford Prefect"
+    ... )
     >>> private_person.hide_email_addresses = True
     >>> get_bugmail_from_address(private_person, bug_four)
     'Ford Prefect <4@bugs.launchpad.net>'
@@ -515,10 +561,12 @@ used to construct bug notification emails.
 When instantiatiated it derives a list of common unchanging headers from
 the bug so that they are not calculated for every recipient.
 
-    >>> bug_four_notification_builder = BugNotificationBuilder(bug_four,
-    ...     private_person)
+    >>> bug_four_notification_builder = BugNotificationBuilder(
+    ...     bug_four, private_person
+    ... )
     >>> for header in bug_four_notification_builder.common_headers:
-    ...     print(': '.join(header))
+    ...     print(": ".join(header))
+    ...
     Reply-To: Bug 4 <4@bugs.launchpad.net>
     Sender: bounces@canonical.com
     X-Launchpad-Notification-Type: bug
@@ -540,28 +588,33 @@ date for the mail.
     >>> import pytz
 
     >>> from_address = get_bugmail_from_address(lp_janitor, bug_four)
-    >>> to_person = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
-    >>> sending_date = pytz.timezone('Europe/Prague').localize(
-    ...     datetime(2008, 5, 20, 11, 5, 47))
+    >>> to_person = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
+    >>> sending_date = pytz.timezone("Europe/Prague").localize(
+    ...     datetime(2008, 5, 20, 11, 5, 47)
+    ... )
 
     >>> notification_email = bug_four_notification_builder.build(
-    ...     from_address, to_person,
-    ...     "A test body.", "A test subject.", sending_date)
+    ...     from_address,
+    ...     to_person,
+    ...     "A test body.",
+    ...     "A test subject.",
+    ...     sending_date,
+    ... )
 
 The fields of the generated notification email will be set according to
 the parameters that were used to instantiate BugNotificationBuilder and
 passed to <builder>.build().
 
-    >>> print(notification_email['From'])
+    >>> print(notification_email["From"])
     Launchpad Bug Tracker <4@bugs.launchpad.net>
 
-    >>> print(notification_email['To'])
+    >>> print(notification_email["To"])
     foo.bar@canonical.com
 
-    >>> print(notification_email['Subject'])
+    >>> print(notification_email["Subject"])
     [Bug 4] A test subject.
 
-    >>> print(notification_email['Date'])
+    >>> print(notification_email["Date"])
     Tue, 20 May 2008 09:05:47 -0000
 
     >>> print(notification_email.get_payload())
@@ -571,49 +624,58 @@ The <builder>.build() method also accepts parameters for rationale,
 references and message_id.
 
     >>> notification_email = bug_four_notification_builder.build(
-    ...     from_address, to_person,
-    ...     "A test body.", "A test subject.", sending_date,
-    ...     rationale='Because-I-said-so',
-    ...     references=['<12345@launchpad.net>'],
-    ...     message_id='<67890@launchpad.net>')
+    ...     from_address,
+    ...     to_person,
+    ...     "A test body.",
+    ...     "A test subject.",
+    ...     sending_date,
+    ...     rationale="Because-I-said-so",
+    ...     references=["<12345@launchpad.net>"],
+    ...     message_id="<67890@launchpad.net>",
+    ... )
 
 The X-Launchpad-Message-Rationale header is set from the rationale
 parameter.
 
-    >>> print(notification_email['X-Launchpad-Message-Rationale'])
+    >>> print(notification_email["X-Launchpad-Message-Rationale"])
     Because-I-said-so
 
 The X-Launchpad-Message-For header is set from the to_person (since this
 notification is not for a team).
 
-    >>> print(notification_email['X-Launchpad-Message-For'])
+    >>> print(notification_email["X-Launchpad-Message-For"])
     name16
 
 The references parameter sets the References header of the email.
 
-    >>> print(notification_email['References'])
+    >>> print(notification_email["References"])
     <12345@launchpad.net>
 
 And the message_id parameter is used to set the Message-Id header. It
 will be auto-generated if it is not supplied.
 
-    >>> print(notification_email['Message-Id'])
+    >>> print(notification_email["Message-Id"])
     <67890@launchpad.net>
 
 The message subject will always have [Bug <bug_id>] prepended to it.
 
     >>> notification_email = bug_four_notification_builder.build(
-    ...     from_address, to_person,
-    ...     "A test body.", "Yet another message", sending_date)
+    ...     from_address,
+    ...     to_person,
+    ...     "A test body.",
+    ...     "Yet another message",
+    ...     sending_date,
+    ... )
 
-    >>> print(notification_email['Subject'])
+    >>> print(notification_email["Subject"])
     [Bug 4] Yet another message
 
 If the subject passed is None the email subject will be set to [Bug
 <bug_id>].
 
     >>> notification_email = bug_four_notification_builder.build(
-    ...     from_address, to_person, "A test body.", None, sending_date)
+    ...     from_address, to_person, "A test body.", None, sending_date
+    ... )
 
-    >>> print(notification_email['Subject'])
+    >>> print(notification_email["Subject"])
     [Bug 4]

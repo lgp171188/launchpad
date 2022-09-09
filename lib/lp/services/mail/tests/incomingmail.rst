@@ -33,15 +33,16 @@ handle, and register them for some domains:
     ...     def __init__(self, allow_unknown_users=False):
     ...         self.allow_unknown_users = allow_unknown_users
     ...         self.handledMails = []
+    ...
     ...     def process(self, mail, to_addr, filealias):
-    ...         self.handledMails.append(mail['Message-Id'])
+    ...         self.handledMails.append(mail["Message-Id"])
     ...         return True
 
     >>> from lp.services.mail.handlers import mail_handlers
     >>> foo_handler = MockHandler()
     >>> bar_handler = MockHandler(allow_unknown_users=True)
-    >>> mail_handlers.add('foo.com', foo_handler)
-    >>> mail_handlers.add('bar.com', bar_handler)
+    >>> mail_handlers.add("foo.com", foo_handler)
+    >>> mail_handlers.add("bar.com", bar_handler)
 
 Now we send a few test mails to foo.com, bar.com, and baz.com:
 
@@ -55,19 +56,22 @@ FOO.COM are treated equivalently.
 
     >>> def sendmail(msg, to_addrs=None):
     ...     return original_sendmail(msg, to_addrs=to_addrs, bulk=False)
+    ...
 
-    >>> switch_dbuser('launchpad')
-    >>> msgids = {'foo.com': [], 'bar.com': [], 'baz.com': []}
-    >>> for domain in ('foo.com', 'bar.com', 'FOO.COM', 'baz.com'):
-    ...     msg = read_test_message('signed_detached.txt')
-    ...     msg.replace_header('To', '123@%s' % domain)
+    >>> switch_dbuser("launchpad")
+    >>> msgids = {"foo.com": [], "bar.com": [], "baz.com": []}
+    >>> for domain in ("foo.com", "bar.com", "FOO.COM", "baz.com"):
+    ...     msg = read_test_message("signed_detached.txt")
+    ...     msg.replace_header("To", "123@%s" % domain)
     ...     msgids[domain.lower()].append("<%s>" % sendmail(msg))
+    ...
 
 handleMail will check the timestamp on signed messages, but the signatures
 on our testdata are old, and in these tests we don't care to be told.
 
     >>> def accept_any_timestamp(timestamp, context_message):
     ...     pass
+    ...
 
 Since the User gets authenticated using OpenPGP signatures we have to
 import the keys before handleMail is called.
@@ -82,7 +86,8 @@ import the keys before handleMail is called.
 
     >>> handleMailForTest = lambda: handleMail(
     ...     zopeless_transaction,
-    ...     signature_timestamp_checker=accept_any_timestamp)
+    ...     signature_timestamp_checker=accept_any_timestamp,
+    ... )
 
 
 We temporarily override the error mails' From address, so that they will
@@ -92,7 +97,7 @@ pass through the authentication stage:
     ...     [malone]
     ...     bugmail_error_from_address: foo.bar@canonical.com
     ...     """
-    >>> config.push('bugmail_error_from_address', bugmail_error_from_address)
+    >>> config.push("bugmail_error_from_address", bugmail_error_from_address)
 
 The test mails are now in Launchpad's mail box, so now we can call
 handleMail, so that every mail gets handled by the correct handler.  (We
@@ -108,10 +113,12 @@ header is missing.)
 
 Now we can see that each handler handled the emails sent to its domain:
 
-    >>> for item in set(foo_handler.handledMails) ^ set(msgids['foo.com']):
+    >>> for item in set(foo_handler.handledMails) ^ set(msgids["foo.com"]):
     ...     print(item)
-    >>> for item in set(bar_handler.handledMails) ^ set(msgids['bar.com']):
+    ...
+    >>> for item in set(bar_handler.handledMails) ^ set(msgids["bar.com"]):
     ...     print(item)
+    ...
 
 --------------
 Unhandled Mail
@@ -125,7 +132,7 @@ a link to the original message.
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())
     multipart/mixed
-    >>> print(notification['To'])
+    >>> print(notification["To"])
     Sample Person <test@canonical.com>
     >>> error_message, original_message = notification.get_payload()
     >>> print(error_message.get_content_type())
@@ -143,11 +150,11 @@ a link to the original message.
     and include the error ID OOPS-... in the descr...
     >>> print(original_message.get_content_type())
     message/rfc822
-    >>> print(original_message.get_payload(0)['From'])
+    >>> print(original_message.get_payload(0)["From"])
     Sample Person <test@canonical.com>
-    >>> print(original_message.get_payload(0)['To'])
+    >>> print(original_message.get_payload(0)["To"])
     123@baz.com
-    >>> print(original_message.get_payload(0)['Subject'])
+    >>> print(original_message.get_payload(0)["Subject"])
     Signed Email
 
 ---------------------------------------------
@@ -157,8 +164,8 @@ Mail from Persons not registered in Launchpad
 If a Person who isn't registered in Launchpad sends an email, we'll
 most of the time reject the email:
 
-    >>> moin_change = read_test_message('moin-change.txt')
-    >>> moin_change['X-Launchpad-Original-To'] = '123@foo.com'
+    >>> moin_change = read_test_message("moin-change.txt")
+    >>> moin_change["X-Launchpad-Original-To"] = "123@foo.com"
     >>> msgid = "<%s>" % sendmail(moin_change)
     >>> handleMailForTest()
     >>> msgid not in foo_handler.handledMails
@@ -173,7 +180,7 @@ However, bar_handler specifies that it can handle such emails:
 
 So if we send the mail to bar.com, bar_handler will handle the mail:
 
-    >>> moin_change.replace_header('X-Launchpad-Original-To', '123@bar.com')
+    >>> moin_change.replace_header("X-Launchpad-Original-To", "123@bar.com")
     >>> msgid = "<%s>" % sendmail(moin_change)
     >>> handleMailForTest()
     >>> msgid in bar_handler.handledMails
@@ -191,19 +198,20 @@ silently rejected.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> person_set = getUtility(IPersonSet)
-    >>> bigjools = person_set.getByEmail('launchpad@julian-edwards.com',
-    ...                                  filter_status=False)
+    >>> bigjools = person_set.getByEmail(
+    ...     "launchpad@julian-edwards.com", filter_status=False
+    ... )
     >>> print(bigjools.account_status.name)
     NOACCOUNT
 
-    >>> msg = read_test_message('unsigned_inactive.txt')
-    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    >>> msg = read_test_message("unsigned_inactive.txt")
+    >>> msgid = sendmail(msg, ["edit@malone-domain"])
     >>> handleMailForTest()
     >>> msgid not in foo_handler.handledMails
     True
 
-    >>> msg = read_test_message('invalid_signed_inactive.txt')
-    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    >>> msg = read_test_message("invalid_signed_inactive.txt")
+    >>> msgid = sendmail(msg, ["edit@malone-domain"])
     >>> handleMailForTest()
     >>> msgid not in foo_handler.handledMails
     True
@@ -215,11 +223,11 @@ X-Launchpad-Original-To
 If available, the X-Launchpad-Original-To header is used to determine to
 which address the email was sent to:
 
-    >>> msg = read_test_message('signed_detached.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msg['CC'] = '123@foo.com'
-    >>> msg['X-Launchpad-Original-To'] = '123@bar.com'
-    >>> msgid = '<%s>' % sendmail (msg, ['123@bar.com'])
+    >>> msg = read_test_message("signed_detached.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msg["CC"] = "123@foo.com"
+    >>> msg["X-Launchpad-Original-To"] = "123@bar.com"
+    >>> msgid = "<%s>" % sendmail(msg, ["123@bar.com"])
     >>> handleMailForTest()
     >>> msgid in bar_handler.handledMails
     True
@@ -242,25 +250,28 @@ attempting to process incoming mail.
 
     >>> class TestOopsException(Exception):
     ...     pass
+    ...
     >>> @implementer(IMailHandler)
     ... class OopsHandler:
     ...     allow_unknown_users = True
+    ...
     ...     def process(self, mail, to_addr, filealias):
     ...         raise TestOopsException()
-    >>> mail_handlers.add('oops.com', OopsHandler())
+    >>> mail_handlers.add("oops.com", OopsHandler())
 
 And submit an email to the handler.
 
     >>> import email
     >>> msg = email.message_from_string(
-    ... """From: Foo Bar <foo.bar@canonical.com>
+    ...     """From: Foo Bar <foo.bar@canonical.com>
     ... To: launchpad@oops.com
     ... X-Launchpad-Original-To: launchpad@oops.com
     ... Subject: doesn't matter
     ...
     ... doesn't matter
-    ... """)
-    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    ... """
+    ... )
+    >>> msgid = sendmail(msg, ["edit@malone-domain"])
     >>> handleMailForTest()
     ERROR:process-mail:An exception was raised inside the handler:
     ...
@@ -272,7 +283,7 @@ to the user, citing the OOPS ID, with the original message attached.
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())
     multipart/mixed
-    >>> print(notification['To'])
+    >>> print(notification["To"])
     Foo Bar <foo.bar@canonical.com>
     >>> error_message, original_message = notification.get_payload()
     >>> print(error_message.get_content_type())
@@ -290,26 +301,29 @@ to the user, citing the OOPS ID, with the original message attached.
     and include the error ID OOPS-... in the descr...
     >>> print(original_message.get_content_type())
     message/rfc822
-    >>> print(original_message.get_payload(0)['From'])
+    >>> print(original_message.get_payload(0)["From"])
     Foo Bar <foo.bar@canonical.com>
-    >>> print(original_message.get_payload(0)['To'])
+    >>> print(original_message.get_payload(0)["To"])
     launchpad@oops.com
-    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    >>> print(original_message.get_payload(0)["X-Launchpad-Original-To"])
     launchpad@oops.com
-    >>> print(original_message.get_payload(0)['Subject'])
+    >>> print(original_message.get_payload(0)["Subject"])
     doesn't matter
 
 OOPS notifications work even if the From: address isn't properly MIME-encoded.
 
     >>> msg = email.message_from_bytes(
-    ... u"""From: \u05D1 <bet@canonical.com>
+    ...     """From: \u05D1 <bet@canonical.com>
     ... To: launchpad@oops.com
     ... X-Launchpad-Original-To: launchpad@oops.com
     ... Subject: doesn't matter
     ...
     ... doesn't matter
-    ... """.encode('UTF-8'))
-    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    ... """.encode(
+    ...         "UTF-8"
+    ...     )
+    ... )
+    >>> msgid = sendmail(msg, ["edit@malone-domain"])
     >>> handleMailForTest()
     ERROR:process-mail:An exception was raised inside the handler:
     ...
@@ -320,8 +334,9 @@ OOPS notifications work even if the From: address isn't properly MIME-encoded.
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())
     multipart/mixed
-    >>> print(pretty(
-    ...     six.ensure_text(decode_header(notification['To'])[0][0])))
+    >>> print(
+    ...     pretty(six.ensure_text(decode_header(notification["To"])[0][0]))
+    ... )
     '\u05d1 <bet@canonical.com>'
     >>> error_message, original_message = notification.get_payload()
     >>> print(error_message.get_content_type())
@@ -339,13 +354,13 @@ OOPS notifications work even if the From: address isn't properly MIME-encoded.
     and include the error ID OOPS-... in the descr...
     >>> print(original_message.get_content_type())
     message/rfc822
-    >>> print(parseaddr(str(original_message.get_payload(0)['From']))[1])
+    >>> print(parseaddr(str(original_message.get_payload(0)["From"]))[1])
     bet@canonical.com
-    >>> print(original_message.get_payload(0)['To'])
+    >>> print(original_message.get_payload(0)["To"])
     launchpad@oops.com
-    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    >>> print(original_message.get_payload(0)["X-Launchpad-Original-To"])
     launchpad@oops.com
-    >>> print(original_message.get_payload(0)['Subject'])
+    >>> print(original_message.get_payload(0)["Subject"])
     doesn't matter
 
 Unauthorized exceptions, which are ignored for the purpose of OOPS
@@ -356,17 +371,18 @@ reporting in the web interface, are not ignored in the email interface.
     ... class UnauthorizedOopsHandler:
     ...     def process(self, mail, to_addr, filealias):
     ...         raise Unauthorized()
-    >>> mail_handlers.add('unauthorized.com', UnauthorizedOopsHandler())
+    >>> mail_handlers.add("unauthorized.com", UnauthorizedOopsHandler())
 
     >>> msg = email.message_from_string(
-    ... """From: Foo Bar <foo.bar@canonical.com>
+    ...     """From: Foo Bar <foo.bar@canonical.com>
     ... To: launchpad@unauthorized.com
     ... X-Launchpad-Original-To: launchpad@unauthorized.com
     ... Subject: doesn't matter
     ...
     ... doesn't matter
-    ... """)
-    >>> msgid = sendmail(msg, ['edit@malone-domain'])
+    ... """
+    ... )
+    >>> msgid = sendmail(msg, ["edit@malone-domain"])
     >>> handleMailForTest()
     ERROR:process-mail:An exception was raised inside the handler:
     ...
@@ -375,7 +391,7 @@ reporting in the web interface, are not ignored in the email interface.
     >>> notification = pop_notifications()[-1]
     >>> print(notification.get_content_type())
     multipart/mixed
-    >>> print(notification['To'])
+    >>> print(notification["To"])
     Foo Bar <foo.bar@canonical.com>
     >>> error_message, original_message = notification.get_payload()
     >>> print(error_message.get_content_type())
@@ -393,13 +409,13 @@ reporting in the web interface, are not ignored in the email interface.
     and include the error ID OOPS-... in the descr...
     >>> print(original_message.get_content_type())
     message/rfc822
-    >>> print(original_message.get_payload(0)['From'])
+    >>> print(original_message.get_payload(0)["From"])
     Foo Bar <foo.bar@canonical.com>
-    >>> print(original_message.get_payload(0)['To'])
+    >>> print(original_message.get_payload(0)["To"])
     launchpad@unauthorized.com
-    >>> print(original_message.get_payload(0)['X-Launchpad-Original-To'])
+    >>> print(original_message.get_payload(0)["X-Launchpad-Original-To"])
     launchpad@unauthorized.com
-    >>> print(original_message.get_payload(0)['Subject'])
+    >>> print(original_message.get_payload(0)["Subject"])
     doesn't matter
 
 -------------
@@ -417,27 +433,28 @@ Let's create and register a handler which raises a SQL error:
     ... class DBExceptionRaiser:
     ...     def process(self, mail, to_addr, filealias):
     ...         cur = cursor()
-    ...         cur.execute('SELECT 1/0')
-    >>> mail_handlers.add('except.com', DBExceptionRaiser())
+    ...         cur.execute("SELECT 1/0")
+    >>> mail_handlers.add("except.com", DBExceptionRaiser())
 
 Now we send a mail to the handler, which will cause an exception:
 
     >>> exception_raiser = email.message_from_string(
-    ... """From: Foo Bar <foo.bar@canonical.com>
+    ...     """From: Foo Bar <foo.bar@canonical.com>
     ... To: something@except.com
     ... X-Launchpad-Original-To: something@except.com
     ... Subject: Raise an exception
     ...
     ... This part is not important.
-    ... """)
-    >>> msgid = sendmail(exception_raiser, ['something@exception.com'])
+    ... """
+    ... )
+    >>> msgid = sendmail(exception_raiser, ["something@exception.com"])
 
 We send another mail as well, in order to make sure that it gets
 processed as well:
 
-    >>> msg = read_test_message('signed_detached.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msgid = '<%s>' % sendmail(msg)
+    >>> msg = read_test_message("signed_detached.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msgid = "<%s>" % sendmail(msg)
 
 If we call handleMail(), we'll see some useful error messages printed
 out:
@@ -474,9 +491,9 @@ logged.
     >>> from lp.testing.layers import LibrarianLayer
     >>> LibrarianLayer.hide()
 
-    >>> msg = read_test_message('signed_detached.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msgid = '<%s>' % sendmail(msg)
+    >>> msg = read_test_message("signed_detached.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msgid = "<%s>" % sendmail(msg)
     >>> len(stub.test_emails)
     2
 
@@ -503,10 +520,10 @@ simply drop the emails.
 
 Emails with an empty Return-Path header should be dropped:
 
-    >>> msg = read_test_message('signed_detached.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msg['Return-Path'] = '<>'
-    >>> msgid = '<%s>' % sendmail(msg)
+    >>> msg = read_test_message("signed_detached.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msg["Return-Path"] = "<>"
+    >>> msgid = "<%s>" % sendmail(msg)
     >>> handleMailForTest()
     >>> msgid in foo_handler.handledMails
     False
@@ -521,13 +538,14 @@ If the content type is multipart/report, it's most likely a DSN
 (RFC 3464), so those get dropped as well. Normally a DSN should have an
 empty Return-Path, but there are some broken mailers out there.
 
-    >>> msg = read_test_message('signed_inline.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msg['Return-Path'] = '<not@empty.com>'
-    >>> msg['Content-Type'] = (
-    ...     'multipart/report; report-type=delivery-status;'
-    ...     ' boundary="boundary"')
-    >>> msgid = '<%s>' % sendmail(msg)
+    >>> msg = read_test_message("signed_inline.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msg["Return-Path"] = "<not@empty.com>"
+    >>> msg["Content-Type"] = (
+    ...     "multipart/report; report-type=delivery-status;"
+    ...     ' boundary="boundary"'
+    ... )
+    >>> msgid = "<%s>" % sendmail(msg)
     >>> handleMailForTest()
     >>> msgid in foo_handler.handledMails
     False
@@ -538,11 +556,11 @@ empty Return-Path, but there are some broken mailers out there.
 Email with the Precedence header are probably from an auto-responder or
 another robot. We also drop those.
 
-    >>> msg = read_test_message('signed_inline.txt')
-    >>> msg.replace_header('To', '123@foo.com')
-    >>> msg['Return-Path'] = '<not@empty.com>'
-    >>> msg['Precedence'] = 'bulk'
-    >>> msgid = '<%s>' % sendmail(msg)
+    >>> msg = read_test_message("signed_inline.txt")
+    >>> msg.replace_header("To", "123@foo.com")
+    >>> msg["Return-Path"] = "<not@empty.com>"
+    >>> msg["Precedence"] = "bulk"
+    >>> msgid = "<%s>" % sendmail(msg)
     >>> handleMailForTest()
     >>> msgid in foo_handler.handledMails
     False
@@ -553,7 +571,7 @@ another robot. We also drop those.
 
 .. Doctest cleanup
 
-    >>> config_data = config.pop('bugmail_error_from_address')
-    >>> mail_handlers.add('foo.com', None)
-    >>> mail_handlers.add('bar.com', None)
-    >>> mail_handlers.add('except.com', None)
+    >>> config_data = config.pop("bugmail_error_from_address")
+    >>> mail_handlers.add("foo.com", None)
+    >>> mail_handlers.add("bar.com", None)
+    >>> mail_handlers.add("except.com", None)

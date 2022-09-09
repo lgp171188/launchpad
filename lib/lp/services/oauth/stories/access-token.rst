@@ -12,22 +12,24 @@ access token.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.testing import login, logout
-    >>> login('salgado@ubuntu.com')
-    >>> consumer = getUtility(IOAuthConsumerSet).getByKey(u'foobar123451432')
+    >>> login("salgado@ubuntu.com")
+    >>> consumer = getUtility(IOAuthConsumerSet).getByKey("foobar123451432")
     >>> token, secret = consumer.newRequestToken()
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> token.review(salgado, OAuthPermission.WRITE_PUBLIC)
     >>> logout()
 
     >>> from urllib.parse import urlencode
     >>> data = dict(
-    ...     oauth_consumer_key='foobar123451432',
-    ...     oauth_version='1.0',
+    ...     oauth_consumer_key="foobar123451432",
+    ...     oauth_version="1.0",
     ...     oauth_token=token.key,
-    ...     oauth_signature_method='PLAINTEXT',
-    ...     oauth_signature='&'.join(['', secret]))
+    ...     oauth_signature_method="PLAINTEXT",
+    ...     oauth_signature="&".join(["", secret]),
+    ... )
     >>> anon_browser.open(
-    ...     'http://launchpad.test/+access-token', data=urlencode(data))
+    ...     "http://launchpad.test/+access-token", data=urlencode(data)
+    ... )
 
     >>> print(anon_browser.contents)
     oauth_token=...&oauth_token_secret=...
@@ -36,7 +38,8 @@ Any further attempt to exchange that request token for an access token
 will fail because request tokens can be used only once.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/+access-token', data=urlencode(data))
+    ...     "http://launchpad.test/+access-token", data=urlencode(data)
+    ... )
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 401: Unauthorized
@@ -45,18 +48,19 @@ The token's context, when not None, is sent to the consumer together
 with the token's key and secret.
 
     # Create a new request token, with firefox as its context, and review it.
-    >>> login('salgado@ubuntu.com')
+    >>> login("salgado@ubuntu.com")
     >>> token, secret = consumer.newRequestToken()
-    >>> firefox = getUtility(IProductSet)['firefox']
+    >>> firefox = getUtility(IProductSet)["firefox"]
     >>> token.review(salgado, OAuthPermission.WRITE_PUBLIC, context=firefox)
     >>> logout()
 
     # Exchange the request token for an access token.
     >>> data2 = data.copy()
-    >>> data2['oauth_token'] = token.key
-    >>> data2['oauth_signature'] = '&'.join(['', secret])
+    >>> data2["oauth_token"] = token.key
+    >>> data2["oauth_signature"] = "&".join(["", secret])
     >>> anon_browser.open(
-    ...     'http://launchpad.test/+access-token', data=urlencode(data2))
+    ...     "http://launchpad.test/+access-token", data=urlencode(data2)
+    ... )
     >>> print(anon_browser.contents)
     oauth_token=...&oauth_token_secret=...&lp.context=firefox
 
@@ -65,12 +69,17 @@ before it's been reviewed, though, or it'll get a 401 response.
 
     >>> token, secret = consumer.newRequestToken()
     >>> data2 = data.copy()
-    >>> data2['oauth_token'] = token.key
-    >>> data2['oauth_signature'] = '&'.join(['', secret])
-    >>> print(http(r"""
+    >>> data2["oauth_token"] = token.key
+    >>> data2["oauth_signature"] = "&".join(["", secret])
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+access-token?%s HTTP/1.1
     ... Host: launchpad.test
-    ... """ % urlencode(data2)))
+    ... """
+    ...         % urlencode(data2)
+    ...     )
+    ... )
     HTTP/1.1 401 Unauthorized
     ...
     Request token has not yet been reviewed. Try again later.
@@ -78,21 +87,31 @@ before it's been reviewed, though, or it'll get a 401 response.
 If the token is missing or the signature is wrong the response will
 also be 401.
 
-    >>> data2['oauth_signature'] = '&'.join(['foobar', secret])
-    >>> print(http(r"""
+    >>> data2["oauth_signature"] = "&".join(["foobar", secret])
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+access-token?%s HTTP/1.1
     ... Host: launchpad.test
-    ... """ % urlencode(data2)))
+    ... """
+    ...         % urlencode(data2)
+    ...     )
+    ... )
     HTTP/1.1 401 Unauthorized
     ...
     Invalid OAuth signature.
 
     >>> data3 = data.copy()
-    >>> del(data3['oauth_token'])
-    >>> print(http(r"""
+    >>> del data3["oauth_token"]
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+access-token?%s HTTP/1.1
     ... Host: launchpad.test
-    ... """ % urlencode(data3)))
+    ... """
+    ...         % urlencode(data3)
+    ...     )
+    ... )
     HTTP/1.1 401 Unauthorized
     ...
     No request token specified.
@@ -103,11 +122,16 @@ If the token's permission is set to UNAUTHORIZED, the response code is
 exchanged for an access token.
 
     >>> token.review(salgado, OAuthPermission.UNAUTHORIZED)
-    >>> data2['oauth_signature'] = '&'.join(['', secret])
-    >>> print(http(r"""
+    >>> data2["oauth_signature"] = "&".join(["", secret])
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+access-token?%s HTTP/1.1
     ... Host: launchpad.test
-    ... """ % urlencode(data2)))
+    ... """
+    ...         % urlencode(data2)
+    ...     )
+    ... )
     HTTP/1.1 403 Forbidden
     ...
     End-user refused to authorize request token.

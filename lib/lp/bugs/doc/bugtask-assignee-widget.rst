@@ -16,7 +16,7 @@ argument:
 and a context, which is an IBugTask.assignee field:
 
     >>> from lp.bugs.interfaces.bugtask import IBugTask
-    >>> field = IBugTask['assignee']
+    >>> field = IBugTask["assignee"]
 
 Let's borrow a bugtask to use in this example:
 
@@ -48,8 +48,9 @@ pretend to be logged in as Foo Bar:
 Then, let's simulate selecting the "me" radio button, to assign the
 bug to the currently logged-in user:
 
-    >>> request = LaunchpadTestRequest(form={
-    ...     'field.assignee.option': 'field.assignee.assign_to_me'})
+    >>> request = LaunchpadTestRequest(
+    ...     form={"field.assignee.option": "field.assignee.assign_to_me"}
+    ... )
     >>> widget = BugTaskAssigneeWidget(context, None, request)
 
 Currently, the bugtask is not assigned to the current user:
@@ -108,14 +109,14 @@ option.
 
 This time we use a different prefix than the standard 'field'.
 
-    >>> request.form = {'foo.assignee.option': 'foo.assignee.assign_to'}
+    >>> request.form = {"foo.assignee.option": "foo.assignee.assign_to"}
 
 In order to tell the widget about the new prefix, we need to call
 setPrefix.
 
     >>> widget.name
     'field.assignee'
-    >>> widget.setPrefix('foo')
+    >>> widget.setPrefix("foo")
     >>> print(widget.name)
     foo.assignee
 
@@ -137,7 +138,7 @@ If this option is selected, but no value is entered in
 Likewise, if a non-existent field.assignee is provided, the validation
 will fail:
 
-    >>> request.form['foo.assignee'] = 'name'
+    >>> request.form["foo.assignee"] = "name"
     >>> widget.validate()
     Traceback (most recent call last):
     ...
@@ -151,7 +152,7 @@ Note, in this case, that the widget will properly select the
 
 Let's supply a field.assignee so that the widget validation succeeds:
 
-    >>> request.form['foo.assignee'] = 'name12'
+    >>> request.form["foo.assignee"] = "name12"
     >>> widget.validate()
 
 Now, the bugtask is assigned to the current user:
@@ -179,7 +180,7 @@ The widget has valid input:
 
 The input value is the user with .name == 'name12':
 
-    >>> widget.getInputValue().name == 'name12'
+    >>> widget.getInputValue().name == "name12"
     True
 
 Let's apply the changes:
@@ -206,8 +207,8 @@ If we were to resubmit the form, without making any changes, the
 assignee would remain unchanged, so the input value is effectively the
 value of the current assignee:
 
-    >>> request.form = {'foo.assignee.option' : 'foo.assignee.assigned_to'}
-    >>> widget.getInputValue().name == 'name12'
+    >>> request.form = {"foo.assignee.option": "foo.assignee.assigned_to"}
+    >>> widget.getInputValue().name == "name12"
     True
 
 Assigning the bug to no-one
@@ -216,9 +217,10 @@ Assigning the bug to no-one
 Lastly, a bug can be put "up for grabs" again by selecting the
 "assign_to_nobody" option.
 
-    >>> widget.setPrefix('field')
+    >>> widget.setPrefix("field")
     >>> request.form = {
-    ...     'field.assignee.option': 'field.assignee.assign_to_nobody'}
+    ...     "field.assignee.option": "field.assignee.assign_to_nobody"
+    ... }
 
     >>> widget.validate()
 

@@ -25,12 +25,18 @@ over, and the tag that surrounds the text.
 
     >>> from lp.registry.interfaces.product import IProduct
     >>> product = factory.makeProduct(
-    ...     name='widget', displayname='Widgets > important')
-    >>> title_field = IProduct['display_name']
-    >>> title = 'Edit the title'
+    ...     name="widget", displayname="Widgets > important"
+    ... )
+    >>> title_field = IProduct["display_name"]
+    >>> title = "Edit the title"
     >>> widget = TextLineEditorWidget(
-    ...     product, title_field, title, 'h1', max_width='90%',
-    ...     truncate_lines=2)
+    ...     product,
+    ...     title_field,
+    ...     title,
+    ...     "h1",
+    ...     max_width="90%",
+    ...     truncate_lines=2,
+    ... )
 
 The widget is rendered by executing it, it prints out the attribute
 content.
@@ -71,8 +77,9 @@ attribute being edited.  This can be overridden if needed using the
 "content_box_id" constructor argument.
 
     >>> span_widget = TextLineEditorWidget(
-    ...     product, title_field, title, 'span', content_box_id="overridden")
-    >>> login(ANONYMOUS) # To not get the script tag rendered
+    ...     product, title_field, title, "span", content_box_id="overridden"
+    ... )
+    >>> login(ANONYMOUS)  # To not get the script tag rendered
     >>> print(span_widget())
     <span id="overridden">...</span>
 
@@ -92,8 +99,13 @@ of the object being edited.  This can be overridden in two ways:
     http://launchpad.test/widget/+edit
 
     >>> diff_view = TextLineEditorWidget(
-    ...     product, title_field, title, 'h1', edit_view='+edit-people',
-    ...     edit_title='Change the product title')
+    ...     product,
+    ...     title_field,
+    ...     title,
+    ...     "h1",
+    ...     edit_view="+edit-people",
+    ...     edit_title="Change the product title",
+    ... )
     >>> print(diff_view.edit_url)
     http://launchpad.test/widget/+edit-people
     >>> print(diff_view.edit_title)
@@ -106,7 +118,8 @@ of the object being edited.  This can be overridden in two ways:
        title="Change the product title">...
 
     >>> diff_url = TextLineEditorWidget(
-    ...     product, title_field, title, 'h1', edit_url='http://example.com/')
+    ...     product, title_field, title, "h1", edit_url="http://example.com/"
+    ... )
     >>> print(diff_url.edit_url)
     http://example.com/
 
@@ -139,12 +152,13 @@ are editing, and the exported field that is being edited, and a title for the
 edit link that is rendered as the itle of the anchor so it shows on mouse
 over.
 
-    >>> eric = factory.makePerson(name='eric')
+    >>> eric = factory.makePerson(name="eric")
     >>> archive = factory.makeArchive(
-    ...     owner=eric, name='ppa', description='short description')
+    ...     owner=eric, name="ppa", description="short description"
+    ... )
     >>> from lp.soyuz.interfaces.archive import IArchive
-    >>> description = IArchive['description']
-    >>> widget = TextAreaEditorWidget(archive, description, 'A title')
+    >>> description = IArchive["description"]
+    >>> widget = TextAreaEditorWidget(archive, description, "A title")
 
 With no-one logged in, there are no edit buttons.
 
@@ -216,7 +230,8 @@ This behaviour can be overridden by setting the "hide_empty" parameter to
 False.
 
     >>> widget = TextAreaEditorWidget(
-    ...     archive, description, 'A title', hide_empty=False)
+    ...     archive, description, "A title", hide_empty=False
+    ... )
     >>> print(widget())
     <div>
     <div class="lazr-multiline-edit" id="edit-description">
@@ -263,7 +278,7 @@ huge, the different items are shown in the normal paginated way for the user
 to select.
 
     >>> ignore = login_person(product.owner)
-    >>> owner = IProduct['owner']
+    >>> owner = IProduct["owner"]
     >>> widget = InlineEditPickerWidget(product, owner, default_text)
     >>> print(widget())
     <span id="edit-owner">
@@ -320,12 +335,15 @@ on the current value of the field on the object:
 
     >>> login(ANONYMOUS)
     >>> from lp.registry.interfaces.person import IPerson
-    >>> hide_email = IPerson['hide_email_addresses']
+    >>> hide_email = IPerson["hide_email_addresses"]
     >>> widget = BooleanChoiceWidget(
-    ...     eric, hide_email, 'span',
+    ...     eric,
+    ...     hide_email,
+    ...     "span",
     ...     false_text="Don't hide it",
     ...     true_text="Keep it secret",
-    ...     prefix="My email: ")
+    ...     prefix="My email: ",
+    ... )
     >>> print(widget())
     <span id="edit-hide_email_addresses">
     My email: <span class="value">Don't hide it</span>
@@ -387,15 +405,21 @@ on the current value of the field on the object:
     >>> login(ANONYMOUS)
     >>> from lp.code.interfaces.sourcepackagerecipe import (
     ...     ISourcePackageRecipe,
-    ...     )
-    >>> distroseries = ISourcePackageRecipe['distroseries']
+    ... )
+    >>> distroseries = ISourcePackageRecipe["distroseries"]
     >>> recipe = factory.makeSourcePackageRecipe(
-    ...     owner=eric, name=u'cake_recipe', description=u'Yummy.')
+    ...     owner=eric, name="cake_recipe", description="Yummy."
+    ... )
     >>> widget = InlineMultiCheckboxWidget(
-    ...     recipe, distroseries, 'Recipe distro series',
-    ...     header='Select distroseries:', vocabulary='BuildableDistroSeries',
-    ...     label_tag='dt', items_tag='dl',
-    ...     selected_items=recipe.distroseries)
+    ...     recipe,
+    ...     distroseries,
+    ...     "Recipe distro series",
+    ...     header="Select distroseries:",
+    ...     vocabulary="BuildableDistroSeries",
+    ...     label_tag="dt",
+    ...     items_tag="dl",
+    ...     selected_items=recipe.distroseries,
+    ... )
     >>> print(widget())
     <span id="edit-distroseries">
       <dt>

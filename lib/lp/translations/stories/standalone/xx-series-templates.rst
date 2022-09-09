@@ -16,9 +16,8 @@ Getting there
 To get to the listing of all templates, one needs to use the link
 from the distribution series translations page.
 
-    >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
-    >>> user_browser.getLink('full list of templates').click()
+    >>> user_browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> user_browser.getLink("full list of templates").click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+templates
 
@@ -29,14 +28,13 @@ Templates view for DistroSeries
 Full template listing for a distribution series is reached by following
 a link from the distribution series translations page.
 
-    >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
-    >>> anon_browser.getLink('full list of templates').click()
+    >>> anon_browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> anon_browser.getLink("full list of templates").click()
 
 Full listing of templates shows priority, source package name, template name
 length, languages and the date of last update for this distribution series.
 
-    >>> table = find_tag_by_id(anon_browser.contents, 'templates_table')
+    >>> table = find_tag_by_id(anon_browser.contents, "templates_table")
     >>> print(extract_text(table))
     Priority    Source package Template name  Shared with     Length   Updated
     0           evolution      man            ...not shared   1     2006-08-14
@@ -45,14 +43,13 @@ length, languages and the date of last update for this distribution series.
 
 Logged-in users see a link to all the active translation templates
 on a distribution series translation page.
-    >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
-    >>> user_browser.getLink('full list of templates').click()
+    >>> user_browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> user_browser.getLink("full list of templates").click()
 
 Regular users only see the option to download translations for each of
 the active templates.
 
-    >>> table = find_tag_by_id(user_browser.contents, 'templates_table')
+    >>> table = find_tag_by_id(user_browser.contents, "templates_table")
     >>> print(extract_text(table))
     Priority    Source package  Template name ...   Updated     Actions...
     100         evolution       evolution-2.2 ...   2005-05-06  Download...
@@ -60,13 +57,12 @@ the active templates.
 
 Administrator can see all editing options.
 
-    >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary')
-    >>> admin_browser.getLink('full list of templates').click()
+    >>> admin_browser.open("http://translations.launchpad.test/ubuntu/hoary")
+    >>> admin_browser.getLink("full list of templates").click()
 
 The page shows a table of all templates and links to their subpages.
 
-    >>> table = find_tag_by_id(admin_browser.contents, 'templates_table')
+    >>> table = find_tag_by_id(admin_browser.contents, "templates_table")
     >>> print(extract_text(table))
     Priority  Source package  ... Updated     Actions
     0         evolution       ... 2007-01-05  Edit Upload Download Administer
@@ -84,18 +80,22 @@ appropriate page.
 
     >>> utc_browser = setupDTCBrowser()
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+templates"
+    ... )
     >>> utc_browser.getLink(
-    ...     url='+source/evolution/+pots/evolution-2.2/+edit').click()
+    ...     url="+source/evolution/+pots/evolution-2.2/+edit"
+    ... ).click()
     >>> print(utc_browser.url)
     http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+edit
 
 Administration page is inaccessible.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+templates"
+    ... )
     >>> utc_browser.getLink(
-    ...     url='+source/evolution/+pots/evolution-2.2/+admin')
+    ...     url="+source/evolution/+pots/evolution-2.2/+admin"
+    ... )
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -103,18 +103,22 @@ Administration page is inaccessible.
 Trying to edit disabled templates brings them to the appropriate page.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+templates"
+    ... )
     >>> utc_browser.getLink(
-    ...     url='+source/evolution/+pots/disabled-template/+edit').click()
+    ...     url="+source/evolution/+pots/disabled-template/+edit"
+    ... ).click()
     >>> print(utc_browser.url)
     http://.../ubuntu/hoary/+source/evolution/+pots/disabled-template/+edit
 
 Administration page is inaccessible.
 
     >>> utc_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+templates"
+    ... )
     >>> utc_browser.getLink(
-    ...     url='+source/evolution/+pots/disabled-template/+admin')
+    ...     url="+source/evolution/+pots/disabled-template/+admin"
+    ... )
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -126,7 +130,7 @@ Links to the templates
 Clicking on a template name will take the user to that template's overview
 page.
 
-    >>> admin_browser.getLink('pmount').click()
+    >>> admin_browser.getLink("pmount").click()
     >>> print(admin_browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/pmount/+pots/pmount
 
@@ -134,8 +138,9 @@ Clicking on 'Edit' will take the user to the page to edit the template
 details. Likewise for the other links for each template.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+templates')
-    >>> admin_browser.getLink('Edit', index=1).click()
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+templates"
+    ... )
+    >>> admin_browser.getLink("Edit", index=1).click()
     >>> print(admin_browser.url)
     http://translations.../evolution/+pots/disabled-template/+edit
 
@@ -154,13 +159,14 @@ Preparation
 To test the ordering of templates in the listing, we need another
 template that is new but must appear at the top of the list.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
-    >>> evolution_trunk = evolution.getSeries('trunk')
-    >>> template = factory.makePOTemplate(productseries=evolution_trunk,
-    ...                                   name='at-the-top')
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
+    >>> evolution_trunk = evolution.getSeries("trunk")
+    >>> template = factory.makePOTemplate(
+    ...     productseries=evolution_trunk, name="at-the-top"
+    ... )
     >>> logout()
 
 
@@ -171,8 +177,9 @@ To get to the listing of all templates, one needs to use the link
 from the product series translations page.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk')
-    >>> user_browser.getLink('full list of templates').click()
+    ...     "http://translations.launchpad.test/evolution/trunk"
+    ... )
+    >>> user_browser.getLink("full list of templates").click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk/+templates
 
@@ -182,7 +189,7 @@ The templates table
 
 The page shows a table of all templates and links to their subpages.
 
-    >>> table = find_tag_by_id(user_browser.contents, 'templates_table')
+    >>> table = find_tag_by_id(user_browser.contents, "templates_table")
     >>> print(extract_text(table))
     Priority    Template name   Length  Updated     Actions
     0           at-the-top      0       ...         Download
@@ -193,8 +200,9 @@ If an administrator views this page, links to the templates admin page are
 shown, too.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/+templates')
-    >>> table = find_tag_by_id(admin_browser.contents, 'templates_table')
+    ...     "http://translations.launchpad.test/evolution/trunk/+templates"
+    ... )
+    >>> table = find_tag_by_id(admin_browser.contents, "templates_table")
     >>> print(extract_text(table))
     Priority  Template name ...   Updated     Actions
     0         at-the-top    ...   ...         Edit Upload Download Administer
@@ -208,7 +216,7 @@ Links to the templates
 Clicking on a template name will take the user to that template's overview
 page.
 
-    >>> admin_browser.getLink('evolution-2.2').click()
+    >>> admin_browser.getLink("evolution-2.2").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2
 
@@ -216,7 +224,8 @@ Clicking on 'Edit' will take the user to the page to edit the template
 details. Likewise for the other links for each template.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/+templates')
-    >>> admin_browser.getLink('Edit').click()
+    ...     "http://translations.launchpad.test/evolution/trunk/+templates"
+    ... )
+    >>> admin_browser.getLink("Edit").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/at-the-top/+edit

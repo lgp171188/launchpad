@@ -49,20 +49,23 @@ We need some setup for the upload handler.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> from lp.soyuz.model.component import ComponentSelection
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
-    >>> universe = getUtility(IComponentSet)['universe']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
+    >>> universe = getUtility(IComponentSet)["universe"]
     >>> trash = ComponentSelection(distroseries=hoary, component=universe)
 
 Construct an upload.
 
     >>> anything_policy = getPolicy(
-    ...     name='absolutely-anything', distro='ubuntu', distroseries='hoary')
+    ...     name="absolutely-anything", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> from lp.services.log.logger import DevNullLogger
     >>> ed_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed_0.2-20_i386.changes.source-only-unsigned"),
-    ...     anything_policy, DevNullLogger())
+    ...     anything_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_upload.process()
     >>> success = ed_upload.do_accept()
@@ -92,6 +95,7 @@ XXX cprov 20051209: need to build a broken upload to test it properly
     ...         IStore(item).flush()
     ...     except QueueInconsistentStateError as info:
     ...         print(info)
+    ...
 
     >>> accepted_queue = hoary.getPackageUploads(PackageUploadStatus.ACCEPTED)
 
@@ -100,6 +104,7 @@ XXX cprov 20051209: need to build a broken upload to test it properly
     ...     for source in item.sources:
     ...         print(source.sourcepackagerelease.name)
     ...     pub_records = item.realiseUpload(FakeLogger())
+    ...
     ed
     DEBUG Publishing source ed/0.2-20 to ubuntu/hoary in ubuntu
 
@@ -109,8 +114,10 @@ Confirm we can now find ed published in hoary.
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     >>> for release in IStore(SourcePackagePublishingHistory).find(
-    ...         SourcePackagePublishingHistory,
-    ...         distroseries=hoary, status=PackagePublishingStatus.PENDING):
+    ...     SourcePackagePublishingHistory,
+    ...     distroseries=hoary,
+    ...     status=PackagePublishingStatus.PENDING,
+    ... ):
     ...     if release.sourcepackagerelease.sourcepackagename.name == "ed":
     ...         print(release.sourcepackagerelease.version)
     0.2-20
@@ -157,18 +164,18 @@ Counter, optionally by status (informally named "queue") and or distroseries:
 Retrieve some data from DB to play more with counter.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> distro = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> breezy_autotest = distro['breezy-autotest']
+    >>> distro = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> breezy_autotest = distro["breezy-autotest"]
 
     >>> qset.count(distroseries=breezy_autotest)
     13
 
-    >>> qset.count(status=PackageUploadStatus.ACCEPTED,
-    ...            distroseries=breezy_autotest)
+    >>> qset.count(
+    ...     status=PackageUploadStatus.ACCEPTED, distroseries=breezy_autotest
+    ... )
     0
 
-    >>> qset.count(status=PackageUploadStatus.DONE,
-    ...            distroseries=hoary)
+    >>> qset.count(status=PackageUploadStatus.DONE, distroseries=hoary)
     1
 
 
@@ -223,9 +230,10 @@ Let's check the behaviour of @cachedproperty attributes in a custom upload:
 The method getBuildByBuildIDs() will return all the PackageUploadBuild
 records that match the supplied build IDs.
 
-    >>> ids = (18,19)
+    >>> ids = (18, 19)
     >>> for package_upload_build in qset.getBuildByBuildIDs(ids):
     ...     print(package_upload_build.packageupload.displayname)
+    ...
     mozilla-firefox
     pmount
 
@@ -252,11 +260,14 @@ done by someone else.
 Let's process a new upload:
 
     >>> insecure_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> bar_ok = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_ok.process()
     >>> success = bar_ok.do_accept()
     >>> success
@@ -302,6 +313,7 @@ Performing full acceptance:
     >>> for item in items:
     ...     item.setAccepted()
     ...     print(item.displayname, item.status.name)
+    ...
     netapplet-1.0.0.tar.gz ACCEPTED
     netapplet-1.0.0.tar.gz ACCEPTED
     alsa-utils ACCEPTED
@@ -313,10 +325,12 @@ Move the ACCEPTED items back to NEW.
 
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
     >>> items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.ACCEPTED)
+    ...     PackageUploadStatus.ACCEPTED
+    ... )
     >>> for item in items:
     ...     item.status = PassthroughStatusValue(PackageUploadStatus.NEW)
     ...     print(item.displayname, item.status.name)
+    ...
     netapplet-1.0.0.tar.gz NEW
     netapplet-1.0.0.tar.gz NEW
     alsa-utils NEW
@@ -342,7 +356,8 @@ Check forbidden approval of not selected Section:
 Retrieve mozilla-firefox Upload:
 
     >>> item = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'mozilla')[0]
+    ...     PackageUploadStatus.NEW, name="mozilla"
+    ... )[0]
 
 Override the mozilla-firefox component to fresh created 'hell' component.
 
@@ -350,21 +365,24 @@ XXX cprov 20060118: remove proxy magic is required for BPR instances.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_bin = removeSecurityProxy(
-    ...       item.builds[0].build.binarypackages[0])
-    >>> naked_bin.component = getUtility(IComponentSet).new('hell')
+    ...     item.builds[0].build.binarypackages[0]
+    ... )
+    >>> naked_bin.component = getUtility(IComponentSet).new("hell")
     >>> try:
     ...     item.setAccepted()
     ... except QueueInconsistentStateError as e:
     ...     print(item.displayname, e)
     ... else:
-    ...     print(item.displayname, 'ACCEPTED')
+    ...     print(item.displayname, "ACCEPTED")
+    ...
     mozilla-firefox Component "hell" is not allowed in breezy-autotest
 
 Check how we treat source upload duplications in UNAPPROVED queue (NEW
 has a similar behaviour):
 
     >>> dups = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.UNAPPROVED, name=u'cnews')
+    ...     PackageUploadStatus.UNAPPROVED, name="cnews"
+    ... )
     >>> dups.count()
     2
     >>> dup_one, dup_two = list(dups)
@@ -414,7 +432,8 @@ Move the second item back to its original queue to perform the same
 test after the former accepted item was published (DONE queue)
 
     >>> dup_two.status = PassthroughStatusValue(
-    ...     PackageUploadStatus.UNAPPROVED)
+    ...     PackageUploadStatus.UNAPPROVED
+    ... )
     >>> IStore(dup_two).flush()
     >>> dup_two.status.name
     'UNAPPROVED'
@@ -443,11 +462,13 @@ Retrieve the 'pmount' NEW queue entry and override it with a
 just-created, thus unofficial, section named 'boing'.
 
     >>> item = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'pmount')[0]
+    ...     PackageUploadStatus.NEW, name="pmount"
+    ... )[0]
 
     >>> pmount_binary = item.builds[0].build.binarypackages[0]
-    >>> removeSecurityProxy(
-    ...     pmount_binary).section = getUtility(ISectionSet).new('boing')
+    >>> removeSecurityProxy(pmount_binary).section = getUtility(
+    ...     ISectionSet
+    ... ).new("boing")
 
 The 'pmount' entry for the unofficial section 'boing', can be
 normally accepted.
@@ -473,13 +494,22 @@ Sampledata contains only a i386 binary exactly matching 'pmount 0.1-1'.
     >>> from operator import attrgetter
     >>> def print_queue_items(queue_items):
     ...     for queue_item in queue_items:
-    ...         print("%s  %s  %s" % (
-    ...             queue_item.displayname, queue_item.displayversion,
-    ...             queue_item.displayarchs))
+    ...         print(
+    ...             "%s  %s  %s"
+    ...             % (
+    ...                 queue_item.displayname,
+    ...                 queue_item.displayversion,
+    ...                 queue_item.displayarchs,
+    ...             )
+    ...         )
+    ...
 
     >>> queue_items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'pmount', version=u'0.1-1',
-    ...     exact_match=True)
+    ...     PackageUploadStatus.NEW,
+    ...     name="pmount",
+    ...     version="0.1-1",
+    ...     exact_match=True,
+    ... )
     >>> print_queue_items(queue_items)
     pmount  0.1-1  i386
 
@@ -489,17 +519,21 @@ version of pmount (0.1-2) into the binary pmount upload we already
 have in the sampledata.
 
     >>> [binary_queue] = queue_items
-    >>> pmount = ubuntu.getSourcePackage('pmount')
-    >>> non_matching_pmount = pmount.getVersion('0.1-2')
+    >>> pmount = ubuntu.getSourcePackage("pmount")
+    >>> non_matching_pmount = pmount.getVersion("0.1-2")
     >>> unused = binary_queue.addSource(
-    ...    non_matching_pmount.sourcepackagerelease)
+    ...     non_matching_pmount.sourcepackagerelease
+    ... )
 
 'pmount 0.1-1' binary upload continues to be returned when we query
 the queue for 'pmount 0.1-1', via the existing binary path.
 
     >>> queue_items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'pmount', version=u'0.1-1',
-    ...     exact_match=True)
+    ...     PackageUploadStatus.NEW,
+    ...     name="pmount",
+    ...     version="0.1-1",
+    ...     exact_match=True,
+    ... )
     >>> print_queue_items(queue_items)
     pmount  0.1-1  i386
 
@@ -510,14 +544,20 @@ breezy-autotest context. It also becomes part of the lookup results.
     >>> candidate_queue = breezy_autotest.createQueueEntry(
     ...     PackagePublishingPocket.RELEASE,
     ...     breezy_autotest.main_archive,
-    ...     'pmount_0.1-1_source.changes', b'some content')
-    >>> matching_pmount = pmount.getVersion('0.1-1')
+    ...     "pmount_0.1-1_source.changes",
+    ...     b"some content",
+    ... )
+    >>> matching_pmount = pmount.getVersion("0.1-1")
     >>> unused = candidate_queue.addSource(
-    ...     matching_pmount.sourcepackagerelease)
+    ...     matching_pmount.sourcepackagerelease
+    ... )
 
     >>> queue_items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'pmount', version=u'0.1-1',
-    ...     exact_match=True)
+    ...     PackageUploadStatus.NEW,
+    ...     name="pmount",
+    ...     version="0.1-1",
+    ...     exact_match=True,
+    ... )
     >>> print_queue_items(queue_items)
     pmount  0.1-1  source
     pmount  0.1-1  i386
@@ -532,14 +572,18 @@ is a 'pmount 0.1-1' binary upload already accepted in its context.
 (see bug #280700 for more information about this policy decision)
 
 # XXX StuartBishop 20100311 bug=537335: Need to order results here.
-    >>> queue_items = sorted(list(queue_items),
-    ...     key=attrgetter('displayarchs'))
+    >>> queue_items = sorted(
+    ...     list(queue_items), key=attrgetter("displayarchs")
+    ... )
     >>> [binary_item, source_item] = queue_items
     >>> binary_item.setAccepted()
 
     >>> queue_items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.ACCEPTED, name=u'pmount',
-    ...     version=u'0.1-1', exact_match=True)
+    ...     PackageUploadStatus.ACCEPTED,
+    ...     name="pmount",
+    ...     version="0.1-1",
+    ...     exact_match=True,
+    ... )
     >>> print_queue_items(queue_items)
     pmount  0.1-1  i386
 
@@ -550,8 +594,11 @@ Binary accepted, let's accept the source.
 Both uploads are waiting to be published.
 
     >>> queue_items = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.ACCEPTED, name=u'pmount',
-    ...     version=u'0.1-1', exact_match=True)
+    ...     PackageUploadStatus.ACCEPTED,
+    ...     name="pmount",
+    ...     version="0.1-1",
+    ...     exact_match=True,
+    ... )
     >>> print_queue_items(queue_items)
     pmount  0.1-1  source
     pmount  0.1-1  i386
@@ -581,23 +628,32 @@ The alsa-utils source is already in the queue with component "main"
 and section "base".
 
     >>> [item] = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'alsa-utils')
+    ...     PackageUploadStatus.NEW, name="alsa-utils"
+    ... )
     >>> [source] = item.sources
-    >>> print("%s/%s" % (
-    ...     source.sourcepackagerelease.component.name,
-    ...     source.sourcepackagerelease.section.name))
+    >>> print(
+    ...     "%s/%s"
+    ...     % (
+    ...         source.sourcepackagerelease.component.name,
+    ...         source.sourcepackagerelease.section.name,
+    ...     )
+    ... )
     main/base
 
 Overriding to a component not in the allowed_components list results in
 an error:
 
-    >>> restricted = getUtility(IComponentSet)['restricted']
-    >>> universe = getUtility(IComponentSet)['universe']
-    >>> main = getUtility(IComponentSet)['main']
-    >>> web = getUtility(ISectionSet)['web']
-    >>> print(item.overrideSource(
-    ...     new_component=restricted, new_section=web,
-    ...     allowed_components=(universe,)))
+    >>> restricted = getUtility(IComponentSet)["restricted"]
+    >>> universe = getUtility(IComponentSet)["universe"]
+    >>> main = getUtility(IComponentSet)["main"]
+    >>> web = getUtility(ISectionSet)["web"]
+    >>> print(
+    ...     item.overrideSource(
+    ...         new_component=restricted,
+    ...         new_section=web,
+    ...         allowed_components=(universe,),
+    ...     )
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
@@ -606,9 +662,13 @@ an error:
 Allowing "restricted" still won't work because the original component
 is "main":
 
-    >>> print(item.overrideSource(
-    ...     new_component=restricted, new_section=web,
-    ...     allowed_components=(restricted,)))
+    >>> print(
+    ...     item.overrideSource(
+    ...         new_component=restricted,
+    ...         new_section=web,
+    ...         allowed_components=(restricted,),
+    ...     )
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
@@ -617,54 +677,82 @@ is "main":
 Specifying both main and restricted allows the override to restricted/web.
 overrideSource() returns True if it completed the task.
 
-    >>> print(item.overrideSource(
-    ...     new_component=restricted, new_section=web,
-    ...     allowed_components=(main,restricted)))
+    >>> print(
+    ...     item.overrideSource(
+    ...         new_component=restricted,
+    ...         new_section=web,
+    ...         allowed_components=(main, restricted),
+    ...     )
+    ... )
     True
-    >>> print("%s/%s" % (
-    ...     source.sourcepackagerelease.component.name,
-    ...     source.sourcepackagerelease.section.name))
+    >>> print(
+    ...     "%s/%s"
+    ...     % (
+    ...         source.sourcepackagerelease.component.name,
+    ...         source.sourcepackagerelease.section.name,
+    ...     )
+    ... )
     restricted/web
 
 Similarly for binaries:
 
     >>> [item] = breezy_autotest.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'pmount')
+    ...     PackageUploadStatus.NEW, name="pmount"
+    ... )
     >>> [build] = item.builds
     >>> [binary_package] = build.build.binarypackages
-    >>> print("%s/%s/%s" % (
-    ...     binary_package.component.name,
-    ...     binary_package.section.name,
-    ...     binary_package.priority.title))
+    >>> print(
+    ...     "%s/%s/%s"
+    ...     % (
+    ...         binary_package.component.name,
+    ...         binary_package.section.name,
+    ...         binary_package.priority.title,
+    ...     )
+    ... )
     main/base/Important
 
     >>> from lp.soyuz.enums import PackagePublishingPriority
-    >>> binary_changes = [{
-    ...     "component": restricted,
-    ...     "section": web,
-    ...     "priority": PackagePublishingPriority.EXTRA,
-    ...     }]
-    >>> print(item.overrideBinaries(
-    ...     binary_changes, allowed_components=(universe,)))
+    >>> binary_changes = [
+    ...     {
+    ...         "component": restricted,
+    ...         "section": web,
+    ...         "priority": PackagePublishingPriority.EXTRA,
+    ...     }
+    ... ]
+    >>> print(
+    ...     item.overrideBinaries(
+    ...         binary_changes, allowed_components=(universe,)
+    ...     )
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
     No rights to override to restricted
 
-    >>> print(item.overrideBinaries(
-    ...     binary_changes, allowed_components=(restricted,)))
+    >>> print(
+    ...     item.overrideBinaries(
+    ...         binary_changes, allowed_components=(restricted,)
+    ...     )
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.queue.QueueAdminUnauthorizedError:
     No rights to override from main
 
-    >>> print(item.overrideBinaries(
-    ...     binary_changes, allowed_components=(main, restricted)))
+    >>> print(
+    ...     item.overrideBinaries(
+    ...         binary_changes, allowed_components=(main, restricted)
+    ...     )
+    ... )
     True
-    >>> print("%s/%s/%s" % (
-    ...     binary_package.component.name,
-    ...     binary_package.section.name,
-    ...     binary_package.priority.title))
+    >>> print(
+    ...     "%s/%s/%s"
+    ...     % (
+    ...         binary_package.component.name,
+    ...         binary_package.section.name,
+    ...         binary_package.priority.title,
+    ...     )
+    ... )
     restricted/web/Extra
 
 
@@ -674,14 +762,13 @@ Queue items retrieval
 IPackageUploadSet.getPackageUploads() returns an optionally filtered list of
 PackageUpload records for the supplied distroseries.
 
-    >>> warty = distro['warty']
+    >>> warty = distro["warty"]
     >>> warty.getPackageUploads().count()
     1
 
 Filtering by status:
 
-    >>> warty.getPackageUploads(
-    ...     status=PackageUploadStatus.DONE).count()
+    >>> warty.getPackageUploads(status=PackageUploadStatus.DONE).count()
     1
 
 Filtering by archive:
@@ -689,14 +776,16 @@ Filtering by archive:
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
     >>> partner_archive = getUtility(IArchiveSet).getByDistroPurpose(
-    ...     warty.distribution, ArchivePurpose.PARTNER)
+    ...     warty.distribution, ArchivePurpose.PARTNER
+    ... )
     >>> warty.getPackageUploads(archive=partner_archive).count()
     0
 
 Filtering by pocket:
 
     >>> warty.getPackageUploads(
-    ...     pocket=PackagePublishingPocket.RELEASE).count()
+    ...     pocket=PackagePublishingPocket.RELEASE
+    ... ).count()
     1
 
 Filtering by custom_type.  We need to add some custom uploads to show this.
@@ -706,15 +795,17 @@ Filtering by custom_type.  We need to add some custom uploads to show this.
     >>> def add_static_xlat_upload():
     ...     upload = warty.createQueueEntry(
     ...         pocket=PackagePublishingPocket.RELEASE,
-    ...         changesfilename="test", changesfilecontent=b"test",
-    ...         archive=warty.main_archive)
+    ...         changesfilename="test",
+    ...         changesfilecontent=b"test",
+    ...         archive=warty.main_archive,
+    ...     )
     ...     arbitrary_file = factory.makeLibraryFileAlias()
     ...     upload.addCustom(arbitrary_file, static_xlat)
+    ...
 
     >>> add_static_xlat_upload()
 
-    >>> print(warty.getPackageUploads(
-    ...     custom_type=static_xlat).count())
+    >>> print(warty.getPackageUploads(custom_type=static_xlat).count())
     1
 
 There is also a created_since_date filter that will only return packages
@@ -741,7 +832,8 @@ Commit a transaction to ensure new DB objects get a later timestamp.
     >>> last_custom_time = uploads[1].date_created
     >>> add_static_xlat_upload()
     >>> uploads = warty.getPackageUploads(
-    ...     created_since_date=last_custom_time, custom_type=static_xlat)
+    ...     created_since_date=last_custom_time, custom_type=static_xlat
+    ... )
 
 Only the just-created file is returned:
 
@@ -774,7 +866,7 @@ well shown in nascentupload-announcements.rst.
     >>> from lp.services.job.runner import JobRunner
     >>> from lp.soyuz.interfaces.archivejob import (
     ...     IPackageUploadNotificationJobSource,
-    ...     )
+    ... )
     >>> from lp.testing.dbuser import dbuser
 
     >>> def run_package_upload_notification_jobs():
@@ -782,6 +874,7 @@ well shown in nascentupload-announcements.rst.
     ...     logger = DevNullLogger()
     ...     with dbuser(config.IPackageUploadNotificationJobSource.dbuser):
     ...         JobRunner.fromReady(job_source, logger).runAll()
+    ...
 
     >>> run_package_upload_notification_jobs()
     >>> [notification, announcement] = pop_notifications()

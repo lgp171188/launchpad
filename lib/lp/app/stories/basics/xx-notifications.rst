@@ -3,10 +3,14 @@ Ensure that notifications are being displayed and propagated correctly.
 
 This first page adds notifications itself before being rendered.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+notificationtest1 HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     Content-Length: ...
     Content-Type: text/html;charset=utf-8
@@ -24,10 +28,12 @@ This first page adds notifications itself before being rendered.
 This second page adds notifications, and then redirects to another page.
 The notification messages should be propagated.
 
-    >>> result = http(r"""
+    >>> result = http(
+    ...     r"""
     ... GET /+notificationtest2 HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
-    ... """)
+    ... """
+    ... )
     >>> print(result)
     HTTP/1.1 303 See Other
     ...
@@ -35,14 +41,21 @@ The notification messages should be propagated.
     ...
     >>> import re
     >>> destination_url = re.search(
-    ...     '(?m)^Location:\s(.*)$', str(result)).group(1)
+    ...     "(?m)^Location:\s(.*)$", str(result)
+    ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-    >>> print(http(r"""
+    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ... ).group(1)
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET %(destination_url)s HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
     ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-    ... """ % vars()))
+    ... """
+    ...         % vars()
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     ...<div class="error message">Error notification <b>1</b></div>
@@ -60,10 +73,12 @@ Our third test page adds notifications and then redirects to a page that
 adds further notifications. This demonstrates that notifications are
 combined.
 
-    >>> result = http(r"""
+    >>> result = http(
+    ...     r"""
     ... GET /+notificationtest3 HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
-    ... """)
+    ... """
+    ... )
     >>> print(result)
     HTTP/1.1 303 See Other
     ...
@@ -73,14 +88,21 @@ combined.
     ...
 
     >>> destination_url = re.search(
-    ...     '(?m)^Location:\s(.*)$', str(result)).group(1)
+    ...     "(?m)^Location:\s(.*)$", str(result)
+    ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-    >>> print(http(r"""
+    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ... ).group(1)
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET %(destination_url)s HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
     ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-    ... """ % vars()))
+    ... """
+    ...         % vars()
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     ...<div class="error message">+notificationtest3 error</div>
@@ -101,10 +123,12 @@ notifications. This demonstrates that notifications are preserved and
 combined across multiple redirects. Hopefully this functionality won't
 be needed.
 
-    >>> result = http(r"""
+    >>> result = http(
+    ...     r"""
     ... GET /+notificationtest4 HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
-    ... """)
+    ... """
+    ... )
     >>> print(result)
     HTTP/1.1 303 See Other
     ...
@@ -114,14 +138,19 @@ be needed.
     ...
 
     >>> destination_url = re.search(
-    ...     '(?m)^Location:\s(.*)$', str(result)).group(1)
+    ...     "(?m)^Location:\s(.*)$", str(result)
+    ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-    >>> result = http(r"""
+    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ... ).group(1)
+    >>> result = http(
+    ...     r"""
     ... GET %(destination_url)s HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
     ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-    ... """ % vars())
+    ... """
+    ...     % vars()
+    ... )
     >>> print(result)
     HTTP/1.1 303 See Other
     ...
@@ -131,14 +160,21 @@ be needed.
     ...
 
     >>> destination_url = re.search(
-    ...     '(?m)^Location:\s(.*)$', str(result)).group(1)
+    ...     "(?m)^Location:\s(.*)$", str(result)
+    ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     '(?m)^Set-Cookie:\slaunchpad_tests=(.*?);', str(result)).group(1)
-    >>> print(http(r"""
+    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ... ).group(1)
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET %(destination_url)s HTTP/1.1
     ... Authorization: Basic Y2FybG9zQGNhbm9uaWNhbC5jb206dGVzdA==
     ... Cookie: launchpad_tests=%(launchpad_session_cookie)s
-    ... """ % vars()))
+    ... """
+    ...         % vars()
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     ...<div class="error message">+notificationtest4 error</div>

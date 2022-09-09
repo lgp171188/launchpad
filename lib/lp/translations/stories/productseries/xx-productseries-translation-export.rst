@@ -14,8 +14,9 @@ option is presented in the sidebar as "Download translations" on the
 productseries' translations page.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/')
-    >>> user_browser.getLink('download').click()
+    ...     "http://translations.launchpad.test/evolution/trunk/"
+    ... )
+    >>> user_browser.getLink("download").click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk/+export
 
@@ -24,8 +25,9 @@ It will select a series of the product as its primary translation target, and
 offer a download link for that series.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/evolution/+translations')
-    >>> user_browser.getLink('download').click()
+    ...     "http://translations.launchpad.test/evolution/+translations"
+    ... )
+    >>> user_browser.getLink("download").click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk/+export
 
@@ -37,8 +39,9 @@ To prevent spambot activity from becoming a problem, the download option is
 not available to anonymous visitors.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/')
-    >>> anon_browser.getLink('download')
+    ...     "http://translations.launchpad.test/evolution/trunk/"
+    ... )
+    >>> anon_browser.getLink("download")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -59,16 +62,16 @@ File format
 
 The request must specify a file format.
 
-    >>> user_browser.getControl('Format:').clear()
-    >>> user_browser.getControl('Request Download').click()
+    >>> user_browser.getControl("Format:").clear()
+    >>> user_browser.getControl("Request Download").click()
 
     >>> print_feedback_messages(user_browser.contents)
     Please select a valid format for download.
 
 The most usual and most well-supported format is PO.
 
-    >>> user_browser.getControl('Format:').value = ['PO']
-    >>> user_browser.getControl('Request Download').click()
+    >>> user_browser.getControl("Format:").value = ["PO"]
+    >>> user_browser.getControl("Request Download").click()
 
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk
@@ -78,9 +81,9 @@ The most usual and most well-supported format is PO.
 
 An alternative is MO.
 
-    >>> user_browser.getLink('download').click()
-    >>> user_browser.getControl('Format:').value = ['PO']
-    >>> user_browser.getControl('Request Download').click()
+    >>> user_browser.getLink("download").click()
+    >>> user_browser.getControl("Format:").value = ["PO"]
+    >>> user_browser.getControl("Request Download").click()
     >>> print(user_browser.url)
     http://translations.launchpad.test/evolution/trunk
 
@@ -95,15 +98,16 @@ Where there are no translation files to be exported, the user is not offered
 the option to download any.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/bzr/trunk/+export')
+    ...     "http://translations.launchpad.test/bzr/trunk/+export"
+    ... )
     >>> print_feedback_messages(user_browser.contents)
     There are no translations to download in Bazaar trunk series.
 
 On +translate pages for products that do not have any translations, the action
 link for "Download translations" is hidden.
 
-    >>> user_browser.open('http://translations.launchpad.test/bzr/')
-    >>> user_browser.getLink('download')
+    >>> user_browser.open("http://translations.launchpad.test/bzr/")
+    >>> user_browser.getLink("download")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

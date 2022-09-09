@@ -11,18 +11,19 @@ The +linkbug and +unlinkbug views operates on IBugLinkTarget.
     >>> from lp.bugs.interfaces.cve import ICveSet
 
     >>> bugset = getUtility(IBugSet)
-    >>> cve = getUtility(ICveSet)['2005-2730']
+    >>> cve = getUtility(ICveSet)["2005-2730"]
 
     (Setup an event listener.)
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> collected_events = []
     >>> modified_listener = ZopeEventHandlerFixture(
     ...     lambda object, event: collected_events.append(event),
-    ...     (IBugLinkTarget, ObjectModifiedEvent))
+    ...     (IBugLinkTarget, ObjectModifiedEvent),
+    ... )
     >>> modified_listener.setUp()
 
     (Login because bug link management is only available to registered users.)
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
 
 Link Bug View
@@ -30,7 +31,7 @@ Link Bug View
 
 The +linkbug view is used to link bugs to IBugLinkTarget.
 
-    >>> view = create_view(cve, name='+linkbug')
+    >>> view = create_view(cve, name="+linkbug")
     >>> print(view.label)
     Link a bug report
 
@@ -42,8 +43,9 @@ to. After it links the bug, it sends a ObjectModifiedEvent.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.actions.link':'Link', 'field.bug' : '1'})
-    >>> linkView = getMultiAdapter((cve, request), name='+linkbug')
+    ...     form={"field.actions.link": "Link", "field.bug": "1"},
+    ... )
+    >>> linkView = getMultiAdapter((cve, request), name="+linkbug")
     >>> linkView.initialize()
 
 One notification should have been added to the response.
@@ -85,7 +87,7 @@ Unlink Bugs View
 The +unlinkbug view is used to unlink a selection of bugs from an
 IBugLinkTarget.
 
-    >>> view = create_view(cve, name='+unlinkbug')
+    >>> view = create_view(cve, name="+unlinkbug")
     >>> print(view.label)
     Remove links to bug reports
 
@@ -96,8 +98,9 @@ After removing the bugs, it sends a SQLObjectModified event.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.actions.remove':'Remove', 'field.bugs' : ['1', '2']})
-    >>> unlinkView = getMultiAdapter((cve, request), name='+unlinkbug')
+    ...     form={"field.actions.remove": "Remove", "field.bugs": ["1", "2"]},
+    ... )
+    >>> unlinkView = getMultiAdapter((cve, request), name="+unlinkbug")
     >>> unlinkView.initialize()
 
 One notification by removed bugs should have been added to the response.
@@ -141,14 +144,16 @@ We will give bug #2 a very bad title, then link the cve to the bug.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.actions.link':'Link', 'field.bug' : '2'})
-    >>> linkView = getMultiAdapter((cve, request), name='+linkbug')
+    ...     form={"field.actions.link": "Link", "field.bug": "2"},
+    ... )
+    >>> linkView = getMultiAdapter((cve, request), name="+linkbug")
     >>> linkView.initialize()
 
 The notification contains the escaped bug title.
 
     >>> for notification in request.response.notifications:
     ...     print(notification.message)
+    ...
     Added link to bug #2:
     ...&lt;script&gt;window.alert(&quot;Hello!&quot;)&lt;/script&gt;....
 

@@ -172,9 +172,8 @@ You can call the fixture's setUp() and cleanUp() methods for doctests and
 other environments that have no explicit setup and teardown::
 
     >>> from lp.services.features.testing import FeatureFixture
-    >>> fixture = FeatureFixture({'my-doctest-flag': 'on'})
+    >>> fixture = FeatureFixture({"my-doctest-flag": "on"})
     >>> fixture.setUp()
-    ...
     >>> fixture.cleanUp()
 
 """

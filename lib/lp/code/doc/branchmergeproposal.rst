@@ -38,12 +38,12 @@ Creating a Merge Proposal
 All merge proposals are created from the source branch using a method called
 ``addLandingTarget``.
 
-    >>> fooix = factory.makeProduct(name='fooix')
+    >>> fooix = factory.makeProduct(name="fooix")
     >>> source_branch = factory.makeProductBranch(product=fooix)
     >>> target_branch = factory.makeProductBranch(product=fooix)
     >>> merge_proposal = source_branch.addLandingTarget(
-    ...     registrant=source_branch.owner,
-    ...     merge_target=target_branch)
+    ...     registrant=source_branch.owner, merge_target=target_branch
+    ... )
 
 The bare minimum that needs to be specified is the person that is proposing
 the merge, the ``registrant``, and the branch that the registrant wants the

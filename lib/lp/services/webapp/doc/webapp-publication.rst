@@ -31,10 +31,11 @@ These are parsed into webapp.vhost.allvhosts.
     >>> allvhosts.use_https
     False
     >>> for confname, vhost in sorted(allvhosts.configs.items()):
-    ...     print(confname, '@', vhost.hostname)
-    ...     print('rooturl:', vhost.rooturl)
-    ...     print('althosts:', (', '.join(vhost.althostnames)))
-    ...     print('----')
+    ...     print(confname, "@", vhost.hostname)
+    ...     print("rooturl:", vhost.rooturl)
+    ...     print("althosts:", (", ".join(vhost.althostnames)))
+    ...     print("----")
+    ...
     answers @ answers.launchpad.test
     rooturl: http://answers.launchpad.test/
     althosts:
@@ -86,6 +87,7 @@ request is headed to one of the officialy-used Launchpad host names:
 
     >>> for hostname in sorted(allvhosts.hostnames):
     ...     print(hostname)
+    ...
     answers.launchpad.test
     api.launchpad.test
     blueprints.launchpad.test
@@ -108,25 +110,26 @@ Zope to handle requests for a particular vhost, port, and set of HTTP
 methods.
 
     >>> import io
-    >>> from lp.services.webapp.publication import (
-    ...     LaunchpadBrowserPublication)
+    >>> from lp.services.webapp.publication import LaunchpadBrowserPublication
     >>> from lp.services.webapp.servers import (
-    ...     LaunchpadBrowserRequest, VirtualHostRequestPublicationFactory)
+    ...     LaunchpadBrowserRequest,
+    ...     VirtualHostRequestPublicationFactory,
+    ... )
     >>> from zope.app.publication.interfaces import IRequestPublicationFactory
     >>> from lp.testing import verifyObject
 
 Those factories provide the IRequestPublicationFactory interface.
 
     >>> factory = VirtualHostRequestPublicationFactory(
-    ...     'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication)
+    ...     "mainsite", LaunchpadBrowserRequest, LaunchpadBrowserPublication
+    ... )
     >>> verifyObject(IRequestPublicationFactory, factory)
     True
 
 By default, the request publication factory will only handle requests
 to all the host names registered for a particular virtual host.
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.test'}
+    >>> environment = {"REQUEST_METHOD": "GET", "HTTP_HOST": "launchpad.test"}
     >>> factory.canHandle(environment)
     True
 
@@ -134,22 +137,27 @@ A request publication factory that was initialized with
 handle_default_host=True will handle a request that specifies no virtual
 host. By default, handle_default_host is False.
 
-    >>> environment = {'REQUEST_METHOD': 'GET'}
+    >>> environment = {"REQUEST_METHOD": "GET"}
     >>> factory.canHandle(environment)
     False
 
     >>> default_handling_factory = VirtualHostRequestPublicationFactory(
-    ...    'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication,
-    ...    handle_default_host=True)
+    ...     "mainsite",
+    ...     LaunchpadBrowserRequest,
+    ...     LaunchpadBrowserPublication,
+    ...     handle_default_host=True,
+    ... )
     >>> default_handling_factory.canHandle(environment)
     True
 
 By default, a request publication factory handles requests to any port
 on its registered hosts.
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'SERVER_PORT': '1234',
-    ...                'HTTP_HOST': 'launchpad.test'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "GET",
+    ...     "SERVER_PORT": "1234",
+    ...     "HTTP_HOST": "launchpad.test",
+    ... }
     >>> factory.canHandle(environment)
     True
 
@@ -162,7 +170,8 @@ canHandle() by saving the environment to a thread-local variable. This
 information is retrieved later on, in __call__().
 
     >>> for key, value in sorted(factory._thread_local.environment.items()):
-    ...     print('%s: %s' % (key, value))
+    ...     print("%s: %s" % (key, value))
+    ...
     HTTP_HOST: launchpad.test
     REQUEST_METHOD: GET
     SERVER_PORT: 1234
@@ -190,15 +199,14 @@ host configured settings.
 But if the request comes in to the local or default host, the request
 factory is not wrapped:
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'localhost:9000'}
+    >>> environment = {"REQUEST_METHOD": "GET", "HTTP_HOST": "localhost:9000"}
     >>> default_handling_factory.canHandle(environment)
     True
     >>> requestfactory, publicationfactory = default_handling_factory()
     >>> requestfactory
     <class 'lp.services.webapp.servers.LaunchpadBrowserRequest'>
 
-    >>> environment = {'REQUEST_METHOD': 'GET'}
+    >>> environment = {"REQUEST_METHOD": "GET"}
     >>> default_handling_factory.canHandle(environment)
     True
     >>> requestfactory, publicationfactory = default_handling_factory()
@@ -208,8 +216,10 @@ factory is not wrapped:
 A request publication factory will not handle requests unless they're
 directed to one of its registered host names.
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'answers.launchpad.test'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "GET",
+    ...     "HTTP_HOST": "answers.launchpad.test",
+    ... }
     >>> factory.canHandle(environment)
     False
 
@@ -225,26 +235,30 @@ The factory accepts a port parameter that will restrict the handled
 requests to request to a particular port.
 
     >>> factory = VirtualHostRequestPublicationFactory(
-    ...     'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication,
-    ...     port=1234)
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.test'}
+    ...     "mainsite",
+    ...     LaunchpadBrowserRequest,
+    ...     LaunchpadBrowserPublication,
+    ...     port=1234,
+    ... )
+    >>> environment = {"REQUEST_METHOD": "GET", "HTTP_HOST": "launchpad.test"}
     >>> factory.canHandle(environment)
     False
-    >>> environment['SERVER_PORT'] = '80'
+    >>> environment["SERVER_PORT"] = "80"
     >>> factory.canHandle(environment)
     False
-    >>> environment['SERVER_PORT'] = '1234'
+    >>> environment["SERVER_PORT"] = "1234"
     >>> factory.canHandle(environment)
     True
 
 The port is also checked for in the HTTP_HOST variable:
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.test:1234'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "GET",
+    ...     "HTTP_HOST": "launchpad.test:1234",
+    ... }
     >>> factory.canHandle(environment)
     True
-    >>> environment['HTTP_HOST'] = 'launchpad.test:one_two_three_four'
+    >>> environment["HTTP_HOST"] = "launchpad.test:one_two_three_four"
     >>> factory.canHandle(environment)
     False
 
@@ -254,17 +268,21 @@ that it's valid for a client to put launchpad.test:80 in the Host header,
 but the request is really coming on the port 1234 because it's being
 proxied.)
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'SERVER_PORT' : '1234',
-    ...                'HTTP_HOST': 'launchpad.test:80'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "GET",
+    ...     "SERVER_PORT": "1234",
+    ...     "HTTP_HOST": "launchpad.test:80",
+    ... }
     >>> factory.canHandle(environment)
     True
 
 It's okay to specify the port in both places if the ports are the same:
 
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'SERVER_PORT' : 1234,
-    ...                'HTTP_HOST': 'launchpad.test:1234'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "GET",
+    ...     "SERVER_PORT": 1234,
+    ...     "HTTP_HOST": "launchpad.test:1234",
+    ... }
     >>> factory.canHandle(environment)
     True
 
@@ -276,9 +294,11 @@ ProtocolErrorPublicationFactory when called. The
 ProtocolErrorPublicationFactory is a parameterized object that
 publishes a document describing a particular HTTP-level error.
 
-    >>> environment = {'REQUEST_METHOD': 'DELETE',
-    ...                'HTTP_HOST': 'launchpad.test',
-    ...                'SERVER_PORT' : '1234'}
+    >>> environment = {
+    ...     "REQUEST_METHOD": "DELETE",
+    ...     "HTTP_HOST": "launchpad.test",
+    ...     "SERVER_PORT": "1234",
+    ... }
     >>> factory.canHandle(environment)
     True
 
@@ -287,17 +307,19 @@ publishes a document describing a particular HTTP-level error.
     <lp.services.webapp.servers.ProtocolErrorPublicationFactory ...>
 
     >>> factory = VirtualHostRequestPublicationFactory(
-    ...     'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication,
-    ...     methods=['DELETE'])
-    >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.test'}
+    ...     "mainsite",
+    ...     LaunchpadBrowserRequest,
+    ...     LaunchpadBrowserPublication,
+    ...     methods=["DELETE"],
+    ... )
+    >>> environment = {"REQUEST_METHOD": "GET", "HTTP_HOST": "launchpad.test"}
     >>> factory.canHandle(environment)
     True
     >>> requestfactory, publicationfactory = factory()
     >>> publicationfactory
     <lp.services.webapp.servers.ProtocolErrorPublicationFactory ...>
 
-    >>> environment['REQUEST_METHOD'] = 'DELETE'
+    >>> environment["REQUEST_METHOD"] = "DELETE"
     >>> factory.canHandle(environment)
     True
     >>> requestfactory, publicationfactory = factory()
@@ -316,30 +338,33 @@ function called when the servers module is loaded.
 the registered factories.)
 
     >>> from lp.services.webapp.servers import (
-    ...     register_launchpad_request_publication_factories)
+    ...     register_launchpad_request_publication_factories,
+    ... )
     >>> register_launchpad_request_publication_factories()
 
     >>> from lp.testing.publication import (
-    ...     get_request_and_publication, print_request_and_publication)
+    ...     get_request_and_publication,
+    ...     print_request_and_publication,
+    ... )
 
-    >>> print_request_and_publication('launchpad.test')
+    >>> print_request_and_publication("launchpad.test")
     LaunchpadBrowserRequest
     MainLaunchpadPublication
 
-    >>> print_request_and_publication('')
+    >>> print_request_and_publication("")
     LaunchpadBrowserRequest
     MainLaunchpadPublication
 
-    >>> print_request_and_publication('launchpad.test', method='DELETE')
+    >>> print_request_and_publication("launchpad.test", method="DELETE")
     ProtocolErrorRequest
     ProtocolErrorPublication: status=405
       Allow: GET, HEAD, POST
 
-    >>> print_request_and_publication('api.launchpad.test')
+    >>> print_request_and_publication("api.launchpad.test")
     WebServiceClientRequest
     WebServicePublication
 
-    >>> print_request_and_publication('feeds.launchpad.test')
+    >>> print_request_and_publication("feeds.launchpad.test")
     FeedsBrowserRequest
     FeedsPublication
 
@@ -347,8 +372,9 @@ The web service RequestPublicationFactory responds to the six most
 common HTTP methods, but it will only accept a MIME type of
 application/json.
 
-    >>> for m in ['GET', 'HEAD', 'DELETE', 'OPTIONS']:
-    ...     print_request_and_publication('api.launchpad.test', method=m)
+    >>> for m in ["GET", "HEAD", "DELETE", "OPTIONS"]:
+    ...     print_request_and_publication("api.launchpad.test", method=m)
+    ...
     WebServiceClientRequest
     WebServicePublication
     WebServiceClientRequest
@@ -359,9 +385,11 @@ application/json.
     WebServicePublication
 
 
-    >>> for m in ['POST', 'PUT']:
+    >>> for m in ["POST", "PUT"]:
     ...     print_request_and_publication(
-    ...         'api.launchpad.test', method=m, mime_type='application/json')
+    ...         "api.launchpad.test", method=m, mime_type="application/json"
+    ...     )
+    ...
     WebServiceClientRequest
     WebServicePublication
     WebServiceClientRequest
@@ -372,8 +400,10 @@ virtualhosts, such as the application root, it is also handled by the
 web service request and publication:
 
     >>> print_request_and_publication(
-    ...     'launchpad.test', method='GET',
-    ...     extra_environment={'PATH_INFO': '/api'})
+    ...     "launchpad.test",
+    ...     method="GET",
+    ...     extra_environment={"PATH_INFO": "/api"},
+    ... )
     WebServiceClientRequest
     WebServicePublication
 
@@ -381,8 +411,10 @@ Requests for '/api' on other hosts like feeds are handled like
 other requests on these hosts:
 
     >>> print_request_and_publication(
-    ...     'feeds.launchpad.test', method='GET',
-    ...     extra_environment={'PATH_INFO': '/api'})
+    ...     "feeds.launchpad.test",
+    ...     method="GET",
+    ...     extra_environment={"PATH_INFO": "/api"},
+    ... )
     FeedsBrowserRequest
     FeedsPublication
 
@@ -390,25 +422,29 @@ The XML-RPC RequestPublicationFactory only responds to POST requests,
 and then only when the MIME type is text/xml.
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.test', method='POST', mime_type='text/xml')
+    ...     "xmlrpc.launchpad.test", method="POST", mime_type="text/xml"
+    ... )
     PublicXMLRPCRequest
     PublicXMLRPCPublication
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.test', method='POST',
-    ...     mime_type='text/xml; charset=utf-8')
+    ...     "xmlrpc.launchpad.test",
+    ...     method="POST",
+    ...     mime_type="text/xml; charset=utf-8",
+    ... )
     PublicXMLRPCRequest
     PublicXMLRPCPublication
 
-    >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.test', method='GET')
+    >>> print_request_and_publication("xmlrpc.launchpad.test", method="GET")
     ProtocolErrorRequest
     ProtocolErrorPublication: status=405
       Allow: POST
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.test', method='POST',
-    ...     mime_type='application/xml')
+    ...     "xmlrpc.launchpad.test",
+    ...     method="POST",
+    ...     mime_type="application/xml",
+    ... )
     ProtocolErrorRequest
     ProtocolErrorPublication: status=415
 
@@ -419,28 +455,36 @@ Find the port the Private XMLRPC service is listening on.
 
     >>> private_port = config.vhost.xmlrpc_private.private_port
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.test', method='POST',
-    ...     mime_type='application/xml')
+    ...     "xmlrpc-private.launchpad.test",
+    ...     method="POST",
+    ...     mime_type="application/xml",
+    ... )
     ProtocolErrorRequest
     ProtocolErrorPublication: status=404
 
 Try a normal request:
 
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.test', port=private_port, method='POST',
-    ...     mime_type='text/xml')
+    ...     "xmlrpc-private.launchpad.test",
+    ...     port=private_port,
+    ...     method="POST",
+    ...     mime_type="text/xml",
+    ... )
     PrivateXMLRPCRequest
     PrivateXMLRPCPublication
 
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.test', port=private_port, method='POST',
-    ...     mime_type='text/xml; charset=utf-8')
+    ...     "xmlrpc-private.launchpad.test",
+    ...     port=private_port,
+    ...     method="POST",
+    ...     mime_type="text/xml; charset=utf-8",
+    ... )
     PrivateXMLRPCRequest
     PrivateXMLRPCPublication
 
 A request to an unknown host results in a 404 error.
 
-    >>> print_request_and_publication('nosuchhost.launchpad.test')
+    >>> print_request_and_publication("nosuchhost.launchpad.test")
     ProtocolErrorRequest
     ProtocolErrorPublication: status=404
 
@@ -450,19 +494,17 @@ errors aren't logged as exceptions--that would make the tests look
 less nice.
 
     >>> import logging
-    >>> logger = logging.getLogger('SiteError')
+    >>> logger = logging.getLogger("SiteError")
     >>> old_level = logger.level
     >>> logger.setLevel(logging.CRITICAL)
 
     >>> logout()
     >>> from lp.testing.pages import http
-    >>> print(http("GET / HTTP/1.1\n"
-    ...            "Host: nosuchhost.launchpad.test"))
+    >>> print(http("GET / HTTP/1.1\n" "Host: nosuchhost.launchpad.test"))
     HTTP/1.1 404 Not Found
     ...
 
-    >>> print(http("GET /foo/bar HTTP/1.1\n"
-    ...            "Host: xmlrpc.launchpad.test"))
+    >>> print(http("GET /foo/bar HTTP/1.1\n" "Host: xmlrpc.launchpad.test"))
     HTTP/1.1 405 Method Not Allowed
     Allow: POST
     ...
@@ -483,7 +525,8 @@ interface. That interface is an extension of the zope standard
 IBrowserApplicationRequest.
 
     >>> from lp.services.webapp.interfaces import (
-    ...     ILaunchpadBrowserApplicationRequest)
+    ...     ILaunchpadBrowserApplicationRequest,
+    ... )
 
     >>> request, publication = get_request_and_publication()
     >>> verifyObject(ILaunchpadBrowserApplicationRequest, request)
@@ -505,51 +548,53 @@ regular Zope3 form attribute using the dictionary interface.)
 You can check the presence of an uploaded field using the regular
 python 'in' operator.
 
-    >>> from lp.services.webapp.servers import (
-    ...     LaunchpadBrowserRequest)
+    >>> from lp.services.webapp.servers import LaunchpadBrowserRequest
     >>> from urllib.parse import urlencode
-    >>> environment = {'QUERY_STRING': urlencode({
-    ...     'a_field': 'a_value',
-    ...     'items_field': [1, 2, 3]}, doseq=True)}
-    >>> request = LaunchpadBrowserRequest('', environment)
+    >>> environment = {
+    ...     "QUERY_STRING": urlencode(
+    ...         {"a_field": "a_value", "items_field": [1, 2, 3]}, doseq=True
+    ...     )
+    ... }
+    >>> request = LaunchpadBrowserRequest("", environment)
     >>> request.processInputs()
 
-    >>> 'a_field' in request.form_ng
+    >>> "a_field" in request.form_ng
     True
-    >>> 'another_field' in request.form_ng
+    >>> "another_field" in request.form_ng
     False
 
 The advantage of the IBrowserFormNG API is that it offers methods that
 checks the number of values you are expecting. The getOne() method
 should be used when you expect only one value for the field.
 
-    >>> print(request.form_ng.getOne('a_field'))
+    >>> print(request.form_ng.getOne("a_field"))
     a_value
 
 UnexpectedFormData is raised if more than one value was submitted for
 the field:
 
-    >>> request.form_ng.getOne('items_field')
+    >>> request.form_ng.getOne("items_field")
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: ...
 
 None is returned if the field wasn't submitted:
 
-    >>> request.form_ng.getOne('another_field') is None
+    >>> request.form_ng.getOne("another_field") is None
     True
 
 You can provide a default value that is returned if the field wasn't
 submitted:
 
-    >>> print(request.form_ng.getOne('another_field', u'default'))
+    >>> print(request.form_ng.getOne("another_field", "default"))
     default
 
 The getAll() method should be used when you are expecting a list of
 values.
 
-    >>> for item in request.form_ng.getAll('items_field'):
+    >>> for item in request.form_ng.getAll("items_field"):
     ...     print(item)
+    ...
     1
     2
     3
@@ -557,26 +602,29 @@ values.
 If only one value was submitted, it will still be returned as part of
 a list:
 
-    >>> for item in request.form_ng.getAll('a_field'):
+    >>> for item in request.form_ng.getAll("a_field"):
     ...     print(item)
+    ...
     a_value
 
 An empty list is returned when no value was submitted for the field:
 
-    >>> request.form_ng.getAll('another_field')
+    >>> request.form_ng.getAll("another_field")
     []
 
 That method also accepts a default value that is to be returned when
 no value was submitted with the field.
 
-    >>> for item in request.form_ng.getAll('another_field', [u'default']):
+    >>> for item in request.form_ng.getAll("another_field", ["default"]):
     ...     print(item)
+    ...
     default
 
 All the submitted field names can be iterated over:
 
     >>> for name in sorted(request.form_ng):
     ...     print(name)
+    ...
     a_field
     items_field
 
@@ -590,8 +638,7 @@ This is an identifier of the form ContextName:ViewName.  We also set the
 
     >>> from talisker.context import Context
     >>> from talisker.logs import logging_context
-    >>> from lp.services.webapp.interfaces import (
-    ...     IPlacelessAuthUtility)
+    >>> from lp.services.webapp.interfaces import IPlacelessAuthUtility
     >>> _ = Context.new()
     >>> auth_utility = getUtility(IPlacelessAuthUtility)
     >>> request, publication = get_request_and_publication()
@@ -599,9 +646,9 @@ This is an identifier of the form ContextName:ViewName.  We also set the
 
 Originally, this variable isn't set.
 
-    >>> 'launchpad.pageid' in request._orig_env
+    >>> "launchpad.pageid" in request._orig_env
     False
-    >>> 'pageid' in logging_context.flat
+    >>> "pageid" in logging_context.flat
     False
     >>> logout()
 
@@ -616,20 +663,24 @@ name of the context class and the view class name.
     ...         self.request = request
     ...
     ...     def __call__(self):
-    ...         return u"Result"
+    ...         return "Result"
+    ...
 
     >>> class TestContext:
     ...     """Test context object."""
+    ...
 
     >>> view = TestView(TestContext(), request)
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, view)
-    >>> print(request._orig_env['launchpad.pageid'])
+    >>> print(request._orig_env["launchpad.pageid"])
     TestContext:TestView
-    >>> print(logging_context.flat['pageid'])
+    >>> print(logging_context.flat["pageid"])
     TestContext:TestView
     >>> from lp.services.webapp.adapter import (
-    ...     clear_request_started, set_request_started)
+    ...     clear_request_started,
+    ...     set_request_started,
+    ... )
     >>> clear_request_started()
 
 
@@ -652,18 +703,19 @@ as traversal_duration_ms in the Talisker logging context.  On Python >= 3.3,
 there is also traversal_thread_duration_ms with the time spent in the
 current thread.
 
-    >>> 'traversal_duration_ms' in logging_context.flat
+    >>> "traversal_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_thread_duration_ms' in logging_context.flat
+    >>> "traversal_thread_duration_ms" in logging_context.flat
     False
     >>> publication.beforeTraversal(request)
     >>> publication.afterTraversal(request, None)
-    >>> 'traversal_duration_ms' in logging_context.flat
+    >>> "traversal_duration_ms" in logging_context.flat
     True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context.flat
+    >>> if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
+    ...     "traversal_thread_duration_ms" in logging_context.flat
     ... else:
     ...     True
+    ...
     True
 
 For publication we start counting the duration during the callObject()
@@ -672,20 +724,22 @@ publication_duration_ms in the Talisker logging context.  On Python >= 3.3,
 there is also publication_thread_duration_ms with the time spent in the
 current thread.
 
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context.flat
+    >>> "publication_thread_duration_ms" in logging_context.flat
     False
-    >>> print(publication.callObject(
-    ...     request, TestView(TestContext(), request)))
+    >>> print(
+    ...     publication.callObject(request, TestView(TestContext(), request))
+    ... )
     Result
     >>> publication.afterCall(request, None)
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'publication_thread_duration_ms' in logging_context.flat
+    >>> if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
+    ...     "publication_thread_duration_ms" in logging_context.flat
     ... else:
     ...     True
+    ...
     True
     >>> publication.endRequest(request, None)
 
@@ -707,16 +761,18 @@ there's nothing to store.
     ...     raise Exception()
     ... except:
     ...     exc_info = sys.exc_info()
+    ...
     >>> set_request_started()
     >>> publication.handleException(
-    ...     None, request, exc_info, retry_allowed=False)
-    >>> 'traversal_duration_ms' in logging_context.flat
+    ...     None, request, exc_info, retry_allowed=False
+    ... )
+    >>> "traversal_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_thread_duration_ms' in logging_context.flat
+    >>> "traversal_thread_duration_ms" in logging_context.flat
     False
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context.flat
+    >>> "publication_thread_duration_ms" in logging_context.flat
     False
     >>> clear_request_started()
 
@@ -725,17 +781,19 @@ the duration for the traversal and not for the publication.
 
     >>> publication.beforeTraversal(request)
     >>> publication.handleException(
-    ...     None, request, exc_info, retry_allowed=False)
-    >>> 'traversal_duration_ms' in logging_context.flat
+    ...     None, request, exc_info, retry_allowed=False
+    ... )
+    >>> "traversal_duration_ms" in logging_context.flat
     True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context.flat
+    >>> if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
+    ...     "traversal_thread_duration_ms" in logging_context.flat
     ... else:
     ...     True
+    ...
     True
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context.flat
+    >>> "publication_thread_duration_ms" in logging_context.flat
     False
     >>> clear_request_started()
 
@@ -744,25 +802,29 @@ completed), we'll have the duration for the traversal and the duration for
 the publication, up to the point where it was forcefully stopped.
 
     >>> publication.afterTraversal(request, None)
-    >>> print(publication.callObject(
-    ...     request, TestView(TestContext(), request)))
+    >>> print(
+    ...     publication.callObject(request, TestView(TestContext(), request))
+    ... )
     Result
     >>> set_request_started()
     >>> publication.handleException(
-    ...     None, request, exc_info, retry_allowed=False)
-    >>> 'traversal_duration_ms' in logging_context.flat
+    ...     None, request, exc_info, retry_allowed=False
+    ... )
+    >>> "traversal_duration_ms" in logging_context.flat
     True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'traversal_thread_duration_ms' in logging_context.flat
+    >>> if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
+    ...     "traversal_thread_duration_ms" in logging_context.flat
     ... else:
     ...     True
+    ...
     True
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     True
-    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
-    ...     'publication_thread_duration_ms' in logging_context.flat
+    >>> if hasattr(time, "CLOCK_THREAD_CPUTIME_ID"):
+    ...     "publication_thread_duration_ms" in logging_context.flat
     ... else:
     ...     True
+    ...
     True
     >>> publication.endRequest(request, None)
     >>> logger.setLevel(old_level)
@@ -778,28 +840,33 @@ the Talisker logging context.
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> _ = logging_context.push(
-    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
-    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
+    ...     traversal_duration_ms=500,
+    ...     traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500,
+    ...     publication_thread_duration_ms=400,
+    ... )
     >>> request.supportsRetry()
     True
     >>> from zope.publisher.interfaces import Retry
-    >>> foo_exc_info = (Exception, 'foo', None)
+    >>> foo_exc_info = (Exception, "foo", None)
     >>> try:
     ...     raise Retry(foo_exc_info)
     ... except:
     ...     publication.handleException(
-    ...         None, request, sys.exc_info(), retry_allowed=True)
+    ...         None, request, sys.exc_info(), retry_allowed=True
+    ...     )
+    ...
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo
 
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context.flat
+    >>> "publication_thread_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_duration_ms' in logging_context.flat
+    >>> "traversal_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_thread_duration_ms' in logging_context.flat
+    >>> "traversal_thread_duration_ms" in logging_context.flat
     False
 
     >>> _ = Context.new()
@@ -807,28 +874,33 @@ the Talisker logging context.
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> _ = logging_context.push(
-    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
-    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
+    ...     traversal_duration_ms=500,
+    ...     traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500,
+    ...     publication_thread_duration_ms=400,
+    ... )
     >>> request.supportsRetry()
     True
     >>> from storm.exceptions import DisconnectionError
     >>> try:
-    ...     raise DisconnectionError('foo DisconnectionError')
+    ...     raise DisconnectionError("foo DisconnectionError")
     ... except:
     ...     exc_info = sys.exc_info()
+    ...
     >>> publication.handleException(
-    ...     None, request, exc_info, retry_allowed=True)
+    ...     None, request, exc_info, retry_allowed=True
+    ... )
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo DisconnectionError
 
-    >>> 'publication_duration_ms' in logging_context.flat
+    >>> "publication_duration_ms" in logging_context.flat
     False
-    >>> 'publication_thread_duration_ms' in logging_context.flat
+    >>> "publication_thread_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_duration_ms' in logging_context.flat
+    >>> "traversal_duration_ms" in logging_context.flat
     False
-    >>> 'traversal_thread_duration_ms' in logging_context.flat
+    >>> "traversal_thread_duration_ms" in logging_context.flat
     False
 
 Of course, any request can only be retried a certain number of times and
@@ -840,8 +912,11 @@ WSGI env.
     >>> publication.initializeLoggingContext(request)
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> _ = logging_context.push(
-    ...     traversal_duration_ms=500, traversal_thread_duration_ms=400,
-    ...     publication_duration_ms=500, publication_thread_duration_ms=400)
+    ...     traversal_duration_ms=500,
+    ...     traversal_thread_duration_ms=400,
+    ...     publication_duration_ms=500,
+    ...     publication_thread_duration_ms=400,
+    ... )
     >>> request.supportsRetry = lambda: False
     >>> request.supportsRetry()
     False
@@ -850,18 +925,20 @@ WSGI env.
     ...     raise Retry(foo_exc_info)
     ... except:
     ...     publication.handleException(
-    ...         None, request, sys.exc_info(), retry_allowed=True)
+    ...         None, request, sys.exc_info(), retry_allowed=True
+    ...     )
+    ...
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.Retry: foo
 
-    >>> logging_context.flat['publication_duration_ms']
+    >>> logging_context.flat["publication_duration_ms"]
     500
-    >>> logging_context.flat['publication_thread_duration_ms']
+    >>> logging_context.flat["publication_thread_duration_ms"]
     400
-    >>> logging_context.flat['traversal_duration_ms']
+    >>> logging_context.flat["traversal_duration_ms"]
     500
-    >>> logging_context.flat['traversal_thread_duration_ms']
+    >>> logging_context.flat["traversal_thread_duration_ms"]
     400
 
 (A bit of cleanup so the test can continue)
@@ -902,7 +979,7 @@ allowing different authentication based on the traversed objects):
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> personset = getUtility(IPersonSet)
     >>> txn = transaction.begin()
-    >>> foo_bar = personset.getByEmail('foo.bar@canonical.com')
+    >>> foo_bar = personset.getByEmail("foo.bar@canonical.com")
     >>> foo_bar.id
     16
     >>> request.setPrincipal(foo_bar)
@@ -926,6 +1003,7 @@ some string in its finishReadOnlyRequest().
     >>> class MyPublication(LaunchpadBrowserPublication):
     ...     def finishReadOnlyRequest(self, request, ob, txn):
     ...         print("booo!")
+    ...
 
     >>> publication = MyPublication(None)
     >>> publication.afterCall(request, None)
@@ -937,19 +1015,25 @@ be automatically reverted in a GET request.
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from lp.services.database.interfaces import IMasterStore
     >>> from lp.registry.model.person import Person
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> txn = transaction.begin()
     >>> def get_foo_bar_person():
-    ...     return IMasterStore(Person).find(
-    ...         Person,
-    ...         Person.id == EmailAddress.personID,
-    ...         EmailAddress.email == 'foo.bar@canonical.com').one()
+    ...     return (
+    ...         IMasterStore(Person)
+    ...         .find(
+    ...             Person,
+    ...             Person.id == EmailAddress.personID,
+    ...             EmailAddress.email == "foo.bar@canonical.com",
+    ...         )
+    ...         .one()
+    ...     )
+    ...
     >>> foo_bar = get_foo_bar_person()
     >>> print(foo_bar.description)
     None
-    >>> foo_bar.description = 'Montreal'
+    >>> foo_bar.description = "Montreal"
 
-    >>> request, publication = get_request_and_publication(method='GET')
+    >>> request, publication = get_request_and_publication(method="GET")
 
     # Our afterCall() implementation expects to find _publication_start and
     # _publication_thread_start in its request, which are set by
@@ -966,9 +1050,9 @@ be automatically reverted in a GET request.
 But not if the request uses POST, the changes will be preserved.
 
     >>> txn = transaction.begin()
-    >>> get_foo_bar_person().description = 'Darwin'
+    >>> get_foo_bar_person().description = "Darwin"
 
-    >>> request, publication = get_request_and_publication(method='POST')
+    >>> request, publication = get_request_and_publication(method="POST")
 
     # Our afterCall() implementation expects to find _publication_start and
     # _publication_thread_start in its request, which are set by
@@ -987,7 +1071,7 @@ Doomed transactions are aborted
 
 Doomed transactions are aborted.
 
-    >>> request, publication = get_request_and_publication(method='POST')
+    >>> request, publication = get_request_and_publication(method="POST")
     >>> txn = transaction.begin()
 
     # This sets up an alert so we can easily see that the transaction has
@@ -995,7 +1079,7 @@ Doomed transactions are aborted.
     >>> bound_abort = txn.abort
     >>> def faux_abort():
     ...     bound_abort()
-    ...     print('Aborted')
+    ...     print("Aborted")
     ...
     >>> txn.abort = faux_abort
 
@@ -1013,9 +1097,9 @@ Doomed transactions are aborted.
 
     >>> publication.afterCall(request, None)
     Aborted
-    >>> txn.isDoomed() # It is still doomed.
+    >>> txn.isDoomed()  # It is still doomed.
     True
-    >>> del txn.abort # Clean up test fixture.
+    >>> del txn.abort  # Clean up test fixture.
 
 
 Requests on Python C Methods succeed
@@ -1031,7 +1115,8 @@ For instance, an XMLRPC proxy might allow a traversal to __repr__.
     '{}'
     >>> import zope.security.checker
     >>> publication.callObject(
-    ...     request, zope.security.checker.ProxyFactory({}).__repr__)
+    ...     request, zope.security.checker.ProxyFactory({}).__repr__
+    ... )
     '{}'
 
 
@@ -1043,9 +1128,9 @@ returned as part of HEAD requests. (Again this is handled by the
 afterCall() publication hook.)
 
     >>> txn = transaction.begin()
-    >>> request, publication = get_request_and_publication(method='HEAD')
+    >>> request, publication = get_request_and_publication(method="HEAD")
     >>> response = request.response
-    >>> response.setResult('Content that will disappear.')
+    >>> response.setResult("Content that will disappear.")
 
     # Our afterCall() implementation expects to find _publication_start and
     # _publication_thread_start in its request, which are set by
@@ -1060,9 +1145,9 @@ afterCall() publication hook.)
 In other cases, like a GET, the body would be unchanged.
 
     >>> txn = transaction.begin()
-    >>> request, publication = get_request_and_publication(method='GET')
+    >>> request, publication = get_request_and_publication(method="GET")
     >>> response = request.response
-    >>> response.setResult('Some boring content.')
+    >>> response.setResult("Some boring content.")
 
     # Our afterCall() implementation expects to find _publication_start and
     # _publication_thread_start in its request, which are set by
@@ -1089,6 +1174,7 @@ will get associated with the request after the beforeTraversal() hook.
     >>> class MyPublication(LaunchpadBrowserPublication):
     ...     def getPrincipal(self, request):
     ...         return marker
+    ...
 
     >>> publication = MyPublication(None)
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
@@ -1108,11 +1194,13 @@ The default implementation will use the IPlacelessAuthentication
 utility to setup the request.
 
     >>> import base64
-    >>> login(ANONYMOUS) # Get rid of the marker object in the interaction.
-    >>> foo_bar_auth = 'Basic %s' % (
-    ...     base64.b64encode(b'foo.bar@canonical.com:test').decode('ASCII'))
+    >>> login(ANONYMOUS)  # Get rid of the marker object in the interaction.
+    >>> foo_bar_auth = "Basic %s" % (
+    ...     base64.b64encode(b"foo.bar@canonical.com:test").decode("ASCII")
+    ... )
     >>> request, publication = get_request_and_publication(
-    ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth))
+    ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth)
+    ... )
     >>> principal = publication.getPrincipal(request)
     >>> print(principal.title)
     Foo Bar
@@ -1120,8 +1208,9 @@ utility to setup the request.
 The feeds implementation always returns the anonymous user.
 
     >>> request, publication = get_request_and_publication(
-    ...     'feeds.launchpad.test',
-    ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth))
+    ...     "feeds.launchpad.test",
+    ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth),
+    ... )
     >>> principal = publication.getPrincipal(request)
 
     >>> from zope.authentication.interfaces import IUnauthenticatedPrincipal
@@ -1139,24 +1228,27 @@ token.
     >>> from lp.services.oauth.interfaces import IOAuthConsumerSet
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> getUtility(IStoreSelector).push(PrimaryDatabasePolicy())
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
-    >>> consumer = getUtility(IOAuthConsumerSet).getByKey(u'foobar123451432')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
+    >>> consumer = getUtility(IOAuthConsumerSet).getByKey("foobar123451432")
     >>> token, _ = consumer.newRequestToken()
-    >>> firefox = getUtility(IProductSet)['firefox']
+    >>> firefox = getUtility(IProductSet)["firefox"]
     >>> token.review(salgado, OAuthPermission.WRITE_PUBLIC, context=firefox)
     >>> access_token, access_secret = token.createAccessToken()
     >>> form = dict(
-    ...     oauth_consumer_key=u'foobar123451432',
+    ...     oauth_consumer_key="foobar123451432",
     ...     oauth_token=access_token.key,
-    ...     oauth_version='1.0',
-    ...     oauth_signature_method='PLAINTEXT',
-    ...     oauth_signature="&".join(['', access_secret]),
+    ...     oauth_version="1.0",
+    ...     oauth_signature_method="PLAINTEXT",
+    ...     oauth_signature="&".join(["", access_secret]),
     ...     oauth_timestamp=time.time(),
-    ...     oauth_nonce='4572616e48616d6d65724c61686176')
+    ...     oauth_nonce="4572616e48616d6d65724c61686176",
+    ... )
     >>> policy = getUtility(IStoreSelector).pop()
     >>> test_request, publication = get_request_and_publication(
-    ...     'api.launchpad.test', 'GET',
-    ...     extra_environment=dict(QUERY_STRING=urlencode(form)))
+    ...     "api.launchpad.test",
+    ...     "GET",
+    ...     extra_environment=dict(QUERY_STRING=urlencode(form)),
+    ... )
     >>> test_request.processInputs()
     >>> principal = publication.getPrincipal(test_request)
     >>> print(principal.title)
@@ -1170,13 +1262,13 @@ If the token is expired or doesn't exist, an Unauthorized exception is
 raised, though.
 
     # Must login in order to edit the token.
-    >>> login('salgado@ubuntu.com')
+    >>> login("salgado@ubuntu.com")
     >>> from datetime import datetime, timedelta
     >>> import pytz
-    >>> now = datetime.now(pytz.timezone('UTC'))
+    >>> now = datetime.now(pytz.timezone("UTC"))
     >>> access_token.date_expires = now - timedelta(days=1)
     >>> form2 = form.copy()
-    >>> form2['oauth_nonce'] = '1764572616e48616d6d65724c61686'
+    >>> form2["oauth_nonce"] = "1764572616e48616d6d65724c61686"
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
@@ -1186,8 +1278,8 @@ raised, though.
     >>> access_token.date_expires = now + timedelta(days=1)
 
     >>> form2 = form.copy()
-    >>> form2['oauth_token'] += 'z'
-    >>> form2['oauth_nonce'] = '4572616e48616d6d65724c61686176'
+    >>> form2["oauth_token"] += "z"
+    >>> form2["oauth_nonce"] = "4572616e48616d6d65724c61686176"
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
@@ -1198,7 +1290,7 @@ The consumer must be registered as well, and the signature must be
 correct.
 
     >>> form2 = form.copy()
-    >>> form2['oauth_consumer_key'] += 'z'
+    >>> form2["oauth_consumer_key"] += "z"
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
@@ -1207,8 +1299,8 @@ correct.
     Unknown consumer (foobar123451432z).
 
     >>> form2 = form.copy()
-    >>> form2['oauth_signature'] += 'z'
-    >>> form2['oauth_nonce'] = '2616e48616d6d65724c61686176457'
+    >>> form2["oauth_signature"] += "z"
+    >>> form2["oauth_nonce"] = "2616e48616d6d65724c61686176457"
     >>> test_request = LaunchpadTestRequest(form=form2)
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
@@ -1219,10 +1311,10 @@ The user's account must be active.
 
     >>> from lp.services.identity.interfaces.account import AccountStatus
 
-    >>> login('foo.bar@canonical.com')
-    >>> salgado.setAccountStatus(AccountStatus.SUSPENDED, None, 'Bye')
+    >>> login("foo.bar@canonical.com")
+    >>> salgado.setAccountStatus(AccountStatus.SUSPENDED, None, "Bye")
 
-    >>> login('salgado@ubuntu.com')
+    >>> login("salgado@ubuntu.com")
     >>> test_request = LaunchpadTestRequest(form=form)
     >>> publication.getPrincipal(test_request)
     Traceback (most recent call last):
@@ -1237,3 +1329,4 @@ Also, pop all the database policies we have been accumulating.
     >>> store_selector = getUtility(IStoreSelector)
     >>> while store_selector.get_current():
     ...     db_policy = store_selector.pop()
+    ...

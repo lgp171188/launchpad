@@ -18,12 +18,12 @@ has ProductReleases 1.5.0.1 and 1.5.0.2
 First, get a product that has some ProductSeries in the sample data.
 
     >>> productset = getUtility(IProductSet)
-    >>> firefox = productset['firefox']
+    >>> firefox = productset["firefox"]
 
 A ProductSeries can be retrieved using the associated product and the
 series name.
 
-    >>> trunk = firefox.getSeries('trunk')
+    >>> trunk = firefox.getSeries("trunk")
 
 Get the product releases for trunk.
 
@@ -53,21 +53,23 @@ Add a file alias to the productrelease.
     >>> from io import BytesIO
     >>> from pytz import UTC
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> def add_release_file(release, file_content, name, description,
-    ...                      date_uploaded=None):
+    >>> def add_release_file(
+    ...     release, file_content, name, description, date_uploaded=None
+    ... ):
     ...     user = getUtility(ILaunchBag).user
     ...     result = release.addReleaseFile(
     ...         filename=name,
     ...         file_content=BytesIO(file_content),
-    ...         content_type='test/plain',
+    ...         content_type="test/plain",
     ...         uploader=user,
-    ...         description=description)
+    ...         description=description,
+    ...     )
     ...     if date_uploaded is not None:
     ...         removeSecurityProxy(result).date_uploaded = date_uploaded
     ...     return result
     >>> product_release_file = add_release_file(
-    ...    rel, b'Some useful information.',
-    ...    'foo.txt', 'Foo file')
+    ...     rel, b"Some useful information.", "foo.txt", "Foo file"
+    ... )
     >>> print(product_release_file.description)
     Foo file
 
@@ -83,27 +85,27 @@ The number of files on the series has increased
 
 The alias can be retrieved by name.
 
-    >>> file_alias = rel.getFileAliasByName('foo.txt')
+    >>> file_alias = rel.getFileAliasByName("foo.txt")
     >>> print(file_alias.filename)
     foo.txt
 
 Attempting to retrieve an alias that does not exist is an error.
 
-    >>> file_alias = rel.getFileAliasByName('bar.txt')
+    >>> file_alias = rel.getFileAliasByName("bar.txt")
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'bar.txt'
 
 The ProductReleaseFile can also be retrieved by name.
 
-    >>> prf = rel.getProductReleaseFileByName('foo.txt')
+    >>> prf = rel.getProductReleaseFileByName("foo.txt")
     >>> print(prf.libraryfile.filename)
     foo.txt
 
 Attempting to retrieve a ProductReleaseFile  that does not exist is an
 error.
 
-    >>> prf = rel.getProductReleaseFileByName('bar.txt')
+    >>> prf = rel.getProductReleaseFileByName("bar.txt")
     Traceback (most recent call last):
     ...
     lp.app.errors.NotFoundError: ...'bar.txt'
@@ -118,11 +120,12 @@ delete a product file.
     ...
     zope.security.interfaces.Unauthorized:
     (<ProductReleaseFile...>, 'destroySelf', 'launchpad.Edit')
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> for release_file in rel.files:
     ...     if release_file.libraryfile.id == file_alias.id:
     ...         release_file.destroySelf()
     ...         break
+    ...
     >>> print(rel.files.count())
     1
 
@@ -136,10 +139,11 @@ Deleting files via a GET method is not allowed.
     >>> from zope.component import getMultiAdapter
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> request = LaunchpadTestRequest(
-    ...     environ={'REQUEST_METHOD': 'GET'},
-    ...     form={'delete_files': 'Delete Files'})
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> view = getMultiAdapter((firefox,request), name='+download')
+    ...     environ={"REQUEST_METHOD": "GET"},
+    ...     form={"delete_files": "Delete Files"},
+    ... )
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> view = getMultiAdapter((firefox, request), name="+download")
     >>> view.initialize()
     Traceback (most recent call last):
      ...
@@ -149,14 +153,14 @@ There a convenience method for getting all of the releases for a list
 of series.  The releases are returned sorted by release date in
 reverse order.
 
-    >>> from lp.registry.interfaces.productrelease import (
-    ...     IProductReleaseSet)
+    >>> from lp.registry.interfaces.productrelease import IProductReleaseSet
     >>> series = firefox.series
     >>> release_set = getUtility(IProductReleaseSet)
     >>> releases = release_set.getReleasesForSeries(series)
     >>> for release in releases:
-    ...     date = release.datereleased.strftime('%Y-%m-%d %H:%M:%S')
+    ...     date = release.datereleased.strftime("%Y-%m-%d %H:%M:%S")
     ...     print(release.version, date)
+    ...
     0.9.2 2004-10-15 18:32:35
     0.9.1 2004-10-15 18:31:19
     0.9 2004-10-15 18:27:09
@@ -176,12 +180,14 @@ Let's add some release files to the releases for firefox.
     ...     description = "description%d" % i
     ...     upload_date = now + timedelta(days=i)
     ...     pr_file = add_release_file(
-    ...         release, content, name,
-    ...         description, date_uploaded=upload_date)
+    ...         release, content, name, description, date_uploaded=upload_date
+    ...     )
+    ...
 
     >>> files = release_set.getFilesForReleases(releases)
     >>> for file in files:
     ...     print(file.libraryfile.filename)
+    ...
     name3
     name2
     name1
@@ -198,12 +204,14 @@ Only the product owner can create a new release.
     zope.security.interfaces.Unauthorized:
     (<Milestone ...>, 'createProductRelease', 'launchpad.Edit')
     >>> login(owner_email)
-    >>> milestone = trunk.newMilestone('8.0', code_name='ralph')
-    >>> milestone.createProductRelease(firefox.owner, now,
-    ...                                changelog='New in v2')
+    >>> milestone = trunk.newMilestone("8.0", code_name="ralph")
+    >>> milestone.createProductRelease(
+    ...     firefox.owner, now, changelog="New in v2"
+    ... )
     <ProductRelease at ...>
     >>> for release in release_set.getReleasesForSeries(series):
     ...     print(release.version)
+    ...
     8.0
     0.9.2
     0.9.1

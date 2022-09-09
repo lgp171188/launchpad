@@ -5,9 +5,12 @@ The script that uses RemoteProductUpdater is update-remote-product.py.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     ['cronscripts/update-remote-product.py'],
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     ["cronscripts/update-remote-product.py"],
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(out)
     <BLANKLINE>

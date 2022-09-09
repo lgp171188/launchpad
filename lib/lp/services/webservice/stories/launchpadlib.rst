@@ -8,10 +8,10 @@ object, you can write pagetests using launchpadlib.
     >>> from fixtures import (
     ...     EnvironmentVariable,
     ...     TempDir,
-    ...     )
+    ... )
     >>> tempdir_fixture = TempDir()
     >>> tempdir_fixture.setUp()
-    >>> home_fixture = EnvironmentVariable('HOME', tempdir_fixture.path)
+    >>> home_fixture = EnvironmentVariable("HOME", tempdir_fixture.path)
     >>> home_fixture.setUp()
 
 Two helper functions make it easy to set up Launchpad objects that
@@ -19,7 +19,8 @@ can access the web service. With launchpadlib_for() you can set up a
 Launchpad object for a given user with a single call.
 
     >>> launchpad = launchpadlib_for(
-    ...     u'launchpadlib test', 'salgado', 'WRITE_PUBLIC')
+    ...     "launchpadlib test", "salgado", "WRITE_PUBLIC"
+    ... )
     >>> print(launchpad.me.name)
     salgado
 
@@ -43,7 +44,8 @@ Credentials object.
 
     >>> from lp.testing import launchpadlib_credentials_for
     >>> credentials = launchpadlib_credentials_for(
-    ...     u'launchpadlib test', 'no-priv', 'READ_PUBLIC')
+    ...     "launchpadlib test", "no-priv", "READ_PUBLIC"
+    ... )
     >>> credentials
     <launchpadlib.credentials.Credentials object ...>
 
@@ -58,15 +60,17 @@ scheme which does not work in the test environment.
 
     >>> from launchpadlib.launchpad import Launchpad
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.test/')
+    ...     credentials, None, None, "http://api.launchpad.test/"
+    ... )
     >>> print(launchpad.me.name)
     no-priv
 
 Anonymous access
 ================
 
-    >>> lp_anon = Launchpad.login_anonymously('launchpadlib test',
-    ...                                       'http://api.launchpad.test/')
+    >>> lp_anon = Launchpad.login_anonymously(
+    ...     "launchpadlib test", "http://api.launchpad.test/"
+    ... )
 
 The Launchpad object for the anonymous user can be used to access
 public information.
@@ -104,8 +108,8 @@ and Launchpad.
 Now create a Launchpad object and observe how it populates the cache.
 
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.test/',
-    ...     cache=cache)
+    ...     credentials, None, None, "http://api.launchpad.test/", cache=cache
+    ... )
     send: ...'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
     reply: 'HTTP/1.0 200 Ok\n'
     ...
@@ -117,8 +121,8 @@ Create a second Launchpad object, and the cached documents will be
 used instead of new HTTP requests being used.
 
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.test/',
-    ...     cache=cache)
+    ...     credentials, None, None, "http://api.launchpad.test/", cache=cache
+    ... )
 
 Cleanup.
 
@@ -133,7 +137,8 @@ The cache location for Launchpad objects created via launchpadlib_for are a
 temp directory.
 
     >>> launchpad = launchpadlib_for(
-    ...     u'launchpadlib test', 'salgado', 'WRITE_PUBLIC')
+    ...     "launchpadlib test", "salgado", "WRITE_PUBLIC"
+    ... )
 
     >>> launchpad._browser._connection.cache._cache_dir
     '/.../launchpadlib-cache-...'
@@ -141,7 +146,8 @@ temp directory.
 If we create another Launchpad object, it'll get its own cache directory.
 
     >>> launchpad_2 = launchpadlib_for(
-    ...     u'launchpadlib test', 'salgado', 'WRITE_PUBLIC')
+    ...     "launchpadlib test", "salgado", "WRITE_PUBLIC"
+    ... )
 
     >>> cache_dir_1 = launchpad._browser._connection.cache._cache_dir
     >>> cache_dir_2 = launchpad_2._browser._connection.cache._cache_dir

@@ -27,25 +27,36 @@ Imports:
     >>> from lp.services.webapp.batching import BatchNavigator
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
-    >>> def build_request(query_string_args=None, method='GET'):
-    ...   if query_string_args is None:
-    ...       query_string_args = {}
-    ...   query_string = "&".join(
-    ...       "%s=%s" % (k,v) for k,v in query_string_args.items())
-    ...   request = LaunchpadTestRequest(
-    ...       SERVER_URL='http://www.example.com/foo', method=method,
-    ...       environ={'QUERY_STRING': query_string})
-    ...   request.processInputs()
-    ...   return request
+    >>> def build_request(query_string_args=None, method="GET"):
+    ...     if query_string_args is None:
+    ...         query_string_args = {}
+    ...     query_string = "&".join(
+    ...         "%s=%s" % (k, v) for k, v in query_string_args.items()
+    ...     )
+    ...     request = LaunchpadTestRequest(
+    ...         SERVER_URL="http://www.example.com/foo",
+    ...         method=method,
+    ...         environ={"QUERY_STRING": query_string},
+    ...     )
+    ...     request.processInputs()
+    ...     return request
+    ...
 
 A dummy request object:
 
 Some sample data.
 
     >>> reindeer = [
-    ...     'Dasher', 'Dancer', 'Prancer', 'Vixen', 'Comet',
-    ...     'Cupid', 'Donner', 'Blitzen', 'Rudolph',
-    ...     ]
+    ...     "Dasher",
+    ...     "Dancer",
+    ...     "Prancer",
+    ...     "Vixen",
+    ...     "Comet",
+    ...     "Cupid",
+    ...     "Donner",
+    ...     "Blitzen",
+    ...     "Rudolph",
+    ... ]
 
 
 Multiple pages
@@ -54,13 +65,14 @@ Multiple pages
 The batch navigator tells us whether multiple pages will be used.
 
     >>> from lp.services.identity.model.emailaddress import EmailAddress
-    >>> select_results = EmailAddress.select(orderBy='id')
+    >>> select_results = EmailAddress.select(orderBy="id")
     >>> batch_nav = BatchNavigator(select_results, build_request(), size=50)
     >>> batch_nav.has_multiple_pages
     True
 
     >>> one_page_nav = BatchNavigator(
-    ...     select_results, build_request(), size=200)
+    ...     select_results, build_request(), size=200
+    ... )
     >>> one_page_nav.has_multiple_pages
     False
 
@@ -75,18 +87,23 @@ InvalidBatchSizeError is raised.
 
     >>> from lp.services.config import config
     >>> from textwrap import dedent
-    >>> config.push('max-batch-size', dedent("""\
+    >>> config.push(
+    ...     "max-batch-size",
+    ...     dedent(
+    ...         """\
     ...     [launchpad]
     ...     max_batch_size: 5
-    ...     """))
+    ...     """
+    ...     ),
+    ... )
     >>> request = build_request({"start": "0", "batch": "20"})
-    >>> BatchNavigator(reindeer, request=request )
+    >>> BatchNavigator(reindeer, request=request)
     Traceback (most recent call last):
       ...
     lazr.batchnavigator.interfaces.InvalidBatchSizeError:
     Maximum for "batch" parameter is 5.
 
-    >>> ignored = config.pop('max-batch-size')
+    >>> ignored = config.pop("max-batch-size")
 
 
 Batch views
@@ -103,12 +120,14 @@ upper and lower navigation link views.
     >>> request = build_request({"start": "0", "batch": "10"})
     >>> navigator = BatchNavigator([], request=request)
     >>> upper_view = getMultiAdapter(
-    ...     (navigator, request), name='+navigation-links-upper')
+    ...     (navigator, request), name="+navigation-links-upper"
+    ... )
     >>> print(upper_view.render())
     <BLANKLINE>
 
     >>> lower_view = getMultiAdapter(
-    ...     (navigator, request), name='+navigation-links-lower')
+    ...     (navigator, request), name="+navigation-links-lower"
+    ... )
     >>> print(lower_view.render())
     <BLANKLINE>
 
@@ -117,7 +136,8 @@ batches, both the upper and lower navigation links view will render.
 
     >>> navigator = BatchNavigator(reindeer, request=request)
     >>> upper_view = getMultiAdapter(
-    ...     (navigator, request), name='+navigation-links-upper')
+    ...     (navigator, request), name="+navigation-links-upper"
+    ... )
     >>> print(upper_view.render())
     <table...
     ...<strong>1</strong>...&rarr;...<strong>9</strong>...of 9 results...
@@ -127,7 +147,8 @@ batches, both the upper and lower navigation links view will render.
     ...<span class="last inactive">...Last...
 
     >>> lower_view = getMultiAdapter(
-    ...     (navigator, request), name='+navigation-links-lower')
+    ...     (navigator, request), name="+navigation-links-lower"
+    ... )
     >>> print(lower_view.render())
     <table...
     ...<strong>1</strong>...&rarr;...<strong>9</strong>...of 9 results...

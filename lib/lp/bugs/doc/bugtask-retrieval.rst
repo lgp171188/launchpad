@@ -9,7 +9,7 @@ Launchpad. We'll use this implementation for demonstration purposes:
     >>> from lp.bugs.interfaces.bugtask import (
     ...     IBugTask,
     ...     IBugTaskSet,
-    ...     )
+    ... )
     >>> from lp.services.database.interfaces import IStore
     >>> task_set = getUtility(IBugTaskSet)
 
@@ -62,6 +62,7 @@ task in the database:
     >>> assert len(retrieved_tasks) == sample_task_count
     >>> for task in sample_tasks:
     ...     assert retrieved_tasks[task.id].id == task.id
+    ...
 
 When given a singleton sequence containing a valid bug task ID, the
 method returns a singleton dictionary:
@@ -96,7 +97,7 @@ method raises errors appropriately:
     Traceback (most recent call last):
     ...
     TypeError: ...
-    >>> print(task_set.getMultiple(['1; DROP TABLE person;']))
+    >>> print(task_set.getMultiple(["1; DROP TABLE person;"]))
     Traceback (most recent call last):
     ...
     ValueError: ...

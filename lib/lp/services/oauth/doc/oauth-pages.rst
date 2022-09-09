@@ -12,31 +12,36 @@ consumer's request to access Launchpad on their behalf.
     # Define some things we're going to use throughout this test.
     >>> from zope.component import getMultiAdapter
     >>> from lp.services.oauth.interfaces import (
-    ...     IOAuthConsumerSet, OAuthPermission)
+    ...     IOAuthConsumerSet,
+    ...     OAuthPermission,
+    ... )
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
-    >>> consumer = getUtility(IOAuthConsumerSet).getByKey('launchpad-library')
+    >>> consumer = getUtility(IOAuthConsumerSet).getByKey("launchpad-library")
     >>> root = getUtility(ILaunchpadRoot)
     >>> def get_view_with_fresh_token(form):
     ...     token, _ = consumer.newRequestToken()
-    ...     form.update({'oauth_token': token.key})
+    ...     form.update({"oauth_token": token.key})
     ...     request = LaunchpadTestRequest(form=form)
-    ...     login('salgado@ubuntu.com', request)
+    ...     login("salgado@ubuntu.com", request)
     ...     view = getMultiAdapter((root, request), name="+authorize-token")
     ...     view.initialize()
     ...     return view, token
+    ...
 
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
-    ...     )
+    ... )
     >>> def print_hidden_fields(html):
     ...     soup = BeautifulSoup(
-    ...         html, parse_only=SoupStrainer(attrs={'type': 'hidden'}))
-    ...     for tag in soup.find_all(attrs={'type': 'hidden'}):
-    ...         if tag['value']:
-    ...             print(tag['name'], tag['value'])
+    ...         html, parse_only=SoupStrainer(attrs={"type": "hidden"})
+    ...     )
+    ...     for tag in soup.find_all(attrs={"type": "hidden"}):
+    ...         if tag["value"]:
+    ...             print(tag["name"], tag["value"])
+    ...
 
 When the client doesn't specify a duration, the resulting request
 token will have no expiration date set.
@@ -51,12 +56,12 @@ When the client specifies a duration, the resulting request
 token will have an appropriate expiration date set.
 
     >>> import pytz
-    >>> from lp.services.oauth.browser import (
-    ...     TemporaryIntegrations)
+    >>> from lp.services.oauth.browser import TemporaryIntegrations
     >>> view, token = get_view_with_fresh_token({})
     >>> view.reviewToken(
-    ...     OAuthPermission.READ_PRIVATE, TemporaryIntegrations.HOUR)
-    >>> token.date_expires > datetime.now(pytz.timezone('UTC'))
+    ...     OAuthPermission.READ_PRIVATE, TemporaryIntegrations.HOUR
+    ... )
+    >>> token.date_expires > datetime.now(pytz.timezone("UTC"))
     True
 
 When the consumer doesn't specify a context, the token will not have a
@@ -85,7 +90,7 @@ context either.
 The context can be a product, and if it's specified it will be carried
 over to the token once it's reviewed.
 
-    >>> view, token = get_view_with_fresh_token({'lp.context': 'firefox'})
+    >>> view, token = get_view_with_fresh_token({"lp.context": "firefox"})
     >>> print(view.token_context.name)
     firefox
 
@@ -102,7 +107,7 @@ over to the token once it's reviewed.
 
 Likewise for a project.
 
-    >>> view, token = get_view_with_fresh_token({'lp.context': 'mozilla'})
+    >>> view, token = get_view_with_fresh_token({"lp.context": "mozilla"})
     >>> print(view.token_context.name)
     mozilla
 
@@ -119,7 +124,7 @@ Likewise for a project.
 
 And a distribution.
 
-    >>> view, token = get_view_with_fresh_token({'lp.context': 'ubuntu'})
+    >>> view, token = get_view_with_fresh_token({"lp.context": "ubuntu"})
     >>> print(view.token_context.name)
     ubuntu
 
@@ -138,7 +143,8 @@ If the consumer wants to access only things related to a distribution's
 package, it must specify the distribution and the package's name.
 
     >>> view, token = get_view_with_fresh_token(
-    ...     {'lp.context': 'ubuntu/evolution'})
+    ...     {"lp.context": "ubuntu/evolution"}
+    ... )
     >>> print(view.token_context.title)
     evolution package in Ubuntu
 
@@ -155,7 +161,7 @@ package, it must specify the distribution and the package's name.
 
 An error is raised if the context is not found.
 
-    >>> view, token = get_view_with_fresh_token({'lp.context': 'fooooo'})
+    >>> view, token = get_view_with_fresh_token({"lp.context": "fooooo"})
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: ...
@@ -163,7 +169,8 @@ An error is raised if the context is not found.
 Or if the user gives us a package in a non-existing distribution.
 
     >>> view, token = get_view_with_fresh_token(
-    ...     {'lp.context': 'firefox/evolution'})
+    ...     {"lp.context": "firefox/evolution"}
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData: ...

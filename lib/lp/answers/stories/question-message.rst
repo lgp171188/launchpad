@@ -11,11 +11,11 @@ Let's have an authenticated user create a message in the style of
 an email post to examine the markup rules. This message contains a
 quoted passage, and a signature with an email address in it.
 
-    >>> user_browser.open('http://answers.launchpad.test/ubuntu/+question/11')
+    >>> user_browser.open("http://answers.launchpad.test/ubuntu/+question/11")
     >>> print(user_browser.title)
     Question #11 : ...
 
-    >>> user_browser.getControl('Message').value = (
+    >>> user_browser.getControl("Message").value = (
     ...     "Top quoting is bad netiquette.\n"
     ...     "The leading text will be displayed\n"
     ...     "normally--no markup to hide it from view.\n"
@@ -28,8 +28,9 @@ quoted passage, and a signature with an email address in it.
     ...     "--\n"
     ...     "______________________\n"
     ...     "human@somewhere.org\n"
-    ...     "Witty signatures rock!\n")
-    >>> user_browser.getControl('Add Information Request').click()
+    ...     "Witty signatures rock!\n"
+    ... )
+    >>> user_browser.getControl("Add Information Request").click()
 
 
 Email addresses are only shown to authenticated users
@@ -40,9 +41,10 @@ authenticated already, so they will see 'human@somewhere.org'.
 
     >>> print(user_browser.title)
     Question #11 :  ...
-    >>> text = find_tags_by_class(
-    ...     user_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.find_all('p')[-1]))
+    >>> text = find_tags_by_class(user_browser.contents, "boardCommentBody")[
+    ...     -1
+    ... ]
+    >>> print(extract_text(text.find_all("p")[-1]))
     --
     ______________________
     human@somewhere.org
@@ -52,13 +54,14 @@ Unauthenticated users, such as a bot will see the mock email address
 of 'person@domain.dom'. The anonymous user is unauthenticated, so they will
 see the obfuscated email address (<email address hidden>).
 
-    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+question/11')
+    >>> anon_browser.open("http://answers.launchpad.test/ubuntu/+question/11")
     >>> print(anon_browser.title)
     Question #11 : ...
 
-    >>> text = find_tags_by_class(
-    ...     anon_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.find_all('p')[-1]))
+    >>> text = find_tags_by_class(anon_browser.contents, "boardCommentBody")[
+    ...     -1
+    ... ]
+    >>> print(extract_text(text.find_all("p")[-1]))
     --
     ______________________
     &lt;email address hidden&gt;
@@ -77,7 +80,7 @@ Signatures are identified by paragraphs with a starting line like '--'.
 The entire content of the paragraph is wrapped by a tag of 'foldable'
 class.
 
-    >>> print(text.find_all('p')[-1])
+    >>> print(text.find_all("p")[-1])
     <p><span class="foldable">--...
     &lt;email address hidden&gt;<br/>
     Witty signatures rock!
@@ -90,7 +93,7 @@ preceded by a citation line. Only the quoted lines are wrapped with a
 tag of 'foldable' class, citation lines are always displayed. Again
 we can continue with the anonymous user to see the markup.
 
-    >>> print(text.find_all('p')[-2])
+    >>> print(text.find_all("p")[-2])
     <p>Somebody said sometime ago:<br/>
     <span class="foldable-quoted">
     &gt; 1. Remove the letters  c, j, q, x, w<br/>

@@ -6,45 +6,48 @@ reported a bug can be set at the Distribution, DistributionSourcePackage,
 ProjectGroup or Product level to help users file good bug reports, direct
 them to FAQs, and so forth.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
 
-    >>> distribution = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> distribution_source_package = (
-    ...     distribution.getSourcePackage('alsa-utils'))
-    >>> project = getUtility(IProjectGroupSet).getByName('mozilla')
-    >>> product = getUtility(IProductSet).getByName('firefox')
+    >>> distribution = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> distribution_source_package = distribution.getSourcePackage(
+    ...     "alsa-utils"
+    ... )
+    >>> project = getUtility(IProjectGroupSet).getByName("mozilla")
+    >>> product = getUtility(IProductSet).getByName("firefox")
 
     >>> settable_contexts = [
     ...     distribution,
     ...     distribution_source_package,
     ...     project,
     ...     product,
-    ...     ]
+    ... ]
 
     >>> for context in settable_contexts:
     ...     context.bug_reported_acknowledgement = (
-    ...         "Bug reported on %s." % context.displayname)
+    ...         "Bug reported on %s." % context.displayname
+    ...     )
+    ...
 
 In fact, all IBugTargets have an acknowledgement message available, but the
 others delegate to the distribution or product level.
 
 DistroSeries and SourcePackages defer to the Distribution:
 
-    >>> distro_series = distribution.getSeries('warty')
+    >>> distro_series = distribution.getSeries("warty")
     >>> print(distro_series.bug_reported_acknowledgement)
     Bug reported on Ubuntu.
 
-    >>> source_package = distro_series.getSourcePackage('alsa-utils')
+    >>> source_package = distro_series.getSourcePackage("alsa-utils")
     >>> print(source_package.bug_reported_acknowledgement)
     Bug reported on Ubuntu.
 
 ProductSeries defer to the Product:
 
-    >>> product_series = product.getSeries('trunk')
+    >>> product_series = product.getSeries("trunk")
     >>> print(product_series.bug_reported_acknowledgement)
     Bug reported on Mozilla Firefox.
 
@@ -53,17 +56,17 @@ their own message. In the meantime the deferral is done with a
 read-only property, and the security proxies also only allow read
 access.
 
-    >>> distro_series.bug_reported_acknowledgement = 'Foobar'
+    >>> distro_series.bug_reported_acknowledgement = "Foobar"
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
 
-    >>> source_package.bug_reported_acknowledgement = 'Foobar'
+    >>> source_package.bug_reported_acknowledgement = "Foobar"
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
 
-    >>> product_series.bug_reported_acknowledgement = 'Foobar'
+    >>> product_series.bug_reported_acknowledgement = "Foobar"
     Traceback (most recent call last):
     ...
     zope.security.interfaces.ForbiddenAttribute: ...
@@ -79,10 +82,14 @@ message.
     ...     else:
     ...         login(user)
     ...     context.bug_reported_acknowledgement = (
-    ...         "%s let %s have access." % (
+    ...         "%s let %s have access."
+    ...         % (
     ...             context.displayname,
-    ...             getUtility(ILaunchBag).user.displayname))
+    ...             getUtility(ILaunchBag).user.displayname,
+    ...         )
+    ...     )
     ...     print(context.bug_reported_acknowledgement)
+    ...
 
     >>> check_access("no-priv@canonical.com", distribution)
     Traceback (most recent call last):
@@ -120,5 +127,6 @@ Distribution can edit the message.
 
     >>> check_access(
     ...     distribution_source_package.distribution.owner.activemembers[0],
-    ...     distribution_source_package)
+    ...     distribution_source_package,
+    ... )
     alsa-utils in Ubuntu let Alexander Limi have access.

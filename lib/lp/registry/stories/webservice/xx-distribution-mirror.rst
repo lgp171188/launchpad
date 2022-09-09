@@ -6,13 +6,14 @@ archive mirrors:
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> distros = webservice.get("/distros").jsonBody()
-    >>> distro = distros['entries'][0]
-    >>> ubuntu = webservice.get(distro['self_link']).jsonBody()
+    >>> distro = distros["entries"][0]
+    >>> ubuntu = webservice.get(distro["self_link"]).jsonBody()
     >>> ubuntu_archive_mirrors = webservice.get(
-    ...     ubuntu['archive_mirrors_collection_link']).jsonBody()
+    ...     ubuntu["archive_mirrors_collection_link"]
+    ... ).jsonBody()
     >>> canonical_archive = webservice.named_get(
-    ...     ubuntu['self_link'], 'getMirrorByName',
-    ...     name='canonical-archive').jsonBody()
+    ...     ubuntu["self_link"], "getMirrorByName", name="canonical-archive"
+    ... ).jsonBody()
     >>> pprint_entry(canonical_archive)
     base_url: 'http://archive.ubuntu.com/ubuntu/'
     content: 'Archive'
@@ -42,10 +43,12 @@ archive mirrors:
 And CD image mirrors:
 
     >>> ubuntu_cd_mirrors = webservice.get(
-    ...     ubuntu['cdimage_mirrors_collection_link']).jsonBody()
-    >>> canonical_releases =  ubuntu_cd_mirrors['entries'][0]
+    ...     ubuntu["cdimage_mirrors_collection_link"]
+    ... ).jsonBody()
+    >>> canonical_releases = ubuntu_cd_mirrors["entries"][0]
     >>> canonical_releases_json = webservice.get(
-    ...     canonical_releases['self_link']).jsonBody()
+    ...     canonical_releases["self_link"]
+    ... ).jsonBody()
     >>> pprint_entry(canonical_releases_json)
     base_url: 'http://releases.ubuntu.com/'
     content: 'CD Image'
@@ -84,38 +87,44 @@ change the owner's of mirrors:
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from simplejson import dumps
     >>> login(ANONYMOUS)
-    >>> karl_db = getUtility(IPersonSet).getByName('karl')
-    >>> test_db = getUtility(IPersonSet).getByName('name12')
-    >>> no_priv_db = getUtility(IPersonSet).getByName('no-priv')
+    >>> karl_db = getUtility(IPersonSet).getByName("karl")
+    >>> test_db = getUtility(IPersonSet).getByName("name12")
+    >>> no_priv_db = getUtility(IPersonSet).getByName("no-priv")
     >>> karl_webservice = webservice_for_person(
-    ...     karl_db, permission=OAuthPermission.WRITE_PUBLIC)
+    ...     karl_db, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
     >>> test_webservice = webservice_for_person(
-    ...     test_db, permission=OAuthPermission.WRITE_PUBLIC)
+    ...     test_db, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
     >>> no_priv_webservice = webservice_for_person(
-    ...     no_priv_db, permission=OAuthPermission.READ_PUBLIC)
+    ...     no_priv_db, permission=OAuthPermission.READ_PUBLIC
+    ... )
     >>> logout()
 
 Ensure that anonymous API sessions can view mirror listings; archive/releases.
 
     >>> archive_response = anon_webservice.get(
-    ...     ubuntu['archive_mirrors_collection_link'])
+    ...     ubuntu["archive_mirrors_collection_link"]
+    ... )
     >>> anon_archive_mirrors = archive_response.jsonBody()
-    >>> print(anon_archive_mirrors['total_size'])
+    >>> print(anon_archive_mirrors["total_size"])
     5
 
     >>> cd_response = anon_webservice.get(
-    ...     ubuntu['cdimage_mirrors_collection_link'])
+    ...     ubuntu["cdimage_mirrors_collection_link"]
+    ... )
     >>> anon_cd_mirrors = cd_response.jsonBody()
-    >>> print(anon_cd_mirrors['total_size'])
+    >>> print(anon_cd_mirrors["total_size"])
     4
 
 One must have special permissions to access certain attributes:
 
     >>> archive_404_mirror = webservice.named_get(
-    ...     ubuntu['self_link'], 'getMirrorByName',
-    ...     name="archive-404-mirror").jsonBody()
+    ...     ubuntu["self_link"], "getMirrorByName", name="archive-404-mirror"
+    ... ).jsonBody()
     >>> response = no_priv_webservice.get(
-    ...     archive_404_mirror['self_link']).jsonBody()
+    ...     archive_404_mirror["self_link"]
+    ... ).jsonBody()
     >>> pprint_entry(response)
     base_url: ...
     content: ...
@@ -131,7 +140,8 @@ One must have special permissions to access certain attributes:
 Mirror registrars may see some:
 
     >>> response = test_webservice.get(
-    ...     archive_404_mirror['self_link']).jsonBody()
+    ...     archive_404_mirror["self_link"]
+    ... ).jsonBody()
     >>> pprint_entry(response)
     base_url: ...
     content: ...
@@ -143,7 +153,8 @@ Mirror registrars may see some:
 Mirror listing admins may see all:
 
     >>> response = karl_webservice.get(
-    ...     archive_404_mirror['self_link']).jsonBody()
+    ...     archive_404_mirror["self_link"]
+    ... ).jsonBody()
     >>> pprint_entry(response)
     base_url: 'http://.../archive-mirror/'
     content: 'Archive'
@@ -174,11 +185,10 @@ Now trying to set the owner using Sample Person's webservice is not
 authorized.
 
     >>> karl = webservice.get("/~karl").jsonBody()
-    >>> patch = {
-    ...     u'owner_link': karl['self_link']
-    ... }
+    >>> patch = {"owner_link": karl["self_link"]}
     >>> response = test_webservice.patch(
-    ...     canonical_archive['self_link'], 'application/json', dumps(patch))
+    ...     canonical_archive["self_link"], "application/json", dumps(patch)
+    ... )
     >>> response.status
     401
 
@@ -186,26 +196,28 @@ But if we use Karl, the mirror listing admin's, webservice, we can update
 the owner.
 
     >>> response = karl_webservice.patch(
-    ...     canonical_archive['self_link'], 'application/json', dumps(patch))
+    ...     canonical_archive["self_link"], "application/json", dumps(patch)
+    ... )
     >>> response.status
     209
 
     >>> patched_canonical_archive = response.jsonBody()
-    >>> print(patched_canonical_archive['owner_link'])
+    >>> print(patched_canonical_archive["owner_link"])
     http://.../~karl
 
 Some attributes are read-only via the API:
 
     >>> distros = webservice.get("/distros").jsonBody()
-    >>> debian_distro = distros['entries'][3]
+    >>> debian_distro = distros["entries"][3]
     >>> patch = {
-    ...     u'date_reviewed' : u'2010-02-04T17:19:16.424198+00:00',
-    ...     u'distribution_link' : debian_distro['self_link'],
-    ...     u'enabled' : False,
-    ...     u'reviewer_link' : karl['self_link']
+    ...     "date_reviewed": "2010-02-04T17:19:16.424198+00:00",
+    ...     "distribution_link": debian_distro["self_link"],
+    ...     "enabled": False,
+    ...     "reviewer_link": karl["self_link"],
     ... }
     >>> response = karl_webservice.patch(
-    ...     canonical_releases['self_link'], 'application/json', dumps(patch))
+    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ... )
     >>> print(response)
     HTTP/1.1 400 Bad Request
     ...
@@ -216,21 +228,23 @@ Some attributes are read-only via the API:
 
 While others can be set with the appropriate authorization:
 
-    >>> greenland = webservice.named_get("/+countries",
-    ...     "getByCode", code="GL").jsonBody()
+    >>> greenland = webservice.named_get(
+    ...     "/+countries", "getByCode", code="GL"
+    ... ).jsonBody()
     >>> patch = {
-    ...     u'country_link': greenland['self_link'],
-    ...     u'status' : 'Unofficial',
-    ...     u'whiteboard' : u'This mirror is too shiny to be true'
+    ...     "country_link": greenland["self_link"],
+    ...     "status": "Unofficial",
+    ...     "whiteboard": "This mirror is too shiny to be true",
     ... }
     >>> response = test_webservice.patch(
-    ...     canonical_releases['self_link'], 'application/json', dumps(patch))
+    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ... )
     >>> response.status
     401
 
     >>> response = karl_webservice.patch(
-    ...     canonical_releases['self_link'], 'application/json',
-    ...     dumps(patch)).jsonBody()
+    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ... ).jsonBody()
     >>> pprint_entry(response)
     base_url: 'http://releases.ubuntu.com/'
     content: 'CD Image'
@@ -266,7 +280,8 @@ DistributionMirror has some custom operations.
 mirror or not.
 
     >>> is_official_mirror = webservice.named_get(
-    ...     canonical_releases['self_link'], 'isOfficial').jsonBody()
+    ...     canonical_releases["self_link"], "isOfficial"
+    ... ).jsonBody()
     >>> print(is_official_mirror)
     False
 
@@ -274,9 +289,10 @@ mirror or not.
 mirror prober from the mirror's last probe.
 
     >>> releases_mirror2 = webservice.named_get(
-    ...     ubuntu['self_link'], 'getMirrorByName',
-    ...     name='releases-mirror2').jsonBody()
-    >>> freshness = webservice.named_get(releases_mirror2['self_link'],
-    ...     'getOverallFreshness').jsonBody()
+    ...     ubuntu["self_link"], "getMirrorByName", name="releases-mirror2"
+    ... ).jsonBody()
+    >>> freshness = webservice.named_get(
+    ...     releases_mirror2["self_link"], "getOverallFreshness"
+    ... ).jsonBody()
     >>> print(freshness)
     Up to date

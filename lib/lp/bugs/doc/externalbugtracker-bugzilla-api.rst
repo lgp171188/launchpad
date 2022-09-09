@@ -10,15 +10,17 @@ implemented as a separate ExternalBugTracker.
 As with the BugzillaLPPlugin ExternalBugTracker, we use a special XML-RPC
 transport for the purposes of testing.
 
-    >>> from lp.bugs.externalbugtracker.bugzilla import (
-    ...     BugzillaAPI)
+    >>> from lp.bugs.externalbugtracker.bugzilla import BugzillaAPI
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestBugzillaAPIXMLRPCTransport)
+    ...     TestBugzillaAPIXMLRPCTransport,
+    ... )
     >>> test_transport = TestBugzillaAPIXMLRPCTransport(
-    ...     'http://bugzilla-3.4.example.com/')
+    ...     "http://bugzilla-3.4.example.com/"
+    ... )
     >>> bugzilla = BugzillaAPI(
-    ...     'http://bugzilla-3.4.example.com/',
-    ...     xmlrpc_transport=test_transport)
+    ...     "http://bugzilla-3.4.example.com/",
+    ...     xmlrpc_transport=test_transport,
+    ... )
     >>> bugzilla.xmlrpc_transport == test_transport
     True
 
@@ -59,10 +61,11 @@ Trying to log in to a Bugzilla instance for which we have no credentials
 will raise an error:
 
     >>> transport = TestBugzillaAPIXMLRPCTransport(
-    ...     'http://thiswillfail.example.com/')
+    ...     "http://thiswillfail.example.com/"
+    ... )
     >>> non_auth_bugzilla = BugzillaAPI(
-    ...     'http://thiswillfail.example.com/',
-    ...     xmlrpc_transport=transport)
+    ...     "http://thiswillfail.example.com/", xmlrpc_transport=transport
+    ... )
 
     >>> non_auth_bugzilla._authenticate()
     Traceback (most recent call last):
@@ -75,11 +78,12 @@ raise an error.
 
     >>> class BadCredentialsBugzillaAPI(BugzillaAPI):
     ...
-    ...     credentials = {'login': 'fail', 'password': 'fail'}
+    ...     credentials = {"login": "fail", "password": "fail"}
+    ...
 
     >>> non_auth_bugzilla = BadCredentialsBugzillaAPI(
-    ...     'http://thiswillfail.example.com/',
-    ...     xmlrpc_transport=transport)
+    ...     "http://thiswillfail.example.com/", xmlrpc_transport=transport
+    ... )
 
     >>> non_auth_bugzilla._authenticate()
     Traceback (most recent call last):
@@ -111,7 +115,7 @@ If the remote system is in a different timezone, getCurrentDBTime() will
 convert its time to UTC before returning it.
 
     >>> test_transport.utc_offset = 60**2
-    >>> test_transport.timezone = 'CET'
+    >>> test_transport.timezone = "CET"
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
     datetime.datetime(2009, 8, 19, 16, 2, 2, tzinfo=<UTC>)
@@ -119,7 +123,7 @@ convert its time to UTC before returning it.
 This works whether the UTC offset is positive or negative.
 
     >>> test_transport.utc_offset = -5 * 60**2
-    >>> test_transport.timezone = 'US/Eastern'
+    >>> test_transport.timezone = "US/Eastern"
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
     datetime.datetime(2009, 8, 19, 22, 2, 2, tzinfo=<UTC>)
@@ -151,6 +155,7 @@ The bug data is stored as a list of dicts:
     ...         for key in sorted(bugs[bug]):
     ...             print("    %s: %s" % (key, bugs[bug][key]))
     ...         print("\n")
+    ...
 
     >>> print_bugs(bugzilla._bugs)
     Bug 1:
@@ -200,7 +205,7 @@ dicts to demonstrate this.
 
     >>> bugzilla._bugs = {}
     >>> bugzilla._bug_aliases = {}
-    >>> bugzilla.initializeRemoteBugDB([2, 'bug-two', 3])
+    >>> bugzilla.initializeRemoteBugDB([2, "bug-two", 3])
     CALLED Bug.get({'ids': [2, 'bug-two', 3], 'permissive': True})
 
     >>> print_bugs(bugzilla._bugs)
@@ -244,6 +249,7 @@ the alias and the bug's actual ID.
 
     >>> for alias, bug_id in sorted(bugzilla._bug_aliases.items()):
     ...     print("%s: %s" % (alias, bug_id))
+    ...
     bad-diodes: 3
     bug-three: 3
     bug-two: 2
@@ -251,13 +257,13 @@ the alias and the bug's actual ID.
 The method _getActualBugId() returns the correct bug ID for a passed bug
 ID or alias.
 
-    >>> bugzilla._getActualBugId('bug-two')
+    >>> bugzilla._getActualBugId("bug-two")
     2
 
     >>> bugzilla._getActualBugId(2)
     2
 
-    >>> bugzilla._getActualBugId('bad-diodes')
+    >>> bugzilla._getActualBugId("bad-diodes")
     3
 
 
@@ -265,12 +271,15 @@ Sometimes a Bugzilla will return bug data without an alias field.
 _storeBugs() handles that, too.
 
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     NoAliasTestBugzillaAPIXMLRPCTransport)
+    ...     NoAliasTestBugzillaAPIXMLRPCTransport,
+    ... )
     >>> no_alias_transport = NoAliasTestBugzillaAPIXMLRPCTransport(
-    ...     'http://bugzilla-3.4.example.com/')
+    ...     "http://bugzilla-3.4.example.com/"
+    ... )
     >>> no_alias_bugzilla = BugzillaAPI(
-    ...     'http://bugzilla-3.4.example.com/',
-    ...     xmlrpc_transport=no_alias_transport)
+    ...     "http://bugzilla-3.4.example.com/",
+    ...     xmlrpc_transport=no_alias_transport,
+    ... )
     >>> no_alias_transport.print_method_calls = True
     >>> no_alias_bugzilla.initializeRemoteBugDB([1])
     CALLED Bug.get({'ids': [1], 'permissive': True})
@@ -305,7 +314,7 @@ severity as a string.
 
 If a bug can't be found a BugNotFound error will be raised.
 
-    >>> bugzilla.getRemoteStatus('no-such-bug')
+    >>> bugzilla.getRemoteStatus("no-such-bug")
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: no-such-bug
@@ -369,6 +378,7 @@ BugzillaAPI instance's bugs dict.
     ...     for key in sorted(bugzilla._bugs[bug]):
     ...         print("    %s: %s" % (key, bugzilla._bugs[bug][key]))
     ...     print("\n")
+    ...
     Bug 1:
         alias:
         assigned_to: test@canonical.com...
@@ -392,14 +402,14 @@ Getting the remote product
 getRemoteProduct() returns the product a remote bug is associated with
 in Bugzilla.
 
-    >>> bugzilla.xmlrpc_transport.bugs[2]['product']
+    >>> bugzilla.xmlrpc_transport.bugs[2]["product"]
     'HeartOfGold'
     >>> bugzilla.getRemoteProduct(2)
     'HeartOfGold'
 
 A bug alias can also be given to getRemoteProduct().
 
-    >>> bugzilla.getRemoteProduct('bug-two')
+    >>> bugzilla.getRemoteProduct("bug-two")
     'HeartOfGold'
 
 If the product is requested for a bug that can't be found, BugNotFound
@@ -420,7 +430,8 @@ instance.
 
     >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     ISupportsCommentImport)
+    ...     ISupportsCommentImport,
+    ... )
     >>> verifyObject(ISupportsCommentImport, bugzilla)
     True
 
@@ -433,22 +444,27 @@ bugtracker and a couple of bugwatches.
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
 
     >>> bug_tracker = new_bugtracker(BugTrackerType.BUGZILLA)
 
     >>> with lp_dbuser():
     ...     sample_person = getUtility(IPersonSet).getByEmail(
-    ...         'test@canonical.com')
-    ...     firefox = getUtility(IProductSet).getByName('firefox')
+    ...         "test@canonical.com"
+    ...     )
+    ...     firefox = getUtility(IProductSet).getByName("firefox")
     ...     bug = firefox.createBug(
-    ...         CreateBugParams(sample_person, "Yet another test bug",
+    ...         CreateBugParams(
+    ...             sample_person,
+    ...             "Yet another test bug",
     ...             "Yet another test description.",
-    ...             subscribe_owner=False))
-    ...     bug_watch = bug.addWatch(bug_tracker, '1', sample_person)
-    ...     bug_watch_two = bug.addWatch(bug_tracker, '2', sample_person)
-    ...     bug_watch_broken = bug.addWatch(bug_tracker, '42', sample_person)
+    ...             subscribe_owner=False,
+    ...         )
+    ...     )
+    ...     bug_watch = bug.addWatch(bug_tracker, "1", sample_person)
+    ...     bug_watch_two = bug.addWatch(bug_tracker, "2", sample_person)
+    ...     bug_watch_broken = bug.addWatch(bug_tracker, "42", sample_person)
+    ...
 
 
 getCommentIds()
@@ -484,17 +500,18 @@ bug ID and a list of the comment IDs to retrieve for that bug watch.
     >>> transaction.commit()
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = False
-    >>> bugzilla.fetchComments(remote_bug, ['1', '3'])
+    >>> bugzilla.fetchComments(remote_bug, ["1", "3"])
 
 The comments will be stored in the bugs dict as a dict of comment id =>
 comment dict mappings under the key 'comments'.
 
-    >>> comments = bugzilla._bugs[1]['comments']
+    >>> comments = bugzilla._bugs[1]["comments"]
     >>> for comment_id in sorted(comments):
     ...     print("Comment %s:" % comment_id)
     ...     comment = comments[comment_id]
     ...     for key in sorted(comment):
     ...         print("    %s: %s" % (key, comment[key]))
+    ...
     Comment 1:
         author: trillian
         bug_id: 1
@@ -517,14 +534,15 @@ fetchComments() will silently ignore them.
     >>> transaction.commit()
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = False
-    >>> bugzilla.fetchComments(remote_bug, ['1', '4'])
+    >>> bugzilla.fetchComments(remote_bug, ["1", "4"])
 
-    >>> comments = bugzilla._bugs[1]['comments']
+    >>> comments = bugzilla._bugs[1]["comments"]
     >>> for comment_id in sorted(comments):
     ...     print("Comment %s:" % comment_id)
     ...     comment = comments[comment_id]
     ...     for key in sorted(comment):
     ...         print("    %s: %s" % (key, comment[key]))
+    ...
     Comment 1:
         author: trillian
         bug_id: 1
@@ -543,8 +561,8 @@ ISupportsCommentImport.getPosterForComment() returns a tuple of
     >>> remote_bug = bug_watch_two.remotebug
     >>> transaction.commit()
 
-    >>> bugzilla.fetchComments(remote_bug, ['2', '4', '5', '6'])
-    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, '4')
+    >>> bugzilla.fetchComments(remote_bug, ["2", "4", "5", "6"])
+    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, "4")
     >>> print(displayname, email)
     Ford Prefect ford.prefect@h2g2.com
 
@@ -553,7 +571,7 @@ is supplied for the 'user' field by returning None as the user's
 displayname. When this is passed to IPersonSet.ensurePerson() a display
 name will be generated for the user from their email address.
 
-    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, '5')
+    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, "5")
     >>> print(displayname, email)
     None arthur.dent@earth.example.com
 
@@ -562,14 +580,14 @@ cases where the 'user' field is set to a plain username (e.g. 'foo').
 However, in these cases it is the email address that will be set to
 None.
 
-    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, '2')
+    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, "2")
     >>> print(displayname, email)
     trillian None
 
 Bugzilla 4.0 renamed the 'author' field to 'creator', but kept the old field
 for compatibility.  Bugzilla 5.0 dropped the compatibility field.
 
-    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, '6')
+    >>> displayname, email = bugzilla.getPosterForComment(remote_bug, "6")
     >>> print(displayname, email)
     Slartibartfast slarti@magrathea.example.net
 
@@ -584,7 +602,8 @@ getPosterForComment(), above. For the sake of this test we'll use
 Sample Person as our poster.
 
     >>> message = bugzilla.getMessageForComment(
-    ...     bug_watch_two.remotebug, '2', sample_person)
+    ...     bug_watch_two.remotebug, "2", sample_person
+    ... )
     >>> print(message.text_contents)
     Bring the passengers to the bridge please Marvin.
 
@@ -594,7 +613,7 @@ Sample Person as our poster.
 The datecreated attribute of the Message will be the same as the 'time'
 field on the imported comment.
 
-    >>> print(bugzilla._bugs[2]['comments'][2]['time'])
+    >>> print(bugzilla._bugs[2]["comments"][2]["time"])
     2008-06-16 13:08:08
 
     >>> print(message.datecreated)
@@ -608,15 +627,20 @@ BugzillaAPI implements the ISupportsCommentPushing interface, which
 defines the necessary methods for pushing comments to remote servers.
 
     >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     ISupportsCommentPushing)
+    ...     ISupportsCommentPushing,
+    ... )
     >>> verifyObject(ISupportsCommentPushing, bugzilla)
     True
 
 If an instance of BugzillaAPI does not have suitable credentials set up,
 then that instance does not provide ISupportsCommentPushing.
 
-    >>> verifyObject(ISupportsCommentPushing, BugzillaAPI(
-    ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
+    >>> verifyObject(
+    ...     ISupportsCommentPushing,
+    ...     BugzillaAPI(
+    ...         "http://unknown.example.com/", xmlrpc_transport=test_transport
+    ...     ),
+    ... )
     Traceback (most recent call last):
     ...
     zope.interface.exceptions.DoesNotImplement: ...
@@ -633,11 +657,13 @@ which requires authentication.
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = True
     >>> bugzilla.xmlrpc_transport.expireCookie(
-    ...     bugzilla.xmlrpc_transport.auth_cookie)
+    ...     bugzilla.xmlrpc_transport.auth_cookie
+    ... )
 
     >>> transaction.commit()
-    >>> comment_id  = bugzilla.addRemoteComment(
-    ...     1, "This is a new remote comment.", None)
+    >>> comment_id = bugzilla.addRemoteComment(
+    ...     1, "This is a new remote comment.", None
+    ... )
     CALLED User.login({'...'})
     CALLED Bug.add_comment({'comment': 'This is a new remote comment.',
         'id': 1})
@@ -654,9 +680,10 @@ The comment will be stored on the remote server with the other comments.
     >>> remote_bug = bug_watch.remotebug
     >>> transaction.commit()
 
-    >>> bugzilla.fetchComments(remote_bug, ['7'])
+    >>> bugzilla.fetchComments(remote_bug, ["7"])
     >>> message = bugzilla.getMessageForComment(
-    ...     bug_watch.remotebug, '7', sample_person)
+    ...     bug_watch.remotebug, "7", sample_person
+    ... )
     >>> print(message.text_contents)
     This is a new remote comment.
     <BLANKLINE>
@@ -676,8 +703,12 @@ bug is linked to a Launchpad bug.
 If an instance of BugzillaAPI does not have suitable credentials set up,
 then that instance does not provide ISupportsBackLinking.
 
-    >>> verifyObject(ISupportsBackLinking, BugzillaAPI(
-    ...     'http://unknown.example.com/', xmlrpc_transport=test_transport))
+    >>> verifyObject(
+    ...     ISupportsBackLinking,
+    ...     BugzillaAPI(
+    ...         "http://unknown.example.com/", xmlrpc_transport=test_transport
+    ...     ),
+    ... )
     Traceback (most recent call last):
     ...
     zope.interface.exceptions.DoesNotImplement: ...
@@ -688,10 +719,11 @@ for a given bug.
 setLaunchpadBugId() requires the user to be logged in.
 
     >>> bugzilla.xmlrpc_transport.expireCookie(
-    ...     bugzilla.xmlrpc_transport.auth_cookie)
+    ...     bugzilla.xmlrpc_transport.auth_cookie
+    ... )
 
     >>> bug_id = bug_watch.bug.id
-    >>> bug_url = 'http://bugs.launchpad.test/bugs/xxx'
+    >>> bug_url = "http://bugs.launchpad.test/bugs/xxx"
     >>> remote_bug = bug_watch.remotebug
     >>> transaction.commit()
 

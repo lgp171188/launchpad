@@ -23,8 +23,8 @@ anyone in Launchpad..
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> person_set = getUtility(IPersonSet)
-    >>> login('test@canonical.com')
-    >>> mark = person_set.getByEmail('mark@example.com')
+    >>> login("test@canonical.com")
+    >>> mark = person_set.getByEmail("mark@example.com")
     >>> print(mark.preferredemail.email)
     mark@example.com
 
@@ -36,7 +36,7 @@ email addresses state is LOGIN_REQUIRED, there is no description, nor
 are there any email addresses.
 
     >>> login(ANONYMOUS)
-    >>> view = create_initialized_view(mark, '+index')
+    >>> view = create_initialized_view(mark, "+index")
     >>> view.email_address_visibility.is_login_required
     True
 
@@ -50,8 +50,8 @@ Logged in user can see Mark's email addresses. The email addresses state
 is PUBLIC. There is a description of who can see the list of email
 addresses.
 
-    >>> login('test@canonical.com')
-    >>> view = create_initialized_view(mark, '+index')
+    >>> login("test@canonical.com")
+    >>> view = create_initialized_view(mark, "+index")
     >>> view.email_address_visibility.are_public
     True
 
@@ -60,18 +60,19 @@ addresses.
 
     >>> for email in view.visible_email_addresses:
     ...     print(email)
+    ...
     mark@example.com
 
 As for Sample Person, they have chosen not to disclose their email addresses.
 
     >>> login(ANONYMOUS)
-    >>> sample_person = person_set.getByEmail('test@canonical.com')
+    >>> sample_person = person_set.getByEmail("test@canonical.com")
     >>> sample_person.hide_email_addresses
     True
 
 Anonymous users can't see them because the state is LOGIN_REQUIRED.
 
-    >>> view = create_initialized_view(sample_person, '+index')
+    >>> view = create_initialized_view(sample_person, "+index")
     >>> view.email_address_visibility.is_login_required
     True
 
@@ -82,8 +83,8 @@ No Privileges Person cannot see them either because the state is HIDDEN.
 There is no description for the email addresses because they cannot view
 them.
 
-    >>> login('no-priv@canonical.com')
-    >>> view = create_initialized_view(sample_person, '+index')
+    >>> login("no-priv@canonical.com")
+    >>> view = create_initialized_view(sample_person, "+index")
     >>> view.email_address_visibility.are_hidden
     True
 
@@ -97,8 +98,8 @@ Admins and commercial admins, like Foo Bar and Commercial Member, can
 see Sample Person's email addresses because the state is ALLOWED. The
 description states that the email addresses are not disclosed to others.
 
-    >>> login('foo.bar@canonical.com')
-    >>> view = create_initialized_view(sample_person, '+index')
+    >>> login("foo.bar@canonical.com")
+    >>> view = create_initialized_view(sample_person, "+index")
     >>> view.email_address_visibility.are_allowed
     True
 
@@ -107,16 +108,18 @@ description states that the email addresses are not disclosed to others.
 
     >>> for email in view.visible_email_addresses:
     ...     print(email)
+    ...
     test@canonical.com
     testing@canonical.com
 
-    >>> login('commercial-member@canonical.com')
-    >>> view = create_initialized_view(sample_person, '+index')
+    >>> login("commercial-member@canonical.com")
+    >>> view = create_initialized_view(sample_person, "+index")
     >>> view.email_address_visibility.are_allowed
     True
 
     >>> for email in view.visible_email_addresses:
     ...     print(email)
+    ...
     test@canonical.com
     testing@canonical.com
 
@@ -124,8 +127,8 @@ Teams are like Persons. No email address is disclosed when the user is
 anonymous.
 
     >>> login(ANONYMOUS)
-    >>> ubuntu_team = person_set.getByName('ubuntu-team')
-    >>> view = create_initialized_view(ubuntu_team, '+index')
+    >>> ubuntu_team = person_set.getByName("ubuntu-team")
+    >>> view = create_initialized_view(ubuntu_team, "+index")
     >>> view.email_address_visibility.is_login_required
     True
 
@@ -135,13 +138,14 @@ anonymous.
 A logged in user can see the team's contact address because it cannot be
 hidden.
 
-    >>> login('no-priv@canonical.com')
-    >>> view = create_initialized_view(ubuntu_team, '+index')
+    >>> login("no-priv@canonical.com")
+    >>> view = create_initialized_view(ubuntu_team, "+index")
     >>> view.email_address_visibility.are_public
     True
 
     >>> for email in view.visible_email_addresses:
     ...     print(email)
+    ...
     support@ubuntu.com
 
 It is possible for a team to have more than two addresses (from a
@@ -149,20 +153,23 @@ mailing list), but only the preferred address is listed in the
 visible_email_addresses property.
 
     >>> email_address = factory.makeEmail(
-    ...     'ubuntu_team@canonical.com', ubuntu_team)
+    ...     "ubuntu_team@canonical.com", ubuntu_team
+    ... )
     >>> ubuntu_team.setContactAddress(email_address)
     >>> mailing_list = factory.makeMailingList(
-    ...     ubuntu_team, ubuntu_team.teamowner)
-    >>> view = create_initialized_view(ubuntu_team, '+index')
+    ...     ubuntu_team, ubuntu_team.teamowner
+    ... )
+    >>> view = create_initialized_view(ubuntu_team, "+index")
     >>> for email in view.visible_email_addresses:
     ...     print(email)
+    ...
     ubuntu_team@canonical.com
 
 When the user or team does not have a validated contact address, the
 email addresses state is NONE_AVAILABLE.
 
-    >>> landscape_developers = person_set.getByName('landscape-developers')
-    >>> view = create_initialized_view(landscape_developers, '+index')
+    >>> landscape_developers = person_set.getByName("landscape-developers")
+    >>> view = create_initialized_view(landscape_developers, "+index")
     >>> view.email_address_visibility.are_none_available
     True
 
@@ -186,7 +193,7 @@ their preferred languages, English is used.
     []
 
     >>> login(ANONYMOUS)
-    >>> view = create_view(sample_person, '+portlet-contact-details')
+    >>> view = create_view(sample_person, "+portlet-contact-details")
     >>> print(view.languages)
     English
 
@@ -197,12 +204,12 @@ correction. The list of languages is alphabetized.
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
 
     >>> languageset = getUtility(ILanguageSet)
-    >>> login('test@canonical.com')
-    >>> sample_person.addLanguage(languageset.getLanguageByCode('so'))
-    >>> sample_person.addLanguage(languageset.getLanguageByCode('fr'))
+    >>> login("test@canonical.com")
+    >>> sample_person.addLanguage(languageset.getLanguageByCode("so"))
+    >>> sample_person.addLanguage(languageset.getLanguageByCode("fr"))
 
     >>> login(ANONYMOUS)
-    >>> view = create_view(sample_person, '+portlet-contact-details')
+    >>> view = create_view(sample_person, "+portlet-contact-details")
     >>> print(view.languages)
     French, Somali
 
@@ -212,17 +219,18 @@ set a language.
     >>> landscape_developers.languages
     []
 
-    >>> view = create_view(landscape_developers, '+portlet-contact-details')
+    >>> view = create_view(landscape_developers, "+portlet-contact-details")
     >>> print(view.languages)
     English
 
 Teams most often set just one language that is used for the Answers
 application. If the language is a variant, the variation is shown in
 parenthesis.
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> landscape_developers.addLanguage(
-    ...     languageset.getLanguageByCode('pt_BR'))
-    >>> view = create_view(landscape_developers, '+portlet-contact-details')
+    ...     languageset.getLanguageByCode("pt_BR")
+    ... )
+    >>> view = create_view(landscape_developers, "+portlet-contact-details")
     >>> print(view.languages)
     Portuguese (Brazil)
 
@@ -237,8 +245,8 @@ on..." section in the Person profile page (+index). Nothing is rendered
 when the user does not have any assigned bug or specs that are not in
 progress.
 
-    >>> user = factory.makePerson(name='ken')
-    >>> view = create_initialized_view(user, name='+portlet-currentfocus')
+    >>> user = factory.makePerson(name="ken")
+    >>> view = create_initialized_view(user, name="+portlet-currentfocus")
     >>> view.has_assigned_bugs_or_specs_in_progress
     False
 
@@ -260,7 +268,8 @@ progress state.
     >>> ignored = login_person(user)
     >>> product = factory.makeProduct(name="tool", owner=user)
     >>> spec = factory.makeSpecification(
-    ...     product=product, title='Specs need stories')
+    ...     product=product, title="Specs need stories"
+    ... )
     >>> spec.assignee = user
     >>> view.has_assigned_bugs_or_specs_in_progress
     False
@@ -282,7 +291,7 @@ working on.
     >>> newstate = spec.updateLifecycleStatus(user)
     >>> spec.implementation_status = SpecificationImplementationStatus.STARTED
     >>> newstate = spec.updateLifecycleStatus(user)
-    >>> view = create_initialized_view(user, name='+portlet-currentfocus')
+    >>> view = create_initialized_view(user, name="+portlet-currentfocus")
     >>> view.has_assigned_bugs_or_specs_in_progress
     True
 
@@ -301,7 +310,7 @@ working on.
 
 Assigned bugs do not display when their status is not INPROGRESS.
 
-    >>> bug = factory.makeBug(target=product, title='tool does not work')
+    >>> bug = factory.makeBug(target=product, title="tool does not work")
     >>> bug.bugtasks[0].transitionToAssignee(user)
     >>> view.has_assigned_bugs_or_specs_in_progress
     True
@@ -320,7 +329,7 @@ status is in INPROGRESS.
 
     # Create a new view because we're testing some cached properties.
 
-    >>> view = create_initialized_view(user, name='+portlet-currentfocus')
+    >>> view = create_initialized_view(user, name="+portlet-currentfocus")
 
     >>> view.has_assigned_bugs_or_specs_in_progress
     True
@@ -346,14 +355,16 @@ status is in INPROGRESS.
 Multiple bugs and specs are displayed.
 
     >>> another_bug = factory.makeBug(
-    ...     target=product, title='tool does is broken')
+    ...     target=product, title="tool does is broken"
+    ... )
     >>> another_bug.bugtasks[0].transitionToAssignee(user)
     >>> another_bug.bugtasks[0].transitionToStatus(
-    ...     BugTaskStatus.INPROGRESS, user)
+    ...     BugTaskStatus.INPROGRESS, user
+    ... )
 
     # Create a new view because we're testing some cached properties.
 
-    >>> view = create_initialized_view(user, name='+portlet-currentfocus')
+    >>> view = create_initialized_view(user, name="+portlet-currentfocus")
 
     >>> view.has_assigned_bugs_or_specs_in_progress
     True
@@ -370,7 +381,7 @@ But duplicate bugs are never displayed.
 
     # Create a new view because we're testing some cached properties.
 
-    >>> view = create_initialized_view(user, name='+portlet-currentfocus')
+    >>> view = create_initialized_view(user, name="+portlet-currentfocus")
 
     >>> view.has_assigned_bugs_or_specs_in_progress
     True

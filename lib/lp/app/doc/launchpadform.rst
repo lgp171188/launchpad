@@ -51,15 +51,16 @@ example schema:
     >>> from zope.schema import TextLine
 
     >>> class IFormTest(Interface):
-    ...     name = TextLine(title=u"Name")
-    ...     displayname = TextLine(title=u"Title")
-    ...     password = TextLine(title=u"Password")
+    ...     name = TextLine(title="Name")
+    ...     displayname = TextLine(title="Title")
+    ...     password = TextLine(title="Password")
+    ...
 
     >>> @implementer(IFormTest)
     ... class FormTest:
-    ...     name = 'fred'
-    ...     displayname = 'Fred'
-    ...     password = 'password'
+    ...     name = "fred"
+    ...     displayname = "Fred"
+    ...     password = "password"
 
 
 A form that handles all fields in the schema needs only set the
@@ -70,6 +71,7 @@ A form that handles all fields in the schema needs only set the
 
     >>> class FormTestView1(LaunchpadFormView):
     ...     schema = IFormTest
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
@@ -86,7 +88,8 @@ The list of fields can be restricted with the "field_names" attribute:
 
     >>> class FormTestView2(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['name', 'displayname']
+    ...     field_names = ["name", "displayname"]
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
@@ -104,12 +107,15 @@ by the context widget.  This can be handled by providing some custom
 adapters for the form.
 
     >>> class IFormTest2(Interface):
-    ...     name = TextLine(title=u"Name")
+    ...     name = TextLine(title="Name")
+    ...
     >>> class FormAdaptersTestView(LaunchpadFormView):
     ...     schema = IFormTest2
+    ...
     ...     @property
     ...     def adapters(self):
     ...         return {IFormTest2: self.context}
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
@@ -123,7 +129,7 @@ We now check to see that the widget is bound to our FormTest
 instance.  The context for the widget is a bound field object, who
 should in turn have the FormTest instance as a context:
 
-    >>> view.widgets['name'].context.context is context
+    >>> view.widgets["name"].context.context is context
     True
 
 
@@ -140,18 +146,20 @@ attribute:
     >>> class FormTestView3(LaunchpadFormView):
     ...     schema = IFormTest
     ...     custom_widget_displayname = CustomWidgetFactory(
-    ...         TextWidget, displayWidth=50)
+    ...         TextWidget, displayWidth=50
+    ...     )
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
     >>> view = FormTestView3(context, request)
     >>> view.setUpFields()
     >>> view.setUpWidgets()
-    >>> view.widgets['displayname']
+    >>> view.widgets["displayname"]
     <...TextWidget object at ...>
-    >>> view.widgets['displayname'].displayWidth
+    >>> view.widgets["displayname"].displayWidth
     50
-    >>> view.widgets['password']
+    >>> view.widgets["password"]
     <...TextWidget object at ...>
 
 
@@ -167,9 +175,9 @@ widgets, but it's also possible to specify the context explicitly.
     >>> view = FormTestView3(view_context, request)
     >>> view.setUpFields()
     >>> view.setUpWidgets(context=another_context)
-    >>> view.widgets['displayname'].context.context is view_context
+    >>> view.widgets["displayname"].context.context is view_context
     False
-    >>> view.widgets['displayname'].context.context is another_context
+    >>> view.widgets["displayname"].context.context is another_context
     True
 
 
@@ -183,11 +191,12 @@ decorator:
     >>> from lp.app.browser.launchpadform import action
     >>> class FormTestView4(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['displayname']
+    ...     field_names = ["displayname"]
     ...
-    ...     @action(u"Change Name", name="change")
+    ...     @action("Change Name", name="change")
     ...     def change_action(self, action, data):
-    ...         self.context.displayname = data['displayname']
+    ...         self.context.displayname = data["displayname"]
+    ...
 
 This will create a submit button at the bottom of the form labeled
 "Change Name", and cause change_action() to be called when the form is
@@ -195,9 +204,12 @@ submitted with that button.
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': 'bob',
-    ...           'field.actions.change': 'Change Name'})
+    ...     method="POST",
+    ...     form={
+    ...         "field.displayname": "bob",
+    ...         "field.actions.change": "Change Name",
+    ...     },
+    ... )
     >>> view = FormTestView4(context, request)
     >>> view.initialize()
     >>> print(context.displayname)
@@ -222,20 +234,24 @@ setFieldError() method (for errors specific to a field):
 
     >>> class FormTestView5(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['name', 'password']
+    ...     field_names = ["name", "password"]
     ...
     ...     def validate(self, data):
-    ...         if data.get('name') == data.get('password'):
-    ...             self.addError('your password may not be the same '
-    ...                           'as your name')
-    ...         if data.get('password') == 'password':
-    ...             self.setFieldError('password',
-    ...                                'your password must not be "password"')
+    ...         if data.get("name") == data.get("password"):
+    ...             self.addError(
+    ...                 "your password may not be the same " "as your name"
+    ...             )
+    ...         if data.get("password") == "password":
+    ...             self.setFieldError(
+    ...                 "password", 'your password must not be "password"'
+    ...             )
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.name': 'fred', 'field.password': '12345'})
+    ...     method="POST",
+    ...     form={"field.name": "fred", "field.password": "12345"},
+    ... )
     >>> view = FormTestView5(context, request)
     >>> view.setUpFields()
     >>> view.setUpWidgets()
@@ -247,33 +263,39 @@ setFieldError() method (for errors specific to a field):
 Check that form wide errors can be reported:
 
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.name': 'fred', 'field.password': 'fred'})
+    ...     method="POST",
+    ...     form={"field.name": "fred", "field.password": "fred"},
+    ... )
     >>> view = FormTestView5(context, request)
     >>> view.setUpFields()
     >>> view.setUpWidgets()
     >>> data = {}
     >>> for error in view._validate(None, data):
     ...     print(error)
+    ...
     your password may not be the same as your name
     >>> for error in view.form_wide_errors:
     ...     print(error)
+    ...
     your password may not be the same as your name
 
 Check that widget specific errors can be reported:
 
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.name': 'fred', 'field.password': 'password'})
+    ...     method="POST",
+    ...     form={"field.name": "fred", "field.password": "password"},
+    ... )
     >>> view = FormTestView5(context, request)
     >>> view.setUpFields()
     >>> view.setUpWidgets()
     >>> data = {}
     >>> for error in view._validate(None, data):
     ...     print(error)
+    ...
     your password must not be &quot;password&quot;
     >>> for field, error in view.widget_errors.items():
     ...     print("%s: %s" % (field, error))
+    ...
     password: your password must not be &quot;password&quot;
 
 The base template used for LaunchpadFormView classes takes care of
@@ -290,34 +312,37 @@ that belong to other actions. Here, we'll define a form with two
 required fields, and show how to validate one field at a time.
 
     >>> class INameAndPasswordForm(Interface):
-    ...     name = TextLine(title=u"Name", required=True)
-    ...     password = TextLine(title=u"Password", required=True)
+    ...     name = TextLine(title="Name", required=True)
+    ...     password = TextLine(title="Password", required=True)
+    ...
 
     >>> class FormViewForWidgetValidation(LaunchpadFormView):
     ...     schema = INameAndPasswordForm
+    ...
 
     >>> def print_widget_validation(names):
-    ...     data = {'field.name': '', 'field.password': ''}
+    ...     data = {"field.name": "", "field.password": ""}
     ...     context = FormTest()
-    ...     request = LaunchpadTestRequest(method='POST', form=data)
+    ...     request = LaunchpadTestRequest(method="POST", form=data)
     ...     view = FormViewForWidgetValidation(context, request)
     ...     view.setUpFields()
     ...     view.setUpWidgets()
     ...     for error in view.validate_widgets(data, names=names):
     ...         if isinstance(error, str):
-    ...            print(error)
+    ...             print(error)
     ...         else:
     ...             print("%s: %s" % (error.widget_title, error.doc()))
+    ...
 
 Only the fields we specify will be validated:
 
-    >>> print_widget_validation(['name'])
+    >>> print_widget_validation(["name"])
     Name: Required input is missing.
 
-    >>> print_widget_validation(['password'])
+    >>> print_widget_validation(["password"])
     Password: Required input is missing.
 
-    >>> print_widget_validation(['name', 'password'])
+    >>> print_widget_validation(["name", "password"])
     Name: Required input is missing.
     Password: Required input is missing.
 
@@ -338,23 +363,27 @@ redirect the user to another URL.  The URL is specified by the
     >>> from zope.formlib.form import action
     >>> class FormTestView6(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['displayname']
-    ...     next_url = 'http://www.ubuntu.com/'
+    ...     field_names = ["displayname"]
+    ...     next_url = "http://www.ubuntu.com/"
     ...
-    ...     @action(u"Change Name", name="change")
+    ...     @action("Change Name", name="change")
     ...     def change_action(self, action, data):
-    ...         self.context.displayname = data['displayname']
+    ...         self.context.displayname = data["displayname"]
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': 'bob',
-    ...           'field.actions.change': 'Change Name'})
+    ...     method="POST",
+    ...     form={
+    ...         "field.displayname": "bob",
+    ...         "field.actions.change": "Change Name",
+    ...     },
+    ... )
     >>> view = FormTestView6(context, request)
     >>> view.initialize()
     >>> request.response.getStatus()
     302
-    >>> print(request.response.getHeader('location'))
+    >>> print(request.response.getHeader("location"))
     http://www.ubuntu.com/
 
 
@@ -365,21 +394,22 @@ Form Rendering
 
     >>> class RenderFormTest(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['displayname']
+    ...     field_names = ["displayname"]
     ...
     ...     def template(self):
-    ...         return u'Content that comes from a ZCML registered template.'
+    ...         return "Content that comes from a ZCML registered template."
     ...
-    ...     @action(u'Redirect', name='redirect')
+    ...     @action("Redirect", name="redirect")
     ...     def redirect_action(self, action, data):
-    ...         self.next_url = 'http://launchpad.test/'
+    ...         self.next_url = "http://launchpad.test/"
     ...
     ...     def handleUpdateFailure(self, action, data, errors):
-    ...         return u'Some errors occurred.'
+    ...         return "Some errors occurred."
     ...
-    ...     @action(u'Update', name='update', failure=handleUpdateFailure)
+    ...     @action("Update", name="update", failure=handleUpdateFailure)
     ...     def update_action(self, action, data):
-    ...         return u'Display name changed to: %s.' % data['displayname']
+    ...         return "Display name changed to: %s." % data["displayname"]
+    ...
 
 Like with LaunchpadView, the view content will usually be rendered by
 executing the template attribute (which can be set from ZCML):
@@ -395,9 +425,12 @@ rendered content is always the empty string.
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': 'bob',
-    ...           'field.actions.redirect': 'Redirect'})
+    ...     method="POST",
+    ...     form={
+    ...         "field.displayname": "bob",
+    ...         "field.actions.redirect": "Redirect",
+    ...     },
+    ... )
     >>> view = RenderFormTest(context, request)
     >>> print(view())
     <BLANKLINE>
@@ -407,9 +440,12 @@ can directly return the rendered content:
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': 'bob',
-    ...           'field.actions.update': 'Update'})
+    ...     method="POST",
+    ...     form={
+    ...         "field.displayname": "bob",
+    ...         "field.actions.update": "Update",
+    ...     },
+    ... )
     >>> view = RenderFormTest(context, request)
     >>> print(view())
     Display name changed to: bob.
@@ -418,9 +454,9 @@ This is also true of failure handlers:
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': '',
-    ...           'field.actions.update': 'Update'})
+    ...     method="POST",
+    ...     form={"field.displayname": "", "field.actions.update": "Update"},
+    ... )
     >>> view = RenderFormTest(context, request)
     >>> print(view())
     Some errors occurred.
@@ -446,8 +482,9 @@ The focus can also be set explicitly by overriding initial_focus_widget:
 
     >>> class FormTestView7(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['name', 'password']
-    ...     initial_focus_widget = 'password'
+    ...     field_names = ["name", "password"]
+    ...     initial_focus_widget = "password"
+    ...
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
     >>> view = FormTestView7(context, request)
@@ -467,7 +504,7 @@ initially:
 Note that if the form is being redisplayed because of a validation
 error, the generated script will focus the first widget with an error:
 
-    >>> view.setFieldError('password', 'Bad password')
+    >>> view.setFieldError("password", "Bad password")
     >>> print(view.focusedElementScript())
     <!--
     setFocusByName('field.password');
@@ -488,7 +525,7 @@ template and thus is way simpler.
     >>> from tempfile import mkstemp
     >>> from zope.browserpage import ViewPageTemplateFile
     >>> file, filename = mkstemp()
-    >>> f = open(filename, 'w')
+    >>> f = open(filename, "w")
     >>> _ = f.write('<div metal:use-macro="context/@@launchpad_form/form" />')
     >>> f.close()
 
@@ -496,8 +533,9 @@ By default, all widgets are visible.
 
     >>> class TestWidgetVisibility(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['displayname']
+    ...     field_names = ["displayname"]
     ...     template = ViewPageTemplateFile(filename)
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
@@ -505,8 +543,9 @@ By default, all widgets are visible.
 
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(view())
-    >>> for input in soup.find_all('input'):
+    >>> for input in soup.find_all("input"):
     ...     print(input)
+    ...
     <input ... name="field.displayname" ... type="text" ...
 
 If we change a widget's 'visible' flag to False, that widget is rendered
@@ -514,13 +553,16 @@ using its hidden() method, which should return a hidden <input> tag.
 
     >>> class TestWidgetVisibility2(TestWidgetVisibility):
     ...     custom_widget_displayname = CustomWidgetFactory(
-    ...         TextWidget, visible=False)
+    ...         TextWidget, visible=False
+    ...     )
+    ...
 
     >>> view = TestWidgetVisibility2(context, request)
 
     >>> soup = BeautifulSoup(view())
-    >>> for input in soup.find_all('input'):
+    >>> for input in soup.find_all("input"):
     ...     print(input)
+    ...
     <input ... name="field.displayname" type="hidden" ...
 
     >>> import os
@@ -548,25 +590,26 @@ action).  Those actions can be marked as such:
     >>> from lp.app.browser.launchpadform import safe_action
     >>> class UnsafeActionTestView(LaunchpadFormView):
     ...     schema = IFormTest
-    ...     field_names = ['name']
+    ...     field_names = ["name"]
     ...
-    ...     @action(u'Change', name='change')
+    ...     @action("Change", name="change")
     ...     def redirect_action(self, action, data):
-    ...         print('Change')
+    ...         print("Change")
     ...
     ...     @safe_action
-    ...     @action(u'Search', name='search')
+    ...     @action("Search", name="search")
     ...     def search_action(self, action, data):
-    ...         print('Search')
+    ...         print("Search")
+    ...
     >>> context = FormTest()
 
 With this form, the "change" action can only be submitted with a POST
 request:
 
     >>> request = LaunchpadTestRequest(
-    ...     environ={'REQUEST_METHOD': 'GET'},
-    ...     form={'field.name': 'foo',
-    ...           'field.actions.change': 'Change'})
+    ...     environ={"REQUEST_METHOD": "GET"},
+    ...     form={"field.name": "foo", "field.actions.change": "Change"},
+    ... )
     >>> view = UnsafeActionTestView(context, request)
     >>> view.initialize()
     Traceback (most recent call last):
@@ -575,9 +618,9 @@ request:
     field.actions.change
 
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.name': 'foo',
-    ...           'field.actions.change': 'Change'})
+    ...     method="POST",
+    ...     form={"field.name": "foo", "field.actions.change": "Change"},
+    ... )
     >>> view = UnsafeActionTestView(context, request)
     >>> view.initialize()
     Change
@@ -586,9 +629,9 @@ request:
 In contrast, the "search" action can be submitted with a GET request:
 
     >>> request = LaunchpadTestRequest(
-    ...     environ={'REQUEST_METHOD': 'GET'},
-    ...     form={'field.name': 'foo',
-    ...           'field.actions.search': 'Search'})
+    ...     environ={"REQUEST_METHOD": "GET"},
+    ...     form={"field.name": "foo", "field.actions.search": "Search"},
+    ... )
     >>> view = UnsafeActionTestView(context, request)
     >>> view.initialize()
     Search
@@ -610,13 +653,14 @@ In other respects, it is used the same way as LaunchpadFormView:
     >>> from lp.app.browser.launchpadform import LaunchpadEditFormView
     >>> class FormTestView8(LaunchpadEditFormView):
     ...     schema = IFormTest
-    ...     field_names = ['displayname']
-    ...     next_url = 'http://www.ubuntu.com/'
+    ...     field_names = ["displayname"]
+    ...     next_url = "http://www.ubuntu.com/"
     ...
-    ...     @action(u"Change Name", name="change")
+    ...     @action("Change Name", name="change")
     ...     def change_action(self, action, data):
     ...         if self.updateContextFromData(data):
-    ...             print('Context was updated')
+    ...             print("Context was updated")
+    ...
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest()
@@ -626,7 +670,7 @@ In other respects, it is used the same way as LaunchpadFormView:
 
 The field values take their defaults from the context object:
 
-    >>> print(view.widgets['displayname']())
+    >>> print(view.widgets["displayname"]())
     <input...value="Fred"...
 
 The updateContextFromData() method takes care of updating the context
@@ -634,9 +678,12 @@ object for us too:
 
     >>> context = FormTest()
     >>> request = LaunchpadTestRequest(
-    ...     method='POST',
-    ...     form={'field.displayname': 'James Henstridge',
-    ...           'field.actions.change': 'Change Name'})
+    ...     method="POST",
+    ...     form={
+    ...         "field.displayname": "James Henstridge",
+    ...         "field.actions.change": "Change Name",
+    ...     },
+    ... )
     >>> view = FormTestView8(context, request)
     >>> view.initialize()
     Context was updated
@@ -652,7 +699,8 @@ possible to pass in a specific context to use instead:
 
     >>> custom_context = FormTest()
     >>> view.updateContextFromData(
-    ...     {'displayname': u'New name'}, custom_context)
+    ...     {"displayname": "New name"}, custom_context
+    ... )
     True
     >>> print(custom_context.displayname)
     New name

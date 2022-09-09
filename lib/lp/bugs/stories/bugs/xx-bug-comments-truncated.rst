@@ -17,20 +17,21 @@ small value.
     ...     [malone]
     ...     max_comment_size: 45
     ...     """
-    >>> config.push('max_comment_data', max_comment_data)
+    >>> config.push("max_comment_data", max_comment_data)
 
 Bug number two starts with a short comment followed by two longer ones,
 the first one will be displayed as it is, and the other two will be
 truncated.
 
-    >>> browser.open('http://localhost/bugs/2')
+    >>> browser.open("http://localhost/bugs/2")
     >>> def print_comments(page):
     ...     """Print all the comments on the page."""
     ...     soup = find_main_content(page)
-    ...     comment_divs = soup('div', 'boardCommentBody')
+    ...     comment_divs = soup("div", "boardCommentBody")
     ...     for div_tag in comment_divs:
     ...         print(div_tag)
-    >>> print_comments(browser.contents) #doctest: +ELLIPSIS
+    ...
+    >>> print_comments(browser.contents)  # doctest: +ELLIPSIS
     <div class="boardCommentBody">
     <a href="http://bugs...test/tomcat/+bug/2/comments/1/+download">Download
     full text</a> (363 bytes)
@@ -77,7 +78,7 @@ The whole comment is visible on this page:
     >>> print(browser.title)
     Comment #1 : Bug #2 (blackhole) : Bugs : Tomcat
 
-    >>> print_comments(browser.contents) #doctest: +ELLIPSIS
+    >>> print_comments(browser.contents)  # doctest: +ELLIPSIS
     <div class="boardCommentBody">
     <div class="editable-message-body">
     <div class="comment-text editable-message-text"
@@ -95,7 +96,7 @@ The whole comment is visible on this page:
     </div>
     </div>
 
-    >>> config_data  = config.pop('max_comment_data')
+    >>> config_data = config.pop("max_comment_data")
 
 
 Obfuscated email addresses and hidden content
@@ -108,10 +109,10 @@ with an email address in it. Note: This set of tests is generally
 the same rules as xx-question-message.rst; changes here may require
 changes to that test.
 
-    >>> user_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
+    >>> user_browser.open("http://bugs.launchpad.test/tomcat/+bug/2")
     >>> print(user_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
-    >>> user_browser.getControl(name='field.comment').value = (
+    >>> user_browser.getControl(name="field.comment").value = (
     ...     "-----BEGIN PGP SIGNED MESSAGE-----\n"
     ...     "Hash: SHA1\n"
     ...     "\n"
@@ -136,17 +137,19 @@ changes to that test.
     ...     "iD8DBQFED60Y0F+nu1YWqI0RAqrNAJ9hTww5vqDbxp4xJS8ek58W\n"
     ...     "T2PIWy0CUJsX8RXSt/M51WE=\n"
     ...     "=J2S5\n"
-    ...     "-----END PGP SIGNATURE-----\n")
-    >>> user_browser.getControl('Post Comment', index=-1).click()
+    ...     "-----END PGP SIGNATURE-----\n"
+    ... )
+    >>> user_browser.getControl("Post Comment", index=-1).click()
 
 No Privileges Person is authenticated in user_browser, so they can see
 email addresses in messages.
 
     >>> print(user_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
-    >>> text = find_tags_by_class(
-    ...     user_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.find_all('p')[-2]))
+    >>> text = find_tags_by_class(user_browser.contents, "boardCommentBody")[
+    ...     -1
+    ... ]
+    >>> print(extract_text(text.find_all("p")[-2]))
     --
     ______________________
     human@example.org
@@ -156,12 +159,13 @@ Unauthenticated users, such as a bot will see the obfuscated email
 address, '<email address hidden>'. The anonymous user is
 unauthenticated, so they will see the obfuscated email address.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
+    >>> anon_browser.open("http://bugs.launchpad.test/tomcat/+bug/2")
     >>> print(anon_browser.title)
     Bug #2 (blackhole) ... : Bugs : Tomcat
-    >>> text = find_tags_by_class(
-    ...     anon_browser.contents, 'boardCommentBody')[-1]
-    >>> print(extract_text(text.find_all('p')[-2]))
+    >>> text = find_tags_by_class(anon_browser.contents, "boardCommentBody")[
+    ...     -1
+    ... ]
+    >>> print(extract_text(text.find_all("p")[-2]))
     --
     ______________________
     &lt;email address hidden&gt;
@@ -178,7 +182,7 @@ class.
 Pagetests cannot test CSS and JS behaviour.  We can only check that the markup
 includes the hooks for the style and script.
 
-    >>> print(text.find_all('p')[-2])
+    >>> print(text.find_all("p")[-2])
     <p><span class="foldable">--...
     &lt;email address hidden&gt;<br/>
     Witty signatures rock!
@@ -192,7 +196,7 @@ are wrapped with a tag of 'foldable' class, citation lines are
 always displayed. Again we can continue with the anonymous user to
 see the markup.
 
-    >>> print(text.find_all('p')[-3])
+    >>> print(text.find_all("p")[-3])
     <p>Somebody said sometime ago:<br/>
     <span class="foldable-quoted">
     &gt; 1. Remove the letters  c, j, q, x, w<br/>
@@ -204,12 +208,12 @@ PGP blocks in signed messages are identified by a paragraph that
 starts with '-----BEGIN PGP'.  There are two kinds of PGP blocks,
 the notice that the message is signed, and the signature.
 
-    >>> print(text.find_all('p')[0])
+    >>> print(text.find_all("p")[0])
     <p><span class="foldable">-----BEGIN PGP SIGNED MESSAGE-----<br/>
     Hash: SHA1
     </span></p>
 
-    >>> print(text.find_all('p')[-1])
+    >>> print(text.find_all("p")[-1])
     <p><span class="foldable">-----BEGIN PGP SIGNATURE-----<br/>
     Version: GnuPG v1.4.1 (GNU/Linux)<br/>
     Comment: Using GnuPG with Thunderbird<br/>

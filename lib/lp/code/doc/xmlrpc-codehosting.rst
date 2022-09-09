@@ -7,14 +7,11 @@ branches.  It is available as the codehosting attribute of our private
 XMLRPC instance.
 
     >>> from lp.xmlrpc.interfaces import IPrivateApplication
-    >>> from lp.code.interfaces.codehosting import (
-    ...     ICodehostingApplication)
+    >>> from lp.code.interfaces.codehosting import ICodehostingApplication
     >>> from lp.testing import verifyObject
 
     >>> private_root = getUtility(IPrivateApplication)
-    >>> verifyObject(
-    ...     ICodehostingApplication,
-    ...     private_root.codehosting)
+    >>> verifyObject(ICodehostingApplication, private_root.codehosting)
     True
 
 The CodehostingAPI view provides the ICodehostingAPI XML-RPC API:
@@ -24,7 +21,8 @@ The CodehostingAPI view provides the ICodehostingAPI XML-RPC API:
     >>> from lp.code.xmlrpc.codehosting import CodehostingAPI
 
     >>> codehosting_api = CodehostingAPI(
-    ...     private_root.codehosting, LaunchpadTestRequest())
+    ...     private_root.codehosting, LaunchpadTestRequest()
+    ... )
     >>> verifyObject(ICodehostingAPI, codehosting_api)
     True
 

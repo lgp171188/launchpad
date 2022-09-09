@@ -20,7 +20,7 @@ person icon in front of the name.
     >>> print(firefox_bugtask.assignee.displayname)
     Mark Shuttleworth
 
-    >>> assignee_field = IBugTask['assignee'].bind(firefox_bugtask)
+    >>> assignee_field = IBugTask["assignee"].bind(firefox_bugtask)
     >>> assignee_widget = AssigneeDisplayWidget(assignee_field, None, None)
     >>> print(assignee_widget())
     <a href="http://.../~mark"><img
@@ -31,7 +31,7 @@ If we would want to display a different value than the real assignee,
 we can use setRenderedValue()
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> assignee_widget.setRenderedValue(foo_bar)
     >>> print(assignee_widget())
     <a href="http://.../~name16"><img
@@ -41,7 +41,7 @@ we can use setRenderedValue()
 If the assignee is None, 'not assigned' will be displayed:
 
     >>> firefox_ubuntu_bugtask = bug_one.bugtasks[1]
-    >>> assignee_field = IBugTask['assignee'].bind(firefox_ubuntu_bugtask)
+    >>> assignee_field = IBugTask["assignee"].bind(firefox_ubuntu_bugtask)
     >>> assignee_widget = AssigneeDisplayWidget(assignee_field, None, None)
     >>> print(assignee_widget())
     <i>not assigned</i>
@@ -54,7 +54,7 @@ assignee yet:
     >>> thunderbird_bugtask = bug_nine.bugtasks[0]
     >>> thunderbird_bugtask.pillar.official_malone
     False
-    >>> assignee_field = IBugTask['assignee'].bind(thunderbird_bugtask)
+    >>> assignee_field = IBugTask["assignee"].bind(thunderbird_bugtask)
     >>> assignee_widget = AssigneeDisplayWidget(assignee_field, None, None)
     >>> print(assignee_widget())
     <i>unknown</i>
@@ -69,7 +69,7 @@ in a span with the appropriate css class:
     >>> from lp.bugs.browser.widgets.bugtask import DBItemDisplayWidget
     >>> firefox_bugtask.status.title
     'New'
-    >>> status_field = IBugTask['status'].bind(firefox_bugtask)
+    >>> status_field = IBugTask["status"].bind(firefox_bugtask)
     >>> status_widget = DBItemDisplayWidget(status_field, None, None)
     >>> print(status_widget())
     <span class="statusNEW">New</span>
@@ -79,7 +79,7 @@ If the value is None, a dash is displayed:
     >>> test_task = bug_nine.bugtasks[1]
     >>> test_task.assignee is None
     True
-    >>> assignee_field = IBugTask['assignee'].bind(test_task)
+    >>> assignee_field = IBugTask["assignee"].bind(test_task)
     >>> assignee_widget = DBItemDisplayWidget(assignee_field, None, None)
     >>> print(assignee_widget())
     <span>&mdash;</span>

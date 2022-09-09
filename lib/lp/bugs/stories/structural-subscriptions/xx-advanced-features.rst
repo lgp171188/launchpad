@@ -8,7 +8,7 @@ option to subscribe to add a new subscription
     >>> from lp.testing.sampledata import USER_EMAIL
     >>> login(USER_EMAIL)
     >>> product = factory.makeProduct()
-    >>> url = canonical_url(product, view_name='+subscriptions')
+    >>> url = canonical_url(product, view_name="+subscriptions")
     >>> logout()
     >>> user_browser.open(url)
     >>> user_browser.getLink("Add a subscription")

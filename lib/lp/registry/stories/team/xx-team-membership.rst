@@ -1,25 +1,25 @@
 Start out by verifying the members page is sane.
 
-    >>> browser.open('http://launchpad.test/~ubuntu-team/+members')
-    >>> 'Ubuntu Team' in browser.contents
+    >>> browser.open("http://launchpad.test/~ubuntu-team/+members")
+    >>> "Ubuntu Team" in browser.contents
     True
 
 Let's take a look at Colin's subscription page. Colin is an
 administrator and his subscription never expires.
 
-    >>> browser.addHeader('Authorization', 'Basic foo.bar@canonical.com:test')
+    >>> browser.addHeader("Authorization", "Basic foo.bar@canonical.com:test")
     >>> browser.reload()
-    >>> url = '/~ubuntu-team/+member/kamion'
+    >>> url = "/~ubuntu-team/+member/kamion"
     >>> browser.getLink(url=url).click()
 
     >>> print(browser.title)
     Colin Watson's membership : ...Ubuntu Team... team
     >>> "Active member" in browser.contents
     True
-    >>> browser.getControl(name='admin').value
+    >>> browser.getControl(name="admin").value
     ['yes']
 
-    >>> browser.getControl(name='expires').value
+    >>> browser.getControl(name="expires").value
     ['never']
 
 Post an incomplete date and remove his administrator status.
@@ -38,17 +38,18 @@ way to "enable" the input. So, we have to reach into the guts of the
 TestBrowser to manually re-enable the input. That's what the
 `del expiry._control.attrs['disabled']` stuff is.
 
-    >>> browser.getControl(name='admin').value = ['no']
-    >>> browser.getControl(name='expires').value = ['date']
-    >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> del expiry._control.attrs['disabled']
-    >>> expiry.value = 'ssdf'
-    >>> browser.getControl('Change').click()
+    >>> browser.getControl(name="admin").value = ["no"]
+    >>> browser.getControl(name="expires").value = ["date"]
+    >>> expiry = browser.getControl(name="membership.expirationdate")
+    >>> del expiry._control.attrs["disabled"]
+    >>> expiry.value = "ssdf"
+    >>> browser.getControl("Change").click()
 
 We get a nice error message
 
-    >>> for tag in find_tags_by_class(browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(browser.contents, "message"):
     ...     print(tag.decode_contents())
+    ...
     Invalid expiration: Invalid date value
 
 Give up on change, nothing should have changed with Colin:
@@ -60,10 +61,11 @@ Give up on change, nothing should have changed with Colin:
     >>> login(ANONYMOUS)
     >>> personset = getUtility(IPersonSet)
     >>> teammembershipset = getUtility(ITeamMembershipSet)
-    >>> ubuntu_team = personset.getByName('ubuntu-team')
-    >>> kamion = personset.getByName('kamion')
+    >>> ubuntu_team = personset.getByName("ubuntu-team")
+    >>> kamion = personset.getByName("kamion")
     >>> kamion_membership = teammembershipset.getByPersonAndTeam(
-    ...     kamion, ubuntu_team)
+    ...     kamion, ubuntu_team
+    ... )
     >>> kamion_membership.status.title
     'Administrator'
     >>> print(kamion_membership.dateexpires)
@@ -77,13 +79,13 @@ next year -- successfully.
     >>> from datetime import datetime, timedelta
     >>> expire_date = datetime.utcnow() + timedelta(days=365)
 
-    >>> browser.getControl(name='admin').value = ['no']
-    >>> browser.getControl(name='expires').value = ['date']
-    >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> del expiry._control.attrs['disabled']
-    >>> expiry.value = expire_date.strftime('%Y-%m-%d')
-    >>> browser.getControl(name='comment').value = 'Arfie'
-    >>> browser.getControl('Change').click()
+    >>> browser.getControl(name="admin").value = ["no"]
+    >>> browser.getControl(name="expires").value = ["date"]
+    >>> expiry = browser.getControl(name="membership.expirationdate")
+    >>> del expiry._control.attrs["disabled"]
+    >>> expiry.value = expire_date.strftime("%Y-%m-%d")
+    >>> browser.getControl(name="comment").value = "Arfie"
+    >>> browser.getControl("Change").click()
 
 We're redirected to the +members page
 
@@ -92,7 +94,8 @@ We're redirected to the +members page
 
     >>> login(ANONYMOUS)
     >>> kamion_membership = teammembershipset.getByPersonAndTeam(
-    ...     kamion, ubuntu_team)
+    ...     kamion, ubuntu_team
+    ... )
     >>> print(kamion_membership.status.title)
     Approved
     >>> kamion_membership.dateexpires.date() == expire_date.date()
@@ -104,13 +107,13 @@ We're redirected to the +members page
 If we revisit Colin's membership page we'll see the comment field is
 pre-populated with the last comment.
 
-    >>> url = '/~ubuntu-team/+member/kamion'
+    >>> url = "/~ubuntu-team/+member/kamion"
     >>> browser.getLink(url=url).click()
 
 Do not use 'print' for the following test as it will eliminate potential
 leading and trailing whitespace, which we don't want.
 
-    >>> browser.getControl(name='comment').value
+    >>> browser.getControl(name="comment").value
     'Arfie'
 
 Jeff is also an administrator and his subscription never expires, but he can
@@ -118,10 +121,11 @@ demote himself. He starts by paging though the memberships, then he deselects
 the administrator control on the membership page.
 
     >>> jdub_browser = setupBrowser(
-    ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
-    >>> jdub_browser.open('http://launchpad.test/~ubuntu-team/+members')
-    >>> jdub_browser.getLink('Next').click()
-    >>> url = '/~ubuntu-team/+member/jdub'
+    ...     auth="Basic jeff.waugh@ubuntulinux.com:test"
+    ... )
+    >>> jdub_browser.open("http://launchpad.test/~ubuntu-team/+members")
+    >>> jdub_browser.getLink("Next").click()
+    >>> url = "/~ubuntu-team/+member/jdub"
     >>> jdub_browser.getLink(url=url).click()
 
     >>> print(jdub_browser.title)
@@ -129,16 +133,17 @@ the administrator control on the membership page.
     >>> "Active member" in jdub_browser.contents
     True
 
-    >>> jdub_browser.getControl(name='admin').value = ['no']
-    >>> jdub_browser.getControl('Change').click()
+    >>> jdub_browser.getControl(name="admin").value = ["no"]
+    >>> jdub_browser.getControl("Change").click()
 
     >>> jdub_browser.url
     'http://launchpad.test/~ubuntu-team/+members'
 
     >>> login(ANONYMOUS)
-    >>> jdub = personset.getByName('jdub')
+    >>> jdub = personset.getByName("jdub")
     >>> jdub_membership = teammembershipset.getByPersonAndTeam(
-    ...     jdub, ubuntu_team)
+    ...     jdub, ubuntu_team
+    ... )
     >>> jdub_membership.status.title
     'Approved'
     >>> logout()
@@ -146,25 +151,25 @@ the administrator control on the membership page.
 Sample person had their membership declined to the guadamen group. Test
 that the page works and that foo.bar@canonical can access it.
 
-    >>> browser.open('http://launchpad.test/~guadamen/+member/name12/')
+    >>> browser.open("http://launchpad.test/~guadamen/+member/name12/")
 
-    >>> 'Declined member' in browser.contents
+    >>> "Declined member" in browser.contents
     True
 
 Dave Miller is a proposed member in Ubuntu Gnome Team.
 If two people try to accept him as a member at the same time, the first one
 should succeed and the second one receive a nice error message.
 
-    >>> browser.open('http://launchpad.test/~name18/+members')
-    >>> url = '/~name18/+member/justdave'
+    >>> browser.open("http://launchpad.test/~name18/+members")
+    >>> url = "/~name18/+member/justdave"
     >>> browser.getLink(url=url).click()
 
-    >>> second_browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> second_browser.open('http://launchpad.test' + url)
+    >>> second_browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
+    >>> second_browser.open("http://launchpad.test" + url)
 
 Approve the membership in the first browser.
 
-    >>> browser.getControl('Approve').click()
+    >>> browser.getControl("Approve").click()
 
 We're redirected to the members page.
 
@@ -172,10 +177,11 @@ We're redirected to the members page.
     'http://launchpad.test/~name18/+members'
 
     >>> login(ANONYMOUS)
-    >>> dave = personset.getByName('justdave')
-    >>> ubuntu_gnome_team = personset.getByName('name18')
+    >>> dave = personset.getByName("justdave")
+    >>> ubuntu_gnome_team = personset.getByName("name18")
     >>> dave_membership = teammembershipset.getByPersonAndTeam(
-    ...     dave, ubuntu_gnome_team)
+    ...     dave, ubuntu_gnome_team
+    ... )
     >>> dave_membership.status.title
     'Approved'
     >>> logout()
@@ -183,24 +189,26 @@ We're redirected to the members page.
 
 But in the second browser with the stale data we get an error message:
 
-    >>> second_browser.getControl('Approve').click()
+    >>> second_browser.getControl("Approve").click()
     >>> message = (
-    ...     'The membership request for Dave Miller has already been '
-    ...     'processed')
+    ...     "The membership request for Dave Miller has already been "
+    ...     "processed"
+    ... )
     >>> message in second_browser.contents
     True
 
 An admin can see the former members of the team.
 
-    >>> browser.open('http://launchpad.test/~name18/+members')
-    >>> print(extract_text(
-    ...     find_tag_by_id(browser.contents, 'inactivemembers')))
+    >>> browser.open("http://launchpad.test/~name18/+members")
+    >>> print(
+    ...     extract_text(find_tag_by_id(browser.contents, "inactivemembers"))
+    ... )
     Name    Joined in   Status...
 
 Other users cannot see the former members of the team.
 
-    >>> user_browser.open('http://launchpad.test/~name18/+members')
-    >>> print(find_tag_by_id(user_browser.contents, 'inactivemembers'))
+    >>> user_browser.open("http://launchpad.test/~name18/+members")
+    >>> print(find_tag_by_id(user_browser.contents, "inactivemembers"))
     None
 
 
@@ -212,11 +220,14 @@ member, as well as the teams in which they are an indirect member.
 
 Kiko has not joined any teams:
 
-    >>> anon_browser.open('http://launchpad.test/~kiko/+participation')
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'no-participation')))
+    >>> anon_browser.open("http://launchpad.test/~kiko/+participation")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "no-participation")
+    ...     )
+    ... )
     Christian Reis has not yet joined any teams.
-    >>> print(find_tag_by_id(anon_browser.contents, 'participation'))
+    >>> print(find_tag_by_id(anon_browser.contents, "participation"))
     None
 
 Sample Person has both direct and indirect memberships, and expiry dates are
@@ -226,22 +237,25 @@ order to avoid this test failing at some point in the future.
     >>> import pytz
     >>> from zope.security.proxy import removeSecurityProxy
 
-    >>> login('admin@canonical.com')
-    >>> name12 = personset.getByName('name12')
-    >>> lp_users = personset.getByName('launchpad-users')
+    >>> login("admin@canonical.com")
+    >>> name12 = personset.getByName("name12")
+    >>> lp_users = personset.getByName("launchpad-users")
     >>> membership = teammembershipset.getByPersonAndTeam(name12, lp_users)
     >>> removeSecurityProxy(membership).dateexpires = datetime(
-    ...     2009, 1, 1, tzinfo=pytz.UTC)
+    ...     2009, 1, 1, tzinfo=pytz.UTC
+    ... )
     >>> logout()
 
-    >>> anon_browser.open('http://launchpad.test/~name12/+participation')
+    >>> anon_browser.open("http://launchpad.test/~name12/+participation")
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(find_tag_by_id(content, 'no-participation'))
+    >>> print(find_tag_by_id(content, "no-participation"))
     None
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(content, 'participation'),
-    ...     formatter='html'))  # noqa
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(content, "participation"), formatter="html"
+    ...     )
+    ... )  # noqa
     Team                  Joined      Expires     Role    Via                 Mailing List
     HWDB Team             2009-07-09  &mdash;     Member  &mdash;              &mdash;
     Landscape Developers  2006-07-11  &mdash;     Owner   &mdash;              &mdash;
@@ -252,27 +266,31 @@ order to avoid this test failing at some point in the future.
 User can see links to register teams and change their mailing list
 subscriptions on their own participation page.
 
-    >>> print(find_tag_by_id(content, 'participation-actions'))
+    >>> print(find_tag_by_id(content, "participation-actions"))
     None
 
-    >>> user_browser.open('http://launchpad.test/~no-priv/+participation')
+    >>> user_browser.open("http://launchpad.test/~no-priv/+participation")
     >>> actions = find_tag_by_id(
-    ...     user_browser.contents, 'participation-actions')
+    ...     user_browser.contents, "participation-actions"
+    ... )
     >>> print(extract_text(actions))
     Register a team
     Change mailing list subscriptions
 
-    >>> user_browser.getLink('Register a team')
+    >>> user_browser.getLink("Register a team")
     <Link ... url='http://.../people/+newteam'>
-    >>> user_browser.getLink('Change mailing list subscriptions')
+    >>> user_browser.getLink("Change mailing list subscriptions")
     <Link ... url='http://.../~no-priv/+editmailinglists'>
 
 Teams also have a participation page, but it does not include a mailing
 list column.
 
-    >>> admin_browser.open('http://launchpad.test/~admins/+participation')
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'participation'),
-    ...     formatter='html'))
+    >>> admin_browser.open("http://launchpad.test/~admins/+participation")
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "participation"),
+    ...         formatter="html",
+    ...     )
+    ... )
     Team                  Joined      Expires   Role    Via
     Mailing List Experts  2007-10-04  &mdash;   Owner   &mdash;

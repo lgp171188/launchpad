@@ -11,22 +11,26 @@ and has no bugs.
     >>> from lp.testing import anonymous_logged_in, with_person_logged_in
     >>> with anonymous_logged_in():
     ...     anybody = factory.makePerson()
+    ...
     >>> with_anybody = with_person_logged_in(anybody)
     >>> patchy_product = with_anybody(factory.makeProduct)(
-    ...     name='patchy-product-1', displayname="Patchy 1", title="Patchy 1")
+    ...     name="patchy-product-1", displayname="Patchy 1", title="Patchy 1"
+    ... )
     >>> transaction.commit()
 
 We don't see any patches when we open the patches view.
 
     >>> def show_patches_view(contents):
-    ...     for tag in find_tags_by_class(contents, 'listing'):
+    ...     for tag in find_tags_by_class(contents, "listing"):
     ...         print(extract_text(tag))
-    ...     messages = find_tags_by_class(contents, 'informational')
+    ...     messages = find_tags_by_class(contents, "informational")
     ...     if len(messages) > 0:
     ...         print(extract_text(messages[0]))
+    ...
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -34,24 +38,30 @@ After the product has a bug, it still doesn't show up in the patches
 view, because that bug has no patch attachments.
 
     >>> from lp.bugs.interfaces.bugtask import (
-    ...     BugTaskImportance, BugTaskStatus)
+    ...     BugTaskImportance,
+    ...     BugTaskStatus,
+    ... )
     >>> @with_anybody
     ... def make_bug(
-    ...     title, product, importance=BugTaskImportance.UNDECIDED,
-    ...     status=BugTaskStatus.NEW):
+    ...     title,
+    ...     product,
+    ...     importance=BugTaskImportance.UNDECIDED,
+    ...     status=BugTaskStatus.NEW,
+    ... ):
     ...     bug = factory.makeBug(title=title, target=product)
     ...     transaction.commit()
     ...     bug.default_bugtask.transitionToImportance(
-    ...         importance, product.owner)
-    ...     bug.default_bugtask.transitionToStatus(
-    ...         status, product.owner)
+    ...         importance, product.owner
+    ...     )
+    ...     bug.default_bugtask.transitionToStatus(status, product.owner)
     ...     transaction.commit()
     ...     return bug
 
     >>> bug_a = make_bug(title="bug_a title", product=patchy_product)
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -62,7 +72,8 @@ still shows no patches.
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -70,16 +81,22 @@ After we add a patch attachment that's one day old, we see it in the
 patches view.
 
     >>> patch_submitter = with_anybody(factory.makePerson)(
-    ...    name="patchy-person", displayname="Patchy Person")
+    ...     name="patchy-person", displayname="Patchy Person"
+    ... )
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch a",
-    ...     filename="patch_a.diff", owner=patch_submitter,
-    ...     description="description of patch a", bug=bug_a, is_patch=True)
+    ...     filename="patch_a.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch a",
+    ...     bug=bug_a,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_a title               Undecided     New     ...second...
@@ -97,27 +114,41 @@ After creating some more bugs, with some non-patch and some patch
 attachments, and various statuses...
 
     >>> bug_b = make_bug(
-    ...     title="bug_b title", product=patchy_product,
+    ...     title="bug_b title",
+    ...     product=patchy_product,
     ...     importance=BugTaskImportance.CRITICAL,
-    ...     status=BugTaskStatus.CONFIRMED)
+    ...     status=BugTaskStatus.CONFIRMED,
+    ... )
     >>> bug_c = make_bug(
-    ...     title="bug_c title", product=patchy_product,
+    ...     title="bug_c title",
+    ...     product=patchy_product,
     ...     importance=BugTaskImportance.WISHLIST,
-    ...     status=BugTaskStatus.FIXCOMMITTED)
+    ...     status=BugTaskStatus.FIXCOMMITTED,
+    ... )
     >>> bug_d = make_bug(
-    ...     title="bug_d title", product=patchy_product,
+    ...     title="bug_d title",
+    ...     product=patchy_product,
     ...     importance=BugTaskImportance.WISHLIST,
-    ...     status=BugTaskStatus.FIXRELEASED)
+    ...     status=BugTaskStatus.FIXRELEASED,
+    ... )
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch b",
-    ...     filename="patch_b.diff", owner=patch_submitter,
-    ...     description="description of patch b", bug=bug_b, is_patch=True)
+    ...     filename="patch_b.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch b",
+    ...     bug=bug_b,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch c",
-    ...     filename="patch_c.diff", owner=patch_submitter,
-    ...     description="description of patch c", bug=bug_b, is_patch=True)
+    ...     filename="patch_c.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch c",
+    ...     bug=bug_b,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_c, is_patch=False)
@@ -125,26 +156,42 @@ attachments, and various statuses...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch d",
-    ...     filename="patch_d.diff", owner=patch_submitter,
-    ...     description="description of patch d", bug=bug_c, is_patch=True)
+    ...     filename="patch_d.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch d",
+    ...     bug=bug_c,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch e",
-    ...     filename="patch_e.diff", owner=patch_submitter,
-    ...     description="description of patch e", bug=bug_c, is_patch=True)
+    ...     filename="patch_e.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch e",
+    ...     bug=bug_c,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch f",
-    ...     filename="patch_f.diff", owner=patch_submitter,
-    ...     description="description of patch f", bug=bug_c, is_patch=True)
+    ...     filename="patch_f.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch f",
+    ...     bug=bug_c,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch g",
-    ...     filename="patch_g.diff", owner=patch_submitter,
-    ...     description="description of patch g", bug=bug_d, is_patch=True)
+    ...     filename="patch_g.diff",
+    ...     owner=patch_submitter,
+    ...     description="description of patch g",
+    ...     bug=bug_d,
+    ...     is_patch=True,
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment object at...
     >>> transaction.commit()
 
@@ -152,7 +199,8 @@ attachments, and various statuses...
 (except for bugs in "Fix Released" state, which aren't shown):
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
@@ -168,7 +216,7 @@ attachments, and various statuses...
 The default sort order is by patch age. We can sort patches by
 importance and status.
 
-    >>> anon_browser.getControl(name="orderby").value = ['-importance']
+    >>> anon_browser.getControl(name="orderby").value = ["-importance"]
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
     'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=-importance'
@@ -184,7 +232,7 @@ importance and status.
     From: Patchy Person
     Link: patch_a.diff description of patch a
 
-    >>> anon_browser.getControl(name="orderby").value = ['status']
+    >>> anon_browser.getControl(name="orderby").value = ["status"]
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
     'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=status'
@@ -203,8 +251,9 @@ importance and status.
 But we can't sort by things that aren't validated by the view.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/patchy-product-1/+patches'
-    ...     '?orderby=star-sign')
+    ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
+    ...     "?orderby=star-sign"
+    ... )
     Traceback (most recent call last):
     ...
     lp.app.errors.UnexpectedFormData:
@@ -218,12 +267,13 @@ Bugs in a product series show up in the patches view for that series.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> hoary = ubuntu.getSeries("hoary")
     >>> spph = factory.makeSourcePackagePublishingHistory(
-    ...     sourcepackagename=factory.getOrMakeSourcePackageName('a52dec'),
-    ...     distroseries=hoary)
+    ...     sourcepackagename=factory.getOrMakeSourcePackageName("a52dec"),
+    ...     distroseries=hoary,
+    ... )
     >>> logout()
 
     >>> @with_anybody
@@ -246,11 +296,14 @@ Bugs in a product series show up in the patches view for that series.
     ...     #     if None, just use the default importance.
     ...     # :param status: The initial status of the bugtask;
     ...     #     if None, just use the default status.
-    ...     bug, target,
+    ...     bug,
+    ...     target,
     ...     target_is_spkg_name=False,
     ...     target_is_distroseries_name=False,
-    ...     importance=None, status=None):
-    ...     ubuntu_distro = getUtility(IDistributionSet).getByName('ubuntu')
+    ...     importance=None,
+    ...     status=None,
+    ... ):
+    ...     ubuntu_distro = getUtility(IDistributionSet).getByName("ubuntu")
     ...     if target_is_spkg_name:
     ...         target = ubuntu_distro.getSourcePackage(target)
     ...     if target_is_distroseries_name:
@@ -258,16 +311,18 @@ Bugs in a product series show up in the patches view for that series.
     ...     bugtask = factory.makeBugTask(bug=bug, target=target)
     ...     if importance is not None:
     ...         bugtask.transitionToImportance(
-    ...             importance, ubuntu_distro.owner)
+    ...             importance, ubuntu_distro.owner
+    ...         )
     ...     if status is not None:
     ...         bugtask.transitionToStatus(status, ubuntu_distro.owner)
     >>> login(ANONYMOUS)
-    >>> patchy_product_series = patchy_product.getSeries('trunk')
+    >>> patchy_product_series = patchy_product.getSeries("trunk")
     >>> make_bugtask(bug=bug_a, target=patchy_product_series)
     >>> make_bugtask(bug=bug_c, target=patchy_product_series)
     >>> logout()
     >>> anon_browser.open(
-    ...     'https://bugs.launchpad.test/patchy-product-1/trunk/+patches')
+    ...     "https://bugs.launchpad.test/patchy-product-1/trunk/+patches"
+    ... )
     >>> show_patches_view(anon_browser.contents)
     Bug                       Importance     Status      Patch Age
     Bug #...: bug_c title     Wishlist  Fix Committed   ...second...

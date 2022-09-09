@@ -5,11 +5,11 @@ If a distribution doesn't have a current release, like Gentoo, it's
 still possible to edit its tasks from the bug page. There are no Gentoo
 tasks currently open, so let's add one.
 
-    >>> user_browser.open('http://launchpad.test/bugs/4')
-    >>> user_browser.getLink('Also affects distribution/package').click()
+    >>> user_browser.open("http://launchpad.test/bugs/4")
+    >>> user_browser.getLink("Also affects distribution/package").click()
 
-    >>> user_browser.getControl('Distribution').value = ['gentoo']
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.getControl("Distribution").value = ["gentoo"]
+    >>> user_browser.getControl("Continue").click()
 
 There is a link in the affects table to edit the Gentoo task.
 

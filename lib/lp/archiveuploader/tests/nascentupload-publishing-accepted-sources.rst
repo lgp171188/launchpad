@@ -14,7 +14,8 @@ to build it).
 Let's start a new series of ed (0.2-20) and publish it:
 
     >>> ed_src = getUploadForSource(
-    ...     'split-upload-test/ed_0.2-20_source.changes')
+    ...     "split-upload-test/ed_0.2-20_source.changes"
+    ... )
     >>> ed_src.process()
     >>> result = ed_src.do_accept()
     >>> ed_src.queue_root.status.name
@@ -25,14 +26,13 @@ Let's start a new series of ed (0.2-20) and publish it:
 
 Check if the publication is available through the Soyuz package stack:
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu.getSeries("hoary")
 
-    >>> ed_dsp = ubuntu.getSourcePackage('ed')
-    >>> ed_dspr = ed_dsp.getVersion('0.2-20')
+    >>> ed_dsp = ubuntu.getSourcePackage("ed")
+    >>> ed_dspr = ed_dsp.getVersion("0.2-20")
     >>> ed_dspr.publishing_history.count()
     1
     >>> ed_pub = ed_dspr.publishing_history[0]
@@ -52,7 +52,7 @@ Check if the publication is available through the Soyuz package stack:
 Also check if the Soyuz archive file lookup can reach one of the
 just-published file:
 
-    >>> ubuntu.main_archive.getFileByName('ed_0.2.orig.tar.gz')
+    >>> ubuntu.main_archive.getFileByName("ed_0.2.orig.tar.gz")
     <LibraryFileAlias...>
 
 We have to commit in order to have new Librarian files available to
@@ -64,8 +64,7 @@ Now let's submit a new source version of ed (0.2-21) which will be
 automatically accepted and published resulting in a PackageUpload
 record in 'DONE' state:
 
-    >>> ed21_src = getUploadForSource(
-    ...     'ed-0.2-21/ed_0.2-21_source.changes')
+    >>> ed21_src = getUploadForSource("ed-0.2-21/ed_0.2-21_source.changes")
     >>> ed21_src.process()
     >>> result = ed21_src.do_accept()
     >>> ed21_src.queue_root.status.name
@@ -77,13 +76,13 @@ problems to the next test run.
 
     >>> import os
     >>> from lp.archiveuploader.tests import datadir
-    >>> os.remove(datadir('ed-0.2-21/ed_0.2.orig.tar.gz'))
+    >>> os.remove(datadir("ed-0.2-21/ed_0.2.orig.tar.gz"))
 
 After the mentioned procedure-shortcut, since ed_0.2-21 was
 auto-accepted (i.e, published as PENDING), it should be immediately
 available via the package stack:
 
-    >>> ed21_dspr = ed_dsp.getVersion('0.2-21')
+    >>> ed21_dspr = ed_dsp.getVersion("0.2-21")
     >>> ed21_dspr.publishing_history.count()
     1
     >>> ed21_pub = ed21_dspr.publishing_history[0]
@@ -102,6 +101,6 @@ available via the package stack:
 
 Same happens for the archive file lookup:
 
-    >>> ubuntu.main_archive.getFileByName('ed_0.2-21.dsc')
+    >>> ubuntu.main_archive.getFileByName("ed_0.2-21.dsc")
     <LibraryFileAlias...>
 

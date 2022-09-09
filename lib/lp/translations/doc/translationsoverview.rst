@@ -21,7 +21,8 @@ test too much.
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.interfaces.translationsoverview import (
-    ...     ITranslationsOverview)
+    ...     ITranslationsOverview,
+    ... )
     >>> from lp.testing.dbuser import switch_dbuser
 
     >>> karmacachemanager = getUtility(IKarmaCacheManager)
@@ -32,11 +33,13 @@ test too much.
 
     >>> def start_karma_update():
     ...     """Prepare for update to karma cache."""
-    ...     switch_dbuser('testadmin')
+    ...     switch_dbuser("testadmin")
+    ...
 
     >>> def finish_karma_update():
     ...     """Return to normal after updating karma cache."""
-    ...     switch_dbuser('launchpad')
+    ...     switch_dbuser("launchpad")
+    ...
 
 ITranslationOverview defines two constants regulating minimum and maximum
 contribution weights.
@@ -53,12 +56,13 @@ _normalizeSizes
 This private method accepts a list of tuples (object, size) and
 normalizes `size` values into the range [MINIMUM_SIZE, MAXIMUM_SIZE].
 
-    >>> test_list = [('one', 3), ('two', 0), ('three', 1)]
+    >>> test_list = [("one", 3), ("two", 0), ("three", 1)]
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_overview = removeSecurityProxy(overview)
     >>> result = naked_overview._normalizeSizes(test_list, 0, 3)
     >>> for pillar in result:
-    ...     print("%s: %d" % (pillar['pillar'], pillar['weight']))
+    ...     print("%s: %d" % (pillar["pillar"], pillar["weight"]))
+    ...
     one: 18
     two: 10
     three: 13
@@ -74,11 +78,11 @@ The following demo assumes the test data has official_translations set.
 Let's set that up.
 
     >>> from lp.app.enums import ServiceUsage
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
     >>> evolution.translations_usage = ServiceUsage.LAUNCHPAD
-    >>> alsa = getUtility(IProductSet).getByName('alsa-utils')
+    >>> alsa = getUtility(IProductSet).getByName("alsa-utils")
     >>> alsa.translations_usage = ServiceUsage.LAUNCHPAD
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu.translations_usage = ServiceUsage.LAUNCHPAD
     >>> transaction.commit()
 
@@ -92,22 +96,29 @@ overview.MAXIMUM_SIZE].
 
     >>> def display_pillars(pillars):
     ...     for pillar in pillars:
-    ...         print("%s: %d" % (
-    ...             pillar['pillar'].displayname, pillar['weight']))
+    ...         print(
+    ...             "%s: %d"
+    ...             % (pillar["pillar"].displayname, pillar["weight"])
+    ...         )
+    ...
     >>> display_pillars(overview.getMostTranslatedPillars())
     Evolution: 14
 
 Adding some translations karma attributed to Carlos will make
 alsa-utils displayed among the top translated pillars as well.
 
-    >>> carlos = person_set.getByName('carlos')
-    >>> translations = IStore(KarmaCategory).find(
-    ...     KarmaCategory, name="translations").one()
-    >>> alsa_utils = product_set.getByName('alsa-utils')
+    >>> carlos = person_set.getByName("carlos")
+    >>> translations = (
+    ...     IStore(KarmaCategory)
+    ...     .find(KarmaCategory, name="translations")
+    ...     .one()
+    ... )
+    >>> alsa_utils = product_set.getByName("alsa-utils")
 
     >>> start_karma_update()
     >>> cache_entry = karmacachemanager.new(
-    ...     120, carlos.id, translations.id, product_id=alsa_utils.id)
+    ...     120, carlos.id, translations.id, product_id=alsa_utils.id
+    ... )
     >>> finish_karma_update()
 
     >>> display_pillars(overview.getMostTranslatedPillars())
@@ -119,7 +130,8 @@ Evolution.
 
     >>> start_karma_update()
     >>> cache_entry = karmacachemanager.updateKarmaValue(
-    ...     1020, carlos.id, translations.id, product_id=alsa_utils.id)
+    ...     1020, carlos.id, translations.id, product_id=alsa_utils.id
+    ... )
     >>> finish_karma_update()
 
     >>> display_pillars(overview.getMostTranslatedPillars())
@@ -131,12 +143,13 @@ Adding a little bit of karma to upstart will put it in the list as well.
     >>> from lp.app.enums import ServiceUsage
 
     >>> start_karma_update()
-    >>> upstart = product_set.getByName('upstart')
+    >>> upstart = product_set.getByName("upstart")
     >>> upstart_id = upstart.id
     >>> naked_upstart = removeSecurityProxy(upstart)
     >>> naked_upstart.translations_usage = ServiceUsage.LAUNCHPAD
     >>> cache_entry = karmacachemanager.new(
-    ...     50, carlos.id, translations.id, product_id=upstart_id)
+    ...     50, carlos.id, translations.id, product_id=upstart_id
+    ... )
     >>> finish_karma_update()
 
     >>> display_pillars(overview.getMostTranslatedPillars())
@@ -151,8 +164,12 @@ list as well.
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> evolution_sourcepackagename = SourcePackageName.byName("evolution")
     >>> cache_entry = karmacachemanager.new(
-    ...     5150, carlos.id, translations.id, distribution_id=ubuntu.id,
-    ...     sourcepackagename_id=evolution_sourcepackagename.id)
+    ...     5150,
+    ...     carlos.id,
+    ...     translations.id,
+    ...     distribution_id=ubuntu.id,
+    ...     sourcepackagename_id=evolution_sourcepackagename.id,
+    ... )
     >>> finish_karma_update()
     >>> display_pillars(overview.getMostTranslatedPillars())
     alsa-utils: 15
@@ -200,11 +217,14 @@ properly armoured against the occurrence of karmaless projects.
     >>> start_karma_update()
     >>> from lp.services.database.sqlbase import cursor
     >>> cur = cursor()
-    >>> cur.execute("""
+    >>> cur.execute(
+    ...     """
     ...     UPDATE KarmaCache
     ...     SET karmavalue = 0
     ...     WHERE product = %d
-    ...     """ % upstart_id)
+    ...     """
+    ...     % upstart_id
+    ... )
     >>> cur.rowcount
     1
     >>> finish_karma_update()

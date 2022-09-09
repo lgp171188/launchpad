@@ -2,22 +2,26 @@
 HEAD requests should never have a body in their response, even if there are
 errors (such as 404s).
 
-    >>> response = http(r"""
+    >>> response = http(
+    ...     r"""
     ... HEAD / HTTP/1.1
-    ... """)
-    >>> print(str(response).split('\n')[0])
+    ... """
+    ... )
+    >>> print(str(response).split("\n")[0])
     HTTP/1.1 200 Ok
-    >>> print(response.getHeader('Content-Length'))
+    >>> print(response.getHeader("Content-Length"))
     0
     >>> print(six.ensure_text(response.getBody()))
     <BLANKLINE>
 
-    >>> response = http(r"""
+    >>> response = http(
+    ...     r"""
     ... HEAD /badurl HTTP/1.1
-    ... """)
-    >>> print(str(response).split('\n')[0])
+    ... """
+    ... )
+    >>> print(str(response).split("\n")[0])
     HTTP/1.1 404 Not Found
-    >>> print(response.getHeader('Content-Length'))
+    >>> print(response.getHeader("Content-Length"))
     0
     >>> print(six.ensure_text(response.getBody()))
     <BLANKLINE>
@@ -29,21 +33,25 @@ Register a test page that generates HTTP 500 errors.
     >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
     >>> class ErrorView:
     ...     """A broken view"""
+    ...
     ...     def __init__(self, *args):
     ...         oops
     ...
     >>> provideAdapter(
-    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test")
+    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test"
+    ... )
 
 Do a HEAD request on the error test page, and check that its response also has
 no body.
 
-    >>> response = http(r"""
+    >>> response = http(
+    ...     r"""
     ... HEAD /error-test HTTP/1.1
-    ... """)
-    >>> print(str(response).split('\n')[0])
+    ... """
+    ... )
+    >>> print(str(response).split("\n")[0])
     HTTP/1.1 500 Internal Server Error
-    >>> print(response.getHeader('Content-Length'))
+    >>> print(response.getHeader("Content-Length"))
     0
     >>> print(six.ensure_text(response.getBody()))
     <BLANKLINE>

@@ -19,18 +19,25 @@ from the upstream project.
     >>> dummy = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
-    >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
+    >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/3/+translate')
-    >>> print(extract_text(find_tag_by_id(
-    ...     browser.contents, 'msgset_132_es_suggestion_3_0')))
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/3/+translate"
+    ... )
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(
+    ...             browser.contents, "msgset_132_es_suggestion_3_0"
+    ...         )
+    ...     )
+    ... )
     tiene
 
 A warning icon about the legal situation is shown alongside the suggestion
 itself.
 
-    >>> warning_link = find_tags_by_class(
-    ...     browser.contents, 'legal-warning')[0]
+    >>> warning_link = find_tags_by_class(browser.contents, "legal-warning")[
+    ...     0
+    ... ]
     >>> print(extract_link_from_tag(warning_link))
     https://help.launchpad.net/Translations/ReusingPackagedTranslations

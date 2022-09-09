@@ -8,23 +8,25 @@ translation overview for Evolution in Hoary.
 Make the test browser look like it's coming from an arbitrary South African
 IP address, since we'll use that later.
 
-    >>> anon_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+    >>> anon_browser.addHeader("X_FORWARDED_FOR", "196.36.161.227")
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/'
-    ...     '+source/evolution')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/"
+    ...     "+source/evolution"
+    ... )
     >>> anon_browser.title
     'Hoary (5.04) : Translations : ...evolution...package : Ubuntu'
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(backslashreplace(extract_text(content.find_all('h1')[0])))
+    >>> print(backslashreplace(extract_text(content.find_all("h1")[0])))
     Translations for evolution in Ubuntu Hoary
 
 There are two templates for evolution in Ubuntu Hoary
 
-    >>> template_names = content.find_all('h2')
+    >>> template_names = content.find_all("h2")
     >>> for name in template_names:
     ...     print(extract_text(name))
+    ...
     Template "evolution-2.2" in Ubuntu Hoary package "evolution"
     Template "man" in Ubuntu Hoary package "evolution"
 
@@ -35,9 +37,10 @@ comprised of the translated languages plus the languages of the user,
 100% of the strings are untranslated. The Last and Edited By columns
 indicate that these languages have never been edited my anyone.
 
-    >>> table = content.find_all('table')[0]
-    >>> for row in table.find_all('tr'):
-    ...     print(extract_text(row, formatter='html'))
+    >>> table = content.find_all("table")[0]
+    >>> for row in table.find_all("tr"):
+    ...     print(extract_text(row, formatter="html"))
+    ...
     Language        Status Untranslated Need review Changed Last    Edited By
     Afrikaans              22             ...         ...   &mdash; &mdash;
     Sotho, Southern        22             ...         ...   &mdash; &mdash;

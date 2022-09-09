@@ -1,14 +1,14 @@
 This page checks that we can see a list of bugs on the distroseries,
 specifically Hoary.
 
-    >>> browser.open('http://localhost/ubuntu/hoary/+bugs')
+    >>> browser.open("http://localhost/ubuntu/hoary/+bugs")
     >>> print(browser.title)
     Hoary (5.04) : Bugs : Ubuntu
 
 This page checks that we can see a list of bugs on the distributions, in
 this case Ubuntu.
 
-    >>> browser.open('http://localhost/ubuntu/+bugs')
+    >>> browser.open("http://localhost/ubuntu/+bugs")
     >>> print(browser.title)
     Bugs : Ubuntu...
 
@@ -25,10 +25,12 @@ Bar. First, let's clear out the notification table:
     >>> store.execute("DELETE FROM BugNotification", noresult=True)
 
     >>> user_browser.open(
-    ...     'http://localhost/debian/+source/mozilla-firefox/+bug/2')
-    >>> user_browser.getControl(name='field.comment').value = (
-    ...     'This is a test comment.')
-    >>> user_browser.getControl('Post Comment', index=-1).click()
+    ...     "http://localhost/debian/+source/mozilla-firefox/+bug/2"
+    ... )
+    >>> user_browser.getControl(
+    ...     name="field.comment"
+    ... ).value = "This is a test comment."
+    >>> user_browser.getControl("Post Comment", index=-1).click()
 
     >>> user_browser.url
     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/2'

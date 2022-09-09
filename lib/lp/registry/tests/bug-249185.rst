@@ -16,7 +16,8 @@ Beta testers has lp-devs and adjutants as members.
 
     >>> ignored = beta_testers.addMember(devs, person, force_team_add=True)
     >>> ignored = beta_testers.addMember(
-    ...     adjutants, person, force_team_add=True)
+    ...     adjutants, person, force_team_add=True
+    ... )
     >>> dev1.hasParticipationEntryFor(beta_testers)
     True
 
@@ -34,10 +35,10 @@ participants.
     >>> dev1.hasParticipationEntryFor(beta_testers)
     True
 
-    >>> from lp.registry.interfaces.teammembership import (
-    ...     TeamMembershipStatus)
+    >>> from lp.registry.interfaces.teammembership import TeamMembershipStatus
     >>> adjutants.setMembershipData(
-    ...     devs, TeamMembershipStatus.DEACTIVATED, person)
+    ...     devs, TeamMembershipStatus.DEACTIVATED, person
+    ... )
 
 lp-devs has left adjutants, so its members are not participants of
 adjutants anymore.

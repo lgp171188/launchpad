@@ -7,16 +7,15 @@ privileges. This includes answer contacts and the project's owner.
 No Privileges Person is not an answer contact for Mozilla Firefox, nor
 the project owner, therefore they cannot create a new FAQ.
 
-    >>> user_browser.open('http://answers.launchpad.test/firefox')
-    >>> user_browser.getLink('All FAQs').click()
+    >>> user_browser.open("http://answers.launchpad.test/firefox")
+    >>> user_browser.getLink("All FAQs").click()
 
-    >>> user_browser.getLink('Create a new FAQ')
+    >>> user_browser.getLink("Create a new FAQ")
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> user_browser.open(
-    ...     'http://answers.launchpad.test/firefox/+createfaq')
+    >>> user_browser.open("http://answers.launchpad.test/firefox/+createfaq")
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -26,21 +25,24 @@ project owner. They are looking for a FAQ about RSS, but they do not find
 one. They choose to create one because they have answered several questions
 from various sources about the subject.
 
-    >>> owner_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> owner_browser.open('http://answers.launchpad.test/firefox')
-    >>> owner_browser.getLink('All FAQs').click()
+    >>> owner_browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> owner_browser.open("http://answers.launchpad.test/firefox")
+    >>> owner_browser.getLink("All FAQs").click()
     >>> print(owner_browser.title)
     FAQs for Mozilla Firefox : Questions : Mozilla Firefox
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(owner_browser.contents, 'faqs-listing')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(owner_browser.contents, "faqs-listing")
+    ...     )
+    ... )
     What's the keyboard shortcut for [random feature]?
     How do I install plugins (Shockwave, QuickTime, etc.)?
     How do I troubleshoot problems with extensions/themes?
     How do I install Extensions?
     How do I install Java?
 
-    >>> owner_browser.getLink('Create a new FAQ').click()
+    >>> owner_browser.getLink("Create a new FAQ").click()
 
 The page for creating a new FAQ contains three fields that are empty.
 Sample Person adds a title, keywords, and puts the answer into the
@@ -51,17 +53,17 @@ content field. They then submit the form using the 'Create' button.
     >>> print(owner_browser.title)
     Create a FAQ for...
 
-    >>> owner_browser.getControl('Title').value
+    >>> owner_browser.getControl("Title").value
     ''
-    >>> owner_browser.getControl('Keywords').value
+    >>> owner_browser.getControl("Keywords").value
     ''
-    >>> owner_browser.getControl('Content').value
+    >>> owner_browser.getControl("Content").value
     ''
 
-    >>> owner_browser.getControl('Title').value = 'How do I read RSS?'
-    >>> owner_browser.getControl('Keywords').value = 'RSS, bookmark'
-    >>> owner_browser.getControl('Content').value = 'Use the bookmark bar.'
-    >>> owner_browser.getControl('Create').click()
+    >>> owner_browser.getControl("Title").value = "How do I read RSS?"
+    >>> owner_browser.getControl("Keywords").value = "RSS, bookmark"
+    >>> owner_browser.getControl("Content").value = "Use the bookmark bar."
+    >>> owner_browser.getControl("Create").click()
 
 The FAQ is created and the browser displays the page for Sample Person.
 
@@ -71,21 +73,24 @@ The FAQ is created and the browser displays the page for Sample Person.
     FAQ #... : Questions : Mozilla Firefox
 
     >>> content = find_main_content(owner_browser.contents)
-    >>> print(extract_text(find_tag_by_id(content, 'faq-keywords')))
+    >>> print(extract_text(find_tag_by_id(content, "faq-keywords")))
     Keywords:
     RSS bookmark
-    >>> print(extract_text(find_tag_by_id(content, 'faq-content')))
+    >>> print(extract_text(find_tag_by_id(content, "faq-content")))
     Use the bookmark bar.
 
 They return to the project's list of FAQs to verify that the newest
 FAQ is listed first.
 
-    >>> owner_browser.getLink('List all FAQs').click()
+    >>> owner_browser.getLink("List all FAQs").click()
     >>> print(owner_browser.title)
     FAQs for Mozilla Firefox : Questions : Mozilla Firefox
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(owner_browser.contents, 'faqs-listing')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(owner_browser.contents, "faqs-listing")
+    ...     )
+    ... )
     How do I read RSS?
     What's the keyboard shortcut for [random feature]?
     How do I install plugins (Shockwave, QuickTime, etc.)?

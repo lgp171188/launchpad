@@ -17,9 +17,12 @@ retrieve a task, this syntax should look familiar.
 The IDistributionSet utility is accessed in the usual fashion:
 
     >>> from lp.registry.interfaces.distribution import (
-    ...     IDistribution, IDistributionSet)
+    ...     IDistribution,
+    ...     IDistributionSet,
+    ... )
     >>> from lp.translations.interfaces.hastranslationimports import (
-    ...     IHasTranslationImports)
+    ...     IHasTranslationImports,
+    ... )
     >>> distroset = getUtility(IDistributionSet)
 
 To retrieve a specific distribution, use IDistributionSet.get:
@@ -48,6 +51,7 @@ can be used to look up distributions by their aliases too.
     >>> gentoo.setAliases(["jackass"])
     >>> for alias in gentoo.aliases:
     ...     print(alias)
+    ...
     jackass
     >>> login(ANONYMOUS)
     >>> print(distroset["jackass"].name)
@@ -69,12 +73,13 @@ Let's make sure a distribution object properly implements its interfaces.
 Once you've got a distribution, you can retrieve a source package if you
 have a SourcePackageName object for it.
 
-    >>> from lp.registry.model.sourcepackagename import (
-    ...                                          SourcePackageName)
+    >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.registry.interfaces.distributionsourcepackage import (
-    ...     IDistributionSourcePackage)
+    ...     IDistributionSourcePackage,
+    ... )
     >>> from lp.soyuz.interfaces.distributionsourcepackagerelease import (
-    ...     IDistributionSourcePackageRelease)
+    ...     IDistributionSourcePackageRelease,
+    ... )
 
     >>> evo = SourcePackageName.byName("evolution")
     >>> evo_ubuntu = ubuntu.getSourcePackage(evo)
@@ -84,15 +89,14 @@ have a SourcePackageName object for it.
     >>> IDistributionSourcePackage.providedBy(evo_ubuntu)
     True
 
-    >>> from lp.soyuz.model.sourcepackagerelease import (
-    ...                                           SourcePackageRelease)
+    >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
     >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=evo.id, version="1.0")
+    ...     sourcepackagenameID=evo.id, version="1.0"
+    ... )
     >>> print(sourcepackagerelease.name)
     evolution
 
-    >>> evo_ubuntu_rel = ubuntu.getSourcePackageRelease(
-    ...                    sourcepackagerelease)
+    >>> evo_ubuntu_rel = ubuntu.getSourcePackageRelease(sourcepackagerelease)
     >>> IDistributionSourcePackageRelease.providedBy(evo_ubuntu_rel)
     True
 
@@ -113,12 +117,14 @@ You can list development distroseriess:
     >>> devdists = ubuntu.getDevelopmentSeries()
     >>> for devdist in devdists:
     ...     print(devdist.name)
+    ...
     hoary
 
 You can list the series for a distribution,
 
     >>> for series in ubuntu.series:
     ...     print(series.name)
+    ...
     breezy-autotest
     grumpy
     hoary
@@ -128,6 +134,7 @@ as well as the distribution architecture series for a distribution:
 
     >>> for architecture in ubuntu.architectures:
     ...     print(architecture.displayname)
+    ...
     Ubuntu Breezy Badger Autotest i386
     Ubuntu Hoary hppa
     Ubuntu Hoary i386
@@ -163,6 +170,7 @@ Ubuntu (and all flavours of it) first and the rest alphabetically:
 
     >>> for item in distroset.getDistros():
     ...     print(item.name)
+    ...
     ubuntu
     kubuntu
     ubuntutest
@@ -185,9 +193,11 @@ a certain string through the magic of full text indexing (fti). For instance:
 
     >>> packages = ubuntu.searchSourcePackageCaches("mozilla")
     >>> for distro_source_package_cache, source_name, rank in packages:
-    ...     print("%-17s rank:%s" % (
-    ...         distro_source_package_cache.name,
-    ...         type(rank)))
+    ...     print(
+    ...         "%-17s rank:%s"
+    ...         % (distro_source_package_cache.name, type(rank))
+    ...     )
+    ...
     mozilla-firefox   rank:<... 'float'>
 
 The search also matches on exact package names which fti doesn't like,
@@ -198,10 +208,15 @@ and even on substrings:
     1
     >>> packages = ubuntu.searchSourcePackageCaches("a")
     >>> for distro_source_package_cache, source_name, rank in packages:
-    ...     print("%s: %-17s rank:%s" % (
-    ...         distro_source_package_cache.__class__.__name__,
-    ...         distro_source_package_cache.name,
-    ...         type(rank)))
+    ...     print(
+    ...         "%s: %-17s rank:%s"
+    ...         % (
+    ...             distro_source_package_cache.__class__.__name__,
+    ...             distro_source_package_cache.name,
+    ...             type(rank),
+    ...         )
+    ...     )
+    ...
     DistributionSourcePackageCache: alsa-utils        rank:<... 'NoneType'>
     DistributionSourcePackageCache: commercialpackage rank:<... 'NoneType'>
     DistributionSourcePackageCache: foobar            rank:<... 'NoneType'>
@@ -214,6 +229,7 @@ of the results from searchSourcePackageCaches():
     >>> packages = ubuntu.searchSourcePackages("a")
     >>> for dsp in packages:
     ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
+    ...
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: commercialpackage
     DistributionSourcePackage: foobar
@@ -228,12 +244,14 @@ in the Packaging table linking it to an upstream project.
     >>> packages = ubuntu.searchSourcePackages("a", has_packaging=True)
     >>> for dsp in packages:
     ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
+    ...
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: mozilla-firefox
     DistributionSourcePackage: netapplet
     >>> packages = ubuntu.searchSourcePackages("a", has_packaging=False)
     >>> for dsp in packages:
     ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
+    ...
     DistributionSourcePackage: commercialpackage
     DistributionSourcePackage: foobar
 
@@ -243,9 +261,11 @@ results based on whether the source package has an entry in the
 SourcePackagePublishingHistory table for the given distroseries.
 
     >>> packages = ubuntu.searchSourcePackages(
-    ...     "a", publishing_distroseries=ubuntu.currentseries)
+    ...     "a", publishing_distroseries=ubuntu.currentseries
+    ... )
     >>> for dsp in packages:
     ...     print("%s: %s" % (dsp.__class__.__name__, dsp.name))
+    ...
     DistributionSourcePackage: alsa-utils
     DistributionSourcePackage: netapplet
 
@@ -262,9 +282,11 @@ Searching for an exact match on a valid binary name returns the
 expected results:
 
     >>> results = ubuntu.searchBinaryPackages(
-    ...     "mozilla-firefox", exact_match=True)
+    ...     "mozilla-firefox", exact_match=True
+    ... )
     >>> for result in results:
     ...     print(result.name)
+    ...
     mozilla-firefox
 
 An exact match search with no matches on any package name returns
@@ -282,9 +304,11 @@ Loosening to substring matches gives another result:
 
     >>> for result in results:
     ...     print(result.name)
+    ...
     mozilla-firefox
     >>> for result in results:
     ...     print(result.binpkgnames)
+    ...
     mozilla-firefox mozilla-firefox-data
 
 The results of searchBinaryPackages() are simply ordered alphabetically
@@ -293,6 +317,7 @@ for the moment until we have a better FTI rank to order with.
     >>> results = ubuntu.searchBinaryPackages("m")
     >>> for result in results:
     ...     print(result.name)
+    ...
     mozilla-firefox
     pmount
 
@@ -351,11 +376,11 @@ uploader record is in fact an ArchivePermission record that tells us
 what component is uploadable to by what person or group of people.
 
     >>> from operator import attrgetter
-    >>> for permission in sorted(
-    ...     ubuntu.uploaders, key=attrgetter("id")):
+    >>> for permission in sorted(ubuntu.uploaders, key=attrgetter("id")):
     ...     assert not permission.archive.is_ppa
     ...     print(permission.component.name)
     ...     print(permission.person.displayname)
+    ...
     universe
     Ubuntu Team
     restricted
@@ -499,8 +524,10 @@ complete so it will not show up unless we explicitly ask for complete specs:
     >>> filter = [SpecificationFilter.INFORMATIONAL]
     >>> kubuntu.specifications(None, filter=filter).count()
     0
-    >>> filter = [SpecificationFilter.INFORMATIONAL,
-    ...           SpecificationFilter.COMPLETE]
+    >>> filter = [
+    ...     SpecificationFilter.INFORMATIONAL,
+    ...     SpecificationFilter.COMPLETE,
+    ... ]
     >>> kubuntu.specifications(None, filter=filter).count()
     1
 
@@ -509,7 +536,8 @@ There are 2 completed specs for Kubuntu:
 
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print(spec.name, spec.is_complete)
+    ...     print(spec.name, spec.is_complete)
+    ...
     thinclient-local-devices True
     usplash-on-hibernation True
 
@@ -518,7 +546,8 @@ And there are four incomplete specs:
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print(spec.name, spec.is_complete)
+    ...     print(spec.name, spec.is_complete)
+    ...
     cluster-installation False
     revu False
     kde-desktopfile-langpacks False
@@ -529,7 +558,8 @@ If we ask for all specs, we get them in the order of priority.
 
     >>> filter = [SpecificationFilter.ALL]
     >>> for spec in kubuntu.specifications(None, filter=filter):
-    ...    print(spec.priority.title, spec.name)
+    ...     print(spec.priority.title, spec.name)
+    ...
     Essential cluster-installation
     High revu
     Medium thinclient-local-devices
@@ -542,6 +572,7 @@ And if we ask just for specs, we get the incomplete ones.
 
     >>> for spec in kubuntu.specifications(None):
     ...     print(spec.name, spec.is_complete)
+    ...
     cluster-installation False
     revu False
     kde-desktopfile-langpacks False
@@ -551,6 +582,7 @@ We can filter for specifications that contain specific text:
 
     >>> for spec in kubuntu.specifications(None, filter=["package"]):
     ...     print(spec.name)
+    ...
     revu
 
 We can get only valid specs (those that are not obsolete or superseded):
@@ -564,13 +596,17 @@ We can get only valid specs (those that are not obsolete or superseded):
     ...     owner = spec.owner
     ...     if spec.name in ["cluster-installation", "revu"]:
     ...         spec.definition_status = (
-    ...             SpecificationDefinitionStatus.OBSOLETE)
+    ...             SpecificationDefinitionStatus.OBSOLETE
+    ...         )
     ...     if spec.name in ["krunch-desktop-plan"]:
     ...         spec.definition_status = (
-    ...             SpecificationDefinitionStatus.SUPERSEDED)
+    ...             SpecificationDefinitionStatus.SUPERSEDED
+    ...         )
     ...     shim = spec.updateLifecycleStatus(owner)
+    ...
     >>> for spec in kubuntu.valid_specifications():
     ...     print(spec.name)
+    ...
     kde-desktopfile-langpacks
 
 
@@ -583,6 +619,7 @@ series of a distribution.
     >>> from datetime import datetime
     >>> for milestone in debian.milestones:
     ...     print(milestone.name)
+    ...
     3.1
     3.1-rc1
 
@@ -592,20 +629,28 @@ Milestones for distros can only be created by distro owners or admins.
 
     >>> login("no-priv@canonical.com")
     >>> woody.newMilestone(
-    ...     name="impossible", dateexpected=datetime(2028, 10, 1))
+    ...     name="impossible", dateexpected=datetime(2028, 10, 1)
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized:
     (<DistroSeries ...'woody'>, 'newMilestone', 'launchpad.Edit')
     >>> login("mark@example.com")
     >>> debian_milestone = woody.newMilestone(
-    ...     name="woody-rc1", dateexpected=datetime(2028, 10, 1))
+    ...     name="woody-rc1", dateexpected=datetime(2028, 10, 1)
+    ... )
 
 They're ordered by dateexpected.
 
     >>> for milestone in debian.milestones:
-    ...     print("%s: %s" % (
-    ...         milestone.name, milestone.dateexpected.strftime("%Y-%m-%d")))
+    ...     print(
+    ...         "%s: %s"
+    ...         % (
+    ...             milestone.name,
+    ...             milestone.dateexpected.strftime("%Y-%m-%d"),
+    ...         )
+    ...     )
+    ...
     3.1: 2056-05-16
     3.1-rc1: 2056-02-16
     woody-rc1: 2028-10-01
@@ -616,6 +661,7 @@ property.
     >>> debian_milestone.active = False
     >>> for milestone in debian.milestones:
     ...     print(milestone.name)
+    ...
     3.1
     3.1-rc1
 
@@ -623,6 +669,7 @@ To get all milestones of a given distro we have the .all_milestones property.
 
     >>> for milestone in debian.all_milestones:
     ...     print(milestone.name)
+    ...
     3.1
     3.1-rc1
     woody-rc1
@@ -635,8 +682,15 @@ A distribution archive (primary, partner, debug or copy) can be retrieved
 by name using IDistribution.getArchive.
 
     >>> def display_archive(archive):
-    ...     print("%s %s %s" % (
-    ...         archive.distribution.name, archive.owner.name, archive.name))
+    ...     print(
+    ...         "%s %s %s"
+    ...         % (
+    ...             archive.distribution.name,
+    ...             archive.owner.name,
+    ...             archive.name,
+    ...         )
+    ...     )
+    ...
     >>> display_archive(ubuntu.getArchive("primary"))
     ubuntu ubuntu-team primary
     >>> display_archive(ubuntu.getArchive("partner"))

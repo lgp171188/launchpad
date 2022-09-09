@@ -9,10 +9,10 @@ We have to do a little set up.
     >>> from lp.testing import (
     ...     login,
     ...     logout,
-    ...     )
-    >>> login('admin@canonical.com')
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
-    >>> alsa = getUtility(IProductSet).getByName('alsa-utils')
+    ... )
+    >>> login("admin@canonical.com")
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
+    >>> alsa = getUtility(IProductSet).getByName("alsa-utils")
     >>> evolution.translations_usage = ServiceUsage.LAUNCHPAD
     >>> alsa.translations_usage = ServiceUsage.LAUNCHPAD
     >>> transaction.commit()
@@ -22,8 +22,9 @@ The +products-with-translations page lists all translatable products in
 Launchpad.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/'
-    ...     'translations/+products-with-translations')
+    ...     "http://translations.launchpad.test/"
+    ...     "translations/+products-with-translations"
+    ... )
 
     >>> print(find_main_content(browser.contents).decode_contents())
     <...>

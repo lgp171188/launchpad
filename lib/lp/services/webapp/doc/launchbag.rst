@@ -8,27 +8,33 @@ First, we'll set up various imports and stub objects.
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.services.webapp.interfaces import BasicAuthLoggedInEvent
     >>> from lp.services.webapp.interfaces import LoggedOutEvent
-    >>> from lp.services.webapp.interfaces import \
-    ...     CookieAuthPrincipalIdentifiedEvent
+    >>> from lp.services.webapp.interfaces import (
+    ...     CookieAuthPrincipalIdentifiedEvent,
+    ... )
 
     >>> class Principal:
     ...     id = 23
+    ...
 
     >>> principal = Principal()
     >>> class Participation:
     ...     principal = principal
     ...     interaction = None
+    ...
 
     >>> class Response:
     ...     def getCookie(self, name):
     ...         return None
+    ...
 
     >>> class Request:
     ...     principal = principal
     ...     response = Response()
     ...     cookies = {}
+    ...
     ...     def setPrincipal(self, principal):
     ...         pass
+    ...
 
     >>> request = Request()
 
@@ -66,7 +72,8 @@ Let's do a cookie auth principal identification.  In this case, the login
 will be cookie@example.com.
 
     >>> event = CookieAuthPrincipalIdentifiedEvent(
-    ...     principal, request, 'cookie@example.com')
+    ...     principal, request, "cookie@example.com"
+    ... )
     >>> notify(event)
     >>> print(launchbag.login)
     cookie@example.com
@@ -91,8 +98,9 @@ up a lot of times.
     >>> person.setLocation(
     ...     launchbag.user.latitude,
     ...     launchbag.user.longitude,
-    ...     'Europe/Paris',
-    ...     launchbag.user)
+    ...     "Europe/Paris",
+    ...     launchbag.user,
+    ... )
     >>> launchbag.time_zone
     <UTC>
 

@@ -8,8 +8,8 @@ enable them on firefox.
     >>> from zope.component import getUtility
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> login('admin@canonical.com')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> login("admin@canonical.com")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> firefox.blueprints_usage = ServiceUsage.LAUNCHPAD
     >>> transaction.commit()
     >>> logout()
@@ -21,14 +21,16 @@ specification.
 First we load the page to target to the series.
 
     >>> browser.addHeader(
-    ...     'Authorization', 'Basic celso.providelo@canonical.com:test')
+    ...     "Authorization", "Basic celso.providelo@canonical.com:test"
+    ... )
     >>> browser.open(
-    ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support')
-    >>> browser.getLink('Propose as goal').click()
-    >>> back_link = browser.getLink('Support Native SVG Objects')
+    ...     "http://blueprints.launchpad.test/firefox/+spec/svg-support"
+    ... )
+    >>> browser.getLink("Propose as goal").click()
+    >>> back_link = browser.getLink("Support Native SVG Objects")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support'
-    >>> browser.getLink('Cancel').url
+    >>> browser.getLink("Cancel").url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support'
 
 We can see two potential series candidates, the "trunk" and the "1.0" series.
@@ -44,7 +46,9 @@ Now, we POST the form and expect to be redirected to the spec home page.
 Note that we use a user who DOES NOT have the "driver" role on that series,
 so the targeting should NOT be automatically approved.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /firefox/+spec/svg-support/+setproductseries HTTP/1.1
     ... Authorization: Basic celso.providelo@canonical.com:test
     ... Referer: https://launchpad.test/
@@ -67,7 +71,9 @@ so the targeting should NOT be automatically approved.
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 303 See Other
     ...
     Content-Length: 0
@@ -79,9 +85,13 @@ so the targeting should NOT be automatically approved.
 When we view that page, we see the targeted product series listed in the
 header.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/+spec/svg-support HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...Proposed...
     ...firefox/1.0...
@@ -89,7 +99,9 @@ header.
 
 OK, we will also pitch the e4x spec to the same series:
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /firefox/+spec/e4x/+setproductseries HTTP/1.1
     ... Authorization: Basic celso.providelo@canonical.com:test
     ... Referer: https://launchpad.test/
@@ -112,7 +124,9 @@ OK, we will also pitch the e4x spec to the same series:
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 303 See Other
     ...
     Content-Length: 0
@@ -123,10 +137,14 @@ OK, we will also pitch the e4x spec to the same series:
 
 And now both should show up on the "+setgoals" page for that product series.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/1.0/+setgoals HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...Support Native SVG Objects...
     ...Support E4X in EcmaScript...
@@ -135,14 +153,15 @@ And now both should show up on the "+setgoals" page for that product series.
 Now, we will accept one of them, the svg-support one. We expect to be told
 that 1 was accepted.
 
-    >>> driver_browser = setupBrowser(auth='Basic test@canonical.com:test')
+    >>> driver_browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> driver_browser.open(
-    ...     'http://blueprints.launchpad.test/firefox/1.0/+setgoals')
-    >>> 'Support Native SVG' in driver_browser.contents
+    ...     "http://blueprints.launchpad.test/firefox/1.0/+setgoals"
+    ... )
+    >>> "Support Native SVG" in driver_browser.contents
     True
-    >>> driver_browser.getControl('Support Native SVG').selected = True
-    >>> driver_browser.getControl('Accept').click()
-    >>> 'Accepted 1 specification(s)' in driver_browser.contents
+    >>> driver_browser.getControl("Support Native SVG").selected = True
+    >>> driver_browser.getControl("Accept").click()
+    >>> "Accepted 1 specification(s)" in driver_browser.contents
     True
 
 
@@ -150,17 +169,22 @@ We will now decline the remaining one. We expect to be redirected, since
 there are none left in the queue.
 
     >>> driver_browser.open(
-    ...     'http://blueprints.launchpad.test/firefox/1.0/+setgoals')
-    >>> driver_browser.getControl('Support E4X').selected = True
-    >>> driver_browser.getControl('Decline').click()
-    >>> 'Declined 1 specification(s)' in driver_browser.contents
+    ...     "http://blueprints.launchpad.test/firefox/1.0/+setgoals"
+    ... )
+    >>> driver_browser.getControl("Support E4X").selected = True
+    >>> driver_browser.getControl("Decline").click()
+    >>> "Declined 1 specification(s)" in driver_browser.contents
     True
 
 The accepted item should show up in the list of specs for this series:
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/1.0/+specs HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...Support Native SVG Objects...
 
@@ -168,9 +192,13 @@ The accepted item should show up in the list of specs for this series:
 As a final check, we will show that there is that spec in the "Deferred"
 listing.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/1.0/+specs?acceptance=declined HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...Support E4X in EcmaScript...
 
@@ -179,7 +207,9 @@ Now, lets make sure that automatic approval works. We will move the accepted
 spec to the "trunk" series, where it will be automatically approved
 because we are an admin, then we will move it back.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /firefox/+spec/svg-support/+setproductseries HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
     ... Referer: https://launchpad.test/
@@ -202,7 +232,9 @@ because we are an admin, then we will move it back.
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 303 See Other
     ...
     Content-Length: 0
@@ -213,16 +245,17 @@ because we are an admin, then we will move it back.
 
 OK, lets see if it was immediately accepted:
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> 'firefox/trunk' in anon_browser.contents
+    >>> anon_browser.open("http://launchpad.test/firefox/+spec/svg-support")
+    >>> "firefox/trunk" in anon_browser.contents
     True
-    >>> 'Accepted' in anon_browser.contents
+    >>> "Accepted" in anon_browser.contents
     True
 
 And lets put it back:
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /firefox/+spec/svg-support/+setproductseries HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
     ... Referer: https://launchpad.test/
@@ -245,7 +278,9 @@ And lets put it back:
     ...
     ... Continue
     ... -----------------------------26999413214087432371486976730--
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 303 See Other
     ...
     Content-Length: 0
@@ -255,9 +290,8 @@ And lets put it back:
 
 And again, it should be accepted automatically.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> 'firefox/1.0' in anon_browser.contents
+    >>> anon_browser.open("http://launchpad.test/firefox/+spec/svg-support")
+    >>> "firefox/1.0" in anon_browser.contents
     True
-    >>> 'Accepted' in anon_browser.contents
+    >>> "Accepted" in anon_browser.contents
     True

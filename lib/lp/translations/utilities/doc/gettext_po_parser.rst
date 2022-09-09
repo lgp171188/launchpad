@@ -5,9 +5,12 @@ The PO parser handles GNU gettext format human readable files.
 
     >>> from zope.interface.verify import verifyObject
     >>> from lp.translations.interfaces.translationcommonformat import (
-    ...     ITranslationHeaderData)
+    ...     ITranslationHeaderData,
+    ... )
     >>> from lp.translations.utilities.gettext_po_parser import (
-    ...     POHeader, POParser)
+    ...     POHeader,
+    ...     POParser,
+    ... )
 
 
 POParser
@@ -23,17 +26,21 @@ PO files with empty headers are not allowed.
 
 PO files with context after msgids are reported as broken.
 
-    >>> parser.parse(b'msgid ""\nmsgstr ""\n'
-    ...              b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n')  # noqa
+    >>> parser.parse(
+    ...     b'msgid ""\nmsgstr ""\n'
+    ...     b'msgid "blah"\nmsgctxt "foo"\nmsgstr "bar"\n'
+    ... )  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
 
 And a msgctxt followed by msgctxt is caught as well.
 
-    >>> parser.parse(b'msgid ""\nmsgstr ""\n'
-    ...              b'msgctxt "foo"\nmsgctxt "foo1"\n'
-    ...              b'msgid "blah"\nmsgstr "bar"\n')  # noqa
+    >>> parser.parse(
+    ...     b'msgid ""\nmsgstr ""\n'
+    ...     b'msgctxt "foo"\nmsgctxt "foo1"\n'
+    ...     b'msgid "blah"\nmsgstr "bar"\n'
+    ... )  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...
@@ -41,8 +48,9 @@ And a msgctxt followed by msgctxt is caught as well.
 When a string is followed by non-string, non-space data, it is caught
 as an error.
 
-    >>> parser.parse(b'msgid ""\nmsgstr "something"\n'
-    ...              b'"foo"  whatever\n')  # noqa
+    >>> parser.parse(
+    ...     b'msgid ""\nmsgstr "something"\n' b'"foo"  whatever\n'
+    ... )  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Extra content found after string...
@@ -113,7 +121,8 @@ translation_revision_date
 This attribute gives you a datetime object representing the
 PO-Revision-Date field.
 
-    >>> header = POHeader("""
+    >>> header = POHeader(
+    ...     """
     ... Project-Id-Version: foo
     ... Report-Msgid-Bugs-To: foo@bar.com
     ... POT-Creation-Date: 2005-01-26 01:01+0100
@@ -122,14 +131,16 @@ PO-Revision-Date field.
     ... MIME-Version: 1.0
     ... Content-Type: text/plain; charset=UTF-8
     ... Content-Transfer-Encoding: 8bit
-    ... """)
+    ... """
+    ... )
     >>> header.translation_revision_date
     datetime.datetime(2004, 3, 6, 20, 6, tzinfo=tzinfo(60))
 
 
 It defaults to None.
 
-    >>> header = POHeader("""
+    >>> header = POHeader(
+    ...     """
     ... Project-Id-Version: foo
     ... Report-Msgid-Bugs-To: foo@bar.com
     ... POT-Creation-Date: 2005-01-26 01:01+0100
@@ -137,7 +148,8 @@ It defaults to None.
     ... MIME-Version: 1.0
     ... Content-Type: text/plain; charset=UTF-8
     ... Content-Transfer-Encoding: 8bit
-    ... """)
+    ... """
+    ... )
     >>> print(header.translation_revision_date)
     None
 
@@ -145,7 +157,8 @@ It defaults to None.
 If the PO-Revision-Date header contains non-ASCII characters, we get a
 valid header but no revision date.
 
-    >>> header = POHeader("""
+    >>> header = POHeader(
+    ...     """
     ... Project-Id-Version: foo
     ... Report-Msgid-Bugs-To: foo@bar.com
     ... POT-Creation-Date: 2005-01-26 01:01+0100
@@ -154,7 +167,8 @@ valid header but no revision date.
     ... MIME-Version: 1.0
     ... Content-Type: text/plain; charset=UTF-8
     ... Content-Transfer-Encoding: 8bit
-    ... """)
+    ... """
+    ... )
     >>> print(header.translation_revision_date)
     None
 
@@ -162,7 +176,8 @@ valid header but no revision date.
 Likewise, if the PO-Revision-Date header is semantically nonsensical
 (usually because of an insane timezone offset), it is simply ignored.
 
-    >>> header = POHeader("""
+    >>> header = POHeader(
+    ...     """
     ... Project-Id-Version: foo
     ... Report-Msgid-Bugs-To: foo@bar.com
     ... POT-Creation-Date: 2005-01-26 01:01+0100
@@ -171,7 +186,8 @@ Likewise, if the PO-Revision-Date header is semantically nonsensical
     ... MIME-Version: 1.0
     ... Content-Type: text/plain; charset=UTF-8
     ... Content-Transfer-Encoding: 8bit
-    ... """)
+    ... """
+    ... )
     >>> print(header.translation_revision_date)
     None
 
@@ -184,7 +200,8 @@ This method sets some header fields based on the given template_header.
 
 We need an standard template header.
 
-    >>> template_header = POHeader("""
+    >>> template_header = POHeader(
+    ...     """
     ...     Project-Id-Version: PACKAGE VERSION
     ...     Report-Msgid-Bugs-To: 
     ...     POT-Creation-Date: 2007-07-09 03:39+0100
@@ -195,11 +212,13 @@ We need an standard template header.
     ...     Content-Type: text/plain; charset=CHARSET
     ...     Content-Transfer-Encoding: 8bit
     ...     Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;
-    ...     """)  # noqa
+    ...     """
+    ... )  # noqa
 
 and a translation header with some fields set.
 
-    >>> translation_header = POHeader("""
+    >>> translation_header = POHeader(
+    ...     """
     ...     POT-Creation-Date: 2006-12-30 13:23+0400
     ...     PO-Revision-Date: 2007-04-13 18:45+0000
     ...     Last-Translator: Carlos Perello Marin <carlos@canonical.com>
@@ -208,7 +227,8 @@ and a translation header with some fields set.
     ...     Content-Type: text/plain; charset=UTF-8
     ...     Content-Transfer-Encoding: 8bit
     ...     Plural-Forms: nplurals=2; plural=n != 1;
-    ...     """)
+    ...     """
+    ... )
 
 Once we do the update, the resulting output will be a mix between both
 headers.
@@ -249,7 +269,8 @@ Drupal uses a non standard field to note the translation domain for the
 translation catalog. The update method must copy it if it exists in the
 template.
 
-    >>> template_header = POHeader("""
+    >>> template_header = POHeader(
+    ...     """
     ...     Project-Id-Version: PACKAGE VERSION
     ...     Report-Msgid-Bugs-To: 
     ...     POT-Creation-Date: 2007-07-09 03:39+0100
@@ -261,7 +282,8 @@ template.
     ...     Content-Transfer-Encoding: 8bit
     ...     Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;
     ...     Domain: blahdomain
-    ...     """)  # noqa
+    ...     """
+    ... )  # noqa
     >>> translation_header.updateFromTemplateHeader(template_header)
     >>> print(translation_header.getRawContent())
     Project-Id-Version: PACKAGE VERSION
@@ -364,10 +386,11 @@ The translation of the first message has been interpreted correctly,
 despite the backslash in the second multibyte sequence, because is the same
 as decoding '\xa6\xa8\xa5\\' as BIG5 encoding.
 
-    >>> print(backslashreplace(b'\xa6\xa8\xa5\\'.decode('BIG5')))
+    >>> print(backslashreplace(b"\xa6\xa8\xa5\\".decode("BIG5")))
     \u6210\u529f
     >>> for translation in translation_file.messages[0].translations:
     ...     print(backslashreplace(translation))
+    ...
     \u6210\u529f
 
 
@@ -386,13 +409,14 @@ which would cause problems if we naively use '\n' as a line separator.
 
 Change the last PO file to use Mac-style newlines:
 
-    >>> content = content.replace(b'\n', b'\r')
+    >>> content = content.replace(b"\n", b"\r")
 
 Verify that it still parses:
 
     >>> translation_file = parser.parse(content)
     >>> for translation in translation_file.messages[0].translations:
     ...     print(backslashreplace(translation))
+    ...
     \u6210\u529f
 
 
@@ -429,6 +453,7 @@ are decoded correctly.
 
     >>> for translation in translation_file.messages[0].translations:
     ...     print(repr(six.ensure_str(translation)))
+    ...
     '\x07\x08\x0b\x0c\t\x0b\\"\'\n8 8 80 p\n'
 
 In this case, the numeric representation are UTF-8 only characters and we can
@@ -448,10 +473,9 @@ zero for n equal to 1 and to one for everything else), and an inverted English
 plural formula (n==1), first two elements in the map are pointing to each
 other:
 
-    >>> form_1 = 'n!=1'
-    >>> form_2 = 'n==1'
-    >>> from lp.translations.utilities.pluralforms import (
-    ...     plural_form_mapper)
+    >>> form_1 = "n!=1"
+    >>> form_2 = "n==1"
+    >>> from lp.translations.utilities.pluralforms import plural_form_mapper
     >>> plural_form_mapper(form_1, form_2)
     {0: 1, 1: 0, 2: 2, 3: 3, 4: 4, 5: 5}
 
@@ -459,12 +483,14 @@ A practical example we can find on-line is that of Slovenian translations.
 Plural formula in GNOME and a preferred value is:
 
     >>> form_1 = (
-    ...     '(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0)')
+    ...     "(n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0)"
+    ... )
 
 However, KDE uses the formula which returns indices shifted by one:
 
     >>> form_2 = (
-    ...     '(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3)')
+    ...     "(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3)"
+    ... )
 
 We can easily and correctly map between these:
 
@@ -475,58 +501,58 @@ At the same time, if plural formulae are completely incompatible (i.e.
 have a different number of return forms, or they return different results),
 we'll get a return matrix which indicates no change (so we import them as-is):
 
-    >>> plural_form_mapper(form_1, 'n!=1')
+    >>> plural_form_mapper(form_1, "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 First form uses zero for both 0 and 1, compared to only 1 for the latter.
 
-    >>> plural_form_mapper('n>1', 'n!=1')
+    >>> plural_form_mapper("n>1", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 Or, if we get the same number of plural forms, yet they are not being
 mapped to each other:
 
-    >>> plural_form_mapper('(n!=1)? 1: 2', 'n!=1')
+    >>> plural_form_mapper("(n!=1)? 1: 2", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 We also get the identity mapping if we try to use a dangerous '**' operator
 in any of the plural forms:
 
-    >>> plural_form_mapper('n**n**n', 'n!=1')
+    >>> plural_form_mapper("n**n**n", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 Using floats should also be disallowed, and we should get an identity
 mapping as well:
 
-    >>> plural_form_mapper('(1.0 & n) == 1', 'n!=1')
+    >>> plural_form_mapper("(1.0 & n) == 1", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-    >>> plural_form_mapper('(1E-1 & n) == 1', 'n!=1')
+    >>> plural_form_mapper("(1E-1 & n) == 1", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 Similar happens with division by zero and too big a plural form, or a
 syntax error:
 
-    >>> plural_form_mapper('1/n', 'n!=1')
+    >>> plural_form_mapper("1/n", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-    >>> plural_form_mapper('(n!=1) ? 4 : 1', 'n!=1')
+    >>> plural_form_mapper("(n!=1) ? 4 : 1", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
-    >>> plural_form_mapper('n==1? 0', 'n!=1')
+    >>> plural_form_mapper("n==1? 0", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 Symbols like '~' are disallowed:
 
-    >>> plural_form_mapper('~n', 'n!=1')
+    >>> plural_form_mapper("~n", "n!=1")
     {0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5}
 
 While whitespace (including spaces and tabs) is ok:
 
-    >>> plural_form_mapper('n\t==  1', '  n != 1')
+    >>> plural_form_mapper("n\t==  1", "  n != 1")
     {0: 1, 1: 0, 2: 2, 3: 3, 4: 4, 5: 5}
 
 
 Let's parse a Spanish PO file with an inverted plural formula.
 
-    >>> spanish_pluralformula = 'n!=1'
+    >>> spanish_pluralformula = "n!=1"
 
     >>> content = b"""
     ... msgid ""
@@ -551,5 +577,6 @@ formula for the Spanish language.
 
     >>> for translation in translation_file.messages[0].translations:
     ...     print(translation)
+    ...
     singular translation
     plural translation

@@ -21,28 +21,33 @@ follows:
 
     >>> from lp.services.verification.interfaces.authtoken import (
     ...     LoginTokenType,
-    ...     )
+    ... )
     >>> from lp.registry.model.person import Person
     >>> from lp.services.verification.interfaces.logintoken import (
-    ...     ILoginTokenSet)
+    ...     ILoginTokenSet,
+    ... )
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.services.mail import stub
     >>> import transaction
-    >>> foobar = Person.byName('name16')
+    >>> foobar = Person.byName("name16")
 
 Let's create a new LoginToken to confirm an email address for foobar.
 
     >>> token = getUtility(ILoginTokenSet).new(
-    ...     foobar, 'foo.bar@canonical.com', 'foo.bar2@canonical.com',
-    ...     LoginTokenType.VALIDATEEMAIL)
+    ...     foobar,
+    ...     "foo.bar@canonical.com",
+    ...     "foo.bar2@canonical.com",
+    ...     LoginTokenType.VALIDATEEMAIL,
+    ... )
     >>> token.sendEmailValidationRequest()
     >>> transaction.commit()
     >>> found = False
     >>> found_msg = None
     >>> for from_addr, to_addrs, raw_msg in stub.test_emails:
-    ...     if to_addrs == ['foo.bar2@canonical.com']:
+    ...     if to_addrs == ["foo.bar2@canonical.com"]:
     ...         found = True
     ...         found_msg = raw_msg
+    ...
     >>> assert found
     >>> stub.test_emails = []
 
@@ -52,7 +57,7 @@ requested it to complete their task.
     >>> from email import message_from_bytes
 
     >>> msg = message_from_bytes(found_msg)
-    >>> print(msg['Precedence'])
+    >>> print(msg["Precedence"])
     None
 
 As the process is not yet finished, foobar will see this as one of their
@@ -61,6 +66,7 @@ unconfirmed email addresses.
     >>> flush_database_updates()
     >>> for email in foobar.unvalidatedemails:
     ...     print(email)
+    ...
     foo.bar2@canonical.com
 
 It's possible to create another token for the same purpose, but this
@@ -68,11 +74,15 @@ won't cause that email to show up twice on foobar's list of unconfirmed
 emails.
 
     >>> token2 = getUtility(ILoginTokenSet).new(
-    ...     foobar, 'foo.bar@canonical.com', 'foo.bar2@canonical.com',
-    ...     LoginTokenType.VALIDATEEMAIL)
+    ...     foobar,
+    ...     "foo.bar@canonical.com",
+    ...     "foo.bar2@canonical.com",
+    ...     LoginTokenType.VALIDATEEMAIL,
+    ... )
     >>> flush_database_updates()
     >>> for email in foobar.unvalidatedemails:
     ...     print(email)
+    ...
     foo.bar2@canonical.com
 
 Once foobar finished the process, confirming their new email address, we
@@ -111,15 +121,20 @@ our own making.
 
     >>> token = removeSecurityProxy(token)
     >>> token.date_consumed = datetime(
-    ...     2009, 1, 1, 16, 56, 59, tzinfo=pytz.timezone('UTC'))
+    ...     2009, 1, 1, 16, 56, 59, tzinfo=pytz.timezone("UTC")
+    ... )
 
     >>> token3 = getUtility(ILoginTokenSet).new(
-    ...     foobar, 'foo.bar@canonical.com', 'foo.bar2@canonical.com',
-    ...     LoginTokenType.VALIDATEEMAIL)
+    ...     foobar,
+    ...     "foo.bar@canonical.com",
+    ...     "foo.bar2@canonical.com",
+    ...     LoginTokenType.VALIDATEEMAIL,
+    ... )
     >>> flush_database_updates()
 
     >>> for email in foobar.unvalidatedemails:
     ...     print(email)
+    ...
     foo.bar2@canonical.com
 
     >>> token3.consume()
@@ -143,7 +158,8 @@ and type associated with it.
 
     >>> token_set = getUtility(ILoginTokenSet)
     >>> tokens = token_set.searchByEmailRequesterAndType(
-    ...     token.email, token.requester, token.tokentype)
+    ...     token.email, token.requester, token.tokentype
+    ... )
     >>> token = getUtility(ILoginTokenSet).get(token.id)
 
     >>> print(tokens.count())
@@ -153,7 +169,8 @@ This can be limited to searching only unconsumed tokens by passing a
 `consumed=False` parameter to searchByEmailRequesterAndType().
 
     >>> tokens = token_set.searchByEmailRequesterAndType(
-    ...     token.email, token.requester, token.tokentype, consumed=False)
+    ...     token.email, token.requester, token.tokentype, consumed=False
+    ... )
 
     >>> print(tokens.count())
     0
@@ -161,7 +178,8 @@ This can be limited to searching only unconsumed tokens by passing a
 Passing `consumed=True` will return only consumed tokens.
 
     >>> tokens = token_set.searchByEmailRequesterAndType(
-    ...     token.email, token.requester, token.tokentype, consumed=True)
+    ...     token.email, token.requester, token.tokentype, consumed=True
+    ... )
 
     >>> print(tokens.count())
     3
@@ -170,14 +188,19 @@ It's also possible to search for tokens by their fingerprint, requester
 and type. A valid fingerprint is a 40 character uppercase hex string, so
 we'll generate one.
 
-    >>> fingerprint = 'ABCD' * 10
+    >>> fingerprint = "ABCD" * 10
 
     >>> token = token_set.new(
-    ...     foobar, 'foo.bar@canonical.com', 'foo.bar2@canonical.com',
-    ...     LoginTokenType.VALIDATEEMAIL, fingerprint=fingerprint)
+    ...     foobar,
+    ...     "foo.bar@canonical.com",
+    ...     "foo.bar2@canonical.com",
+    ...     LoginTokenType.VALIDATEEMAIL,
+    ...     fingerprint=fingerprint,
+    ... )
 
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
-    ...     fingerprint, token.requester, token.tokentype)
+    ...     fingerprint, token.requester, token.tokentype
+    ... )
 
     >>> print(tokens.count())
     1
@@ -185,7 +208,8 @@ we'll generate one.
 Again, this can be limited to unconsumed tokens.
 
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
-    ...     fingerprint, token.requester, token.tokentype, consumed=False)
+    ...     fingerprint, token.requester, token.tokentype, consumed=False
+    ... )
 
     >>> print(tokens.count())
     1
@@ -193,7 +217,8 @@ Again, this can be limited to unconsumed tokens.
 Or consumed ones.
 
     >>> tokens = token_set.searchByFingerprintRequesterAndType(
-    ...     fingerprint, token.requester, token.tokentype, consumed=True)
+    ...     fingerprint, token.requester, token.tokentype, consumed=True
+    ... )
 
     >>> print(tokens.count())
     0
@@ -203,16 +228,19 @@ searchByFingerprintRequesterAndType() or searchByEmailRequesterAndType()
 you'll raise an error.
 
     >>> token_set.searchByFingerprintRequesterAndType(
-    ...     fingerprint, token.requester, token.tokentype,
-    ...     consumed="eggs")
+    ...     fingerprint, token.requester, token.tokentype, consumed="eggs"
+    ... )
     Traceback (most recent call last):
       ...
     AssertionError: consumed should be one of {True, False, None}.
     Got 'eggs'.
 
     >>> token_set.searchByEmailRequesterAndType(
-    ...     'test@canonical.com', token.requester, token.tokentype,
-    ...     consumed="spam")
+    ...     "test@canonical.com",
+    ...     token.requester,
+    ...     token.tokentype,
+    ...     consumed="spam",
+    ... )
     Traceback (most recent call last):
       ...
     AssertionError: consumed should be one of {True, False, None}.

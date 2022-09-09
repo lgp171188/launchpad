@@ -16,7 +16,8 @@ no results will be returned.
     >>> test_product = factory.makeProduct()
     >>> test_person = factory.makePerson()
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, '', product=test_product)
+    ...     test_person, "", product=test_product
+    ... )
     >>> similar_bugs.count()
     0
 
@@ -25,7 +26,8 @@ no results are returned.
 
 
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, 'nosimilarbugs', product=test_product)
+    ...     test_person, "nosimilarbugs", product=test_product
+    ... )
     >>> similar_bugs.count()
     0
 
@@ -33,12 +35,15 @@ Now, let's enter a real bug summary, which doesn't match any other
 exactly. We can see that it still manages to find a bug.
 
     >>> test_bug = factory.makeBug(
-    ...     target=test_product, title="SVG doesn't work")
+    ...     target=test_product, title="SVG doesn't work"
+    ... )
 
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "Can't display SVG", product=test_product)
+    ...     test_person, "Can't display SVG", product=test_product
+    ... )
     >>> for bugtask in similar_bugs:
     ...     print(bugtask.bug.title)
+    ...
     SVG doesn't work
 
 
@@ -48,7 +53,8 @@ since no similar bugs are found there.
 
     >>> another_product = factory.makeProduct()
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "Can't display SVG", product=another_product)
+    ...     test_person, "Can't display SVG", product=another_product
+    ... )
     >>> similar_bugs.count()
     0
 
@@ -57,25 +63,30 @@ We can also search for distribution bugs:
     >>> test_distroseries = factory.makeDistroSeries()
     >>> test_distro = test_distroseries.distribution
     >>> test_package = factory.makeSourcePackage(
-    ...     distroseries=test_distroseries)
+    ...     distroseries=test_distroseries
+    ... )
     >>> distro_bug_1 = factory.makeBug(
     ...     target=test_package.distribution_sourcepackage,
     ...     series=test_distroseries,
-    ...     title="Nothing to do with cheese or sandwiches")
+    ...     title="Nothing to do with cheese or sandwiches",
+    ... )
     >>> distro_bug_2 = factory.makeBug(
     ...     target=test_package.distribution_sourcepackage,
     ...     series=test_distroseries,
-    ...     title="A bug about sandwiches")
+    ...     title="A bug about sandwiches",
+    ... )
     >>> distro_bug_2 = factory.makeBug(
     ...     target=test_package.distribution_sourcepackage,
     ...     series=test_distroseries,
-    ...     title="This cheese sandwich should show up")
+    ...     title="This cheese sandwich should show up",
+    ... )
 
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "sandwiches",
-    ...     distribution=test_distro)
+    ...     test_person, "sandwiches", distribution=test_distro
+    ... )
     >>> for bugtask in similar_bugs:
     ...     print(bugtask.bug.title)
+    ...
     Nothing to do with cheese or sandwiches
     A bug about sandwiches
     This cheese sandwich should show up
@@ -83,11 +94,14 @@ We can also search for distribution bugs:
 As well as limiting it to a specific source package:
 
     >>> another_package = factory.makeSourcePackage(
-    ...     distroseries=test_distroseries)
+    ...     distroseries=test_distroseries
+    ... )
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "Any cheese sandwiches?",
+    ...     test_person,
+    ...     "Any cheese sandwiches?",
     ...     distribution=test_distro,
-    ...     sourcepackagename=another_package.sourcepackagename)
+    ...     sourcepackagename=another_package.sourcepackagename,
+    ... )
     >>> similar_bugs.count()
     0
 
@@ -99,16 +113,17 @@ Only bugs that the user has access to view will be searched. If we set
 one of our distro bugs to private, and repeat the search as a user who
 isn't allowed to view it, only the public bugs will show up.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> distro_bug_1.setPrivate(True, distro_bug_1.owner)
     True
 
     >>> another_user = factory.makePerson()
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     another_user, "sandwiches",
-    ...     distribution=test_distro)
+    ...     another_user, "sandwiches", distribution=test_distro
+    ... )
     >>> for bugtask in similar_bugs:
     ...     print(bugtask.bug.title)
+    ...
     A bug about sandwiches
     This cheese sandwich should show up
 
@@ -132,18 +147,20 @@ Due to the sample data assuming a way-to-wide search facility, this test
 has been narrowed - see bug 612384.
 
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "cheese sandwiches show",
-    ...     distribution=test_distro)
+    ...     test_person, "cheese sandwiches show", distribution=test_distro
+    ... )
     >>> for bugtask in similar_bugs:
     ...     print(bugtask.bug.title)
+    ...
     Nothing to do with cheese or sandwiches
     This cheese sandwich should show up
 
     >>> similar_bugs = getUtility(IBugTaskSet).findSimilar(
-    ...     test_person, "Nothing sandwich",
-    ...     distribution=test_distro)
+    ...     test_person, "Nothing sandwich", distribution=test_distro
+    ... )
     >>> for bugtask in similar_bugs:
     ...     print(bugtask.bug.title)
+    ...
     Nothing to do with cheese or sandwiches
     A bug about sandwiches
     This cheese sandwich should show up
@@ -157,14 +174,19 @@ it is invoked.
 
     >>> orig_bug = factory.makeBug(
     ...     title="So you walk into this restaurant",
-    ...     owner=test_product.owner, target=test_product)
+    ...     owner=test_product.owner,
+    ...     target=test_product,
+    ... )
 
     >>> dupe_bug = factory.makeBug(
     ...     title="So you walk into this restaurant",
-    ...     owner=test_product.owner, target=test_product)
+    ...     owner=test_product.owner,
+    ...     target=test_product,
+    ... )
     >>> dupe_bug.markAsDuplicate(orig_bug)
 
     >>> similar_bugs = orig_bug.default_bugtask.findSimilarBugs(
-    ...     test_product.owner)
+    ...     test_product.owner
+    ... )
     >>> orig_bug in similar_bugs
     False

@@ -12,46 +12,46 @@ from lp.app.validators import LaunchpadValidationError
 def valid_email(emailaddr):
     """Validate an email address.
 
-    >>> valid_email('kiko.async@hotmail.com')
+    >>> valid_email("kiko.async@hotmail.com")
     True
-    >>> valid_email('kiko+async@hotmail.com')
+    >>> valid_email("kiko+async@hotmail.com")
     True
-    >>> valid_email('kiko-async@hotmail.com')
+    >>> valid_email("kiko-async@hotmail.com")
     True
-    >>> valid_email('kiko_async@hotmail.com')
+    >>> valid_email("kiko_async@hotmail.com")
     True
-    >>> valid_email('kiko@async.com.br')
+    >>> valid_email("kiko@async.com.br")
     True
-    >>> valid_email('kiko@canonical.com')
+    >>> valid_email("kiko@canonical.com")
     True
-    >>> valid_email('kiko@UBUNTU.COM')
+    >>> valid_email("kiko@UBUNTU.COM")
     True
-    >>> valid_email('i@tv')
+    >>> valid_email("i@tv")
     True
-    >>> valid_email('kiko@gnu.info')
+    >>> valid_email("kiko@gnu.info")
     True
-    >>> valid_email('user@z.de')
+    >>> valid_email("user@z.de")
     True
-    >>> valid_email('bob=dobbs@example.com')
+    >>> valid_email("bob=dobbs@example.com")
     True
 
-    >>> valid_email('user@z..de')
+    >>> valid_email("user@z..de")
     False
-    >>> valid_email('user@.z.de')
+    >>> valid_email("user@.z.de")
     False
 
     As per OOPS-256D762:
 
-    >>> valid_email('keith@risby-family.co.uk')
+    >>> valid_email("keith@risby-family.co.uk")
     True
-    >>> valid_email('keith@risby-family-.co.uk')
+    >>> valid_email("keith@risby-family-.co.uk")
     False
-    >>> valid_email('keith@-risby-family.co.uk')
+    >>> valid_email("keith@-risby-family.co.uk")
     False
 
     The IDNA encoding of internationalised domain names is also accepted.
 
-    >>> valid_email('user@example.xn--deba0ad')
+    >>> valid_email("user@example.xn--deba0ad")
     True
     """
     email_re = r"^[_\.0-9a-zA-Z-+=]+@(([0-9a-zA-Z-]{1,}\.)*)[0-9a-zA-Z-]{2,}$"
@@ -72,9 +72,9 @@ def email_validator(emailaddr):
 
     Otherwise, return True.
 
-    >>> email_validator('bugs@example.com')
+    >>> email_validator("bugs@example.com")
     True
-    >>> email_validator('not-valid')
+    >>> email_validator("not-valid")
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: Invalid email

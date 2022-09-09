@@ -11,11 +11,12 @@ Here are some imports we need to get this test running.
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -29,12 +30,12 @@ And also, the DBSchema to change the imports status
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 Here's the person who'll be doing the import.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> person = person_set.getByName('mark')
+    >>> person = person_set.getByName("mark")
 
 Now, is time to create the new potemplate
 
@@ -46,19 +47,21 @@ Now, is time to create the new potemplate
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.new(
-    ...     name='firefox',
-    ...     translation_domain='firefox',
-    ...     path='po/firefox.pot',
-    ...     owner=person)
+    ...     name="firefox",
+    ...     translation_domain="firefox",
+    ...     path="po/firefox.pot",
+    ...     owner=person,
+    ... )
 
 We create the POFile object where we are going to attach the .po file.
 
-    >>> pofile = potemplate.newPOFile('cy')
+    >>> pofile = potemplate.newPOFile("cy")
 
 Let's import a .po file that misses the '"' char after msgstr. That's a
 syntax error.
 
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 20:41+0100\n"
@@ -67,14 +70,22 @@ syntax error.
     ... "Plural-Forms: nplurals=4; plural=n==1) "
     ...     "? 0 : n==2 ? 1 : (n != 8 || n != 11) ? 2 : 3;\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "foo"
     ... msgstr blah"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We must approve the entry to be able to import it.
@@ -126,20 +137,28 @@ Encoding errors
 Encoding problems are similarly reported, but with a different
 explanatory text.
 
-    >>> pofile = potemplate.newPOFile('fy')
-    >>> pofile_contents = u'''
+    >>> pofile = potemplate.newPOFile("fy")
+    >>> pofile_contents = """
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=ASCII\\n"
     ... "X-Rosetta-Export-Date: 2009-07-13 00:00+0700\\n"
-    ... 
+    ...
     ... msgid "\xa9 Yoyodine Industries"
     ... msgstr ""
-    ... '''.encode('utf-8')
+    ... """.encode(
+    ...     "utf-8"
+    ... )
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> transaction.commit()
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -193,8 +212,9 @@ Non-numeric plural forms
 In his rush to be the first Sumerian translator for Firefox, Mark
 submits a translation with a nonsensical plurals definition.
 
-    >>> pofile = potemplate.newPOFile('sux')
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile = potemplate.newPOFile("sux")
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-29 11:44+0100\n"
@@ -202,13 +222,21 @@ submits a translation with a nonsensical plurals definition.
     ... "Content-Type: text/plain; charset=UTF-8\n"
     ... "Plural-Forms: nplurals=n; plural=0\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, False, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     False,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -238,7 +266,8 @@ Not enough forms
 Mark mistakenly attempts to import a translation with "zero" plural
 forms.  He receives an email notifying him of a syntax error.
 
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-14 18:33+0100\n"
@@ -246,13 +275,21 @@ forms.  He receives an email notifying him of a syntax error.
     ... "Content-Type: text/plain; charset=UTF-8\n"
     ... "Plural-Forms: nplurals=0; plural=0\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, False, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     False,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -276,7 +313,8 @@ forms.  He receives an email notifying him of a syntax error.
 On his next attempt, Mark accidentally types a negative number of plural
 forms.  The same error is given.
 
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-15 19:04+0100\n"
@@ -284,13 +322,21 @@ forms.  The same error is given.
     ... "Content-Type: text/plain; charset=UTF-8\n"
     ... "Plural-Forms: nplurals=-1; plural=0\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "foo"
     ... msgstr "bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, False, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     False,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -322,10 +368,11 @@ about this.
 The email points to Launchpad's information about Arabic and shows how
 to get that information corrected if need be.
 
-    >>> pofile = potemplate.newPOFile('ar')
+    >>> pofile = potemplate.newPOFile("ar")
 
     # PO file with nplurals=7, a value we can't handle.
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-07-01 08:35+0100\n"
@@ -333,7 +380,7 @@ to get that information corrected if need be.
     ... "Content-Type: text/plain; charset=UTF-8\n"
     ... "Plural-Forms: nplurals=7; plural=n%%7\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "%%d foo"
     ... msgid_plural "%%d foos"
     ... msgstr[0] "bar %%d"
@@ -343,10 +390,18 @@ to get that information corrected if need be.
     ... msgstr[4] "baros %%d"
     ... msgstr[5] "barorum %%d"
     ... msgstr[6] "barim %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, False, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     False,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -389,7 +444,8 @@ Once Mark has checked the language page and corrected the number of
 plural forms, the file imports just fine.
 
     # Same PO file as before, but with nplurals=6.
-    >>> pofile_contents = six.ensure_binary(r'''
+    >>> pofile_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-07-01 08:35+0100\n"
@@ -397,7 +453,7 @@ plural forms, the file imports just fine.
     ... "Content-Type: text/plain; charset=UTF-8\n"
     ... "Plural-Forms: nplurals=6; plural=n%%6\n"
     ... "X-Rosetta-Export-Date: %s\n"
-    ... 
+    ...
     ... msgid "%%d foo"
     ... msgid_plural "%%d foos"
     ... msgstr[0] "bar %%d"
@@ -406,10 +462,18 @@ plural forms, the file imports just fine.
     ... msgstr[3] "baribus %%d"
     ... msgstr[4] "baros %%d"
     ... msgstr[5] "barorum %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, False, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     False,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)

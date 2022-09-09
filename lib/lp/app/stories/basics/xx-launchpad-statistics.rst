@@ -1,7 +1,7 @@
 We also have the special Launchpad Statistics summary page. This is only
 accessible to launchpad Admins:
 
-    >>> user_browser.open('http://launchpad.test/+statistics')
+    >>> user_browser.open("http://launchpad.test/+statistics")
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -9,12 +9,12 @@ accessible to launchpad Admins:
 
 When we login as an admin, we can see all the stats listed:
 
-    >>> admin_browser.open('http://launchpad.test/+statistics/')
+    >>> admin_browser.open("http://launchpad.test/+statistics/")
     >>> print(admin_browser.title)
     Launchpad statistics
-    >>> 'answered_question_count' in admin_browser.contents
+    >>> "answered_question_count" in admin_browser.contents
     True
-    >>> 'products_with_blueprints' in admin_browser.contents
+    >>> "products_with_blueprints" in admin_browser.contents
     True
-    >>> 'solved_question_count' in admin_browser.contents
+    >>> "solved_question_count" in admin_browser.contents
     True

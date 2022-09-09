@@ -11,7 +11,7 @@ Get the current counts of stuff in the database:
     >>> from lp.soyuz.model.publishing import (
     ...     BinaryPackagePublishingHistory,
     ...     SourcePackagePublishingHistory,
-    ...     )
+    ... )
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
     >>> SSPPH = SourcePackagePublishingHistory
     >>> SBPPH = BinaryPackagePublishingHistory
@@ -36,29 +36,47 @@ Create a distribution series and an arch series for dapper:
 
     # Only the distro owner or admins can create a series.
     >>> ignored = login_person(ubuntu.owner.activemembers[0])
-    >>> dapper = ubuntu.newSeries("dapper", "Dapper Dragoon", "My title",
-    ...                           "My summary", "My description", "5.10",
-    ...                           hoary, celebs.launchpad_developers)
+    >>> dapper = ubuntu.newSeries(
+    ...     "dapper",
+    ...     "Dapper Dragoon",
+    ...     "My title",
+    ...     "My summary",
+    ...     "My description",
+    ...     "5.10",
+    ...     hoary,
+    ...     celebs.launchpad_developers,
+    ... )
     >>> login(ANONYMOUS)
 
 Check it was properly created and create its DistroArchSeriess.
 
     >>> from lp.registry.model.distroseries import DistroSeries
     >>> dapper = DistroSeries.selectOneBy(
-    ...     name="dapper", distributionID=ubuntu.id)
-    >>> processor = getUtility(IProcessorSet).getByName('386')
+    ...     name="dapper", distributionID=ubuntu.id
+    ... )
+    >>> processor = getUtility(IProcessorSet).getByName("386")
     >>> dar = dapper.newArch(
-    ...     processor=processor, architecturetag="i386", official=True,
-    ...     owner=celebs.launchpad_developers)
-    >>> processor = getUtility(IProcessorSet).getByName('amd64')
+    ...     processor=processor,
+    ...     architecturetag="i386",
+    ...     official=True,
+    ...     owner=celebs.launchpad_developers,
+    ... )
+    >>> processor = getUtility(IProcessorSet).getByName("amd64")
     >>> dar = dapper.newArch(
-    ...     processor=processor, architecturetag="amd64", official=True,
-    ...     owner=celebs.launchpad_developers)
+    ...     processor=processor,
+    ...     architecturetag="amd64",
+    ...     official=True,
+    ...     owner=celebs.launchpad_developers,
+    ... )
     >>> processor = getUtility(IProcessorSet).new(
-    ...     'powerpc', 'PowerPC', 'PowerPC')
+    ...     "powerpc", "PowerPC", "PowerPC"
+    ... )
     >>> dar = dapper.newArch(
-    ...     processor=processor, architecturetag="powerpc", official=True,
-    ...     owner=celebs.launchpad_developers)
+    ...     processor=processor,
+    ...     architecturetag="powerpc",
+    ...     official=True,
+    ...     owner=celebs.launchpad_developers,
+    ... )
     >>> import transaction
     >>> transaction.commit()
 
@@ -69,17 +87,20 @@ Let's set up the filesystem:
     ...     os.unlink("/var/lock/launchpad-gina.lock")
     ... except OSError:
     ...     pass
+    ...
     >>> try:
-    ...     os.remove('/tmp/gina_test_archive')
+    ...     os.remove("/tmp/gina_test_archive")
     ... except OSError:
     ...     pass
-    >>> relative_path = ('lib/lp/soyuz/scripts/tests/gina_test_archive')
+    ...
+    >>> relative_path = "lib/lp/soyuz/scripts/tests/gina_test_archive"
     >>> path = os.path.join(os.getcwd(), relative_path)
-    >>> os.symlink(path, '/tmp/gina_test_archive')
+    >>> os.symlink(path, "/tmp/gina_test_archive")
 
-    >>> gina_proc = ['scripts/gina.py', '-q', 'dapper', 'dapper-updates']
+    >>> gina_proc = ["scripts/gina.py", "-q", "dapper", "dapper-updates"]
     >>> proc = subprocess.Popen(
-    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True)
+    ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
+    ... )
     >>> print(proc.stderr.read())
     WARNING ...
     WARNING No source package bdftopcf (0.99.0-1) listed for bdftopcf
@@ -135,8 +156,9 @@ Check that the source package was correctly imported:
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> n = SourcePackageName.selectOneBy(name="ekg")
-    >>> ekg = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id,
-    ...                                        version="1:1.5-4ubuntu1.2")
+    >>> ekg = SourcePackageRelease.selectOneBy(
+    ...     sourcepackagenameID=n.id, version="1:1.5-4ubuntu1.2"
+    ... )
     >>> print(ekg.section.name)
     net
     >>> print(ekg.component.name)
@@ -145,8 +167,9 @@ Check that the source package was correctly imported:
 And that one of the packages in main is here too:
 
     >>> n = BinaryPackageName.selectOneBy(name="libgadu-dev")
-    >>> ekg = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...                                        version="1:1.5-4ubuntu1.2")
+    >>> ekg = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="1:1.5-4ubuntu1.2"
+    ... )
     >>> print(ekg.section.name)
     libdevel
     >>> print(ekg.component.name)
@@ -162,8 +185,9 @@ component name.
 
     >>> from lp.soyuz.enums import PackagePublishingPriority
     >>> n = BinaryPackageName.selectOneBy(name="ekg")
-    >>> ekg = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...                                        version="1:1.5-4ubuntu1.2")
+    >>> ekg = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="1:1.5-4ubuntu1.2"
+    ... )
     >>> print(ekg.section.name)
     net
     >>> print(ekg.component.name)
@@ -178,8 +202,9 @@ right place, updates the component, and creates it with a semi-bogus
 DSC.
 
     >>> n = BinaryPackageName.selectOneBy(name="bdftopcf")
-    >>> ekg = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id,
-    ...                                        version="0.99.0-1")
+    >>> ekg = BinaryPackageRelease.selectOneBy(
+    ...     binarypackagenameID=n.id, version="0.99.0-1"
+    ... )
     >>> print(ekg.section.name)
     x11
     >>> print(ekg.component.name)
@@ -193,14 +218,19 @@ DSC.
 
 Check that we publishing bdftopcf into the correct distroarchseries:
 
-    >>> processor = getUtility(IProcessorSet).getByName('386')
-    >>> dar = DistroArchSeries.selectOneBy(distroseriesID=dapper.id,
-    ...          processor_id=processor.id, architecturetag="i386",
-    ...          official=True, ownerID=celebs.launchpad_developers.id)
+    >>> processor = getUtility(IProcessorSet).getByName("386")
+    >>> dar = DistroArchSeries.selectOneBy(
+    ...     distroseriesID=dapper.id,
+    ...     processor_id=processor.id,
+    ...     architecturetag="i386",
+    ...     official=True,
+    ...     ownerID=celebs.launchpad_developers.id,
+    ... )
     >>> print(dar.architecturetag)
     i386
-    >>> for entry in SBPPH.selectBy(distroarchseriesID=dar.id,
-    ...                             orderBy="binarypackagerelease"):
+    >>> for entry in SBPPH.selectBy(
+    ...     distroarchseriesID=dar.id, orderBy="binarypackagerelease"
+    ... ):
     ...     package = entry.binarypackagerelease
     ...     print(package.binarypackagename.name, package.version)
     bdftopcf 0.99.0-1
@@ -210,4 +240,4 @@ Check that we publishing bdftopcf into the correct distroarchseries:
 
 Be proper and clean up after ourselves.
 
-    >>> os.remove('/tmp/gina_test_archive')
+    >>> os.remove("/tmp/gina_test_archive")

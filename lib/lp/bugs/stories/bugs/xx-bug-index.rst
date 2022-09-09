@@ -7,7 +7,8 @@ comments, external references, details of places in which this bug needs
 to be fixed, and so forth.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2")
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2"
+    ... )
     >>> anon_browser.title
     '...Blackhole Trash folder...'
 
@@ -30,7 +31,7 @@ The page features a table of places where people have asked for the bug
 to be fixed. The row for the current context (and not any other row) is
 highlighted.
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+bug/1')
+    >>> anon_browser.open("http://launchpad.test/firefox/+bug/1")
     >>> print(anon_browser.contents)
     <!DOCTYPE...
     ...
@@ -47,7 +48,8 @@ highlighted.
     1
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/1')
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/1"
+    ... )
     >>> print(anon_browser.contents)
     <!DOCTYPE...
     ...
@@ -66,11 +68,11 @@ highlighted.
 If the context is a distribution package, the package name has a
 tooltip containing the package details.
 
-    >>> print(anon_browser.getLink('mozilla-firefox (Ubuntu)').attrs['title'])
+    >>> print(anon_browser.getLink("mozilla-firefox (Ubuntu)").attrs["title"])
     Latest release: 0.9, uploaded to main on 2004-09-27 11:57:13+00:00...
     by Mark Shuttleworth (mark), maintained by Mark Shuttleworth (mark)
 
-    >>> print(anon_browser.getLink('mozilla-firefox (Debian)').attrs['title'])
+    >>> print(anon_browser.getLink("mozilla-firefox (Debian)").attrs["title"])
     No current release for this source package in Debian
 
 (XXX 20080623 mpt: Projects and distributions should similarly have a tooltip
@@ -80,7 +82,8 @@ If you are logged in, each "Affects" row contains a form for editing the
 status in that context. The forms are hidden initially using CSS.
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2")
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2"
+    ... )
     >>> print(user_browser.contents)
     <!DOCTYPE...
     ...
@@ -100,8 +103,9 @@ Alongside the form is a table displaying details about the context,
 including the latest release if it is a distribution package.
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1")
-    >>> print(extract_text(find_tag_by_id(user_browser.contents, 'task17')))
+    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1"
+    ... )
+    >>> print(extract_text(find_tag_by_id(user_browser.contents, "task17")))
     Affecting: mozilla-firefox (Ubuntu)
     Filed here by: Foo Bar
     When: 2004-01-17
@@ -110,19 +114,20 @@ including the latest release if it is a distribution package.
 
 The bug page includes a link to report another bug.
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
-    >>> print(user_browser.getLink('Report a bug').url)
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bug/1")
+    >>> print(user_browser.getLink("Report a bug").url)
     http://bugs.launchpad.test/firefox/+filebug
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1')
-    >>> print(user_browser.getLink('Report a bug').url)
+    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1"
+    ... )
+    >>> print(user_browser.getLink("Report a bug").url)
     http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 
 There's also a link on the page that will take the user to the "Add
 attachment or patch" page, for use when JavaScript isn't available.
 
-    >>> print(user_browser.getLink('Add attachment or patch').url)
+    >>> print(user_browser.getLink("Add attachment or patch").url)
     http://bugs.launchpad.test/ubuntu/+source/.../+bug/1/+addcomment
 
 
@@ -132,7 +137,7 @@ Navigating to a bug in the wrong context
 If we navigate to a bug in a context in which it doesn't exist, we are
 redirected to the default context.
 
-    >>> browser.open('http://bugs.launchpad.test/jokosher/+bug/10')
+    >>> browser.open("http://bugs.launchpad.test/jokosher/+bug/10")
     >>> print(browser.url)
     http://bugs.launchpad.test/ubuntu/+source/linux-source-2.6.15/+bug/10
 
@@ -146,7 +151,7 @@ initialization code if there's more than 10 bug tasks.
 
     >>> from lp.testing import login, logout
     >>> from lp.services.webapp import canonical_url
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug = factory.makeBug()
     >>> bug_id = bug.id
     >>> bug_url = canonical_url(bug)
@@ -155,42 +160,48 @@ initialization code if there's more than 10 bug tasks.
 On the bug page, for every bug task there's one expander.
 
     >>> user_browser.open(bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     user_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(find_tags_by_class(user_browser.contents, "bugtask-expander"))
+    ... )
     1
 
 We add four more tasks.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> for i in range(4):
     ...     _ = bug.addTask(bug.owner, factory.makeProduct())
+    ...
     >>> logout()
 
 And the expander appears five times.
 
     >>> user_browser.open(bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     user_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(find_tags_by_class(user_browser.contents, "bugtask-expander"))
+    ... )
     5
 
 But on pages with more than ten bug tasks, we don't include the expander
 at all.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> for i in range(5):
     ...     _ = bug.addTask(bug.owner, factory.makeProduct())
+    ...
     >>> logout()
 
     >>> user_browser.open(bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     user_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(find_tags_by_class(user_browser.contents, "bugtask-expander"))
+    ... )
     0
 
 We also don't include the expander for anonymous requests.
 
     >>> anon_browser.open(bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     anon_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(find_tags_by_class(anon_browser.contents, "bugtask-expander"))
+    ... )
     0
 
 
@@ -204,7 +215,7 @@ do they see any edit links.
     >>> from lp.bugs.enums import BugLockStatus
     >>> from lp.testing.pages import setupBrowserForUser
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> locked_bug = factory.makeBug()
     >>> target_owner = locked_bug.default_bugtask.target.owner
     >>> locked_bug.lock(who=target_owner, status=BugLockStatus.COMMENT_ONLY)
@@ -213,17 +224,29 @@ do they see any edit links.
 
     >>> target_owner_browser = setupBrowserForUser(target_owner)
     >>> target_owner_browser.open(locked_bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     target_owner_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(
+    ...         find_tags_by_class(
+    ...             target_owner_browser.contents, "bugtask-expander"
+    ...         )
+    ...     )
+    ... )
     1
-    >>> len(find_main_content(target_owner_browser.contents).find_all(
-    ...     'a', href=re.compile(r'.*/\+edit.*')))
+    >>> len(
+    ...     find_main_content(target_owner_browser.contents).find_all(
+    ...         "a", href=re.compile(r".*/\+edit.*")
+    ...     )
+    ... )
     5
 
     >>> user_browser.open(locked_bug_url)
-    >>> print(len(find_tags_by_class(
-    ...     user_browser.contents, 'bugtask-expander')))
+    >>> print(
+    ...     len(find_tags_by_class(user_browser.contents, "bugtask-expander"))
+    ... )
     0
-    >>> len(find_main_content(user_browser.contents).find_all(
-    ...     'a', href=re.compile(r'.*/\+edit.*')))
+    >>> len(
+    ...     find_main_content(user_browser.contents).find_all(
+    ...         "a", href=re.compile(r".*/\+edit.*")
+    ...     )
+    ... )
     0

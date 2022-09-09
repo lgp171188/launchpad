@@ -9,17 +9,17 @@ That action is only available to project owners. That's why the link doesn't
 appear for the anonymous user nor No Privileges Person:
 
     >>> from lp.services.helpers import backslashreplace
-    >>> anon_browser.open('http://answers.launchpad.test/firefox/+faq/7')
+    >>> anon_browser.open("http://answers.launchpad.test/firefox/+faq/7")
     >>> print(backslashreplace(anon_browser.title))
     FAQ #7 : Questions : Mozilla Firefox
 
-    >>> anon_browser.getLink('Edit FAQ')
+    >>> anon_browser.getLink("Edit FAQ")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> user_browser.open('http://answers.launchpad.test/firefox/+faq/7')
-    >>> user_browser.getLink('Edit FAQ')
+    >>> user_browser.open("http://answers.launchpad.test/firefox/+faq/7")
+    >>> user_browser.getLink("Edit FAQ")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -27,12 +27,14 @@ appear for the anonymous user nor No Privileges Person:
 Even trying to access the link directly will fail:
 
     >>> anon_browser.open(
-    ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
+    ...     "http://answers.launchpad.test/firefox/+faq/7/+edit"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
     >>> user_browser.open(
-    ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
+    ...     "http://answers.launchpad.test/firefox/+faq/7/+edit"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -40,9 +42,9 @@ Even trying to access the link directly will fail:
 The link is accessible to Sample Person who is the owner of the Firefox
 project:
 
-    >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://answers.launchpad.test/firefox/+faq/7')
-    >>> browser.getLink('Edit FAQ').click()
+    >>> browser.addHeader("Authorization", "Basic test@canonical.com:test")
+    >>> browser.open("http://answers.launchpad.test/firefox/+faq/7")
+    >>> browser.getLink("Edit FAQ").click()
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+faq/7/+edit
     >>> print(browser.title)
@@ -51,30 +53,32 @@ project:
 The user can change the title, keywords and content fields. They then
 click 'Save' to save their changes.
 
-    >>> print(browser.getControl('Title').value)
+    >>> print(browser.getControl("Title").value)
     How do I install Java?
-    >>> browser.getControl('Keywords').value
+    >>> browser.getControl("Keywords").value
     ''
-    >>> print(browser.getControl('Content').value)
+    >>> print(browser.getControl("Content").value)
     Windows
     On Windows, ...
 
-    >>> browser.getControl('Keywords').value = (
-    ...     'windows ubuntu plugins extensions')
-    >>> browser.getControl('Content').value += (
-    ...     '\nUbuntu:\nSee https://help.ubuntu.com/community/Java\n')
+    >>> browser.getControl(
+    ...     "Keywords"
+    ... ).value = "windows ubuntu plugins extensions"
+    >>> browser.getControl(
+    ...     "Content"
+    ... ).value += "\nUbuntu:\nSee https://help.ubuntu.com/community/Java\n"
 
-    >>> browser.getControl('Save').click()
+    >>> browser.getControl("Save").click()
 
 The user can see their changes on the page:
 
     >>> print(browser.url)
     http://answers.launchpad.test/firefox/+faq/7
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faq-keywords')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faq-keywords")))
     Keywords: windows ubuntu plugins extensions
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faq-content')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faq-content")))
     Windows
     On Windows,...
     Ubuntu: See https://help.ubuntu.com/community/Java
@@ -82,5 +86,5 @@ The user can see their changes on the page:
 The 'Last updated by' field in the 'Lifecycle' portlet is updated
 with the name of the user who made the last modification:
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faq-updated')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faq-updated")))
     Last updated by: Sample Person ...

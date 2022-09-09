@@ -12,8 +12,7 @@ Some initialization tasks:
     >>> from lp.testing import login
     >>> from lp.services.helpers import bytes_to_tarfile
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> from lp.translations.scripts.language_pack import (
-    ...    export_language_pack)
+    >>> from lp.translations.scripts.language_pack import export_language_pack
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
@@ -26,16 +25,18 @@ This is handy for examining the tar files that are generated.
     >>> def get_name(entry):
     ...     """For sorting: get tar entry's name."""
     ...     return entry.name
+    ...
 
     >>> def examine_tarfile(tarfile):
     ...     """Summarize the contents of a tar file."""
     ...     for member in sorted(tarfile.getmembers(), key=get_name):
     ...         if not member.isreg():
     ...             # Not a regular file.  No size to print.
-    ...             size = '-'
+    ...             size = "-"
     ...         else:
     ...             size = len(tarfile.extractfile(member).readlines())
     ...         print("| %5s | %s" % (size, member.name))
+    ...
 
 
 Base language pack export using Librarian
@@ -47,12 +48,13 @@ to None.
 
     >>> logger = BufferLogger()
     >>> language_pack = export_language_pack(
-    ...     distribution_name='ubuntu',
-    ...     series_name='hoary',
-    ...     component='main',
+    ...     distribution_name="ubuntu",
+    ...     series_name="hoary",
+    ...     component="main",
     ...     force_utf8=True,
     ...     output_file=None,
-    ...     logger=logger)
+    ...     logger=logger,
+    ... )
     >>> transaction.commit()
 
 Check that the log looks ok.
@@ -76,6 +78,7 @@ The tarball has the right members.
 
     >>> for member in tarfile.getmembers():
     ...     print(member.name)
+    ...
     rosetta-hoary
     ...
     rosetta-hoary/es
@@ -87,14 +90,15 @@ The tarball has the right members.
 
 Directory permissions allow correct use of those directories:
 
-    >>> directory = tarfile.getmember('rosetta-hoary')
-    >>> print('0o%o' % directory.mode)
+    >>> directory = tarfile.getmember("rosetta-hoary")
+    >>> print("0o%o" % directory.mode)
     0o755
 
 And one of the included .po files look like what we expected.
 
     >>> fh = tarfile.extractfile(
-    ...     'rosetta-hoary/es/LC_MESSAGES/evolution-2.2.po')
+    ...     "rosetta-hoary/es/LC_MESSAGES/evolution-2.2.po"
+    ... )
     >>> print(six.ensure_text(fh.readline()))
     # traducción de es.po al Spanish
 
@@ -117,44 +121,50 @@ some DB classes.
 
 Get hold of a person.
 
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    >>> mark = getUtility(IPersonSet).getByName("mark")
     >>> print(mark.displayname)
     Mark Shuttleworth
 
 Get the Grumpy distro series.
 
-    >>> series = getUtility(IDistributionSet)['ubuntu'].getSeries('grumpy')
+    >>> series = getUtility(IDistributionSet)["ubuntu"].getSeries("grumpy")
 
 Get a source package name to go with our distro series.
 
-    >>> spn = SourcePackageName.byName('evolution')
+    >>> spn = SourcePackageName.byName("evolution")
 
 Put a dummy file in the Librarian required by the new template we are
 creating.
 
-    >>> contents = b'# Test PO template.'
+    >>> contents = b"# Test PO template."
     >>> file_alias = getUtility(ILibrarianClient).addFile(
-    ...     name='test.po',
+    ...     name="test.po",
     ...     size=len(contents),
     ...     file=io.BytesIO(contents),
-    ...     contentType='application/x-po')
+    ...     contentType="application/x-po",
+    ... )
 
 Get some dates.
 
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> d2000_01_01 = datetime.datetime(year=2000, month=1, day=1, tzinfo=UTC)
     >>> d2000_01_02 = datetime.datetime(year=2000, month=1, day=2, tzinfo=UTC)
     >>> d2000_01_03 = datetime.datetime(year=2000, month=1, day=3, tzinfo=UTC)
 
 Create a PO template and put a single message set in it.
 
-    >>> pot_header = 'Content-Type: text/plain; charset=UTF-8\n'
+    >>> pot_header = "Content-Type: text/plain; charset=UTF-8\n"
     >>> template = POTemplate(
-    ...     name='test', translation_domain='test',
-    ...     distroseries=series, sourcepackagename=spn,
-    ...     owner=mark, languagepack=True, path='po/test.pot',
-    ...     header=pot_header)
-    >>> potmsgset = template.createMessageSetFromText(u'blah', None)
+    ...     name="test",
+    ...     translation_domain="test",
+    ...     distroseries=series,
+    ...     sourcepackagename=spn,
+    ...     owner=mark,
+    ...     languagepack=True,
+    ...     path="po/test.pot",
+    ...     header=pot_header,
+    ... )
+    >>> potmsgset = template.createMessageSetFromText("blah", None)
     >>> item = potmsgset.setSequence(template, 1)
 
 We set the template last update date to the oldest date we are going to
@@ -165,19 +175,21 @@ play with, so it doesn't affect translations export.
 Create a Spanish PO file, with an active translation submission created
 on 2000/01/01.
 
-    >>> pofile_es = template.newPOFile('es')
-    >>> translations = { 0: u'blah (es)' }
+    >>> pofile_es = template.newPOFile("es")
+    >>> translations = {0: "blah (es)"}
     >>> new_translation_message = factory.makeCurrentTranslationMessage(
-    ...     pofile_es, potmsgset, mark, translations=translations)
+    ...     pofile_es, potmsgset, mark, translations=translations
+    ... )
     >>> pofile_es.date_changed = d2000_01_01
 
 Create a Welsh PO file, with an active translation submission created on
 2000/01/03.
 
-    >>> pofile_cy = template.newPOFile('cy')
-    >>> translations = { 0: u'blah (cy)' }
+    >>> pofile_cy = template.newPOFile("cy")
+    >>> translations = {0: "blah (cy)"}
     >>> new_translation_message = factory.makeCurrentTranslationMessage(
-    ...     pofile_cy, potmsgset, mark, translations=translations)
+    ...     pofile_cy, potmsgset, mark, translations=translations
+    ... )
     >>> pofile_cy.date_changed = d2000_01_03
     >>> transaction.commit()
 
@@ -190,12 +202,13 @@ PO files.
     >>> logger = BufferLogger()
     >>> flush_database_caches()
     >>> language_pack = export_language_pack(
-    ...     distribution_name='ubuntu',
-    ...     series_name='grumpy',
+    ...     distribution_name="ubuntu",
+    ...     series_name="grumpy",
     ...     component=None,
     ...     force_utf8=True,
     ...     output_file=None,
-    ...     logger=logger)
+    ...     logger=logger,
+    ... )
     >>> transaction.commit()
 
 Check that the log looks ok.
@@ -227,8 +240,8 @@ Check that the log looks ok.
 
 Check the files look OK.
 
-    >>> fh = tarfile.extractfile('rosetta-grumpy/es/LC_MESSAGES/test.po')
-    >>> print(fh.read().decode('UTF-8'))
+    >>> fh = tarfile.extractfile("rosetta-grumpy/es/LC_MESSAGES/test.po")
+    >>> print(fh.read().decode("UTF-8"))
     # Spanish translation for evolution
     # Copyright (c) ... Rosetta Contributors and Canonical Ltd ...
     # This file is distributed under the same license as the evolution pack...
@@ -251,8 +264,8 @@ Check the files look OK.
     msgid "blah"
     msgstr "blah (es)"
 
-    >>> fh = tarfile.extractfile('rosetta-grumpy/cy/LC_MESSAGES/test.po')
-    >>> print(fh.read().decode('UTF-8'))
+    >>> fh = tarfile.extractfile("rosetta-grumpy/cy/LC_MESSAGES/test.po")
+    >>> print(fh.read().decode("UTF-8"))
     # Welsh translation for evolution
     # Copyright (c) ... Rosetta Contributors and Canonical Ltd ...
     # This file is distributed under the same license as the evolution pack...
@@ -293,12 +306,13 @@ should get only files that were updated after 2000-01-02.
     >>> series.language_pack_base.date_exported = d2000_01_02
     >>> transaction.commit()
     >>> language_pack = export_language_pack(
-    ...     distribution_name='ubuntu',
-    ...     series_name='grumpy',
+    ...     distribution_name="ubuntu",
+    ...     series_name="grumpy",
     ...     component=None,
     ...     force_utf8=True,
     ...     output_file=None,
-    ...     logger=logger)
+    ...     logger=logger,
+    ... )
     >>> transaction.commit()
 
     # Get the generated tarball.
@@ -337,12 +351,13 @@ that was exported on 2000-01-03:
     >>> series.language_pack_base.date_exported = d2000_01_03
     >>> flush_database_caches()
     >>> language_pack = export_language_pack(
-    ...     distribution_name='ubuntu',
-    ...     series_name='grumpy',
+    ...     distribution_name="ubuntu",
+    ...     series_name="grumpy",
     ...     component=None,
     ...     force_utf8=True,
     ...     output_file=None,
-    ...     logger=logger)
+    ...     logger=logger,
+    ... )
     >>> transaction.commit()
 
 The Spanish translation has not changed since 2000-01-03, but the
@@ -371,11 +386,16 @@ number of command-line arguments is wrong.
     >>> import subprocess
     >>> def get_subprocess(command):
     ...     return subprocess.Popen(
-    ...         command, shell=True,
-    ...         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...         stderr=subprocess.PIPE, universal_newlines=True)
+    ...         command,
+    ...         shell=True,
+    ...         stdin=subprocess.PIPE,
+    ...         stdout=subprocess.PIPE,
+    ...         stderr=subprocess.PIPE,
+    ...         universal_newlines=True,
+    ...     )
+    ...
 
-    >>> proc = get_subprocess('cronscripts/language-pack-exporter.py')
+    >>> proc = get_subprocess("cronscripts/language-pack-exporter.py")
     >>> (out, err) = proc.communicate()
     >>> print(err)
     Traceback (most recent call last):
@@ -398,7 +418,8 @@ into the lockfilename to allow multiple exports to run concurrently for
 different distribution and series combinations.
 
     >>> proc = get_subprocess(
-    ...     'cronscripts/language-pack-exporter.py ubuntu hoary')
+    ...     "cronscripts/language-pack-exporter.py ubuntu hoary"
+    ... )
     >>> (out, err) = proc.communicate()
     >>> print(err)
     INFO    Setting lockfile name to

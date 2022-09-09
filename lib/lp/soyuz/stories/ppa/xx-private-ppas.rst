@@ -11,9 +11,14 @@ Define a helper function
 We'll use this function later to print what PPAs are in the +ppas listing.
 
     >>> def list_ppas_in_browser_page(browser):
-    ...     ppas = [extract_text(ppa_row) for ppa_row in find_tags_by_class(
-    ...         browser.contents, 'ppa_batch_row')]
+    ...     ppas = [
+    ...         extract_text(ppa_row)
+    ...         for ppa_row in find_tags_by_class(
+    ...             browser.contents, "ppa_batch_row"
+    ...         )
+    ...     ]
     ...     print("\n".join(ppas))
+    ...
 
 
 Set Up a Private PPA
@@ -23,12 +28,13 @@ First we'll create a private PPA for Celso.
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('admin@canonical.com')
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> login("admin@canonical.com")
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> cprov_private_ppa = factory.makeArchive(
-    ...     owner=cprov, name="p3a", distribution=ubuntu, private=True)
+    ...     owner=cprov, name="p3a", distribution=ubuntu, private=True
+    ... )
     >>> logout()
 
 PPA Listing Page
@@ -39,7 +45,7 @@ they are not shown to non-authorised users.
 
     >>> browser.open("http://launchpad.test/ubuntu/+ppas")
     >>> browser.getControl(name="show_inactive").value = True
-    >>> browser.getControl('Search', index=0).click()
+    >>> browser.getControl("Search", index=0).click()
     >>> list_ppas_in_browser_page(browser)
     PPA for Celso Providelo...
     PPA for Mark Shuttleworth...
@@ -48,10 +54,11 @@ they are not shown to non-authorised users.
 The owner of the archive will see their own archive in the listing:
 
     >>> cprov_browser = setupBrowser(
-    ...     auth="Basic celso.providelo@canonical.com:test")
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open("http://launchpad.test/ubuntu/+ppas")
     >>> cprov_browser.getControl(name="show_inactive").value = True
-    >>> cprov_browser.getControl('Search', index=0).click()
+    >>> cprov_browser.getControl("Search", index=0).click()
     >>> list_ppas_in_browser_page(cprov_browser)
     PPA for Celso Providelo...
     PPA for Mark Shuttleworth...
@@ -63,9 +70,10 @@ private.
 
     >>> admin_browser.open("http://launchpad.test/~landscape-developers")
 
-    >>> admin_browser.getLink('Create a new PPA').click()
-    >>> admin_browser.getControl(name="field.displayname").value = (
-    ...     'PPA for Landscape Developers')
+    >>> admin_browser.getLink("Create a new PPA").click()
+    >>> admin_browser.getControl(
+    ...     name="field.displayname"
+    ... ).value = "PPA for Landscape Developers"
     >>> admin_browser.getControl(name="field.accepted").value = True
     >>> admin_browser.getControl("Activate").click()
 
@@ -80,7 +88,7 @@ the landscape-developers PPA:
     >>> name12_browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> name12_browser.open("http://launchpad.test/ubuntu/+ppas")
     >>> name12_browser.getControl(name="show_inactive").value = True
-    >>> name12_browser.getControl('Search', index=0).click()
+    >>> name12_browser.getControl("Search", index=0).click()
     >>> list_ppas_in_browser_page(name12_browser)
     PPA for Celso Providelo...
     PPA for Landscape Developers...
@@ -91,7 +99,7 @@ Administrators will see all private PPAs in the listing:
 
     >>> admin_browser.open("http://launchpad.test/ubuntu/+ppas")
     >>> admin_browser.getControl(name="show_inactive").value = True
-    >>> admin_browser.getControl('Search', index=0).click()
+    >>> admin_browser.getControl("Search", index=0).click()
     >>> list_ppas_in_browser_page(admin_browser)
     PPA for Celso Providelo...
     PPA for Landscape Developers...
@@ -118,7 +126,7 @@ A non-privileged user cannot access the private PPA pages.
 one because he is not a member of that team, nor an admin.
 
     >>> cprov_browser.open("http://launchpad.test/~cprov/")
-    >>> print_tag_with_id(cprov_browser.contents, 'ppas')
+    >>> print_tag_with_id(cprov_browser.contents, "ppas")
     Personal package archives
     PPA named p3a for Celso Providelo
     PPA for Celso Providelo
@@ -134,7 +142,7 @@ team that has a private PPA for which they are not authorised to see, the
 link to the PPA page is not present.
 
     >>> browser.open("http://launchpad.test/~landscape-developers")
-    >>> print(find_tag_by_id(browser.contents, 'ppas'))
+    >>> print(find_tag_by_id(browser.contents, "ppas"))
     None
 
     >>> browser.getLink("PPA for Landscape Developers").click()
@@ -146,7 +154,7 @@ link to the PPA page is not present.
 the landscape-developers PPA page.
 
     >>> name12_browser.open("http://launchpad.test/~landscape-developers")
-    >>> print_tag_with_id(name12_browser.contents, 'ppas')
+    >>> print_tag_with_id(name12_browser.contents, "ppas")
     Personal package archives
     PPA for Landscape Developers
     Create a new PPA

@@ -16,10 +16,11 @@ the data for your database class.
     >>> from lp.registry.model.person import Person
     >>> import transaction
 
-    >>> writable_janitor = IMasterStore(Person).find(
-    ...     Person, Person.name == 'janitor').one()
+    >>> writable_janitor = (
+    ...     IMasterStore(Person).find(Person, Person.name == "janitor").one()
+    ... )
 
-    >>> writable_janitor.display_name = 'Jack the Janitor'
+    >>> writable_janitor.display_name = "Jack the Janitor"
     >>> transaction.commit()
 
 Sometimes though we know we will not make changes and don't care much
@@ -32,12 +33,13 @@ We can distribute this load over many standby databases but are limited to
 a single primary.
 
     >>> from lp.services.database.interfaces import IStandbyStore
-    >>> ro_janitor = IStandbyStore(Person).find(
-    ...     Person, Person.name == 'janitor').one()
+    >>> ro_janitor = (
+    ...     IStandbyStore(Person).find(Person, Person.name == "janitor").one()
+    ... )
     >>> ro_janitor is writable_janitor
     False
 
-    >>> ro_janitor.display_name = 'Janice the Janitor'
+    >>> ro_janitor.display_name = "Janice the Janitor"
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
@@ -51,8 +53,9 @@ retrieve objects from the default store. What object being returned
 depends on the currently installed database policy.
 
     >>> from lp.services.database.interfaces import IStore
-    >>> default_janitor = IStore(Person).find(
-    ...     Person, Person.name == 'janitor').one()
+    >>> default_janitor = (
+    ...     IStore(Person).find(Person, Person.name == "janitor").one()
+    ... )
     >>> default_janitor is writable_janitor
     True
 
@@ -64,8 +67,10 @@ To alter this behaviour, you can install a different database policy.
 
     >>> from lp.services.database.policy import StandbyDatabasePolicy
     >>> with StandbyDatabasePolicy():
-    ...     default_janitor = IStore(Person).find(
-    ...         Person, Person.name == 'janitor').one()
+    ...     default_janitor = (
+    ...         IStore(Person).find(Person, Person.name == "janitor").one()
+    ...     )
+    ...
     >>> default_janitor is writable_janitor
     False
 
@@ -76,11 +81,14 @@ code we want to prove only accesses standby database resources, we can
 raise an exception if an attempt is made to access primary database
 resources.
 
-    >>> from lp.services.database.policy import (
-    ...     StandbyOnlyDatabasePolicy)
+    >>> from lp.services.database.policy import StandbyOnlyDatabasePolicy
     >>> with StandbyOnlyDatabasePolicy():
-    ...     whoops = IMasterStore(Person).find(
-    ...         Person, Person.name == 'janitor').one()
+    ...     whoops = (
+    ...         IMasterStore(Person)
+    ...         .find(Person, Person.name == "janitor")
+    ...         .one()
+    ...     )
+    ...
     Traceback (most recent call last):
     ...
     lp.services.database.interfaces.DisallowedStore: primary
@@ -92,8 +100,10 @@ database transaction.
 
     >>> from lp.services.database.policy import DatabaseBlockedPolicy
     >>> with DatabaseBlockedPolicy():
-    ...     whoops = IStore(Person).find(
-    ...         Person, Person.name == 'janitor').one()
+    ...     whoops = (
+    ...         IStore(Person).find(Person, Person.name == "janitor").one()
+    ...     )
+    ...
     Traceback (most recent call last):
     ...
     lp.services.database.interfaces.DisallowedStore: ('main', 'default')
@@ -105,10 +115,12 @@ be used.
     >>> from lp.services.database.interfaces import IStoreSelector
     >>> getUtility(IStoreSelector).push(StandbyDatabasePolicy())
     >>> try:
-    ...     default_janitor = IStore(Person).find(
-    ...         Person, Person.name == 'janitor').one()
+    ...     default_janitor = (
+    ...         IStore(Person).find(Person, Person.name == "janitor").one()
+    ...     )
     ... finally:
     ...     db_policy = getUtility(IStoreSelector).pop()
+    ...
     >>> default_janitor is ro_janitor
     True
 

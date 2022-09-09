@@ -10,14 +10,15 @@ indicating when the system is expected to go down.
 First, let's check that the maintenance message is not normally displayed.
 
     >>> import os
-    >>> os.path.exists('+maintenancetime.txt')
+    >>> os.path.exists("+maintenancetime.txt")
     False
 
     >>> def front_page_content():
     ...     return str(http("GET / HTTP/1.1\n"))
+    ...
 
-    >>> maintenance_text = 'Launchpad will be going offline for maintenance'
-    >>> okay200 = 'HTTP/1.1 200 Ok'
+    >>> maintenance_text = "Launchpad will be going offline for maintenance"
+    >>> okay200 = "HTTP/1.1 200 Ok"
     >>> content = front_page_content()
     >>> okay200 in content
     True
@@ -30,7 +31,11 @@ ellipsize the number of minutes in the test output to avoid the risk of
 this timebombing.
 
     >>> os.system(
-    ... 'date --iso-8601=minutes -u -d +10mins30secs > +maintenancetime.txt')
+    ...     (
+    ...         "date --iso-8601=minutes -u -d +10mins30secs "
+    ...         "> +maintenancetime.txt"
+    ...     )
+    ... )
     0
     >>> print(front_page_content())
     HTTP/1.1 200 Ok
@@ -42,7 +47,8 @@ this timebombing.
 When the time is more than 30 minutes away, no message is shown.
 
     >>> os.system(
-    ...     'date --iso-8601=minutes -u -d +40mins > +maintenancetime.txt')
+    ...     "date --iso-8601=minutes -u -d +40mins > +maintenancetime.txt"
+    ... )
     0
     >>> content = front_page_content()
     >>> okay200 in content
@@ -53,37 +59,41 @@ When the time is more than 30 minutes away, no message is shown.
 When the time is under 30 seconds away, the time is given as "very very soon".
 
     >>> os.system(
-    ...     'date --iso-8601=minutes -u -d +29secs > +maintenancetime.txt')
+    ...     "date --iso-8601=minutes -u -d +29secs > +maintenancetime.txt"
+    ... )
     0
     >>> content = front_page_content()
     >>> maintenance_text in content
     True
-    >>> 'very very soon' in content
+    >>> "very very soon" in content
     True
 
 When the time is in the past, the time is still given as "very very soon".
 
     >>> os.system(
-    ...     'date --iso-8601=minutes -u -d -10secs > +maintenancetime.txt')
+    ...     "date --iso-8601=minutes -u -d -10secs > +maintenancetime.txt"
+    ... )
     0
     >>> content = front_page_content()
     >>> maintenance_text in content
     True
-    >>> 'very very soon' in content
+    >>> "very very soon" in content
     True
 
 If the time doesn't make sense, or is empty, then no message is displayed.
 
-    >>> with open('+maintenancetime.txt', 'w') as f:
-    ...     _ = f.write('xxxx')
+    >>> with open("+maintenancetime.txt", "w") as f:
+    ...     _ = f.write("xxxx")
+    ...
     >>> content = front_page_content()
     >>> okay200 in content
     True
     >>> maintenance_text not in content
     True
 
-    >>> with open('+maintenancetime.txt', 'w') as f:
-    ...     _ = f.write('')
+    >>> with open("+maintenancetime.txt", "w") as f:
+    ...     _ = f.write("")
+    ...
     >>> content = front_page_content()
     >>> okay200 in content
     True
@@ -93,7 +103,7 @@ If the time doesn't make sense, or is empty, then no message is displayed.
 
 Remove +maintenancetime.txt to clean up.
 
-    >>> os.remove('+maintenancetime.txt')
+    >>> os.remove("+maintenancetime.txt")
 
 
 Per-page maintenance messages
@@ -106,8 +116,9 @@ pages.
     >>> from lp.services.features.testing import FeatureFixture
     >>> maintenance_text = (
     ...     'This page will be <a href="https://example.com/">broken</a> '
-    ...     'for a while.')
-    >>> with FeatureFixture({'app.maintenance_message': maintenance_text}):
+    ...     "for a while."
+    ... )
+    >>> with FeatureFixture({"app.maintenance_message": maintenance_text}):
     ...     content = front_page_content()
     >>> maintenance_text in content
     True

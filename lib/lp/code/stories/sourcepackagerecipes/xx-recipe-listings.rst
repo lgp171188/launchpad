@@ -6,14 +6,16 @@ Pages that want to display lists of recipes use the recipe-listing
 page template, and views derived from RecipeListingView.
 
     >>> def print_recipe_listing_head(browser):
-    ...     table = find_tag_by_id(browser.contents, 'recipetable')
-    ...     for row in table.thead.find_all('tr'):
+    ...     table = find_tag_by_id(browser.contents, "recipetable")
+    ...     for row in table.thead.find_all("tr"):
     ...         print(extract_text(row))
+    ...
 
     >>> def print_recipe_listing_contents(browser):
-    ...     table = find_tag_by_id(browser.contents, 'recipetable')
-    ...     for row in table.tbody.find_all('tr'):
+    ...     table = find_tag_by_id(browser.contents, "recipetable")
+    ...     for row in table.tbody.find_all("tr"):
     ...         print(extract_text(row))
+    ...
 
 
 Branch Recipe Listings
@@ -21,17 +23,16 @@ Branch Recipe Listings
 
 Create a sample branch.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> recipeless_branch = factory.makeBranch()
     >>> recipeless_branch_url = canonical_url(recipeless_branch)
     >>> logout()
-    >>> nopriv_browser = setupBrowser(
-    ...     auth='Basic nopriv@canonical.com:test')
+    >>> nopriv_browser = setupBrowser(auth="Basic nopriv@canonical.com:test")
 
 Create a new sample branch, but this time create some source package branches
 to go along with them.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> branch = factory.makeBranch()
     >>> recipe1 = factory.makeSourcePackageRecipe(branches=[branch])
     >>> recipe2 = factory.makeSourcePackageRecipe(branches=[branch])
@@ -48,7 +49,7 @@ Since there are 3 recipes associated with this branch now, the link should now
 read "3 recipes." Let's click through.
 
     >>> nopriv_browser.open(branch_url)
-    >>> nopriv_browser.getLink('3 recipes').click()
+    >>> nopriv_browser.getLink("3 recipes").click()
     >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../branch.../+recipes
 
@@ -74,11 +75,12 @@ Git Recipe Listings
 Create a new sample repository, some branches in it, and some source package
 recipes to go along with them.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> repository = factory.makeGitRepository()
     >>> ref1, ref2, ref3 = factory.makeGitRefs(
     ...     repository=repository,
-    ...     paths=[u"refs/heads/a", u"refs/heads/b", u"refs/heads/c"])
+    ...     paths=["refs/heads/a", "refs/heads/b", "refs/heads/c"],
+    ... )
     >>> recipe1a = factory.makeSourcePackageRecipe(branches=[ref1])
     >>> recipe1b = factory.makeSourcePackageRecipe(branches=[ref1])
     >>> recipe2 = factory.makeSourcePackageRecipe(branches=[ref2])
@@ -96,7 +98,7 @@ Since there are 4 recipes associated with this repository now, the link
 should now read "4 recipes."  Let's click through.
 
     >>> nopriv_browser.open(repository_url)
-    >>> nopriv_browser.getLink('4 recipes').click()
+    >>> nopriv_browser.getLink("4 recipes").click()
     >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../+git/gitrepository.../+recipes
 
@@ -123,7 +125,8 @@ listed.
 
     >>> with GitHostingFixture():
     ...     nopriv_browser.open(ref1_url)
-    >>> nopriv_browser.getLink('2 recipes').click()
+    ...
+    >>> nopriv_browser.getLink("2 recipes").click()
     >>> print(nopriv_browser.url)  # noqa
     http://code.launchpad.test/~person-name.../product-name.../+git/gitrepository.../+ref/a/+recipes
 
@@ -143,7 +146,7 @@ Product Recipe Listings
 Let's use the product from the former branch test.
 
     >>> nopriv_browser.open(product_url)
-    >>> nopriv_browser.getLink('View source package recipes').click()
+    >>> nopriv_browser.getLink("View source package recipes").click()
     >>> print(nopriv_browser.url)
     http://code.launchpad.test/product-name.../+recipes
 
@@ -164,7 +167,7 @@ this product.
 The same thing works for the target of the former Git repository test.
 
     >>> nopriv_browser.open(target_url)
-    >>> nopriv_browser.getLink('View source package recipes').click()
+    >>> nopriv_browser.getLink("View source package recipes").click()
     >>> print(nopriv_browser.url)
     http://code.launchpad.test/product-name.../+recipes
 
@@ -186,7 +189,7 @@ Person Recipe Listings
 
 Create a person, make some recipes for that person.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> person = factory.makePerson()
     >>> person_url = canonical_url(person)
     >>> recipe1 = factory.makeSourcePackageRecipe(owner=person)
@@ -195,7 +198,7 @@ Create a person, make some recipes for that person.
     >>> logout()
 
     >>> nopriv_browser.open(person_url)
-    >>> nopriv_browser.getLink('View source package recipes').click()
+    >>> nopriv_browser.getLink("View source package recipes").click()
     >>> print(nopriv_browser.url)
     http://code.launchpad.test/~person-name.../+recipes
 

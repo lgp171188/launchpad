@@ -7,17 +7,29 @@ by our logging handler.
     ...     import sys
     ...     import subprocess
     ...     from lp.services.config import config
+    ...
     ...     test_script_path = os.path.join(
-    ...         config.root, 'lib', 'lp', 'services',
-    ...         'scripts', 'tests', 'loglevels.py')
+    ...         config.root,
+    ...         "lib",
+    ...         "lp",
+    ...         "services",
+    ...         "scripts",
+    ...         "tests",
+    ...         "loglevels.py",
+    ...     )
     ...     cmd = [sys.executable, test_script_path] + list(args)
     ...     proc = subprocess.Popen(
-    ...         cmd, stdin=subprocess.PIPE,
-    ...         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-    ...         universal_newlines=True, **kw)
+    ...         cmd,
+    ...         stdin=subprocess.PIPE,
+    ...         stdout=subprocess.PIPE,
+    ...         stderr=subprocess.PIPE,
+    ...         universal_newlines=True,
+    ...         **kw
+    ...     )
     ...     out, err = proc.communicate()
     ...     assert out == "", "Output to stdout"
     ...     print(err)
+    ...
 
 
 The default is to output INFO messages and above.
@@ -35,7 +47,7 @@ diagnosing problems as we can tell when a script was blocked or
 taking too long, and can reference other timestamped log files
 such as Apache, Librarian or PostgreSQL logs.
 
-    >>> test(env={'LPCONFIG': 'development'})
+    >>> test(env={"LPCONFIG": "development"})
     1985-12-21 13:45:55 ERROR   This is an error
     1985-12-21 13:45:55 WARNING This is a warning
     1985-12-21 13:45:55 INFO    This is info
@@ -90,14 +102,26 @@ FATAL is an alias for CRITICAL, and DEBUG1 is an alias for DEBUG.
 
     >>> from lp.services.log import loglevels
     >>> levels = [
-    ...     loglevels.FATAL, loglevels.CRITICAL, loglevels.ERROR,
-    ...     loglevels.WARNING, loglevels.INFO, loglevels.DEBUG,
-    ...     loglevels.DEBUG1, loglevels.DEBUG2, loglevels.DEBUG3,
-    ...     loglevels.DEBUG4, loglevels.DEBUG5, loglevels.DEBUG6,
-    ...     loglevels.DEBUG7, loglevels.DEBUG8, loglevels.DEBUG9]
+    ...     loglevels.FATAL,
+    ...     loglevels.CRITICAL,
+    ...     loglevels.ERROR,
+    ...     loglevels.WARNING,
+    ...     loglevels.INFO,
+    ...     loglevels.DEBUG,
+    ...     loglevels.DEBUG1,
+    ...     loglevels.DEBUG2,
+    ...     loglevels.DEBUG3,
+    ...     loglevels.DEBUG4,
+    ...     loglevels.DEBUG5,
+    ...     loglevels.DEBUG6,
+    ...     loglevels.DEBUG7,
+    ...     loglevels.DEBUG8,
+    ...     loglevels.DEBUG9,
+    ... ]
     >>> import logging
     >>> for level in levels:
     ...     print("%2d %s" % (level, logging.getLevelName(level)))
+    ...
     50 CRITICAL
     50 CRITICAL
     40 ERROR

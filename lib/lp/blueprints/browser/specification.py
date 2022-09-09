@@ -1486,7 +1486,7 @@ def to_DOT_ID(value):
 
     The returned value is always a unicode string.
 
-    >>> to_DOT_ID(u'foo " bar \n')
+    >>> to_DOT_ID('foo " bar \n')
     u'"foo \\" bar \\n"'
 
     """

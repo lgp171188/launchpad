@@ -21,28 +21,33 @@ functionality:
     ...     def _preparedRequest(self, url):
     ...         with super()._preparedRequest(url) as reqargs:
     ...             reqargs["headers"] = [
-    ...                 (key, value) for key, value in reqargs["headers"]
-    ...                 if key.lower() != "referer"]
+    ...                 (key, value)
+    ...                 for key, value in reqargs["headers"]
+    ...                 if key.lower() != "referer"
+    ...             ]
     ...             if self._referrer is not None:
     ...                 reqargs["headers"].append(("Referer", self._referrer))
     ...             yield reqargs
+    ...
 
     >>> def setupBrowserWithReferrer(referrer):
     ...     browser = BrowserWithReferrer(referrer)
     ...     browser.handleErrors = False
     ...     browser.addHeader(
-    ...         "Authorization", "Basic no-priv@canonical.com:test")
+    ...         "Authorization", "Basic no-priv@canonical.com:test"
+    ...     )
     ...     return browser
+    ...
 
 
 If we try to create a new team with with the referrer set to
 "evil.people.com", the post fails:
 
-    >>> browser = setupBrowserWithReferrer('http://evil.people.com/')
-    >>> browser.open('http://launchpad.test/people/+newteam')
-    >>> browser.getControl('Name', index=0).value = 'team1'
-    >>> browser.getControl('Display Name').value = 'Team 1'
-    >>> browser.getControl('Create').click()
+    >>> browser = setupBrowserWithReferrer("http://evil.people.com/")
+    >>> browser.open("http://launchpad.test/people/+newteam")
+    >>> browser.getControl("Name", index=0).value = "team1"
+    >>> browser.getControl("Display Name").value = "Team 1"
+    >>> browser.getControl("Create").click()
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.OffsiteFormPostError:
@@ -51,11 +56,11 @@ If we try to create a new team with with the referrer set to
 
 Similarly, posting with a garbage referer fails:
 
-    >>> browser = setupBrowserWithReferrer('not a url')
-    >>> browser.open('http://launchpad.test/people/+newteam')
-    >>> browser.getControl('Name', index=0).value = 'team2'
-    >>> browser.getControl('Display Name').value = 'Team 2'
-    >>> browser.getControl('Create').click()
+    >>> browser = setupBrowserWithReferrer("not a url")
+    >>> browser.open("http://launchpad.test/people/+newteam")
+    >>> browser.getControl("Name", index=0).value = "team2"
+    >>> browser.getControl("Display Name").value = "Team 2"
+    >>> browser.getControl("Create").click()
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.OffsiteFormPostError: not a url
@@ -64,10 +69,10 @@ Similarly, posting with a garbage referer fails:
 It also fails if there is no referrer.
 
     >>> browser = setupBrowserWithReferrer(None)
-    >>> browser.open('http://launchpad.test/people/+newteam')
-    >>> browser.getControl('Name', index=0).value = 'team3'
-    >>> browser.getControl('Display Name').value = 'Team 3'
-    >>> browser.getControl('Create').click()
+    >>> browser.open("http://launchpad.test/people/+newteam")
+    >>> browser.getControl("Name", index=0).value = "team3"
+    >>> browser.getControl("Display Name").value = "Team 3"
+    >>> browser.getControl("Create").click()
     Traceback (most recent call last):
       ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -77,19 +82,19 @@ may be because the user is trying to enforce anonymity.  Therefore, we
 present a hopefully helpful error message.
 
     >>> browser.handleErrors = True
-    >>> browser.open('http://launchpad.test/people/+newteam')
-    >>> browser.getControl('Name', index=0).value = 'team3'
-    >>> browser.getControl('Display Name').value = 'Team 3'
-    >>> browser.getControl('Create').click()
+    >>> browser.open("http://launchpad.test/people/+newteam")
+    >>> browser.getControl("Name", index=0).value = "team3"
+    >>> browser.getControl("Display Name").value = "Team 3"
+    >>> browser.getControl("Create").click()
     Traceback (most recent call last):
       ...
     urllib.error.HTTPError: ...
-    >>> print(browser.headers['status'])
+    >>> print(browser.headers["status"])
     403 Forbidden
     >>> print(extract_text(find_main_content(browser.contents)))
     No REFERER Header
     ...
-    >>> browser.getLink('the FAQ').url
+    >>> browser.getLink("the FAQ").url
     'https://answers.launchpad.net/launchpad/+faq/1024'
     >>> browser.handleErrors = False
 
@@ -98,21 +103,23 @@ REFERER header.
 
 To support apport, we allow it for +storeblob.
 
-    >>> browser.post('http://launchpad.test/+storeblob', 'x=1')
+    >>> browser.post("http://launchpad.test/+storeblob", "x=1")
 
 To support old versions of launchpadlib, we also let POST requests
 without a REFERER header go through to +request-token and
 +access-token.
 
-    >>> body = ('oauth_signature=%26&oauth_consumer_key=test'
-    ...         '&oauth_signature_method=PLAINTEXT')
-    >>> browser.post('http://launchpad.test/+request-token', body)
+    >>> body = (
+    ...     "oauth_signature=%26&oauth_consumer_key=test"
+    ...     "&oauth_signature_method=PLAINTEXT"
+    ... )
+    >>> browser.post("http://launchpad.test/+request-token", body)
 
 This request results in a response code of 401, but if there was no
 exception for +access-token, it would result in an
 OffsiteFormPostError.
 
-    >>> browser.post('http://launchpad.test/+access-token', 'x=1')
+    >>> browser.post("http://launchpad.test/+access-token", "x=1")
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 401: Unauthorized
@@ -122,18 +129,18 @@ launchpad.  (Go behind the curtains and change the hostname of one of our
 sites so that we can test this.)
 
     >>> from lp.services.webapp.vhosts import allvhosts
-    >>> allvhosts._hostnames.add('bzr.dev')
+    >>> allvhosts._hostnames.add("bzr.dev")
 
-    >>> browser = setupBrowserWithReferrer('http://bzr.dev')
-    >>> browser.open('http://launchpad.test/people/+newteam')
-    >>> browser.getControl('Name', index=0).value = 'team4'
-    >>> browser.getControl('Display Name').value = 'Team 4'
-    >>> browser.getControl('Create').click()
+    >>> browser = setupBrowserWithReferrer("http://bzr.dev")
+    >>> browser.open("http://launchpad.test/people/+newteam")
+    >>> browser.getControl("Name", index=0).value = "team4"
+    >>> browser.getControl("Display Name").value = "Team 4"
+    >>> browser.getControl("Create").click()
     >>> print(browser.url)
     http://launchpad.test/~team4
 
     # Now restore our site's hostname.
-    >>> allvhosts._hostnames.remove('bzr.dev')
+    >>> allvhosts._hostnames.remove("bzr.dev")
 
 Cheaters never prosper
 ----------------------
@@ -143,18 +150,20 @@ specially crafted requests to bypass the referrer check. None of these
 crafted requests work anymore. For instance, you can't cheat by making
 a referrerless POST request to the browser-accessible API.
 
-    >>> browser = setupBrowserWithReferrer('http://evil.people.com/')
+    >>> browser = setupBrowserWithReferrer("http://evil.people.com/")
     >>> no_referrer_browser = setupBrowserWithReferrer(None)
 
     >>> browser.post(
-    ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
+    ...     "http://launchpad.test/api/devel/people", "ws.op=foo&x=1"
+    ... )
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError:
     http://evil.people.com/
 
     >>> no_referrer_browser.post(
-    ...     'http://launchpad.test/api/devel/people', 'ws.op=foo&x=1')
+    ...     "http://launchpad.test/api/devel/people", "ws.op=foo&x=1"
+    ... )
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -163,16 +172,16 @@ You can't cheat by making your referrerless POST request seem as
 though it were signed with OAuth.
 
     >>> browser.post(
-    ...     'http://launchpad.test/',
-    ...     'oauth_consumer_key=foo&oauth_token=bar')
+    ...     "http://launchpad.test/", "oauth_consumer_key=foo&oauth_token=bar"
+    ... )
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError:
     http://evil.people.com/
 
     >>> no_referrer_browser.post(
-    ...     'http://launchpad.test/',
-    ...     'oauth_consumer_key=foo&oauth_token=bar')
+    ...     "http://launchpad.test/", "oauth_consumer_key=foo&oauth_token=bar"
+    ... )
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.NoReferrerError: No value for REFERER header
@@ -183,15 +192,16 @@ create an anonymous signature, and you don't need to use the name of
 an existing consumer. Maybe the signature will make your request look
 enough like an anonymous OAuth request to bypass the referrer check.
 
-    >>> sig = ('ws.op=new_project&display_name=a&name=bproj&summary=c&title=d'
-    ...        '&oauth_nonce=x&oauth_timestamp=y&oauth_consumer_key=key'
-    ...        '&oauth_signature_method=PLAINTEXT&oauth_version=1.0'
-    ...        '&oauth_token=&oauth_signature=%26')
+    >>> sig = (
+    ...     "ws.op=new_project&display_name=a&name=bproj&summary=c&title=d"
+    ...     "&oauth_nonce=x&oauth_timestamp=y&oauth_consumer_key=key"
+    ...     "&oauth_signature_method=PLAINTEXT&oauth_version=1.0"
+    ...     "&oauth_token=&oauth_signature=%26"
+    ... )
 
 But the browser-accessible API ignores OAuth credentials altogether.
 
-    >>> browser.post(
-    ...     'http://launchpad.test/api/devel/projects', sig)
+    >>> browser.post("http://launchpad.test/api/devel/projects", sig)
     Traceback (most recent call last):
     ...
     lp.services.webapp.interfaces.OffsiteFormPostError:
@@ -200,7 +210,7 @@ But the browser-accessible API ignores OAuth credentials altogether.
 If you go through the 'api' vhost, the signed request will be
 processed despite the bogus referrer, but...
 
-    >>> browser.post('http://api.launchpad.test/devel/projects', sig)
+    >>> browser.post("http://api.launchpad.test/devel/projects", sig)
     Traceback (most recent call last):
     ...
     storm.exceptions.NoneError: None isn't acceptable as a value for

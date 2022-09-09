@@ -36,20 +36,26 @@ Reporting a new bug
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet,
-    ...     )
+    ... )
 
     >>> bug_submitter = getUtility(IPersonSet).get(12)
     >>> firefox = getUtility(IProductSet).get(4)
 
     >>> params = CreateBugParams(
     ...     title="firefox crashes all the time",
-    ...     comment="this is a comment", owner=bug_submitter)
+    ...     comment="this is a comment",
+    ...     owner=bug_submitter,
+    ... )
     >>> firefox_crashes = firefox.createBug(params)
 
     >>> from lp.bugs.model.bugnotification import BugNotification
     >>> from lp.services.database.interfaces import IStore
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -76,9 +82,14 @@ Editing a bug report
 
     >>> with notify_modified(firefox_crashes, ["description"]):
     ...     firefox_crashes.description = "a new description"
+    ...
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -113,13 +124,22 @@ bug. Let's take a look at each type.
     >>> debian = getUtility(IDistributionSet).get(3)
     >>> firefox_source = getUtility(ISourcePackageNameSet).get(1)
     >>> firefox_crashes_in_debian = getUtility(IBugTaskSet).createTask(
-    ...     firefox_crashes, bug_submitter,
-    ...     debian.getSourcePackage(firefox_source))
-    >>> notify(ObjectCreatedEvent(
-    ...     firefox_crashes_in_debian, firefox_crashes_in_debian.owner))
+    ...     firefox_crashes,
+    ...     bug_submitter,
+    ...     debian.getSourcePackage(firefox_source),
+    ... )
+    >>> notify(
+    ...     ObjectCreatedEvent(
+    ...         firefox_crashes_in_debian, firefox_crashes_in_debian.owner
+    ...     )
+    ... )
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -140,13 +160,22 @@ bug. Let's take a look at each type.
 
     >>> sid = getUtility(IDistroSeriesSet).get(8)
     >>> firefox_crashes_in_sid = getUtility(IBugTaskSet).createTask(
-    ...     firefox_crashes, bug_submitter,
-    ...     sid.getSourcePackage(firefox_source))
-    >>> notify(ObjectCreatedEvent(
-    ...     firefox_crashes_in_sid, firefox_crashes_in_sid.owner))
+    ...     firefox_crashes,
+    ...     bug_submitter,
+    ...     sid.getSourcePackage(firefox_source),
+    ... )
+    >>> notify(
+    ...     ObjectCreatedEvent(
+    ...         firefox_crashes_in_sid, firefox_crashes_in_sid.owner
+    ...     )
+    ... )
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -170,12 +199,20 @@ bug. Let's take a look at each type.
 
     >>> evolution = getUtility(IProductSet).get(5)
     >>> evolution_crashes_too = getUtility(IBugTaskSet).createTask(
-    ...     firefox_crashes, bug_submitter, evolution)
-    >>> notify(ObjectCreatedEvent(
-    ...     evolution_crashes_too, evolution_crashes_too.owner))
+    ...     firefox_crashes, bug_submitter, evolution
+    ... )
+    >>> notify(
+    ...     ObjectCreatedEvent(
+    ...         evolution_crashes_too, evolution_crashes_too.owner
+    ...     )
+    ... )
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -191,14 +228,22 @@ bug. Let's take a look at each type.
     Similar to an upstream task, except that a task filed on a specific
     product series is meant to target a bug to a specific series.
 
-    >>> trunk = evolution.getSeries('trunk')
+    >>> trunk = evolution.getSeries("trunk")
     >>> firefox_crashes_in_trunk = getUtility(IBugTaskSet).createTask(
-    ...     firefox_crashes, bug_submitter, trunk)
-    >>> notify(ObjectCreatedEvent(
-    ...     firefox_crashes_in_trunk, firefox_crashes_in_trunk.owner))
+    ...     firefox_crashes, bug_submitter, trunk
+    ... )
+    >>> notify(
+    ...     ObjectCreatedEvent(
+    ...         firefox_crashes_in_trunk, firefox_crashes_in_trunk.owner
+    ...     )
+    ... )
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -217,12 +262,19 @@ Commenting on a bug report
     >>> bugmessageset = getUtility(IBugMessageSet)
     >>> current_user = getUtility(ILaunchBag).user
     >>> comment_on_firefox_crashes_in_debian = bugmessageset.createMessage(
-    ...     subject="some title", content="just a test comment",
-    ...     bug=firefox_crashes, owner=current_user)
+    ...     subject="some title",
+    ...     content="just a test comment",
+    ...     bug=firefox_crashes,
+    ...     owner=current_user,
+    ... )
     >>> notify(ObjectCreatedEvent(comment_on_firefox_crashes_in_debian))
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -241,13 +293,19 @@ task Fixed, and assigns themselves to it.
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
 
     >>> with notify_modified(
-    ...         firefox_crashes_in_debian, ["status", "assignee"]):
+    ...     firefox_crashes_in_debian, ["status", "assignee"]
+    ... ):
     ...     firefox_crashes_in_debian.transitionToStatus(
-    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ...     )
     ...     firefox_crashes_in_debian.transitionToAssignee(bug_submitter)
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -258,13 +316,19 @@ task Fixed, and assigns themselves to it.
     ...
 
     >>> with notify_modified(
-    ...         firefox_crashes_in_trunk, ["status", "assignee"]):
+    ...     firefox_crashes_in_trunk, ["status", "assignee"]
+    ... ):
     ...     firefox_crashes_in_trunk.transitionToStatus(
-    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.FIXRELEASED, getUtility(ILaunchBag).user
+    ...     )
     ...     firefox_crashes_in_trunk.transitionToAssignee(bug_submitter)
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -284,14 +348,21 @@ attach it to the firefox_crashes bug that we've been using throughout
 this document:
 
     >>> from lp.bugs.interfaces.cve import CveStatus, ICveSet
-    >>> cve = getUtility(ICveSet).new(sequence="2004-0276",
-    ...     description="a brief CVE description", status=CveStatus.ENTRY)
+    >>> cve = getUtility(ICveSet).new(
+    ...     sequence="2004-0276",
+    ...     description="a brief CVE description",
+    ...     status=CveStatus.ENTRY,
+    ... )
     >>> from lp.bugs.model.bug import Bug
     >>> bug = Bug.get(1)
-    >>> bugcve = cve.linkBug(bug) # note this creates the event and notifies
+    >>> bugcve = cve.linkBug(bug)  # note this creates the event and notifies
 
-    >>> latest_notification = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id).last()
+    >>> latest_notification = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ...     .last()
+    ... )
     >>> print(latest_notification.message.owner.displayname)
     Sample Person
 
@@ -309,7 +380,8 @@ email notifications.  Due to the previous operation, there is a
 pending bug notification for bug 1:
 
     >>> notifications = IStore(BugNotification).find(
-    ...     BugNotification, bug_id=1, date_emailed=None)
+    ...     BugNotification, bug_id=1, date_emailed=None
+    ... )
     >>> notifications.count()
     1
 
@@ -318,6 +390,7 @@ method:
 
     >>> bug.expireNotifications()
     >>> notifications = IStore(BugNotification).find(
-    ...     BugNotification, bug_id=1, date_emailed=None)
+    ...     BugNotification, bug_id=1, date_emailed=None
+    ... )
     >>> notifications.count()
     0

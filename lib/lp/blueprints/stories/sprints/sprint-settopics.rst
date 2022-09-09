@@ -3,51 +3,56 @@ Any logged in user can propose specs to be discussed in a sprint.
     >>> from datetime import (
     ...     datetime,
     ...     timedelta,
-    ...     )
+    ... )
     >>> import pytz
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> _ = factory.makeSprint(
-    ...     name='uds-guacamole', title='Ubuntu DevSummit Guacamole',
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    ...     name="uds-guacamole",
+    ...     title="Ubuntu DevSummit Guacamole",
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ... )
     >>> transaction.commit()
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/ubuntu/'
-    ...     '+spec/media-integrity-check/+linksprint')
+    ...     "http://blueprints.launchpad.test/ubuntu/"
+    ...     "+spec/media-integrity-check/+linksprint"
+    ... )
 
-    >>> user_browser.getControl('Sprint').value = ['uds-guacamole']
-    >>> user_browser.getControl('Continue').click()
-    >>> meeting_link = user_browser.getLink('uds-guacamole')
+    >>> user_browser.getControl("Sprint").value = ["uds-guacamole"]
+    >>> user_browser.getControl("Continue").click()
+    >>> meeting_link = user_browser.getLink("uds-guacamole")
     >>> meeting_link is not None
     True
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/kubuntu/'
-    ...     '+spec/kde-desktopfile-langpacks/+linksprint')
-    >>> user_browser.getControl('Sprint').value = ['uds-guacamole']
-    >>> user_browser.getControl('Continue').click()
-    >>> meeting_link = user_browser.getLink('uds-guacamole')
+    ...     "http://blueprints.launchpad.test/kubuntu/"
+    ...     "+spec/kde-desktopfile-langpacks/+linksprint"
+    ... )
+    >>> user_browser.getControl("Sprint").value = ["uds-guacamole"]
+    >>> user_browser.getControl("Continue").click()
+    >>> meeting_link = user_browser.getLink("uds-guacamole")
     >>> meeting_link is not None
     True
 
 Regular users can't approve items to be discussed in a sprint.
 
-    >>> user_browser.open('http://launchpad.test/sprints/uds-guacamole')
-    >>> user_browser.getLink('proposed')
+    >>> user_browser.open("http://launchpad.test/sprints/uds-guacamole")
+    >>> user_browser.getLink("proposed")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
-    >>> user_browser.getLink('Blueprints').click()
-    >>> user_browser.getLink('Set agenda').click()
+    >>> user_browser.getLink("Blueprints").click()
+    >>> user_browser.getLink("Set agenda").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/sprints/uds-guacamole/+settopics')
+    ...     "http://launchpad.test/sprints/uds-guacamole/+settopics"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -55,32 +60,33 @@ Regular users can't approve items to be discussed in a sprint.
 It's possible to delegate the approval of a sprint agenda items to somebody
 else.  First choose a driver for the UDS Guacamole sprint.
 
-    >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.test/sprints/uds-guacamole')
-    >>> browser.getLink('Change details').click()
+    >>> browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> browser.open("http://launchpad.test/sprints/uds-guacamole")
+    >>> browser.getLink("Change details").click()
     >>> browser.url
     'http://launchpad.test/sprints/uds-guacamole/+edit'
 
-    >>> browser.getControl('Meeting Driver').value = 'ubuntu-team'
-    >>> browser.getControl('Change').click()
+    >>> browser.getControl("Meeting Driver").value = "ubuntu-team"
+    >>> browser.getControl("Change").click()
 
     >>> browser.url
     'http://launchpad.test/sprints/uds-guacamole'
 
-    >>> meeting_drivers = find_tag_by_id(browser.contents, 'meeting-drivers')
-    >>> print(extract_text(meeting_drivers.find_next('a')))
+    >>> meeting_drivers = find_tag_by_id(browser.contents, "meeting-drivers")
+    >>> print(extract_text(meeting_drivers.find_next("a")))
     Ubuntu Team
 
 Any member of the Ubuntu-Team can now approve and/or decline items to the UDS
 Guacamole agenda.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> cprov_browser.open('http://launchpad.test/sprints/uds-guacamole')
-    >>> cprov_browser.getLink('Blueprints').click()
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
+    >>> cprov_browser.open("http://launchpad.test/sprints/uds-guacamole")
+    >>> cprov_browser.getLink("Blueprints").click()
     >>> cprov_browser.url
     'http://blueprints.launchpad.test/sprints/uds-guacamole'
-    >>> cprov_browser.getLink('Set agenda').click()
+    >>> cprov_browser.getLink("Set agenda").click()
 
     >>> print(cprov_browser.title)
     Review discussion topics for “Ubuntu DevSummit Guacamole” sprint :
@@ -88,12 +94,13 @@ Guacamole agenda.
     Ubuntu DevSummit Guacamole :
     Meetings
 
-    >>> cprov_browser.getControl('CD Media Integrity Check').selected = True
-    >>> cprov_browser.getControl('Accept').click()
+    >>> cprov_browser.getControl("CD Media Integrity Check").selected = True
+    >>> cprov_browser.getControl("Accept").click()
 
     >>> cprov_browser.getControl(
-    ...     'KDE Desktop File Language Packs').selected = True
-    >>> cprov_browser.getControl('Decline').click()
+    ...     "KDE Desktop File Language Packs"
+    ... ).selected = True
+    >>> cprov_browser.getControl("Decline").click()
 
     >>> cprov_browser.url
     'http://blueprints.launchpad.test/sprints/uds-guacamole/+specs'

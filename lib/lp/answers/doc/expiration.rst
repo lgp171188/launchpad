@@ -23,8 +23,11 @@ somebody are subject to expiration.
     >>> from lp.answers.enums import QuestionStatus
     >>> from lp.answers.model.question import Question
     >>> IStore(Question).find(
-    ...     Question, Question.status.is_in(
-    ...         (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO))).count()
+    ...     Question,
+    ...     Question.status.is_in(
+    ...         (QuestionStatus.OPEN, QuestionStatus.NEEDSINFO)
+    ...     ),
+    ... ).count()
     9
 
     # By default, all open and needs info question should expire. Make
@@ -38,7 +41,9 @@ somebody are subject to expiration.
     ...     Question,
     ...     Or(
     ...         Question.datelastresponse >= interval,
-    ...         Question.datelastquery >= interval)).count()
+    ...         Question.datelastquery >= interval,
+    ...     ),
+    ... ).count()
     0
 
     # We need to massage sample data a little. Since all expiration
@@ -52,7 +57,7 @@ somebody are subject to expiration.
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.answers.interfaces.questioncollection import IQuestionSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> no_priv = getUtility(ILaunchBag).user
 
     >>> questionset = getUtility(IQuestionSet)
@@ -63,21 +68,23 @@ somebody are subject to expiration.
     Needs information
 
     # An open question assigned to somebody.
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> old_assigned_open_question = questionset.get(1)
     >>> old_assigned_open_question.assignee = getUtility(ILaunchBag).user
 
     # This one got an update from its owner recently.
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> recent_open_question = questionset.get(2)
     >>> recent_open_question.giveInfo(
-    ...     'SVG works better now, but is still broken')
+    ...     "SVG works better now, but is still broken"
+    ... )
     <lp.answers.model.questionmessage.QuestionMessage...>
 
     # This one was put in the NEEDSINFO state recently.
     >>> recent_needsinfo_question = questionset.get(4)
     >>> recent_needsinfo_question.requestInfo(
-    ...     no_priv, 'What URL were you visiting?')
+    ...     no_priv, "What URL were you visiting?"
+    ... )
     <lp.answers.model.questionmessage.QuestionMessage...>
 
     # Old open questions.
@@ -85,10 +92,10 @@ somebody are subject to expiration.
 
     # Subscribe a team to that question, and a answer contact,
     # to make sure that DB permissions are correct.
-    >>> admin_team = getUtility(IPersonSet).getByName('admins')
+    >>> admin_team = getUtility(IPersonSet).getByName("admins")
     >>> old_open_question.subscribe(admin_team)
     <lp.answers.model.questionsubscription.QuestionSubscription...>
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> old_open_question.target.addAnswerContact(salgado, salgado)
     True
 
@@ -97,10 +104,12 @@ somebody are subject to expiration.
     # the last updates date of the question and remove it from the expiration
     # set.
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> faq = old_open_question.target.newFAQ(
-    ...     salgado, 'Why everyone think this is weird.',
-    ...     "That's an easy one. It's because it is!")
+    ...     salgado,
+    ...     "Why everyone think this is weird.",
+    ...     "That's an easy one. It's because it is!",
+    ... )
     >>> removeSecurityProxy(old_open_question).faq = faq
 
     # A question linked to an non-Invalid bug is not expirable.
@@ -138,9 +147,13 @@ somebody are subject to expiration.
     # Run the script.
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     'cronscripts/expire-questions.py', shell=True,
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     "cronscripts/expire-questions.py",
+    ...     shell=True,
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(err)
     INFO    Creating lockfile: /var/lock/launchpad-expire-questions.lock

@@ -15,11 +15,11 @@ should be threated as so.
     >>> ubuntu_team_nonmember = getUtility(IPersonSet).get(12)
 
     >>> pollset = getUtility(IPollSet)
-    >>> director_election = pollset.getByTeamAndName(ubuntu_team,
-    ...                                              u'director-2004')
+    >>> director_election = pollset.getByTeamAndName(
+    ...     ubuntu_team, "director-2004"
+    ... )
     >>> director_options = director_election.getActiveOptions()
-    >>> leader_election = pollset.getByTeamAndName(
-    ...     ubuntu_team, u'leader-2004')
+    >>> leader_election = pollset.getByTeamAndName(ubuntu_team, "leader-2004")
     >>> leader_options = leader_election.getActiveOptions()
     >>> opendate = leader_election.dateopens
     >>> onesec = timedelta(seconds=1)
@@ -36,10 +36,12 @@ If the poll is already opened, it's impossible to remove an option.
 Trying to vote two times is a programming error.
 
     >>> votes = leader_election.storeSimpleVote(
-    ...     ubuntu_team_member, leader_options[0], when=opendate)
+    ...     ubuntu_team_member, leader_options[0], when=opendate
+    ... )
 
     >>> votes = leader_election.storeSimpleVote(
-    ...     ubuntu_team_member, leader_options[0], when=opendate)
+    ...     ubuntu_team_member, leader_options[0], when=opendate
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: Can't vote twice in one poll
@@ -49,13 +51,15 @@ It's not possible for a non-member to vote, neither to vote when the poll is
 not open.
 
     >>> votes = leader_election.storeSimpleVote(
-    ...     ubuntu_team_nonmember, leader_options[0], when=opendate)
+    ...     ubuntu_team_nonmember, leader_options[0], when=opendate
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: Person ... is not a member of this poll's team.
 
     >>> votes = leader_election.storeSimpleVote(
-    ...     ubuntu_team_member, leader_options[0], when=opendate - onesec)
+    ...     ubuntu_team_member, leader_options[0], when=opendate - onesec
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: This poll is not open
@@ -66,7 +70,8 @@ voting in.
 
     >>> options = {leader_options[0]: 1}
     >>> votes = director_election.storeCondorcetVote(
-    ...     ubuntu_team_member, options, when=opendate)
+    ...     ubuntu_team_member, options, when=opendate
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: The option ... doesn't belong to this poll

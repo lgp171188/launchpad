@@ -14,7 +14,8 @@ project without a remote_product set.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.product import IProductSet
     >>> products = getUtility(
-    ...     IProductSet).getSFLinkedProductsWithNoneRemoteProduct()
+    ...     IProductSet
+    ... ).getSFLinkedProductsWithNoneRemoteProduct()
 
     >>> print(products.count())
     0
@@ -26,15 +27,17 @@ getSFLinkedProductsWithNoneRemoteProduct() will return it.
     >>> from transaction import commit
     >>> factory = LaunchpadObjectFactory()
 
-    >>> product_1 = factory.makeProduct(name='my-first-product')
-    >>> product_1.sourceforgeproject = 'fronobulator'
+    >>> product_1 = factory.makeProduct(name="my-first-product")
+    >>> product_1.sourceforgeproject = "fronobulator"
     >>> commit()
 
     >>> products = getUtility(
-    ...     IProductSet).getSFLinkedProductsWithNoneRemoteProduct()
+    ...     IProductSet
+    ... ).getSFLinkedProductsWithNoneRemoteProduct()
 
     >>> for product in products:
     ...     print(product.name, product.sourceforgeproject)
+    ...
     my-first-product fronobulator
 
 Define some request mocks so that we don't try to access SourceForge.
@@ -46,43 +49,64 @@ Define some request mocks so that we don't try to access SourceForge.
 
     >>> def project_callback(request):
     ...     url = urlsplit(request.url)
-    ...     project = re.match(r'.*/projects/([a-z]+)', url.path).group(1)
+    ...     project = re.match(r".*/projects/([a-z]+)", url.path).group(1)
     ...     file_path = os.path.join(
-    ...         os.path.dirname(__file__), os.pardir, 'tests', 'testfiles',
-    ...         'sourceforge-project-%s.html' % project)
+    ...         os.path.dirname(__file__),
+    ...         os.pardir,
+    ...         "tests",
+    ...         "testfiles",
+    ...         "sourceforge-project-%s.html" % project,
+    ...     )
     ...     with open(file_path) as test_file:
     ...         return (200, {}, test_file.read())
+    ...
     >>> def add_project_response(requests_mock):
     ...     requests_mock.add_callback(
-    ...         'GET', re.compile(r'.*/projects/[a-z]+'),
-    ...         callback=project_callback)
+    ...         "GET",
+    ...         re.compile(r".*/projects/[a-z]+"),
+    ...         callback=project_callback,
+    ...     )
+    ...
 
     >>> def tracker_callback(request):
     ...     url = urlsplit(request.url)
-    ...     group_id = re.match(r'group_id=([0-9]+)', url.query).group(1)
+    ...     group_id = re.match(r"group_id=([0-9]+)", url.query).group(1)
     ...     file_path = os.path.join(
-    ...         os.path.dirname(__file__), os.pardir, 'tests', 'testfiles',
-    ...         'sourceforge-tracker-%s.html' % group_id)
+    ...         os.path.dirname(__file__),
+    ...         os.pardir,
+    ...         "tests",
+    ...         "testfiles",
+    ...         "sourceforge-tracker-%s.html" % group_id,
+    ...     )
     ...     with open(file_path) as test_file:
     ...         return (200, {}, test_file.read())
+    ...
     >>> def add_tracker_response(requests_mock):
     ...     requests_mock.add_callback(
-    ...         'GET', re.compile(r'.*/tracker/\?group_id=[0-9]+'),
-    ...         match_querystring=True, callback=tracker_callback)
+    ...         "GET",
+    ...         re.compile(r".*/tracker/\?group_id=[0-9]+"),
+    ...         match_querystring=True,
+    ...         callback=tracker_callback,
+    ...     )
+    ...
 
     >>> def print_calls(calls):
     ...     for call in calls:
     ...         url = urlsplit(call.request.url)
-    ...         print('Got page %s%s' % (
-    ...             url.path, '?%s' % url.query if url.query else ''))
+    ...         print(
+    ...             "Got page %s%s"
+    ...             % (url.path, "?%s" % url.query if url.query else "")
+    ...         )
+    ...
 
     >>> from lp.bugs.scripts.sfremoteproductfinder import (
     ...     SourceForgeRemoteProductFinder,
-    ...     )
+    ... )
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> finder = SourceForgeRemoteProductFinder(
-    ...     txn=LaunchpadZopelessLayer.txn, logger=FakeLogger())
+    ...     txn=LaunchpadZopelessLayer.txn, logger=FakeLogger()
+    ... )
 
 SourceForgeRemoteProductFinder has a method,
 getRemoteProductFromSourceForge(), which does all the heavy lifting of finding
@@ -96,8 +120,10 @@ atid therein as an ampersand-separated string.
     ...     add_project_response(requests_mock)
     ...     add_tracker_response(requests_mock)
     ...     remote_product = finder.getRemoteProductFromSourceForge(
-    ...         'fronobulator')
+    ...         "fronobulator"
+    ...     )
     ...     print_calls(requests_mock.calls)
+    ...
     Got page /projects/fronobulator
     Got page /tracker/?group_id=5570
 
@@ -108,8 +134,9 @@ If an error is raised when trying to fetch the project pages from the
 remote server, it will be logged.
 
     >>> with responses.RequestsMock() as requests_mock:
-    ...     requests_mock.add('GET', re.compile(r'.*'), status=500)
-    ...     finder.getRemoteProductFromSourceForge('fronobulator')
+    ...     requests_mock.add("GET", re.compile(r".*"), status=500)
+    ...     finder.getRemoteProductFromSourceForge("fronobulator")
+    ...
     ERROR...Error fetching project...: 500 Server Error: Internal Server Error
 
 SourceForgeRemoteProductFinder.setRemoteProductsFromSourceForge()
@@ -122,6 +149,7 @@ getRemoteProductFromSourceForge() to fetch their remote products.
     ...     add_tracker_response(requests_mock)
     ...     finder.setRemoteProductsFromSourceForge()
     ...     print_calls(requests_mock.calls)
+    ...
     INFO...Updating 1 Products using SourceForge project data
     DEBUG...Updating remote_product for Product 'my-first-product'
     Got page /projects/fronobulator
@@ -130,14 +158,15 @@ getRemoteProductFromSourceForge() to fetch their remote products.
 The product that was linked to SourceForge without a remote_product now has
 its remote_product set.
 
-    >>> product_1 = getUtility(IProductSet).getByName('my-first-product')
+    >>> product_1 = getUtility(IProductSet).getByName("my-first-product")
     >>> print(product_1.remote_product)
     5570&105570
 
 There are no other SourceForge-linked products that have no remote product.
 
     >>> products = getUtility(
-    ...     IProductSet).getSFLinkedProductsWithNoneRemoteProduct()
+    ...     IProductSet
+    ... ).getSFLinkedProductsWithNoneRemoteProduct()
 
     >>> print(products.count())
     0
@@ -152,9 +181,12 @@ remote_product fields.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     ['cronscripts/update-sourceforge-remote-products.py', '-v'],
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     ["cronscripts/update-sourceforge-remote-products.py", "-v"],
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(out)
     <BLANKLINE>

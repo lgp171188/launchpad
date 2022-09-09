@@ -22,7 +22,8 @@ Uploading new sources
 First, uploading a new source does not assign karma immediately.
 
     >>> bar_src = getUploadForSource(
-    ...	      'suite/bar_1.0-1/bar_1.0-1_source.changes')
+    ...     "suite/bar_1.0-1/bar_1.0-1_source.changes"
+    ... )
     >>> bar_src.process()
     >>> result = bar_src.do_accept()
     >>> bar_src.queue_root.status.name
@@ -41,7 +42,8 @@ If we upload a package that has a different person signing the upload
 compared to the package creator, then both will get karma.
 
     >>> foo_src = getUploadForSource(
-    ...       'suite/foo_1.0-1/foo_1.0-1_source.changes')
+    ...     "suite/foo_1.0-1/foo_1.0-1_source.changes"
+    ... )
     >>> foo_src.process()
     >>> result = foo_src.do_accept()
 
@@ -50,12 +52,12 @@ Poke the queue entry so it looks like Foo Bar (name16) uploaded it:
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.gpg import IGPGKeySet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> key = getUtility(IGPGKeySet).getGPGKeysForPerson(name16)[0]
-    >>> removeSecurityProxy(foo_src.queue_root).signing_key_owner = (
-    ...     key.owner)
-    >>> removeSecurityProxy(foo_src.queue_root).signing_key_fingerprint = (
-    ...     key.fingerprint)
+    >>> removeSecurityProxy(foo_src.queue_root).signing_key_owner = key.owner
+    >>> removeSecurityProxy(
+    ...     foo_src.queue_root
+    ... ).signing_key_fingerprint = key.fingerprint
     >>> transaction.commit()
     >>> foo_src.queue_root.acceptFromQueue()
     Karma added: action=distributionuploadaccepted, distribution=ubuntu
@@ -71,7 +73,8 @@ Auto-accepted sources are also given karma in the same way as queued uploads
 except that the karma is awarded earlier in the processing cycle.
 
     >>> bar2_src = getUploadForSource(
-    ...     'suite/bar_1.0-2/bar_1.0-2_source.changes')
+    ...     "suite/bar_1.0-2/bar_1.0-2_source.changes"
+    ... )
     >>> bar2_src.process()
     >>> result = bar2_src.do_accept()
     Karma added: action=distributionuploadaccepted, distribution=ubuntu
@@ -86,11 +89,13 @@ will generate another different karma event for the uploader.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> name16_ppa = getUtility(IArchiveSet).new(
-    ...     owner=name16, distribution=ubuntu, purpose=ArchivePurpose.PPA)
+    ...     owner=name16, distribution=ubuntu, purpose=ArchivePurpose.PPA
+    ... )
     >>> bar_ppa_src = getPPAUploadForSource(
-    ...     'suite/bar_1.0-1/bar_1.0-1_source.changes', name16_ppa)
+    ...     "suite/bar_1.0-1/bar_1.0-1_source.changes", name16_ppa
+    ... )
     >>> bar_ppa_src.process()
     >>> result = bar_ppa_src.do_accept()
     Karma added: action=ppauploadaccepted, distribution=ubuntu
@@ -105,5 +110,5 @@ and delete a stray uploaded file.
     >>> import os
     >>> from lp.archiveuploader.tests import datadir
     >>> karma_helper.unregister_listener()
-    >>> upload_data = datadir('suite/bar_1.0-2')
-    >>> os.remove(os.path.join(upload_data, 'bar_1.0.orig.tar.gz'))
+    >>> upload_data = datadir("suite/bar_1.0-2")
+    >>> os.remove(os.path.join(upload_data, "bar_1.0.orig.tar.gz"))

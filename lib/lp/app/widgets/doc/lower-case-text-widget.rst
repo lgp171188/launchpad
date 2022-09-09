@@ -11,16 +11,16 @@ lower case:
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.app.widgets.textwidgets import LowerCaseTextWidget
     >>> from lp.bugs.interfaces.bug import IBug
-    >>> field = IBug['description']
-    >>> request = LaunchpadTestRequest(form={'field.description':'Foo'})
+    >>> field = IBug["description"]
+    >>> request = LaunchpadTestRequest(form={"field.description": "Foo"})
     >>> widget = LowerCaseTextWidget(field, request)
     >>> print(widget.getInputValue())
     foo
 
 However, strings without lower case characters are left unchanged:
 
-    >>> field = IBug['description']
-    >>> request = LaunchpadTestRequest(form={'field.description':'foo1'})
+    >>> field = IBug["description"]
+    >>> request = LaunchpadTestRequest(form={"field.description": "foo1"})
     >>> widget = LowerCaseTextWidget(field, request)
     >>> print(widget.getInputValue())
     foo1

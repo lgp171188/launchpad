@@ -4,26 +4,28 @@ The Distribution Bugs Page
 The front page for a distribution on the bugs domain presents some basic
 information the bugs in it. It also displays the list of bugs.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/ubuntu/+bugs")
     >>> anon_browser.title
     'Bugs : Ubuntu'
     >>> find_tags_by_class(
-    ...     anon_browser.contents, 'buglisting-row') is not None
+    ...     anon_browser.contents, "buglisting-row"
+    ... ) is not None
     True
 
 The page has a link to see all open bugs.
 
-    >>> anon_browser.getLink('Open bugs').click()
+    >>> anon_browser.getLink("Open bugs").click()
     >>> anon_browser.url
     'http://bugs.launchpad.test/ubuntu/+bugs'
     >>> find_tags_by_class(
-    ...     anon_browser.contents, 'buglisting-row') is not None
+    ...     anon_browser.contents, "buglisting-row"
+    ... ) is not None
     True
 
 It also has a link to subscribe to bug mail.
 
-    >>> user_browser.open('http://bugs.launchpad.test/ubuntu/+bugs')
-    >>> user_browser.getLink('Subscribe to bug mail').click()
+    >>> user_browser.open("http://bugs.launchpad.test/ubuntu/+bugs")
+    >>> user_browser.getLink("Subscribe to bug mail").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/ubuntu/+subscribe
 
@@ -34,8 +36,8 @@ Bugs Fixed Elsewhere
 The Bugs frontpage for a distribution includes the number of bugs that are
 fixed in some other context.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+bugs')
-    >>> fixed_elsewhere_link = anon_browser.getLink('Bugs fixed elsewhere')
+    >>> anon_browser.open("http://bugs.launchpad.test/ubuntu/+bugs")
+    >>> fixed_elsewhere_link = anon_browser.getLink("Bugs fixed elsewhere")
 
 The link takes you to the list of the bugs fixed elsewhere.
 
@@ -54,8 +56,8 @@ CVE Bugs
 
 It also displays the number of open bugs associated with a CVE.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+bugs')
-    >>> cve_bugs_link = anon_browser.getLink('Open CVE bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/ubuntu/+bugs")
+    >>> cve_bugs_link = anon_browser.getLink("Open CVE bugs")
 
 The link takes you to the list of bugs with CVEs linked to them.
 
@@ -72,9 +74,8 @@ Expirable Bugs
 The bugs page displays the number of Incomplete, unattended bugs that
 can expire when the project has enabled bug expiration.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+bugs')
-    >>> expirable_bugs_link = anon_browser.getLink(
-    ...     'Incomplete bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/ubuntu/+bugs")
+    >>> expirable_bugs_link = anon_browser.getLink("Incomplete bugs")
 
 The link goes to the expirable bugs page, where the anonymous user can
 see which bugs will expire if they are not confirmed.
@@ -86,8 +87,8 @@ see which bugs will expire if they are not confirmed.
 Debian does not use Launchpad to track bugs; the anonymous user cannot
 see any link reporting that bugs can expire.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/debian/+bugs')
-    >>> expirable_bugs_link = anon_browser.getLink('Incomplete bugs')
+    >>> anon_browser.open("http://bugs.launchpad.test/debian/+bugs")
+    >>> expirable_bugs_link = anon_browser.getLink("Incomplete bugs")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError

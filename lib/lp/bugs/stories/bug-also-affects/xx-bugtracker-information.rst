@@ -6,9 +6,10 @@ information about the product's bug tracker when adding an upstream
 task.
 
     >>> user_browser.open(
-    ...    'http://launchpad.test/firefox/+bug/1/+choose-affected-product')
-    >>> user_browser.getControl('Project').value = 'gnome-terminal'
-    >>> user_browser.getControl('Continue').click()
+    ...     "http://launchpad.test/firefox/+bug/1/+choose-affected-product"
+    ... )
+    >>> user_browser.getControl("Project").value = "gnome-terminal"
+    >>> user_browser.getControl("Continue").click()
     >>> print(user_browser.contents)
     <...GNOME Terminal uses
     <a href="http://bugzilla.gnome.org/bugs">GnomeGBug GTracker</a>
@@ -28,9 +29,10 @@ specified, it will simply say that it doesn't use Launchpad to track
 its bugs and prompt for a URL or an email address.
 
     >>> user_browser.open(
-    ...    'http://launchpad.test/firefox/+bug/1/+choose-affected-product')
-    >>> user_browser.getControl('Project').value = 'thunderbird'
-    >>> user_browser.getControl('Continue').click()
+    ...     "http://launchpad.test/firefox/+bug/1/+choose-affected-product"
+    ... )
+    >>> user_browser.getControl("Project").value = "thunderbird"
+    >>> user_browser.getControl("Continue").click()
     >>> print(user_browser.contents)
     <...Mozilla Thunderbird doesn't use Launchpad to track its bugs...
 
@@ -46,9 +48,10 @@ For products using Launchpad, the linking upstream widgets won't even
 appear.
 
     >>> user_browser.open(
-    ...    'http://launchpad.test/firefox/+bug/1/+choose-affected-product')
-    >>> user_browser.getControl('Project').value = 'evolution'
-    >>> user_browser.getControl('Continue').click()
+    ...     "http://launchpad.test/firefox/+bug/1/+choose-affected-product"
+    ... )
+    >>> user_browser.getControl("Project").value = "evolution"
+    >>> user_browser.getControl("Continue").click()
 
     >>> print_upstream_linking_form(user_browser)
     Traceback (most recent call last):

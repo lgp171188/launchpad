@@ -10,14 +10,15 @@ inserted into the page later.
 Distribution
 ------------
 
-    >>> path = 'debian'
+    >>> path = "debian"
 
 If the user is not logged-in a subscribe link is shown along with some
 general stats.
 
     >>> from lp.bugs.tests.bug import (
     ...     print_bugfilters_portlet_unfilled,
-    ...     print_bugfilters_portlet_filled)
+    ...     print_bugfilters_portlet_filled,
+    ... )
     >>> print_bugfilters_portlet_unfilled(anon_browser, path)
     New bugs
     Open bugs
@@ -77,14 +78,14 @@ reported bugs.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     http://bugs.launchpad.test/debian/+cve
 
 
 Distribution Series
 -------------------
 
-    >>> path = 'debian/woody'
+    >>> path = "debian/woody"
 
 If the user is not logged-in general stats are shown. There is also a
 link to review nominations.
@@ -146,14 +147,14 @@ reported bugs.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     http://bugs.launchpad.test/debian/woody/+cve
 
 
 Distribution Source Package
 ---------------------------
 
-    >>> path = 'debian/+source/mozilla-firefox'
+    >>> path = "debian/+source/mozilla-firefox"
 
 If the user is not logged-in general stats are shown.
 
@@ -215,7 +216,7 @@ reported bugs.
 Note that the "CVE reports" link is not shown above; distribution
 source packages do not have a CVE reports page.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -224,7 +225,7 @@ source packages do not have a CVE reports page.
 Source Package in Distribution Series
 -------------------------------------
 
-    >>> path = 'debian/woody/+source/mozilla-firefox'
+    >>> path = "debian/woody/+source/mozilla-firefox"
 
 If the user is not logged-in general stats are shown. There is no
 option to subscribe to bug mail.
@@ -287,7 +288,7 @@ reported bugs.
 Note that the "CVE reports" link is not shown above; source packages
 do not have a CVE reports page.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -296,7 +297,7 @@ do not have a CVE reports page.
 Project group
 -------------
 
-    >>> path = 'mozilla'
+    >>> path = "mozilla"
 
 If the user is not logged-in general stats are shown.
 
@@ -359,7 +360,7 @@ and reported bugs.
 Note that the "CVE reports" link is not shown above; project groups do
 not have a CVE reports page.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -368,7 +369,7 @@ not have a CVE reports page.
 Project
 -------
 
-    >>> path = 'firefox'
+    >>> path = "firefox"
 
 If the user is not logged-in general stats are shown.
 
@@ -431,5 +432,5 @@ bugs is also shown.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print(user_browser.getLink('CVE report').url)
+    >>> print(user_browser.getLink("CVE report").url)
     http://bugs.launchpad.test/firefox/+cve

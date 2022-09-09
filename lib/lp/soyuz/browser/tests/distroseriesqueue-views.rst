@@ -12,14 +12,15 @@ Let's instantiate the view for +queue for anonymous access:
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> fake_chroot = LibraryFileAlias.get(1)
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> breezy_autotest = ubuntu['breezy-autotest']
-    >>> breezy_autotest_i386 = breezy_autotest['i386']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> breezy_autotest = ubuntu["breezy-autotest"]
+    >>> breezy_autotest_i386 = breezy_autotest["i386"]
     >>> unused = breezy_autotest_i386.addOrUpdateChroot(fake_chroot)
 
     >>> request = LaunchpadTestRequest()
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
 
 View parameters need to be set properly before start:
 
@@ -49,8 +50,9 @@ Let's instantiate the view for a specific queue:
 
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': PackageUploadStatus.DONE.value})
-    >>> warty = ubuntu['warty']
+    ...     form={"queue_state": PackageUploadStatus.DONE.value}
+    ... )
+    >>> warty = ubuntu["warty"]
     >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
     >>> queue_view.setupQueueList()
     >>> queue_view.state.name
@@ -62,9 +64,8 @@ Unexpected values for queue_state results in a proper error, anything
 that can't be can't fit as an integer is automatically assume as the
 default value (NEW queue).
 
-    >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': 'foo'})
-    >>> warty = ubuntu['warty']
+    >>> request = LaunchpadTestRequest(form={"queue_state": "foo"})
+    >>> warty = ubuntu["warty"]
     >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
     >>> queue_view.setupQueueList()
     >>> queue_view.state.name
@@ -74,9 +75,8 @@ default value (NEW queue).
 
 If a invalid integer is posted it raises.
 
-    >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': '10'})
-    >>> warty = ubuntu['warty']
+    >>> request = LaunchpadTestRequest(form={"queue_state": "10"})
+    >>> warty = ubuntu["warty"]
     >>> queue_view = queryMultiAdapter((warty, request), name="+queue")
     >>> queue_view.setupQueueList()
     Traceback (most recent call last):
@@ -87,9 +87,11 @@ Anonymous users also have access to all queues, including UNAPPROVED
 but they are not allowed to perform any action.
 
     >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
+    ...     form={"queue_state": PackageUploadStatus.UNAPPROVED.value}
+    ... )
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
     >>> queue_view.state.name
     'UNAPPROVED'
@@ -101,10 +103,11 @@ but they are not allowed to perform any action.
 
 Now, let's instantiate the view for +queue as a privileged user:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
     >>> queue_view.availableActions()
     ['Accept', 'Reject']
@@ -112,9 +115,11 @@ Now, let's instantiate the view for +queue as a privileged user:
 Attempt to view and act on UNAPPROVED queue works for administrators.
 
     >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': PackageUploadStatus.UNAPPROVED.value})
+    ...     form={"queue_state": PackageUploadStatus.UNAPPROVED.value}
+    ... )
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
     >>> queue_view.state.name
     'UNAPPROVED'
@@ -136,15 +141,19 @@ Accepting an item from NEW queue.
     'NEW'
 
     >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': PackageUploadStatus.NEW.value,
-    ...           'Accept': 'Accept',
-    ...           'QUEUE_ID': ['1', '3']})
-    >>> request.method = 'POST'
+    ...     form={
+    ...         "queue_state": PackageUploadStatus.NEW.value,
+    ...         "Accept": "Accept",
+    ...         "QUEUE_ID": ["1", "3"],
+    ...     }
+    ... )
+    >>> request.method = "POST"
 
 Add fake librarian files so that email notifications work:
 
     >>> from lp.archiveuploader.tests import (
-    ...     insertFakeChangesFileForAllPackageUploads)
+    ...     insertFakeChangesFileForAllPackageUploads,
+    ... )
     >>> insertFakeChangesFileForAllPackageUploads()
 
 Anonymous attempts to accept queue items are ignored and an error
@@ -152,7 +161,8 @@ message is presented.
 
     >>> login(ANONYMOUS)
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
     >>> queue_view.performQueueAction()
     >>> print(queue_view.error)
@@ -165,9 +175,10 @@ message is presented.
 
 Privileged user can accept queue items.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
 
     >>> queue_view.performQueueAction()
@@ -184,18 +195,22 @@ Rejection an item from NEW queue:
     'NEW'
 
     >>> request = LaunchpadTestRequest(
-    ...     form={'queue_state': PackageUploadStatus.NEW.value,
-    ...           'rejection_comment': 'Foo',
-    ...           'Reject': 'Reject',
-    ...           'QUEUE_ID': '2'})
-    >>> request.method = 'POST'
+    ...     form={
+    ...         "queue_state": PackageUploadStatus.NEW.value,
+    ...         "rejection_comment": "Foo",
+    ...         "Reject": "Reject",
+    ...         "QUEUE_ID": "2",
+    ...     }
+    ... )
+    >>> request.method = "POST"
 
 Anonymous attempts to reject queue items are ignored and an error
 message is presented.
 
     >>> login(ANONYMOUS)
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
     >>> queue_view.performQueueAction()
     >>> print(queue_view.error)
@@ -206,9 +221,10 @@ message is presented.
 
 Privileged user can reject queue items.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> queue_view = queryMultiAdapter(
-    ...     (breezy_autotest, request), name="+queue")
+    ...     (breezy_autotest, request), name="+queue"
+    ... )
     >>> queue_view.setupQueueList()
 
     >>> queue_view.performQueueAction()
@@ -231,30 +247,37 @@ We can demonstrate this situation by creating a binary publication
 for a package "foo" and uploading a new build that has "foo" and
 "foo-dev" binaries in it.
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
-    >>> from lp.soyuz.enums import (
-    ...     PackagePublishingStatus)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
+    >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> stp = SoyuzTestPublisher()
-    >>> hoary = ubuntu['hoary']
+    >>> hoary = ubuntu["hoary"]
     >>> stp.prepareBreezyAutotest()
     >>> fake_chroot = getUtility(ILibraryFileAliasSet)[1]
-    >>> trash = hoary['i386'].addOrUpdateChroot(fake_chroot)
+    >>> trash = hoary["i386"].addOrUpdateChroot(fake_chroot)
     >>> foo_source = stp.getPubSource(
-    ...     sourcename="foo", distroseries=hoary, version="1.0-1",
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     sourcename="foo",
+    ...     distroseries=hoary,
+    ...     version="1.0-1",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
     >>> foo_bin = stp.getPubBinaries(
-    ...     binaryname="foo", status=PackagePublishingStatus.PUBLISHED,
-    ...     distroseries=hoary, pub_source=foo_source)
+    ...     binaryname="foo",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=hoary,
+    ...     pub_source=foo_source,
+    ... )
 
 Now that "foo" is published in Hoary, we can upload a new build.
 
     # First we'll need to create a source publication for the foo-1.0-2,
     # though, as our upload will only include binaries.
     >>> foo_source_1_0_2 = stp.getPubSource(
-    ...     sourcename="foo", distroseries=hoary, version="1.0-2",
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     sourcename="foo",
+    ...     distroseries=hoary,
+    ...     version="1.0-2",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
     >>> from lp.archiveuploader.uploadpolicy import ArchiveUploadType
     >>> from lp.archiveuploader.tests import datadir, getPolicy
@@ -264,24 +287,27 @@ Now that "foo" is published in Hoary, we can upload a new build.
     >>> from lp.testing.gpgkeys import import_public_test_keys
     >>> from lp.testing.pages import permissive_security_policy
     >>> import_public_test_keys()
-    >>> universe = getUtility(IComponentSet)['universe']
+    >>> universe = getUtility(IComponentSet)["universe"]
     >>> trash = ComponentSelection(distroseries=hoary, component=universe)
-    >>> sync_policy = getPolicy(name='sync', distro='ubuntu',
-    ...    distroseries='hoary')
+    >>> sync_policy = getPolicy(
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
     >>> sync_policy.accepted_type = ArchiveUploadType.BINARY_ONLY
     >>> from lp.services.log.logger import DevNullLogger
     >>> foo_upload = NascentUpload.from_changesfile_path(
-    ...    datadir('suite/foo_1.0-2_multi_binary/foo_1.0-2_i386.changes'),
-    ...    sync_policy, DevNullLogger())
+    ...     datadir("suite/foo_1.0-2_multi_binary/foo_1.0-2_i386.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> foo_upload.process()
     >>> with permissive_security_policy("uploader"):
     ...     foo_upload.do_accept()
+    ...
     True
 
 Now we can examine the view, which provides an is_new method:
 
-    >>> queue_view = queryMultiAdapter(
-    ...     (hoary, request), name="+queue")
+    >>> queue_view = queryMultiAdapter((hoary, request), name="+queue")
     >>> queue_view.setupQueueList()
 
 The template calls decoratedQueueBatch() to retrieve the current batch
@@ -293,6 +319,7 @@ is_new() method requires to work.
     >>> binary_packages = foo_upload.queue_root.builds[0].build.binarypackages
     >>> for binarypackage in binary_packages:
     ...     print(binarypackage.name, queue_view.is_new(binarypackage))
+    ...
     foo False
     foo-dev True
 

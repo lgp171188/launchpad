@@ -7,14 +7,15 @@ ITranslationMessage object.
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.translations.model.pofile import POFile
     >>> from lp.translations.model.translationmessage import (
-    ...     TranslationMessage)
+    ...     TranslationMessage,
+    ... )
     >>> from lp.services.webapp import canonical_url
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
 
 All the tests will be submitted as coming from Kurem, an editor for the
 POFile that we are going to edit.
 
-    >>> login('kurem@debian.cz')
+    >>> login("kurem@debian.cz")
 
 
 No plural forms
@@ -25,14 +26,17 @@ without the plural form information.
 
     >>> translationmessage = TranslationMessage.get(1)
     >>> pofile = POFile.get(1)
-    >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode('tlh')
+    >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode("tlh")
     >>> pofile_tlh = pofile.potemplate.getPlaceholderPOFile(language_tlh)
     >>> potmsgset = pofile_tlh.potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'evolution addressbook')
+    ...     "evolution addressbook"
+    ... )
     >>> current_translationmessage = (
-    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile_tlh))
+    ...     potmsgset.getCurrentTranslationMessageOrPlaceholder(pofile_tlh)
+    ... )
     >>> translationmessage_page_view = create_view(
-    ...     current_translationmessage, "+translate")
+    ...     current_translationmessage, "+translate"
+    ... )
     >>> translationmessage_page_view.initialize()
 
 Here we can see that it's lacking that information.
@@ -52,11 +56,13 @@ Basic checks
 Now, we will use objects that we have in our database, instead of
 placeholder ones.
 
-    >>> server_url = '/'.join(
-    ...     [canonical_url(current_translationmessage), '+translate'])
+    >>> server_url = "/".join(
+    ...     [canonical_url(current_translationmessage), "+translate"]
+    ... )
     >>> translationmessage.setPOFile(pofile)
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", server_url=server_url)
+    ...     translationmessage, "+translate", server_url=server_url
+    ... )
     >>> translationmessage_page_view.initialize()
 
 We have the plural form information for this language.
@@ -169,6 +175,7 @@ We will use this helper function to simplify the test:
     ...     potmsgset.msgid_singular = msgid
     ...     del get_property_cache(potmsgset).singular_text
     ...     flush_database_updates()
+    ...
 
 First, text_has_tab() determines whether a message set contains any tabs.
 
@@ -177,51 +184,51 @@ First, text_has_tab() determines whether a message set contains any tabs.
 
 When we change the set to include a tab character, the function detects it.
 
-    >>> changeMsgID(u'Foo\tBar')
+    >>> changeMsgID("Foo\tBar")
     >>> subview.text_has_tab
     True
 
 Similarly, text_has_newline() determines whether a message contains newlines.
 
-    >>> changeMsgID(u'Foo Bar')
+    >>> changeMsgID("Foo Bar")
     >>> subview.text_has_newline
     False
 
-    >>> changeMsgID(u'Foo\nBar')
+    >>> changeMsgID("Foo\nBar")
     >>> subview.text_has_newline
     True
 
 And text_has_leading_or_trailing_space() determines ... well, you can guess.
 
-    >>> changeMsgID(u'Foo Bar')
+    >>> changeMsgID("Foo Bar")
     >>> subview.text_has_leading_or_trailing_space
     False
 
-    >>> changeMsgID(u' Leading space')
+    >>> changeMsgID(" Leading space")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'  Leading space')
+    >>> changeMsgID("  Leading space")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'Trailing space ')
+    >>> changeMsgID("Trailing space ")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'Trailing space  ')
+    >>> changeMsgID("Trailing space  ")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'Leading\n Space  ')
+    >>> changeMsgID("Leading\n Space  ")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'Trailing \nSpace  ')
+    >>> changeMsgID("Trailing \nSpace  ")
     >>> subview.text_has_leading_or_trailing_space
     True
 
-    >>> changeMsgID(u'Trailing \r\nspace')
+    >>> changeMsgID("Trailing \r\nspace")
     >>> subview.text_has_leading_or_trailing_space
     True
 
@@ -235,17 +242,19 @@ Submitting translations
 A new translation is submitted through the view.
 
     >>> form = {
-    ...     'lock_timestamp': '2006-11-28T13:00:00+00:00',
-    ...     'alt': None,
-    ...     'msgset_1': None,
-    ...     'msgset_1_es_translation_0_radiobutton':
-    ...         'msgset_1_es_translation_0_new',
-    ...     'msgset_1_es_translation_0_new': 'Foo',
-    ...     'submit_translations': 'Save &amp; Continue'}
+    ...     "lock_timestamp": "2006-11-28T13:00:00+00:00",
+    ...     "alt": None,
+    ...     "msgset_1": None,
+    ...     "msgset_1_es_translation_0_radiobutton": (
+    ...         "msgset_1_es_translation_0_new"
+    ...     ),
+    ...     "msgset_1_es_translation_0_new": "Foo",
+    ...     "submit_translations": "Save &amp; Continue",
+    ... }
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", form=form,
-    ...     server_url=server_url)
-    >>> translationmessage_page_view.request.method = 'POST'
+    ...     translationmessage, "+translate", form=form, server_url=server_url
+    ... )
+    >>> translationmessage_page_view.request.method = "POST"
     >>> translationmessage_page_view.initialize()
     >>> transaction.commit()
 
@@ -253,7 +262,7 @@ Now, let's see how the system prevents a submission that has a timestamp older
 than when last current translation was submitted.
 
     >>> from zope import datetime as zope_datetime
-    >>> old_timestamp_text = '2006-11-28T12:30:00+00:00'
+    >>> old_timestamp_text = "2006-11-28T12:30:00+00:00"
     >>> old_timestamp = zope_datetime.parseDatetimetz(old_timestamp_text)
 
 We can see here that translation in pomsgset is newer than old_timestamp.
@@ -264,30 +273,36 @@ We can see here that translation in pomsgset is newer than old_timestamp.
 And current value
 
     >>> for translation in potmsgset.getCurrentTranslation(
-    ...         pofile.potemplate, pofile.language,
-    ...         pofile.potemplate.translation_side).translations:
+    ...     pofile.potemplate,
+    ...     pofile.language,
+    ...     pofile.potemplate.translation_side,
+    ... ).translations:
     ...     print(translation)
     Foo
 
 We do the submission with that lock_timestamp.
 
-    >>> server_url = '/'.join(
-    ...     [canonical_url(translationmessage), '+translate'])
+    >>> server_url = "/".join(
+    ...     [canonical_url(translationmessage), "+translate"]
+    ... )
     >>> form = {
-    ...     'lock_timestamp': old_timestamp_text,
-    ...     'alt': None,
-    ...     'msgset_1': None,
-    ...     'msgset_1_es_translation_0_radiobutton':
-    ...         'msgset_1_es_translation_0_new',
-    ...     'msgset_1_es_translation_0_new': 'Foos',
-    ...     'submit_translations': 'Save &amp; Continue'}
+    ...     "lock_timestamp": old_timestamp_text,
+    ...     "alt": None,
+    ...     "msgset_1": None,
+    ...     "msgset_1_es_translation_0_radiobutton": (
+    ...         "msgset_1_es_translation_0_new"
+    ...     ),
+    ...     "msgset_1_es_translation_0_new": "Foos",
+    ...     "submit_translations": "Save &amp; Continue",
+    ... }
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", form=form,
-    ...     server_url=server_url)
-    >>> translationmessage_page_view.request.method = 'POST'
+    ...     translationmessage, "+translate", form=form, server_url=server_url
+    ... )
+    >>> translationmessage_page_view.request.method = "POST"
     >>> translationmessage_page_view.initialize()
-    >>> for notification in (
-    ...     translationmessage_page_view.request.notifications):
+    >>> for (
+    ...     notification
+    ... ) in translationmessage_page_view.request.notifications:
     ...     print(notification.message)
     There is an error in the translation you provided. Please correct it
     before continuing.
@@ -306,8 +321,10 @@ means that timestamps remain unchanged.
 And active text too
 
     >>> for translation in potmsgset.getCurrentTranslation(
-    ...         pofile.potemplate, pofile.language,
-    ...         pofile.potemplate.translation_side).translations:
+    ...     pofile.potemplate,
+    ...     pofile.language,
+    ...     pofile.potemplate.translation_side,
+    ... ).translations:
     ...     print(translation)
     Foo
 
@@ -318,19 +335,21 @@ Bogus translation submission
 What would happen if we get a submit for another msgset that isn't being
 considered?
 
-    >>> server_url = '/'.join(
-    ...     [canonical_url(translationmessage), '+translate'])
+    >>> server_url = "/".join(
+    ...     [canonical_url(translationmessage), "+translate"]
+    ... )
     >>> form = {
-    ...     'lock_timestamp': '2006-11-28 13:00:00 UTC',
-    ...     'alt': None,
-    ...     'msgset_2': None,
-    ...     'msgset_2_es_translation_0_new': 'Foo',
-    ...     'msgset_2_es_translation_0_new_checkbox': True,
-    ...     'submit_translations': 'Save &amp; Continue'}
+    ...     "lock_timestamp": "2006-11-28 13:00:00 UTC",
+    ...     "alt": None,
+    ...     "msgset_2": None,
+    ...     "msgset_2_es_translation_0_new": "Foo",
+    ...     "msgset_2_es_translation_0_new_checkbox": True,
+    ...     "submit_translations": "Save &amp; Continue",
+    ... }
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", form=form,
-    ...     server_url=server_url)
-    >>> translationmessage_page_view.request.method = 'POST'
+    ...     translationmessage, "+translate", form=form, server_url=server_url
+    ... )
+    >>> translationmessage_page_view.request.method = "POST"
     >>> translationmessage_page_view.initialize()
 
 The list of translations parsed will be empty because the submission is
@@ -354,14 +373,15 @@ ITranslationMessage.
     >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.translations.browser.translationmessage import (
-    ...     TranslationMessageSuggestions)
+    ...     TranslationMessageSuggestions,
+    ... )
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.interfaces.potemplate import IPOTemplateSet
 
 We are going to work with Evolution's evolution-2.2 template.
 
     >>> potemplate_set = getUtility(IPOTemplateSet)
-    >>> potemplates = potemplate_set.getAllByName('evolution-2.2')
+    >>> potemplates = potemplate_set.getAllByName("evolution-2.2")
     >>> potemplate_trunk = potemplates[0]
     >>> potemplate_hoary = potemplates[1]
     >>> print(potemplate_trunk.title)
@@ -376,31 +396,37 @@ than the other choosen language, Spanish.
 
     # Japanese translation for this template doesn't exist yet in our
     # database, we need to create it first.
-    >>> pofile_ja = potemplate_trunk.newPOFile('ja')
+    >>> pofile_ja = potemplate_trunk.newPOFile("ja")
     >>> pofile_ja.language.pluralforms
     1
-    >>> pofile_es = potemplate_trunk.getPOFileByLang('es')
+    >>> pofile_es = potemplate_trunk.getPOFileByLang("es")
     >>> pofile_es.language.pluralforms
     2
 
 We are going to work with a plural form message.
 
     >>> potmsgset = potemplate_trunk.getPOTMsgSetByMsgIDText(
-    ...     u'%d contact', u'%d contacts')
+    ...     "%d contact", "%d contacts"
+    ... )
     >>> potmsgset.msgid_plural is None
     False
 
 Also, we are going to create a new translation for the Japanese
 language that will be used as the suggestion.
 
-    >>> UTC = pytz.timezone('UTC')
-    >>> carlos = getUtility(IPersonSet).getByName('carlos')
-    >>> login('carlos@canonical.com')
+    >>> UTC = pytz.timezone("UTC")
+    >>> carlos = getUtility(IPersonSet).getByName("carlos")
+    >>> login("carlos@canonical.com")
     >>> translation_message_ja = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile_ja, potmsgset=potmsgset, translator=carlos,
-    ...     reviewer=carlos, translations={0: u'Foo %d'})
+    ...     pofile=pofile_ja,
+    ...     potmsgset=potmsgset,
+    ...     translator=carlos,
+    ...     reviewer=carlos,
+    ...     translations={0: "Foo %d"},
+    ... )
     >>> for translation in translation_message_ja.translations:
     ...     print(translation)
+    ...
     Foo %d
 
 Let's get current message in Spanish.
@@ -411,18 +437,20 @@ Let's get current message in Spanish.
 # to use pofile_es.potemplate.translation_side instead.
     >>> from lp.translations.interfaces.side import TranslationSide
     >>> translation_message_es = potmsgset.getCurrentTranslation(
-    ...     pofile_es.potemplate, pofile_es.language,
-    ...     TranslationSide.UBUNTU)
+    ...     pofile_es.potemplate, pofile_es.language, TranslationSide.UBUNTU
+    ... )
 
 And we prepare the ITranslationMessageSuggestions object for the higher
 Spanish plural form.
 
     >>> suggestions = TranslationMessageSuggestions(
-    ...     title=u'Testing', translation=translation_message_es,
+    ...     title="Testing",
+    ...     translation=translation_message_es,
     ...     submissions=[translation_message_ja],
     ...     user_is_official_translator=True,
     ...     form_is_writeable=True,
-    ...     plural_form=(pofile_es.language.pluralforms - 1))
+    ...     plural_form=(pofile_es.language.pluralforms - 1),
+    ... )
 
 Which produces no suggestions, because Japanese only has one form but
 Spanish has two.
@@ -434,11 +462,13 @@ However, when we use the first plural form, which exists in both
 languages...
 
     >>> suggestions = TranslationMessageSuggestions(
-    ...     title=u'Testing', translation=translation_message_es,
+    ...     title="Testing",
+    ...     translation=translation_message_es,
     ...     submissions=[translation_message_ja],
     ...     user_is_official_translator=True,
     ...     form_is_writeable=True,
-    ...     plural_form=0)
+    ...     plural_form=0,
+    ... )
 
 ... we get suggestions.
 
@@ -446,8 +476,9 @@ languages...
     1
     >>> submission = suggestions.submissions[0]
     >>> for attr in sorted(dir(submission)):
-    ...     if not attr.startswith('_'):
+    ...     if not attr.startswith("_"):
     ...         print("%s: %s" % (attr, getattr(submission, attr)))
+    ...
     date_created: ...
     id: ...
     is_empty: False
@@ -475,37 +506,47 @@ Here, an identical message is added to the two Evolution templates: the
 "trunk" one and the one in Ubuntu Hoary.  But one of the English strings
 is in a single form only, whereas the other has a singular and a plural.
 
-    >>> singular_id = 'This message has %d form.'
-    >>> plural_id = 'This message has %d forms.'
-    >>> pofile_simple = potemplate_trunk.getPOFileByLang('es')
-    >>> pofile_plural = potemplate_hoary.getPOFileByLang('es')
+    >>> singular_id = "This message has %d form."
+    >>> plural_id = "This message has %d forms."
+    >>> pofile_simple = potemplate_trunk.getPOFileByLang("es")
+    >>> pofile_plural = potemplate_hoary.getPOFileByLang("es")
     >>> potmsgset_simple = potemplate_trunk.createMessageSetFromText(
-    ...     singular_id, None)
+    ...     singular_id, None
+    ... )
     >>> potmsgset_plural = potemplate_hoary.createMessageSetFromText(
-    ...     singular_id, plural_id)
+    ...     singular_id, plural_id
+    ... )
 
 Carlos translates both.  The single-form one is simple; for the other he
 provides a complete translation including both the singular and the
 plural form.
 
     >>> translation_message_simple = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile_simple, potmsgset=potmsgset_simple,
-    ...     translator=carlos, reviewer=carlos,
-    ...     translations={0: u'%d forma'})
+    ...     pofile=pofile_simple,
+    ...     potmsgset=potmsgset_simple,
+    ...     translator=carlos,
+    ...     reviewer=carlos,
+    ...     translations={0: "%d forma"},
+    ... )
     >>> translation_message_plural = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile_plural, potmsgset=potmsgset_plural,
-    ...     translator=carlos, reviewer=carlos,
-    ...     translations={0: u'%d forma', 1: u'%d formas'})
+    ...     pofile=pofile_plural,
+    ...     potmsgset=potmsgset_plural,
+    ...     translator=carlos,
+    ...     reviewer=carlos,
+    ...     translations={0: "%d forma", 1: "%d formas"},
+    ... )
 
 The single-form translation shows up as a suggestion for the singular
 translation of the two-form message.
 
     >>> suggestions = TranslationMessageSuggestions(
-    ...     title=u'Testing', translation=translation_message_plural,
+    ...     title="Testing",
+    ...     translation=translation_message_plural,
     ...     submissions=[translation_message_simple],
     ...     user_is_official_translator=True,
     ...     form_is_writeable=True,
-    ...     plural_form=0)
+    ...     plural_form=0,
+    ... )
     >>> len(suggestions.submissions)
     1
 
@@ -513,11 +554,13 @@ For the plural translation of the same message, however, that
 translation provides no text and so is ignored.
 
     >>> suggestions = TranslationMessageSuggestions(
-    ...     title=u'Testing', translation=translation_message_plural,
+    ...     title="Testing",
+    ...     translation=translation_message_plural,
     ...     submissions=[translation_message_simple],
     ...     user_is_official_translator=True,
     ...     form_is_writeable=True,
-    ...     plural_form=1)
+    ...     plural_form=1,
+    ... )
     >>> len(suggestions.submissions)
     0
 
@@ -529,17 +572,21 @@ When there is an existing shared translation, one gets an option
 to diverge it when on a zoomed-in view (when looking that particular
 message).
 
-    >>> pofile = factory.makePOFile('sr')
+    >>> pofile = factory.makePOFile("sr")
     >>> potemplate = pofile.potemplate
     >>> potmsgset = factory.makePOTMsgSet(potemplate, sequence=1)
     >>> translationmessage = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset,
-    ...     translations=[u"shared translation"])
+    ...     pofile=pofile,
+    ...     potmsgset=potmsgset,
+    ...     translations=["shared translation"],
+    ... )
     >>> translationmessage.setPOFile(pofile)
-    >>> server_url = '/'.join(
-    ...     [canonical_url(translationmessage), '+translate'])
+    >>> server_url = "/".join(
+    ...     [canonical_url(translationmessage), "+translate"]
+    ... )
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", server_url=server_url)
+    ...     translationmessage, "+translate", server_url=server_url
+    ... )
     >>> translationmessage_page_view.initialize()
     >>> subview = translationmessage_page_view.translationmessage_view
     >>> subview.initialize()
@@ -556,10 +603,8 @@ the shared translation.
 
 When looking at the entire POFile, diverging is not allowed.
 
-    >>> server_url = '/'.join(
-    ...     [canonical_url(pofile), '+translate'])
-    >>> pofile_view = create_view(
-    ...     pofile, "+translate", server_url=server_url)
+    >>> server_url = "/".join([canonical_url(pofile), "+translate"])
+    >>> pofile_view = create_view(pofile, "+translate", server_url=server_url)
     >>> pofile_view.initialize()
     >>> subview = pofile_view.translationmessage_views[0]
     >>> subview.initialize()
@@ -573,11 +618,14 @@ among one of the suggestions, and we are not offered to diverge the
 translation further, since it's already diverged.
 
     >>> diverged_message = factory.makeDivergedTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset,
-    ...     translations=[u"diverged translation"])
+    ...     pofile=pofile,
+    ...     potmsgset=potmsgset,
+    ...     translations=["diverged translation"],
+    ... )
     >>> diverged_message.setPOFile(pofile)
     >>> translationmessage_page_view = create_view(
-    ...     diverged_message, "+translate", server_url=server_url)
+    ...     diverged_message, "+translate", server_url=server_url
+    ... )
     >>> translationmessage_page_view.initialize()
     >>> subview = translationmessage_page_view.translationmessage_view
     >>> subview.initialize()

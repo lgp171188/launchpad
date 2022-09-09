@@ -13,11 +13,13 @@ actions we consider to be a reasonable contribution.
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.services.database.interfaces import IStore
-    >>> answers_category = IStore(KarmaCategory).find(
-    ...     KarmaCategory, name="answers").one()
+    >>> answers_category = (
+    ...     IStore(KarmaCategory).find(KarmaCategory, name="answers").one()
+    ... )
     >>> answers_karma_actions = answers_category.karmaactions
-    >>> for action in sorted(answers_karma_actions, key=attrgetter('title')):
+    >>> for action in sorted(answers_karma_actions, key=attrgetter("title")):
     ...     print(action.title)
+    ...
     Answered question
     Asked question
     Comment made on a question
@@ -35,8 +37,8 @@ actions we consider to be a reasonable contribution.
     Solved own question
 
     >>> person_set = getUtility(IPersonSet)
-    >>> sample_person = person_set.getByEmail('test@canonical.com')
-    >>> foo_bar = person_set.getByEmail('foo.bar@canonical.com')
+    >>> sample_person = person_set.getByEmail("test@canonical.com")
+    >>> foo_bar = person_set.getByEmail("foo.bar@canonical.com")
 
 Setup an event listener to help ensure karma is assigned when it should.
 
@@ -54,6 +56,7 @@ to order our messages.
     ...     while True:
     ...         now += timedelta(seconds=5)
     ...         yield now
+    ...
     >>> now = timegenerator(datetime.now(UTC))
 
 
@@ -64,11 +67,14 @@ Karma Actions
 Creating a question
 ...................
 
-    >>> login('test@canonical.com')
-    >>> firefox = getUtility(IProductSet)['firefox']
+    >>> login("test@canonical.com")
+    >>> firefox = getUtility(IProductSet)["firefox"]
     >>> firefox_question = firefox.newQuestion(
-    ...     title='New question', description='Question description.',
-    ...     owner=sample_person, datecreated=next(now))
+    ...     title="New question",
+    ...     description="Question description.",
+    ...     owner=sample_person,
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questionasked, product=firefox, person=name12
 
 
@@ -79,9 +85,11 @@ The expireQuestion() workflow method doesn't grant any karma because it
 will usually be called by an automated script.
 
     >>> msg = firefox_question.expireQuestion(
-    ...     foo_bar, 'Expiring because of inactivity. Reopen if you are '
-    ...     'still having the problem and provide additional information.',
-    ...     datecreated=next(now))
+    ...     foo_bar,
+    ...     "Expiring because of inactivity. Reopen if you are "
+    ...     "still having the problem and provide additional information.",
+    ...     datecreated=next(now),
+    ... )
 
 
 Reopening a question
@@ -89,7 +97,8 @@ Reopening a question
 
     >>> msg = firefox_question.reopen(
     ...     "Firefox doesn't have any 'Quick Searches' in its bookmarks.",
-    ...     datecreated=next(now))
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questionreopened, product=firefox, person=name12
 
 
@@ -97,8 +106,10 @@ Requesting for more information
 ...............................
 
     >>> msg = firefox_question.requestInfo(
-    ...     foo_bar, 'What "Quick Searches" do you want?',
-    ...     datecreated=next(now))
+    ...     foo_bar,
+    ...     'What "Quick Searches" do you want?',
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questionrequestedinfo, product=firefox, person=name16
 
 
@@ -106,8 +117,8 @@ Giving back more information
 ............................
 
     >>> msg = firefox_question.giveInfo(
-    ...     'The same one than shipped upstreams.',
-    ...     datecreated=next(now))
+    ...     "The same one than shipped upstreams.", datecreated=next(now)
+    ... )
     Karma added: action=questiongaveinfo, product=firefox, person=name12
 
 
@@ -115,8 +126,11 @@ Giving an answer to a question
 ..............................
 
     >>> msg = firefox_question.giveAnswer(
-    ...     foo_bar, "Ok, I see what you mean. You need to install them "
-    ...     "manually for now.", datecreated=next(now))
+    ...     foo_bar,
+    ...     "Ok, I see what you mean. You need to install them "
+    ...     "manually for now.",
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questiongaveanswer, product=firefox, person=name16
 
 
@@ -124,8 +138,10 @@ Adding a comment
 ................
 
     >>> msg = firefox_question.addComment(
-    ...     foo_bar, 'You could also fill a bug about that, if you like.',
-    ...     datecreated=next(now))
+    ...     foo_bar,
+    ...     "You could also fill a bug about that, if you like.",
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questioncommentadded, product=firefox, person=name16
 
 
@@ -138,7 +154,9 @@ receives karma.
 
     >>> msg = firefox_question.confirmAnswer(
     ...     "Ok, thanks. I'll open a bug about this then.",
-    ...     answer=msg, datecreated=next(now))
+    ...     answer=msg,
+    ...     datecreated=next(now),
+    ... )
     Karma added: action=questionansweraccepted, product=firefox, person=name12
     Karma added: action=questionanswered, product=firefox, person=name16
 
@@ -147,7 +165,8 @@ Rejecting a question
 ....................
 
     >>> msg = firefox_question.reject(
-    ...     foo_bar, 'This should really be a bug report.')
+    ...     foo_bar, "This should really be a bug report."
+    ... )
     Karma added: action=questionrejected, product=firefox, person=name16
 
 
@@ -156,33 +175,40 @@ Changing the status
 
 We do not grant karma for status change made outside of workflow:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.answers.enums import QuestionStatus
     >>> msg = firefox_question.setStatus(
-    ...     foo_bar, QuestionStatus.OPEN, 'That rejection was an error.',
-    ...     datecreated=next(now))
+    ...     foo_bar,
+    ...     QuestionStatus.OPEN,
+    ...     "That rejection was an error.",
+    ...     datecreated=next(now),
+    ... )
 
 
 Changing the title of a question
 ................................
 
     >>> from lp.services.webapp.snapshot import notify_modified
-    >>> login('test@canonical.com')
-    >>> with notify_modified(firefox_question, ['title']):
+    >>> login("test@canonical.com")
+    >>> with notify_modified(firefox_question, ["title"]):
     ...     firefox_question.title = (
     ...         'Firefox 1.5.0.5 does not have any "Quick Searches" '
-    ...         'installed by default')
+    ...         "installed by default"
+    ...     )
+    ...
     Karma added: action=questiontitlechanged, product=firefox, person=name12
 
 
 Changing the description of a question
 ......................................
 
-    >>> with notify_modified(firefox_question, ['description']):
+    >>> with notify_modified(firefox_question, ["description"]):
     ...     firefox_question.description = (
     ...         'Firefox 1.5.0.5 does not have any "Quick Searches" '
-    ...         'installed in the bookmarks by default, like the official '
-    ...         'ones do.')
+    ...         "installed in the bookmarks by default, like the official "
+    ...         "ones do."
+    ...     )
+    ...
     Karma added: action=questiondescriptionchanged, product=firefox,
         person=name12
 
@@ -207,25 +233,29 @@ persons who were awarded it in the past.
     # This test must have no output
 
     >>> msg = firefox_question.giveAnswer(
-    ...     sample_person, "I was able to import some by following the "
+    ...     sample_person,
+    ...     "I was able to import some by following the "
     ...     "instructions on http://tinyurl.com/cyus4",
-    ...     datecreated=next(now))
+    ...     datecreated=next(now),
+    ... )
 
 
 Creating a FAQ
 ..............
 
     >>> firefox_faq = firefox.newFAQ(
-    ...     sample_person, 'A FAQ', 'About something important')
+    ...     sample_person, "A FAQ", "About something important"
+    ... )
     Karma added: action=faqcreated, product=firefox, person=name12
 
 
 Modifying a FAQ
 ...............
 
-    >>> with notify_modified(firefox_faq, ['title', 'content']):
-    ...     firefox_faq.title = 'How can I make the Fnord appears?'
-    ...     firefox_faq.content = 'Install the Fnords highlighter extensions.'
+    >>> with notify_modified(firefox_faq, ["title", "content"]):
+    ...     firefox_faq.title = "How can I make the Fnord appears?"
+    ...     firefox_faq.content = "Install the Fnords highlighter extensions."
+    ...
     Karma added: action=faqedited, product=firefox, person=name12
 
 
@@ -239,6 +269,7 @@ actions have been tested. Only the obsolete methods remain.
     >>> obsolete_actions = set(answers_karma_actions) - added_karma_actions
     >>> for action in obsolete_actions:
     ...     print(action.title)
+    ...
     Solved own question
 
     # Unregister the event listener to make sure we won't interfere in

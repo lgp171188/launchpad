@@ -4,18 +4,22 @@ SourcePackage views
 Edit packaging view
 -------------------
 
-    >>> product = factory.makeProduct(name='bonkers', displayname='Bonkers')
+    >>> product = factory.makeProduct(name="bonkers", displayname="Bonkers")
     >>> productseries = factory.makeProductSeries(
-    ...     name='crazy', product=product)
+    ...     name="crazy", product=product
+    ... )
     >>> distribution = factory.makeDistribution(
-    ...     name='youbuntu', displayname='Youbuntu')
+    ...     name="youbuntu", displayname="Youbuntu"
+    ... )
     >>> distroseries = factory.makeDistroSeries(
-    ...     name='busy', distribution=distribution)
-    >>> sourcepackagename = factory.makeSourcePackageName(name='bonkers')
+    ...     name="busy", distribution=distribution
+    ... )
+    >>> sourcepackagename = factory.makeSourcePackageName(name="bonkers")
     >>> package = factory.makeSourcePackage(
-    ...     sourcepackagename=sourcepackagename, distroseries=distroseries)
+    ...     sourcepackagename=sourcepackagename, distroseries=distroseries
+    ... )
 
-    >>> view = create_initialized_view(package, name='+edit-packaging')
+    >>> view = create_initialized_view(package, name="+edit-packaging")
     >>> print(view.label)
     Link to an upstream project
 
@@ -36,7 +40,7 @@ to create a source package.
     >>> [form_field.__name__ for form_field in view.view.form_fields]
     ['__visited_steps__', 'product']
 
-    >>> print(view.view.widgets.get('product')._getFormValue())
+    >>> print(view.view.widgets.get("product")._getFormValue())
     <BLANKLINE>
 
     >>> print(package.productseries)
@@ -51,13 +55,16 @@ This is a multistep view. In the first step, the product is specified.
 
     >>> ignored = login_person(product.owner)
     >>> form = {
-    ...     'field.product': 'bonkers',
-    ...     'field.actions.continue': 'Continue',
-    ...     }
+    ...     "field.product": "bonkers",
+    ...     "field.actions.continue": "Continue",
+    ... }
     >>> form.update(view.view.request.form)
     >>> view = create_initialized_view(
-    ...     package, name='+edit-packaging', form=form,
-    ...     principal=product.owner)
+    ...     package,
+    ...     name="+edit-packaging",
+    ...     form=form,
+    ...     principal=product.owner,
+    ... )
     >>> view.view.errors
     []
 
@@ -66,20 +73,23 @@ product can be chosen from a list of options.
 
     >>> print(view.view.__class__.__name__)
     SourcePackageChangeUpstreamStepTwo
-    >>> print(view.view.request.form['field.__visited_steps__'])
+    >>> print(view.view.request.form["field.__visited_steps__"])
     sourcepackage_change_upstream_step1|sourcepackage_change_upstream_step2
-    >>> [term.token for term in view.view.widgets['productseries'].vocabulary]
+    >>> [term.token for term in view.view.widgets["productseries"].vocabulary]
     ['trunk', 'crazy']
 
     >>> form = {
-    ...     'field.__visited_steps__': 'sourcepackage_change_upstream_step2',
-    ...     'field.product': 'bonkers',
-    ...     'field.productseries': 'crazy',
-    ...     'field.actions.continue': 'continue',
-    ...     }
+    ...     "field.__visited_steps__": "sourcepackage_change_upstream_step2",
+    ...     "field.product": "bonkers",
+    ...     "field.productseries": "crazy",
+    ...     "field.actions.continue": "continue",
+    ... }
     >>> view = create_initialized_view(
-    ...     package, name='+edit-packaging', form=form,
-    ...     principal=product.owner)
+    ...     package,
+    ...     name="+edit-packaging",
+    ...     form=form,
+    ...     principal=product.owner,
+    ... )
 
     >>> ignored = view.view.render()
     >>> print(view.view.next_url)
@@ -87,6 +97,7 @@ product can be chosen from a list of options.
 
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
+    ...
     Upstream link updated.
 
     >>> print(package.productseries.name)
@@ -96,52 +107,62 @@ product can be chosen from a list of options.
 
 The form shows the current product if it is set.
 
-    >>> view = create_initialized_view(package, name='+edit-packaging')
+    >>> view = create_initialized_view(package, name="+edit-packaging")
 
-    >>> print(view.view.widgets.get('product')._getFormValue().name)
+    >>> print(view.view.widgets.get("product")._getFormValue().name)
     bonkers
 
 If the same product as the current product series is selected,
 then the current product series will be the selected option.
 
     >>> form = {
-    ...     'field.product': 'bonkers',
-    ...     'field.actions.continue': 'Continue',
-    ...     }
+    ...     "field.product": "bonkers",
+    ...     "field.actions.continue": "Continue",
+    ... }
     >>> form.update(view.view.request.form)
     >>> view = create_initialized_view(
-    ...     package, name='+edit-packaging', form=form,
-    ...     principal=product.owner)
-    >>> print(view.view.widgets.get('productseries')._getFormValue().name)
+    ...     package,
+    ...     name="+edit-packaging",
+    ...     form=form,
+    ...     principal=product.owner,
+    ... )
+    >>> print(view.view.widgets.get("productseries")._getFormValue().name)
     crazy
 
 The form requires a product. An error is raised if the field is left
 empty.
 
     >>> form = {
-    ...     'field.__visited_steps__': 'sourcepackage_change_upstream_step1',
-    ...     'field.product': '',
-    ...     'field.actions.continue': 'Continue',
-    ...     }
+    ...     "field.__visited_steps__": "sourcepackage_change_upstream_step1",
+    ...     "field.product": "",
+    ...     "field.actions.continue": "Continue",
+    ... }
     >>> view = create_initialized_view(
-    ...     package, name='+edit-packaging', form=form,
-    ...     principal=product.owner)
+    ...     package,
+    ...     name="+edit-packaging",
+    ...     form=form,
+    ...     principal=product.owner,
+    ... )
     >>> for error in view.view.errors:
     ...     print(pretty(error.args))
+    ...
     ('product', 'Project', RequiredMissing('product'))
 
 Submitting the same product series as the current packaging is not an error,
 but there is no notification message that the upstream link was updated.
 
     >>> form = {
-    ...     'field.__visited_steps__': 'sourcepackage_change_upstream_step2',
-    ...     'field.product': 'bonkers',
-    ...     'field.productseries': 'crazy',
-    ...     'field.actions.continue': 'Continue',
-    ...     }
+    ...     "field.__visited_steps__": "sourcepackage_change_upstream_step2",
+    ...     "field.product": "bonkers",
+    ...     "field.productseries": "crazy",
+    ...     "field.actions.continue": "Continue",
+    ... }
     >>> view = create_initialized_view(
-    ...     package, name='+edit-packaging', form=form,
-    ...     principal=product.owner)
+    ...     package,
+    ...     name="+edit-packaging",
+    ...     form=form,
+    ...     principal=product.owner,
+    ... )
     >>> print(view.view)
     <...SourcePackageChangeUpstreamStepTwo object...>
     >>> print(view.view.next_url)
@@ -164,16 +185,17 @@ ProductVocabulary query using the source package name.
 Since the bonkers source project was associated previously with the
 bonkers project, the portlet will display that information.
 
-    >>> view = create_initialized_view(package, name='+portlet-associations')
+    >>> view = create_initialized_view(package, name="+portlet-associations")
     >>> for product in view.product_suggestions:
     ...     print(product.name)
+    ...
     bonkers
 
-    >>> from lp.testing.pages import (
-    ...     extract_text, find_tag_by_id)
-    >>> content = find_tag_by_id(view.render(), 'upstreams')
-    >>> for link in content.find_all('a'):
-    ...     print(link['href'])
+    >>> from lp.testing.pages import extract_text, find_tag_by_id
+    >>> content = find_tag_by_id(view.render(), "upstreams")
+    >>> for link in content.find_all("a"):
+    ...     print(link["href"])
+    ...
     /bonkers
     /bonkers/crazy
     .../+source/bonkers/+edit-packaging
@@ -189,17 +211,19 @@ bonkers project, the portlet will display that information.
 A new source project that is not linked to an upstream will result in
 the portlet showing the suggested project.
 
-    >>> product = factory.makeProduct(name='lernid', displayname='Lernid')
-    >>> sourcepackagename = factory.makeSourcePackageName(name='lernid')
+    >>> product = factory.makeProduct(name="lernid", displayname="Lernid")
+    >>> sourcepackagename = factory.makeSourcePackageName(name="lernid")
     >>> package = factory.makeSourcePackage(
-    ...     sourcepackagename=sourcepackagename, distroseries=distroseries)
+    ...     sourcepackagename=sourcepackagename, distroseries=distroseries
+    ... )
 
-    >>> view = create_initialized_view(package, name='+portlet-associations')
+    >>> view = create_initialized_view(package, name="+portlet-associations")
     >>> for product in view.product_suggestions:
     ...     print(product.name)
+    ...
     lernid
 
-    >>> content = extract_text(find_tag_by_id(view.render(), 'no-upstreams'))
+    >>> content = extract_text(find_tag_by_id(view.render(), "no-upstreams"))
     >>> print(content)
     Launchpad doesn’t know which project and series this package belongs to.
     ...
@@ -219,17 +243,19 @@ If there are multiple potential matches, the first 9 are shown. The 10th
 item is reserved for the "Choose another upstream project" option.
 
     >>> product = factory.makeProduct(
-    ...     name='lernid-dev', displayname='Lernid Dev')
-    >>> view = create_initialized_view(package, name='+portlet-associations')
+    ...     name="lernid-dev", displayname="Lernid Dev"
+    ... )
+    >>> view = create_initialized_view(package, name="+portlet-associations")
     >>> for product in view.product_suggestions:
     ...     print(product.name)
+    ...
     lernid
     lernid-dev
 
     >>> view.max_suggestions
     9
 
-    >>> content = extract_text(find_tag_by_id(view.render(), 'no-upstreams'))
+    >>> content = extract_text(find_tag_by_id(view.render(), "no-upstreams"))
     >>> print(content)
     Launchpad doesn’t know which project and series this package belongs to.
     ...
@@ -244,11 +270,12 @@ Choosing the "Choose another upstream project" option redirects the user
 to the +edit-packaging page where the user can search for a project.
 
     >>> form = {
-    ...     'field.upstream': 'OTHER_UPSTREAM',
-    ...     'field.actions.link': 'Link to Upstream Project',
-    ...     }
+    ...     "field.upstream": "OTHER_UPSTREAM",
+    ...     "field.actions.link": "Link to Upstream Project",
+    ... }
     >>> view = create_initialized_view(
-    ...     package, name='+portlet-associations', form=form)
+    ...     package, name="+portlet-associations", form=form
+    ... )
     >>> view.errors
     []
     >>> print(view.next_url)
@@ -264,18 +291,21 @@ tracker, though the rules are somewhat complicated.
 If the view's package has no productseries set then has_bugtracker is False.
 
 
-    >>> product = factory.makeProduct(name='stinky', displayname='Stinky')
+    >>> product = factory.makeProduct(name="stinky", displayname="Stinky")
     >>> productseries = factory.makeProductSeries(
-    ...     name='stinkyseries', product=product)
+    ...     name="stinkyseries", product=product
+    ... )
     >>> distroseries = factory.makeDistroSeries(
-    ...     name='wonky', distribution=distribution)
+    ...     name="wonky", distribution=distribution
+    ... )
     >>> sourcepackagename = factory.makeSourcePackageName(
-    ...     name='stinkypackage')
+    ...     name="stinkypackage"
+    ... )
     >>> package = factory.makeSourcePackage(
-    ...     sourcepackagename=sourcepackagename, distroseries=distroseries)
+    ...     sourcepackagename=sourcepackagename, distroseries=distroseries
+    ... )
 
-    >>> view = create_initialized_view(
-    ...     package, name='+upstream-connections')
+    >>> view = create_initialized_view(package, name="+upstream-connections")
 
     >>> print(package.productseries)
     None
@@ -291,8 +321,7 @@ So let's set the product series so we can do more interesting testing.
 If a product is not part of a project group and its bug tracker is not
 set then the view property is false.
 
-    >>> view = create_initialized_view(
-    ...     package, name='+upstream-connections')
+    >>> view = create_initialized_view(package, name="+upstream-connections")
 
     >>> print(product.bug_tracking_usage.name)
     UNKNOWN
@@ -343,7 +372,7 @@ Remove packaging view
 This view allows removal of the packaging link from the sourcepackage
 to the project series.
 
-    >>> view = create_initialized_view(package, name='+remove-packaging')
+    >>> view = create_initialized_view(package, name="+remove-packaging")
     >>> print(view.label)
     Unlink an upstream project
 
@@ -355,14 +384,16 @@ to the project series.
 
     >>> user = package.packaging.owner
     >>> ignored = login_person(user)
-    >>> form = {'field.actions.unlink': 'Unlink'}
+    >>> form = {"field.actions.unlink": "Unlink"}
     >>> view = create_initialized_view(
-    ...     package, name='+remove-packaging', form=form, principal=user)
+    ...     package, name="+remove-packaging", form=form, principal=user
+    ... )
     >>> view.errors
     []
 
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
+    ...
     Removed upstream association between Stinky stinkyseries series and Wonky.
 
 If somebody attempts to remove this packaging link a second time,
@@ -370,16 +401,18 @@ they get a message telling them that the link has already been
 deleted.
 
     >>> view = create_initialized_view(
-    ...     package, name='+remove-packaging', form=form, principal=user)
+    ...     package, name="+remove-packaging", form=form, principal=user
+    ... )
     >>> view.errors
     []
 
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
+    ...
     The packaging link has already been deleted.
 
-    >>> view = create_initialized_view(package, name='+portlet-associations')
-    >>> print(extract_text(find_tag_by_id(view.render(), 'no-upstreams')))
+    >>> view = create_initialized_view(package, name="+portlet-associations")
+    >>> print(extract_text(find_tag_by_id(view.render(), "no-upstreams")))
     Launchpad doesn’t know which project ...
     There are no projects registered in Launchpad that are a potential
     match for this source package. Can you help us find one?

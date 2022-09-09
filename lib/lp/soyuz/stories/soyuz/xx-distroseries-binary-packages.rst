@@ -5,7 +5,8 @@ A binary package for a distro-series displays the package's name,
 summary and description:
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/warty/+package/mozilla-firefox')
+    ...     "http://launchpad.test/ubuntu/warty/+package/mozilla-firefox"
+    ... )
     >>> print(browser.title)
     mozilla-firefox : Warty (4.10) : Ubuntu
 
@@ -25,11 +26,11 @@ summary and description:
 And each publishing history item is a link to the relevant binary
 release:
 
-    >>> print(browser.getLink('mozilla-firefox 0.9 in hppa (Release)').url)
+    >>> print(browser.getLink("mozilla-firefox 0.9 in hppa (Release)").url)
     http://launchpad.test/ubuntu/warty/hppa/mozilla-firefox/0.9
-    >>> print(browser.getLink('mozilla-firefox 0.9 in i386 (Release)').url)
+    >>> print(browser.getLink("mozilla-firefox 0.9 in i386 (Release)").url)
     http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9
-    >>> print(browser.getLink('mozilla-firefox 1.0 in i386 (Release)').url)
+    >>> print(browser.getLink("mozilla-firefox 1.0 in i386 (Release)").url)
     http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/1.0
 
 The page also displays a link to the distro series source package
@@ -43,7 +44,8 @@ Some DistroSeriesBinaryPackages are unpublished, in this case there is
 no link to any source package:
 
     >>> browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/+package/mozilla-firefox')
+    ...     "http://launchpad.test/ubuntu/hoary/+package/mozilla-firefox"
+    ... )
     >>> print(browser.title)
     mozilla-firefox : Hoary (5.04) : Ubuntu
 

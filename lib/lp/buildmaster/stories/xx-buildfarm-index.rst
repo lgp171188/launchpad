@@ -5,7 +5,7 @@ The BuildFarm page is accessible from the root page, although we don't
 link to it yet because we are not yet sure of the benefits of doing
 this, since the audience of this page is still restricted.
 
-    >>> anon_browser.open('http://launchpad.test/+builds')
+    >>> anon_browser.open("http://launchpad.test/+builds")
 
 The BuildFarm contains a list of all builders registered in Launchpad
 ordered by build domain ('nonvirt' then 'virt'), then processor and
@@ -31,8 +31,7 @@ containing the build queue status summary for each build domain.
 When building, the 'Status' column contains a link to the
 corresponding 'Build' page.
 
-    >>> print(anon_browser.getLink(
-    ...     'i386 build of mozilla-firefox 0.9').url)
+    >>> print(anon_browser.getLink("i386 build of mozilla-firefox 0.9").url)
     http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/8
 
 The build status portlets contain the number of builds waiting
@@ -41,14 +40,20 @@ supported processor on each separated build domain, 'nonvirt'
 (PRIMARY and PARTNER) and 'virt'.
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'nonvirt-queue-status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "nonvirt-queue-status")
+    ...     )
+    ... )
     Non-virtual build status
     Architecture  Builders  Queue
     386           1         1 job (1 minute)
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'virt-queue-status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "virt-queue-status")
+    ...     )
+    ... )
     Virtual build status
     Architecture  Builders  Queue
     386           0         empty
@@ -63,10 +68,11 @@ the corresponding portlet with their estimated duration as well.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.buildmaster.enums import BuildStatus
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('foo.bar@canonical.com')
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> login("foo.bar@canonical.com")
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> failed_build = cprov.archive.getBuildRecords(
-    ...     build_state=BuildStatus.FAILEDTOBUILD)[0]
+    ...     build_state=BuildStatus.FAILEDTOBUILD
+    ... )[0]
     >>> one_minute = datetime.timedelta(seconds=60)
     >>> failed_build.retry()
     >>> bq = failed_build.buildqueue_record
@@ -74,8 +80,11 @@ the corresponding portlet with their estimated duration as well.
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'virt-queue-status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "virt-queue-status")
+    ...     )
+    ... )
     Virtual build status
     Architecture  Builders  Queue
     386           0         1 job (1 minute)
@@ -84,20 +93,26 @@ If the archive for the build does not require virtual builders, then
 the pending job will appear in the 'nonvirt' queue. Since the build
 record already exists, we must manually set it to non-virtualized too.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> cprov.archive.require_virtualized = False
     >>> removeSecurityProxy(bq).virtualized = False
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'virt-queue-status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "virt-queue-status")
+    ...     )
+    ... )
     Virtual build status
     Architecture  Builders  Queue
     386           0         empty
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'nonvirt-queue-status')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "nonvirt-queue-status")
+    ...     )
+    ... )
     Non-virtual build status
     Architecture  Builders  Queue
     386           1         2 jobs (2 minutes)
@@ -131,41 +146,42 @@ Administrators can create new builders.
 Registering a new builder involves setting its name, title and corresponding
 location.
 
-    >>> admin_browser.getControl('Name').value = 'tubaina'
-    >>> admin_browser.getControl('Title').value = 'Tubaina'
-    >>> admin_browser.getControl(
-    ...     'URL').value = 'http://tubaina.buildd'
+    >>> admin_browser.getControl("Name").value = "tubaina"
+    >>> admin_browser.getControl("Title").value = "Tubaina"
+    >>> admin_browser.getControl("URL").value = "http://tubaina.buildd"
 
 Additionaly, the administrator can select the processor corresponding
 to the builder.
 
-    >>> admin_browser.getControl(name='field.processors').options
+    >>> admin_browser.getControl(name="field.processors").options
     ['386', 'amd64', 'hppa']
-    >>> admin_browser.getControl(name='field.processors').value
+    >>> admin_browser.getControl(name="field.processors").value
     []
-    >>> admin_browser.getControl(name='field.processors').value = [
-    ...     'amd64', 'hppa']
+    >>> admin_browser.getControl(name="field.processors").value = [
+    ...     "amd64",
+    ...     "hppa",
+    ... ]
 
 By default, builders are created as 'Publicly Visible', although the
 administrator can change this value during creation time.
 
-    >>> print(admin_browser.getControl('Publicly Visible').selected)
+    >>> print(admin_browser.getControl("Publicly Visible").selected)
     True
-    >>> admin_browser.getControl('Publicly Visible').selected = False
+    >>> admin_browser.getControl("Publicly Visible").selected = False
 
 Builder as created as 'non-virtual' by default, but the administrator
 can also modify that while creating a builder.
 
-    >>> print(admin_browser.getControl('Virtualized').selected)
+    >>> print(admin_browser.getControl("Virtualized").selected)
     False
-    >>> admin_browser.getControl('VM host').value
+    >>> admin_browser.getControl("VM host").value
     ''
-    >>> admin_browser.getControl('VM reset protocol').value
+    >>> admin_browser.getControl("VM reset protocol").value
     ['']
 
-    >>> admin_browser.getControl('Virtualized').selected = True
-    >>> admin_browser.getControl('VM host').value = 'tubaina-host.ppa'
-    >>> admin_browser.getControl('VM reset protocol').value = ['PROTO_1_1']
+    >>> admin_browser.getControl("Virtualized").selected = True
+    >>> admin_browser.getControl("VM host").value = "tubaina-host.ppa"
+    >>> admin_browser.getControl("VM reset protocol").value = ["PROTO_1_1"]
 
 Once the form is submitted the users will be redirected to the
 just-created builder page.
@@ -175,11 +191,11 @@ just-created builder page.
     >>> admin_browser.getControl("Register builder").click()
     >>> print(backslashreplace(admin_browser.title))
     Tubaina : Build Farm
-    >>> 'amd64 and hppa' in admin_browser.contents
+    >>> "amd64 and hppa" in admin_browser.contents
     True
 
     >>> admin_browser.getLink("Change details").click()
-    >>> admin_browser.getControl('VM host').value
+    >>> admin_browser.getControl("VM host").value
     'tubaina-host.ppa'
-    >>> admin_browser.getControl('VM reset protocol').value
+    >>> admin_browser.getControl("VM reset protocol").value
     ['PROTO_1_1']

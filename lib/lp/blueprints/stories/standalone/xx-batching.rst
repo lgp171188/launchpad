@@ -13,14 +13,14 @@ To demonstrate this, we'll create a new project:
 
     >>> browser = user_browser
     >>> browser.open("http://launchpad.test/projects/+new")
-    >>> browser.getControl('URL', index=0).value = 'big-project'
-    >>> browser.getControl('Name').value = 'Big Project'
-    >>> browser.getControl('Summary').value = 'A big project indeed.'
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl("URL", index=0).value = "big-project"
+    >>> browser.getControl("Name").value = "Big Project"
+    >>> browser.getControl("Summary").value = "A big project indeed."
+    >>> browser.getControl("Continue").click()
 
-    >>> browser.getControl(name='field.licenses').value = ['GNU_GPL_V2']
-    >>> browser.getControl(name='field.license_info').value = 'foo'
-    >>> browser.getControl('Complete Registration').click()
+    >>> browser.getControl(name="field.licenses").value = ["GNU_GPL_V2"]
+    >>> browser.getControl(name="field.license_info").value = "foo"
+    >>> browser.getControl("Complete Registration").click()
     >>> browser.url
     'http://launchpad.test/big-project'
 
@@ -34,10 +34,12 @@ But it's easy to change that.
 
     >>> browser.open(
     ...     "http://blueprints.launchpad.test/big-project/"
-    ...     "+configure-blueprints")
-    >>> browser.getControl(
-    ...     name='field.blueprints_usage').value = ['LAUNCHPAD']
-    >>> browser.getControl('Change').click()
+    ...     "+configure-blueprints"
+    ... )
+    >>> browser.getControl(name="field.blueprints_usage").value = [
+    ...     "LAUNCHPAD"
+    ... ]
+    >>> browser.getControl("Change").click()
     >>> browser.url
     'http://blueprints.launchpad.test/big-project'
 
@@ -49,11 +51,11 @@ Initially the newly enabled feature has no blueprints.
 
 We'll go ahead and add just a single blueprint:
 
-    >>> browser.open('http://launchpad.test/big-project/+addspec')
-    >>> browser.getControl('Name', index=0).value = 'blueprint-0'
-    >>> browser.getControl('Title').value = 'Blueprint 0'
-    >>> browser.getControl('Summary').value = 'Blueprint 0'
-    >>> browser.getControl('Register Blueprint').click()
+    >>> browser.open("http://launchpad.test/big-project/+addspec")
+    >>> browser.getControl("Name", index=0).value = "blueprint-0"
+    >>> browser.getControl("Title").value = "Blueprint 0"
+    >>> browser.getControl("Summary").value = "Blueprint 0"
+    >>> browser.getControl("Register Blueprint").click()
     >>> browser.url
     'http://blueprints.launchpad.test/big-project/+spec/blueprint-0'
 
@@ -61,37 +63,50 @@ When we ask for the complete list of blueprints for our project, the new
 blueprint is listed:
 
     >>> browser.open("http://blueprints.launchpad.test/big-project")
-    >>> print(extract_text(first_tag_by_class(browser.contents,
-    ...                                      'batch-navigation-index')))
+    >>> print(
+    ...     extract_text(
+    ...         first_tag_by_class(browser.contents, "batch-navigation-index")
+    ...     )
+    ... )
     1...→...1...of...1 result
 
 Let's add some more blueprints:
 
     >>> for index in range(1, 20):
-    ...     browser.open('http://launchpad.test/big-project/+addspec')
-    ...     browser.getControl('Name', index=0).value = 'blueprint-%d' % index
-    ...     browser.getControl('Title').value = 'Blueprint %d' % index
-    ...     browser.getControl('Summary').value = 'Blueprint %d' % index
-    ...     browser.getControl('Register Blueprint').click()
+    ...     browser.open("http://launchpad.test/big-project/+addspec")
+    ...     browser.getControl("Name", index=0).value = "blueprint-%d" % index
+    ...     browser.getControl("Title").value = "Blueprint %d" % index
+    ...     browser.getControl("Summary").value = "Blueprint %d" % index
+    ...     browser.getControl("Register Blueprint").click()
+    ...
 
 Observe that now when we ask for the complete list of blueprints, only some of
 the blueprints are listed:
 
     >>> browser.open("http://blueprints.launchpad.test/big-project")
-    >>> print(extract_text(first_tag_by_class(browser.contents,
-    ...                                      'batch-navigation-index')))
+    >>> print(
+    ...     extract_text(
+    ...         first_tag_by_class(browser.contents, "batch-navigation-index")
+    ...     )
+    ... )
     1...→...5...of...20 results
 
 We can go to the next batch of blueprints by following the 'Next' link:
 
-    >>> browser.getLink('Next').click()
-    >>> print(extract_text(first_tag_by_class(browser.contents,
-    ...                                      'batch-navigation-index')))
+    >>> browser.getLink("Next").click()
+    >>> print(
+    ...     extract_text(
+    ...         first_tag_by_class(browser.contents, "batch-navigation-index")
+    ...     )
+    ... )
     6...→...10...of...20 results
 
 Following the 'Last' link takes us to the last batch of blueprints:
 
-    >>> browser.getLink('Last').click()
-    >>> print(extract_text(first_tag_by_class(browser.contents,
-    ...                                      'batch-navigation-index')))
+    >>> browser.getLink("Last").click()
+    >>> print(
+    ...     extract_text(
+    ...         first_tag_by_class(browser.contents, "batch-navigation-index")
+    ...     )
+    ... )
     16...→...20...of...20 results

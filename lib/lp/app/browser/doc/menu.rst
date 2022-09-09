@@ -9,39 +9,47 @@ are usually bound to a view.
     >>> from zope.interface import implementer, Interface
     >>> from lp.services.webapp.interfaces import INavigationMenu
     >>> from lp.services.webapp.menu import (
-    ...     enabled_with_permission, Link, NavigationMenu)
+    ...     enabled_with_permission,
+    ...     Link,
+    ...     NavigationMenu,
+    ... )
     >>> from lp.services.webapp.publisher import LaunchpadView
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
     >>> class IEditMenuMarker(Interface):
     ...     """A marker for a menu and a view."""
+    ...
 
     >>> class EditMenu(NavigationMenu):
     ...     """A simple menu."""
+    ...
     ...     usedfor = IEditMenuMarker
-    ...     facet = 'overview'
-    ...     title = 'Related pages'
-    ...     links = ('edit_thing', 'edit_people', 'admin')
+    ...     facet = "overview"
+    ...     title = "Related pages"
+    ...     links = ("edit_thing", "edit_people", "admin")
     ...
     ...     def edit_thing(self):
-    ...         return Link('+edit', 'Edit thing', icon='edit')
+    ...         return Link("+edit", "Edit thing", icon="edit")
     ...
     ...     def edit_people(self):
-    ...         return Link('+edit-people', 'Edit people related to thing')
+    ...         return Link("+edit-people", "Edit people related to thing")
     ...
-    ...     @enabled_with_permission('launchpad.Admin')
+    ...     @enabled_with_permission("launchpad.Admin")
     ...     def admin(self):
-    ...         return Link('+admin', 'Administer this user')
+    ...         return Link("+admin", "Administer this user")
+    ...
 
     >>> @implementer(IEditMenuMarker)
     ... class EditView(LaunchpadView):
     ...     """A simple view."""
+    ...
     ...     # A hack that reveals secret of how facets work.
-    ...     __launchpad_facetname__ = 'overview'
+    ...     __launchpad_facetname__ = "overview"
 
     # Menus are normally registered using the menu ZCML directive.
     >>> provideAdapter(
-    ...     EditMenu, [IEditMenuMarker], INavigationMenu, name="overview")
+    ...     EditMenu, [IEditMenuMarker], INavigationMenu, name="overview"
+    ... )
 
 
 Related pages
@@ -50,10 +58,11 @@ Related pages
 The related pages portlet is rendered using a TALES call passing the view
 to the named adapter: <tal:menu replace="structure view/@@+related-pages" />
 
-    >>> user = factory.makePerson(name='beaker')
+    >>> user = factory.makePerson(name="beaker")
     >>> view = EditView(user, LaunchpadTestRequest())
     >>> menu_view = create_initialized_view(
-    ...     view, '+related-pages', principal=user)
+    ...     view, "+related-pages", principal=user
+    ... )
     >>> print(menu_view.template.filename)
     /.../navigationmenu-related-pages.pt
 
@@ -64,6 +73,7 @@ and disabled links are included.
     Related pages
     >>> for link in menu_view.links:
     ...     print(link.enabled, link.url)
+    ...
     True   http://launchpad.test/~beaker/+edit
     True   http://launchpad.test/~beaker/+edit-people
     False  http://launchpad.test/~beaker/+admin
@@ -99,15 +109,18 @@ unset, and then only the link icon and text will be displayed, but it will not
 be clickable.
 
     >>> request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://launchpad.test/~beaker/+edit')
+    ...     SERVER_URL="http://launchpad.test/~beaker/+edit"
+    ... )
     >>> print(request.getURL())
     http://launchpad.test/~beaker/+edit
 
     >>> view = EditView(user, request)
     >>> menu_view = create_initialized_view(
-    ...     view, '+related-pages', principal=user)
+    ...     view, "+related-pages", principal=user
+    ... )
     >>> for link in menu_view.links:
     ...     print(link.enabled, link.linked, link.url)
+    ...
     True  False  http://launchpad.test/~beaker/+edit
     True  True   http://launchpad.test/~beaker/+edit-people
     False True   http://launchpad.test/~beaker/+admin
@@ -131,9 +144,11 @@ The action menu uses the view's enabled_links property to get the list of
 links.
 
     >>> menu_view = create_initialized_view(
-    ...     view, '+global-actions', principal=user)
+    ...     view, "+global-actions", principal=user
+    ... )
     >>> for link in menu_view.enabled_links:
     ...     print(link.enabled, link.linked, link.url)
+    ...
     True  False  http://launchpad.test/~beaker/+edit
     True  True   http://launchpad.test/~beaker/+edit-people
 
@@ -158,10 +173,11 @@ The generated markup is for a portlet with the global-actions id.
 If there are no enabled links, no markup is rendered. For example, a menu
 may contain links that require special privileges to access.
 
-    >>> EditMenu.links = ('admin',)
+    >>> EditMenu.links = ("admin",)
 
     >>> menu_view = create_initialized_view(
-    ...     view, '+global-actions', principal=user)
+    ...     view, "+global-actions", principal=user
+    ... )
     >>> menu_view.enabled_links
     []
 

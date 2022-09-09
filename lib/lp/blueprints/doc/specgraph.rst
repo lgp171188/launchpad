@@ -15,13 +15,13 @@ SpecGraph to keep track of the nodes that have been added.
 
     >>> from lp.blueprints.browser.specification import SpecGraph
     >>> g = SpecGraph()
-    >>> g.url_pattern_for_testing = 'http://whatever/%s'
-    >>> default_target = factory.makeProduct(name='fnord')
+    >>> g.url_pattern_for_testing = "http://whatever/%s"
+    >>> default_target = factory.makeProduct(name="fnord")
 
     >>> class Spec:
-    ...
-    ...     def __init__(self, name,
-    ...             is_complete=False, title=None, assignee=None):
+    ...     def __init__(
+    ...         self, name, is_complete=False, title=None, assignee=None
+    ...     ):
     ...         self.name = name
     ...         self.target = default_target
     ...         self.title = title or name
@@ -39,8 +39,9 @@ SpecGraph to keep track of the nodes that have been added.
     ...
     ...     def getBlockedSpecs(self, user):
     ...         return self._blocked_specs
+    ...
 
-    >>> foo = Spec('foo', title='something with " and \n in it')
+    >>> foo = Spec("foo", title='something with " and \n in it')
     >>> root = g.newNode(foo, root=True)
 
     >>> print(root)
@@ -75,30 +76,33 @@ don't want a link to the spec we're currently looking at.
     Root is <fnord-foo>
     <fnord-foo>:
 
-    >>> foo1 = Spec('foo1')
+    >>> foo1 = Spec("foo1")
     >>> foo._dependencies.append(foo1)
-    >>> foo2 = Spec('foo2')
+    >>> foo2 = Spec("foo2")
     >>> foo._dependencies.append(foo2)
-    >>> foo11 = Spec('foo11')
+    >>> foo11 = Spec("foo11")
     >>> foo1._dependencies.append(foo11)
-    >>> foo111 = Spec('foo111')
+    >>> foo111 = Spec("foo111")
     >>> foo11._dependencies.append(foo111)
 
     >>> def make_graph(dependency, blocked):
     ...     g = SpecGraph()
-    ...     g.url_pattern_for_testing = 'http://whatever/%s'
+    ...     g.url_pattern_for_testing = "http://whatever/%s"
     ...     g.newNode(foo, root=True)
     ...     if dependency:
     ...         g.addDependencyNodes(foo)
     ...     if blocked:
     ...         g.addBlockedNodes(foo)
     ...     return g
+    ...
 
     >>> def print_graph(dependency=True, blocked=False):
     ...     print(make_graph(dependency, blocked).listNodes())
+    ...
 
     >>> def print_graph_dot(dependency=True, blocked=False):
     ...     print(make_graph(dependency, blocked).getDOTGraphStatement())
+    ...
 
     >>> print_graph()
     Root is <fnord-foo>
@@ -228,9 +232,9 @@ A spec with the same name, but from a different target can be a in
 the graph.
 
     >>> test_graph = SpecGraph()
-    >>> ant_spec = factory.makeSpecification(name='ant')
-    >>> a_bat_spec = factory.makeSpecification(name='bat')
-    >>> b_bat_spec = factory.makeSpecification(name='bat')
+    >>> ant_spec = factory.makeSpecification(name="ant")
+    >>> a_bat_spec = factory.makeSpecification(name="bat")
+    >>> b_bat_spec = factory.makeSpecification(name="bat")
     >>> ignore = ant_spec.createDependency(a_bat_spec)
     >>> ignore = ant_spec.createDependency(b_bat_spec)
     >>> ant_node = test_graph.newNode(ant_spec, root=True)
@@ -248,15 +252,17 @@ tag when the render() method is called.
 
     >>> from zope.component import getMultiAdapter
     >>> from lp.blueprints.browser.specification import (
-    ...     SpecificationTreeImageTag)
+    ...     SpecificationTreeImageTag,
+    ... )
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> svg_support = firefox.getSpecification('svg-support')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> svg_support = firefox.getSpecification("svg-support")
     >>> request = LaunchpadTestRequest(form={})
     >>> graph_view = getMultiAdapter(
-    ...     (svg_support, request), name="+deptreeimgtag")
+    ...     (svg_support, request), name="+deptreeimgtag"
+    ... )
     >>> graph_view.initialize()
     >>> isinstance(graph_view, SpecificationTreeImageTag)
     True
@@ -270,18 +276,18 @@ the renderGraphvizGraph() method from the view's parent class. The
 method will make an image map when 'cmapx' is passed as an argument; It
 also makes PNG images when it is passed 'png' as an argument.
 
-    >>> print(graph_view.renderGraphvizGraph('cmapx').decode('UTF-8'))
+    >>> print(graph_view.renderGraphvizGraph("cmapx").decode("UTF-8"))
     <map id="deptree" name="deptree">...
 
 The SpecificationTreeImageTag view is indirectly called when the spec's
 +index template calls render().
 
-    >>> login('no-priv@canonical.com', request)
+    >>> login("no-priv@canonical.com", request)
     >>> page_view = getMultiAdapter((svg_support, request), name="+index")
     >>> page_view.initialize()
     >>> content = page_view.render()
     >>> image_start = content.find('<map id="deptree"')
-    >>> print(content[image_start:image_start + 33])
+    >>> print(content[image_start : image_start + 33])
     <map id="deptree" name="deptree">
 
 
@@ -299,13 +305,15 @@ to the command is bad:
     >>> graph_view_class = specification.SpecificationTreeGraphView
     >>> original_getDotFileText = graph_view_class.getDotFileText
     >>> def fake_getDotFileText(format):
-    ...     return 'bad data'
+    ...     return "bad data"
+    ...
     >>> graph_view_class.getDotFileText = fake_getDotFileText
 
     >>> graph_view = getMultiAdapter(
-    ...     (svg_support, request), name="+deptreeimgtag")
+    ...     (svg_support, request), name="+deptreeimgtag"
+    ... )
     >>> graph_view.initialize()
-    >>> graph_view.renderGraphvizGraph('cmapx')
+    >>> graph_view.renderGraphvizGraph("cmapx")
     Traceback (most recent call last):
      ...
     lp.blueprints.browser.specification.ProblemRenderingGraph:
@@ -321,7 +329,7 @@ message explaining that the image was not linked.
     to its specs.</p>
 
     >>> oops_report = graph_view.request.oops
-    >>> print(oops_report['type'], oops_report['value'])
+    >>> print(oops_report["type"], oops_report["value"])
     ProblemRenderingGraph (... syntax error in line 1 near 'bad'...)
 
     # Restore the getDotFileText() method.
@@ -336,13 +344,15 @@ can raise errors like OSError.
 
     >>> original_popen = specification.Popen
     >>> def fake_popen(*args, **kwargs):
-    ...     raise OSError(12, 'Cannot allocate memory')
+    ...     raise OSError(12, "Cannot allocate memory")
+    ...
     >>> specification.Popen = fake_popen
 
     >>> graph_view = getMultiAdapter(
-    ...     (svg_support, request), name="+deptreeimgtag")
+    ...     (svg_support, request), name="+deptreeimgtag"
+    ... )
     >>> graph_view.initialize()
-    >>> graph_view.renderGraphvizGraph('cmapx')
+    >>> graph_view.renderGraphvizGraph("cmapx")
     Traceback (most recent call last):
      ...
     OSError: [Errno 12] Cannot allocate memory
@@ -357,7 +367,7 @@ page to link the image.
     to its specs. Reload the page to link the image.</p>
 
     >>> oops_report = graph_view.request.oops
-    >>> print(oops_report['type'], oops_report['value'])
+    >>> print(oops_report["type"], oops_report["value"])
     OSError [Errno 12] Cannot allocate memory
 
 If an error occurs during the render of the PNG image, the fail over
@@ -365,15 +375,16 @@ image (icing/blueprints-deptree-error.png) is returned. It's size is
 3092 bytes.
 
     >>> graph_view = getMultiAdapter(
-    ...     (svg_support, request), name="deptree.png")
+    ...     (svg_support, request), name="deptree.png"
+    ... )
     >>> graph_view.initialize()
-    >>> graph_view.renderGraphvizGraph('png')
+    >>> graph_view.renderGraphvizGraph("png")
     Traceback (most recent call last):
      ...
     OSError: [Errno 12] Cannot allocate memory
 
     >>> image = graph_view.render()
-    >>> image.startswith(b'\x89PNG')
+    >>> image.startswith(b"\x89PNG")
     True
 
     >>> fail_over_image_length = len(image)
@@ -387,10 +398,11 @@ The dependency graph image is rendered correctly when Popen is restored.
     >>> specification.Popen = original_popen
 
     >>> graph_view = getMultiAdapter(
-    ...     (svg_support, request), name="deptree.png")
+    ...     (svg_support, request), name="deptree.png"
+    ... )
     >>> graph_view.initialize()
     >>> image = graph_view.render()
-    >>> image.startswith(b'\x89PNG')
+    >>> image.startswith(b"\x89PNG")
     True
 
     >>> len(image) != fail_over_image_length

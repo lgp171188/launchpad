@@ -14,8 +14,8 @@ for accessing the builds related to the instance.
 The method can be called without any arguments.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
     >>> hoary.getBuildRecords().count()
     5
 
@@ -28,22 +28,23 @@ status,
 
 filtering by source package name,
 
-    >>> hoary.getBuildRecords(name=u'pm').count()
+    >>> hoary.getBuildRecords(name="pm").count()
     2
 
 filtering by the pocket to which the build was published,
 
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
-    >>> hoary.getBuildRecords(
-    ...     pocket=PackagePublishingPocket.RELEASE).count()
+    >>> hoary.getBuildRecords(pocket=PackagePublishingPocket.RELEASE).count()
     5
 
 and filtering by the build architecture tag.
 
-    >>> builds = ubuntu['warty'].getBuildRecords(name=u'firefox',
-    ...                                          arch_tag='i386')
+    >>> builds = ubuntu["warty"].getBuildRecords(
+    ...     name="firefox", arch_tag="i386"
+    ... )
     >>> for build in builds:
     ...     print(build.title)
+    ...
     i386 build of mozilla-firefox 0.9 in ubuntu warty RELEASE
 
 

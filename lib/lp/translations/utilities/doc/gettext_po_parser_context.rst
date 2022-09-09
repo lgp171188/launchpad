@@ -15,38 +15,40 @@ Helper imports
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
 
 This is a function for importing a pofile or potemplate from a string,
 printing out the import status after import is done.
 
     >>> from lp.translations.utilities.tests.helpers import (
-    ...     import_pofile_or_potemplate)
+    ...     import_pofile_or_potemplate,
+    ... )
 
 Import PO templates
 -------------------
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 We are creating a new potemplate for Firefox product.
 
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> firefox_trunk = firefox.getSeries('trunk')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> firefox_trunk = firefox.getSeries("trunk")
     >>> firefox_potsubset = POTemplateSubset(productseries=firefox_trunk)
 
 Here's the person who'll be doing the import.
 
-    >>> carlos = getUtility(IPersonSet).getByEmail('carlos@canonical.com')
+    >>> carlos = getUtility(IPersonSet).getByEmail("carlos@canonical.com")
 
 And this is the POTemplate where the import will be done.
 
     >>> potemplate = firefox_potsubset.new(
-    ...     name='firefox',
-    ...     translation_domain='firefox',
-    ...     path='po/firefox.pot',
-    ...     owner=carlos)
+    ...     name="firefox",
+    ...     translation_domain="firefox",
+    ...     path="po/firefox.pot",
+    ...     owner=carlos,
+    ... )
 
 We've got a template with two pairs of messages with duplicated msgids.
 In the first pair of messages, there is context added using 'msgctxt'
@@ -55,7 +57,8 @@ present on both messages (note that two messages with the same msgid,
 where one contains a plural form and the other doesn't, are treated as
 the same message in gettext, and we have to use msgctxt on one of them).
 
-    >>> potemplate_contents = (r'''
+    >>> potemplate_contents = (
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -83,20 +86,25 @@ the same message in gettext, and we have to use msgctxt on one of them).
     ... msgid_plural "%%d files"
     ... msgstr[0] ""
     ... msgstr[1] ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')  # noqa
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... ).encode(
+    ...     "UTF-8"
+    ... )  # noqa
 
 This file can now be correctly imported:
 
-    >>> entry = import_pofile_or_potemplate(potemplate_contents, carlos,
-    ...                                     potemplate=potemplate)
+    >>> entry = import_pofile_or_potemplate(
+    ...     potemplate_contents, carlos, potemplate=potemplate
+    ... )
     >>> print(entry.status.name)
     IMPORTED
-    >>> flush_database_caches() # replace date SQL constant with real date
+    >>> flush_database_caches()  # replace date SQL constant with real date
 
 The method getPOTMsgSetByMsgIDText returns a message without context if
 no context is specified.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("bar")
     >>> print(potmsgset.singular_text)
     bar
     >>> print(potmsgset.context)
@@ -105,14 +113,15 @@ no context is specified.
 And if all the messages have a context, getPOTMsgSetByMsgIDText returns
 nothing when context is not specified.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%d file')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("%d file")
     >>> print(potmsgset)
     None
 
 To get a message with a context, we pass a context parameter.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar',
-    ...                                                context=u'context')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
+    ...     "bar", context="context"
+    ... )
     >>> print(potmsgset.singular_text)
     bar
     >>> print(potmsgset.context)
@@ -121,13 +130,15 @@ To get a message with a context, we pass a context parameter.
 It also works for plural form messages.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d file', context=u'First message')
+    ...     "%d file", context="First message"
+    ... )
     >>> print(potmsgset.singular_text)
     %d file
     >>> print(potmsgset.context)
     First message
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d file', u'%d files', context=u'Second message')
+    ...     "%d file", "%d files", context="Second message"
+    ... )
     >>> print(potmsgset.singular_text)
     %d file
     >>> print(potmsgset.context)
@@ -136,7 +147,8 @@ It also works for plural form messages.
 Importing a PO template with two messages with identical strings, but no
 context differences fails.
 
-    >>> potemplate_contents = (r'''
+    >>> potemplate_contents = (
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -151,12 +163,15 @@ context differences fails.
     ... msgctxt "context"
     ... msgid "bar"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... ).encode("UTF-8")
 
 Importing this file fails because of conflicting messages.
 
-    >>> entry = import_pofile_or_potemplate(potemplate_contents, carlos,
-    ...                                     potemplate=potemplate)
+    >>> entry = import_pofile_or_potemplate(
+    ...     potemplate_contents, carlos, potemplate=potemplate
+    ... )
     INFO We got an error import...
     ...duplicate msgid...
     >>> print(entry.status.name)
@@ -167,9 +182,10 @@ Importing PO files
 
 We can also import POFile with context messages.
 
-    >>> pofile = potemplate.newPOFile('sr')
-    >>> pofile.path='sr.po'
-    >>> pofile_contents = (r'''
+    >>> pofile = potemplate.newPOFile("sr")
+    >>> pofile.path = "sr.po"
+    >>> pofile_contents = (
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -197,56 +213,68 @@ We can also import POFile with context messages.
     ... msgstr[0] "%%d translation"
     ... msgstr[1] "%%d translationes"
     ... msgstr[2] "%%d translations"
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')  # noqa
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... ).encode(
+    ...     "UTF-8"
+    ... )  # noqa
 
 Importing this file succeeds.
 
-    >>> entry = import_pofile_or_potemplate(pofile_contents, carlos,
-    ...                                     pofile=pofile)
+    >>> entry = import_pofile_or_potemplate(
+    ...     pofile_contents, carlos, pofile=pofile
+    ... )
     >>> print(entry.status.name)
     IMPORTED
-    >>> flush_database_caches() # replace date SQL constant with real date
+    >>> flush_database_caches()  # replace date SQL constant with real date
 
 If we don't pass context to POFile.getPOMsgSet method, we get the translation
 for the message without a context.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("bar")
     >>> current = potmsgset.getCurrentTranslation(
-    ...     potemplate, pofile.language, potemplate.translation_side)
+    ...     potemplate, pofile.language, potemplate.translation_side
+    ... )
     >>> print(pretty(current.translations))
     ['bar with no context']
 
 If we pass the context parameter to getPOMsgSet, we get the translation for
 a message with context.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar',
-    ...                                                context=u'context')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
+    ...     "bar", context="context"
+    ... )
     >>> current = potmsgset.getCurrentTranslation(
-    ...      potemplate, pofile.language, potemplate.translation_side)
+    ...     potemplate, pofile.language, potemplate.translation_side
+    ... )
     >>> print(pretty(current.translations))
     ['bar with context']
 
 If message has a context, you cannot get it without specifying the context:
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'%file')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("%file")
     >>> print(potmsgset)
     None
 
 If you specify context, it actually works.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d file', context=u'First message')
+    ...     "%d file", context="First message"
+    ... )
     >>> current = potmsgset.getCurrentTranslation(
-    ...     potemplate, pofile.language, potemplate.translation_side)
+    ...     potemplate, pofile.language, potemplate.translation_side
+    ... )
     >>> print(pretty(current.translations))
     ['Translation %d']
 
 And for messages with plural forms, it gets all the translations.
 
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'%d file', u'%d files', context=u'Second message')
+    ...     "%d file", "%d files", context="Second message"
+    ... )
     >>> current = potmsgset.getCurrentTranslation(
-    ...     potemplate, pofile.language, potemplate.translation_side)
+    ...     potemplate, pofile.language, potemplate.translation_side
+    ... )
     >>> print(pretty(current.translations))
     ['%d translation', '%d translationes', '%d translations']
 
@@ -256,7 +284,7 @@ Export
 Make sure exported files are correct.  Exporting a POT file returns exactly
 the same contents, except that header is marked fuzzy.
 
-    >>> print(potemplate.export().decode('UTF-8'))
+    >>> print(potemplate.export().decode("UTF-8"))
     #, fuzzy
     msgid ""
     msgstr ""
@@ -297,8 +325,8 @@ the same contents, except that header is marked fuzzy.
 And a Serbian PO file is exported using regular export_pofile call.
 It's different from the imported file only in a few headers.
 
-    >>> pofile = potemplate.getPOFileByLang('sr')
-    >>> print(pofile.export().decode('UTF-8'))
+    >>> pofile = potemplate.getPOFileByLang("sr")
+    >>> print(pofile.export().decode("UTF-8"))
     msgid ""
     msgstr ""
     "Project-Id-Version: PACKAGE VERSION\n"
@@ -345,7 +373,8 @@ Messages with empty context
 Messages without msgctxt keyword and with empty value for msgctxt are
 not same.
 
-    >>> potemplate_contents = (r'''
+    >>> potemplate_contents = (
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -359,20 +388,23 @@ not same.
     ... msgctxt ""
     ... msgid "bar"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat()).encode('UTF-8')
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... ).encode("UTF-8")
 
 This file can now be correctly imported:
 
-    >>> entry = import_pofile_or_potemplate(potemplate_contents, carlos,
-    ...                                     potemplate=potemplate)
+    >>> entry = import_pofile_or_potemplate(
+    ...     potemplate_contents, carlos, potemplate=potemplate
+    ... )
     >>> print(entry.status.name)
     IMPORTED
-    >>> flush_database_caches() # replace date SQL constant with real date
+    >>> flush_database_caches()  # replace date SQL constant with real date
 
 The method getPOTMsgSetByMsgIDText returns a message without context if
 no context is specified.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("bar")
     >>> print(potmsgset.singular_text)
     bar
     >>> print(potmsgset.context)
@@ -381,7 +413,7 @@ no context is specified.
 The method getPOTMsgSetByMsgIDText returns a message with empty context
 if empty context is specified, and not the message with None context.
 
-    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText(u'bar', context=u'')
+    >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("bar", context="")
     >>> print(potmsgset.singular_text)
     bar
     >>> print(potmsgset.context)

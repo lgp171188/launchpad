@@ -14,7 +14,7 @@ We are going to fake a consumer for these examples. In order to ensure
 that the consumer is being fed the correct replies, we use a view that
 renders the parameters in the response in an easily testable format.
 
-    >>> anon_browser.open('http://testopenid.test/+echo?foo=bar')
+    >>> anon_browser.open("http://testopenid.test/+echo?foo=bar")
     >>> print(anon_browser.contents)
     Request method: GET
     foo:bar
@@ -31,9 +31,11 @@ POST request.
 
     >>> from urllib.parse import urlencode
     >>> anon_browser.open(
-    ...     'http://testopenid.test/+openid', data=urlencode({
-    ...         'openid.mode': 'associate',
-    ...         'openid.assoc_type': 'HMAC-SHA1'}))
+    ...     "http://testopenid.test/+openid",
+    ...     data=urlencode(
+    ...         {"openid.mode": "associate", "openid.assoc_type": "HMAC-SHA1"}
+    ...     ),
+    ... )
     >>> print(anon_browser.headers)
     Status: 200 Ok
     ...
@@ -50,7 +52,8 @@ Get the association handle, which we will need for later tests.
 
     >>> import re
     >>> [assoc_handle] = re.findall(
-    ...     'assoc_handle:(.*)', anon_browser.contents)
+    ...     "assoc_handle:(.*)", anon_browser.contents
+    ... )
 
 
 checkid_setup Mode
@@ -60,19 +63,21 @@ When we go to the OpenID setup URL, we are presented with a login form.
 By entering an email address we are directed back to the consumer,
 completing the OpenID request:
 
-    >>> args = urlencode({
-    ...     'openid.mode': 'checkid_setup',
-    ...     'openid.identity': 'http://testopenid.test/+id/mark_oid',
-    ...     'openid.assoc_handle': assoc_handle,
-    ...     'openid.return_to': 'http://testopenid.test/+echo',
-    ...     })
-    >>> user_browser.open('http://testopenid.test/+openid?%s' % args)
+    >>> args = urlencode(
+    ...     {
+    ...         "openid.mode": "checkid_setup",
+    ...         "openid.identity": "http://testopenid.test/+id/mark_oid",
+    ...         "openid.assoc_handle": assoc_handle,
+    ...         "openid.return_to": "http://testopenid.test/+echo",
+    ...     }
+    ... )
+    >>> user_browser.open("http://testopenid.test/+openid?%s" % args)
     >>> print(user_browser.url)
     http://testopenid.test/+openid?...
     >>> print(user_browser.title)
     Login
-    >>> user_browser.getControl(name='field.email').value = 'mark@example.com'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.getControl(name="field.email").value = "mark@example.com"
+    >>> user_browser.getControl("Continue").click()
 
     >>> print(user_browser.url)
     http://testopenid.test/+echo?...
@@ -90,7 +95,7 @@ completing the OpenID request:
 
 We will record the signature from this response to use in the next test:
 
-    >>> [sig] = re.findall('sig:(.*)', user_browser.contents)
+    >>> [sig] = re.findall("sig:(.*)", user_browser.contents)
 
 
 check_authentication Mode
@@ -102,16 +107,17 @@ Consumers or when verifying an invalidate_handle response.
 If an association handle is stateful (genereted using the associate Mode),
 check_authentication will fail.
 
-    >>> args = urlencode({
-    ...     'openid.mode': 'check_authentication',
-    ...     'openid.assoc_handle': assoc_handle,
-    ...     'openid.sig': sig,
-    ...     'openid.signed':  'return_to,mode,identity',
-    ...     'openid.identity':
-    ...         'http://testopenid.test/+id/mark_oid',
-    ...     'openid.return_to': 'http://testopenid.test/+echo',
-    ...     })
-    >>> user_browser.open('http://testopenid.test/+openid?%s' % args)
+    >>> args = urlencode(
+    ...     {
+    ...         "openid.mode": "check_authentication",
+    ...         "openid.assoc_handle": assoc_handle,
+    ...         "openid.sig": sig,
+    ...         "openid.signed": "return_to,mode,identity",
+    ...         "openid.identity": "http://testopenid.test/+id/mark_oid",
+    ...         "openid.return_to": "http://testopenid.test/+echo",
+    ...     }
+    ... )
+    >>> user_browser.open("http://testopenid.test/+openid?%s" % args)
     >>> print(user_browser.contents)
     is_valid:false
     <BLANKLINE>
@@ -120,15 +126,16 @@ If we are a dumb consumer though, we must invoke the check_authentication
 mode, passing back the association handle, signature and values of all
 fields that were signed.
 
-    >>> args = urlencode({
-    ...     'openid.mode': 'checkid_setup',
-    ...     'openid.identity':
-    ...         'http://testopenid.test/+id/mark_oid',
-    ...     'openid.return_to': 'http://testopenid.test/+echo',
-    ...     })
-    >>> user_browser.open('http://testopenid.test/+openid?%s' % args)
-    >>> user_browser.getControl(name='field.email').value = 'mark@example.com'
-    >>> user_browser.getControl('Continue').click()
+    >>> args = urlencode(
+    ...     {
+    ...         "openid.mode": "checkid_setup",
+    ...         "openid.identity": "http://testopenid.test/+id/mark_oid",
+    ...         "openid.return_to": "http://testopenid.test/+echo",
+    ...     }
+    ... )
+    >>> user_browser.open("http://testopenid.test/+openid?%s" % args)
+    >>> user_browser.getControl(name="field.email").value = "mark@example.com"
+    >>> user_browser.getControl("Continue").click()
     >>> print(user_browser.contents)
     Request method: GET
     openid.assoc_handle:...
@@ -141,22 +148,28 @@ fields that were signed.
     openid.signed:...
     <BLANKLINE>
 
-    >>> fields = dict(line.split(':', 1)
-    ...               for line in user_browser.contents.splitlines()[1:]
-    ...               if line.startswith('openid.'))
-    >>> signed = ['openid.' + name
-    ...           for name in fields['openid.signed'].split(',')]
-    >>> message = dict((key, value) for (key, value) in fields.items()
-    ...                if key in signed)
-    >>> message.update({
-    ...     'openid.mode': 'check_authentication',
-    ...     'openid.assoc_handle': fields['openid.assoc_handle'],
-    ...     'openid.sig': fields['openid.sig'],
-    ...     'openid.signed': fields['openid.signed'],
-    ...     })
+    >>> fields = dict(
+    ...     line.split(":", 1)
+    ...     for line in user_browser.contents.splitlines()[1:]
+    ...     if line.startswith("openid.")
+    ... )
+    >>> signed = [
+    ...     "openid." + name for name in fields["openid.signed"].split(",")
+    ... ]
+    >>> message = dict(
+    ...     (key, value) for (key, value) in fields.items() if key in signed
+    ... )
+    >>> message.update(
+    ...     {
+    ...         "openid.mode": "check_authentication",
+    ...         "openid.assoc_handle": fields["openid.assoc_handle"],
+    ...         "openid.sig": fields["openid.sig"],
+    ...         "openid.signed": fields["openid.signed"],
+    ...     }
+    ... )
 
     >>> args = urlencode(message)
-    >>> user_browser.open('http://testopenid.test/+openid', args)
+    >>> user_browser.open("http://testopenid.test/+openid", args)
     >>> print(user_browser.contents)
     is_valid:true
     <BLANKLINE>

@@ -31,7 +31,8 @@ have the launchpad.Driver permission.
 
     >>> user_browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
-    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
+    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row"
+    ... )
 
 no-priv will, of course, see their nomination.
 
@@ -55,7 +56,8 @@ buttons) directly either.
 
     >>> user_browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
-    ...     "+bug/1/nominations/2/+edit-form")
+    ...     "+bug/1/nominations/2/+edit-form"
+    ... )
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...
@@ -76,7 +78,8 @@ Approve and Decline buttons.
     >>> browser = setupBrowser("Basic foo.bar@canonical.com:test")
     >>> browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
-    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
+    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row"
+    ... )
 
     >>> approve_button = browser.getControl("Approve")
     >>> decline_button = browser.getControl("Decline")
@@ -96,7 +99,8 @@ Now only the "Approve" button shows.
     >>> browser = setupBrowser("Basic foo.bar@canonical.com:test")
     >>> browser.open(
     ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
-    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
+    ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row"
+    ... )
 
     >>> browser.contents
     '...Declined...for...Hoary...by...Foo Bar...'

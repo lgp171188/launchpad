@@ -1,7 +1,8 @@
 We need to login in order to add attachments.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -9,24 +10,28 @@ We need to login in order to add attachments.
 When we're logged in we can access the page.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
 
 Let's add an attachment. First create a file-like object.
 
     >>> from io import BytesIO
-    >>> foo_file = BytesIO(b'Traceback...')
+    >>> foo_file = BytesIO(b"Traceback...")
 
 Leading and trailing whitespace are stripped from the description of the
 attachment.
 
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...     foo_file, 'text/plain', 'foo.txt')
-    >>> user_browser.getControl('Description').value = (
-    ...     '   Some information   ')
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Added some information'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     "Description"
+    ... ).value = "   Some information   "
+    >>> user_browser.getControl(
+    ...     name="field.comment"
+    ... ).value = "Added some information"
+    >>> user_browser.getControl("Post Comment").click()
 
 After we added the attachment, we get redirected to the bug page.
 
@@ -35,63 +40,71 @@ After we added the attachment, we get redirected to the bug page.
 
 We can check that the attachment is there
 
-    >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-    >>> for li_tag in attachments.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> attachments = find_portlet(user_browser.contents, "Bug attachments")
+    >>> for li_tag in attachments.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     Some information
 
-    >>> link = user_browser.getLink('Some information')
+    >>> link = user_browser.getLink("Some information")
     >>> link.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+files/foo.txt'
 
-    >>> 'Added some information' in user_browser.contents
+    >>> "Added some information" in user_browser.contents
     True
 
 And that we stripped the leading and trailing whitespace correctly
 
-    >>> '   Some information   ' in user_browser.contents
+    >>> "   Some information   " in user_browser.contents
     False
-    >>> 'Some information' in user_browser.contents
+    >>> "Some information" in user_browser.contents
     True
 
 If no description is given it gets set to the attachment filename. It's
 also not necessary to enter a comment in order to add an attachment.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
-    >>> bar_file = BytesIO(b'Traceback...')
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   bar_file, 'text/plain', 'bar.txt')
-    >>> user_browser.getControl('Description').value = ''
-    >>> user_browser.getControl(name="field.comment").value = ''
-    >>> user_browser.getControl('Post Comment').click()
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
+    >>> bar_file = BytesIO(b"Traceback...")
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     bar_file, "text/plain", "bar.txt"
+    ... )
+    >>> user_browser.getControl("Description").value = ""
+    >>> user_browser.getControl(name="field.comment").value = ""
+    >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
-    >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-    >>> for li_tag in attachments.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> attachments = find_portlet(user_browser.contents, "Bug attachments")
+    >>> for li_tag in attachments.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     Some information
     bar.txt
 
 We can also declare an attachment to be a patch.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
 
 Leading and trailing whitespace are stripped from the description of the
 attachment.
 
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo.diff')
-    >>> user_browser.getControl('Description').value = 'A fix for this bug.'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo.diff"
+    ... )
+    >>> user_browser.getControl("Description").value = "A fix for this bug."
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Added some information'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     name="field.comment"
+    ... ).value = "Added some information"
+    >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
@@ -99,17 +112,21 @@ If we add an attachment that looks like a patch but if we don't set
 the flag "this attachment is a patch"...
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo2.diff')
-    >>> user_browser.getControl('Description').value = 'More data'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo2.diff"
+    ... )
+    >>> user_browser.getControl("Description").value = "More data"
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = False
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Added even more information'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     name="field.comment"
+    ... ).value = "Added even more information"
+    >>> user_browser.getControl("Post Comment").click()
 
 ...we are redirected to a page...
 
@@ -119,18 +136,23 @@ the flag "this attachment is a patch"...
 ...where we see a message that we should double-check if this file
 is indeed not a patch.
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'documentDescription')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(
+    ...             user_browser.contents, "documentDescription"
+    ...         )[0]
+    ...     )
+    ... )
     This file looks like a patch.
     What is a patch?
 
 Also, we have "yes"/"no" radio buttons to answer the question "Is this a
 patch?". The currently selected radio button is "yes".
 
-    >>> patch_control_yes = user_browser.getControl('yes')
+    >>> patch_control_yes = user_browser.getControl("yes")
     >>> patch_control_yes.selected
     True
-    >>> patch_control_no = user_browser.getControl('no')
+    >>> patch_control_no = user_browser.getControl("no")
     >>> patch_control_no.selected
     False
 
@@ -138,16 +160,17 @@ We want indeed to declare the file as not being a patch, so we unselect
 the "patch" checkbox again and submit the form.
 
     >>> patch_control_no.selected = True
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Change").click()
 
 Now we are redirected to the main bug page, and the new file is
 listed as an ordinary attachment.
 
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
-    >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-    >>> for li_tag in attachments.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> attachments = find_portlet(user_browser.contents, "Bug attachments")
+    >>> for li_tag in attachments.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     Some information
     bar.txt
     More data
@@ -156,15 +179,18 @@ Similarly, if we add an attachment that does not look like a patch and
 if we set the "patch" flag for this attachment...
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo.png')
-    >>> user_browser.getControl('Description').value = 'A better icon for foo'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo.png"
+    ... )
+    >>> user_browser.getControl("Description").value = "A better icon for foo"
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl('Post Comment').click()
+    >>> user_browser.getControl("Post Comment").click()
 
 ...we are redirected to the page where we must confirm that this attachment
 is indeed a patch.
@@ -175,17 +201,22 @@ is indeed a patch.
 ...where we see a message asking us if we really ant to declare this file
 as a patch.
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'documentDescription')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(
+    ...             user_browser.contents, "documentDescription"
+    ...         )[0]
+    ...     )
+    ... )
     This file does not look like a patch.
     What is a patch?
 
 Also, the "patch" flag is not yet set.
 
-    >>> patch_control_yes = user_browser.getControl('yes')
+    >>> patch_control_yes = user_browser.getControl("yes")
     >>> patch_control_yes.selected
     False
-    >>> patch_control_no = user_browser.getControl('no')
+    >>> patch_control_no = user_browser.getControl("no")
     >>> patch_control_no.selected
     True
 
@@ -193,7 +224,7 @@ Let's pretend that the file contains an improved icon, so we set
 the "patch" flag again and save the changes.
 
     >>> patch_control_yes.selected = True
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Change").click()
 
 Now we are redirected to the main bug page...
 
@@ -202,9 +233,10 @@ Now we are redirected to the main bug page...
 
 ...and the new attachment is listed as a patch.
 
-    >>> patches = find_portlet(user_browser.contents, 'Patches')
-    >>> for li_tag in patches.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> patches = find_portlet(user_browser.contents, "Patches")
+    >>> for li_tag in patches.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     A fix for this bug.
     A better icon for foo
 
@@ -213,89 +245,102 @@ when we tell it that plain text files whose names end in ".diff",
 ".debdiff", or ".patch" are patch attachments:
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo3.diff')
-    >>> user_browser.getControl('Description').value = 'the foo3 patch'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo3.diff"
+    ... )
+    >>> user_browser.getControl("Description").value = "the foo3 patch"
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Add foo3.diff as a patch.'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     name="field.comment"
+    ... ).value = "Add foo3.diff as a patch."
+    >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo4.debdiff')
-    >>> user_browser.getControl('Description').value = 'the foo4 patch'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo4.debdiff"
+    ... )
+    >>> user_browser.getControl("Description").value = "the foo4 patch"
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Add foo4.debdiff as a patch.'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     name="field.comment"
+    ... ).value = "Add foo4.debdiff as a patch."
+    >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bug/1/+addcomment')
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> _ = foo_file.seek(0)
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo5.patch')
-    >>> user_browser.getControl('Description').value = 'the foo5 patch'
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo5.patch"
+    ... )
+    >>> user_browser.getControl("Description").value = "the foo5 patch"
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
     >>> user_browser.getControl(
-    ...     name="field.comment").value = 'Add foo5.patch as a patch.'
-    >>> user_browser.getControl('Post Comment').click()
+    ...     name="field.comment"
+    ... ).value = "Add foo5.patch as a patch."
+    >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
 We can also edit the attachment details, let's navigate to that page.
 
     >>> import re
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
-    >>> user_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bug/1")
+    >>> user_browser.getLink(url=re.compile(r".*/\+attachment/\d+$")).click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/...'
 
-    >>> 'Edit attachment' in user_browser.contents
+    >>> "Edit attachment" in user_browser.contents
     True
 
 There's also an option to cancel, which takes you back to the bug
 page, maintaining the firefox context.
 
-    >>> user_browser.getLink('Cancel')
+    >>> user_browser.getLink("Cancel")
     <Link text='Cancel' url='http://bugs.launchpad.test/firefox/+bug/1'>
 
 After editing the attachment details (we leave some leading and trailing
 whitespace to test that's correctly stripped)...
 
-    >>> user_browser.getControl('Title').value = '   Another title  '
-    >>> user_browser.getControl('Content Type').value = 'text/html'
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Title").value = "   Another title  "
+    >>> user_browser.getControl("Content Type").value = "text/html"
+    >>> user_browser.getControl("Change").click()
 
 ...we're redirected to the bug page
 
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
 
-    >>> 'Another title' in user_browser.contents
+    >>> "Another title" in user_browser.contents
     True
 
 We can edit the attachment to be a patch.
 
-    >>> user_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
+    >>> user_browser.getLink(url=re.compile(r".*/\+attachment/\d+$")).click()
     >>> patch_control = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Change").click()
 
 The server now checks if the attachment looks like a patch. In this case,
 is doesn't, and we get the edit page again, with a message asking us if
@@ -304,8 +349,13 @@ the attachment should indeed be labeled as a patch
     >>> user_browser.url  # noqa
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/.../+confirm-is-patch'
 
-    >>> print(extract_text(find_tags_by_class(
-    ...     user_browser.contents, 'documentDescription')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(
+    ...             user_browser.contents, "documentDescription"
+    ...         )[0]
+    ...     )
+    ... )
     This file does not look like a patch.
     What is a patch?
 
@@ -313,14 +363,14 @@ We are sure that this file is indeed a patch, so let's activate the
 currently inactive "yes" radion button of the question "Is this a patch?"
 again and submit the form.
 
-    >>> patch_control_yes = user_browser.getControl('yes')
+    >>> patch_control_yes = user_browser.getControl("yes")
     >>> patch_control_yes.selected
     False
-    >>> patch_control_no = user_browser.getControl('no')
+    >>> patch_control_no = user_browser.getControl("no")
     >>> patch_control_no.selected
     True
     >>> patch_control_yes.selected = True
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.getControl("Change").click()
 
 Now we are redirected to the main bug page...
 
@@ -330,9 +380,10 @@ Now we are redirected to the main bug page...
 ...the attachment that became a patch is now shown in the portlet
 "Patches"...
 
-    >>> patches = find_portlet(user_browser.contents, 'Patches')
-    >>> for li_tag in patches.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> patches = find_portlet(user_browser.contents, "Patches")
+    >>> for li_tag in patches.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     Another title
     A fix for this bug.
     A better icon for foo
@@ -342,9 +393,10 @@ Now we are redirected to the main bug page...
 
 ...while it is gone from the portlet "Bug attachments".
 
-    >>> attachments = find_portlet(user_browser.contents, 'Bug attachments')
-    >>> for li_tag in attachments.find_all('li', 'download-attachment'):
-    ...   print(li_tag.a.decode_contents())
+    >>> attachments = find_portlet(user_browser.contents, "Bug attachments")
+    >>> for li_tag in attachments.find_all("li", "download-attachment"):
+    ...     print(li_tag.a.decode_contents())
+    ...
     bar.txt
     More data
 
@@ -352,58 +404,70 @@ Clicking the link "Add patch" in the patches portlet opens the form
 to add bug comments with the checkbox "This attachment is a patch"
 enabled.
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
-    >>> user_browser.getLink('Add patch').click()
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bug/1")
+    >>> user_browser.getLink("Add patch").click()
     >>> patch_checkbox = user_browser.getControl(
-    ...     'This attachment contains a solution (patch) for this bug')
+    ...     "This attachment contains a solution (patch) for this bug"
+    ... )
     >>> patch_checkbox.selected
     True
 
 Let's add a normal text file...
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
 
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"Traceback..."), "text/plain", "foo.txt")
+    ...     BytesIO(b"Traceback..."), "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl("Description").value = "Some information."
     >>> user_browser.getControl(
-    ...     name="field.comment").value = "Added some information."
+    ...     name="field.comment"
+    ... ).value = "Added some information."
     >>> user_browser.getControl("Post Comment").click()
 
 And a patch...
 
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/debian/+source/mozilla-firefox"
-    ...     "/+bug/2/+addcomment")
+    ...     "/+bug/2/+addcomment"
+    ... )
 
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"Patch..."), "text/plain", "foo.patch")
+    ...     BytesIO(b"Patch..."), "text/plain", "foo.patch"
+    ... )
     >>> user_browser.getControl("patch").selected = True
     >>> user_browser.getControl("Description").value = "A patch."
     >>> user_browser.getControl(
-    ...     name="field.comment").value = "This patch fixes the bug."
+    ...     name="field.comment"
+    ... ).value = "This patch fixes the bug."
     >>> user_browser.getControl("Post Comment").click()
 
 And another patch...
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/4/+addcomment")
+    ...     "http://bugs.launchpad.test/firefox/+bug/4/+addcomment"
+    ... )
 
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"Patch..."), "text/plain", "foo.patch")
+    ...     BytesIO(b"Patch..."), "text/plain", "foo.patch"
+    ... )
     >>> user_browser.getControl("patch").selected = True
     >>> user_browser.getControl("Description").value = "A patch."
     >>> user_browser.getControl(
-    ...     name="field.comment").value = "This patch fixes the bug."
+    ...     name="field.comment"
+    ... ).value = "This patch fixes the bug."
     >>> user_browser.getControl("Post Comment").click()
 
 And now we'll search for patches for firefox bugs.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1")
+    ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"
+    ... )
     >>> user_browser.getControl(
-    ...     "Show only bugs with patches available").selected = True
+    ...     "Show only bugs with patches available"
+    ... ).selected = True
     >>> user_browser.getControl("Search", index=1).click()
 
     >>> print(user_browser.contents)

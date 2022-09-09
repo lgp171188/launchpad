@@ -22,11 +22,16 @@ page, and this is why the event stream elides it doesn't include it:
     >>> bug_ten_bugtask = bug_ten.bugtasks[0]
 
     >>> bug_view = getMultiAdapter(
-    ...     (bug_ten_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug_ten_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
     >>> def bug_comments(bug_view):
-    ...     return [event.get('comment') for event in
-    ...         bug_view.activity_and_comments if event.get('comment')]
+    ...     return [
+    ...         event.get("comment")
+    ...         for event in bug_view.activity_and_comments
+    ...         if event.get("comment")
+    ...     ]
+    ...
     >>> [bug_comment.index for bug_comment in bug_comments(bug_view)]
     [1]
 
@@ -55,7 +60,8 @@ first comment.
     >>> bug_11 = getUtility(IBugSet).get(11)
     >>> bug_11_bugtask = bug_11.bugtasks[0]
     >>> bug_11_view = getMultiAdapter(
-    ...     (bug_11_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug_11_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_11_view.initialize()
     >>> rendered_comments = bug_comments(bug_11_view)
     >>> [bug_comment.index for bug_comment in rendered_comments]
@@ -67,12 +73,17 @@ in activity_and_comments...
     >>> from io import BytesIO
     >>> login("test@canonical.com")
     >>> attachment = bug_11.addAttachment(
-    ...     owner=None, data=BytesIO(b'whatever'),
-    ...     comment=bug_11.initial_message, filename='test.txt',
-    ...     is_patch=False, content_type='text/plain',
-    ...     description='sample data')
+    ...     owner=None,
+    ...     data=BytesIO(b"whatever"),
+    ...     comment=bug_11.initial_message,
+    ...     filename="test.txt",
+    ...     is_patch=False,
+    ...     content_type="text/plain",
+    ...     description="sample data",
+    ... )
     >>> bug_11_view = getMultiAdapter(
-    ...     (bug_11_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug_11_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_11_view.initialize()
     >>> rendered_comments = bug_comments(bug_11_view)
     >>> [bug_comment.index for bug_comment in rendered_comments]
@@ -101,7 +112,7 @@ threshold so that all comments truncate.
     ...     [malone]
     ...     max_comment_size: 20
     ...     """
-    >>> config.push('max_comment_size', max_comment_size)
+    >>> config.push("max_comment_size", max_comment_size)
 
 (For bug comments the context isn't too important, so we get the page using
 just any of the bug's bugtask.)
@@ -109,21 +120,24 @@ just any of the bug's bugtask.)
     >>> bug_two = getUtility(IBugSet).get(2)
     >>> bug_two_bugtask = bug_two.bugtasks[0]
     >>> bug_view = getMultiAdapter(
-    ...     (bug_two_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug_two_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
 
 If we get the bug comments from the view we can see that the two additional
 comments have been truncated:
 
-    >>> [(bug_comment.index, bug_comment.too_long)
-    ...  for bug_comment in bug_comments(bug_view)]
+    >>> [
+    ...     (bug_comment.index, bug_comment.too_long)
+    ...     for bug_comment in bug_comments(bug_view)
+    ... ]
     [(1, True), (2, True)]
 
 Let's take a closer look at one of the truncated comments. We can
 display the truncated text using text_for_display:
 
     >>> comment_one = bug_comments(bug_view)[0]
-    >>> print(comment_one.text_for_display) #doctest: -ELLIPSIS
+    >>> print(comment_one.text_for_display)  # doctest: -ELLIPSIS
     This would be a real...
 
 The UI will display information about the comment being truncated and
@@ -169,6 +183,7 @@ displayed.
     >>> all_comments = get_comments_for_bugtask(bug_11.bugtasks[0])
     >>> for comment in all_comments:
     ...     print(comment.display_title, comment.title)
+    ...
     False Make Jokosher use autoaudiosink
     False Re: Make Jokosher use autoaudiosink
     False Re: Make Jokosher use autoaudiosink
@@ -180,6 +195,7 @@ displayed.
     >>> all_comments = get_comments_for_bugtask(bug_12.bugtasks[0])
     >>> for comment in all_comments:
     ...     print(comment.display_title, comment.title)
+    ...
     False Copy, Cut and Delete operations should work on selections
     False Re: Copy, Cut and Delete operations should work on selections
     False Re: Copy, Cut and Delete operations should work on selections
@@ -197,26 +213,36 @@ attachments to a bug to see this in action:
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> user = getUtility(ILaunchBag).user
-    >>> different_user = getUtility(IPersonSet).getByName('name16')
+    >>> different_user = getUtility(IPersonSet).getByName("name16")
 
     >>> login("test@canonical.com")
     >>> bug_three = getUtility(IBugSet).get(3)
     >>> m1 = bug_three.newMessage(
-    ...     owner=user, subject="Hi", content="Hello there")
+    ...     owner=user, subject="Hi", content="Hello there"
+    ... )
     >>> m2 = bug_three.newMessage(
-    ...     owner=user, subject="Hi", content="Hello there")
+    ...     owner=user, subject="Hi", content="Hello there"
+    ... )
     >>> m3 = bug_three.newMessage(
-    ...     owner=user, subject="Ho", content="Hello there")
+    ...     owner=user, subject="Ho", content="Hello there"
+    ... )
     >>> m4 = bug_three.newMessage(
-    ...     owner=user, subject="Ho", content="Hello there")
+    ...     owner=user, subject="Ho", content="Hello there"
+    ... )
     >>> file_ = BytesIO(b"Bogus content makes the world go round")
     >>> a1 = bug_three.addAttachment(
-    ...     owner=user, data=file_, description="Ho",
-    ...     filename="munchy", comment="Hello there")
+    ...     owner=user,
+    ...     data=file_,
+    ...     description="Ho",
+    ...     filename="munchy",
+    ...     comment="Hello there",
+    ... )
     >>> m6 = bug_three.newMessage(
-    ...     owner=user, subject="Ho", content="Hello there")
+    ...     owner=user, subject="Ho", content="Hello there"
+    ... )
     >>> m7 = bug_three.newMessage(
-    ...     owner=different_user, subject="Ho", content="Hello there")
+    ...     owner=different_user, subject="Ho", content="Hello there"
+    ... )
     >>> bug_three.messages.count()
     8
 
@@ -227,10 +253,12 @@ hidden.
 
     >>> bug_three_bugtask = bug_three.bugtasks[0]
     >>> bug_view = getMultiAdapter(
-    ...     (bug_three_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug_three_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
     >>> for c in bug_comments(bug_view):
     ...     print("%d: '%s', '%s'" % (c.index, c.title, c.text_for_display))
+    ...
     1: 'Hi', 'Hello there'
     3: 'Ho', 'Hello there'
     5: 'Ho', 'Hello there'
@@ -255,18 +283,20 @@ comments_list_max_length, the list is truncated to show the oldest and
 newest bugs, with a visual break in between.
 
     >>> from lp.services.config import config
-    >>> config.push('malone', '''
+    >>> config.push(
+    ...     "malone",
+    ...     """
     ... [malone]
     ... comments_list_max_length: 10
     ... comments_list_truncate_oldest_to: 3
     ... comments_list_truncate_newest_to: 5
-    ... ''')
+    ... """,
+    ... )
 
 We'll create an example bug with 9 comments.
 
     >>> import itertools
-    >>> from lp.bugs.interfaces.bugmessage import (
-    ...     IBugMessageSet)
+    >>> from lp.bugs.interfaces.bugmessage import IBugMessageSet
 
     >>> comment_counter = itertools.count(1)
     >>> def add_comments(bug, how_many):
@@ -274,8 +304,12 @@ We'll create an example bug with 9 comments.
     ...     for i in range(how_many):
     ...         num = next(comment_counter)
     ...         bug_message_set.createMessage(
-    ...             "Comment %d" % num, bug, bug.owner,
-    ...             "Something or other #%d" % num)
+    ...             "Comment %d" % num,
+    ...             bug,
+    ...             bug.owner,
+    ...             "Something or other #%d" % num,
+    ...         )
+    ...
 
     >>> bug = factory.makeBug()
     >>> add_comments(bug, 9)
@@ -283,7 +317,8 @@ We'll create an example bug with 9 comments.
 If we create a view for this, we can see that truncation is disabled.
 
     >>> bug_view = getMultiAdapter(
-    ...     (bug.default_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug.default_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
     >>> bug_view.visible_comments_truncated_for_display
     False
@@ -293,7 +328,8 @@ Add two more comments, and the list will be truncated to only 8 total.
     >>> add_comments(bug, 2)
 
     >>> bug_view = getMultiAdapter(
-    ...     (bug.default_bugtask, LaunchpadTestRequest()), name='+index')
+    ...     (bug.default_bugtask, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
 
     >>> bug_view.visible_comments_truncated_for_display
@@ -305,9 +341,10 @@ Add two more comments, and the list will be truncated to only 8 total.
 
 The display of all comments can be requested with a form parameter.
 
-    >>> request = LaunchpadTestRequest(form={'comments': 'all'})
+    >>> request = LaunchpadTestRequest(form={"comments": "all"})
     >>> bug_view = getMultiAdapter(
-    ...     (bug.default_bugtask, request), name='+index')
+    ...     (bug.default_bugtask, request), name="+index"
+    ... )
     >>> bug_view.initialize()
 
     >>> bug_view.visible_comments_truncated_for_display
@@ -315,7 +352,7 @@ The display of all comments can be requested with a form parameter.
 
 Restore the configuration to its previous setting.
 
-    >>> config.pop('malone')
+    >>> config.pop("malone")
     (...)
 
 
@@ -324,7 +361,7 @@ Wrapping up
 
 Be nice and restore the comment size to what it was originally.
 
-    >>> config_data = config.pop('max_comment_size')
+    >>> config_data = config.pop("max_comment_size")
 
 
 Displaying BugComments with activity
@@ -340,22 +377,30 @@ doc/bugactivity.rst for details of the BugActivityItem class).
     >>> from lp.bugs.interfaces.bugactivity import IBugActivitySet
 
     >>> user = factory.makePerson(displayname="Arthur Dent")
-    >>> message = factory.makeMessage(
-    ...     content="Comment content", owner=user)
+    >>> message = factory.makeMessage(content="Comment content", owner=user)
     >>> bug_task = factory.makeBugTask(owner=user)
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_task.bug, whatchanged='malone: status',
-    ...     oldvalue='New', newvalue='Confirmed',
-    ...     person=user, datechanged=message.datecreated)
+    ...     bug=bug_task.bug,
+    ...     whatchanged="malone: status",
+    ...     oldvalue="New",
+    ...     newvalue="Confirmed",
+    ...     person=user,
+    ...     datechanged=message.datecreated,
+    ... )
     >>> activity_item = BugActivityItem(activity)
 
     >>> bug_comment = BugComment(
-    ...     index=0, message=message, bugtask=bug_task,
-    ...     activity=[activity_item])
+    ...     index=0,
+    ...     message=message,
+    ...     bugtask=bug_task,
+    ...     activity=[activity_item],
+    ... )
 
     >>> for activity in bug_comment.activity:
-    ...     print("%s: %s" % (
-    ...         activity.change_summary, activity.change_details))
+    ...     print(
+    ...         "%s: %s" % (activity.change_summary, activity.change_details)
+    ...     )
+    ...
     status: New &#8594; Confirmed
 
 The activity will be inserted into the footer of the comment. If a
@@ -387,35 +432,54 @@ not included in BugComment.patches.
     >>> bug_task = factory.makeBugTask(owner=user)
     >>> bug = bug_task.bug
     >>> attachment_1 = bug.addAttachment(
-    ...     owner=None, data=BytesIO(b'whatever'),
-    ...     comment=bug.initial_message, filename='file1',
-    ...     is_patch=False, content_type='text/plain',
-    ...     description='sample data 1')
+    ...     owner=None,
+    ...     data=BytesIO(b"whatever"),
+    ...     comment=bug.initial_message,
+    ...     filename="file1",
+    ...     is_patch=False,
+    ...     content_type="text/plain",
+    ...     description="sample data 1",
+    ... )
     >>> attachment_2 = bug.addAttachment(
-    ...     owner=None, data=BytesIO(b'whatever'),
-    ...     comment=bug.initial_message, filename='file2',
-    ...     is_patch=False, content_type='text/plain',
-    ...     description='sample data 2')
+    ...     owner=None,
+    ...     data=BytesIO(b"whatever"),
+    ...     comment=bug.initial_message,
+    ...     filename="file2",
+    ...     is_patch=False,
+    ...     content_type="text/plain",
+    ...     description="sample data 2",
+    ... )
     >>> patch_1 = bug.addAttachment(
-    ...     owner=None, data=BytesIO(b'whatever'),
-    ...     comment=bug.initial_message, filename='patch1',
-    ...     is_patch=True, content_type='text/plain',
-    ...     description='patch 1')
+    ...     owner=None,
+    ...     data=BytesIO(b"whatever"),
+    ...     comment=bug.initial_message,
+    ...     filename="patch1",
+    ...     is_patch=True,
+    ...     content_type="text/plain",
+    ...     description="patch 1",
+    ... )
     >>> patch_2 = bug.addAttachment(
-    ...     owner=None, data=BytesIO(b'whatever'),
-    ...     comment=bug.initial_message, filename='patch2',
-    ...     is_patch=True, content_type='text/plain',
-    ...     description='patch 2')
+    ...     owner=None,
+    ...     data=BytesIO(b"whatever"),
+    ...     comment=bug.initial_message,
+    ...     filename="patch2",
+    ...     is_patch=True,
+    ...     content_type="text/plain",
+    ...     description="patch 2",
+    ... )
     >>> bug_view = getMultiAdapter(
-    ...     (bug_task, LaunchpadTestRequest()), name='+index')
+    ...     (bug_task, LaunchpadTestRequest()), name="+index"
+    ... )
     >>> bug_view.initialize()
 
     >>> bug_comment = bug_view.comments[0]
     >>> for attachment in bug_comment.bugattachments:
     ...     print(attachment.title, attachment.type.title)
+    ...
     sample data 1 Unspecified
     sample data 2 Unspecified
     >>> for patch in bug_comment.patches:
     ...     print(patch.title, patch.type.title)
+    ...
     patch 1 Patch
     patch 2 Patch

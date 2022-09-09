@@ -15,21 +15,22 @@ First, set all the bugs to private.
 
 There should be zero entries in these feeds, since all the bugs are private.
 
-    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.atom')
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    >>> browser.open("http://feeds.launchpad.test/jokosher/latest-bugs.atom")
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
-    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.atom')
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    >>> browser.open("http://feeds.launchpad.test/mozilla/latest-bugs.atom")
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
-    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.atom')
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    >>> browser.open("http://feeds.launchpad.test/~name16/latest-bugs.atom")
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.test/~simple-team/latest-bugs.atom')
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    ...     "http://feeds.launchpad.test/~simple-team/latest-bugs.atom"
+    ... )
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
     >>> from lp.services.config import config
@@ -37,58 +38,64 @@ There should be zero entries in these feeds, since all the bugs are private.
     ...     [launchpad]
     ...     is_bug_search_feed_active: True
     ...     """
-    >>> config.push('bug_search_feed_data', bug_search_feed_data)
-    >>> browser.open('http://feeds.launchpad.test/bugs/+bugs.atom?'
-    ...        'field.searchtext=&search=Search+Bug+Reports&'
-    ...        'field.scope=all&field.scope.target=')
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    >>> config.push("bug_search_feed_data", bug_search_feed_data)
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/bugs/+bugs.atom?"
+    ...     "field.searchtext=&search=Search+Bug+Reports&"
+    ...     "field.scope=all&field.scope.target="
+    ... )
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
 There should be just one <tr> elements for the table header in
 these HTML feeds, since all the bugs are private.
 
-    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.html')
-    >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
+    >>> browser.open("http://feeds.launchpad.test/jokosher/latest-bugs.html")
+    >>> len(BeautifulSoup(browser.contents, "xml")("tr"))
     1
 
-    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
+    >>> print(extract_text(BeautifulSoup(browser.contents, "xml")("tr")[0]))
     Bugs in Jokosher
 
-    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html')
-    >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
+    >>> browser.open("http://feeds.launchpad.test/mozilla/latest-bugs.html")
+    >>> len(BeautifulSoup(browser.contents, "xml")("tr"))
     1
 
-    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
+    >>> print(extract_text(BeautifulSoup(browser.contents, "xml")("tr")[0]))
     Bugs in The Mozilla Project
 
-    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.html')
-    >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
+    >>> browser.open("http://feeds.launchpad.test/~name16/latest-bugs.html")
+    >>> len(BeautifulSoup(browser.contents, "xml")("tr"))
     1
 
-    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
+    >>> print(extract_text(BeautifulSoup(browser.contents, "xml")("tr")[0]))
     Bugs for Foo Bar
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.test/~simple-team/latest-bugs.html')
-    >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
+    ...     "http://feeds.launchpad.test/~simple-team/latest-bugs.html"
+    ... )
+    >>> len(BeautifulSoup(browser.contents, "xml")("tr"))
     1
 
-    >>> print(extract_text(BeautifulSoup(browser.contents, 'xml')('tr')[0]))
+    >>> print(extract_text(BeautifulSoup(browser.contents, "xml")("tr")[0]))
     Bugs for Simple Team
 
-    >>> browser.open('http://feeds.launchpad.test/bugs/+bugs.html?'
-    ...        'field.searchtext=&search=Search+Bug+Reports&'
-    ...        'field.scope=all&field.scope.target=')
-    >>> len(BeautifulSoup(browser.contents, 'xml')('tr'))
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/bugs/+bugs.html?"
+    ...     "field.searchtext=&search=Search+Bug+Reports&"
+    ...     "field.scope=all&field.scope.target="
+    ... )
+    >>> len(BeautifulSoup(browser.contents, "xml")("tr"))
     1
 
     >>> try:
-    ...      browser.open('http://feeds.launchpad.test/bugs/1/bug.html')
+    ...     browser.open("http://feeds.launchpad.test/bugs/1/bug.html")
     ... except Unauthorized:
     ...     print("Shouldn't  raise Unauthorized exception")
-    >>> BeautifulSoup(browser.contents, 'xml')('entry')
+    ...
+    >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
 Revert configuration change after tests are finished.
 
-    >>> config_data = config.pop('bug_search_feed_data')
+    >>> config_data = config.pop("bug_search_feed_data")

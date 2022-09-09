@@ -16,9 +16,11 @@ First, we'll construct an example object hierarchy.
 
     >>> class ICookbook(Interface):
     ...     pass
+    ...
 
     >>> class IRecipe(Interface):
     ...     pass
+    ...
 
     >>> @implementer(ICanonicalUrlData)
     ... class BaseContent:
@@ -30,6 +32,7 @@ First, we'll construct an example object hierarchy.
 
     >>> class Root(BaseContent):
     ...     pass
+    ...
 
     >>> @implementer(ICookbook)
     ... class Cookbook(BaseContent):
@@ -41,9 +44,9 @@ First, we'll construct an example object hierarchy.
 
 Here is the structure of our hierarchy:
 
-    >>> root = BaseContent('', None)
-    >>> cookbook = Cookbook('joy-of-cooking', root)
-    >>> recipe = Recipe('fried-spam', cookbook)
+    >>> root = BaseContent("", None)
+    >>> cookbook = Cookbook("joy-of-cooking", root)
+    >>> recipe = Recipe("fried-spam", cookbook)
 
 
 Using nearest_adapter
@@ -53,6 +56,7 @@ We'll try adapting our objects to a made-up interface, ICookingDirections.
 
     >>> class ICookingDirections(Interface):
     ...     """Something that tells us how to cook."""
+    ...
 
     >>> @implementer(ICookingDirections)
     ... class CookingDirections:
@@ -62,8 +66,10 @@ We'll try adapting our objects to a made-up interface, ICookingDirections.
 Right now, none of our example objects can be turned into cooking
 directions.
 
-    >>> from lp.services.webapp.canonicalurl import (nearest_adapter,
-    ...     nearest_context_with_adapter)
+    >>> from lp.services.webapp.canonicalurl import (
+    ...     nearest_adapter,
+    ...     nearest_context_with_adapter,
+    ... )
 
     >>> print(nearest_adapter(root, ICookingDirections))
     None
@@ -124,33 +130,38 @@ First we need a named adapter to use:
     >>> from zope.component import queryAdapter
 
     >>> class ILabelledCookbook(Interface):
-    ...     """ A recipe with a name."""
+    ...     """A recipe with a name."""
+    ...
 
     >>> @implementer(ILabelledCookbook)
     ... class LabelledCookbook:
     ...     def __init__(self, context):
     ...         self.context = context
 
-    >>> provideAdapter(LabelledCookbook, [ICookbook], ILabelledCookbook,
-    ...     name='foo')
+    >>> provideAdapter(
+    ...     LabelledCookbook, [ICookbook], ILabelledCookbook, name="foo"
+    ... )
 
     >>> print(queryAdapter(cookbook, ILabelledCookbook))
     None
-    >>> queryAdapter(cookbook, ILabelledCookbook, name='foo')
+    >>> queryAdapter(cookbook, ILabelledCookbook, name="foo")
     <...LabelledCookbook ...>
 
 nearest_adapter() behaves as it would with a regular adapter.  The named
 adapter for the next highest object in the canonical URL is returned.
 For a recipe, this is the adapter for the cookbook:
 
-    >>> nearest_adapter(recipe, ILabelledCookbook, name='foo')
+    >>> nearest_adapter(recipe, ILabelledCookbook, name="foo")
     <...LabelledCookbook ...>
 
 We can verify that the adapter is for the Cookbook using
 nearest_context_with_adapter():
 
-    >>> print(nearest_context_with_adapter(
-    ...     recipe, ILabelledCookbook, name='foo'))
+    >>> print(
+    ...     nearest_context_with_adapter(
+    ...         recipe, ILabelledCookbook, name="foo"
+    ...     )
+    ... )
     (<...Cookbook ...>, <...LabelledCookbook ...>)
 
 And we can see that the adapter is not returned if we omit the 'name'
@@ -162,10 +173,10 @@ keyword argument:
 If we search for the adapter on the cookbook object, the lookup works as
 expected:
 
-    >>> nearest_adapter(cookbook, ILabelledCookbook, name='foo')
+    >>> nearest_adapter(cookbook, ILabelledCookbook, name="foo")
     <...LabelledCookbook ...>
 
 And searching for the adapter on the root object returns nothing:
 
-    >>> print(nearest_adapter(root, ILabelledCookbook, name='foo'))
+    >>> print(nearest_adapter(root, ILabelledCookbook, name="foo"))
     None

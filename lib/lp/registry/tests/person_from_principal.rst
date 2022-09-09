@@ -9,6 +9,7 @@ raised.
     >>> class NoLaunchpadPrincipal:
     ...     id = 42
     ...     person = None
+    ...
     >>> person_from_principal(NoLaunchpadPrincipal())
     Traceback (most recent call last):
     ...

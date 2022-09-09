@@ -3,16 +3,19 @@ Branch subscriptions
 
 Set up a branch to be subscribed to.
 
-    >>> login('admin@canonical.com')
-    >>> farm = factory.makeProduct(name='farm')
-    >>> farmer_joe_db = factory.makePerson(name='farmer-joe',
-    ...     displayname='Farmer Joe')
-    >>> farmer_bob_db = factory.makePerson(name='farmer-bob',
-    ...     displayname='Farmer Bob')
-    >>> farmer_joe_url = '/~farmer-joe'
-    >>> corn_db = factory.makeAnyBranch(product=farm, owner=farmer_bob_db,
-    ...     name='corn')
-    >>> corn_url = '/' + corn_db.unique_name
+    >>> login("admin@canonical.com")
+    >>> farm = factory.makeProduct(name="farm")
+    >>> farmer_joe_db = factory.makePerson(
+    ...     name="farmer-joe", displayname="Farmer Joe"
+    ... )
+    >>> farmer_bob_db = factory.makePerson(
+    ...     name="farmer-bob", displayname="Farmer Bob"
+    ... )
+    >>> farmer_joe_url = "/~farmer-joe"
+    >>> corn_db = factory.makeAnyBranch(
+    ...     product=farm, owner=farmer_bob_db, name="corn"
+    ... )
+    >>> corn_url = "/" + corn_db.unique_name
     >>> logout()
 
 
@@ -24,10 +27,13 @@ A user can subscribe to a branch through the API.
     >>> joe = webservice.get(farmer_joe_url).jsonBody()
     >>> corn = webservice.get(corn_url).jsonBody()
     >>> subscription = webservice.named_post(
-    ...     corn['self_link'], 'subscribe', person=joe['self_link'],
-    ...     notification_level=u'Branch attribute notifications only',
-    ...     max_diff_lines=u'Don\'t send diffs',
-    ...     code_review_level=u'No email')
+    ...     corn["self_link"],
+    ...     "subscribe",
+    ...     person=joe["self_link"],
+    ...     notification_level="Branch attribute notifications only",
+    ...     max_diff_lines="Don't send diffs",
+    ...     code_review_level="No email",
+    ... )
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(subscription.jsonBody())
@@ -43,16 +49,20 @@ A user can subscribe to a branch through the API.
 
     >>> def print_subscriber_count(branch):
     ...     subscribers = webservice.get(
-    ...         corn['subscribers_collection_link']).jsonBody()
-    ...     print(len(subscribers['entries']))
+    ...         corn["subscribers_collection_link"]
+    ...     ).jsonBody()
+    ...     print(len(subscribers["entries"]))
+    ...
     >>> print_subscriber_count(corn)
     2
 
     >>> def print_subscriber_names(branch):
     ...     subscribers = webservice.get(
-    ...         corn['subscribers_collection_link']).jsonBody()
-    ...     for subscriber in subscribers['entries']:
-    ...         print(subscriber['display_name'])
+    ...         corn["subscribers_collection_link"]
+    ...     ).jsonBody()
+    ...     for subscriber in subscribers["entries"]:
+    ...         print(subscriber["display_name"])
+    ...
     >>> print_subscriber_names(corn)
     Farmer Bob
     Farmer Joe
@@ -65,10 +75,10 @@ Sometimes it's necessary to get a single person's subscriptions through the
 API without getting everyone's subscriptions.
 
     >>> subscription = webservice.named_get(
-    ...     corn['self_link'], 'getSubscription',
-    ...     person=joe['self_link']).jsonBody()
+    ...     corn["self_link"], "getSubscription", person=joe["self_link"]
+    ... ).jsonBody()
 
-    >>> print(subscription['self_link'])
+    >>> print(subscription["self_link"])
     http://.../~farmer-bob/farm/corn/+subscription/farmer-joe
 
 
@@ -80,10 +90,13 @@ The way this works is to just subscribe to the branch again, the same way it
 was originally subscribed.
 
     >>> subscription = webservice.named_post(
-    ...     corn['self_link'], 'subscribe', person=joe['self_link'],
-    ...     notification_level=u'No email',
-    ...     max_diff_lines=u'Send entire diff',
-    ...     code_review_level=u'Status changes only')
+    ...     corn["self_link"],
+    ...     "subscribe",
+    ...     person=joe["self_link"],
+    ...     notification_level="No email",
+    ...     max_diff_lines="Send entire diff",
+    ...     code_review_level="Status changes only",
+    ... )
 
     >>> pprint_entry(subscription.jsonBody())
     branch_link: 'http://.../~farmer-bob/farm/corn'
@@ -114,7 +127,8 @@ Sometimes branches get too noisy.  It's possible to unsubscribe from the
 branch through the API as well.
 
     >>> _unused = webservice.named_post(
-    ...     corn['self_link'], 'unsubscribe', person=joe['self_link'])
+    ...     corn["self_link"], "unsubscribe", person=joe["self_link"]
+    ... )
 
     >>> print_subscriber_count(corn)
     1

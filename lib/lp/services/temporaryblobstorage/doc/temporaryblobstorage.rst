@@ -14,12 +14,13 @@ perhaps as attachments.
 
     >>> from zope.component import getUtility
     >>> from lp.services.temporaryblobstorage.interfaces import (
-    ...     ITemporaryStorageManager)
+    ...     ITemporaryStorageManager,
+    ... )
     >>> tsm = getUtility(ITemporaryStorageManager)
 
 To create a new TemporaryBlob, use ITemporaryStorageManager.new:
 
-    >>> data = b'abcdefg'
+    >>> data = b"abcdefg"
     >>> uuid = tsm.new(data)
     >>> uuid is not None
     True
@@ -33,7 +34,7 @@ same transaction as we stored it in:
 To retrieve a blob, we can also use the tsm.
 
     >>> blob = tsm.fetch(uuid)
-    >>> blob.blob == b'abcdefg'
+    >>> blob.blob == b"abcdefg"
     True
 
 We can delete a blob by UUID too:
@@ -50,12 +51,12 @@ Size limits can be enforced, although this is turned off by default:
     ...     [launchpad]
     ...     max_blob_size: 6
     ...     """
-    >>> config.push('max_blob_size', max_blob_size)
+    >>> config.push("max_blob_size", max_blob_size)
     >>> uuid = tsm.new(data)
     Traceback (most recent call last):
     ...
     lp.services.temporaryblobstorage.interfaces.BlobTooLarge: 7
-    >>> config_data = config.pop('max_blob_size')
+    >>> config_data = config.pop("max_blob_size")
 
 
 Checking blob processing status
@@ -74,10 +75,8 @@ associated ProcessApportBlobJob, will return False.
 
 We'll create a ProcessApportBlobJob for the blob.
 
-    >>> from lp.bugs.interfaces.apportjob import (
-    ...     IProcessApportBlobJobSource)
-    >>> processing_job = getUtility(IProcessApportBlobJobSource).create(
-    ...     blob)
+    >>> from lp.bugs.interfaces.apportjob import IProcessApportBlobJobSource
+    >>> processing_job = getUtility(IProcessApportBlobJobSource).create(blob)
 
     >>> blob = getUtility(ITemporaryStorageManager).fetch(blob_token)
     >>> processing_job.blob == blob

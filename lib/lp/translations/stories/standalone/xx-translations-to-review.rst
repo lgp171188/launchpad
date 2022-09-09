@@ -15,38 +15,46 @@ We'll be following this list as it applies to a new user, xowxz.
 
     >>> login(ANONYMOUS)
 
-    >>> user = factory.makePerson(name='xowxz', email='xowxz@example.com')
+    >>> user = factory.makePerson(name="xowxz", email="xowxz@example.com")
 
 Xowxz is a Khmer reviewer.
 
     >>> translationgroup = factory.makeTranslationGroup(
-    ...     owner=factory.makePerson())
-    >>> khmer = getUtility(ILanguageSet).getLanguageByCode('km')
+    ...     owner=factory.makePerson()
+    ... )
+    >>> khmer = getUtility(ILanguageSet).getLanguageByCode("km")
     >>> entry = getUtility(ITranslatorSet).new(
-    ...     translationgroup=translationgroup, language=khmer,
-    ...     translator=user)
+    ...     translationgroup=translationgroup, language=khmer, translator=user
+    ... )
 
     >>> logout()
 
-    >>> browser = setupBrowser(auth='Basic xowxz@example.com:test')
-    >>> homepage = 'http://translations.launchpad.test/~xowxz'
+    >>> browser = setupBrowser(auth="Basic xowxz@example.com:test")
+    >>> homepage = "http://translations.launchpad.test/~xowxz"
 
     >>> def add_unreviewed_pofile(translationgroup):
     ...     """Create a POFile managed by `translationgroup`."""
     ...     pofile = removeSecurityProxy(
-    ...         factory.makePOFile(language_code=khmer.code))
+    ...         factory.makePOFile(language_code=khmer.code)
+    ...     )
     ...     product = pofile.potemplate.productseries.product
     ...     product.translationgroup = translationgroup
     ...     pofile.unreviewed_count = 1
     ...     return pofile
+    ...
 
     >>> def work_on(user, pofile):
     ...     """Let `user` add a suggestion to `pofile`."""
     ...     potmsgset = factory.makePOTMsgSet(
-    ...         potemplate=pofile.potemplate, singular='x', sequence=1)
+    ...         potemplate=pofile.potemplate, singular="x", sequence=1
+    ...     )
     ...     factory.makeCurrentTranslationMessage(
-    ...         potmsgset=potmsgset, pofile=pofile, translator=user,
-    ...         translations=['y'])
+    ...         potmsgset=potmsgset,
+    ...         pofile=pofile,
+    ...         translator=user,
+    ...         translations=["y"],
+    ...     )
+    ...
 
     >>> def list_reviewables(browser):
     ...     """List the table of reviewable translations seen in browser."""
@@ -54,13 +62,14 @@ Xowxz is a Khmer reviewer.
     ...     listing = soup.find(id="translations-to-review-table")
     ...     if listing:
     ...         count = 0
-    ...         for tr in listing.find_all('tr'):
-    ...             tds = [td.decode_contents() for td in tr.find_all('td')]
-    ...             print('    '.join(tds))
+    ...         for tr in listing.find_all("tr"):
+    ...             tds = [td.decode_contents() for td in tr.find_all("td")]
+    ...             print("    ".join(tds))
     ...             count += 1
     ...         print("Listing contains %d translation(s)." % count)
     ...     else:
     ...         print("No listing found.")
+    ...
 
     >>> def show_reviewables_link(browser):
     ...     """Show the "view all n unreviewed translations" link."""
@@ -70,6 +79,7 @@ Xowxz is a Khmer reviewer.
     ...         print(link.decode_contents())
     ...     else:
     ...         print("No link.")
+    ...
 
 There are no translations for xowxz to review, so the listing does not
 show up.
@@ -111,7 +121,7 @@ to the full list shows up.
 The link leads to a full listing of translations that xowxz seems to be
 the appropriate reviewer for.
 
-    >>> browser.getLink(id='translations-to-review-link').click()
+    >>> browser.getLink(id="translations-to-review-link").click()
     >>> list_reviewables(browser)
     <...
     Listing contains 2 translation(s).
@@ -127,7 +137,7 @@ show up in this full listing.
     >>> show_reviewables_link(browser)
     See all 2 unreviewed translations
 
-    >>> browser.getLink(id='translations-to-review-link').click()
+    >>> browser.getLink(id="translations-to-review-link").click()
     >>> list_reviewables(browser)
     <...
     Listing contains 2 translation(s).
@@ -139,6 +149,7 @@ at 10 entries.
     >>> for count in range(9):
     ...     pofile = add_unreviewed_pofile(translationgroup)
     ...     work_on(user, pofile)
+    ...
     >>> logout()
 
     >>> browser.open(homepage)
@@ -149,7 +160,7 @@ at 10 entries.
     >>> show_reviewables_link(browser)
     See all 11 unreviewed translations
 
-    >>> browser.getLink(id='translations-to-review-link').click()
+    >>> browser.getLink(id="translations-to-review-link").click()
     >>> list_reviewables(browser)
     <...
     Listing contains 11 translation(s).

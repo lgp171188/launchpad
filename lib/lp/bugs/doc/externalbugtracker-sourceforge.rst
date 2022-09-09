@@ -12,13 +12,11 @@ The ExternalBugTracker descendant class which implements methods for
 updating bug watches on SourceForge bug trackers is
 externalbugtracker.SourceForge, which implements IExternalBugTracker.
 
-    >>> from lp.bugs.externalbugtracker import (
-    ...     SourceForge)
+    >>> from lp.bugs.externalbugtracker import SourceForge
     >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.bugs.interfaces.externalbugtracker import IExternalBugTracker
-    >>> verifyObject(IExternalBugTracker,
-    ...     SourceForge('http://example.com'))
+    >>> verifyObject(IExternalBugTracker, SourceForge("http://example.com"))
     True
 
 
@@ -28,48 +26,48 @@ Status Conversion
 The SourceForge bug status/resolution combinations map to Launchpad bug
 statuses. SourceForge.convertRemoteStatus() handles the conversion.
 
-    >>> sourceforge = SourceForge('http://example.com')
-    >>> sourceforge.convertRemoteStatus('Open').title
+    >>> sourceforge = SourceForge("http://example.com")
+    >>> sourceforge.convertRemoteStatus("Open").title
     'New'
-    >>> sourceforge.convertRemoteStatus('Closed').title
+    >>> sourceforge.convertRemoteStatus("Closed").title
     'Fix Released'
-    >>> sourceforge.convertRemoteStatus('Pending').title
+    >>> sourceforge.convertRemoteStatus("Pending").title
     'Incomplete'
-    >>> sourceforge.convertRemoteStatus('Open:Accepted').title
+    >>> sourceforge.convertRemoteStatus("Open:Accepted").title
     'Confirmed'
-    >>> sourceforge.convertRemoteStatus('Open:Duplicate').title
+    >>> sourceforge.convertRemoteStatus("Open:Duplicate").title
     'Confirmed'
-    >>> sourceforge.convertRemoteStatus('Open:Fixed').title
+    >>> sourceforge.convertRemoteStatus("Open:Fixed").title
     'Fix Committed'
-    >>> sourceforge.convertRemoteStatus('Open:Invalid').title
+    >>> sourceforge.convertRemoteStatus("Open:Invalid").title
     'Invalid'
-    >>> sourceforge.convertRemoteStatus('Open:Later').title
+    >>> sourceforge.convertRemoteStatus("Open:Later").title
     'Confirmed'
-    >>> sourceforge.convertRemoteStatus('Open:Out of Date').title
+    >>> sourceforge.convertRemoteStatus("Open:Out of Date").title
     'Invalid'
-    >>> sourceforge.convertRemoteStatus('Open:Postponed').title
+    >>> sourceforge.convertRemoteStatus("Open:Postponed").title
     'Confirmed'
-    >>> sourceforge.convertRemoteStatus('Open:Rejected').title
+    >>> sourceforge.convertRemoteStatus("Open:Rejected").title
     "Won't Fix"
-    >>> sourceforge.convertRemoteStatus('Open:Remind').title
+    >>> sourceforge.convertRemoteStatus("Open:Remind").title
     'Confirmed'
     >>> sourceforge.convertRemoteStatus("Open:Won't Fix").title
     "Won't Fix"
-    >>> sourceforge.convertRemoteStatus('Open:Works For Me').title
+    >>> sourceforge.convertRemoteStatus("Open:Works For Me").title
     'Invalid'
-    >>> sourceforge.convertRemoteStatus('Closed:Accepted').title
+    >>> sourceforge.convertRemoteStatus("Closed:Accepted").title
     'Fix Committed'
-    >>> sourceforge.convertRemoteStatus('Closed:Fixed').title
+    >>> sourceforge.convertRemoteStatus("Closed:Fixed").title
     'Fix Released'
-    >>> sourceforge.convertRemoteStatus('Closed:Postponed').title
+    >>> sourceforge.convertRemoteStatus("Closed:Postponed").title
     "Won't Fix"
-    >>> sourceforge.convertRemoteStatus('Pending:Postponed').title
+    >>> sourceforge.convertRemoteStatus("Pending:Postponed").title
     "Won't Fix"
 
 If the status isn't something that our SourceForge ExternalBugTracker can
 understand an UnknownRemoteStatusError will be raised.
 
-    >>> sourceforge.convertRemoteStatus('eggs').title
+    >>> sourceforge.convertRemoteStatus("eggs").title
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
@@ -86,10 +84,13 @@ We use a test-oriented implementation for the purposes of these tests, which
 avoids relying on a working network connection.
 
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestSourceForge, print_bugwatches)
-    >>> sourceforge = TestSourceForge('http://example.com/')
+    ...     TestSourceForge,
+    ...     print_bugwatches,
+    ... )
+    >>> sourceforge = TestSourceForge("http://example.com/")
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([1722250])
+    ...
     >>> sorted(sourceforge.bugs.keys())
     [1722250]
 
@@ -99,6 +100,7 @@ resolution, to demonstrate this:
 
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([0])
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData:
@@ -110,21 +112,22 @@ remote bug database. Sample bug 99 is private.
 
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([99])
+    ...
     >>> sorted(sourceforge.bugs.keys())
     [99]
 
 If we look at the bug, however, we can see that its private field has
 been set to True:
 
-    >>> sourceforge.bugs[99]['private']
+    >>> sourceforge.bugs[99]["private"]
     True
 
 The SourceForge ExternalBugTracker class has an _extractErrorMessage()
 method which can be used to find error messages.
 
     >>> page_data = open(
-    ...     'lib/lp/bugs/tests/testfiles/'
-    ...     'sourceforge-sample-bug-99.html')
+    ...     "lib/lp/bugs/tests/testfiles/" "sourceforge-sample-bug-99.html"
+    ... )
     >>> print(sourceforge._extractErrorMessage(page_data))
     Artifact: This Artifact Has Been Made Private. Only Group Members
     Can View Private ArtifactTypes.
@@ -152,15 +155,17 @@ Launchpad.dev bug #10 is the same bug as reported in example.com bug
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> example_bug = getUtility(IBugSet).get(10)
     >>> example_bug_tracker = new_bugtracker(BugTrackerType.SOURCEFORGE)
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
     >>> example_bugwatch = example_bug.addWatch(
-    ...     example_bug_tracker, '1722250',
-    ...     getUtility(ILaunchpadCelebrities).janitor)
+    ...     example_bug_tracker,
+    ...     "1722250",
+    ...     getUtility(ILaunchpadCelebrities).janitor,
+    ... )
 
     >>> print_bugwatches(example_bug_tracker.watches)
     Remote bug 1722250: None
@@ -174,12 +179,13 @@ remote status for, the bug watch that we have created.
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
     >>> txn = LaunchpadZopelessLayer.txn
-    >>> bug_watch_updater = CheckwatchesMaster(
-    ...     txn, logger=FakeLogger())
+    >>> bug_watch_updater = CheckwatchesMaster(txn, logger=FakeLogger())
     >>> sourceforge = TestSourceForge(example_bug_tracker.baseurl)
     >>> with sourceforge.responses():
     ...     bug_watch_updater.updateBugWatches(
-    ...         sourceforge, example_bug_tracker.watches)
+    ...         sourceforge, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
     >>> print_bugwatches(example_bug_tracker.watches)
     Remote bug 1722250: Open:None
@@ -188,8 +194,9 @@ We now add some more watches against remote bugs in the example.com bug
 tracker with a variety of statuses.
 
     >>> from lp.bugs.interfaces.bugwatch import IBugWatchSet
-    >>> print_bugwatches(example_bug_tracker.watches,
-    ...     sourceforge.convertRemoteStatus)
+    >>> print_bugwatches(
+    ...     example_bug_tracker.watches, sourceforge.convertRemoteStatus
+    ... )
     Remote bug 1722250: New
 
     >>> remote_bugs = [
@@ -207,9 +214,12 @@ tracker with a variety of statuses.
     >>> bug_watch_set = getUtility(IBugWatchSet)
     >>> for remote_bug_id in remote_bugs:
     ...     bug_watch = bug_watch_set.createBugWatch(
-    ...         bug=example_bug, owner=sample_person,
+    ...         bug=example_bug,
+    ...         owner=sample_person,
     ...         bugtracker=example_bug_tracker,
-    ...         remotebug=str(remote_bug_id))
+    ...         remotebug=str(remote_bug_id),
+    ...     )
+    ...
 
 By default, SourceForge ExternalBugTrackers will only import one bug at
 a time so as to avoid tripping SourceForge's rate limiting filters. So
@@ -223,7 +233,9 @@ been checked.
     >>> with sourceforge.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
     ...         sourceforge,
-    ...         sorted(example_bug_tracker.watches, key=attrgetter('id')))
+    ...         sorted(example_bug_tracker.watches, key=attrgetter("id")),
+    ...     )
+    ...
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
     GET http://bugs.some.where/support/tracker.php?aid=1722251
 
@@ -233,7 +245,9 @@ None so that it will process all the updates at once:
     >>> sourceforge.batch_size = None
     >>> with sourceforge.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
-    ...         sourceforge, example_bug_tracker.watches)
+    ...         sourceforge, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 10 watches for 10 bugs on http://bugs.some.where
     GET http://bugs.some.where/support/tracker.php?aid=1722250
     GET http://bugs.some.where/support/tracker.php?aid=1722251
@@ -250,8 +264,9 @@ The bug statuses have now been imported from the Example.com bug
 tracker, so the bug watches should now have valid Launchpad bug
 statuses:
 
-    >>> print_bugwatches(example_bug_tracker.watches,
-    ...     sourceforge.convertRemoteStatus)
+    >>> print_bugwatches(
+    ...     example_bug_tracker.watches, sourceforge.convertRemoteStatus
+    ... )
     Remote bug 1722250: New
     Remote bug 1722251: Won't Fix
     Remote bug 1722252: Incomplete
@@ -276,7 +291,7 @@ us to pinpoint the specific SourceForge tracker to which the bug
 belongs. The remote product is returned by getRemoteProduct() as an
 ampersand-separated string.
 
-    >>> print(sourceforge.getRemoteProduct('1722250'))
+    >>> print(sourceforge.getRemoteProduct("1722250"))
     155120&794532
 
 If you try to get the remote product of a bug that doesn't exist you'll
@@ -294,5 +309,6 @@ if the bug is private), getRemoteProduct() will return None.
 
     >>> with sourceforge.responses():
     ...     sourceforge.initializeRemoteBugDB([99])
+    ...
     >>> print(sourceforge.getRemoteProduct(99))
     None

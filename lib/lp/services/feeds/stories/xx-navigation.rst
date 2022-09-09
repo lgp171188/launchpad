@@ -12,19 +12,19 @@ Index of a product
 Trying to view a page which is not registered on the Feeds layer
 returns a 404.
 
-    >>> browser.open('http://feeds.launchpad.test/jokosher')
+    >>> browser.open("http://feeds.launchpad.test/jokosher")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
-    >>> browser.open('http://feeds.launchpad.test/bugs')
+    >>> browser.open("http://feeds.launchpad.test/bugs")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
-    >>> browser.open('http://feeds.launchpad.test/+dims')
+    >>> browser.open("http://feeds.launchpad.test/+dims")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
-    >>> browser.open('http://feeds.launchpad.test/announcements.atom/foo')
+    >>> browser.open("http://feeds.launchpad.test/announcements.atom/foo")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -38,7 +38,7 @@ a predictable pattern. If someone enters a feed URL and it has
 uppercase letters in it, we redirect to the canonical form of the URL
 before serving the page.
 
-    >>> browser.open('http://feeds.launchpad.test/jOkOshEr/latest-bugs.html')
+    >>> browser.open("http://feeds.launchpad.test/jOkOshEr/latest-bugs.html")
     >>> browser.url
     'http://feeds.launchpad.test/jokosher/latest-bugs.html'
 
@@ -47,10 +47,12 @@ The +index view should redirect to https://help.launchpad.net/Feeds
 XXX Edwin Grubbs 2007-12-10 bug=98482: zope.testbrowser does not handle
 redirects to remote sites, but http() can be used instead.
 
-    >>> response = http(r"""
+    >>> response = http(
+    ...     r"""
     ... GET / HTTP/1.0
     ... Host: feeds.launchpad.test
-    ... """)
+    ... """
+    ... )
     >>> print(str(response))
     HTTP/1.0 301 Moved Permanently
     ...
@@ -73,9 +75,11 @@ query strings.
     ...     [launchpad]
     ...     is_bug_search_feed_active: True
     ...     """
-    >>> config.push('bug_search_feed_data', bug_search_feed_data)
-    >>> browser.open('http://feeds.launchpad.test/bugs/+bugs.atom?'
-    ...     'field.scope=all&search=Search+Bug+Reports&aaa=foo')
+    >>> config.push("bug_search_feed_data", bug_search_feed_data)
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/bugs/+bugs.atom?"
+    ...     "field.scope=all&search=Search+Bug+Reports&aaa=foo"
+    ... )
     >>> browser.url
     '...+bugs.atom?aaa=foo&field.scope=all&search=Search+Bug+Reports'
 
@@ -91,17 +95,23 @@ on feeds.launchpad.test and does not work on all the other vhosts.
 
     >>> from zope.publisher.interfaces import NotFound
     >>> def verify_feed_host(path):
-    ...     url = 'http://feeds.launchpad.test' + path
+    ...     url = "http://feeds.launchpad.test" + path
     ...     try:
     ...         browser.open(url)
     ...     except:
     ...         print("Error accessing:", url)
     ...         raise
-    ...     prefixes = ('', 'answers.', 'blueprints.', 'bugs.',
-    ...         'code.', 'translations.')
+    ...     prefixes = (
+    ...         "",
+    ...         "answers.",
+    ...         "blueprints.",
+    ...         "bugs.",
+    ...         "code.",
+    ...         "translations.",
+    ...     )
     ...     for prefix in prefixes:
     ...         try:
-    ...             url = 'http://%slaunchpad.test%s' % (prefix, path)
+    ...             url = "http://%slaunchpad.test%s" % (prefix, path)
     ...             browser.open(url)
     ...         except NotFound:
     ...             pass
@@ -110,33 +120,38 @@ on feeds.launchpad.test and does not work on all the other vhosts.
     ...             raise
     ...         else:
     ...             raise AssertionError("Page should not exist: %s" % url)
+    ...
 
 These atom feeds should only exist on feeds.launchpad.test:
 
-    >>> verify_feed_host('/jokosher/latest-bugs.atom')
-    >>> verify_feed_host('/mozilla/latest-bugs.atom')
-    >>> verify_feed_host('/~name16/latest-bugs.atom')
-    >>> verify_feed_host('/~admins/latest-bugs.atom')
-    >>> verify_feed_host('/~simple-team/latest-bugs.atom')
-    >>> verify_feed_host('/bugs/1/bug.atom')
-    >>> verify_feed_host('/bugs/+bugs.atom?'
-    ...        'field.searchtext=&search=Search+Bug+Reports&'
-    ...        'field.scope=all&field.scope.target=')
+    >>> verify_feed_host("/jokosher/latest-bugs.atom")
+    >>> verify_feed_host("/mozilla/latest-bugs.atom")
+    >>> verify_feed_host("/~name16/latest-bugs.atom")
+    >>> verify_feed_host("/~admins/latest-bugs.atom")
+    >>> verify_feed_host("/~simple-team/latest-bugs.atom")
+    >>> verify_feed_host("/bugs/1/bug.atom")
+    >>> verify_feed_host(
+    ...     "/bugs/+bugs.atom?"
+    ...     "field.searchtext=&search=Search+Bug+Reports&"
+    ...     "field.scope=all&field.scope.target="
+    ... )
 
 These html feeds should only exist on feeds.launchpad.test:
 
-    >>> verify_feed_host('/jokosher/latest-bugs.html')
-    >>> verify_feed_host('/mozilla/latest-bugs.html')
-    >>> verify_feed_host('/~name16/latest-bugs.html')
-    >>> verify_feed_host('/~simple-team/latest-bugs.html')
-    >>> verify_feed_host('/bugs/1/bug.html')
-    >>> verify_feed_host('/bugs/+bugs.html?'
-    ...        'field.searchtext=&search=Search+Bug+Reports&'
-    ...        'field.scope=all&field.scope.target=')
+    >>> verify_feed_host("/jokosher/latest-bugs.html")
+    >>> verify_feed_host("/mozilla/latest-bugs.html")
+    >>> verify_feed_host("/~name16/latest-bugs.html")
+    >>> verify_feed_host("/~simple-team/latest-bugs.html")
+    >>> verify_feed_host("/bugs/1/bug.html")
+    >>> verify_feed_host(
+    ...     "/bugs/+bugs.html?"
+    ...     "field.searchtext=&search=Search+Bug+Reports&"
+    ...     "field.scope=all&field.scope.target="
+    ... )
 
 Revert configuration change after tests are finished.
 
-    >>> config_data = config.pop('bug_search_feed_data')
+    >>> config_data = config.pop("bug_search_feed_data")
 
 
 Favicon
@@ -144,6 +159,6 @@ Favicon
 
 feeds.launchpad.test has a favicon.
 
-    >>> browser.open('http://feeds.launchpad.test/favicon.ico')
-    >>> print(browser.headers['Content-Type'])
+    >>> browser.open("http://feeds.launchpad.test/favicon.ico")
+    >>> print(browser.headers["Content-Type"])
     image/vnd.microsoft.icon

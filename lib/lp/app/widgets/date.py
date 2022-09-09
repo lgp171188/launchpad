@@ -42,33 +42,33 @@ class DateTimeWidget(TextWidget):
 
       >>> from lp.services.webapp.servers import LaunchpadTestRequest
       >>> from zope.schema import Field
-      >>> field = Field(__name__='foo', title=u'Foo')
+      >>> field = Field(__name__="foo", title="Foo")
       >>> widget = DateTimeWidget(field, LaunchpadTestRequest())
 
     The datetime popup widget shows the time zone in which it will return
     the time:
 
-      >>> print(widget())  #doctest: +ELLIPSIS
+      >>> print(widget())  # doctest: +ELLIPSIS
       <BLANKLINE>
       <...in time zone: UTC...
 
     The datetime popup widget links to the page which allows the user to
     change their system time zone.
 
-      >>> print(widget())  #doctest: +ELLIPSIS
+      >>> print(widget())  # doctest: +ELLIPSIS
       <BLANKLINE>
       <...<a href="/people/+me/+editlocation">...
 
     If there is a required time zone, then that overrides the user or system
     default, and the user is not invited to change the time zone:
 
-      >>> widget.required_time_zone = pytz.timezone('America/Los_Angeles')
-      >>> print(widget())  #doctest: +ELLIPSIS
+      >>> widget.required_time_zone = pytz.timezone("America/Los_Angeles")
+      >>> print(widget())  # doctest: +ELLIPSIS
       <BLANKLINE>
       <...in time zone: America/Los_Angeles...
-      >>> 'change time zone' not in widget()
+      >>> "change time zone" not in widget()
       True
-      >>> 'login to set time zone' not in widget()
+      >>> "login to set time zone" not in widget()
       True
 
     If there is a from_date then the date provided must be later than that.
@@ -76,9 +76,10 @@ class DateTimeWidget(TextWidget):
     WidgetInputError. The message gives the required date/time in the widget
     time zone even if the date provided was in a different time zone.
 
-      >>> widget.request.form[widget.name] = '2005-07-03'
-      >>> widget.from_date = datetime(2006, 5, 23,
-      ...                             tzinfo=pytz.timezone('UTC'))
+      >>> widget.request.form[widget.name] = "2005-07-03"
+      >>> widget.from_date = datetime(
+      ...     2006, 5, 23, tzinfo=pytz.timezone("UTC")
+      ... )
       >>> print(widget.getInputValue())
       ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
       Traceback (most recent call last):
@@ -89,14 +90,13 @@ class DateTimeWidget(TextWidget):
     If the date provided is greater than from_date then the widget works as
     expected.
 
-      >>> widget.request.form[widget.name] = '2009-09-14'
-      >>> print(widget.getInputValue())  #doctest: +ELLIPSIS
+      >>> widget.request.form[widget.name] = "2009-09-14"
+      >>> print(widget.getInputValue())  # doctest: +ELLIPSIS
       2009-09-14 00:00:00-07:00
 
     If to_date is provided then getInputValue() will enforce this too.
 
-      >>> widget.to_date = datetime(2008, 1, 26,
-      ...                           tzinfo=pytz.timezone('UTC'))
+      >>> widget.to_date = datetime(2008, 1, 26, tzinfo=pytz.timezone("UTC"))
       >>> print(widget.getInputValue())
       ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
       Traceback (most recent call last):
@@ -106,10 +106,10 @@ class DateTimeWidget(TextWidget):
 
     A datetime picker can be disabled initially:
 
-      >>> 'disabled' in widget()
+      >>> "disabled" in widget()
       False
       >>> widget.disabled = True
-      >>> 'disabled' in widget()
+      >>> "disabled" in widget()
       True
 
     """
@@ -170,7 +170,7 @@ class DateTimeWidget(TextWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateTimeWidget(field, TestRequest())
 
         The time zone is a time zone object, not the string representation
@@ -202,7 +202,7 @@ class DateTimeWidget(TextWidget):
 
         When there is a required_time_zone, we get it:
 
-          >>> widget.required_time_zone = pytz.timezone('Africa/Maseru')
+          >>> widget.required_time_zone = pytz.timezone("Africa/Maseru")
           >>> print(widget.time_zone)
           Africa/Maseru
 
@@ -255,7 +255,7 @@ class DateTimeWidget(TextWidget):
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
           >>> from datetime import datetime
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateTimeWidget(field, TestRequest())
           >>> from_date = datetime(2004, 4, 5)
           >>> to_date = datetime(2004, 4, 10)
@@ -296,7 +296,7 @@ class DateTimeWidget(TextWidget):
         The date range is displayed in the page when the widget is
         displayed:
 
-          >>> '[[2004,04,05],[2004,04,10]]' in widget()
+          >>> "[[2004,04,05],[2004,04,10]]" in widget()
           True
 
         """
@@ -371,31 +371,31 @@ class DateTimeWidget(TextWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateTimeWidget(field, TestRequest())
-          >>> widget.required_time_zone = pytz.timezone('UTC')
+          >>> widget.required_time_zone = pytz.timezone("UTC")
           >>> widget.time_zone
           <UTC>
 
         The widget converts an empty string to the missing value:
 
-          >>> widget._parseInput('') == field.missing_value
+          >>> widget._parseInput("") == field.missing_value
           True
 
         The widget prints out times in UTC:
 
-          >>> print(widget._parseInput('2006-01-01 12:00:00'))
+          >>> print(widget._parseInput("2006-01-01 12:00:00"))
           2006-01-01 12:00:00+00:00
 
         But it will handle other time zones:
 
-          >>> widget.required_time_zone = pytz.timezone('Australia/Perth')
-          >>> print(widget._parseInput('2006-01-01 12:00:00'))
+          >>> widget.required_time_zone = pytz.timezone("Australia/Perth")
+          >>> print(widget._parseInput("2006-01-01 12:00:00"))
           2006-01-01 12:00:00+08:00
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._parseInput('not a date'))
+          >>> print(widget._parseInput("not a date"))
           ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
           Traceback (most recent call last):
             ...
@@ -418,7 +418,7 @@ class DateTimeWidget(TextWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateTimeWidget(field, TestRequest())
 
         The 'missing' value is converted to an empty string:
@@ -429,15 +429,14 @@ class DateTimeWidget(TextWidget):
         DateTimes are displayed without the corresponding time zone
         information:
 
-          >>> dt = datetime(2006, 1, 1, 12, 0, 0,
-          ...                        tzinfo=pytz.timezone('UTC'))
+          >>> dt = datetime(2006, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("UTC"))
           >>> widget._toFormValue(dt)
           '2006-01-01 12:00:00'
 
         The date value will be converted to the widget's time zone
         before being displayed:
 
-          >>> widget.required_time_zone = pytz.timezone('America/New_York')
+          >>> widget.required_time_zone = pytz.timezone("America/New_York")
           >>> widget._toFormValue(dt)
           '2006-01-01 07:00:00'
         """
@@ -481,13 +480,13 @@ class DateWidget(DateTimeWidget):
       >>> from zope.publisher.browser import TestRequest
       >>> from zope.schema import Field
       >>> from datetime import date
-      >>> field = Field(__name__='foo', title=u'Foo')
+      >>> field = Field(__name__="foo", title="Foo")
       >>> from_date = date(2004, 4, 5)
       >>> to_date = date(2004, 4, 10)
       >>> widget = DateWidget(field, TestRequest())
       >>> widget.from_date = from_date
       >>> widget.to_date = to_date
-      >>> '[[2004,04,05],[2004,04,10]]' in widget()
+      >>> "[[2004,04,05],[2004,04,10]]" in widget()
       True
 
     This widget ignores required_time_zone and system_time_zone and
@@ -498,20 +497,20 @@ class DateWidget(DateTimeWidget):
       >>> widget.time_zone
       <UTC>
 
-      >>> widget.system_time_zone = pytz.timezone('America/New_York')
+      >>> widget.system_time_zone = pytz.timezone("America/New_York")
       >>> widget.time_zone
       <UTC>
 
-      >>> widget.required_time_zone = pytz.timezone('America/Los_Angeles')
+      >>> widget.required_time_zone = pytz.timezone("America/Los_Angeles")
       >>> widget.time_zone
       <UTC>
 
     A date picker can be disabled initially:
 
-      >>> 'disabled' in widget()
+      >>> "disabled" in widget()
       False
       >>> widget.disabled = True
-      >>> 'disabled' in widget()
+      >>> "disabled" in widget()
       True
 
     """
@@ -532,31 +531,31 @@ class DateWidget(DateTimeWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateWidget(field, TestRequest())
 
         The widget converts an empty string to the missing value:
 
-          >>> widget._toFieldValue('') == field.missing_value
+          >>> widget._toFieldValue("") == field.missing_value
           True
 
         The widget ignores time and time zone information, returning only
         the date:
 
-          >>> print(widget._toFieldValue('2006-01-01 12:00:00'))
+          >>> print(widget._toFieldValue("2006-01-01 12:00:00"))
           2006-01-01
 
         Even if you feed it information that gives a time zone, it will
         ignore that:
 
-          >>> print(widget._toFieldValue('2006-01-01 2:00:00+06:00'))
+          >>> print(widget._toFieldValue("2006-01-01 2:00:00+06:00"))
           2006-01-01
-          >>> print(widget._toFieldValue('2006-01-01 23:00:00-06:00'))
+          >>> print(widget._toFieldValue("2006-01-01 23:00:00-06:00"))
           2006-01-01
 
         Invalid dates result in a ConversionError:
 
-          >>> print(widget._toFieldValue('not a date'))
+          >>> print(widget._toFieldValue("not a date"))
           ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
           Traceback (most recent call last):
             ...
@@ -573,7 +572,7 @@ class DateWidget(DateTimeWidget):
 
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
-          >>> field = Field(__name__='foo', title=u'Foo')
+          >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateWidget(field, TestRequest())
 
         The 'missing' value is converted to an empty string:
@@ -584,8 +583,7 @@ class DateWidget(DateTimeWidget):
         The widget ignores time and time zone information, returning only
         the date:
 
-          >>> dt = datetime(
-          ...     2006, 1, 1, 12, 0, 0, tzinfo=pytz.timezone('UTC'))
+          >>> dt = datetime(2006, 1, 1, 12, 0, 0, tzinfo=pytz.timezone("UTC"))
           >>> widget._toFormValue(dt)
           '2006-01-01'
 

@@ -18,6 +18,7 @@ We can add and remove these subscriptions.
     >>> def print_subscriptions_list(subscriptions):
     ...     for subscription in subscriptions:
     ...         print(subscription.subscriber.name)
+    ...
 
     >>> subscription = target.addBugSubscription(foobar, foobar)
     >>> print_subscriptions_list(target.getSubscriptions())
@@ -48,10 +49,13 @@ To search for all subscriptions on a structure we use getSubscriptions.
 Structural subscriptions and indirect bug subscriptions
 =======================================================
 
-    >>> bug = filebug(target, 'test bug one')
+    >>> bug = filebug(target, "test bug one")
     >>> indirect_subscribers = set(
-    ...     subscriber.name for subscriber in bug.getIndirectSubscribers())
+    ...     subscriber.name for subscriber in bug.getIndirectSubscribers()
+    ... )
     >>> structural_subscribers = set(
-    ...     sub.subscriber.name for sub in target.bug_subscriptions)
+    ...     sub.subscriber.name for sub in target.bug_subscriptions
+    ... )
     >>> for name in structural_subscribers.difference(indirect_subscribers):
     ...     print(name)
+    ...

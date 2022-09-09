@@ -13,9 +13,10 @@ spirit of Postel's Law, the TokensTextWidget permits users to enter
 a list of terms as they like, while ensuring that the schema's field is
 satisfied.
 
-    >>> field = IFAQ['keywords']
+    >>> field = IFAQ["keywords"]
     >>> request = LaunchpadTestRequest(
-    ...     form={'field.keywords' : ' news feeds   HTTP, RSS; UTF-8. '})
+    ...     form={"field.keywords": " news feeds   HTTP, RSS; UTF-8. "}
+    ... )
     >>> widget = TokensTextWidget(field, request)
 
 The widget removed the extra whitespace and punctuation.

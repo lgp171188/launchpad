@@ -11,26 +11,34 @@ Interfaces
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import verifyObject
     >>> from lp.code.interfaces.revision import (
-    ...     IRevision, IRevisionAuthor, IRevisionParent, IRevisionSet)
+    ...     IRevision,
+    ...     IRevisionAuthor,
+    ...     IRevisionParent,
+    ...     IRevisionSet,
+    ... )
     >>> from lp.code.interfaces.branchrevision import IBranchRevision
     >>> from lp.code.model.revision import (
-    ...     Revision, RevisionAuthor, RevisionParent, RevisionSet)
+    ...     Revision,
+    ...     RevisionAuthor,
+    ...     RevisionParent,
+    ...     RevisionSet,
+    ... )
     >>> from lp.code.model.branchrevision import BranchRevision
     >>> verifyObject(IRevision, IStore(Revision).find(Revision).any())
     True
     >>> verifyObject(
-    ...     IRevisionAuthor,
-    ...     IStore(RevisionAuthor).find(RevisionAuthor).any())
+    ...     IRevisionAuthor, IStore(RevisionAuthor).find(RevisionAuthor).any()
+    ... )
     True
     >>> verifyObject(
-    ...     IRevisionParent,
-    ...     IStore(RevisionParent).find(RevisionParent).any())
+    ...     IRevisionParent, IStore(RevisionParent).find(RevisionParent).any()
+    ... )
     True
     >>> verifyObject(IRevisionSet, RevisionSet())
     True
     >>> verifyObject(
-    ...     IBranchRevision,
-    ...     IStore(BranchRevision).find(BranchRevision).any())
+    ...     IBranchRevision, IStore(BranchRevision).find(BranchRevision).any()
+    ... )
     True
 
 Creating revisions
@@ -41,7 +49,7 @@ is not a person because that is only an informational attribute, and even if
 we trust it, there's really no simple way to map that reliably to persons.
 
     >>> from lp.code.model.revision import RevisionAuthor
-    >>> author = RevisionAuthor(name='ddaa@localhost')
+    >>> author = RevisionAuthor(name="ddaa@localhost")
     >>> print(author.name)
     ddaa@localhost
 
@@ -63,9 +71,12 @@ while the date_created is the time when the database record was created.
     >>> from datetime import datetime
     >>> from pytz import UTC
     >>> date = datetime(2005, 3, 8, 12, 0, tzinfo=UTC)
-    >>> revision_1 = Revision(log_body=log_body_1,
-    ...     revision_author=author, revision_id=revision_id_1,
-    ...     revision_date=date)
+    >>> revision_1 = Revision(
+    ...     log_body=log_body_1,
+    ...     revision_author=author,
+    ...     revision_id=revision_id_1,
+    ...     revision_date=date,
+    ... )
 
 Parents
 -------
@@ -77,13 +88,17 @@ record merges. All revisions except initial imports have at least one parent.
 Parents are accessed through their revision_id without using a foreign key so
 we can represent revisions whose at least one parent is a ghost revision.
 
-    >>> revision_2 = Revision(log_body=log_body_2,
-    ...     revision_author=author, revision_id=revision_id_2,
-    ...     revision_date=date)
+    >>> revision_2 = Revision(
+    ...     log_body=log_body_2,
+    ...     revision_author=author,
+    ...     revision_id=revision_id_2,
+    ...     revision_date=date,
+    ... )
 
     >>> from lp.code.model.revision import RevisionParent
-    >>> rev2_parent = RevisionParent(sequence=0, revision=revision_2,
-    ...                              parent_id=revision_1.revision_id)
+    >>> rev2_parent = RevisionParent(
+    ...     sequence=0, revision=revision_2, parent_id=revision_1.revision_id
+    ... )
 
 Branch ancestry
 ---------------
@@ -100,9 +115,11 @@ Bazaar converge-on-pull logic.
 BranchRevision rows are created using `Branch.createBranchRevision`.
 
     >>> rev_no_1 = branch.createBranchRevision(
-    ...     sequence=1, revision=revision_1)
+    ...     sequence=1, revision=revision_1
+    ... )
     >>> rev_no_2 = branch.createBranchRevision(
-    ...     sequence=2, revision=revision_2)
+    ...     sequence=2, revision=revision_2
+    ... )
     >>> rev_no_1.branch == rev_no_2.branch == branch
     True
 
@@ -110,7 +127,8 @@ Accessing BranchRevision
 ........................
 
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
-    ...     '~name12/+junk/junk.contrib')
+    ...     "~name12/+junk/junk.contrib"
+    ... )
 
 The full ancestry of a branch is recorded. That includes the history commits
 on this branch, but also revisions that were merged into this branch. Such
@@ -119,12 +137,17 @@ sequence attribute is None.
 
     >>> from lp.code.model.branchrevision import BranchRevision
     >>> ancestry = IStore(BranchRevision).find(
-    ...     BranchRevision, BranchRevision.branch == branch)
-    >>> for branch_revision in sorted(ancestry,
-    ...         key=lambda r: (
-    ...             0 if r.sequence is None else 1, r.sequence,
-    ...             r.revision.id),
-    ...         reverse=True):
+    ...     BranchRevision, BranchRevision.branch == branch
+    ... )
+    >>> for branch_revision in sorted(
+    ...     ancestry,
+    ...     key=lambda r: (
+    ...         0 if r.sequence is None else 1,
+    ...         r.sequence,
+    ...         r.revision.id,
+    ...     ),
+    ...     reverse=True,
+    ... ):
     ...     print(branch_revision.sequence, branch_revision.revision.id)
     6 9
     5 8
@@ -149,6 +172,7 @@ of the branch.
 
     >>> for revision_id in sorted(ancestry):
     ...     print(revision_id)
+    ...
     foo@localhost-20051031165758-48acedf2b6a2e898
     foo@localhost-20051031170008-098959758bf79803
     foo@localhost-20051031170239-5fce7d6bd3f01efc
@@ -163,6 +187,7 @@ history of the branch.
 
     >>> for revision_id in history:
     ...     print(revision_id)
+    ...
     test@canonical.com-20051031165248-6f1bb97973c2b4f4
     test@canonical.com-20051031165338-5f2f3d6b10bb3bf0
     foo@localhost-20051031165758-48acedf2b6a2e898
@@ -188,7 +213,8 @@ First, get a branch:
 
     >>> from zope.component import getUtility
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
-    ...     '~name12/+junk/junk.dev')
+    ...     "~name12/+junk/junk.dev"
+    ... )
 
 The last commit on this branch has the revision number 6.
 
@@ -217,7 +243,8 @@ may be referenced by some other branch):
 
     >>> from lp.code.interfaces.revision import IRevisionSet
     >>> revision = getUtility(IRevisionSet).getByRevisionId(
-    ...     'foo@localhost-20051031170357-1301ad6d387feb23')
+    ...     "foo@localhost-20051031170357-1301ad6d387feb23"
+    ... )
     >>> print(revision.revision_id)
     foo@localhost-20051031170357-1301ad6d387feb23
 
@@ -230,12 +257,13 @@ Associated RevisionAuthor and RevisionParent objects will be created
 as needed.
 
     >>> revision = getUtility(IRevisionSet).new(
-    ...     revision_id='rev-3',
-    ...     log_body='commit message',
+    ...     revision_id="rev-3",
+    ...     log_body="commit message",
     ...     revision_date=date,
-    ...     revision_author='ddaa@localhost',
-    ...     parent_ids=['rev-1', 'rev-2'],
-    ...     properties={u'key': u'value'})
+    ...     revision_author="ddaa@localhost",
+    ...     parent_ids=["rev-1", "rev-2"],
+    ...     properties={"key": "value"},
+    ... )
     >>> print(revision.revision_id)
     rev-3
     >>> print(revision.log_body)
@@ -246,8 +274,10 @@ as needed.
     ddaa@localhost
     >>> for parent_id in revision.parent_ids:
     ...     print(parent_id)
+    ...
     rev-1
     rev-2
     >>> for key, value in sorted(revision.getProperties().items()):
-    ...     print('%s: %s' % (key, value))
+    ...     print("%s: %s" % (key, value))
+    ...
     key: value

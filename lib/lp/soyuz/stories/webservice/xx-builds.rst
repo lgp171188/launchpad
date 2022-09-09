@@ -9,41 +9,46 @@ publication.
 First, we need to insert some fake changes file data in the librarian so that
 source publications can be retrieved.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.archiveuploader.tests import (
-    ...     insertFakeChangesFileForAllPackageUploads)
+    ...     insertFakeChangesFileForAllPackageUploads,
+    ... )
     >>> insertFakeChangesFileForAllPackageUploads()
     >>> from zope.component import getUtility
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.gpgkey import GPGKey
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> fake_signer = GPGKey.selectOneBy(owner=name16)
-    >>> ppa = getUtility(IPersonSet).getByName('cprov').archive
+    >>> ppa = getUtility(IPersonSet).getByName("cprov").archive
     >>> for pub in ppa.getPublishedSources():
     ...     pub = removeSecurityProxy(pub)
-    ...     pub.sourcepackagerelease.signing_key_owner = (
-    ...         fake_signer.owner)
+    ...     pub.sourcepackagerelease.signing_key_owner = fake_signer.owner
     ...     pub.sourcepackagerelease.signing_key_fingerprint = (
-    ...         fake_signer.fingerprint)
+    ...         fake_signer.fingerprint
+    ...     )
+    ...
     >>> transaction.commit()
     >>> logout()
 
 Retrieve a source publication:
 
     >>> cprov_archive = webservice.get(
-    ...     "/~cprov/+archive/ubuntu/ppa").jsonBody()
+    ...     "/~cprov/+archive/ubuntu/ppa"
+    ... ).jsonBody()
     >>> pubs = webservice.named_get(
-    ...     cprov_archive['self_link'], 'getPublishedSources').jsonBody()
-    >>> source_pub = pubs['entries'][0]
+    ...     cprov_archive["self_link"], "getPublishedSources"
+    ... ).jsonBody()
+    >>> source_pub = pubs["entries"][0]
     >>> builds = webservice.named_get(
-    ...     source_pub['self_link'], 'getBuilds').jsonBody()
+    ...     source_pub["self_link"], "getBuilds"
+    ... ).jsonBody()
 
 'builds' is a collection of Build records.  Each Build contains a number
 of properties:
 
     >>> from lazr.restful.testing.webservice import pprint_entry
-    >>> pprint_entry(builds['entries'][0])  # noqa
+    >>> pprint_entry(builds["entries"][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../beta/~cprov/+archive/ubuntu/ppa'
     builder_link: 'http://.../beta/builders/bob'
@@ -75,8 +80,9 @@ Whereas the 1.0 webservice for builds maintains the old property names
 (without underscores):
 
     >>> builds_1_0 = webservice.named_get(
-    ...     source_pub['self_link'].replace('beta', '1.0'), 'getBuilds')
-    >>> pprint_entry(builds_1_0.jsonBody()['entries'][0])  # noqa
+    ...     source_pub["self_link"].replace("beta", "1.0"), "getBuilds"
+    ... )
+    >>> pprint_entry(builds_1_0.jsonBody()["entries"][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     build_log_url:
@@ -107,8 +113,9 @@ Whereas the 1.0 webservice for builds maintains the old property names
 devel webservice also contains build date_started and duration.
 
     >>> builds_devel = webservice.named_get(
-    ...     source_pub['self_link'].replace('beta', 'devel'), 'getBuilds')
-    >>> pprint_entry(builds_devel.jsonBody()['entries'][0])  # noqa
+    ...     source_pub["self_link"].replace("beta", "devel"), "getBuilds"
+    ... )
+    >>> pprint_entry(builds_devel.jsonBody()["entries"][0])  # noqa
     arch_tag: 'i386'
     archive_link: 'http://.../~cprov/+archive/ubuntu/ppa'
     build_log_url:
@@ -143,11 +150,12 @@ devel webservice also contains build date_started and duration.
 For testing purposes we will set 'buildlog' and 'upload_log' to the
 same library file, so both can be verified.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
-    ...     IBinaryPackageBuildSet)
+    ...     IBinaryPackageBuildSet,
+    ... )
     >>> build = getUtility(IBinaryPackageBuildSet).getByID(26)
-    >>> build.storeUploadLog('i am a log')
+    >>> build.storeUploadLog("i am a log")
     >>> logout()
 
 IBinaryPackageBuild 'build_log_url' and 'upload_log_url' are webapp
@@ -156,12 +164,13 @@ private files (stored in the restricted librarian) directly because they
 will be proxied by the webapp.
 
     >>> builds = webservice.named_get(
-    ...     source_pub['self_link'], 'getBuilds').jsonBody()
+    ...     source_pub["self_link"], "getBuilds"
+    ... ).jsonBody()
 
-    >>> print(builds['entries'][0]['log_url'])
+    >>> print(builds["entries"][0]["log_url"])
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
 
-    >>> print(builds['entries'][0]['upload_log_url'])
+    >>> print(builds["entries"][0]["upload_log_url"])
     http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
 
 Re-trying builds
@@ -172,12 +181,11 @@ to cause a new build request for that build.  The caller must also have
 permission to retry the build.  See doc/binarypackagebuild.rst and
 stories/soyuz/xx-build-record.rst for more information.
 
-    >>> a_build = builds['entries'][0]
+    >>> a_build = builds["entries"][0]
 
 Plain users have no permission to call retry:
 
-    >>> print(user_webservice.named_post(
-    ...     a_build['self_link'], 'retry'))
+    >>> print(user_webservice.named_post(a_build["self_link"], "retry"))
     HTTP/1.1 401 Unauthorized
     ...
 
@@ -185,26 +193,26 @@ Set up some more webservice users:
 
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
-    >>> login('foo.bar@canonical.com')
-    >>> admin_person = getUtility(IPersonSet).getByName('mark')
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> login("foo.bar@canonical.com")
+    >>> admin_person = getUtility(IPersonSet).getByName("mark")
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> logout()
 
 Admin users can call it:
 
     >>> admin_webservice = webservice_for_person(
-    ...     admin_person, permission=OAuthPermission.WRITE_PUBLIC)
-    >>> print(admin_webservice.named_post(
-    ...     a_build['self_link'], 'retry'))
+    ...     admin_person, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
+    >>> print(admin_webservice.named_post(a_build["self_link"], "retry"))
     HTTP/1.1 200 Ok
     ...
 
 As can cprov who owns the PPA for the build:
 
     >>> cprov_webservice = webservice_for_person(
-    ...     cprov, permission=OAuthPermission.WRITE_PUBLIC)
-    >>> print(cprov_webservice.named_post(
-    ...     a_build['self_link'], 'retry'))
+    ...     cprov, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
+    >>> print(cprov_webservice.named_post(a_build["self_link"], "retry"))
     HTTP/1.1 400 Bad Request
     ...
     Build ... cannot be retried.
@@ -214,8 +222,9 @@ failed because it was already retried by an admin.  This is reflected in the
 can_be_retried property:
 
     >>> builds = webservice.named_get(
-    ...     source_pub['self_link'], 'getBuilds').jsonBody()
-    >>> print(builds['entries'][0]['can_be_retried'])
+    ...     source_pub["self_link"], "getBuilds"
+    ... ).jsonBody()
+    >>> print(builds["entries"][0]["can_be_retried"])
     False
 
 
@@ -226,42 +235,52 @@ When a build is in NEEDSBUILD state, it may be rescored using the 'rescore'
 custom operation.  However, the caller must be a member of the buildd admins
 team.
 
-    >>> print(user_webservice.named_post(
-    ...     a_build['self_link'], 'rescore', score=1000))
+    >>> print(
+    ...     user_webservice.named_post(
+    ...         a_build["self_link"], "rescore", score=1000
+    ...     )
+    ... )
     HTTP/1.1 401 Unauthorized
     ...
 
 The user cprov is a buildd admin.
 
-    >>> login('foo.bar@canonical.com')
-    >>> buildd_admins = getUtility(
-    ...     IPersonSet).getByName('launchpad-buildd-admins')
+    >>> login("foo.bar@canonical.com")
+    >>> buildd_admins = getUtility(IPersonSet).getByName(
+    ...     "launchpad-buildd-admins"
+    ... )
 
     >>> cprov.inTeam(buildd_admins)
     True
 
     >>> logout()
-    >>> print(cprov_webservice.named_post(
-    ...     a_build['self_link'], 'rescore', score=1000))
+    >>> print(
+    ...     cprov_webservice.named_post(
+    ...         a_build["self_link"], "rescore", score=1000
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
 
 The job has been rescored
 
-    >>> updated_build = webservice.get(a_build['self_link']).jsonBody()
-    >>> print(updated_build['score'])
+    >>> updated_build = webservice.get(a_build["self_link"]).jsonBody()
+    >>> print(updated_build["score"])
     1000
 
 If the build cannot be retried, then a 400 code is returned.  Let's
 alter the buildstate to one that cannot be retried:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.buildmaster.enums import BuildStatus
     >>> build.updateStatus(BuildStatus.FAILEDTOUPLOAD)
     >>> logout()
 
-    >>> print(cprov_webservice.named_post(
-    ...     a_build['self_link'], 'rescore', score=1000))
+    >>> print(
+    ...     cprov_webservice.named_post(
+    ...         a_build["self_link"], "rescore", score=1000
+    ...     )
+    ... )
     HTTP/1.1 400 Bad Request
     ...
     Build ... cannot be rescored.

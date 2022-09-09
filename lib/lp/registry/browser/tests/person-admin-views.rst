@@ -7,12 +7,11 @@ The PersonAdministerView is registered under the +review name.
     >>> from lp.services.webapp.authorization import check_permission
     >>> from lp.services.webapp.interfaces import IOpenLaunchBag
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> admin = getUtility(IOpenLaunchBag).user
-    >>> user = factory.makePerson(
-    ...     name='a-user', email="zaphod@example.place")
-    >>> view = create_initialized_view(user, '+review')
-    >>> check_permission('launchpad.Admin', view)
+    >>> user = factory.makePerson(name="a-user", email="zaphod@example.place")
+    >>> view = create_initialized_view(user, "+review")
+    >>> check_permission("launchpad.Admin", view)
     True
     >>> print(view.errors)
     []
@@ -34,13 +33,13 @@ The PersonAdministerView allows Launchpad admins to change some
 of a user's attributes.
 
     >>> form = {
-    ...     'field.name': 'zaphod',
-    ...     'field.display_name': 'Zaphod Beeblebrox',
-    ...     'field.personal_standing': 'POOR',
-    ...     'field.personal_standing_reason': "Zaphod's just this guy.",
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+review', form=form)
+    ...     "field.name": "zaphod",
+    ...     "field.display_name": "Zaphod Beeblebrox",
+    ...     "field.personal_standing": "POOR",
+    ...     "field.personal_standing_reason": "Zaphod's just this guy.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+review", form=form)
     >>> print(view.errors)
     []
     >>> print(user.name)
@@ -57,8 +56,8 @@ of a user's attributes.
 Non administrators cannot access the +review view
 
     >>> ignored = login_person(user)
-    >>> view = create_initialized_view(user, '+review')
-    >>> check_permission('launchpad.Admin', view)
+    >>> view = create_initialized_view(user, "+review")
+    >>> check_permission("launchpad.Admin", view)
     False
 
 
@@ -68,16 +67,17 @@ Reviewing a person's account
 The +reviewaccount allows admins to see and edit user account information.
 Non-admins cannot access it.
 
-    >>> view = create_view(user, '+reviewaccount')
-    >>> check_permission('launchpad.Admin', view)
+    >>> view = create_view(user, "+reviewaccount")
+    >>> check_permission("launchpad.Admin", view)
     False
 
 An admin can see a user's account information.
 
     >>> ignored = login_person(admin)
     >>> view = create_initialized_view(
-    ...     user, '+reviewaccount', principal=admin)
-    >>> check_permission('launchpad.Admin', view)
+    ...     user, "+reviewaccount", principal=admin
+    ... )
+    >>> check_permission("launchpad.Admin", view)
     True
     >>> print(view.errors)
     []
@@ -98,15 +98,16 @@ not need to look in the db.
 
     >>> for email in view.email_addresses:
     ...     print(email)
+    ...
     zaphod@example.place
 
 The admin can change the user's account information.
 
     >>> form = {
-    ...     'field.status': 'ACTIVE',
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    ...     "field.status": "ACTIVE",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> print(view.errors)
     []
 
@@ -119,11 +120,11 @@ an account is suspended, the preferred email address is disabled.
     None
 
     >>> form = {
-    ...     'field.status': 'SUSPENDED',
-    ...     'field.comment': "Wanted by the galactic police.",
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    ...     "field.status": "SUSPENDED",
+    ...     "field.comment": "Wanted by the galactic police.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> print(view.errors)
     []
     >>> transaction.commit()
@@ -137,11 +138,11 @@ an account is suspended, the preferred email address is disabled.
 No one can force account status to an invalid transition:
 
     >>> form = {
-    ...     'field.status': 'ACTIVE',
-    ...     'field.status_history': "Zaphod's a hoopy frood.",
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    ...     "field.status": "ACTIVE",
+    ...     "field.status_history": "Zaphod's a hoopy frood.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> [e.args[2] for e in view.errors]
     [AccountStatusError(...'The status cannot change from Suspended to
     Active')]
@@ -152,11 +153,11 @@ suspension, reactivation does not change the user's email addresses; the
 user must log in to restore the email addresses using the reactivate step.
 
     >>> form = {
-    ...     'field.status': 'DEACTIVATED',
-    ...     'field.comment': "Zaphod's a hoopy frood.",
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    ...     "field.status": "DEACTIVATED",
+    ...     "field.comment": "Zaphod's a hoopy frood.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> print(view.errors)
     []
     >>> user.account_status
@@ -171,11 +172,11 @@ user must log in to restore the email addresses using the reactivate step.
 An admin can mark an account as belonging to a user who has died.
 
     >>> form = {
-    ...     'field.status': 'DECEASED',
-    ...     'field.comment': 'In memoriam.',
-    ...     'field.actions.change': 'Change',
-    ...     }
-    >>> view = create_initialized_view(user, '+reviewaccount', form=form)
+    ...     "field.status": "DECEASED",
+    ...     "field.comment": "In memoriam.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> print(view.errors)
     []
     >>> user.account_status

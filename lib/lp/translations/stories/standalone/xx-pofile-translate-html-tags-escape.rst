@@ -2,21 +2,24 @@ This check will be sure that we are escaping correctly html tags
 inside textareas.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/pmount/'
-    ...     '+pots/pmount/hr/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/pmount/"
+    ...     "+pots/pmount/hr/+translate"
+    ... )
 
 We are going to assign a value with html tags to see that we escape it when
 rendered as part of a textarea. As we want to see what we get back inside a
 textarea, and
 
     >>> user_browser.getControl(
-    ...     name='msgset_67_hr_translation_0_radiobutton').value = [
-    ...         'msgset_67_hr_translation_0_new']
+    ...     name="msgset_67_hr_translation_0_radiobutton"
+    ... ).value = ["msgset_67_hr_translation_0_new"]
     >>> textarea = user_browser.getControl(
-    ...     name='msgset_67_hr_translation_0_new')
+    ...     name="msgset_67_hr_translation_0_new"
+    ... )
     >>> textarea.value = (
-    ...     'Upotreba:\r\n\r\n%s [opcije] <foo> [<etiketa>]%s%s%s\r\n')
-    >>> user_browser.getControl(name='submit_translations').click()
+    ...     "Upotreba:\r\n\r\n%s [opcije] <foo> [<etiketa>]%s%s%s\r\n"
+    ... )
+    >>> user_browser.getControl(name="submit_translations").click()
 
 We are in next form page.
 
@@ -25,12 +28,13 @@ We are in next form page.
 
 Let's go back to the modified message.
 
-    >>> user_browser.getLink('Previous').click()
+    >>> user_browser.getLink("Previous").click()
 
 And we can see that we escaped the tags:
 
     >>> text = find_tag_by_id(
-    ...     user_browser.contents, 'msgset_67_hr_translation_0')
+    ...     user_browser.contents, "msgset_67_hr_translation_0"
+    ... )
     >>> print(extract_text(text.decode_contents()))
     Upotreba:
     %s [opcije] &lt;foo&gt; [&lt;etiketa&gt;]%s%s%s

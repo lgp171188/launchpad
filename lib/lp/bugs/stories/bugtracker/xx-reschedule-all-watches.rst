@@ -11,18 +11,18 @@ is failing to update.
 
     >>> login(ADMIN_EMAIL)
     >>> bug_tracker = factory.makeBugTracker(
-    ...     name='our-bugtracker', title='Our BugTracker')
+    ...     name="our-bugtracker", title="Our BugTracker"
+    ... )
     >>> bug_watch = factory.makeBugWatch(bugtracker=bug_tracker)
     >>> logout()
 
-    >>> bug_tracker_edit_url = (
-    ...     canonical_url(bug_tracker) + '/+edit')
+    >>> bug_tracker_edit_url = canonical_url(bug_tracker) + "/+edit"
 
 The functionality to do this is available from the bug tracker's +edit
 page. It isn't visible to ordinary users, however.
 
     >>> user_browser.open(bug_tracker_edit_url)
-    >>> user_browser.getControl('Reschedule all watches')
+    >>> user_browser.getControl("Reschedule all watches")
     Traceback (most recent call last):
       ...
     LookupError: label ...'Reschedule all watches'
@@ -31,21 +31,23 @@ page. It isn't visible to ordinary users, however.
 However, the reschedule button will appear to administrators.
 
     >>> admin_browser.open(bug_tracker_edit_url)
-    >>> admin_browser.getControl('Reschedule all watches')
+    >>> admin_browser.getControl("Reschedule all watches")
     <SubmitControl...>
 
 It will also appear for non-admin registry experts.
 
     >>> from lp.testing import login_celebrity
 
-    >>> registry_expert = login_celebrity('registry_experts')
+    >>> registry_expert = login_celebrity("registry_experts")
     >>> registry_browser = setupBrowser(
-    ...     auth='Basic %s:test' % registry_expert.preferredemail.email)
+    ...     auth="Basic %s:test" % registry_expert.preferredemail.email
+    ... )
     >>> logout()
 
     >>> registry_browser.open(bug_tracker_edit_url)
     >>> reschedule_button = registry_browser.getControl(
-    ...     'Reschedule all watches')
+    ...     "Reschedule all watches"
+    ... )
 
 Clicking the button will reschedule the watches for the bug tracker for
 checking at some future date.
@@ -55,7 +57,8 @@ checking at some future date.
     http://bugs.launchpad.test/bugs/bugtrackers/our-bugtracker
 
     >>> for message in find_tags_by_class(
-    ...         registry_browser.contents, 'informational message'):
+    ...     registry_browser.contents, "informational message"
+    ... ):
     ...     print(extract_text(message))
     All bug watches on Our BugTracker have been rescheduled.
 
@@ -77,7 +80,8 @@ appear on the bugtracker page.
 
     >>> registry_browser.open(bug_tracker_edit_url)
     >>> reschedule_button = registry_browser.getControl(
-    ...     'Reschedule all watches')
+    ...     "Reschedule all watches"
+    ... )
     Traceback (most recent call last):
       ...
     LookupError: label ...'Reschedule all watches'

@@ -8,22 +8,24 @@ even if the user was trying to set the milestone value.
     >>> browser.getControl("Milestone").value = ["1"]
     >>> browser.getControl("Save Changes").click()
 
-    >>> for message in find_tags_by_class(browser.contents, 'message'):
+    >>> for message in find_tags_by_class(browser.contents, "message"):
     ...     print(message.decode_contents())
+    ...
     The milestone setting was ignored because you reassigned the bug
     to...Evolution...
 
 (Revert the change we just made.)
 
     >>> browser.open(
-    ...     "http://bugs.launchpad.test/evolution/+bug/1/+editstatus")
+    ...     "http://bugs.launchpad.test/evolution/+bug/1/+editstatus"
+    ... )
     >>> browser.getControl(name="evolution.target.product").value = "firefox"
     >>> browser.getControl("Save Changes").click()
 
 (The "ignore" message doesn't appear when the user didn't set a
 milestone.)
 
-    >>> find_tags_by_class(browser.contents, 'message')
+    >>> find_tags_by_class(browser.contents, "message")
     []
 
 Likewise, reassigning a bugtask to a different product will clear the
@@ -37,7 +39,8 @@ milestone value, if one was set.
     >>> browser.getControl(name="firefox.target.product").value = "evolution"
     >>> browser.getControl("Save Changes").click()
 
-    >>> for message in find_tags_by_class(browser.contents, 'message'):
+    >>> for message in find_tags_by_class(browser.contents, "message"):
     ...     print(message.decode_contents())
+    ...
     The Mozilla Firefox 1.0 milestone setting has been removed
     because you reassigned the bug to Evolution.

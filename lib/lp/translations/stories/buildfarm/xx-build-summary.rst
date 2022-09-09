@@ -14,21 +14,23 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.buildmaster.interactor import BuilderWorker
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> from lp.testing.factory import (
-    ...     remove_security_proxy_and_shout_at_engineer)
+    ...     remove_security_proxy_and_shout_at_engineer,
+    ... )
     >>> from lp.testing.fakemethod import FakeMethod
     >>> from lp.translations.interfaces.translations import (
-    ...     TranslationsBranchImportMode)
+    ...     TranslationsBranchImportMode,
+    ... )
 
     >>> class FakeWorker:
-    ...     resume = FakeMethod(result=('stdout', 'stderr', 0))
+    ...     resume = FakeMethod(result=("stdout", "stderr", 0))
     ...     build = FakeMethod()
     ...     sendFileToWorker = FakeMethod()
+    ...
 
     >>> login(ANONYMOUS)
-    >>> owner_email = factory.getUniqueString() + '@example.com'
+    >>> owner_email = factory.getUniqueString() + "@example.com"
     >>> owner = factory.makePerson(email=owner_email)
 
     >>> productseries = factory.makeProductSeries(owner=owner)
@@ -39,21 +41,25 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
     >>> branch_url = branch.unique_name
 
     >>> naked_productseries = remove_security_proxy_and_shout_at_engineer(
-    ...     productseries)
+    ...     productseries
+    ... )
     >>> naked_productseries.branch = factory.makeBranch()
     >>> naked_productseries.translations_autoimport_mode = (
-    ...     TranslationsBranchImportMode.IMPORT_TEMPLATES)
+    ...     TranslationsBranchImportMode.IMPORT_TEMPLATES
+    ... )
     >>> build = factory.makeTranslationTemplatesBuild(branch=branch)
     >>> buildqueue = build.queueBuild()
 
     >>> fake_chroot = getUtility(ILibraryFileAliasSet)[1]
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     >>> unused = ubuntu.currentseries.nominatedarchindep.addOrUpdateChroot(
-    ...     fake_chroot)
+    ...     fake_chroot
+    ... )
 
     >>> builder = factory.makeBuilder(vm_host=factory.getUniqueUnicode())
     >>> _ = patch(
-    ...     BuilderWorker, 'makeBuilderWorker', FakeMethod(FakeWorker()))
+    ...     BuilderWorker, "makeBuilderWorker", FakeMethod(FakeWorker())
+    ... )
     >>> buildqueue.markAsBuilding(builder)
 
     >>> builder_page = canonical_url(builder)
@@ -62,7 +68,8 @@ Create a builder working on a TranslationTemplatesBuild for a branch.
 Helper: find the current build's summary on a browser's current page.
 
     >>> def find_build_summary(browser):
-    ...     return find_tag_by_id(browser.contents, 'current-build-summary')
+    ...     return find_tag_by_id(browser.contents, "current-build-summary")
+    ...
 
 
 Show summary
@@ -86,9 +93,12 @@ There's a detailed page for the build record.
     >>> login(ANONYMOUS)
     >>> from lp.translations.interfaces.translationtemplatesbuild import (
     ...     ITranslationTemplatesBuildSource,
-    ...     )
-    >>> build = getUtility(ITranslationTemplatesBuildSource).findByBranch(
-    ...     branch).one()
+    ... )
+    >>> build = (
+    ...     getUtility(ITranslationTemplatesBuildSource)
+    ...     .findByBranch(branch)
+    ...     .one()
+    ... )
     >>> build_url = canonical_url(build)
     >>> logout()
 
@@ -110,12 +120,13 @@ product series.
     >>> login(ADMIN_EMAIL)
     >>> from lp.translations.interfaces.translations import (
     ...     TranslationsBranchImportMode,
-    ...     )
-    >>> product = factory.makeProduct(name='qblark', displayname='qblark')
-    >>> trunk = product.getSeries('trunk')
+    ... )
+    >>> product = factory.makeProduct(name="qblark", displayname="qblark")
+    >>> trunk = product.getSeries("trunk")
     >>> trunk.branch = branch
     >>> trunk.translations_autoimport_mode = (
-    ...     TranslationsBranchImportMode.IMPORT_TEMPLATES)
+    ...     TranslationsBranchImportMode.IMPORT_TEMPLATES
+    ... )
     >>> logout()
 
     >>> user_browser.open(build_url)
@@ -145,11 +156,12 @@ build history.
     >>> build.updateStatus(BuildStatus.BUILDING, builder=builder)
     >>> build.updateStatus(
     ...     BuildStatus.FULLYBUILT,
-    ...     date_finished=build.date_started + timedelta(seconds=300))
+    ...     date_finished=build.date_started + timedelta(seconds=300),
+    ... )
     >>> logout()
 
     >>> user_browser.open(builder_page)
-    >>> user_browser.getLink('View full history').click()
+    >>> user_browser.getLink("View full history").click()
 
     >>> print(extract_text(find_main_content(user_browser.contents)))
     Build history for ...

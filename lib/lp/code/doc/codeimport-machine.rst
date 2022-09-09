@@ -7,7 +7,9 @@ is, currently capable of performing imports).
 
     >>> from lp.code.enums import CodeImportMachineState
     >>> from lp.code.interfaces.codeimportmachine import (
-    ...     ICodeImportMachine, ICodeImportMachineSet)
+    ...     ICodeImportMachine,
+    ...     ICodeImportMachineSet,
+    ... )
 
     >>> machine_set = getUtility(ICodeImportMachineSet)
     >>> from lp.testing import verifyObject
@@ -42,10 +44,10 @@ hostname and online state information.
 getByHostname looks for a machine of the given hostname, and returns
 None if there is no machine by that name in the database.
 
-    >>> print(machine_set.getByHostname('bazaar-importer'))
+    >>> print(machine_set.getByHostname("bazaar-importer"))
     <...CodeImportMachine...>
 
-    >>> print(machine_set.getByHostname('unlikely-to-exist'))
+    >>> print(machine_set.getByHostname("unlikely-to-exist"))
     None
 
 
@@ -74,7 +76,7 @@ CodeImportMachines can be created with the 'new' method of
 ICodeImportMachineSet.  New machines can be created in either the ONLINE
 or OFFLINE states, but are in the OFFLINE state by default.
 
-    >>> new_machine = machine_set.new('frobisher')
+    >>> new_machine = machine_set.new("frobisher")
     >>> print(new_machine.state.name)
     OFFLINE
 
@@ -83,13 +85,15 @@ the CodeImportEvent audit trail.  The NewEvents class helps testing the
 creation of CodeImportEvent objects.
 
     >>> from lp.code.enums import (
-    ...     CodeImportEventDataType, CodeImportMachineOfflineReason)
-    >>> from lp.code.model.tests.test_codeimportjob import (
-    ...     NewEvents)
+    ...     CodeImportEventDataType,
+    ...     CodeImportMachineOfflineReason,
+    ... )
+    >>> from lp.code.model.tests.test_codeimportjob import NewEvents
 
     >>> new_events = NewEvents()
     >>> new_machine2 = machine_set.new(
-    ...     'innocent', CodeImportMachineState.ONLINE)
+    ...     "innocent", CodeImportMachineState.ONLINE
+    ... )
     >>> print(new_machine2.state.name)
     ONLINE
 
@@ -161,7 +165,7 @@ records the corresponding event.  A user is passed into the method to be
 recorded in the event, and will in almost all cases be a member of the
 bazaar experts or more likely a LOSA (administrator).
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> admin = getUtility(ILaunchBag).user
 
     >>> new_machine.setOnline()
@@ -194,10 +198,11 @@ CodeImportMachineState entries into the local namespace.
     >>> machine_counter = 0
     >>> def new_machine_with_state(state):
     ...     global machine_counter
-    ...     new_machine = machine_set.new('machine-%d' % machine_counter)
+    ...     new_machine = machine_set.new("machine-%d" % machine_counter)
     ...     machine_counter += 1
     ...     removeSecurityProxy(new_machine).state = state
     ...     return new_machine
+    ...
 
     >>> ONLINE = CodeImportMachineState.ONLINE
     >>> OFFLINE = CodeImportMachineState.OFFLINE

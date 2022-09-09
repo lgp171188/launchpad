@@ -4,6 +4,6 @@ The ProjectGroup Bugs Page
 The default page for a ProjectGroup on the bugs domain shows the bug listing
 for the ProjectGroup.
 
-    >>> anon_browser.open('http://bugs.launchpad.test/gnome')
+    >>> anon_browser.open("http://bugs.launchpad.test/gnome")
     >>> print(anon_browser.title)
     Bugs : GNOME

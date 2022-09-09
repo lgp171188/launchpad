@@ -6,32 +6,33 @@ Question' menu item. You need to be logged in to see the edit form, and
 only the question creator or an owner of the question target can change the
 title and description.
 
-    >>> anon_browser.open('http://launchpad.test/firefox/+question/2')
-    >>> anon_browser.getLink('Edit question').click()
+    >>> anon_browser.open("http://launchpad.test/firefox/+question/2")
+    >>> anon_browser.getLink("Edit question").click()
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> test_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> test_browser.open('http://launchpad.test/firefox/+question/2')
-    >>> test_browser.getLink('Edit question').click()
+    >>> test_browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> test_browser.open("http://launchpad.test/firefox/+question/2")
+    >>> test_browser.getLink("Edit question").click()
     >>> print(test_browser.url)
     http://answers.launchpad.test/firefox/+question/2/+edit
 
 There is a cancel link should the user decide otherwise:
 
-    >>> print(test_browser.getLink('Cancel').url)
+    >>> print(test_browser.getLink("Cancel").url)
     http://answers.launchpad.test/firefox/+question/2
 
 When we post the form, we should be redirected back to the question page.
 
     >>> description = (
-    ...   "Hi! I'm trying to learn about SVG but I can't get it to work at "
-    ...   "all in firefox. Maybe there is a plugin? Help! Thanks. Mark")
-    >>> test_browser.getControl('Description').value = description
+    ...     "Hi! I'm trying to learn about SVG but I can't get it to work at "
+    ...     "all in firefox. Maybe there is a plugin? Help! Thanks. Mark"
+    ... )
+    >>> test_browser.getControl("Description").value = description
     >>> summary = "Problem showing the SVG demo on W3C web site"
-    >>> test_browser.getControl('Summary').value = summary
-    >>> test_browser.getControl('Save Changes').click()
+    >>> test_browser.getControl("Summary").value = summary
+    >>> test_browser.getControl("Save Changes").click()
 
     >>> print(test_browser.url)
     http://answers.launchpad.test/firefox/+question/2
@@ -39,25 +40,29 @@ When we post the form, we should be redirected back to the question page.
 And viewing that page should show the updated information.
 
     >>> soup = find_main_content(test_browser.contents)
-    >>> print(soup.find('div', 'report').decode_contents().strip())
+    >>> print(soup.find("div", "report").decode_contents().strip())
     <p>Hi! I'm trying to learn about SVG but I can't get it to
     work at all in firefox. Maybe there is a plugin? Help! Thanks.
     Mark</p>
-    >>> print(soup.find('h1').decode_contents())
+    >>> print(soup.find("h1").decode_contents())
     Problem showing the SVG demo on W3C web site
 
 You can even modify the title and description of 'Answered' and
 'Invalid' questions:
 
     >>> def print_question_status(browser):
-    ...     print(extract_text(
-    ...         find_tag_by_id(browser.contents, 'question-status')))
+    ...     print(
+    ...         extract_text(
+    ...             find_tag_by_id(browser.contents, "question-status")
+    ...         )
+    ...     )
+    ...
 
-    >>> test_browser.open('http://launchpad.test/ubuntu/+question/3')
+    >>> test_browser.open("http://launchpad.test/ubuntu/+question/3")
     >>> print_question_status(test_browser)
     Status: Invalid
 
-    >>> test_browser.getLink('Edit question')
+    >>> test_browser.getLink("Edit question")
     <Link...>
 
 
@@ -68,19 +73,21 @@ Distribution questions can have a source package associated with them.
 Any logged in user can change the question source package on the
 'Edit Question' page.
 
-    >>> user_browser.open('http://launchpad.test/ubuntu/+question/5')
-    >>> user_browser.getLink('Edit question').click()
+    >>> user_browser.open("http://launchpad.test/ubuntu/+question/5")
+    >>> user_browser.getLink("Edit question").click()
     >>> user_browser.getControl(
-    ...     name='field.target.package').value = 'linux-source-2.6.15'
-    >>> user_browser.getControl('Save Changes').click()
+    ...     name="field.target.package"
+    ... ).value = "linux-source-2.6.15"
+    >>> user_browser.getControl("Save Changes").click()
 
 Product questions ignore sourcepackage information if it is submitted:
 
-    >>> user_browser.open('http://launchpad.test/firefox/+question/2')
-    >>> user_browser.getLink('Edit question').click()
+    >>> user_browser.open("http://launchpad.test/firefox/+question/2")
+    >>> user_browser.getLink("Edit question").click()
     >>> user_browser.getControl(
-    ...     name='field.target.package').value = 'linux-source-2.6.15'
-    >>> user_browser.getControl('Save Changes').click()
+    ...     name="field.target.package"
+    ... ).value = "linux-source-2.6.15"
+    >>> user_browser.getControl("Save Changes").click()
 
 
 Changing Other Metadata
@@ -91,28 +98,29 @@ distribution owner) can also change the question Assignee, and
 edit the Status Whiteboard using the 'Edit Question' page.
 
     >>> browser.addHeader(
-    ...   'Authorization', 'Basic jeff.waugh@ubuntulinux.com:test')
-    >>> browser.open('http://localhost/ubuntu/+question/5')
-    >>> browser.getLink('Edit question').click()
+    ...     "Authorization", "Basic jeff.waugh@ubuntulinux.com:test"
+    ... )
+    >>> browser.open("http://localhost/ubuntu/+question/5")
+    >>> browser.getLink("Edit question").click()
 
-    >>> browser.getControl('Assignee').value = 'name16'
-    >>> browser.getControl('Status Whiteboard').value = 'Some note'
-    >>> browser.getControl('Save Changes').click()
+    >>> browser.getControl("Assignee").value = "name16"
+    >>> browser.getControl("Status Whiteboard").value = "Some note"
+    >>> browser.getControl("Save Changes").click()
 
     >>> soup = find_main_content(browser.contents)
-    >>> print(extract_text(find_tag_by_id(soup, 'question-whiteboard')))
+    >>> print(extract_text(find_tag_by_id(soup, "question-whiteboard")))
     Whiteboard: Some note
-    >>> portlet_details = find_tag_by_id(browser.contents, 'portlet-details')
+    >>> portlet_details = find_tag_by_id(browser.contents, "portlet-details")
 
 These fields cannot be modified by a non-privileged user:
 
-    >>> user_browser.open('http://localhost/ubuntu/+question/5')
-    >>> user_browser.getLink('Edit question').click()
-    >>> user_browser.getControl('Assignee')
+    >>> user_browser.open("http://localhost/ubuntu/+question/5")
+    >>> user_browser.getLink("Edit question").click()
+    >>> user_browser.getControl("Assignee")
     Traceback (most recent call last):
     ...
     LookupError...
-    >>> user_browser.getControl('Status Whiteboard')
+    >>> user_browser.getControl("Status Whiteboard")
     Traceback (most recent call last):
     ...
     LookupError...

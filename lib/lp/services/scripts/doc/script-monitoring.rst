@@ -28,28 +28,38 @@ IScriptActivitySet.recordSuccess():
 
     >>> from lp.services.config import config
     >>> from lp.services.scripts.interfaces.scriptactivity import (
-    ...     IScriptActivitySet)
+    ...     IScriptActivitySet,
+    ... )
     >>> from lp.services.statsd.interfaces.statsd_client import IStatsdClient
     >>> from lp.testing.dbuser import switch_dbuser
 
-    >>> UTC = pytz.timezone('UTC')
-    >>> switch_dbuser('garbo_daily') # A script db user
+    >>> UTC = pytz.timezone("UTC")
+    >>> switch_dbuser("garbo_daily")  # A script db user
 
-    >>> config.push('statsd_test', dedent('''
+    >>> config.push(
+    ...     "statsd_test",
+    ...     dedent(
+    ...         """
     ...     [statsd]
     ...     environment: test
-    ...     '''))
+    ...     """
+    ...     ),
+    ... )
     >>> statsd_client = getUtility(IStatsdClient)
     >>> stats_client = mock.Mock()
 
-    >>> with MockPatchObject(statsd_client, '_client', stats_client):
+    >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     activity = getUtility(IScriptActivitySet).recordSuccess(
-    ...         name='script-name',
-    ...         date_started=datetime.datetime(2007,2,1,10,0,tzinfo=UTC),
-    ...         date_completed=datetime.datetime(2007,2,1,10,1,tzinfo=UTC),
-    ...         hostname='script-host')
+    ...         name="script-name",
+    ...         date_started=datetime.datetime(2007, 2, 1, 10, 0, tzinfo=UTC),
+    ...         date_completed=datetime.datetime(
+    ...             2007, 2, 1, 10, 1, tzinfo=UTC
+    ...         ),
+    ...         hostname="script-host",
+    ...     )
+    ...
 
-    >>> _ = config.pop('statsd_test')
+    >>> _ = config.pop("statsd_test")
 
 The activity object records the script name, the host name it ran on
 and the start and end timestamps:
@@ -76,15 +86,17 @@ We can also query for the last activity for a particular script, which
 will match the activity we just created:
 
     >>> activity = getUtility(IScriptActivitySet).getLastActivity(
-    ...     'script-name')
+    ...     "script-name"
+    ... )
     >>> print(activity.date_started)
     2007-02-01 10:00:00+00:00
 
 If no activity has occurred for a script, getLastActivity() returns
 None:
 
-    >>> print(getUtility(IScriptActivitySet).getLastActivity(
-    ...     'no-such-script'))
+    >>> print(
+    ...     getUtility(IScriptActivitySet).getLastActivity("no-such-script")
+    ... )
     None
 
 If the hostname parameter is omitted, it defaults to the host the
@@ -93,6 +105,7 @@ script ran on, as determined by 'socket.gethostname()':
     >>> local_activity = getUtility(IScriptActivitySet).recordSuccess(
     ...     name=factory.getUniqueString(),
     ...     date_started=datetime.datetime.now(UTC),
-    ...     date_completed=datetime.datetime.now(UTC))
+    ...     date_completed=datetime.datetime.now(UTC),
+    ... )
     >>> local_activity.hostname == socket.gethostname()
     True

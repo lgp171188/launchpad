@@ -14,11 +14,13 @@ PillarNameSet.
     >>> pillar_set = getUtility(IPillarNameSet)
     >>> def isFeatured(project):
     ...     return project in getUtility(IPillarNameSet).featured_projects
+    ...
 
 We can get a list of featured projects from the pillar name set:
 
     >>> for project in pillar_set.featured_projects:
     ...     print(project.name)
+    ...
     applets
     bazaar
     firefox
@@ -31,33 +33,33 @@ We can get a list of featured projects from the pillar name set:
 
 We'll make sure our isFeatured() test is working:
 
-    >>> isFeatured(getUtility(IProductSet).getByName('bazaar'))
+    >>> isFeatured(getUtility(IProductSet).getByName("bazaar"))
     True
-    >>> isFeatured(getUtility(IProjectGroupSet).getByName('gnome'))
+    >>> isFeatured(getUtility(IProjectGroupSet).getByName("gnome"))
     True
-    >>> isFeatured(getUtility(IDistributionSet).getByName('ubuntu'))
+    >>> isFeatured(getUtility(IDistributionSet).getByName("ubuntu"))
     True
-    >>> isFeatured(getUtility(IDistributionSet).getByName('kubuntu'))
+    >>> isFeatured(getUtility(IDistributionSet).getByName("kubuntu"))
     False
 
 We can add a project, product or distro to the list of featured
 projects:
 
-    >>> guadalinex = getUtility(IDistributionSet).getByName('guadalinex')
+    >>> guadalinex = getUtility(IDistributionSet).getByName("guadalinex")
     >>> isFeatured(guadalinex)
     False
     >>> added = pillar_set.add_featured_project(guadalinex)
     >>> isFeatured(guadalinex)
     True
 
-    >>> evolution = getUtility(IProductSet).getByName('evolution')
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
     >>> isFeatured(evolution)
     False
     >>> added = pillar_set.add_featured_project(evolution)
     >>> isFeatured(evolution)
     True
 
-    >>> apache = getUtility(IProjectGroupSet).getByName('apache')
+    >>> apache = getUtility(IProjectGroupSet).getByName("apache")
     >>> isFeatured(apache)
     False
     >>> added = pillar_set.add_featured_project(apache)

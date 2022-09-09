@@ -25,9 +25,10 @@ The IDistroSeriesSet utility is accessed in the usual fashion:
     >>> from lp.registry.interfaces.distroseries import (
     ...     IDistroSeries,
     ...     IDistroSeriesSet,
-    ...     )
+    ... )
     >>> from lp.translations.interfaces.hastranslationimports import (
-    ...     IHasTranslationImports)
+    ...     IHasTranslationImports,
+    ... )
     >>> distroseriesset = getUtility(IDistroSeriesSet)
 
 To retrieve a specific release of a distribution, use IDistroSeriesSet.get:
@@ -62,8 +63,11 @@ queryByName works on series aliases too if follow_aliases is True.
     >>> login(ANONYMOUS)
     >>> print(distroseriesset.queryByName(ubuntu, "devel"))
     None
-    >>> print(distroseriesset.queryByName(
-    ...     ubuntu, "devel", follow_aliases=True).name)
+    >>> print(
+    ...     distroseriesset.queryByName(
+    ...         ubuntu, "devel", follow_aliases=True
+    ...     ).name
+    ... )
     hoary
 
 We verify that a distroseries does in fact fully provide IDistroSeries:
@@ -83,9 +87,11 @@ And IHasTranslationImports:
 To search the set of IDistroSeriess, use IDistroSeriesSet.search:
 
     >>> ubuntu_releases = distroseriesset.search(
-    ...     distribution=ubuntu, isreleased=True, orderBy="-datereleased")
+    ...     distribution=ubuntu, isreleased=True, orderBy="-datereleased"
+    ... )
     >>> for release in ubuntu_releases:
     ...     print(release.name)
+    ...
     warty
 
     >>> all_ubuntu_releases = distroseriesset.search(distribution=ubuntu)
@@ -138,10 +144,10 @@ canModifySuite
 canModifySuite method helps us to decide if an upload is allowed or not,
 according to the distroseries status and the upload target pocket.
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> archive = ubuntu.main_archive
-    >>> breezy_autotest = ubuntu['breezy-autotest']
-    >>> hoary = ubuntu['hoary']
+    >>> breezy_autotest = ubuntu["breezy-autotest"]
+    >>> hoary = ubuntu["hoary"]
 
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.registry.interfaces.series import SeriesStatus
@@ -156,10 +162,12 @@ according to the distroseries status and the upload target pocket.
     >>> breezy_autotest.status.name
     'EXPERIMENTAL'
     >>> archive.canModifySuite(
-    ...     breezy_autotest, PackagePublishingPocket.RELEASE)
+    ...     breezy_autotest, PackagePublishingPocket.RELEASE
+    ... )
     True
     >>> archive.canModifySuite(
-    ...     breezy_autotest, PackagePublishingPocket.SECURITY)
+    ...     breezy_autotest, PackagePublishingPocket.SECURITY
+    ... )
     False
 
 The FROZEN status is special.  Uploads are allowed for all pockets as
@@ -182,7 +190,8 @@ be used for staging uploads on their way into the UPDATES pocket.
     >>> archive.canModifySuite(warty, PackagePublishingPocket.PROPOSED)
     True
     >>> archive.canModifySuite(
-    ...     breezy_autotest, PackagePublishingPocket.PROPOSED)
+    ...     breezy_autotest, PackagePublishingPocket.PROPOSED
+    ... )
     True
     >>> archive.canModifySuite(hoary, PackagePublishingPocket.PROPOSED)
     True
@@ -193,19 +202,20 @@ Package searching
 You can search through binary packages publishing in a distribution
 release by using the searchPackages method, which uses magical fti:
 
-    >>> warty.searchPackages(u"pmount").count()
+    >>> warty.searchPackages("pmount").count()
     1
 
 This also works for small or weirdly named packages that don't work
 through fti, and even for substrings:
 
-    >>> warty.searchPackages(u"linux-2.6.12").count()
+    >>> warty.searchPackages("linux-2.6.12").count()
     1
-    >>> warty.searchPackages(u"at").count()
+    >>> warty.searchPackages("at").count()
     1
-    >>> pkgs = warty.searchPackages(u'a')
+    >>> pkgs = warty.searchPackages("a")
     >>> for dsbp in pkgs:
     ...     print("%s: %s" % (dsbp.__class__.__name__, dsbp.name))
+    ...
     DistroSeriesBinaryPackage: foobar
     DistroSeriesBinaryPackage: mozilla-firefox
     DistroSeriesBinaryPackage: at
@@ -221,10 +231,12 @@ other things) the uploader for validating incoming uploads.
     >>> hoary = distroseriesset.get(3)
     >>> for c in hoary.components:
     ...     print(c.name)
+    ...
     main
     restricted
     >>> for s in hoary.sections:
     ...     print(s.name)
+    ...
     base
     web
     editors
@@ -234,16 +246,18 @@ other things) the uploader for validating incoming uploads.
 
     >>> from lp.soyuz.interfaces.section import ISectionSet
     >>> from lp.soyuz.model.section import SectionSelection
-    >>> python = getUtility(ISectionSet).ensure('python')
+    >>> python = getUtility(ISectionSet).ensure("python")
     >>> _ = SectionSelection(distroseries=hoary, section=python)
 
     >>> for c in hoary.components:
     ...     print(c.name)
+    ...
     main
     restricted
 
     >>> for s in hoary.sections:
     ...     print(s.name)
+    ...
     base
     web
     editors
@@ -255,9 +269,11 @@ other things) the uploader for validating incoming uploads.
 Breezy-autotest has got a partner component, which is not reported:
 
     >>> breezyautotest = distroseriesset.queryByName(
-    ...     ubuntu, "breezy-autotest")
+    ...     ubuntu, "breezy-autotest"
+    ... )
     >>> for c in breezyautotest.components:
     ...     print(c.name)
+    ...
     main
     restricted
     universe
@@ -268,6 +284,7 @@ components since partner is allowed for upload:
 
     >>> for c in breezyautotest.upload_components:
     ...     print(c.name)
+    ...
     main
     restricted
     universe
@@ -295,28 +312,45 @@ again" type set of assertions.
 
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.scripts.initialize_distroseries import (
-    ...     InitializeDistroSeries)
+    ...     InitializeDistroSeries,
+    ... )
     >>> login("foo.bar@canonical.com")
-    >>> humpy = ubuntu.newSeries('humpy', 'Humpy Hippo',
-    ...                          'The Humpy Hippo', 'Fat', 'Yo Momma',
-    ...                          '99.2', None, hoary.owner)
+    >>> humpy = ubuntu.newSeries(
+    ...     "humpy",
+    ...     "Humpy Hippo",
+    ...     "The Humpy Hippo",
+    ...     "Fat",
+    ...     "Yo Momma",
+    ...     "99.2",
+    ...     None,
+    ...     hoary.owner,
+    ... )
     >>> humpy.previous_series = hoary
     >>> ids = InitializeDistroSeries(humpy, [hoary.id])
     >>> ids.initialize()
     >>> hoary.main_archive.getPublishedSources(
-    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
-    ...     distroseries=hoary, exact_match=True).count()
+    ...     name="pmount",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=hoary,
+    ...     exact_match=True,
+    ... ).count()
     1
     >>> humpy.main_archive.getPublishedSources(
-    ...     name='pmount', status=PackagePublishingStatus.PUBLISHED,
-    ...     distroseries=humpy, exact_match=True).count()
+    ...     name="pmount",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ...     distroseries=humpy,
+    ...     exact_match=True,
+    ... ).count()
     1
     >>> hoary.main_archive.getAllPublishedBinaries(
-    ...     distroarchseries=hoary['i386'], name=u'pmount',
-    ...     status=PackagePublishingStatus.PUBLISHED).count()
+    ...     distroarchseries=hoary["i386"],
+    ...     name="pmount",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... ).count()
     1
     >>> humpy.main_archive.getAllPublishedBinaries(
-    ...     distroarchseries=humpy['i386'], name=u'pmount').count()
+    ...     distroarchseries=humpy["i386"], name="pmount"
+    ... ).count()
     1
 
 Check if the attributes of an DRSPR instance for the just initialized
@@ -339,16 +373,23 @@ resulted of the sourcepackagerelease in question, but built anywhere.
 Initialize a new distroseries based on warty (since it has, at least
 one coherent published source + binary, mozilla-firefox)
 
-    >>> bumpy = ubuntu.newSeries('bumpy', 'Bumpy',
-    ...                          'The Bumpy', 'Fat', 'Boom',
-    ...                          '99.3', None, warty.owner)
+    >>> bumpy = ubuntu.newSeries(
+    ...     "bumpy",
+    ...     "Bumpy",
+    ...     "The Bumpy",
+    ...     "Fat",
+    ...     "Boom",
+    ...     "99.3",
+    ...     None,
+    ...     warty.owner,
+    ... )
     >>> bumpy.previous_series = warty
     >>> ids = InitializeDistroSeries(bumpy, [warty.id])
     >>> ids.initialize()
 
 Build a new ISourcePackage based in the new distroseries:
 
-    >>> bumpy_firefox_sp = bumpy.getSourcePackage('mozilla-firefox')
+    >>> bumpy_firefox_sp = bumpy.getSourcePackage("mozilla-firefox")
 
 Check the content IDSPR binaries & builds attributes:
 
@@ -358,7 +399,8 @@ getBinariesForSeries() should be inherited from parent release.
     3
 
     >>> for bin in bumpy_firefox_sp.currentrelease.getBinariesForSeries(
-    ...         bumpy):
+    ...     bumpy
+    ... ):
     ...     print(bin.id, bin.title, bin.build.distro_arch_series.title)
     27 mozilla-firefox-data-0.9 The Warty Warthog Release for i386 (386)
     26 mozilla-firefox-0.9 The Warty Warthog Release for hppa (hppa)
@@ -368,6 +410,7 @@ The new series also has the same packaging links as its parent series.
 
     >>> for packaging in warty.packagings:
     ...     print(packaging.sourcepackagename.name)
+    ...
     a52dec
     alsa-utils
     evolution
@@ -376,6 +419,7 @@ The new series also has the same packaging links as its parent series.
 
     >>> for packaging in bumpy.packagings:
     ...     print(packaging.sourcepackagename.name)
+    ...
     a52dec
     alsa-utils
     evolution
@@ -391,7 +435,8 @@ distribution release:
 
     >>> translatables = hoary.getTranslatableSourcePackages()
     >>> for translatable in translatables:
-    ...    print(translatable.name)
+    ...     print(translatable.name)
+    ...
     evolution
     mozilla
     pmount
@@ -403,7 +448,8 @@ packages that are linked to upstream productseries.
     >>> from operator import attrgetter
     >>> unlinked_translatables = hoary.getUnlinkedTranslatableSourcePackages()
     >>> for translatable in sorted(
-    ...         unlinked_translatables, key=attrgetter('name')):
+    ...     unlinked_translatables, key=attrgetter("name")
+    ... ):
     ...     print(translatable.name)
     mozilla
     pmount
@@ -413,8 +459,11 @@ packagings property:
 
     >>> packagings = hoary.packagings
     >>> for packaging in packagings:
-    ...     print(packaging.sourcepackagename.name,
-    ...           packaging.productseries.product.displayname)
+    ...     print(
+    ...         packaging.sourcepackagename.name,
+    ...         packaging.productseries.product.displayname,
+    ...     )
+    ...
     evolution Evolution
     mozilla-firefox Mozilla Firefox
     netapplet NetApplet
@@ -433,9 +482,10 @@ translations, and code. Each item in the list is a dict with the 'package',
 total_bugs, and total_messages (translatable messages).
 
     >>> for summary in hoary.getPrioritizedUnlinkedSourcePackages():
-    ...     print(summary['package'].name)
+    ...     print(summary["package"].name)
     ...     naked_summary = removeSecurityProxy(summary)
-    ...     print('%(bug_count)s %(total_messages)s' % naked_summary)
+    ...     print("%(bug_count)s %(total_messages)s" % naked_summary)
+    ...
     pmount  0  64
     alsa-utils  0  0
     cnews  0  0
@@ -449,6 +499,7 @@ share bugs, translations, and code.
 
     >>> for packaging in hoary.getPrioritizedPackagings():
     ...     print(packaging.sourcepackagename.name)
+    ...
     netapplet
     evolution
 
@@ -466,19 +517,22 @@ upstream.
     >>> print(pkgs.count())
     0
 
-    >>> for name in ['aaron', 'bjorn', 'chex', 'deryck', 'edwin', 'francis']:
+    >>> for name in ["aaron", "bjorn", "chex", "deryck", "edwin", "francis"]:
     ...     product = factory.makeProduct(name=name)
     ...     productseries = factory.makeProductSeries(product=product)
     ...     spn = factory.makeSourcePackageName(name=name)
-    ...     package = factory.makeSourcePackage(sourcepackagename=spn,
-    ...                                         distroseries=distroseries)
+    ...     package = factory.makeSourcePackage(
+    ...         sourcepackagename=spn, distroseries=distroseries
+    ...     )
     ...     package.setPackaging(productseries, product.owner)
     ...     transaction.commit()
+    ...
 
 
     >>> pkgs = distroseries.getMostRecentlyLinkedPackagings()
     >>> for packaging in pkgs:
     ...     print(packaging.sourcepackagename.name)
+    ...
     francis
     edwin
     deryck
@@ -493,8 +547,10 @@ ISPP.getPublishedBinaries returns all the binaries generated by the
 publication in question:
 
     >>> warty_pub_source = warty.main_archive.getPublishedSources(
-    ...     distroseries=warty, name=u'mozilla-firefox',
-    ...     status=PackagePublishingStatus.PUBLISHED).one()
+    ...     distroseries=warty,
+    ...     name="mozilla-firefox",
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... ).one()
     >>> print(warty_pub_source.sourcepackagerelease.name)
     mozilla-firefox
     >>> print(warty_pub_source.sourcepackagerelease.version)
@@ -511,7 +567,7 @@ publication in question:
 
     >>> from lp.soyuz.interfaces.publishing import (
     ...     IBinaryPackagePublishingHistory,
-    ...     )
+    ... )
     >>> verifyObject(IBinaryPackagePublishingHistory, warty_mozilla_pub_bin)
     True
 
@@ -531,7 +587,9 @@ and in the main archives for this distroseries:
     >>> for source in sources:
     ...     print(
     ...         source.sourcepackagerelease.sourcepackagename.name,
-    ...         source.sourcepackagerelease.version)
+    ...         source.sourcepackagerelease.version,
+    ...     )
+    ...
     netapplet 0.99.6-1
     alsa-utils 1.0.8-1ubuntu1
     alsa-utils 1.0.9a-4
@@ -545,7 +603,9 @@ Similarly for binary publications:
     >>> for binary in binaries:
     ...     print(
     ...         binary.binarypackagerelease.binarypackagename.name,
-    ...         binary.binarypackagerelease.version)
+    ...         binary.binarypackagerelease.version,
+    ...     )
+    ...
     mozilla-firefox 0.9
     pmount 0.1-1
     linux-2.6.12 2.6.12.20
@@ -566,17 +626,23 @@ case of a distribution that doesn't use Soyuz officially, a user who is
 a driver can create the series and they are automatically assigned to the
 series' driver role so that they can edit it.
 
-    >>> youbuntu = factory.makeDistribution(name='youbuntu')
-    >>> yo_driver = factory.makePerson(name='yo-driver')
+    >>> youbuntu = factory.makeDistribution(name="youbuntu")
+    >>> yo_driver = factory.makePerson(name="yo-driver")
     >>> youbuntu.driver = yo_driver
     >>> ignored = login_person(yo_driver)
     >>> youbuntu.official_packages
     False
 
     >>> yo_series = youbuntu.newSeries(
-    ...     name='island', display_name='Island', title='YouBuntu Island',
-    ...     summary='summary', description='description', version='09.07',
-    ...     previous_series=warty, registrant=yo_driver)
+    ...     name="island",
+    ...     display_name="Island",
+    ...     title="YouBuntu Island",
+    ...     summary="summary",
+    ...     description="description",
+    ...     version="09.07",
+    ...     previous_series=warty,
+    ...     registrant=yo_driver,
+    ... )
     >>> print(yo_series.name)
     island
     >>> print(yo_series.registrant.name)
@@ -590,9 +656,15 @@ have permission to edit the series.
 
     >>> ignored = login_person(youbuntu.owner)
     >>> yo_series = youbuntu.newSeries(
-    ...     name='forest', display_name='Forest', title='YouBuntu Forest',
-    ...     summary='summary', description='description', version='09.07',
-    ...     previous_series=warty, registrant=youbuntu.owner)
+    ...     name="forest",
+    ...     display_name="Forest",
+    ...     title="YouBuntu Forest",
+    ...     summary="summary",
+    ...     description="description",
+    ...     version="09.07",
+    ...     previous_series=warty,
+    ...     registrant=youbuntu.owner,
+    ... )
     >>> print(yo_series.name)
     forest
     >>> print(yo_series.driver)
@@ -606,9 +678,15 @@ Ubuntu driver can not create series.
     >>> ubuntu.driver = yo_driver
     >>> ignored = login_person(yo_driver)
     >>> ubuntu.newSeries(
-    ...     name='finch', display_name='Finch', title='Ubuntu Finch',
-    ...     summary='summary', description='description', version='9.06',
-    ...     previous_series=warty, owner=ubuntu.driver)
+    ...     name="finch",
+    ...     display_name="Finch",
+    ...     title="Ubuntu Finch",
+    ...     summary="summary",
+    ...     description="description",
+    ...     version="9.06",
+    ...     previous_series=warty,
+    ...     owner=ubuntu.driver,
+    ... )
     Traceback (most recent call last):
      ...
     zope.security.interfaces.Unauthorized: ...
@@ -618,9 +696,15 @@ series.
 
     >>> ignored = login_person(ubuntu.owner.activemembers[0])
     >>> u_series = ubuntu.newSeries(
-    ...     name='finch', display_name='Finch', title='Ubuntu Finch',
-    ...     summary='summary', description='description', version='9.06',
-    ...     previous_series=warty, registrant=ubuntu.owner)
+    ...     name="finch",
+    ...     display_name="Finch",
+    ...     title="Ubuntu Finch",
+    ...     summary="summary",
+    ...     description="description",
+    ...     version="9.06",
+    ...     previous_series=warty,
+    ...     registrant=ubuntu.owner,
+    ... )
     >>> print(u_series.name)
     finch
     >>> print(u_series.registrant.name)
@@ -655,6 +739,7 @@ There are 2 completed specs for Krunch:
     >>> filter = [SpecificationFilter.COMPLETE]
     >>> for spec in kubuntu.specifications(None, filter=filter):
     ...     print(spec.name, spec.is_complete)
+    ...
     thinclient-local-devices True
     usplash-on-hibernation True
 
@@ -664,6 +749,7 @@ And there are 2 incomplete specs:
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in krunch.specifications(None, filter=filter):
     ...     print(spec.name, spec.is_complete)
+    ...
     cluster-installation False
     revu False
 
@@ -673,6 +759,7 @@ If we ask for all specs, we get them in the order of priority.
     >>> filter = [SpecificationFilter.ALL]
     >>> for spec in krunch.specifications(None, filter=filter):
     ...     print(spec.priority.title, spec.name)
+    ...
     Essential cluster-installation
     High revu
     Medium thinclient-local-devices
@@ -683,22 +770,25 @@ If we ask for all specs, we get them in the order of priority.
 
 With a distroseries, we can ask for ACCEPTED, PROPOSED and DECLINED specs:
 
-    >>> filter=[SpecificationFilter.ACCEPTED]
+    >>> filter = [SpecificationFilter.ACCEPTED]
     >>> for spec in krunch.specifications(None, filter=filter):
     ...     print(spec.name, spec.goalstatus.title)
+    ...
     cluster-installation Accepted
     revu Accepted
     thinclient-local-devices Accepted
     usplash-on-hibernation Accepted
 
-    >>> filter=[SpecificationFilter.PROPOSED]
+    >>> filter = [SpecificationFilter.PROPOSED]
     >>> for spec in krunch.specifications(None, filter=filter):
     ...     print(spec.name, spec.goalstatus.title)
+    ...
     kde-desktopfile-langpacks Proposed
 
-    >>> filter=[SpecificationFilter.DECLINED]
+    >>> filter = [SpecificationFilter.DECLINED]
     >>> for spec in krunch.specifications(None, filter=filter):
     ...     print(spec.name, spec.goalstatus.title)
+    ...
     krunch-desktop-plan Declined
 
 
@@ -707,6 +797,7 @@ ones that have been accepted.
 
     >>> for spec in krunch.specifications(None):
     ...     print(spec.name, spec.is_complete, spec.goalstatus.title)
+    ...
     cluster-installation False Accepted
     revu False Accepted
     thinclient-local-devices True Accepted
@@ -714,8 +805,9 @@ ones that have been accepted.
 
 We can filter for specifications that contain specific text:
 
-    >>> for spec in krunch.specifications(None, filter=[u'usb']):
+    >>> for spec in krunch.specifications(None, filter=["usb"]):
     ...     print(spec.name)
+    ...
     thinclient-local-devices
 
 
@@ -749,6 +841,7 @@ drivers. Kubuntu should be a good example.
     edgar
     >>> for d in krunch.drivers:
     ...     print(d.name)
+    ...
     edgar
     jblack
 
@@ -756,16 +849,17 @@ drivers. Kubuntu should be a good example.
 Now, we look at a release where there is a driver on the release but not on
 the distribution.
 
-    >>> debian = distroset.getByName('debian')
+    >>> debian = distroset.getByName("debian")
     >>> print(debian.driver)
     None
     >>> print(debian.owner.name)
     mark
-    >>> sarge = debian.getSeries('sarge')
+    >>> sarge = debian.getSeries("sarge")
     >>> print(sarge.driver.name)
     jdub
     >>> for d in sarge.drivers:
     ...     print(d.name)
+    ...
     jdub
     mark
 
@@ -773,21 +867,22 @@ the distribution.
 Now, a release where there is no driver on the release but there is a driver
 on the distribution.
 
-    >>> redhat = distroset.getByName('redhat')
+    >>> redhat = distroset.getByName("redhat")
     >>> print(redhat.driver.name)
     jblack
-    >>> six = redhat.getSeries('six')
+    >>> six = redhat.getSeries("six")
     >>> print(six.driver)
     None
     >>> for d in six.drivers:
     ...     print(d.name)
+    ...
     jblack
 
 Finally, on a release where neither the distribution nor the release have a
 driver. Here, we expect the driver to be the owner of the distribution
 (because this is the "commonest fallback").
 
-    >>> sid = debian.getSeries('sid')
+    >>> sid = debian.getSeries("sid")
     >>> print(debian.driver)
     None
     >>> print(debian.owner.name)
@@ -799,6 +894,7 @@ driver. Here, we expect the driver to be the owner of the distribution
 
     >>> for d in sid.drivers:
     ...     print(d.name)
+    ...
     mark
 
 
@@ -809,20 +905,21 @@ IDistroSeries provides the 'getLatestUpload' method which returns a
 list of the last 5 (five) IDistributionSourcePackageRelease (IDSPR)
 uploaded and published in its context.
 
-    >>> warty = ubuntu['warty']
+    >>> warty = ubuntu["warty"]
     >>> latest_uploads = warty.getLatestUploads()
 
 Each element is an IDistributionSourcePackageRelease instance:
 
     >>> for upload in latest_uploads:
     ...     print(upload.title)
+    ...
     mozilla-firefox 0.9 source package in Ubuntu
 
 Also, empty results (caused obviously by lack of sample data or very
 earlier development state of a distroseries) are possible:
 
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
-    >>> breezy_autotest = ubuntutest['breezy-autotest']
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+    >>> breezy_autotest = ubuntutest["breezy-autotest"]
     >>> latest_uploads = breezy_autotest.getLatestUploads()
 
     >>> len(latest_uploads)
@@ -835,9 +932,10 @@ Getting build records for a distro series
 IDistroSeries inherits the IHasBuildRecords interfaces and therefore provides
 a getBuildRecords() method.
 
-    >>> builds = ubuntu['warty'].getBuildRecords(name=u'firefox')
+    >>> builds = ubuntu["warty"].getBuildRecords(name="firefox")
     >>> for build in builds:
     ...     print(build.title)
+    ...
     hppa build of mozilla-firefox 0.9 in ubuntu warty RELEASE
     i386 build of mozilla-firefox 0.9 in ubuntu warty RELEASE
 

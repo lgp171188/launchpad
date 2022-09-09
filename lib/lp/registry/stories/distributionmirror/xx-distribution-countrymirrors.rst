@@ -10,20 +10,21 @@ main ubuntu repositories in case there's no mirror on the country of request.
 Spoofing a request from France will give us a list containing our french
 archive mirrors, plus the canonical one.
 
-    >>> browser.addHeader('X_FORWARDED_FOR', '83.196.46.77')
-    >>> browser.open('http://launchpad.test/ubuntu/+countrymirrors-archive')
-    >>> print(browser.headers['content-type'])
+    >>> browser.addHeader("X_FORWARDED_FOR", "83.196.46.77")
+    >>> browser.open("http://launchpad.test/ubuntu/+countrymirrors-archive")
+    >>> print(browser.headers["content-type"])
     text/plain;charset=utf-8
-    >>> print(browser.headers['X-Generated-For-Country'])
+    >>> print(browser.headers["X-Generated-For-Country"])
     France
-    >>> print(browser.headers['X-Generated-For-IP'])
+    >>> print(browser.headers["X-Generated-For-IP"])
     83.196.46.77
-    >>> print(browser.headers['X-REQUEST-HTTP_X_FORWARDED_FOR'])
+    >>> print(browser.headers["X-REQUEST-HTTP_X_FORWARDED_FOR"])
     83.196.46.77
-    >>> print(browser.headers['X-REQUEST-REMOTE_ADDR'])
+    >>> print(browser.headers["X-REQUEST-REMOTE_ADDR"])
     127.0.0.1
-    >>> for url in sorted(browser.contents.split('\n')):
+    >>> for url in sorted(browser.contents.split("\n")):
     ...     print(url)
+    ...
     http://archive.ubuntu.com/ubuntu/
     http://localhost:11375/archive-mirror/
     http://localhost:11375/valid-mirror/
@@ -32,11 +33,13 @@ Using a request with no IP address information will give us only the
 canonical mirror.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+countrymirrors-archive')
-    >>> print(anon_browser.headers['X-Generated-For-Country'])
+    ...     "http://launchpad.test/ubuntu/+countrymirrors-archive"
+    ... )
+    >>> print(anon_browser.headers["X-Generated-For-Country"])
     Unknown
-    >>> for url in sorted(anon_browser.contents.split('\n')):
+    >>> for url in sorted(anon_browser.contents.split("\n")):
     ...     print(url)
+    ...
     http://archive.ubuntu.com/ubuntu/
 
 Note that unofficial mirrors are not included in the listings.
@@ -45,22 +48,24 @@ Note that unofficial mirrors are not included in the listings.
     >>> from lp.registry.interfaces.distributionmirror import MirrorStatus
     >>> from lp.registry.model.distributionmirror import DistributionMirrorSet
     >>> mirror = DistributionMirrorSet().getByHttpUrl(
-    ...     'http://localhost:11375/archive-mirror/')
+    ...     "http://localhost:11375/archive-mirror/"
+    ... )
     >>> mirror.status = MirrorStatus.UNOFFICIAL
     >>> flush_database_updates()
 
     # http://localhost:11375/archive-mirror/ is not included in the list
     # anymore.
-    >>> browser.open('http://launchpad.test/ubuntu/+countrymirrors-archive')
-    >>> for url in sorted(browser.contents.split('\n')):
+    >>> browser.open("http://launchpad.test/ubuntu/+countrymirrors-archive")
+    >>> for url in sorted(browser.contents.split("\n")):
     ...     print(url)
+    ...
     http://archive.ubuntu.com/ubuntu/
     http://localhost:11375/valid-mirror/
 
 Also, the +countrymirrors-archive page is only available for the Ubuntu
 distribution.
 
-    >>> browser.open('http://launchpad.test/debian/+countrymirrors-archive')
+    >>> browser.open("http://launchpad.test/debian/+countrymirrors-archive")
     Traceback (most recent call last):
     ...
     urllib.error.HTTPError: HTTP Error 404: Not Found

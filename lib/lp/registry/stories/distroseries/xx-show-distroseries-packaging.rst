@@ -4,16 +4,17 @@ Distro series packaging
 The distro series packaging page is accssible to any user from the distro
 series +index page.
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary')
-    >>> anon_browser.getLink('All upstream links').click()
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> anon_browser.getLink("All upstream links").click()
     >>> print(anon_browser.title)
     All upstream links : ...
 
 The page lists the upstream packaging links.
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'packagings')))
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "packagings"))
+    ... )
     Source Package   Upstream Project   Upstream Contributor Connections
     netapplet
       NetApplet The Novell Network Applet
@@ -30,14 +31,14 @@ The page lists the upstream packaging links.
 Any use can see that this page is related to the needs packaging report. It
 is linked, but the link to this page is not enabled.
 
-    >>> print(extract_text(find_tag_by_id(content, 'related-pages')))
+    >>> print(extract_text(find_tag_by_id(content, "related-pages")))
     Needs upstream links     All upstream links
 
-    >>> anon_browser.getLink('Needs upstream links')
+    >>> anon_browser.getLink("Needs upstream links")
     <Link text='Needs upstream links'
       url='http://launchpad.test/ubuntu/hoary/+needs-packaging'>
 
-    >>> anon_browser.getLink('All upstream links')
+    >>> anon_browser.getLink("All upstream links")
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -46,15 +47,18 @@ The packaging links are batched so that users can view the thousands of
 links packages. Users can also hack the URL to set their own batch size.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/hoary/+packaging?start=0&batch=1')
-    >>> print(extract_text(find_tag_by_id(
-    ...     anon_browser.contents, 'packagings')))
+    ...     "http://launchpad.test/ubuntu/hoary/+packaging?start=0&batch=1"
+    ... )
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "packagings"))
+    ... )
     Source Package   Upstream Project   Upstream Contributor Connections
     netapplet ...
 
-    >>> anon_browser.getLink('Next', index=0).click()
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'packagings')))
+    >>> anon_browser.getLink("Next", index=0).click()
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "packagings"))
+    ... )
     Source Package   Upstream Project   Upstream Contributor Connections
     evolution ...
 
@@ -69,19 +73,22 @@ packages with the greatest need are listed first.
     >>> from zope.component import getUtility
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> login('admin@canonical.com')
-    >>> dsp = getUtility(IDistributionSet).getByName(
-    ...     'ubuntu').getSourcePackage('linux-source-2.6.15')
+    >>> login("admin@canonical.com")
+    >>> dsp = (
+    ...     getUtility(IDistributionSet)
+    ...     .getByName("ubuntu")
+    ...     .getSourcePackage("linux-source-2.6.15")
+    ... )
     >>> removeSecurityProxy(dsp).bug_count = 1
     >>> logout()
 
-    >>> anon_browser.open('http://launchpad.test/ubuntu/hoary')
-    >>> anon_browser.getLink('Needs upstream links').click()
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary")
+    >>> anon_browser.getLink("Needs upstream links").click()
     >>> print(anon_browser.title)
     Needs upstream links : ...
 
     >>> content = find_main_content(anon_browser.contents)
-    >>> print(extract_text(find_tag_by_id(content, 'packages')))
+    >>> print(extract_text(find_tag_by_id(content, "packages")))
     Source Package       Bugs     Translations
     pmount               No bugs  64 strings
     linux-source-2.6.15  1 bug    No strings
@@ -92,31 +99,31 @@ packages with the greatest need are listed first.
 The counts in the listing link to their respect bugs and translations
 pages.
 
-    >>> anon_browser.getLink('64 strings')
+    >>> anon_browser.getLink("64 strings")
     <Link text='64 strings'
       url='http://translations.launchpad.test/ubuntu/hoary/+source/pmount'>
 
-    >>> anon_browser.getLink('1 bug')
+    >>> anon_browser.getLink("1 bug")
     <Link text='1 bug'
       url='http://bugs.launchpad.test/ubuntu/+source/linux-source-2.6.15'>
 
 
 The listing is batched so that the user can visit the next page listings.
 
-    >>> print(extract_text(find_tag_by_id(content, 'listing-navigation')))
+    >>> print(extract_text(find_tag_by_id(content, "listing-navigation")))
     1 ... 5 of 5 packages	First ... Previous ... Next ... Last
 
 Any use can see that this page is related to the packaging report. It is
 linked, but the link to this page is not enabled.
 
-    >>> print(extract_text(find_tag_by_id(content, 'related-pages')))
+    >>> print(extract_text(find_tag_by_id(content, "related-pages")))
     Needs upstream links     All upstream links
 
-    >>> anon_browser.getLink('All upstream links')
+    >>> anon_browser.getLink("All upstream links")
     <Link text='All upstream links'
       url='http://launchpad.test/ubuntu/hoary/+packaging'>
 
-    >>> anon_browser.getLink('Needs upstream links')
+    >>> anon_browser.getLink("Needs upstream links")
     Traceback (most recent call last):
      ...
     zope.testbrowser.browser.LinkNotFoundError

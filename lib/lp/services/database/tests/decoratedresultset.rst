@@ -13,7 +13,7 @@ ResultSet:
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from storm.store import Store
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> store = Store.of(ubuntu)
     >>> from lp.registry.model.distribution import Distribution
     >>> result_set = store.find(Distribution)
@@ -25,14 +25,16 @@ ResultSet:
 
     >>> def result_decorator(distribution):
     ...     return "Dist name is: %s" % distribution.name
+    ...
 
     >>> def pre_iter_hook(values):
     ...     print(len(values), "elements in result set")
+    ...
 
-    >>> from lp.services.database.decoratedresultset import (
-    ...     DecoratedResultSet)
+    >>> from lp.services.database.decoratedresultset import DecoratedResultSet
     >>> decorated_result_set = DecoratedResultSet(
-    ...     proxied_result_set, result_decorator, pre_iter_hook)
+    ...     proxied_result_set, result_decorator, pre_iter_hook
+    ... )
 
 copy()
 ------
@@ -54,6 +56,7 @@ But it still contains the expected results:
 
     >>> for distro in result_copy:
     ...     print(distro)
+    ...
     7 elements in result set
     Dist name is: debian
     ...
@@ -66,7 +69,8 @@ The decorated config method updates the config of the original result set:
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_result_set = removeSecurityProxy(
-    ...     decorated_result_set.result_set)
+    ...     decorated_result_set.result_set
+    ... )
     >>> naked_result_set._distinct
     False
     >>> returned_result = decorated_result_set.config(distinct=True)
@@ -112,8 +116,9 @@ pre_iter_hook is not called from methods like first() or one() which return
 at most one row:
 
     >>> empty_result_set = decorated_result_set.copy()
-    >>> print(empty_result_set.config(
-    ...     offset=empty_result_set.count()).first())
+    >>> print(
+    ...     empty_result_set.config(offset=empty_result_set.count()).first()
+    ... )
     None
 
 last()
@@ -134,9 +139,11 @@ method and decorates the result:
 
     >>> from storm.expr import Desc
     >>> ordered_results = decorated_result_set.order_by(
-    ...     Desc(Distribution.name))
+    ...     Desc(Distribution.name)
+    ... )
     >>> for dist in ordered_results:
     ...     print(dist)
+    ...
     7 elements in result set
     Dist name is: ubuntutest
     ...
@@ -172,11 +179,14 @@ a refined query.
     >>> result_set = store.find(Distribution)
     >>> proxied_result_set = ProxyFactory(result_set)
     >>> decorated_result_set = DecoratedResultSet(
-    ...     proxied_result_set, result_decorator)
+    ...     proxied_result_set, result_decorator
+    ... )
     >>> ubuntu_distros = removeSecurityProxy(decorated_result_set).find(
-    ...     "Distribution.name like 'ubuntu%'")
+    ...     "Distribution.name like 'ubuntu%'"
+    ... )
     >>> for dist in ubuntu_distros:
     ...     print(dist)
+    ...
     Dist name is: ubuntu
     Dist name is: ubuntutest
 
@@ -193,8 +203,10 @@ set.
 get_plain_result_set() works for nested DecoratedResultSets.
 
     >>> def embellish(result):
-    ...     return result.replace('Dist name', 'The distribution name')
+    ...     return result.replace("Dist name", "The distribution name")
+    ...
     >>> embellished_result_set = DecoratedResultSet(
-    ...     decorated_result_set, embellish)
+    ...     decorated_result_set, embellish
+    ... )
     >>> embellished_result_set.get_plain_result_set()
     <storm.store.ResultSet object at...

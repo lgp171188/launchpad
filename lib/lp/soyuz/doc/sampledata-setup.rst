@@ -13,7 +13,8 @@ little point in inspecting what it does to the test database in detail.
     >>> from lp.testing.script import run_script
 
     >>> return_code, output, error = run_script(
-    ...     'utilities/soyuz-sampledata-setup.py')
+    ...     "utilities/soyuz-sampledata-setup.py"
+    ... )
 
     >>> print(return_code)
     0

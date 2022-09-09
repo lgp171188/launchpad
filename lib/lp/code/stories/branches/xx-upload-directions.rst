@@ -5,8 +5,9 @@ The branch ~name12/gnome-terminal/pushed is an upload branch. Its index page
 shows contextual directions on how to upload to it.
 
     >>> branch_page = (
-    ...     'http://code.launchpad.test/~name12/+branch/gnome-terminal/'
-    ...     'pushed')
+    ...     "http://code.launchpad.test/~name12/+branch/gnome-terminal/"
+    ...     "pushed"
+    ... )
 
 We will need multiple browsers, logged in with different users. Set them up
 now.
@@ -15,33 +16,35 @@ now.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.testing.pages import setupBrowserFreshLogin
     >>> login(ANONYMOUS)
-    >>> name12 = getUtility(IPersonSet).getByEmail('test@canonical.com')
+    >>> name12 = getUtility(IPersonSet).getByEmail("test@canonical.com")
     >>> logout()
     >>> name12_browser = setupBrowserFreshLogin(name12)
     >>> ddaa_browser = setupBrowser(
-    ...     auth='Basic david.allouche@canonical.com:test')
+    ...     auth="Basic david.allouche@canonical.com:test"
+    ... )
 
 We will also need a ssh key. Save it now.
 
     >>> some_sshkey = (
-    ...     'ssh-dss AAAAB3NzaC1kc3MAAAEBAPfhCA15ZaT08brwVXwpJjcZT6QFIipzF1'
-    ...     'sGy57HY7QPi/W+uljr1VcCHzWdlSmda7YpTCTx0NFYYQIccQRGX6zYL8v1w9FS'
-    ...     'RCAnxxUJmqEhsUDFYFdVTa9uLCrs3MSbmh7wwFPdRrGrO6X5x7T4dMZQwykSZr'
-    ...     'OVdpLcCHRgrMZslLomIAjERn6OAQNiGFz7B2tEi/3Soqd52bGJwOtGymRiAXkP'
-    ...     'SLbH7KfzSCe34ytdh6BD+4SrgSoa+TL3VDV70QAdlOFXD42ZHl3Sc0Tde4LbZe'
-    ...     'Yq2Uf84DOATLZBbOYpRSqTLkM9XngpnvCRVb6dxEQfgODDw783tEuPpySLj2EA'
-    ...     'AAAVANpUVgivDjt9gFibN/AXfYy1meeBAAABAB6FtnMywmWZg2lr2I3nDfE5U5'
-    ...     'QbGUQB/ZEP98ZkSkhOcF29VlnGOxyb2/VZbVTLa/btlPF82L4An/c8VKtKZnel'
-    ...     '7LnAlMoArdgzQNXGVQQVtnaWwM26ydgDzkSSIes3elNZgsfnPRBvaF0ol9Tqju'
-    ...     '0rNGKjnr3ZOX/NX+42bxpjRnxYj1h56yP2jKKeGfjorI6JK1YfqBAiTxzaDMzS'
-    ...     'pknnrbztaKJoh7IFqMMOp9ANSFh7H106pEaCv3ebCTJZprtWqNKjb2zum7OQPR'
-    ...     'z3upA0qx22ocTokjv4itXJ6yj/BvGu9qdOIQFXuB2rsFtLZtS8ATueOly0Gzye'
-    ...     'iZBx/AEAAAEBAO8jRYjL7tAYnVlO1p6UzPOicAuGCFWfNbBEDRAXoSgLNdj451'
-    ...     'jStw+eUc9ZVz7tG/XRVZsiavtFHb2cbrcfX1YOd69xi0m+IY6mo3yKt3irQRok'
-    ...     'Dtt376sHoUdHgj2ozySZJgG8IJndtoS+VQQy6NdClA3fNFb96bF865eNaRYoHJ'
-    ...     'O9ZI84lkWQL++MLzIuyFfCs1hSlapyyuHC8kFmF7AQdrVZvbohSbnWs+w53nIW'
-    ...     '8nAA7z21wAukvE1Pl6AQyG0e7U1sYS8Pc8dtmzJvdtVZWBl02/gqQJ7f06mFvn'
-    ...     'sN45rR1Uyxnrwl6rbFwqabZDlyD5Ac6Icbvz9SG1gBOiI= andrew@trogdor')
+    ...     "ssh-dss AAAAB3NzaC1kc3MAAAEBAPfhCA15ZaT08brwVXwpJjcZT6QFIipzF1"
+    ...     "sGy57HY7QPi/W+uljr1VcCHzWdlSmda7YpTCTx0NFYYQIccQRGX6zYL8v1w9FS"
+    ...     "RCAnxxUJmqEhsUDFYFdVTa9uLCrs3MSbmh7wwFPdRrGrO6X5x7T4dMZQwykSZr"
+    ...     "OVdpLcCHRgrMZslLomIAjERn6OAQNiGFz7B2tEi/3Soqd52bGJwOtGymRiAXkP"
+    ...     "SLbH7KfzSCe34ytdh6BD+4SrgSoa+TL3VDV70QAdlOFXD42ZHl3Sc0Tde4LbZe"
+    ...     "Yq2Uf84DOATLZBbOYpRSqTLkM9XngpnvCRVb6dxEQfgODDw783tEuPpySLj2EA"
+    ...     "AAAVANpUVgivDjt9gFibN/AXfYy1meeBAAABAB6FtnMywmWZg2lr2I3nDfE5U5"
+    ...     "QbGUQB/ZEP98ZkSkhOcF29VlnGOxyb2/VZbVTLa/btlPF82L4An/c8VKtKZnel"
+    ...     "7LnAlMoArdgzQNXGVQQVtnaWwM26ydgDzkSSIes3elNZgsfnPRBvaF0ol9Tqju"
+    ...     "0rNGKjnr3ZOX/NX+42bxpjRnxYj1h56yP2jKKeGfjorI6JK1YfqBAiTxzaDMzS"
+    ...     "pknnrbztaKJoh7IFqMMOp9ANSFh7H106pEaCv3ebCTJZprtWqNKjb2zum7OQPR"
+    ...     "z3upA0qx22ocTokjv4itXJ6yj/BvGu9qdOIQFXuB2rsFtLZtS8ATueOly0Gzye"
+    ...     "iZBx/AEAAAEBAO8jRYjL7tAYnVlO1p6UzPOicAuGCFWfNbBEDRAXoSgLNdj451"
+    ...     "jStw+eUc9ZVz7tG/XRVZsiavtFHb2cbrcfX1YOd69xi0m+IY6mo3yKt3irQRok"
+    ...     "Dtt376sHoUdHgj2ozySZJgG8IJndtoS+VQQy6NdClA3fNFb96bF865eNaRYoHJ"
+    ...     "O9ZI84lkWQL++MLzIuyFfCs1hSlapyyuHC8kFmF7AQdrVZvbohSbnWs+w53nIW"
+    ...     "8nAA7z21wAukvE1Pl6AQyG0e7U1sYS8Pc8dtmzJvdtVZWBl02/gqQJ7f06mFvn"
+    ...     "sN45rR1Uyxnrwl6rbFwqabZDlyD5Ac6Icbvz9SG1gBOiI= andrew@trogdor"
+    ... )
 
 Branch owned by a person
 ------------------------
@@ -51,7 +54,7 @@ the branch, and suggest logging in for directions.
 
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(instructions.decode_contents())
     Only
     <a href="http://launchpad.test/~name12">Sample Person</a>
@@ -63,7 +66,7 @@ definitive that it is not possible to upload to this branch.
 
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(instructions.decode_contents())
     <div...
     You cannot upload to this branch. Only
@@ -76,7 +79,7 @@ upload URL for the branch.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(extract_text(instructions))
     Update this branch:
     bzr push --use-existing-dir lp://dev/~name12/gnome-terminal/pushed
@@ -90,15 +93,15 @@ key registered, point to the SSH keys form.
 
 First, unregister the existing SSH key for Sample Person.
 
-    >>> name12_browser.open(url='http://launchpad.test/~name12')
-    >>> name12_browser.getLink(url='editsshkeys').click()
-    >>> name12_browser.getControl('Remove').click()
+    >>> name12_browser.open(url="http://launchpad.test/~name12")
+    >>> name12_browser.getLink(url="editsshkeys").click()
+    >>> name12_browser.getControl("Remove").click()
 
 The branch page now displays directions and a link to register an SSH key.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
-    >>> instructions = find_tag_by_id(content, 'ssh-key-directions')
+    >>> instructions = find_tag_by_id(content, "ssh-key-directions")
     >>> print(instructions.decode_contents())
     To authenticate with the Launchpad branch upload service, you need to
     <a href="http://launchpad.test/~name12/+editsshkeys">
@@ -106,15 +109,15 @@ The branch page now displays directions and a link to register an SSH key.
 
 Click the link and register a key.
 
-    >>> name12_browser.getLink('register an SSH key').click()
-    >>> name12_browser.getControl(name='sshkey').value = some_sshkey
-    >>> name12_browser.getControl('Import Public Key').click()
+    >>> name12_browser.getLink("register an SSH key").click()
+    >>> name12_browser.getControl(name="sshkey").value = some_sshkey
+    >>> name12_browser.getControl("Import Public Key").click()
 
 The branch page should no longer display the SSH key directions.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
-    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
+    >>> print(find_tag_by_id(content, "ssh-key-directions"))
     None
 
 If the user is not logged in, or does have the permission to upload to the
@@ -124,12 +127,12 @@ appear.
 
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
-    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
+    >>> print(find_tag_by_id(content, "ssh-key-directions"))
     None
 
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
-    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
+    >>> print(find_tag_by_id(content, "ssh-key-directions"))
     None
 
 
@@ -144,10 +147,11 @@ which is owned by Sample Person.
 Reassign the branch to the team.
 
     >>> name12_browser.open(branch_page)
-    >>> name12_browser.getLink('Change branch details').click()
-    >>> name12_browser.getControl('Owner').displayValue = [
-    ...     'Landscape Developers']
-    >>> name12_browser.getControl('Change Branch').click()
+    >>> name12_browser.getLink("Change branch details").click()
+    >>> name12_browser.getControl("Owner").displayValue = [
+    ...     "Landscape Developers"
+    ... ]
+    >>> name12_browser.getControl("Change Branch").click()
 
 This changes the URL of the branch. Save the new URL.
 
@@ -158,7 +162,7 @@ owner is a team.
 
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(instructions.decode_contents())
     Members of <a
     href="http://launchpad.test/~landscape-developers">Landscape
@@ -170,7 +174,7 @@ a link to the team.
 
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(instructions.decode_contents())
     <div...
     You cannot upload to this branch. Members of <a
@@ -185,7 +189,7 @@ the owning team's name.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(extract_text(instructions))
     Update this branch:
     bzr push --use-existing-dir
@@ -198,9 +202,10 @@ Import branch
 Upload directions should not be displayed for import branches.
 
     >>> import_branch_page = (
-    ...     'http://code.launchpad.test/~vcs-imports/evolution/main')
+    ...     "http://code.launchpad.test/~vcs-imports/evolution/main"
+    ... )
     >>> anon_browser.open(import_branch_page)
     >>> content = anon_browser.contents
-    >>> instructions = find_tag_by_id(content, 'upload-directions')
+    >>> instructions = find_tag_by_id(content, "upload-directions")
     >>> print(instructions)
     None

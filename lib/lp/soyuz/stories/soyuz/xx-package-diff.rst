@@ -35,52 +35,61 @@ they show up in the UI.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> test_publisher = SoyuzTestPublisher()
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> test_publisher.person = name16
 
 Create a series of 'biscuit' sources in ubuntu primary archive.
 
     >>> biscuit_one_pub = test_publisher.getPubSource(
-    ...     sourcename='biscuit', version='1.0-1', distroseries=hoary)
+    ...     sourcename="biscuit", version="1.0-1", distroseries=hoary
+    ... )
 
     >>> biscuit_two_pub = test_publisher.getPubSource(
-    ...     sourcename='biscuit', version='1.0-2', distroseries=hoary)
+    ...     sourcename="biscuit", version="1.0-2", distroseries=hoary
+    ... )
 
     >>> biscuit_three_pub = test_publisher.getPubSource(
-    ...     sourcename='biscuit', version='1.0-3', distroseries=hoary)
+    ...     sourcename="biscuit", version="1.0-3", distroseries=hoary
+    ... )
 
 Activate Foo Bar's PPA and upload another 'biscuit' source version.
 
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> foobar = getUtility(IPersonSet).getByName('name16')
+    >>> foobar = getUtility(IPersonSet).getByName("name16")
     >>> ppa = getUtility(IArchiveSet).new(
-    ...     owner=foobar, distribution=ubuntu, purpose=ArchivePurpose.PPA)
+    ...     owner=foobar, distribution=ubuntu, purpose=ArchivePurpose.PPA
+    ... )
 
     >>> biscuit_four_pub = test_publisher.getPubSource(
-    ...     sourcename='biscuit', version='1.0-4',
-    ...     distroseries=hoary, archive=foobar.archive)
+    ...     sourcename="biscuit",
+    ...     version="1.0-4",
+    ...     distroseries=hoary,
+    ...     archive=foobar.archive,
+    ... )
 
 Creating corresponding `PackageDiff`s for all sources uploaded, except
 the first one (new upload).
 
     >>> diff_one = biscuit_one_pub.sourcepackagerelease.requestDiffTo(
     ...     requester=name16,
-    ...     to_sourcepackagerelease=biscuit_two_pub.sourcepackagerelease)
+    ...     to_sourcepackagerelease=biscuit_two_pub.sourcepackagerelease,
+    ... )
     >>> diff_two = biscuit_two_pub.sourcepackagerelease.requestDiffTo(
     ...     requester=name16,
-    ...     to_sourcepackagerelease=biscuit_three_pub.sourcepackagerelease)
+    ...     to_sourcepackagerelease=biscuit_three_pub.sourcepackagerelease,
+    ... )
     >>> diff_three = biscuit_three_pub.sourcepackagerelease.requestDiffTo(
     ...     requester=name16,
-    ...     to_sourcepackagerelease=biscuit_four_pub.sourcepackagerelease)
+    ...     to_sourcepackagerelease=biscuit_four_pub.sourcepackagerelease,
+    ... )
 
 Perform some diffs in advance, the first diff in ubuntu and the diff
 in PPA will be performed, the second diff in ubuntu will be performed
@@ -97,11 +106,13 @@ later.
     ...     naked_diff.date_fulfilled = UTC_NOW
     ...     naked_diff.status = PackageDiffStatus.COMPLETED
     ...     naked_diff.diff_content = getUtility(ILibrarianClient).addFile(
-    ...         filename, 3, io.BytesIO(b'Foo'), 'application/gzipped-patch')
+    ...         filename, 3, io.BytesIO(b"Foo"), "application/gzipped-patch"
+    ...     )
+    ...
 
-    >>> perform_fake_diff(diff_one, 'biscuit_1.0-1_1.0-2.diff.gz')
+    >>> perform_fake_diff(diff_one, "biscuit_1.0-1_1.0-2.diff.gz")
 
-    >>> perform_fake_diff(diff_three, 'biscuit_1.0-3_1.0-4.diff.gz')
+    >>> perform_fake_diff(diff_three, "biscuit_1.0-3_1.0-4.diff.gz")
 
 Commit again, so the diffs will be available, and log out, we
 are done here.
@@ -118,11 +129,13 @@ All diffs are visible in the 'biscuit source in ubuntu' change log page, right
 below the text for each uploaded version.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/ubuntu/+source/biscuit/+changelog')
-    >>> changes = find_tags_by_class(anon_browser.contents, 'boardComment')
+    ...     "http://launchpad.test/ubuntu/+source/biscuit/+changelog"
+    ... )
+    >>> changes = find_tags_by_class(anon_browser.contents, "boardComment")
     >>> for change in changes:
-    ...     print(30 * '=')
+    ...     print(30 * "=")
     ...     print(extract_text(change))
+    ...
     ==============================
     1.0-3
     Pending in hoary-release
@@ -142,14 +155,14 @@ below the text for each uploaded version.
 
 Diffs already performed are rendered as link to the librarian file.
 
-    >>> print(anon_browser.getLink('diff from 1.0-1 to 1.0-2').url)
+    >>> print(anon_browser.getLink("diff from 1.0-1 to 1.0-2").url)
     http://.../biscuit_1.0-1_1.0-2.diff.gz
 
 On the other hand, diffs not yet performed are rendered as plain text,
 and "(pending)" is appended to the text as a further hint that it's not
 ready yet.
 
-    >>> anon_browser.getLink('diff from 1.0-2 to 1.0-3')
+    >>> anon_browser.getLink("diff from 1.0-2 to 1.0-3")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -157,27 +170,26 @@ ready yet.
 When the remaining pending diff is performed and the page is reloaded
 the missing link is rendered.
 
-    >>> login('foo.bar@canonical.com')
-    >>> perform_fake_diff(diff_two, 'biscuit_1.0-2_1.0-3.diff.gz')
+    >>> login("foo.bar@canonical.com")
+    >>> perform_fake_diff(diff_two, "biscuit_1.0-2_1.0-3.diff.gz")
     >>> transaction.commit()
     >>> logout()
 
     >>> anon_browser.reload()
-    >>> print(anon_browser.getLink('diff from 1.0-2 to 1.0-3').url)
+    >>> print(anon_browser.getLink("diff from 1.0-2 to 1.0-3").url)
     http://.../biscuit_1.0-2_1.0-3.diff.gz
 
 The same page section is presented in the corresponding
 `DistributionSourcePackageRelease` pages
 
-    >>> anon_browser.getLink('1.0-3').click()
+    >>> anon_browser.getLink("1.0-3").click()
 
-    >>> diff_section = find_tag_by_id(
-    ...     anon_browser.contents, 'diff-for-1.0-3')
+    >>> diff_section = find_tag_by_id(anon_browser.contents, "diff-for-1.0-3")
     >>> print(extract_text(diff_section))
     Available diffs
       diff from 1.0-2 to 1.0-3 (3 bytes)
 
-    >>> print(anon_browser.getLink('diff from 1.0-2 to 1.0-3').url)
+    >>> print(anon_browser.getLink("diff from 1.0-2 to 1.0-3").url)
     http://.../biscuit_1.0-2_1.0-3.diff.gz
 
 
@@ -189,8 +201,9 @@ are. They are presented in the expandable area right below the
 corresponding source row in the PPA overview page.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~name16/+archive/ppa/+packages')
-    >>> login('foo.bar@canonical.com')
+    ...     "http://launchpad.test/~name16/+archive/ppa/+packages"
+    ... )
+    >>> login("foo.bar@canonical.com")
     >>> biscuit_ppa = name16.archive.getPublishedSources().first()
     >>> biscuit_ppa_id = biscuit_ppa.id
     >>> diff_three.date_fulfilled = None
@@ -200,7 +213,8 @@ corresponding source row in the PPA overview page.
 The diff starts out as pending:
 
     >>> expander_url = anon_browser.getLink(
-    ...     id='pub%s-expander' % biscuit_ppa_id).url
+    ...     id="pub%s-expander" % biscuit_ppa_id
+    ... ).url
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
@@ -211,8 +225,8 @@ The diff starts out as pending:
 
 If we complete the diff, the text changes.
 
-    >>> login('foo.bar@canonical.com')
-    >>> perform_fake_diff(diff_three, 'biscuit_1.0-3_1.0-4.diff.gz')
+    >>> login("foo.bar@canonical.com")
+    >>> perform_fake_diff(diff_three, "biscuit_1.0-3_1.0-4.diff.gz")
     >>> transaction.commit()
     >>> logout()
 
@@ -226,6 +240,7 @@ If we complete the diff, the text changes.
 
 The text also links to the librarian file containing the diff.
 
-    >>> print(anon_browser.getLink(
-    ...     'diff from 1.0-3 (in Ubuntu) to 1.0-4').url)
+    >>> print(
+    ...     anon_browser.getLink("diff from 1.0-3 (in Ubuntu) to 1.0-4").url
+    ... )
     http://.../biscuit_1.0-3_1.0-4.diff.gz

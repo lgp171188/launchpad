@@ -21,7 +21,7 @@ def _enable_sftp_in_urlparse():
     Without that, some operations on sftp URLs give obviously wrong results.
     For example: urlappend('sftp://foo/bar', 'gam') => 'gam'
 
-    >>> urlappend('sftp://foo/bar', 'gam')
+    >>> urlappend("sftp://foo/bar", "gam")
     'sftp://foo/bar/gam'
     """
     if "sftp" not in urlparse_module.uses_netloc:
@@ -39,7 +39,7 @@ def _enable_bzr_ssh_in_urlparse():
 
     That allows the helpers in this module to operate usefully on bzr+ssh URLs
 
-    >>> tuple(urlparse('bzr+ssh://example.com/code/branch'))
+    >>> tuple(urlparse("bzr+ssh://example.com/code/branch"))
     ('bzr+ssh', 'example.com', '/code/branch', '', '', '')
     """
     if "bzr+ssh" not in urlparse_module.uses_netloc:
@@ -64,9 +64,9 @@ def urlappend(baseurl, path):
     The path must not start with a slash, but a slash is added to baseurl
     (before appending the path), in case it doesn't end with a slash.
 
-    >>> urlappend('http://foo.bar', 'spam/eggs')
+    >>> urlappend("http://foo.bar", "spam/eggs")
     'http://foo.bar/spam/eggs'
-    >>> urlappend('http://localhost:11375/foo', 'bar/baz')
+    >>> urlappend("http://localhost:11375/foo", "bar/baz")
     'http://localhost:11375/foo/bar/baz'
     """
     assert not path.startswith("/")
@@ -92,16 +92,16 @@ def urlparse(url, scheme="", allow_fragments=True):
     function ensures that the original urlparse is called always with a
     str object, and never unicode (Python 2) or bytes (Python 3).
 
-        >>> tuple(urlparse(u'http://foo.com/bar'))
+        >>> tuple(urlparse("http://foo.com/bar"))
         ('http', 'foo.com', '/bar', '', '', '')
 
-        >>> tuple(urlparse('http://foo.com/bar'))
+        >>> tuple(urlparse("http://foo.com/bar"))
         ('http', 'foo.com', '/bar', '', '', '')
 
-        >>> tuple(urlparse(b'http://foo.com/bar'))
+        >>> tuple(urlparse(b"http://foo.com/bar"))
         ('http', 'foo.com', '/bar', '', '', '')
 
-        >>> tuple(original_urlparse('http://foo.com/bar'))
+        >>> tuple(original_urlparse("http://foo.com/bar"))
         ('http', 'foo.com', '/bar', '', '', '')
 
     This is needed since external libraries might expect that the original
@@ -122,16 +122,16 @@ def urlsplit(url, scheme="", allow_fragments=True):
     function ensures that the original urlsplit is called always with a
     str object, and never unicode (Python 2) or bytes (Python 3).
 
-        >>> tuple(urlsplit(u'http://foo.com/baz'))
+        >>> tuple(urlsplit("http://foo.com/baz"))
         ('http', 'foo.com', '/baz', '', '')
 
-        >>> tuple(urlsplit('http://foo.com/baz'))
+        >>> tuple(urlsplit("http://foo.com/baz"))
         ('http', 'foo.com', '/baz', '', '')
 
-        >>> tuple(urlsplit(b'http://foo.com/baz'))
+        >>> tuple(urlsplit(b"http://foo.com/baz"))
         ('http', 'foo.com', '/baz', '', '')
 
-        >>> tuple(original_urlsplit('http://foo.com/baz'))
+        >>> tuple(original_urlsplit("http://foo.com/baz"))
         ('http', 'foo.com', '/baz', '', '')
 
     """

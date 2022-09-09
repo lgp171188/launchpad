@@ -77,16 +77,23 @@ for the ubuntutest distribution.
     >>> from lp.registry.model.distribution import Distribution
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.scripts.initialize_distroseries import (
-    ...     InitializeDistroSeries)
+    ...     InitializeDistroSeries,
+    ... )
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.testing.factory import LaunchpadObjectFactory
-    >>> ubuntu = Distribution.byName('ubuntu')
-    >>> breezy_autotest = ubuntu['breezy-autotest']
-    >>> ubuntutest = Distribution.byName('ubuntutest')
+    >>> ubuntu = Distribution.byName("ubuntu")
+    >>> breezy_autotest = ubuntu["breezy-autotest"]
+    >>> ubuntutest = Distribution.byName("ubuntutest")
     >>> breezy = ubuntutest.newSeries(
-    ...     'breezy', 'Breezy Badger', 'The Breezy Badger',
-    ...     'Black and White', 'Someone', '5.10', None,
-    ...     breezy_autotest.owner)
+    ...     "breezy",
+    ...     "Breezy Badger",
+    ...     "The Breezy Badger",
+    ...     "Black and White",
+    ...     "Someone",
+    ...     "5.10",
+    ...     None,
+    ...     breezy_autotest.owner,
+    ... )
     >>> factory = LaunchpadObjectFactory()
     >>> breezy.previous_series = breezy_autotest
     >>> ids = InitializeDistroSeries(breezy, [breezy_autotest.id])
@@ -99,15 +106,15 @@ for the ubuntutest distribution.
     INFO:...:Copying packagesets from parents.
     INFO:...:Copying permissions from parents.
     INFO:...:Creating DistroSeriesDifferences.
-    >>> breezy.changeslist = 'breezy-changes@ubuntu.com'
+    >>> breezy.changeslist = "breezy-changes@ubuntu.com"
     >>> fake_chroot = LibraryFileAlias.get(1)
-    >>> unused = breezy['i386'].addOrUpdateChroot(fake_chroot)
+    >>> unused = breezy["i386"].addOrUpdateChroot(fake_chroot)
 
 Add disk content for file inherited from ubuntu/breezy-autotest:
 
     >>> from lp.services.librarianserver.testing.server import (
     ...     fillLibrarianFile,
-    ...     )
+    ... )
     >>> fillLibrarianFile(54)
 
 Now that the infrastructure is ready, we prepare a set of useful methods.
@@ -122,11 +129,13 @@ lock files, which have names starting with a dot).
     ...     os.makedirs(inc_dir)
     ...     for entry in os.scandir(datadir(os.path.join("suite", leaf))):
     ...         shutil.copy(entry.path, inc_dir)
+    ...
 
 We need a way to count the items in a queue directory
 
     >>> def count_items(queue):
     ...     return len(queue)
+    ...
 
 And then we need a way to process the uploads from the queue
 
@@ -153,20 +162,22 @@ And then we need a way to process the uploads from the queue
     ...     # script constructor is ignored, so we must change DB users here.
     ...     switch_dbuser(config.uploader.dbuser)
     ...     process = ProcessUpload(
-    ...         'process-upload', dbuser='ignored', test_args=args)
+    ...         "process-upload", dbuser="ignored", test_args=args
+    ...     )
     ...     process.logger = FakeLogger()
     ...     if loglevel is not None:
     ...         process.logger.setLevel(loglevel)
     ...     process.txn = LaunchpadZopelessLayer.txn
     ...     process.main()
-    ...     switch_dbuser('launchpad')
+    ...     switch_dbuser("launchpad")
+    ...
 
 And we need a way to process the accepted queue
 
     >>> from zope.component import getUtility
     >>> from lp.testing import (
     ...     login,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.distribution import IDistributionSet
 
     >>> login("foo.bar@canonical.com")
@@ -175,9 +186,11 @@ And we need a way to process the accepted queue
     ...     distribution = getUtility(IDistributionSet)[distro]
     ...     for series in distribution.series:
     ...         items = series.getPackageUploads(
-    ...            status=PackageUploadStatus.ACCEPTED)
+    ...             status=PackageUploadStatus.ACCEPTED
+    ...         )
     ...         for item in items:
     ...             item.realiseUpload()
+    ...
 
 
 If an upload of ours ends up in the NEW queue, we need a way to process
@@ -192,34 +205,46 @@ it into the accepted queue
     ...     for item in items:
     ...         item.setAccepted()
     ...     items = dr.getPackageUploads(
-    ...         status=PackageUploadStatus.UNAPPROVED)
+    ...         status=PackageUploadStatus.UNAPPROVED
+    ...     )
     ...     for item in items:
     ...         item.setAccepted()
+    ...
 
 Finally, as a very simplistic publishing process, we may need to punt any
 given upload into the published state, so here's a very simplistic publisher
 
     >>> from lp.soyuz.model.publishing import (
     ...     SourcePackagePublishingHistory as SPPH,
-    ...     BinaryPackagePublishingHistory as BPPH)
+    ...     BinaryPackagePublishingHistory as BPPH,
+    ... )
     >>> from lp.soyuz.enums import PackagePublishingStatus as PPS
     >>> from lp.services.database.constants import UTC_NOW
     >>> def simple_publish(distro):
-    ...     srcs_to_publish = SPPH.select("""
+    ...     srcs_to_publish = SPPH.select(
+    ...         """
     ...         SourcePackagePublishingHistory.distroseries = DistroSeries.id
     ...     AND DistroSeries.distribution = Distribution.id
     ...     AND Distribution.name = '%s'
-    ...     AND SourcePackagePublishingHistory.status = 1""" % distro,
-    ...         clauseTables=['DistroSeries', 'Distribution'])
-    ...     bins_to_publish = BPPH.select("""
+    ...     AND SourcePackagePublishingHistory.status = 1"""
+    ...         % distro,
+    ...         clauseTables=["DistroSeries", "Distribution"],
+    ...     )
+    ...     bins_to_publish = BPPH.select(
+    ...         """
     ...         BinaryPackagePublishingHistory.distroarchseries =
     ...             DistroArchSeries.id
     ...     AND DistroArchSeries.distroseries = DistroSeries.id
     ...     AND DistroSeries.distribution = Distribution.id
     ...     AND Distribution.name = '%s'
-    ...     AND BinaryPackagePublishingHistory.status = 1""" % distro,
-    ...         clauseTables=['DistroArchSeries', 'DistroSeries',
-    ...                       'Distribution'])
+    ...     AND BinaryPackagePublishingHistory.status = 1"""
+    ...         % distro,
+    ...         clauseTables=[
+    ...             "DistroArchSeries",
+    ...             "DistroSeries",
+    ...             "Distribution",
+    ...         ],
+    ...     )
     ...     published_one = False
     ...     for src in srcs_to_publish:
     ...         src.status = PPS.PUBLISHED
@@ -230,6 +255,7 @@ given upload into the published state, so here's a very simplistic publisher
     ...         bin.datepublished = UTC_NOW
     ...         published_one = True
     ...     return published_one
+    ...
 
 
 We'll be doing a lot of uploads with sanity checks, and expect them to
@@ -238,19 +264,25 @@ succeed.  A helper function, simulate_upload does that with all the checking.
     >>> from lp.services.mail import stub
 
     >>> def simulate_upload(
-    ...     leafname, is_new=False, upload_policy='anything',
-    ...     series=None, distro="ubuntutest", loglevel=logging.WARN):
+    ...     leafname,
+    ...     is_new=False,
+    ...     upload_policy="anything",
+    ...     series=None,
+    ...     distro="ubuntutest",
+    ...     loglevel=logging.WARN,
+    ... ):
     ...     """Process upload(s).  Options are as for process_uploads()."""
     ...     punt_upload_into_queue(leafname, distro=distro)
     ...     process_uploads(upload_policy, series, loglevel)
     ...     # We seem to be leaving a lock file behind here for some reason.
     ...     # Naturally it doesn't count as an unprocessed incoming file,
     ...     # which is what we're really looking for.
-    ...     lockfile = os.path.join(incoming_dir, '.lock')
+    ...     lockfile = os.path.join(incoming_dir, ".lock")
     ...     if os.access(lockfile, os.F_OK):
     ...         os.remove(lockfile)
-    ...     assert len(os.listdir(incoming_dir)) == 0, (
-    ...         "Incoming should be empty: %s" % os.listdir(incoming_dir))
+    ...     assert (
+    ...         len(os.listdir(incoming_dir)) == 0
+    ...     ), "Incoming should be empty: %s" % os.listdir(incoming_dir)
     ...
     ...     rejected_contents = os.listdir(rejected_dir)
     ...     if len(rejected_contents) > 0:
@@ -259,20 +291,22 @@ succeed.  A helper function, simulate_upload does that with all the checking.
     ...         print("Rejected uploads: %s" % ", ".join(rejected_contents))
     ...         return
     ...
-    ...     assert len(os.listdir(failed_dir)) == 0, (
-    ...         "Failed upload(s): %s" % os.listdir(failed_dir))
+    ...     assert (
+    ...         len(os.listdir(failed_dir)) == 0
+    ...     ), "Failed upload(s): %s" % os.listdir(failed_dir)
     ...     if is_new:
     ...         process_new(distro=distro, series=series)
     ...     process_accepted(distro=distro)
-    ...     assert simple_publish(distro=distro), (
-    ...             "Should publish at least one item")
+    ...     assert simple_publish(
+    ...         distro=distro
+    ...     ), "Should publish at least one item"
     ...     if loglevel is None or loglevel <= logging.INFO:
     ...         print("Upload complete.")
 
     >>> from lp.testing.mail_helpers import (
     ...     pop_notifications,
     ...     sort_addresses,
-    ...     )
+    ... )
     >>> def read_email():
     ...     """Pop all emails from the test mailbox, and summarize them.
     ...
@@ -281,14 +315,19 @@ succeed.  A helper function, simulate_upload does that with all the checking.
     ...     line.
     ...     """
     ...     for message in pop_notifications(commit=False):
-    ...         print("To:", sort_addresses(message['to']))
-    ...         print("Subject:", message['subject'])
-    ...         print("Content-Type:",
-    ...               message.get_payload()[0]['content-type'])
+    ...         print("To:", sort_addresses(message["to"]))
+    ...         print("Subject:", message["subject"])
+    ...         print(
+    ...             "Content-Type:", message.get_payload()[0]["content-type"]
+    ...         )
     ...         print()
-    ...         print(message.get_payload()[0].get_payload(
-    ...             decode=True).decode('UTF-8'))
+    ...         print(
+    ...             message.get_payload()[0]
+    ...             .get_payload(decode=True)
+    ...             .decode("UTF-8")
+    ...         )
     ...         print()
+    ...
 
 The 'bar' package' is an arch-all package. We have four stages to the
 bar test. Each stage should be simple enough. First we have a new
@@ -296,22 +335,22 @@ source, then a new binary, then an overridable source and then an
 overridable binary. This tests the simple overriding of both sources
 and arch-independent binaries.
 
-    >>> simulate_upload('bar_1.0-1', is_new=True, loglevel=logging.INFO)
+    >>> simulate_upload("bar_1.0-1", is_new=True, loglevel=logging.INFO)
     INFO Processing upload
     ...
     Upload complete.
 
-    >>> simulate_upload('bar_1.0-1_binary', is_new=True)
+    >>> simulate_upload("bar_1.0-1_binary", is_new=True)
 
-    >>> simulate_upload('bar_1.0-2')
+    >>> simulate_upload("bar_1.0-2")
 
-    >>> simulate_upload('bar_1.0-2_binary')
+    >>> simulate_upload("bar_1.0-2_binary")
 
 Check the rejection of a malicious version of bar package which refers
 to a different 'bar_1.0.orig.tar.gz'.
 
     >>> stub.test_emails = []
-    >>> simulate_upload('bar_1.0-3', loglevel=logging.ERROR)
+    >>> simulate_upload("bar_1.0-3", loglevel=logging.ERROR)
     Rejected uploads: bar_1.0-3
 
     >>> read_email()
@@ -326,13 +365,13 @@ Force weird behaviour with rfc2047 sentences containing '.' on
 bar_1.0-4, which caused bug # 41102.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> name16.display_name = "Foo B. Bar"
 
 Check the email recipient for displayname containing special chars,
 '.', must be rfc2047 compliant:
 
-    >>> simulate_upload('bar_1.0-4')
+    >>> simulate_upload("bar_1.0-4")
     >>> read_email()  # noqa
     To: "Foo B. Bar" <foo.bar@canonical.com>
     Subject: [ubuntutest/breezy] bar 1.0-4 (Accepted)
@@ -378,7 +417,7 @@ changer.
 
     >>> stub.test_emails = []
 
-    >>> simulate_upload('bar_1.0-5', upload_policy='sync')
+    >>> simulate_upload("bar_1.0-5", upload_policy="sync")
     >>> read_email()
     To: Celso Providelo <celso.providelo@canonical.com>
     Subject: [ubuntutest/breezy] bar 1.0-5 (Accepted)
@@ -389,13 +428,14 @@ Add a new series of bar sourcepackage, rename its binary package to
 'bar-bin', upload the binary and look for a spurious sourcepackagename
 created with the binary package name.
 
-    >>> simulate_upload('bar_1.0-6', upload_policy='sync')
-    >>> simulate_upload('bar_1.0-6_binary', is_new=True)
+    >>> simulate_upload("bar_1.0-6", upload_policy="sync")
+    >>> simulate_upload("bar_1.0-6_binary", is_new=True)
 
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
+    ...     ISourcePackageNameSet,
+    ... )
     >>> spn_set = getUtility(ISourcePackageNameSet)
-    >>> assert spn_set.queryByName('bar-bin') is None
+    >>> assert spn_set.queryByName("bar-bin") is None
 
 
 Source Uploads using epochs
@@ -427,13 +467,13 @@ implied as '0'.
 Check if upload system interpret epochs properly, inter-epoch versions
 will get compared in this case (see bug #85201):
 
-    >>> simulate_upload('bar_1.0-7', upload_policy='sync')
+    >>> simulate_upload("bar_1.0-7", upload_policy="sync")
     >>> read_email()
     To: ...
     Subject: [ubuntutest/breezy] bar 1.0-6 (Accepted)
     ...
 
-    >>> simulate_upload('bar_1.0-8', upload_policy='sync')
+    >>> simulate_upload("bar_1.0-8", upload_policy="sync")
     >>> read_email()
     To: ...
     Subject: [ubuntutest/breezy] bar 1:1.0-8 (Accepted)
@@ -449,8 +489,11 @@ Let's start a new package series by uploading foo_1.0-1  source in
 ubututest/breezy-RELEASE:
 
     >>> simulate_upload(
-    ...     'foo_1.0-1', upload_policy='sync', is_new=True,
-    ...     loglevel=logging.DEBUG)
+    ...     "foo_1.0-1",
+    ...     upload_policy="sync",
+    ...     is_new=True,
+    ...     loglevel=logging.DEBUG,
+    ... )
     DEBUG Initializing connection.
     ...
     DEBUG Sent a mail:
@@ -488,8 +531,11 @@ ubututest/breezy-RELEASE:
 And its binary:
 
     >>> simulate_upload(
-    ...     'foo_1.0-1_i386_binary', upload_policy='anything', is_new=True,
-    ...     loglevel=logging.DEBUG)
+    ...     "foo_1.0-1_i386_binary",
+    ...     upload_policy="anything",
+    ...     is_new=True,
+    ...     loglevel=logging.DEBUG,
+    ... )
     DEBUG ...
     DEBUG foo: (binary) NEW
     ...
@@ -510,7 +556,8 @@ UNAPPROVED queue.
 Upload a newer version of source package "foo" to breezy-backports:
 
     >>> simulate_upload(
-    ...     'foo_2.9-1', upload_policy='sync', loglevel=logging.DEBUG)
+    ...     "foo_2.9-1", upload_policy="sync", loglevel=logging.DEBUG
+    ... )
     DEBUG Initializing connection.
     ...
     DEBUG Setting it to ACCEPTED
@@ -524,17 +571,19 @@ ubuntutest/breezy.
 
     >>> from lp.buildmaster.model.processor import Processor
     >>> powerpc = Processor(
-    ...     name='powerpc', title='PowerPC G3/G4', description='G3/G4')
-    >>> powerpc_dar = breezy.newArch(
-    ...     'powerpc', powerpc, True, breezy.owner)
+    ...     name="powerpc", title="PowerPC G3/G4", description="G3/G4"
+    ... )
+    >>> powerpc_dar = breezy.newArch("powerpc", powerpc, True, breezy.owner)
 
 After having the respective DistroArchSeries in place we will submit a
 binary upload for the last source in BACKPORTS. The ancestry should be
 found in i386/RELEASE, because it's the only one available.
 
     >>> simulate_upload(
-    ...     'foo_2.9-1_binary', upload_policy='anything',
-    ...     loglevel=logging.DEBUG)
+    ...     "foo_2.9-1_binary",
+    ...     upload_policy="anything",
+    ...     loglevel=logging.DEBUG,
+    ... )
     DEBUG ...
     DEBUG Checking for foo/2.9-1/powerpc binary ancestry
     ...
@@ -550,7 +599,8 @@ it should be rejected by the package reviewer, otherwise people can
 live with this inconsistency.
 
     >>> simulate_upload(
-    ...     'foo_2.9-2', upload_policy='sync', loglevel=logging.DEBUG)
+    ...     "foo_2.9-2", upload_policy="sync", loglevel=logging.DEBUG
+    ... )
     DEBUG Initializing connection.
     ...
     DEBUG Setting it to ACCEPTED
@@ -562,7 +612,8 @@ Same behaviour is expected for a version in SECURITY lower than that
 in PROPOSED:
 
     >>> simulate_upload(
-    ...     'foo_2.9-4', upload_policy='sync', loglevel=logging.DEBUG)
+    ...     "foo_2.9-4", upload_policy="sync", loglevel=logging.DEBUG
+    ... )
     DEBUG Initializing connection.
     ...
     DEBUG Setting it to ACCEPTED
@@ -570,7 +621,8 @@ in PROPOSED:
     Upload complete.
 
     >>> simulate_upload(
-    ...     'foo_2.9-3', upload_policy='sync', loglevel=logging.DEBUG)
+    ...     "foo_2.9-3", upload_policy="sync", loglevel=logging.DEBUG
+    ... )
     DEBUG Initializing connection.
     ...
     DEBUG Setting it to ACCEPTED
@@ -582,7 +634,8 @@ However, the source upload of a smaller version than the one already
 published inside the target pocket should be rejected:
 
     >>> simulate_upload(
-    ...     'foo_1.0-3', upload_policy='sync', loglevel=logging.INFO)
+    ...     "foo_1.0-3", upload_policy="sync", loglevel=logging.INFO
+    ... )
     INFO ...
     INFO Upload was rejected:
     INFO foo_1.0-3.dsc: Version older than that in the archive. 1.0-3 <= 2.9-2
@@ -635,6 +688,7 @@ First a couple helpers.
     ...     print(stderr)
     ...     if result != 0:
     ...         print("Script returned", result)
+    ...
 
     >>> def release_file_has_uncompressed_packages(path):
     ...     """Does the release file include uncompressed Packages?"""
@@ -643,6 +697,7 @@ First a couple helpers.
     ...     release_file.close()
     ...     target_string = "Packages\n"
     ...     return release_contents.find(target_string) != -1
+    ...
 
 
 First publish the distro carefully, to get everything in place.
@@ -673,15 +728,18 @@ files that are published in the sample data.
 Delete the uncompressed Packages and Sources files from the archive folder.
 This simulates what cron.daily does between publishing runs.
 
-    >>> os.system('find /var/tmp/archive/ubuntutest \\( -name "Packages" '
-    ...           '-o -name "Sources" \\) -exec rm "{}" \\;')
+    >>> os.system(
+    ...     'find /var/tmp/archive/ubuntutest \\( -name "Packages" '
+    ...     '-o -name "Sources" \\) -exec rm "{}" \\;'
+    ... )
     0
 
 Record the timestamp of a release file we expect to be rewritten,
 which we'll need later.
 
-    >>> release_timestamp = os.stat('/var/tmp/archive/ubuntutest/dists/'
-    ...     'breezy/Release')[stat.ST_MTIME]
+    >>> release_timestamp = os.stat(
+    ...     "/var/tmp/archive/ubuntutest/dists/" "breezy/Release"
+    ... )[stat.ST_MTIME]
 
 Re-publish the distribution, with careful publishing only. This will mean
 only pockets into which we've done some publication will have apt-ftparchive
@@ -706,15 +764,17 @@ uploaded in the test above don't break the assumptions of this test.
 Check the breezy-security release file doesn't exhibit bug 54039.
 
     >>> release_file_has_uncompressed_packages(
-    ...     '/var/tmp/archive/ubuntutest/dists/breezy-security/Release')
+    ...     "/var/tmp/archive/ubuntutest/dists/breezy-security/Release"
+    ... )
     True
 
 We also need to check the fix for bug 54039 didn't go too far, ie. that
 Release files are still generated for those pockets where they should be.
 So, check the MTIME has changed for hoary-test/Release.
 
-    >>> new_release_timestamp = os.stat('/var/tmp/archive/ubuntutest/dists/'
-    ...     'breezy/Release')[stat.ST_MTIME]
+    >>> new_release_timestamp = os.stat(
+    ...     "/var/tmp/archive/ubuntutest/dists/" "breezy/Release"
+    ... )[stat.ST_MTIME]
 
     >>> new_release_timestamp == release_timestamp
     False

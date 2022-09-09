@@ -23,15 +23,20 @@ to allow user agents (and users) to update bookmarks, etc.
 
     >>> def print_query_changes(query_string_before, query_string_after):
     ...     from urllib.parse import parse_qsl
+    ...
     ...     query_before = parse_qsl(
-    ...         query_string_before, keep_blank_values=True)
+    ...         query_string_before, keep_blank_values=True
+    ...     )
     ...     query_after = parse_qsl(
-    ...         query_string_after, keep_blank_values=True)
+    ...         query_string_after, keep_blank_values=True
+    ...     )
     ...     for term_before, term_after in zip(query_before, query_after):
     ...         if term_before != term_after:
-    ...             print('%s --> %s' % (
-    ...                 '='.join(term_before),
-    ...                 '='.join(term_after)))
+    ...             print(
+    ...                 "%s --> %s"
+    ...                 % ("=".join(term_before), "=".join(term_after))
+    ...             )
+    ...
 
     >>> from lazr.uri import URI
     >>> uri = URI(anon_browser.url)
@@ -59,7 +64,7 @@ the new status names in place of the old.
     ...     "assignee_option=any&"
     ...     "field.status_upstream-empty-marker=1&"
     ...     "field.omit_dupes=on"
-    ...     )
+    ... )
     >>> url = "http://bugs.launchpad.test/bugs/+bugs?" + query
     >>> anon_browser.open(url)
 

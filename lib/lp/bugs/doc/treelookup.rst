@@ -1,8 +1,7 @@
 Doing lookups in a tree
 =======================
 
-    >>> from lp.bugs.adapters.treelookup import (
-    ...     LookupBranch, LookupTree)
+    >>> from lp.bugs.adapters.treelookup import LookupBranch, LookupTree
 
 `LookupTree` encapsulates a simple tree structure that can be used to
 do lookups using one or more keys.
@@ -40,14 +39,23 @@ Creation
 --------
 
     >>> tree = LookupTree(
-    ...     ('Snack', LookupTree(
-    ...             ('Mars Bar', 'Snickers', 'Bad'),
-    ...             ('Apple', 'Banana', 'Good'))),
-    ...     LookupBranch('Lunch', 'Dinner', LookupTree(
-    ...             ('Fish and chips', "Penne all'arrabbiata", 'Nice'),
-    ...             ('Raw liver', 'Not so nice'))),
-    ...     ('Make up your mind!',),
-    ...     )
+    ...     (
+    ...         "Snack",
+    ...         LookupTree(
+    ...             ("Mars Bar", "Snickers", "Bad"),
+    ...             ("Apple", "Banana", "Good"),
+    ...         ),
+    ...     ),
+    ...     LookupBranch(
+    ...         "Lunch",
+    ...         "Dinner",
+    ...         LookupTree(
+    ...             ("Fish and chips", "Penne all'arrabbiata", "Nice"),
+    ...             ("Raw liver", "Not so nice"),
+    ...         ),
+    ...     ),
+    ...     ("Make up your mind!",),
+    ... )
 
 Behind the scenes, `LookupTree` promotes plain tuples (or any
 iterable) into `LookupBranch` instances. This means that the last
@@ -61,8 +69,8 @@ in the tree. Hence, attempting to specify a default branch before the
 last position is treated as an error.
 
     >>> broken_tree = LookupTree(
-    ...     ('Free agents',),
-    ...     ('Alice', 'Bob', 'Allies of Schneier'))
+    ...     ("Free agents",), ("Alice", "Bob", "Allies of Schneier")
+    ... )
     Traceback (most recent call last):
     ...
     TypeError: Default branch must be last.
@@ -72,9 +80,9 @@ instance can be passed in when constructing a new one. Its branches
 are copied into the new `LookupTree` at that point.
 
     >>> breakfast_tree = LookupTree(
-    ...     ('Breakfast', 'Corn flakes'),
+    ...     ("Breakfast", "Corn flakes"),
     ...     tree,
-    ...     )
+    ... )
 
     >>> len(tree.branches)
     3
@@ -87,7 +95,7 @@ instances), `LookupTree._verify` also checks that every branch is a
 `LookupBranch`.
 
     >>> invalid_tree = LookupTree(tree)
-    >>> invalid_tree.branches = invalid_tree.branches + ('Greenland',)
+    >>> invalid_tree.branches = invalid_tree.branches + ("Greenland",)
     >>> invalid_tree._verify()
     Traceback (most recent call last):
     ...
@@ -99,18 +107,18 @@ Searching
 
 Just call `tree.find`.
 
-    >>> print(tree.find('Snack', 'Banana'))
+    >>> print(tree.find("Snack", "Banana"))
     Good
 
 If you specify more keys than you need to reach a leaf, you still get
 the result.
 
-    >>> print(tree.find('Snack', 'Banana', 'Big', 'Yellow', 'Taxi'))
+    >>> print(tree.find("Snack", "Banana", "Big", "Yellow", "Taxi"))
     Good
 
 But an exception is raised if it does not reach a leaf.
 
-    >>> tree.find('Snack')
+    >>> tree.find("Snack")
     Traceback (most recent call last):
     ...
     KeyError: ...'Snack'
@@ -170,12 +178,12 @@ in the second branch. The default branch is left unchanged; only
 branches with keys are candidates for being discarded.
 
     >>> pruned_tree = LookupTree(
-    ...     ('Snack', 'Crisps'),
-    ...     ('Lunch', 'Bread'),
-    ...     ('Snack', 'Mars Bar'),
-    ...     ('Lunch', 'Dinner', 'Soup'),
-    ...     ('Eat more fruit and veg',),
-    ...     )
+    ...     ("Snack", "Crisps"),
+    ...     ("Lunch", "Bread"),
+    ...     ("Snack", "Mars Bar"),
+    ...     ("Lunch", "Dinner", "Soup"),
+    ...     ("Eat more fruit and veg",),
+    ... )
     >>> print(pruned_tree.describe())
     tree(
         branch(Snack => 'Crisps')
@@ -201,8 +209,12 @@ leaves.
 
     >>> for elems in tree.flatten():
     ...     path, result = elems[:-1], elems[-1]
-    ...     print(' => '.join(
-    ...         [pretty(node.keys) for node in path] + [pretty(result)]))
+    ...     print(
+    ...         " => ".join(
+    ...             [pretty(node.keys) for node in path] + [pretty(result)]
+    ...         )
+    ...     )
+    ...
     ('Snack',) => ('Mars Bar', 'Snickers') => 'Bad'
     ('Snack',) => ('Apple', 'Banana') => 'Good'
     ('Lunch', 'Dinner') => ('Fish and chips', "Penne all'arrabbiata")

@@ -7,24 +7,27 @@ entry and its target that may be helpful in queue review.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.translations.model.translationimportqueue import (
-    ...     TranslationImportQueue)
+    ...     TranslationImportQueue,
+    ... )
 
-    >>> filename = 'po/foo.pot'
+    >>> filename = "po/foo.pot"
 
     >>> login(ANONYMOUS)
     >>> queue = TranslationImportQueue()
     >>> product = factory.makeProduct(
-    ...     translations_usage=ServiceUsage.LAUNCHPAD)
+    ...     translations_usage=ServiceUsage.LAUNCHPAD
+    ... )
     >>> product_displayname = product.displayname
-    >>> trunk = product.getSeries('trunk')
+    >>> trunk = product.getSeries("trunk")
     >>> uploader = factory.makePerson()
     >>> entry = queue.addOrUpdateEntry(
-    ...     filename, b'# empty', False, uploader, productseries=trunk)
-    >>> entry_url = canonical_url(entry, rootsite='translations')
+    ...     filename, b"# empty", False, uploader, productseries=trunk
+    ... )
+    >>> entry_url = canonical_url(entry, rootsite="translations")
     >>> logout()
 
     >>> admin_browser.open(entry_url)
-    >>> details = find_tag_by_id(admin_browser.contents, 'portlet-details')
+    >>> details = find_tag_by_id(admin_browser.contents, "portlet-details")
     >>> details_text = extract_text(details)
     >>> print(details_text)
     Upload attached to ... trunk series.
@@ -61,7 +64,7 @@ and there will be a link to the templates list.
     >>> logout()
 
     >>> admin_browser.open(entry_url)
-    >>> details = find_tag_by_id(admin_browser.contents, 'portlet-details')
+    >>> details = find_tag_by_id(admin_browser.contents, "portlet-details")
     >>> details_text = extract_text(details)
     >>> print(details_text)
     Upload attached to
@@ -69,10 +72,10 @@ and there will be a link to the templates list.
     Release series has 1 template.
     ...
 
-    >>> print(admin_browser.getLink('1 template').url)
+    >>> print(admin_browser.getLink("1 template").url)
     http...://translations.launchpad.test/.../trunk/+templates
 
-    >>> admin_browser.getLink('1 template').click()
+    >>> admin_browser.getLink("1 template").click()
     >>> print(admin_browser.title)
     All templates : Series trunk : Translations : ...
 
@@ -94,19 +97,24 @@ attached to distribution packages.
     >>> from lp.registry.model.distribution import DistributionSet
 
     >>> login(ANONYMOUS)
-    >>> distro = DistributionSet().getByName('ubuntu')
-    >>> distroseries = distro.getSeries('hoary')
-    >>> packagename = factory.makeSourcePackageName(name='xpad')
+    >>> distro = DistributionSet().getByName("ubuntu")
+    >>> distroseries = distro.getSeries("hoary")
+    >>> packagename = factory.makeSourcePackageName(name="xpad")
     >>> entry = queue.addOrUpdateEntry(
-    ...     filename, b'# nothing', True, uploader, distroseries=distroseries,
-    ...     sourcepackagename=packagename)
-    >>> entry_url = canonical_url(entry, rootsite='translations')
+    ...     filename,
+    ...     b"# nothing",
+    ...     True,
+    ...     uploader,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=packagename,
+    ... )
+    >>> entry_url = canonical_url(entry, rootsite="translations")
     >>> logout()
 
 This only shows the source package and the file.
 
     >>> admin_browser.open(entry_url)
-    >>> details = find_tag_by_id(admin_browser.contents, 'portlet-details')
+    >>> details = find_tag_by_id(admin_browser.contents, "portlet-details")
     >>> details_text = extract_text(details)
     >>> print(details_text)
     Upload attached to xpad in Ubuntu Hoary.

@@ -19,21 +19,24 @@ well as allowing the addition of new subscribers.
 
 First, ensure that the archives we'll be using are private:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> cprov_private_ppa = factory.makeArchive(
-    ...     owner=cprov, private=True, name='pppa')
+    ...     owner=cprov, private=True, name="pppa"
+    ... )
     >>> mark = getUtility(IPersonSet).getByName("mark")
     >>> mark_private_ppa = factory.makeArchive(
-    ...     owner=mark, private=True, name='pppa')
+    ...     owner=mark, private=True, name="pppa"
+    ... )
     >>> transaction.commit()
 
 The view includes a label property.
 
-    >>> login('celso.providelo@canonical.com')
+    >>> login("celso.providelo@canonical.com")
     >>> view = create_initialized_view(
-    ...     cprov_private_ppa, name="+subscriptions")
+    ...     cprov_private_ppa, name="+subscriptions"
+    ... )
     >>> print(view.label)
     Manage access to PPA named pppa for Celso Providelo
 
@@ -46,36 +49,44 @@ using the has_subscriptions property:
 POSTing with out data just causes the validation to display:
 
     >>> view = create_initialized_view(
-    ...     cprov_private_ppa, name="+subscriptions",
-    ...     server_url=
-    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
+    ...     cprov_private_ppa,
+    ...     name="+subscriptions",
+    ...     server_url=(
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions"
+    ...     ),
     ...     form={
-    ...         'field.actions.add': 'Add',
-    ...         'field.date_expires': '',
-    ...         'field.subscriber': ''})
+    ...         "field.actions.add": "Add",
+    ...         "field.date_expires": "",
+    ...         "field.subscriber": "",
+    ...     },
+    ... )
     >>> for error in view.errors:
     ...     print(error.field_name, view.getFieldError(error.field_name))
+    ...
     subscriber Required input is missing.
 
 The view can be used to add a new subscriber:
 
     >>> view = create_initialized_view(
-    ...     cprov_private_ppa, name="+subscriptions",
-    ...     server_url=
-    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
+    ...     cprov_private_ppa,
+    ...     name="+subscriptions",
+    ...     server_url=(
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions"
+    ...     ),
     ...     form={
-    ...         'field.subscriber': 'spiv',
-    ...         'field.description': "spiv's my friend",
-    ...         'field.date_expires': '',
-    ...         'field.actions.add': 'Add'
-    ...         })
+    ...         "field.subscriber": "spiv",
+    ...         "field.description": "spiv's my friend",
+    ...         "field.date_expires": "",
+    ...         "field.actions.add": "Add",
+    ...     },
+    ... )
 
 The view redirects to itself when a new subscriber has been added
 successfully:
 
     >>> view.request.response.getStatus()
     302
-    >>> print(view.request.response.getHeader('location'))
+    >>> print(view.request.response.getHeader("location"))
     https://launchpad.test/~cprov/+archive/ppa/+subscriptions
     >>> view.has_subscriptions
     True
@@ -84,6 +95,7 @@ After adding a subscriber, the view includes a relevant notification:
 
     >>> for notification in view.request.notifications:
     ...     print(notification.message)
+    ...
     You have granted access for Andrew Bennetts to install software
     from PPA named pppa for Celso Providelo.
     Andrew Bennetts will be notified of the access via email.
@@ -93,6 +105,7 @@ subscribers:
 
     >>> for subscription in view.subscriptions:
     ...     print(subscription.subscriber.displayname)
+    ...
     Andrew Bennetts
 
     >>> transaction.commit()
@@ -100,34 +113,40 @@ subscribers:
 The same subscriber cannot be added a second time:
 
     >>> view = create_initialized_view(
-    ...     cprov_private_ppa, name="+subscriptions",
+    ...     cprov_private_ppa,
+    ...     name="+subscriptions",
     ...     form={
-    ...         'field.subscriber': 'spiv',
-    ...         'field.description': "spiv's still my friend",
-    ...         'field.date_expires': '',
-    ...         'field.actions.add': 'Add'
-    ...         })
+    ...         "field.subscriber": "spiv",
+    ...         "field.description": "spiv's still my friend",
+    ...         "field.date_expires": "",
+    ...         "field.actions.add": "Add",
+    ...     },
+    ... )
 
 In this case the view will include validation errors:
 
     >>> for error in view.errors:
     ...     print(error)
+    ...
     Andrew Bennetts is already subscribed.
 
 But the same person can be a subscriber of other archives:
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> view = create_initialized_view(
-    ...     mark_private_ppa, name="+subscriptions",
+    ...     mark_private_ppa,
+    ...     name="+subscriptions",
     ...     form={
-    ...         'field.subscriber': 'spiv',
-    ...         'field.description': "spiv's still my friend",
-    ...         'field.date_expires': '',
-    ...         'field.actions.add': 'Add'
-    ...         })
+    ...         "field.subscriber": "spiv",
+    ...         "field.description": "spiv's still my friend",
+    ...         "field.date_expires": "",
+    ...         "field.actions.add": "Add",
+    ...     },
+    ... )
 
     >>> for subscription in view.subscriptions:
     ...     print(subscription.subscriber.displayname)
+    ...
     Andrew Bennetts
 
 A second subscriber can be added, this time a we'll add a team as a
@@ -135,17 +154,21 @@ subscriber, but the date_expires must be in the future:
 
     >>> transaction.commit()
     >>> view = create_initialized_view(
-    ...     mark_private_ppa, name="+subscriptions",
-    ...     server_url=
-    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
+    ...     mark_private_ppa,
+    ...     name="+subscriptions",
+    ...     server_url=(
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions"
+    ...     ),
     ...     form={
-    ...         'field.subscriber': 'launchpad',
-    ...         'field.description': "The launchpad team can use it.",
-    ...         'field.date_expires': '1980-12-10',
-    ...         'field.actions.add': 'Add'
-    ...         })
+    ...         "field.subscriber": "launchpad",
+    ...         "field.description": "The launchpad team can use it.",
+    ...         "field.date_expires": "1980-12-10",
+    ...         "field.actions.add": "Add",
+    ...     },
+    ... )
     >>> for error in view.errors:
     ...     print(error)
+    ...
     The expiry date must be in the future.
 
 So we try again with an expiry date in the future:
@@ -153,19 +176,23 @@ So we try again with an expiry date in the future:
     >>> import datetime
     >>> future_date = datetime.date.today() + datetime.timedelta(30)
     >>> view = create_initialized_view(
-    ...     mark_private_ppa, name="+subscriptions",
-    ...     server_url=
-    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
+    ...     mark_private_ppa,
+    ...     name="+subscriptions",
+    ...     server_url=(
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions"
+    ...     ),
     ...     form={
-    ...         'field.subscriber': 'launchpad',
-    ...         'field.description': "The launchpad team can use it.",
-    ...         'field.date_expires': str(future_date),
-    ...         'field.actions.add': 'Add'
-    ...         })
+    ...         "field.subscriber": "launchpad",
+    ...         "field.description": "The launchpad team can use it.",
+    ...         "field.date_expires": str(future_date),
+    ...         "field.actions.add": "Add",
+    ...     },
+    ... )
     >>> view.errors
     []
     >>> for subscription in view.subscriptions:
     ...     print(subscription.subscriber.displayname)
+    ...
     Launchpad Developers
     Andrew Bennetts
 
@@ -175,11 +202,15 @@ ArchiveSubscriptionEditView
 The ArchiveSubsriptionEditView includes a view label for the views main
 title.
 
-    >>> login('celso.providelo@canonical.com')
+    >>> login("celso.providelo@canonical.com")
     >>> from lp.soyuz.interfaces.archivesubscriber import (
-    ...     IArchiveSubscriberSet)
-    >>> spiv_subscription = getUtility(IArchiveSubscriberSet).getByArchive(
-    ...     cprov_private_ppa).one()
+    ...     IArchiveSubscriberSet,
+    ... )
+    >>> spiv_subscription = (
+    ...     getUtility(IArchiveSubscriberSet)
+    ...     .getByArchive(cprov_private_ppa)
+    ...     .one()
+    ... )
     >>> view = create_initialized_view(spiv_subscription, name="+edit")
     >>> print(view.label)
     Edit Andrew Bennetts's access to PPA named pppa for Celso Providelo
@@ -191,6 +222,7 @@ for editing, together with Update and Cancel actions:
     ['date_expires', 'description']
     >>> for action in view.actions:
     ...     print(action.label)
+    ...
     Save
     Revoke access
 
@@ -202,37 +234,47 @@ The ArchiveSubscriptionEditView has a next_url helper property.
 The ArchiveSubscriptionEditView can be used to update the description field:
 
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+edit", method="POST",
+    ...     spiv_subscription,
+    ...     name="+edit",
+    ...     method="POST",
     ...     form={
-    ...         'field.description': "Updated description",
-    ...         'field.date_expires': '',
-    ...         'field.actions.update': 'Update'
-    ...     })
+    ...         "field.description": "Updated description",
+    ...         "field.date_expires": "",
+    ...         "field.actions.update": "Update",
+    ...     },
+    ... )
     >>> print(spiv_subscription.description)
     Updated description
 
 Like the create view, the update view will not accept a date in the past:
 
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+edit", method="POST",
+    ...     spiv_subscription,
+    ...     name="+edit",
+    ...     method="POST",
     ...     form={
-    ...         'field.description': "Updated description",
-    ...         'field.date_expires': '1984-01-01',
-    ...         'field.actions.update': 'Update'
-    ...     })
+    ...         "field.description": "Updated description",
+    ...         "field.date_expires": "1984-01-01",
+    ...         "field.actions.update": "Update",
+    ...     },
+    ... )
     >>> for error in view.errors:
     ...     print(error)
+    ...
     The expiry date must be in the future.
 
 But a date in the future is fine:
 
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+edit", method="POST",
+    ...     spiv_subscription,
+    ...     name="+edit",
+    ...     method="POST",
     ...     form={
-    ...         'field.description': "spiv's my friend",
-    ...         'field.date_expires': str(future_date),
-    ...         'field.actions.update': 'Update'
-    ...     })
+    ...         "field.description": "spiv's my friend",
+    ...         "field.date_expires": str(future_date),
+    ...         "field.actions.update": "Update",
+    ...     },
+    ... )
     >>> view.errors
     []
 
@@ -242,8 +284,11 @@ The ArchiveSubscriptionEditView can be used to cancel a subscription:
     >>> print(current_status.name)
     CURRENT
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+edit", method="POST",
-    ...     form={'field.actions.cancel': 'Cancel subscription'})
+    ...     spiv_subscription,
+    ...     name="+edit",
+    ...     method="POST",
+    ...     form={"field.actions.cancel": "Cancel subscription"},
+    ... )
     >>> print(spiv_subscription.status.name)
     CANCELLED
     >>> print(spiv_subscription.cancelled_by.name)
@@ -253,6 +298,7 @@ After canceling a subscription, a relevant notification is added to the view.
 
     >>> for notification in view.request.notifications:
     ...     print(notification.message)
+    ...
     You have revoked Andrew Bennetts&#x27;s access to PPA named pppa for
     Celso Providelo.
 
@@ -274,7 +320,7 @@ for a person.
 
 But spiv is subscribed to a number of archives:
 
-    >>> spiv = getUtility(IPersonSet).getByName('spiv')
+    >>> spiv = getUtility(IPersonSet).getByName("spiv")
     >>> login("andrew.bennetts@ubuntulinux.com")
     >>> view = create_initialized_view(spiv, name="+archivesubscriptions")
     >>> len(view.subscriptions_with_tokens)
@@ -286,13 +332,14 @@ if one exists:
 
     >>> def print_subscriptions_with_tokens():
     ...     for subscription_and_token in view.subscriptions_with_tokens:
-    ...         subscription = subscription_and_token['subscription']
-    ...         token = subscription_and_token['token']
+    ...         subscription = subscription_and_token["subscription"]
+    ...         token = subscription_and_token["token"]
     ...         print(subscription.archive.displayname)
     ...         token_text = "None"
     ...         if token:
     ...             token_text = "Token"
     ...         print(token_text)
+    ...
 
     >>> print_subscriptions_with_tokens()
     PPA named pppa for Mark Shuttleworth       None
@@ -301,7 +348,7 @@ if one exists:
 After activating a subscription, the token will be included in the
 subscriptions_with_tokens property:
 
-    >>> spiv = getUtility(IPersonSet).getByName('spiv')
+    >>> spiv = getUtility(IPersonSet).getByName("spiv")
     >>> new_token = cprov_private_ppa.newAuthToken(spiv)
     >>> view = create_initialized_view(spiv, name="+archivesubscriptions")
     >>> print_subscriptions_with_tokens()
@@ -322,9 +369,11 @@ corresponding token information.
 The view includes a label to define its main heading.
 
     >>> from lp.soyuz.browser.archivesubscription import (
-    ...     PersonalArchiveSubscription)
+    ...     PersonalArchiveSubscription,
+    ... )
     >>> spiv_subscription = PersonalArchiveSubscription(
-    ...     spiv_subscription.subscriber, spiv_subscription.archive)
+    ...     spiv_subscription.subscriber, spiv_subscription.archive
+    ... )
     >>> view = create_initialized_view(spiv_subscription, name="+index")
     >>> print(view.label)
     Access to PPA named pppa for Celso Providelo
@@ -338,7 +387,8 @@ But if 'activate' is posted, the view will generate a new token and
 redirect:
 
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+index", form={'activate': '1'})
+    ...     spiv_subscription, name="+index", form={"activate": "1"}
+    ... )
     >>> view.request.response.getStatus()
     302
 
@@ -355,11 +405,13 @@ The view can also be used to regenerate the source.list entries.
 
     >>> original_token = view.active_token.token
     >>> view = create_initialized_view(
-    ...     spiv_subscription, name="+index", form={'regenerate': '1'})
+    ...     spiv_subscription, name="+index", form={"regenerate": "1"}
+    ... )
     >>> view.request.response.getStatus()
     302
     >>> for notification in view.request.notifications:
     ...     print(notification.message)
+    ...
     Launchpad has generated the new password you...
 
     >>> view = create_initialized_view(spiv_subscription, name="+index")
@@ -371,20 +423,20 @@ The security for the PersonalArchiveSubscription provides spiv, as the
 subscriber, with view access:
 
     >>> from lp.services.webapp.authorization import check_permission
-    >>> check_permission('launchpad.View', spiv_subscription)
+    >>> check_permission("launchpad.View", spiv_subscription)
     True
 
 but as a default security setting, other logged in users cannot.
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.View', spiv_subscription)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.View", spiv_subscription)
     False
 
 Celso, on the other hand, will be granted view access as he has append privs
 on the archive:
 
-    >>> login('celso.providelo@canonical.com')
-    >>> check_permission('launchpad.View', spiv_subscription)
+    >>> login("celso.providelo@canonical.com")
+    >>> check_permission("launchpad.View", spiv_subscription)
     True
 
 Now that we're logged in as Celso, the view still realizes the user in

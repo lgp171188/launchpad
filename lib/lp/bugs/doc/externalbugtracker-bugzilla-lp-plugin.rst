@@ -9,18 +9,19 @@ so that we can avoid network traffic in tests.
 
     >>> from lp.bugs.externalbugtracker.bugzilla import BugzillaLPPlugin
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestBugzillaXMLRPCTransport)
-    >>> test_transport = TestBugzillaXMLRPCTransport('http://example.com/')
+    ...     TestBugzillaXMLRPCTransport,
+    ... )
+    >>> test_transport = TestBugzillaXMLRPCTransport("http://example.com/")
     >>> bugzilla = BugzillaLPPlugin(
-    ...     'http://example.com/', xmlrpc_transport=test_transport)
+    ...     "http://example.com/", xmlrpc_transport=test_transport
+    ... )
     >>> bugzilla.xmlrpc_transport == test_transport
     True
 
 BugzillaLPPlugin inherits from the BugzillaAPI ExternalBugTracker, with
 which it shares some functionality.
 
-    >>> from lp.bugs.externalbugtracker.bugzilla import (
-    ...     BugzillaAPI)
+    >>> from lp.bugs.externalbugtracker.bugzilla import BugzillaAPI
     >>> issubclass(BugzillaLPPlugin, BugzillaAPI)
     True
 
@@ -55,20 +56,25 @@ _handleLoginToken() method of TestBugzillaXMLRPCTransport so that it can
 work with the right database user.
 
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestInternalXMLRPCTransport)
+    ...     TestInternalXMLRPCTransport,
+    ... )
     >>> from lp.testing.dbuser import lp_dbuser
 
     >>> class ZopelessBugzillaXMLRPCTransport(TestBugzillaXMLRPCTransport):
     ...     def _handleLoginToken(self, token_text):
     ...         with lp_dbuser():
     ...             self._consumeLoginToken(token_text)
+    ...
 
     >>> test_transport = ZopelessBugzillaXMLRPCTransport(
-    ...     'http://example.com/')
+    ...     "http://example.com/"
+    ... )
     >>> test_transport.print_method_calls = True
     >>> bugzilla = BugzillaLPPlugin(
-    ...     'http://example.com/', xmlrpc_transport=test_transport,
-    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport())
+    ...     "http://example.com/",
+    ...     xmlrpc_transport=test_transport,
+    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport(),
+    ... )
 
     >>> bugzilla._authenticate()
     Using XML-RPC to generate token.
@@ -90,17 +96,18 @@ server if it encounters a method which requires it to be logged in.
 We can demonstrate this by subclassing BugzillaLPPlugin and adding a
 method which requires authentication.
 
-    >>> from lp.bugs.externalbugtracker.bugzilla import (
-    ...     needs_authentication)
+    >>> from lp.bugs.externalbugtracker.bugzilla import needs_authentication
     >>> class AuthenticatingBugzillaLPPlugin(BugzillaLPPlugin):
-    ...
     ...     @needs_authentication
     ...     def testAuthentication(self):
     ...         return self.xmlrpc_proxy.Test.login_required()
+    ...
 
     >>> test_bugzilla = AuthenticatingBugzillaLPPlugin(
-    ...     'http://example.com/', xmlrpc_transport=test_transport,
-    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport())
+    ...     "http://example.com/",
+    ...     xmlrpc_transport=test_transport,
+    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport(),
+    ... )
 
 The Test.login_required() method on the server requires the user to be
 authenticated. We'll expire the current auth_cookie so that
@@ -132,19 +139,21 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
 
     >>> from xmlrpc.client import Fault, ProtocolError
     >>> class TestAuthFailingBugzillaXMLRPCTransport(
-    ...         ZopelessBugzillaXMLRPCTransport):
+    ...     ZopelessBugzillaXMLRPCTransport
+    ... ):
     ...     error = Fault(100, "Sorry, you can't log in.")
     ...
     ...     def login(self, arguments):
     ...         raise self.error
 
     >>> fail_transport = TestAuthFailingBugzillaXMLRPCTransport(
-    ...     'http://example.com/')
+    ...     "http://example.com/"
+    ... )
     >>> test_bugzilla = BugzillaLPPlugin(
-    ...     'http://example.com/',
+    ...     "http://example.com/",
     ...     xmlrpc_transport=fail_transport,
-    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport(quiet=True)
-    ...     )
+    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport(quiet=True),
+    ... )
 
     >>> test_bugzilla._authenticate()
     Traceback (most recent call last):
@@ -155,7 +164,8 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
 This is also true if an error occurs at the protocol level:
 
     >>> fail_transport.error = ProtocolError(
-    ...     'http://example.com', 500, 'Internal server error', {})
+    ...     "http://example.com", 500, "Internal server error", {}
+    ... )
     >>> test_bugzilla._authenticate()
     Traceback (most recent call last):
        ...
@@ -178,7 +188,7 @@ and work with that.
     >>> remote_time = datetime(2008, 5, 16, 16, 53, 20)
 
     >>> test_transport.utc_offset = 60**2
-    >>> test_transport.timezone = 'CET'
+    >>> test_transport.timezone = "CET"
     >>> test_transport.local_datetime = remote_time
     >>> bugzilla.getCurrentDBTime()
     datetime.datetime(2008, 5, 16, 15, 53, 20, tzinfo=<UTC>)
@@ -204,6 +214,7 @@ The bug data is stored as a list of dicts:
     ...         for key in sorted(bugs[bug]):
     ...             print("    %s: %s" % (key, bugs[bug][key]))
     ...         print("\n")
+    ...
 
     >>> print_bugs(bugzilla._bugs)
     Bug 1:
@@ -291,6 +302,7 @@ BugzillaLPPlugin instance's bugs dict.
     ...     for key in sorted(bugzilla._bugs[bug]):
     ...         print("    %s: %s" % (key, bugzilla._bugs[bug][key]))
     ...     print("\n")
+    ...
     Bug 1:
         alias:
         assigned_to: test@canonical.com...
@@ -334,7 +346,7 @@ instance.
     >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.externalbugtracker import (
     ...     ISupportsCommentImport,
-    ...     )
+    ... )
     >>> verifyObject(ISupportsCommentImport, bugzilla)
     True
 
@@ -345,22 +357,27 @@ bugtracker and a couple of bugwatches.
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
 
     >>> bug_tracker = new_bugtracker(BugTrackerType.BUGZILLA)
 
     >>> with lp_dbuser():
     ...     sample_person = getUtility(IPersonSet).getByEmail(
-    ...         'test@canonical.com')
-    ...     firefox = getUtility(IProductSet).getByName('firefox')
+    ...         "test@canonical.com"
+    ...     )
+    ...     firefox = getUtility(IProductSet).getByName("firefox")
     ...     bug = firefox.createBug(
-    ...         CreateBugParams(sample_person, "Yet another test bug",
+    ...         CreateBugParams(
+    ...             sample_person,
+    ...             "Yet another test bug",
     ...             "Yet another test description.",
-    ...             subscribe_owner=False))
-    ...     bug_watch = bug.addWatch(bug_tracker, '1', sample_person)
-    ...     bug_watch_two = bug.addWatch(bug_tracker, '2', sample_person)
-    ...     bug_watch_broken = bug.addWatch(bug_tracker, '42', sample_person)
+    ...             subscribe_owner=False,
+    ...         )
+    ...     )
+    ...     bug_watch = bug.addWatch(bug_tracker, "1", sample_person)
+    ...     bug_watch_two = bug.addWatch(bug_tracker, "2", sample_person)
+    ...     bug_watch_broken = bug.addWatch(bug_tracker, "42", sample_person)
+    ...
 
 
 getCommentIds()
@@ -402,17 +419,18 @@ bug ID and a list of the comment IDs to retrieve for that bug watch.
     >>> transaction.commit()
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = False
-    >>> bugzilla.fetchComments(remote_bug, ['1', '3'])
+    >>> bugzilla.fetchComments(remote_bug, ["1", "3"])
 
 The comments will be stored in the bugs dict as a dict of comment id =>
 comment dict mappings under the key 'comments'.
 
-    >>> comments = bugzilla._bugs[1]['comments']
+    >>> comments = bugzilla._bugs[1]["comments"]
     >>> for comment_id in sorted(comments):
     ...     print("Comment %s:" % comment_id)
     ...     comment = comments[comment_id]
     ...     for key in sorted(comment):
     ...         print("    %s: %s" % (key, comment[key]))
+    ...
     Comment 1:
         author: trillian
         id: 1
@@ -434,7 +452,8 @@ BugzillaLPPlugin implements the ISupportsCommentPushing interface, which
 defines the necessary methods for pushing comments to remote servers.
 
     >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     ISupportsCommentPushing)
+    ...     ISupportsCommentPushing,
+    ... )
     >>> verifyObject(ISupportsCommentPushing, bugzilla)
     True
 
@@ -452,10 +471,12 @@ authorization cookie so that it gets regenerated.
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = True
     >>> bugzilla.xmlrpc_transport.expireCookie(
-    ...     bugzilla.xmlrpc_transport.auth_cookie)
+    ...     bugzilla.xmlrpc_transport.auth_cookie
+    ... )
 
-    >>> comment_id  = bugzilla.addRemoteComment(
-    ...     1, "This is a new remote comment.", None)
+    >>> comment_id = bugzilla.addRemoteComment(
+    ...     1, "This is a new remote comment.", None
+    ... )
     Using XML-RPC to generate token.
     CALLED Launchpad.login({'token': '...'})
     Successfully validated the token.
@@ -476,9 +497,10 @@ The comment will be stored on the remote server with the other comments.
 
     >>> transaction.commit()
 
-    >>> bugzilla.fetchComments(remote_bug, ['7'])
+    >>> bugzilla.fetchComments(remote_bug, ["7"])
     >>> message = bugzilla.getMessageForComment(
-    ...     remote_bug, '7', sample_person)
+    ...     remote_bug, "7", sample_person
+    ... )
     >>> print(message.text_contents)
     This is a new remote comment.
     <BLANKLINE>
@@ -491,8 +513,7 @@ BugzillaLPPlugin implements the ISupportsBackLinking interface, which
 provides methods to set and retrieve the Launchpad bug that links to a
 given remote bug from the remote server.
 
-    >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     ISupportsBackLinking)
+    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsBackLinking
     >>> verifyObject(ISupportsBackLinking, bugzilla)
     True
 
@@ -510,7 +531,7 @@ getLaunchpadBugId() will return None.
 We'll set the launchpad_id for the remote bug so that we can retrieve
 it.
 
-    >>> bugzilla._bugs[1]['internals']['launchpad_id'] = 42
+    >>> bugzilla._bugs[1]["internals"]["launchpad_id"] = 42
 
 getLaunchpadBugId() will return the current Launchpad bug ID if one is
 set.
@@ -528,10 +549,12 @@ setLaunchpadBugId() requires authentication.
 
     >>> bugzilla.xmlrpc_transport.print_method_calls = True
     >>> bugzilla.xmlrpc_transport.expireCookie(
-    ...     bugzilla.xmlrpc_transport.auth_cookie)
+    ...     bugzilla.xmlrpc_transport.auth_cookie
+    ... )
 
     >>> bugzilla.setLaunchpadBugId(
-    ...     1, 10, 'http://bugs.launchpad.test/bugs/xxx')
+    ...     1, 10, "http://bugs.launchpad.test/bugs/xxx"
+    ... )
     Using XML-RPC to generate token.
     CALLED Launchpad.login({'token': '...'})
     Successfully validated the token.
@@ -556,10 +579,12 @@ BugzillaLPPlugin can be instructed to only get the data for a set of
 bug IDs if those bugs belong to one of a given set of products.
 
     >>> ids_to_update = [1, 2]
-    >>> products_to_update = ['HeartOfGold']
+    >>> products_to_update = ["HeartOfGold"]
     >>> bugzilla = BugzillaLPPlugin(
-    ...     'http://example.com/', xmlrpc_transport=test_transport,
-    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport())
+    ...     "http://example.com/",
+    ...     xmlrpc_transport=test_transport,
+    ...     internal_xmlrpc_transport=TestInternalXMLRPCTransport(),
+    ... )
     >>> bugzilla.xmlrpc_transport.print_method_calls = True
 
     >>> bugzilla.initializeRemoteBugDB(ids_to_update, products_to_update)
@@ -611,5 +636,6 @@ mappings.
 
     >>> for bug_id in sorted(product_mappings):
     ...     print("%s: %s" % (bug_id, product_mappings[bug_id]))
+    ...
     1: Marvin
     2: HeartOfGold

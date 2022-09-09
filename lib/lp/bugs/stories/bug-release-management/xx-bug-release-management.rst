@@ -4,7 +4,8 @@ page.
 The approve/decline buttons and buttons aren't visible to unprivileged users.
 
     >>> no_priv_browser = setupBrowser(
-    ...     auth="Basic no-priv@canonical.com:test")
+    ...     auth="Basic no-priv@canonical.com:test"
+    ... )
     >>> no_priv_browser.open("http://launchpad.test/bugs/1")
 
     >>> no_priv_browser.getControl("Approve")
@@ -28,21 +29,22 @@ Approving a nomination displays a feedback message.
     >>> approve_button.click()
 
     >>> feedback_msg = find_tags_by_class(
-    ...     admin_browser.contents, "informational message")[0]
+    ...     admin_browser.contents, "informational message"
+    ... )[0]
     >>> print(feedback_msg.decode_contents())
     Approved nomination for Mozilla Firefox 1.0
 
 After a productseries task has been created, it's editable.
 
-    >>> user_browser.open('http://launchpad.test/firefox/+bug/1')
-    >>> user_browser.getLink(url='firefox/1.0/+bug/1/+editstatus').click()
+    >>> user_browser.open("http://launchpad.test/firefox/+bug/1")
+    >>> user_browser.getLink(url="firefox/1.0/+bug/1/+editstatus").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/1.0/+bug/1/+editstatus'
 
-    >>> user_browser.getControl('Status').value
+    >>> user_browser.getControl("Status").value
     ['New']
-    >>> user_browser.getControl('Status').value = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").value = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/1.0/+bug/1'
 
@@ -57,7 +59,8 @@ Declining a nomination displays a feedback message.
     >>> decline_button.click()
 
     >>> feedback_msg = find_tags_by_class(
-    ...     admin_browser.contents, "informational message")[0]
+    ...     admin_browser.contents, "informational message"
+    ... )[0]
     >>> print(feedback_msg.decode_contents())
     Declined nomination for Ubuntu Hoary
 
@@ -66,43 +69,49 @@ Nominate a bug to a distribution release
 
 A bug can be nominated for a distribution release.
 
-    >>> login('foo.bar@canonical.com')
-    >>> nominater = factory.makePerson(name='denominater')
-    >>> poseidon = factory.makeDistribution(name='poseidon',
-    ...     bug_supervisor=nominater)
+    >>> login("foo.bar@canonical.com")
+    >>> nominater = factory.makePerson(name="denominater")
+    >>> poseidon = factory.makeDistribution(
+    ...     name="poseidon", bug_supervisor=nominater
+    ... )
     >>> dsp = factory.makeDistributionSourcePackage(distribution=poseidon)
-    >>> series = factory.makeDistroSeries(distribution=poseidon,
-    ...     name='aqua')
+    >>> series = factory.makeDistroSeries(distribution=poseidon, name="aqua")
     >>> ignore = factory.makeSourcePackagePublishingHistory(
-    ...     distroseries=series, sourcepackagename=dsp.sourcepackagename)
-    >>> series = factory.makeDistroSeries(distribution=poseidon,
-    ...     name='hydro')
+    ...     distroseries=series, sourcepackagename=dsp.sourcepackagename
+    ... )
+    >>> series = factory.makeDistroSeries(distribution=poseidon, name="hydro")
     >>> ignore = factory.makeSourcePackagePublishingHistory(
-    ...     distroseries=series, sourcepackagename=dsp.sourcepackagename)
+    ...     distroseries=series, sourcepackagename=dsp.sourcepackagename
+    ... )
     >>> bug_task = factory.makeBugTask(target=dsp)
     >>> nominater_browser = setupBrowser(
-    ...     auth='Basic %s:test' % nominater.preferredemail.email)
+    ...     auth="Basic %s:test" % nominater.preferredemail.email
+    ... )
     >>> logout()
     >>> nominater_browser.open(
-    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
-    ...     (dsp.name, bug_task.bug.id))
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate"
+    ...     % (dsp.name, bug_task.bug.id)
+    ... )
 
 Before we continue, we'll set up a second browser instance, to simulate
 the nominater accessing the site from another window. Working with the same
 form in different browser windows or tabs can sometimes trigger edge case
 errors, and we'll give an example of one shortly.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> nominater_other_browser = setupBrowser(
-    ...     auth='Basic %s:test' % nominater.preferredemail.email)
+    ...     auth="Basic %s:test" % nominater.preferredemail.email
+    ... )
     >>> logout()
     >>> nominater_other_browser.open(
-    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
-    ...     (dsp.name, bug_task.bug.id))
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate"
+    ...     % (dsp.name, bug_task.bug.id)
+    ... )
     >>> nominater_browser.getControl("Aqua").selected = True
     >>> nominater_browser.getControl("Nominate").click()
-    >>> for tag in find_tags_by_class(nominater_browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(nominater_browser.contents, "message"):
     ...     print(tag)
+    ...
     <div...Added nominations for: Poseidon Aqua...
 
 Now, if the nominater, having the form open in another browser window,
@@ -112,8 +121,9 @@ raised.
     >>> nominater_other_browser.getControl("Aqua").selected = True
     >>> nominater_other_browser.getControl("Nominate").click()
 
-    >>> for tag in find_tags_by_class(nominater_other_browser.contents,
-    ...     'message'):
+    >>> for tag in find_tags_by_class(
+    ...     nominater_other_browser.contents, "message"
+    ... ):
     ...     print(tag.decode_contents())
     There is 1 error.
     This bug has already been nominated for these series: Aqua
@@ -122,14 +132,16 @@ When a nomination is submitted by a privileged user, it is immediately
 approved and targeted to the release.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
-    ...     (dsp.name, bug_task.bug.id))
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate"
+    ...     % (dsp.name, bug_task.bug.id)
+    ... )
 
     >>> admin_browser.getControl("Hydro").selected = True
     >>> admin_browser.getControl("Target").click()
 
-    >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(admin_browser.contents, "message"):
     ...     print(tag)
+    ...
     <div...Targeted bug to: Poseidon Hydro...
 
 Nominating a bug for a product series
@@ -137,38 +149,42 @@ Nominating a bug for a product series
 
 A bug can be nominated for a product series.
 
-    >>> login('foo.bar@canonical.com')
-    >>> nominater = factory.makePerson(name='nominater')
-    >>> widget = factory.makeProduct(name='widget',
-    ...     official_malone = True,
-    ...     bug_supervisor=nominater)
-    >>> series = factory.makeProductSeries(product=widget,
-    ...     name='beta')
+    >>> login("foo.bar@canonical.com")
+    >>> nominater = factory.makePerson(name="nominater")
+    >>> widget = factory.makeProduct(
+    ...     name="widget", official_malone=True, bug_supervisor=nominater
+    ... )
+    >>> series = factory.makeProductSeries(product=widget, name="beta")
     >>> bug = factory.makeBug(target=widget)
     >>> nominater_browser = setupBrowser(
-    ...     auth='Basic %s:test' % nominater.preferredemail.email)
+    ...     auth="Basic %s:test" % nominater.preferredemail.email
+    ... )
     >>> logout()
     >>> nominater_browser.open(
-    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id
+    ... )
 
 Before we continue, we'll set up a second browser instance, to simulate
 the nominater accessing the site from another window. Working with the same
 form in different browser windows or tabs can sometimes trigger edge case
 errors, and we'll give an example of one shortly.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> nominater_other_browser = setupBrowser(
-    ...     auth='Basic %s:test' % nominater.preferredemail.email)
+    ...     auth="Basic %s:test" % nominater.preferredemail.email
+    ... )
     >>> logout()
     >>> nominater_other_browser.open(
-    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id
+    ... )
 
     >>> nominater_browser.getControl("Beta").selected = True
     >>> nominater_other_browser.getControl("Beta").selected = True
     >>> nominater_browser.getControl("Nominate").click()
 
-    >>> for tag in find_tags_by_class(nominater_browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(nominater_browser.contents, "message"):
     ...     print(tag)
+    ...
     <div...Added nominations for: Widget beta...
 
 Now, if the nominater, having the form open in another browser window,
@@ -176,8 +192,9 @@ accidentally nominates the bug for Beta a second time, an error is raised.
 
     >>> nominater_other_browser.getControl("Nominate").click()
 
-    >>> for tag in find_tags_by_class(nominater_other_browser.contents,
-    ...     'message'):
+    >>> for tag in find_tags_by_class(
+    ...     nominater_other_browser.contents, "message"
+    ... ):
     ...     print(tag.decode_contents())
     There is 1 error.
     This bug has already been nominated for these series: Beta
@@ -186,29 +203,33 @@ When a nomination is submitted by a privileged user, it is immediately
 approved and targeted to the release.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id
+    ... )
 
     >>> admin_browser.getControl("Trunk").selected = True
     >>> admin_browser.getControl("Target").click()
 
-    >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(admin_browser.contents, "message"):
     ...     print(tag)
+    ...
     <div...Targeted bug to: Widget trunk...
 
 When a bug is targeted to the current development release, the general
 distribution task is no longer editable. Instead the status is tracked
 in the release task.
 
-    >>> user_browser.open('http://bugs.launchpad.test/ubuntu/+bug/2')
+    >>> user_browser.open("http://bugs.launchpad.test/ubuntu/+bug/2")
     >>> ubuntu_edit_url = (
-    ...     'http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus"
+    ... )
     >>> user_browser.getLink(url=ubuntu_edit_url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> ubuntu_hoary_edit_url = (
-    ...     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus"
+    ... )
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
 
@@ -216,12 +237,15 @@ The use of the Won't Fix status is restricted. We need to use it to
 illustrate conjoined bugtasks, so we'll make 'no-priv' the bug supervisor
 for Ubuntu:
 
-    >>> admin_browser.open('http://bugs.launchpad.test/ubuntu/+bugsupervisor')
-    >>> admin_browser.getControl('Bug Supervisor').value = 'no-priv'
-    >>> admin_browser.getControl('Change').click()
+    >>> admin_browser.open("http://bugs.launchpad.test/ubuntu/+bugsupervisor")
+    >>> admin_browser.getControl("Bug Supervisor").value = "no-priv"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'bug-supervisor')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "bug-supervisor")
+    ...     )
+    ... )
     Bug supervisor:
     No Privileges Person
 
@@ -232,26 +256,26 @@ to the next release. In that case, the general Ubuntu task will keep
 open, while the release task is invalid.
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue = ["Won't Fix"]
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Won't Fix"]
+    >>> user_browser.getControl("Save Changes").click()
 
 Now both the general and release tasks are editable.
 
     >>> user_browser.getLink(url=ubuntu_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue
+    >>> user_browser.getControl("Status").displayValue
     ['New']
-    >>> user_browser.getControl('Status').displayValue = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue
+    >>> user_browser.getControl("Status").displayValue
     ["Won't Fix"]
 
 If the release task gets reopened, the tasks will be synced again, and
 the distribution task won't be editable.
 
-    >>> user_browser.getControl('Status').displayValue = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
     Traceback (most recent call last):
@@ -266,8 +290,8 @@ from being separated, if the task gets changed to Fix Released, it
 general distribution task will remain uneditable.
 
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue = ['Fix Released']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Fix Released"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=ubuntu_edit_url)
     Traceback (most recent call last):
@@ -282,20 +306,23 @@ product task is no longer editable. Instead the status is tracked
 in the series task.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.test/products/firefox/+bug/4/+nominate")
+    ...     "http://launchpad.test/products/firefox/+bug/4/+nominate"
+    ... )
     >>> admin_browser.getControl("Trunk").selected = True
     >>> admin_browser.getControl("Target").click()
 
-    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/4')
+    >>> user_browser.open("http://bugs.launchpad.test/firefox/+bug/4")
     >>> firefox_edit_url = (
-    ...     'http://bugs.launchpad.test/firefox/+bug/4/+editstatus')
+    ...     "http://bugs.launchpad.test/firefox/+bug/4/+editstatus"
+    ... )
     >>> user_browser.getLink(url=firefox_edit_url)
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> firefox_trunk_edit_url = (
-    ...     'http://bugs.launchpad.test/firefox/trunk/+bug/4/+editstatus')
+    ...     "http://bugs.launchpad.test/firefox/trunk/+bug/4/+editstatus"
+    ... )
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True
 
@@ -304,12 +331,16 @@ illustrate conjoined bugtasks, so we'll make 'no-priv' the bug supervisor
 for Firefox:
 
     >>> admin_browser.open(
-    ...     'http://bugs.launchpad.test/firefox/+bugsupervisor')
-    >>> admin_browser.getControl('Bug Supervisor').value = 'no-priv'
-    >>> admin_browser.getControl('Change').click()
+    ...     "http://bugs.launchpad.test/firefox/+bugsupervisor"
+    ... )
+    >>> admin_browser.getControl("Bug Supervisor").value = "no-priv"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> print(extract_text(find_tag_by_id(admin_browser.contents,
-    ...     'bug-supervisor')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(admin_browser.contents, "bug-supervisor")
+    ...     )
+    ... )
     Bug supervisor:
     No Privileges Person
 
@@ -320,28 +351,28 @@ to the next release. In that case, the general Firefox task will stay
 open, while the series task is invalid.
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue = ["Won't Fix"]
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Won't Fix"]
+    >>> user_browser.getControl("Save Changes").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/trunk/+bug/4'
 
 Now both the general and series tasks are editable.
 
     >>> user_browser.getLink(url=firefox_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue
+    >>> user_browser.getControl("Status").displayValue
     ['New']
-    >>> user_browser.getControl('Status').displayValue = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue
+    >>> user_browser.getControl("Status").displayValue
     ["Won't Fix"]
 
 If the series task gets reopened, the tasks will be synced again, and
 the distribution task won't be editable.
 
-    >>> user_browser.getControl('Status').displayValue = ['Confirmed']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
     Traceback (most recent call last):
@@ -356,8 +387,8 @@ from being separated, if the task gets changed to Fix Released, the
 general distribution task will remain uneditable.
 
     >>> user_browser.getLink(url=firefox_trunk_edit_url).click()
-    >>> user_browser.getControl('Status').displayValue = ['Fix Released']
-    >>> user_browser.getControl('Save Changes').click()
+    >>> user_browser.getControl("Status").displayValue = ["Fix Released"]
+    >>> user_browser.getControl("Save Changes").click()
 
     >>> user_browser.getLink(url=firefox_edit_url)
     Traceback (most recent call last):
@@ -371,8 +402,7 @@ Now that we've targeted a few bugs towards Firefox 1.0, we can go to
 the productseries' bug page, in order to see a list of all bugs
 targeted to it.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/firefox/1.0/+bugs')
+    >>> anon_browser.open("http://launchpad.test/firefox/1.0/+bugs")
 
     >>> from lp.bugs.tests.bug import print_bugtasks
     >>> print_bugtasks(anon_browser.contents)

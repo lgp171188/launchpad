@@ -20,19 +20,25 @@ from `lp.services.config.config`, and returns a pidfile path that combines the
 instance name with the service name.
 
     >>> from lp.services.pidfile import (
-    ...     pidfile_path, make_pidfile, remove_pidfile, get_pid)
+    ...     pidfile_path,
+    ...     make_pidfile,
+    ...     remove_pidfile,
+    ...     get_pid,
+    ... )
     >>> from lp.services.config import config
 
-    >>> pidfile_path('nuts') == '/var/tmp/%s-nuts.pid' % config.instance_name
+    >>> pidfile_path("nuts") == "/var/tmp/%s-nuts.pid" % config.instance_name
     True
 
 You can pass in your own config instance to use.
 
     >>> class MyConfig:
     ...     class canonical:
-    ...         pid_dir = '/var/tmp'
-    ...     instance_name = 'blah'
-    >>> print(pidfile_path('beans', MyConfig))
+    ...         pid_dir = "/var/tmp"
+    ...
+    ...     instance_name = "blah"
+    ...
+    >>> print(pidfile_path("beans", MyConfig))
     /var/tmp/blah-beans.pid
 
 This basic mechanism supports the other three functions.
@@ -67,7 +73,7 @@ the correct PID is stored in it.
 
 Moreover, the pidfile has been removed.
 
-    >>> os.path.exists(pidfile_path('nuts'))
+    >>> os.path.exists(pidfile_path("nuts"))
     False
 
 The pidfile must also be removed if the process is exited with SIGINT (Ctrl-C)
@@ -86,31 +92,32 @@ we'll need them again later.
     ...     pass'''
     >>> def start_process():
     ...     real_pid = subprocess.Popen(
-    ...         [sys.executable, '-c', subprocess_code]).pid
+    ...         [sys.executable, "-c", subprocess_code]
+    ...     ).pid
     ...     for i in range(50):
-    ...         if os.path.exists(pidfile_path('nuts')):
-    ...             if real_pid == int(open(pidfile_path('nuts')).read()):
+    ...         if os.path.exists(pidfile_path("nuts")):
+    ...             if real_pid == int(open(pidfile_path("nuts")).read()):
     ...                 return real_pid
     ...         time.sleep(0.1)
     ...     else:
-    ...         print('Error: pid file was not created')
+    ...         print("Error: pid file was not created")
     ...
     >>> def stop(pid, sig):
     ...     os.kill(pid, sig)
     ...     os.waitpid(pid, 0)
-    ...     if not os.path.exists(pidfile_path('nuts')):
-    ...         print('Stopped successfully')
+    ...     if not os.path.exists(pidfile_path("nuts")):
+    ...         print("Stopped successfully")
     ...     else:
     ...         try:
     ...             # Is it still here at all?
     ...             os.kill(pid, 0)
     ...         except OSError as e:
     ...             if e.errno == errno.ESRCH:
-    ...                 print('Error: pid file was not removed')
+    ...                 print("Error: pid file was not removed")
     ...             else:
     ...                 raise
     ...         else:
-    ...             print('Error: process did not exit')
+    ...             print("Error: process did not exit")
     ...
 
 Here's our example.  We start, and then stop with SIGINT.
@@ -133,7 +140,7 @@ provide a documented interface for doing so.)
     >>> current_SIGINT_handler = signal.getsignal(signal.SIGINT)
     >>> current_SIGTERM_handler = signal.getsignal(signal.SIGTERM)
     >>> pid = start_process()
-    >>> make_pidfile('nuts')
+    >>> make_pidfile("nuts")
     Traceback (most recent call last):
     ...
     RuntimeError: PID file /var/tmp/...nuts.pid already exists.
@@ -151,7 +158,7 @@ terminated without removing the file, by removing the old file and
 continuing as normal.
 
     >>> stale_pid = start_process()
-    >>> make_pidfile('nuts')
+    >>> make_pidfile("nuts")
     Traceback (most recent call last):
     ...
     RuntimeError: PID file /var/tmp/...nuts.pid already exists.
@@ -161,11 +168,11 @@ continuing as normal.
     >>> new_pid = start_process()
     >>> new_pid == stale_pid
     False
-    >>> new_pid == get_pid('nuts')
+    >>> new_pid == get_pid("nuts")
     True
     >>> stop(new_pid, signal.SIGTERM)
     Stopped successfully
-    >>> print(get_pid('nuts'))
+    >>> print(get_pid("nuts"))
     None
 
 
@@ -180,31 +187,34 @@ no checking is done to ensure that the process is actually running, is
 healthy, or died horribly a while ago and its PID is being used by something
 else.  What we have is probably good enough.
 
-    >>> get_pid('nuts') is None
+    >>> get_pid("nuts") is None
     True
     >>> pid = start_process()
-    >>> get_pid('nuts') == pid
+    >>> get_pid("nuts") == pid
     True
     >>> stop(pid, signal.SIGINT)
     Stopped successfully
-    >>> get_pid('nuts') is None
+    >>> get_pid("nuts") is None
     True
 
 You can also pass in your own config instance.
 
     >>> class MyConfig:
     ...     class canonical:
-    ...         pid_dir = '/var/tmp'
-    ...     instance_name = 'blah'
-    >>> path = pidfile_path('beans', MyConfig)
+    ...         pid_dir = "/var/tmp"
+    ...
+    ...     instance_name = "blah"
+    ...
+    >>> path = pidfile_path("beans", MyConfig)
     >>> print(path)
     /var/tmp/blah-beans.pid
-    >>> file = open(path, 'w')
+    >>> file = open(path, "w")
     >>> try:
     ...     print(72, file=file)
     ... finally:
     ...     file.close()
-    >>> get_pid('beans', MyConfig)
+    ...
+    >>> get_pid("beans", MyConfig)
     72
     >>> os.remove(path)
 
@@ -215,34 +225,38 @@ You can also pass in your own config instance.
 The `remove_pidfile` function removes the PID file. It should only be needed
 if you are overriding the default SIGTERM signal handler.
 
-    >>> path = pidfile_path('legumes')
-    >>> file = open(path, 'w')
+    >>> path = pidfile_path("legumes")
+    >>> file = open(path, "w")
     >>> try:
     ...     print(os.getpid(), file=file)
     ... finally:
     ...     file.close()
-    >>> remove_pidfile('legumes')
+    ...
+    >>> remove_pidfile("legumes")
     >>> os.path.exists(path)
     False
 
 If the file does not exist, the function silently ignores the request.
 
-    >>> remove_pidfile('legumes')
+    >>> remove_pidfile("legumes")
 
 You can also pass in your own config instance, in which case the pid does not
 need to match the current process's pid.
 
     >>> class MyConfig:
     ...     class canonical:
-    ...         pid_dir = '/var/tmp'
-    ...     instance_name = 'blah'
-    >>> path = pidfile_path('pits', MyConfig)
+    ...         pid_dir = "/var/tmp"
+    ...
+    ...     instance_name = "blah"
+    ...
+    >>> path = pidfile_path("pits", MyConfig)
 
-    >>> file = open(path, 'w')
+    >>> file = open(path, "w")
     >>> try:
     ...     print(os.getpid() + 1, file=file)
     ... finally:
     ...     file.close()
-    >>> remove_pidfile('pits', MyConfig)
+    ...
+    >>> remove_pidfile("pits", MyConfig)
     >>> os.path.exists(path)
     False

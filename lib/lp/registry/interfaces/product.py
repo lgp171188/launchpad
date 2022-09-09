@@ -154,11 +154,12 @@ def valid_sourceforge_project_name(project_name):
 def sourceforge_project_name_validator(project_name):
     """Raise a validation exception if the name is not valid.
 
-    >>> sourceforge_project_name_validator('valid')
+    >>> sourceforge_project_name_validator("valid")
     True
 
     >>> sourceforge_project_name_validator(
-    ...     '1nvalid') #doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
+    ...     "1nvalid"
+    ... )  # doctest: +ELLIPSIS,+NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
     LaunchpadValidationError: SourceForge project names...

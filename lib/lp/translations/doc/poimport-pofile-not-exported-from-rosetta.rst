@@ -24,10 +24,11 @@ Here are some imports we need to get this test running.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -37,12 +38,12 @@ We need this for the Librarian to work properly.
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 Here's the person who'll be doing the import.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> person = person_set.getByName('mark')
+    >>> person = person_set.getByName("mark")
 
 Now, is time to create the new potemplate
 
@@ -53,20 +54,21 @@ Now, is time to create the new potemplate
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.new(
-    ...     name='firefox',
-    ...     translation_domain='firefox',
-    ...     path='po/firefox.pot',
-    ...     owner=person)
+    ...     name="firefox",
+    ...     translation_domain="firefox",
+    ...     path="po/firefox.pot",
+    ...     owner=person,
+    ... )
 
 We create the POFile object where we are going to attach the .po file.
 
-    >>> pofile = potemplate.newPOFile('cy')
+    >>> pofile = potemplate.newPOFile("cy")
 
 And now, we import a .po file, not uploaded by the maintainer, that lacks the
 header 'X-Rosetta-Export-Date'. That header is the one that notes that the
 file comes from a previous export from Rosetta and when did it happen.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = rb"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 19:41+0100\n"
@@ -75,11 +77,17 @@ file comes from a previous export from Rosetta and when did it happen.
     ...
     ... msgid "foo"
     ... msgstr "blah"
-    ... '''
+    ... """
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We must approve the entry to be able to import it.
@@ -140,16 +148,22 @@ commit.
     >>> release = ProductRelease.get(3)
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
-    >>> potemplate = subset.getPOTemplateByName('firefox')
-    >>> pofile = potemplate.getPOFileByLang('cy')
-    >>> person = person_set.getByName('mark')
+    >>> potemplate = subset.getPOTemplateByName("firefox")
+    >>> pofile = potemplate.getPOFileByLang("cy")
+    >>> person = person_set.getByName("mark")
 
 Now, attach the file again, but this time as coming from upstream.
 
     >>> by_maintainer = True
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     productseries=series, potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     productseries=series,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
 
 We must approve the entry to be able to import it.

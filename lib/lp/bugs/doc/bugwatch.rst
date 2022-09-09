@@ -60,11 +60,13 @@ property is always the same as the bugtracker baseurl property.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> bugtrackerset = getUtility(IBugTrackerSet)
 
-    >>> email_bugtracker = bugtrackerset['email']
-    >>> email_bugwatch = (
-    ...     getUtility(IBugWatchSet).createBugWatch(
-    ...         getUtility(IBugSet).get(1), getUtility(IPersonSet).get(1),
-    ...         email_bugtracker, 'remote-bug-id'))
+    >>> email_bugtracker = bugtrackerset["email"]
+    >>> email_bugwatch = getUtility(IBugWatchSet).createBugWatch(
+    ...     getUtility(IBugSet).get(1),
+    ...     getUtility(IPersonSet).get(1),
+    ...     email_bugtracker,
+    ...     "remote-bug-id",
+    ... )
 
     >>> print(email_bugwatch.remotebug)
     remote-bug-id
@@ -77,20 +79,21 @@ Bug watches can also be accessed as a property of a bug tracker, with
 the .watches attribute.
 
     >>> from operator import attrgetter
-    >>> debbugs = bugtrackerset['debbugs']
+    >>> debbugs = bugtrackerset["debbugs"]
     >>> for watch in sorted(
-    ...         debbugs.watches, key=attrgetter('bug.id', 'remotebug')):
-    ...     print('%d: %s' % (watch.bug.id, watch.remotebug))
+    ...     debbugs.watches, key=attrgetter("bug.id", "remotebug")
+    ... ):
+    ...     print("%d: %s" % (watch.bug.id, watch.remotebug))
     1: 304014
     2: 327452
     3: 327549
     7: 280883
     15: 308994
-    >>> mozilla_bugtracker = bugtrackerset['mozilla.org']
+    >>> mozilla_bugtracker = bugtrackerset["mozilla.org"]
     >>> for watch in sorted(
-    ...         mozilla_bugtracker.watches,
-    ...         key=attrgetter('bug.id', 'remotebug')):
-    ...     print('%d: %s' % (watch.bug.id, watch.remotebug))
+    ...     mozilla_bugtracker.watches, key=attrgetter("bug.id", "remotebug")
+    ... ):
+    ...     print("%d: %s" % (watch.bug.id, watch.remotebug))
     1: 123543
     1: 2000
     1: 42
@@ -99,7 +102,8 @@ the .watches attribute.
 To get the latest 10 watches, use IBugTracker.latestwatches:
 
     >>> for watch in mozilla_bugtracker.latestwatches:
-    ...     print('%d: %s' % (watch.bug.id, watch.remotebug))
+    ...     print("%d: %s" % (watch.bug.id, watch.remotebug))
+    ...
     1: 2000
     1: 123543
     1: 42
@@ -108,7 +112,7 @@ To get the latest 10 watches, use IBugTracker.latestwatches:
 We can retrieve the list of Launchpad bugs watching a particular
 remote bug using getBugsWatching():
 
-    >>> [bug.id for bug in mozilla_bugtracker.getBugsWatching('42')]
+    >>> [bug.id for bug in mozilla_bugtracker.getBugsWatching("42")]
     [1, 2]
 
 If we have a bug, we can query for a bug watch associated with that
@@ -117,7 +121,7 @@ being added.
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> bug_one = getUtility(IBugSet).get(1)
-    >>> mozilla_watch = bug_one.getBugWatch(mozilla_bugtracker, '2000')
+    >>> mozilla_watch = bug_one.getBugWatch(mozilla_bugtracker, "2000")
     >>> mozilla_watch in bug_one.watches
     True
     >>> print(mozilla_watch.bugtracker.name)
@@ -127,7 +131,7 @@ being added.
 
 If no matching bug watch can be found, None is returned.
 
-    >>> bug_one.getBugWatch(mozilla_bugtracker, 'no-such-bug') is None
+    >>> bug_one.getBugWatch(mozilla_bugtracker, "no-such-bug") is None
     True
 
 
@@ -141,8 +145,11 @@ To create a bugwatch, use IBugWatchSet.createBugWatch:
     >>> sample_person = getUtility(IPersonSet).get(12)
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bugwatch = getUtility(IBugWatchSet).createBugWatch(
-    ...     bug=bug_one, owner=sample_person, bugtracker=mozilla_bugtracker,
-    ...     remotebug='1234')
+    ...     bug=bug_one,
+    ...     owner=sample_person,
+    ...     bugtracker=mozilla_bugtracker,
+    ...     remotebug="1234",
+    ... )
     >>> print(bugwatch.url)
     https://bugzilla.mozilla.org/show_bug.cgi?id=1234
     >>> bugwatch.lastchecked is None
@@ -156,12 +163,15 @@ SourceForge.net bug watch URLs are generated using the
 "/support/tracker.php" script, which will redirect to the URL with the
 group_id and aid arguments filled in:
 
-    >>> sftracker = bugtrackerset['sf']
+    >>> sftracker = bugtrackerset["sf"]
     >>> sample_person = getUtility(IPersonSet).get(12)
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bugwatch = getUtility(IBugWatchSet).createBugWatch(
-    ...     bug=bug_one, owner=sample_person, bugtracker=sftracker,
-    ...     remotebug='1337833')
+    ...     bug=bug_one,
+    ...     owner=sample_person,
+    ...     bugtracker=sftracker,
+    ...     remotebug="1337833",
+    ... )
     >>> print(bugwatch.url)
     http://sourceforge.net/support/tracker.php?aid=1337833
 
@@ -193,12 +203,15 @@ easier you can use IBugWatchSet.fromText().
     ...         http://code.google.com/p/myproject/issues/detail?id=12345
     ... """  # noqa
     >>> bug_watches = getUtility(IBugWatchSet).fromText(
-    ...     text, bug_one, sample_person)
+    ...     text, bug_one, sample_person
+    ... )
     >>> bugs_and_types = [
     ...     (bug_watch.bugtracker.bugtrackertype, bug_watch.remotebug)
-    ...     for bug_watch in bug_watches]
+    ...     for bug_watch in bug_watches
+    ... ]
     >>> for bugtracker_type, remotebug in sorted(bugs_and_types):
     ...     print("%s: %s" % (bugtracker_type.name, remotebug))
+    ...
     BUGZILLA: 42
     DEBBUGS: 42
     ROUNDUP: 42
@@ -217,12 +230,14 @@ bugs.gnome.org vs. bugzilla.gnome.org).
 
     >>> old_bugtracker_count = getUtility(IBugTrackerSet).count
     >>> gnome_bugzilla = getUtility(IBugTrackerSet).queryByBaseURL(
-    ...     'http://bugzilla.gnome.org/bugs')
+    ...     "http://bugzilla.gnome.org/bugs"
+    ... )
     >>> print(gnome_bugzilla.name)
     gnome-bugzilla
     >>> text = "https://bugzilla.gnome.org/bugs/show_bug.cgi?id=12345"
     >>> [gnome_bugwatch] = getUtility(IBugWatchSet).fromText(
-    ...     text, bug_one, sample_person)
+    ...     text, bug_one, sample_person
+    ... )
     >>> print(gnome_bugwatch.bugtracker.name)
     gnome-bugzilla
     >>> new_bugtracker_count = getUtility(IBugTrackerSet).count
@@ -236,8 +251,9 @@ create bug watches or bug trackers from such URIs if they are found in
 the text passed to fromText().
 
     >>> text = "mailto:some.one@example.com"
-    >>> bug_watches = getUtility(IBugWatchSet).fromText(text, bug_one,
-    ...     sample_person)
+    >>> bug_watches = getUtility(IBugWatchSet).fromText(
+    ...     text, bug_one, sample_person
+    ... )
     >>> bug_watches
     []
 
@@ -249,7 +265,7 @@ If the bug watch is linked to a bugtask, the bug watch can sync its
 status with it. Before we do this we need to login as the Bug Watch
 Updater and get a bug watch and a bugtask to test with.
 
-    >>> login('bugwatch@bugs.launchpad.net')
+    >>> login("bugwatch@bugs.launchpad.net")
     >>> bug_watch_updater_user = getUtility(ILaunchBag).user
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.expireNotifications()
@@ -272,16 +288,22 @@ we can confirm that an event is indeed fired off.
     >>> def print_bugtask_modified(bugtask, event):
     ...     old_bugtask = event.object_before_modification
     ...     if bugtask.status != old_bugtask.status:
-    ...         print("%s => %s" % (old_bugtask.status.title,
-    ...             bugtask.status.title))
+    ...         print(
+    ...             "%s => %s"
+    ...             % (old_bugtask.status.title, bugtask.status.title)
+    ...         )
     ...     if bugtask.importance != old_bugtask.importance:
-    ...         print("%s => %s" % (old_bugtask.importance.title,
-    ...             bugtask.importance.title))
+    ...         print(
+    ...             "%s => %s"
+    ...             % (old_bugtask.importance.title, bugtask.importance.title)
+    ...         )
+    ...
     >>> from lazr.lifecycle.interfaces import IObjectModifiedEvent
     >>> from lp.bugs.interfaces.bugtask import IBugTask
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> event_listener = ZopeEventHandlerFixture(
-    ...     print_bugtask_modified, (IBugTask, IObjectModifiedEvent))
+    ...     print_bugtask_modified, (IBugTask, IObjectModifiedEvent)
+    ... )
     >>> event_listener.setUp()
 
 If we pass in a different Malone status than the existing one, an event
@@ -290,7 +312,8 @@ will be fired off, even though the remote status stays the same.
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> old_lastchanged = debian_bugwatch.lastchanged
     >>> debian_bugwatch.updateStatus(
-    ...     debian_bugwatch.remotestatus, BugTaskStatus.NEW)
+    ...     debian_bugwatch.remotestatus, BugTaskStatus.NEW
+    ... )
     Confirmed => New
 
 The lastchanged isn't updated, though, since it indicates when the
@@ -310,7 +333,7 @@ If only the remote status is changed, not the bugtask's status, no
 event is fired off. The remote status is simply a string, it doesn't
 have to be convertible to a real Malone status.
 
-    >>> debian_bugwatch.updateStatus(u'some status', BugTaskStatus.NEW)
+    >>> debian_bugwatch.updateStatus("some status", BugTaskStatus.NEW)
 
     >>> print(debian_bugwatch.remotestatus)
     some status
@@ -333,14 +356,22 @@ tasks, because it's not a valid person and only valid persons can get karma.
 Finally, let's make sure that bug notifications were added:
 
     >>> from lp.bugs.model.bugnotification import BugNotification
-    >>> unsent_notifications = IStore(BugNotification).find(
-    ...     BugNotification, date_emailed=None).order_by(BugNotification.id)
+    >>> unsent_notifications = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification, date_emailed=None)
+    ...     .order_by(BugNotification.id)
+    ... )
 
     >>> for bug_notification in unsent_notifications:
-    ...     print("Bug %s changed by %s:" % (
-    ...         bug_notification.bug_id,
-    ...         bug_notification.message.owner.displayname))
+    ...     print(
+    ...         "Bug %s changed by %s:"
+    ...         % (
+    ...             bug_notification.bug_id,
+    ...             bug_notification.message.owner.displayname,
+    ...         )
+    ...     )
     ...     print(bug_notification.message.text_contents)
+    ...
     Bug 1 changed by Bug Watch Updater:
     ** Changed in: mozilla-firefox (Debian)
            Status: Confirmed => New
@@ -359,7 +390,8 @@ watch so that we can demonstrate how it gets updated.
     >>> old_remote_importance = debian_bugwatch.remote_importance
 
     >>> debian_bugwatch.updateImportance(
-    ...     debian_bugwatch.remote_importance, BugTaskImportance.CRITICAL)
+    ...     debian_bugwatch.remote_importance, BugTaskImportance.CRITICAL
+    ... )
     Low => Critical
 
 As with updating Malone statuses, the bug watch's `lastchanged` field
@@ -378,8 +410,9 @@ If only the remote importance is changed, not the bugtask's importance,
 no event is fired off. The remote importance is simply a string, it
 doesn't necessarily have to be convertible to a real Malone status.
 
-    >>> debian_bugwatch.updateImportance(u'some importance',
-    ...     BugTaskImportance.CRITICAL)
+    >>> debian_bugwatch.updateImportance(
+    ...     "some importance", BugTaskImportance.CRITICAL
+    ... )
 
     >>> print(debian_bugwatch.remote_importance)
     some importance
@@ -395,10 +428,15 @@ Changes to bug watch statuses will produce notifications in the usual
 manner:
 
     >>> for bug_notification in unsent_notifications:
-    ...     print("Bug %s changed by %s:" % (
-    ...         bug_notification.bug.id,
-    ...         bug_notification.message.owner.displayname))
+    ...     print(
+    ...         "Bug %s changed by %s:"
+    ...         % (
+    ...             bug_notification.bug.id,
+    ...             bug_notification.message.owner.displayname,
+    ...         )
+    ...     )
     ...     print(bug_notification.message.text_contents)
+    ...
     Bug 1 changed by Bug Watch Updater:
     ** Changed in: mozilla-firefox (Debian)
            Status: Confirmed => New
@@ -411,10 +449,12 @@ manner:
 The Bug Watch Updater can transition a bug to any status or importance:
 
     >>> for status in BugTaskStatus.items:
-    ...     debian_bugwatch.updateStatus(u'nothing', status)
+    ...     debian_bugwatch.updateStatus("nothing", status)
+    ...
 
     >>> for importance in BugTaskImportance.items:
-    ...     debian_bugwatch.updateImportance(u'nothing', importance)
+    ...     debian_bugwatch.updateImportance("nothing", importance)
+    ...
 
 
 BugWatches against BugTasks with conjoined primaries
@@ -434,17 +474,22 @@ creating a bug task with a conjoined primary.
     >>> from lp.bugs.interfaces.bugtracker import (
     ...     BugTrackerType,
     ...     IBugTrackerSet,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.distribution import IDistributionSet
 
     >>> ubuntu = getUtility(IDistributionSet).get(1)
-    >>> firefox = ubuntu.getSourcePackage('mozilla-firefox')
-    >>> bug = firefox.createBug(CreateBugParams(
-    ...     owner=sample_person, title='Yet another test bug',
-    ...     comment="A sample bug for conjoined primary tests."))
+    >>> firefox = ubuntu.getSourcePackage("mozilla-firefox")
+    >>> bug = firefox.createBug(
+    ...     CreateBugParams(
+    ...         owner=sample_person,
+    ...         title="Yet another test bug",
+    ...         comment="A sample bug for conjoined primary tests.",
+    ...     )
+    ... )
 
     >>> targeted_bugtask = getUtility(IBugTaskSet).createTask(
-    ...     bug, sample_person, firefox.development_version)
+    ...     bug, sample_person, firefox.development_version
+    ... )
 
     >>> targeted_bugtask.conjoined_primary is None
     True
@@ -457,9 +502,12 @@ specify, such as the bug tracker's name.
 
     >>> bug_tracker = getUtility(IBugTrackerSet).ensureBugTracker(
     ...     bugtrackertype=BugTrackerType.ROUNDUP,
-    ...     owner=sample_person, baseurl='http://some.where')
+    ...     owner=sample_person,
+    ...     baseurl="http://some.where",
+    ... )
     >>> bug_watch = bug.addWatch(
-    ...     bugtracker=bug_tracker, remotebug='1', owner=sample_person)
+    ...     bugtracker=bug_tracker, remotebug="1", owner=sample_person
+    ... )
 
     >>> bug.bugtasks[0].bugwatch = bug_watch
     >>> flush_database_updates()
@@ -474,15 +522,16 @@ replicas must be updated through their conjoined primary.
     'New'
 
     >>> import transaction
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestRoundup)
+    >>> from lp.bugs.tests.externalbugtracker import TestRoundup
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
     >>> bug_watch_updater = CheckwatchesMaster(transaction, FakeLogger())
     >>> external_bugtracker = TestRoundup(bug_tracker.baseurl)
     >>> with external_bugtracker.responses():
     ...     bug_watch_updater.updateBugWatches(
-    ...         external_bugtracker, [bug_watch])
+    ...         external_bugtracker, [bug_watch]
+    ...     )
+    ...
     INFO Updating 1 watches for 1 bugs on http://some.where
 
     >>> bug.bugtasks[0].status.title
@@ -501,11 +550,12 @@ watches that are linked to a bug task targeted to the Product.
 
     >>> product = factory.makeProduct(official_malone=False)
     >>> bug_task = factory.makeBugTask(target=product)
-    >>> bug_watch = factory.makeBugWatch(remote_bug='42')
+    >>> bug_watch = factory.makeBugWatch(remote_bug="42")
     >>> bug_task.bugwatch = bug_watch
     >>> product.bugtracker = bug_watch.bugtracker
     >>> for bug_watch in product.getLinkedBugWatches():
     ...     print(bug_watch.remotebug)
+    ...
     42
 
 It's not uncommon to link to other bug trackers than the one the Product
@@ -514,7 +564,7 @@ errors, we ignore such bug watches.
 
     >>> product = factory.makeProduct(official_malone=False)
     >>> bug_task = factory.makeBugTask(target=product)
-    >>> bug_watch = factory.makeBugWatch(remote_bug='84')
+    >>> bug_watch = factory.makeBugWatch(remote_bug="84")
     >>> bug_task.bugwatch = bug_watch
     >>> product.bugtracker == bug_watch.bugtracker
     False
@@ -523,10 +573,11 @@ errors, we ignore such bug watches.
 
 Bug watches can be removed using the removeWatch method.
 
-    >>> bug_watch = factory.makeBugWatch(remote_bug='42')
+    >>> bug_watch = factory.makeBugWatch(remote_bug="42")
     >>> bug = bug_watch.bug
     >>> for bug_watch in bug.watches:
     ...     print(bug_watch.remotebug)
+    ...
     42
     >>> bug.removeWatch(bug_watch, factory.makePerson())
     >>> [bug_watch.remotebug for bug_watch in bug.watches]
@@ -560,7 +611,8 @@ can_be_rescheduled will be True
 
     >>> transaction.commit()
     >>> schedulable_watch.addActivity(
-    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND)
+    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND
+    ... )
     >>> schedulable_watch.can_be_rescheduled
     True
 
@@ -581,7 +633,8 @@ needs attention in order for it to be able to work again.
     >>> schedulable_watch.next_check = None
     >>> transaction.commit()
     >>> schedulable_watch.addActivity(
-    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND)
+    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND
+    ... )
     >>> schedulable_watch.can_be_rescheduled
     False
 
@@ -590,10 +643,12 @@ true.
 
     >>> from datetime import timedelta
     >>> run_once_failed_once_watch = factory.makeBugWatch()
-    >>> run_once_failed_once_watch.next_check = (
-    ...     datetime.now(utc) + timedelta(days=7))
+    >>> run_once_failed_once_watch.next_check = datetime.now(utc) + timedelta(
+    ...     days=7
+    ... )
     >>> run_once_failed_once_watch.addActivity(
-    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND)
+    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND
+    ... )
     >>> run_once_failed_once_watch.can_be_rescheduled
     True
 
@@ -634,7 +689,8 @@ If we add some activity to the watch, to make its can_be_rescheduled
 property become True, setNextCheck() will succeed.
 
     >>> schedulable_watch.addActivity(
-    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND)
+    ...     result=BugWatchActivityStatus.BUG_NOT_FOUND
+    ... )
     >>> schedulable_watch.can_be_rescheduled
     True
 

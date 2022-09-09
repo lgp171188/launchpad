@@ -17,7 +17,7 @@ configuration).
 
     >>> from lp.services.config import config
     >>> from lp.testing.layers import DatabaseLayer
-    >>> expected = 'dbname=%s' % DatabaseLayer._db_fixture.dbname
+    >>> expected = "dbname=%s" % DatabaseLayer._db_fixture.dbname
     >>> expected == config.database.rw_main_primary
     True
 
@@ -34,8 +34,7 @@ Configs are kept from the 'configs' directory.
 
     >>> import os.path
     >>> import lp
-    >>> os.path.join(config.root, 'lib', 'lp') == os.path.dirname(
-    ...     lp.__file__)
+    >>> os.path.join(config.root, "lib", "lp") == os.path.dirname(lp.__file__)
     True
 
 LaunchpadConfig loads the conf file from the directory that matches its
@@ -48,8 +47,10 @@ instance_name to 'testrunner' and additionally uses unique temporary
 configs to permit changing the config during tests (but not if we are
 using persistent helpers - see lp.testing.layers).
 
-    >>> (config.instance_name == 'testrunner' or
-    ...     config.instance_name == os.environ['LPCONFIG'])
+    >>> (
+    ...     config.instance_name == "testrunner"
+    ...     or config.instance_name == os.environ["LPCONFIG"]
+    ... )
     True
 
     >>> config.process_name
@@ -64,10 +65,10 @@ using persistent helpers - see lp.testing.layers).
 LaunchpadConfig provides __contains__ and __getitem__ to check and
 access lazr.config sections and keys.
 
-    >>> 'launchpad' in config
+    >>> "launchpad" in config
     True
 
-    >>> config['launchpad']['default_batch_size']
+    >>> config["launchpad"]["default_batch_size"]
     5
 
 The application root directory is assigned to the root attribute.
@@ -77,7 +78,7 @@ The application root directory is assigned to the root attribute.
     >>> config.root in example_path
     True
 
-    >>> example_path[len(config.root):]
+    >>> example_path[len(config.root) :]
     '/lib/lp/services/...'
 
 
@@ -87,16 +88,16 @@ Working with test configurations
 Tests can update the config with test data. For example, the domain can
 be changed for a feature.
 
-    >>> test_data = ("""
+    >>> test_data = """
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.test""")
-    >>> config.push('test_data', test_data)
+    ...     email_domain: answers.launchpad.test"""
+    >>> config.push("test_data", test_data)
     >>> config.answertracker.email_domain
     'answers.launchpad.test'
 
 And the test can remove the data when it is done to restore the config.
 
-    >>> config.pop('test_data')
+    >>> config.pop("test_data")
     (<lazr.config...ConfigData ...>,)
 
     >>> config.answertracker.email_domain
@@ -116,8 +117,8 @@ Setting just the instance_name will change the directory from which the
 conf file is loaded.
 
     >>> from lp.services.config import LaunchpadConfig
-    >>> test_config = LaunchpadConfig('testrunner', 'test')
-    >>> test_config.setInstance('development')
+    >>> test_config = LaunchpadConfig("testrunner", "test")
+    >>> test_config.setInstance("development")
     >>> test_config.instance_name
     'development'
 
@@ -133,14 +134,14 @@ conf file is loaded.
 Changing the instance_name and process_name changes the directory and
 conf file name that is loaded.
 
-    >>> test_config.setInstance('testrunner')
+    >>> test_config.setInstance("testrunner")
     >>> test_config.instance_name
     'testrunner'
 
     >>> test_config.answertracker.days_before_expiration
     15
 
-    >>> test_config.setProcess('test-process')
+    >>> test_config.setProcess("test-process")
     >>> test_config.process_name
     'test-process'
 
@@ -156,11 +157,11 @@ conf file name that is loaded.
 The default 'launchpad-lazr.conf' is loaded if no conf files match the
 process's name.
 
-    >>> test_config.setInstance('testrunner')
+    >>> test_config.setInstance("testrunner")
     >>> test_config.instance_name
     'testrunner'
 
-    >>> test_config.setProcess('test_no_conf')
+    >>> test_config.setProcess("test_no_conf")
     >>> test_config.process_name
     'test_no_conf'
 
@@ -184,7 +185,7 @@ module to test LaunchpadConfig's behaviour.
 Alternatively, the instance name and process name can be specified as
 argument to the constructor.
 
-    >>> dev_config = LaunchpadConfig('development', 'authserver')
+    >>> dev_config = LaunchpadConfig("development", "authserver")
     >>> dev_config.instance_name
     'development'
 

@@ -5,7 +5,8 @@ comment form requires launchpad.Append permission on the bugtask. In this
 case, it means being logged in.
 
     >>> anon_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
     Traceback (most recent call last):
       ..
     zope.security.interfaces.Unauthorized: ...launchpad.Append...
@@ -13,8 +14,9 @@ case, it means being logged in.
 So let's login and add a comment.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
-    >>> user_browser.getControl(name='field.comment').value = "a test comment"
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
+    >>> user_browser.getControl(name="field.comment").value = "a test comment"
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
@@ -28,9 +30,11 @@ When an attachment is submitted, the comment and description are optional.
     >>> from io import BytesIO
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"a test file"), "text/plain", "foo.txt")
+    ...     BytesIO(b"a test file"), "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -39,11 +43,14 @@ When an attachment is submitted, the comment and description are optional.
 A comment and attachment can be submitted in one request.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
     >>> user_browser.getControl(
-    ...     name='field.comment').value = "this is a comment"
+    ...     name="field.comment"
+    ... ).value = "this is a comment"
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"some file"), "text/plain", "bar.txt")
+    ...     BytesIO(b"some file"), "text/plain", "bar.txt"
+    ... )
     >>> user_browser.getControl("Description").value = "some file"
     >>> user_browser.getControl("Post Comment").click()
 
@@ -57,9 +64,11 @@ A comment and attachment can be submitted in one request.
 You cannot upload an empty attachment.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b""), "text/plain", "foo.txt")
+    ...     BytesIO(b""), "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
@@ -78,9 +87,11 @@ option in launchpad-lazr.conf. In our example, the size is limited to 1024.
     1024
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
+    ... )
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"x" * 1025), "text/plain", "foo.txt")
+    ...     BytesIO(b"x" * 1025), "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -90,9 +101,11 @@ option in launchpad-lazr.conf. In our example, the size is limited to 1024.
 The comment/attach file form is available from a link on the bug page.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment"
+    ... )
     >>> user_browser.getControl("Attachment").add_file(
-    ...     BytesIO(b"a test file"), "text/plain", "foo.txt")
+    ...     BytesIO(b"a test file"), "text/plain", "foo.txt"
+    ... )
     >>> user_browser.getControl("Description").value = "some file"
     >>> user_browser.getControl("Post Comment").click()
 

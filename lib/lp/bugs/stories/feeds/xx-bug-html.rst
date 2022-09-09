@@ -8,22 +8,26 @@ as HTML instead of Atom.
     >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
-    ...     )
+    ... )
 
 Define a helper function for parsing the entries:
 
     >>> def parse_entries(contents):
     ...     entries = [
-    ...         tag for tag in BeautifulSoup(
-    ...             browser.contents, parse_only=SoupStrainer('tr'))]
+    ...         tag
+    ...         for tag in BeautifulSoup(
+    ...             browser.contents, parse_only=SoupStrainer("tr")
+    ...         )
+    ...     ]
     ...     return entries
+    ...
 
 And two for printing the results:
 
     >>> def print_entry(entry):
-    ...     tds = entry('td')
+    ...     tds = entry("td")
     ...     print("number:", extract_text(tds[1]))
-    ...     print("href:", tds[1].a['href'])
+    ...     print("href:", tds[1].a["href"])
     ...     print("title:", extract_text(tds[2]))
     ...     if len(tds) < 6:
     ...         print("importance:", extract_text(tds[3]))
@@ -32,13 +36,15 @@ And two for printing the results:
     ...         print("project:", extract_text(tds[3]))
     ...         print("importance:", extract_text(tds[4]))
     ...         print("status:", extract_text(tds[5]))
+    ...
 
     >>> def get_bug_numbers(entries):
     ...     bug_numbers = []
     ...     for entry in entries[1:]:
-    ...         bug_num = int(extract_text(entry('td')[1]))
+    ...         bug_num = int(extract_text(entry("td")[1]))
     ...         bug_numbers.append(bug_num)
     ...     return bug_numbers
+    ...
 
 
 Latest bugs for a product
@@ -48,8 +54,10 @@ This feed gets the latest bugs reported against a product. The feed includes
 summary information about the bugs such as ID, title, author, and a link to
 the bug itself.
 
-    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.html?'
-    ...              'show_column=bugtargetdisplayname')
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/jokosher/latest-bugs.html?"
+    ...     "show_column=bugtargetdisplayname"
+    ... )
     >>> browser.title
     'Bugs in Jokosher'
     >>> browser.url  # noqa
@@ -75,8 +83,10 @@ Latest bugs for a project
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
 
-    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
-    ...              'show_column=bugtargetdisplayname')
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/mozilla/latest-bugs.html?"
+    ...     "show_column=bugtargetdisplayname"
+    ... )
     >>> browser.title
     'Bugs in The Mozilla Project'
     >>> browser.url  # noqa
@@ -105,7 +115,7 @@ Create a private team and assign a mozilla bug to that team.
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import PersonVisibility
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> priv_team = factory.makeTeam(visibility=PersonVisibility.PRIVATE)
     >>> bug = getUtility(IBugSet).get(1)
     >>> print(bug.title)
@@ -119,8 +129,10 @@ Create a private team and assign a mozilla bug to that team.
 
 Get the mozilla/latest-bugs feed. The previous bug should be included.
 
-    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
-    ...              'show_column=bugtargetdisplayname')
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/mozilla/latest-bugs.html?"
+    ...     "show_column=bugtargetdisplayname"
+    ... )
     >>> entries = parse_entries(browser.contents)
     >>> get_bug_numbers(entries)
     [15, 15, 9, 9, 5, 5, 5, 4, 1, 1, 1]
@@ -130,7 +142,7 @@ Latest bugs for a person
 
 This feed gets the latest bugs for a person.
 
-    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.html')
+    >>> browser.open("http://feeds.launchpad.test/~name16/latest-bugs.html")
     >>> browser.title
     'Bugs for Foo Bar'
     >>> browser.url
@@ -157,8 +169,10 @@ Latest bugs for any target
 
 This feed gets the latest bugs reported against any target.
 
-    >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.html?'
-    ...              'show_column=bugtargetdisplayname')
+    >>> browser.open(
+    ...     "http://feeds.launchpad.test/bugs/latest-bugs.html?"
+    ...     "show_column=bugtargetdisplayname"
+    ... )
     >>> browser.title
     'Launchpad bugs'
     >>> browser.url  # noqa
@@ -186,9 +200,11 @@ General bug search
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
 
-    >>> url = ("http://feeds.launchpad.test/bugs/+bugs.html?"
-    ...        "field.searchtext=&search=Search+Bug+Reports&"
-    ...        "field.scope=all&field.scope.target=")
+    >>> url = (
+    ...     "http://feeds.launchpad.test/bugs/+bugs.html?"
+    ...     "field.searchtext=&search=Search+Bug+Reports&"
+    ...     "field.scope=all&field.scope.target="
+    ... )
 
 The bug search feed is not enabled by default since it may represent a
 performance problem in production.
@@ -200,7 +216,7 @@ performance problem in production.
     ...     [launchpad]
     ...     is_bug_search_feed_active: False
     ...     """
-    >>> config.push('bug_search_feed_data', bug_search_feed_data)
+    >>> config.push("bug_search_feed_data", bug_search_feed_data)
     >>> browser.open(url)
     Traceback (most recent call last):
     ...
@@ -210,7 +226,7 @@ The bug search feed can be tested after setting is_bug_search_feed_active
 to True.
 
     # Restore the config to the original state; True.
-    >>> config_data = config.pop('bug_search_feed_data')
+    >>> config_data = config.pop("bug_search_feed_data")
 
     >>> browser.open(url)
     >>> browser.title

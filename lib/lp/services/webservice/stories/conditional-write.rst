@@ -9,35 +9,38 @@ the problem crops up again.
 Here's a bug: it has an ETag and values for fields like
 'date_last_message'.
 
-    >>> url = '/bugs/1'
+    >>> url = "/bugs/1"
     >>> bug = webservice.get(url).jsonBody()
-    >>> old_etag = bug['http_etag']
-    >>> old_date_last_message = bug['date_last_message']
+    >>> old_etag = bug["http_etag"]
+    >>> old_date_last_message = bug["date_last_message"]
 
 When we add a message to a bug, 'date_last_message' is changed as a
 side effect.
 
-    >>> print(webservice.named_post(
-    ...     url, 'newMessage', subject="subject", content="content"))
+    >>> print(
+    ...     webservice.named_post(
+    ...         url, "newMessage", subject="subject", content="content"
+    ...     )
+    ... )
     HTTP/1.1 201 Created
     ...
 
     >>> new_bug = webservice.get(url).jsonBody()
-    >>> new_date_last_message = new_bug['date_last_message']
+    >>> new_date_last_message = new_bug["date_last_message"]
     >>> old_date_last_message == new_date_last_message
     False
 
 Because 'date_last_message' changed, the bug resource's ETag also
 changed:
 
-    >>> new_etag = new_bug['http_etag']
+    >>> new_etag = new_bug["http_etag"]
     >>> old_etag == new_etag
     False
 
 A conditional GET request using the old ETag will fail, and the client
 will hear about the new value for 'date_last_message'.
 
-    >>> print(webservice.get(url, headers={'If-None-Match' : old_etag}))
+    >>> print(webservice.get(url, headers={"If-None-Match": old_etag}))
     HTTP/1.1 200 Ok
     ...
 
@@ -53,8 +56,8 @@ lazr.restful resolves this by splitting the ETag into two parts. The
 first part changes only on changes to fields that clients cannot
 modify directly, like 'date_last_message':
 
-    >>> old_read, old_write = old_etag.rsplit('-', 1)
-    >>> new_read, new_write = new_etag.rsplit('-', 1)
+    >>> old_read, old_write = old_etag.rsplit("-", 1)
+    >>> new_read, new_write = new_etag.rsplit("-", 1)
     >>> old_read == new_read
     False
 
@@ -68,18 +71,19 @@ So long as the second part of the submitted ETag matches, a
 conditional write will succeed.
 
     >>> import simplejson
-    >>> data = simplejson.dumps({'title' : 'New title'})
-    >>> headers = {'If-Match': old_etag}
-    >>> print(webservice.patch(
-    ...     url, 'application/json', data, headers=headers))
+    >>> data = simplejson.dumps({"title": "New title"})
+    >>> headers = {"If-Match": old_etag}
+    >>> print(
+    ...     webservice.patch(url, "application/json", data, headers=headers)
+    ... )
     HTTP/1.1 209 Content Returned
     ...
 
 Of course, now the resource has been modified by a client, and the
 ETag has changed.
 
-    >>> newer_etag = webservice.get(url).jsonBody()['http_etag']
-    >>> newer_read, newer_write = newer_etag.rsplit('-', 1)
+    >>> newer_etag = webservice.get(url).jsonBody()["http_etag"]
+    >>> newer_read, newer_write = newer_etag.rsplit("-", 1)
 
 Both portions of the ETag has changed: the write portion because we
 just changed 'description', and the read portion because
@@ -93,9 +97,10 @@ just changed 'description', and the read portion because
 A conditional write will fail when the write portion of the submitted
 ETag doesn't match, even if the read portion matches.
 
-    >>> headers = {'If-Match': new_etag}
-    >>> print(webservice.patch(
-    ...     url, 'application/json', data, headers=headers))
+    >>> headers = {"If-Match": new_etag}
+    >>> print(
+    ...     webservice.patch(url, "application/json", data, headers=headers)
+    ... )
     HTTP/1.1 412 Precondition Failed
     ...
 
@@ -113,9 +118,9 @@ same. Apache's mod_compress modifies outgoing ETags when it compresses
 the representations. Launchpad's web service will treat an ETag
 modified by mod_compress as though it were the original ETag.
 
-    >>> etag = webservice.get(url).jsonBody()['http_etag']
+    >>> etag = webservice.get(url).jsonBody()["http_etag"]
 
-    >>> headers = {'If-None-Match': etag}
+    >>> headers = {"If-None-Match": etag}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
     ...
@@ -123,19 +128,19 @@ modified by mod_compress as though it were the original ETag.
 Some versions of mod_compress turn '"foo"' into '"foo"-gzip', and some
 versions turn it into '"foo-gzip"'. We treat all three forms the same.
 
-    >>> headers = {'If-None-Match': etag + "-gzip"}
+    >>> headers = {"If-None-Match": etag + "-gzip"}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
     ...
 
-    >>> headers = {'If-None-Match': etag[:-1] + "-gzip" + etag[-1]}
+    >>> headers = {"If-None-Match": etag[:-1] + "-gzip" + etag[-1]}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
     ...
 
 Any other modification to the ETag is treated as a distinct ETag.
 
-    >>> headers = {'If-None-Match': etag + "-not-gzip"}
+    >>> headers = {"If-None-Match": etag + "-not-gzip"}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 200 Ok
     ...

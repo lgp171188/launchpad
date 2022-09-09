@@ -9,9 +9,12 @@ packages within the distroseries in context:
     >>> anon_browser.getControl("Find a Package").click()
     >>> anon_browser.url
     'http://launchpad.test/ubuntu/warty/+search?text=a'
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'search-results'),
-    ...     formatter='html'))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(anon_browser.contents, "search-results"),
+    ...         formatter="html",
+    ...     )
+    ... )
     1 &rarr; 3 of 3 results
     First &bull; Previous &bull; Next &bull; Last
     foobar: foobar is bad
@@ -35,12 +38,14 @@ Each entry contains:
    the upload was done.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/ubuntu/warty/+portlet-latestuploads")
-    >>> latest_uploads = str(find_tag_by_id(anon_browser.contents,
-    ...                      "latest-uploads"))
-    >>> 'mozilla-firefox 0.9' in latest_uploads
+    ...     "http://launchpad.test/ubuntu/warty/+portlet-latestuploads"
+    ... )
+    >>> latest_uploads = str(
+    ...     find_tag_by_id(anon_browser.contents, "latest-uploads")
+    ... )
+    >>> "mozilla-firefox 0.9" in latest_uploads
     True
-    >>> 'Mark Shuttleworth' in latest_uploads
+    >>> "Mark Shuttleworth" in latest_uploads
     True
 
 The link presented points to the SourcePackageRelease inside the
@@ -56,6 +61,7 @@ in production environment):
 
     >>> anon_browser.open(
     ...     "http://launchpad.test/ubuntutest/breezy-autotest/"
-    ...     "+portlet-latestuploads")
-    >>> find_tag_by_id(anon_browser.contents, 'no-latest-uploads') is not None
+    ...     "+portlet-latestuploads"
+    ... )
+    >>> find_tag_by_id(anon_browser.contents, "no-latest-uploads") is not None
     True

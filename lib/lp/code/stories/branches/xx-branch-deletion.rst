@@ -9,26 +9,32 @@ branches that have been created in error.
     >>> login(ANONYMOUS)
     >>> alice = factory.makePerson(name="alice", email="alice@example.com")
     >>> product = factory.makeProduct(
-    ...     name='earthlynx', displayname="Earth Lynx", owner=alice)
+    ...     name="earthlynx", displayname="Earth Lynx", owner=alice
+    ... )
     >>> branch = factory.makeProductBranch(
-    ...     product=product, branch_type=BranchType.HOSTED)
+    ...     product=product, branch_type=BranchType.HOSTED
+    ... )
     >>> productseries = factory.makeProductSeries(
-    ...     product=product, branch=branch)
+    ...     product=product, branch=branch
+    ... )
     >>> ignored = login_person(alice)
     >>> product.development_focus = productseries
     >>> delete_branch = factory.makeProductBranch(
-    ...     name='to-delete', owner=alice,
-    ...     product=product, branch_type=BranchType.HOSTED)
+    ...     name="to-delete",
+    ...     owner=alice,
+    ...     product=product,
+    ...     branch_type=BranchType.HOSTED,
+    ... )
     >>> logout()
 
     >>> browser = setupBrowser(auth="Basic alice@example.com:test")
-    >>> browser.open('http://code.launchpad.test/~alice/earthlynx/to-delete')
+    >>> browser.open("http://code.launchpad.test/~alice/earthlynx/to-delete")
     >>> print(browser.title)
     to-delete : Code : Earth Lynx
 
 The newly created branch has an action 'Delete branch'.
 
-    >>> delete_link = browser.getLink('Delete branch')
+    >>> delete_link = browser.getLink("Delete branch")
     >>> print(delete_link.url)
     http://code.launchpad.test/~alice/earthlynx/to-delete/+delete
 
@@ -46,7 +52,7 @@ Once the branch has been deleted, the user is taken back to the code
 listing for deleted branch's product, and a message is shown saying that
 the branch has been deleted.
 
-    >>> browser.getControl('Delete').click()
+    >>> browser.getControl("Delete").click()
     >>> print(browser.url)
     http://code.launchpad.test/earthlynx
     >>> print_feedback_messages(browser.contents)
@@ -57,11 +63,12 @@ the deleted branch's owner.
 
     >>> ignored = login_person(alice)
     >>> delete_branch = factory.makePersonalBranch(
-    ...     name='to-delete', owner=alice)
+    ...     name="to-delete", owner=alice
+    ... )
     >>> logout()
-    >>> browser.open('http://code.launchpad.test/~alice/+junk/to-delete')
-    >>> browser.getLink('Delete branch').click()
-    >>> browser.getControl('Delete').click()
+    >>> browser.open("http://code.launchpad.test/~alice/+junk/to-delete")
+    >>> browser.getLink("Delete branch").click()
+    >>> browser.getControl("Delete").click()
     >>> print(browser.url)
     http://code.launchpad.test/~alice
     >>> print_feedback_messages(browser.contents)
@@ -79,7 +86,7 @@ Branches that are stacked upon cannot be deleted.
 Even if you are an admin.
 
     >>> admin_browser.open(branch_location)
-    >>> admin_browser.getLink('Delete branch').click()
+    >>> admin_browser.getLink("Delete branch").click()
     >>> print(extract_text(find_main_content(admin_browser.contents)))
     Delete branch...
     This branch cannot be deleted as it has 1 branch sharing revisions.
@@ -101,7 +108,7 @@ package, when you also have the permission to set the official package branch.
     >>> logout()
 
     >>> browser.open(branch_url)
-    >>> browser.getLink('Delete branch').click()
-    >>> browser.getControl('Delete').click()
+    >>> browser.getLink("Delete branch").click()
+    >>> browser.getControl("Delete").click()
     >>> print_feedback_messages(browser.contents)
     Branch ... deleted...

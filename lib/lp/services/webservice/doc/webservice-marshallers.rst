@@ -12,8 +12,8 @@ application root.
     >>> from lp.services.webapp.servers import (
     ...     WebServicePublication,
     ...     WebServiceTestRequest,
-    ...     )
-    >>> request = WebServiceTestRequest(method='GET')
+    ... )
+    >>> request = WebServiceTestRequest(method="GET")
     >>> set_request_started()
     >>> request.setPublication(WebServicePublication(None))
     >>> login(ANONYMOUS, request)
@@ -42,8 +42,10 @@ returns that item. Otherwise it raises a ValueError.
 
     # Bind the field, to resolve the vocabulary name.
     >>> field = ReferenceChoice(
-    ...    __name__='some_person', vocabulary='ValidPersonOrTeam',
-    ...    schema=IPerson)
+    ...     __name__="some_person",
+    ...     vocabulary="ValidPersonOrTeam",
+    ...     schema=IPerson,
+    ... )
     >>> field = field.bind(None)
     >>> marshaller = getMultiAdapter((field, request), IFieldMarshaller)
     >>> verifyObject(IFieldMarshaller, marshaller)
@@ -51,19 +53,22 @@ returns that item. Otherwise it raises a ValueError.
 
     >>> from lp.registry.interfaces.person import IPerson
     >>> person = marshaller.marshall_from_request(
-    ...     "http://api.launchpad.test/beta/~salgado")
+    ...     "http://api.launchpad.test/beta/~salgado"
+    ... )
     >>> IPerson.providedBy(person)
     True
     >>> print(person.name)
     salgado
 
     >>> ubuntu_team = marshaller.marshall_from_json_data(
-    ...     "http://api.launchpad.test/beta/~ubuntu-team")
+    ...     "http://api.launchpad.test/beta/~ubuntu-team"
+    ... )
     >>> print(ubuntu_team.name)
     ubuntu-team
 
     >>> marshaller.marshall_from_request(
-    ...     "http://api.launchpad.test/beta/~nosuchperson")
+    ...     "http://api.launchpad.test/beta/~nosuchperson"
+    ... )
     Traceback (most recent call last):
     ...
     ValueError: No such object "http://api.launchpad.test/beta/~nosuchperson".
@@ -93,8 +98,7 @@ If you export a Choice that uses an SQLObjectVocabularyBase then you
 get an error, as you should be using a ReferenceChoice instead to
 ensure that the resulting wadl matches lazr.restful conventions.
 
-    >>> field = Choice(
-    ...    __name__='some_person', vocabulary='ValidPersonOrTeam')
+    >>> field = Choice(__name__="some_person", vocabulary="ValidPersonOrTeam")
     >>> field = field.bind(None)
     >>> getMultiAdapter((field, request), IFieldMarshaller)
     ... # doctest: +NORMALIZE_WHITESPACE

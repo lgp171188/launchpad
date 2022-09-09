@@ -25,16 +25,19 @@ setup:
     ...     import xml.etree.cElementTree as ET
     ... except ImportError:
     ...     import cElementTree as ET
+    ...
     >>> from zope.component import getUtility
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.bugs.scripts.bugexport import (
-    ...     serialise_bugtask, export_bugtasks)
+    ...     serialise_bugtask,
+    ...     export_bugtasks,
+    ... )
 
 First get the bug task:
 
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> bug1 = getUtility(IBugSet).get(1)
     >>> bugtask = bug1.bugtasks[0]
     >>> bugtask.target == firefox
@@ -46,7 +49,7 @@ Now we serialise it as XML, and print it:
     >>> tree = ET.ElementTree(node)
     >>> output = io.BytesIO()
     >>> tree.write(output)
-    >>> print(output.getvalue().decode('UTF-8'))
+    >>> print(output.getvalue().decode("UTF-8"))
     <bug id="1">
     <private>False</private>
     <security_related>False</security_related>
@@ -96,7 +99,8 @@ successively serialising each of the tasks for that product.
 
     >>> import transaction
     >>> export_bugtasks(
-    ...     transaction, firefox, getattr(sys.stdout, 'buffer', sys.stdout))
+    ...     transaction, firefox, getattr(sys.stdout, "buffer", sys.stdout)
+    ... )
     <launchpad-bugs xmlns="https://launchpad.net/xmlns/2006/bugs">
     <bug id="1">
     ...
@@ -134,12 +138,16 @@ Attachments are included in the XML dump.  First add an attachment to
 bug #1.  We need to commit here so that the librarian can later serve
 the file when we later serialise the bug:
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> bug4 = getUtility(IBugSet).get(4)
-    >>> sampleperson = getUtility(IPersonSet).getByEmail('test@canonical.com')
+    >>> sampleperson = getUtility(IPersonSet).getByEmail("test@canonical.com")
     >>> bug4.addAttachment(
-    ...     sampleperson, io.BytesIO(b'Hello World'), 'Added attachment',
-    ...     'hello.txt', description='"Hello World" attachment')
+    ...     sampleperson,
+    ...     io.BytesIO(b"Hello World"),
+    ...     "Added attachment",
+    ...     "hello.txt",
+    ...     description='"Hello World" attachment',
+    ... )
     <lp.bugs.model.bugattachment.BugAttachment ...>
 
     >>> transaction.commit()

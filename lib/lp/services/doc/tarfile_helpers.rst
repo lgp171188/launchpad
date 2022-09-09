@@ -16,22 +16,27 @@ output we will get.
     ...     # Calculate the length of the longest name.
     ...     max_length = max(len(member.name) for member in members)
     ...     # Use this length to generate an appropriate format string.
-    ...     format = '%%-%ds | %%s' % max_length
+    ...     format = "%%-%ds | %%s" % max_length
     ...
     ...     for member in members:
     ...         if member.type == tarfile.REGTYPE:
     ...             file = tar.extractfile(member)
     ...
     ...             if file is not None:
-    ...                 print(format % (
-    ...                     member.name, six.ensure_text(file.read())))
+    ...                 print(
+    ...                     format
+    ...                     % (member.name, six.ensure_text(file.read()))
+    ...                 )
     ...             else:
-    ...                 print(format % (member.name, ''))
+    ...                 print(format % (member.name, ""))
     ...         elif member.type == tarfile.SYMTYPE:
-    ...             print(format % (
-    ...                 member.name, "<link to %s>" % member.linkname))
+    ...             print(
+    ...                 format
+    ...                 % (member.name, "<link to %s>" % member.linkname)
+    ...             )
     ...         elif member.type == tarfile.DIRTYPE:
     ...             print(format % (member.name, "<directory>"))
+    ...
 
     # Start off by creating a blank archive.
     # We'll need a filehandle to store it in.
@@ -41,20 +46,20 @@ output we will get.
 We can add files individually. First argument is the file name, second
 argument is the file content.
 
-    >>> archive.add_file('foo', b'1')
+    >>> archive.add_file("foo", b"1")
 
 Or add many files simultaneously using a dictionary that use the key as
 the file name and the value the file content.
 
-    >>> archive.add_files({'bar': b'2', 'baz': b'3'})
+    >>> archive.add_files({"bar": b"2", "baz": b"3"})
 
 We can add symbolic links.
 
-    >>> archive.add_symlink('link', 'foo')
+    >>> archive.add_symlink("link", "foo")
 
 We can add directories.
 
-    >>> archive.add_directory('dir')
+    >>> archive.add_directory("dir")
 
 Once we are done adding files, the archive needs to be closed.
 
@@ -63,7 +68,7 @@ Once we are done adding files, the archive needs to be closed.
 And now we can inspect the produced file.
 
     >>> _ = buffer.seek(0)
-    >>> archive = tarfile.open('', 'r', buffer)
+    >>> archive = tarfile.open("", "r", buffer)
     >>> examine_tarfile(archive)
     foo  | 1
     bar  | 2
@@ -78,8 +83,8 @@ file content as the value, to a stream...
 If we have several files to import...
 
     >>> files = {
-    ...     'eins': b'zwei',
-    ...     'drei': b'vier',
+    ...     "eins": b"zwei",
+    ...     "drei": b"vier",
     ... }
 
 ...then we can easily turn it into a tarfile file object with
@@ -93,7 +98,7 @@ files_to_tarfile...
 ...or a tarfile stream with files_to_stream...
 
     >>> stream = LaunchpadWriteTarFile.files_to_stream(files)
-    >>> archive = tarfile.open('', 'r', stream)
+    >>> archive = tarfile.open("", "r", stream)
     >>> examine_tarfile(archive)
     drei | vier
     eins | zwei
@@ -101,7 +106,7 @@ files_to_tarfile...
 ...or a byte string.
 
     >>> data = LaunchpadWriteTarFile.files_to_bytes(files)
-    >>> archive = tarfile.open('', 'r', io.BytesIO(data))
+    >>> archive = tarfile.open("", "r", io.BytesIO(data))
     >>> examine_tarfile(archive)
     drei | vier
     eins | zwei
@@ -109,9 +114,11 @@ files_to_tarfile...
 If a filename contains slashes, containing directories are automatically
 created.
 
-    >>> archive = LaunchpadWriteTarFile.files_to_tarfile({
-    ...     'uno/dos/tres/cuatro': b'blah',
-    ...     })
+    >>> archive = LaunchpadWriteTarFile.files_to_tarfile(
+    ...     {
+    ...         "uno/dos/tres/cuatro": b"blah",
+    ...     }
+    ... )
     >>> examine_tarfile(archive)
     uno                 | <directory>
     uno/dos             | <directory>

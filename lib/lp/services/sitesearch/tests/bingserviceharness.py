@@ -25,7 +25,8 @@ class BingServiceTestSetup:
     # bing-service-stub.rst, is also disabled.  See test_doc.py.
     """
     >>> from lp.services.sitesearch.bingtestservice import (
-    ...     service_is_available)
+    ...     service_is_available,
+    ... )
     >>> from lp.services.config import config
 
     >>> assert not service_is_available()  # Sanity check. # SPURIOUS FAILURE
@@ -54,7 +55,7 @@ class BingServiceTestSetup:
     by the new one.
 
     >>> old_pid = BingServiceTestSetup.service.pid
-    >>> BingServiceTestSetup().setUp() # SPURIOUS FAILURE
+    >>> BingServiceTestSetup().setUp()  # SPURIOUS FAILURE
     >>> BingServiceTestSetup.service.pid != old_pid
     True
 

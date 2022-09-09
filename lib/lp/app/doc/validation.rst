@@ -13,10 +13,9 @@ an IWidgetInputErrorView:
     >>> from zope.component import getMultiAdapter
     >>> from zope.formlib.interfaces import IWidgetInputErrorView
 
-    >>> error = LaunchpadValidationError('lp validation error')
+    >>> error = LaunchpadValidationError("lp validation error")
     >>> request = LaunchpadTestRequest()
-    >>> view = getMultiAdapter((error, request),
-    ...     IWidgetInputErrorView)
+    >>> view = getMultiAdapter((error, request), IWidgetInputErrorView)
 
     >>> IWidgetInputErrorView.providedBy(view)
     True

@@ -26,20 +26,20 @@ def valid_absolute_url(name):
     We define this as something that can be parsed into a URL that has both
     a protocol and a network address.
 
-      >>> valid_absolute_url('sftp://chinstrap.ubuntu.com/foo/bar')
+      >>> valid_absolute_url("sftp://chinstrap.ubuntu.com/foo/bar")
       True
-      >>> valid_absolute_url('http://www.example.com')
+      >>> valid_absolute_url("http://www.example.com")
       True
-      >>> valid_absolute_url('whatever:/uxample.com/blah')
+      >>> valid_absolute_url("whatever:/uxample.com/blah")
       False
-      >>> valid_absolute_url('whatever://example.com/blah')
+      >>> valid_absolute_url("whatever://example.com/blah")
       True
 
     Unicode urls are ascii encoded, and a failure here means it isn't valid.
 
-      >>> valid_absolute_url(u'http://www.example.com/test...')
+      >>> valid_absolute_url("http://www.example.com/test...")
       True
-      >>> valid_absolute_url(u'http://www.example.com/test\u2026')
+      >>> valid_absolute_url("http://www.example.com/test\u2026")
       False
 
     """
@@ -61,11 +61,11 @@ def valid_builder_url(url):
     Builder urls must be http://host/ or http://host:port/
     (with or without the trailing slash) only.
 
-    >>> valid_builder_url('http://example.com:54321/')
+    >>> valid_builder_url("http://example.com:54321/")
     True
-    >>> valid_builder_url('http://example.com/foo')
+    >>> valid_builder_url("http://example.com/foo")
     False
-    >>> valid_builder_url('ftp://foo.com/')
+    >>> valid_builder_url("ftp://foo.com/")
     False
 
     """
@@ -110,27 +110,27 @@ def validate_url(url, valid_schemes):
 
       >>> validate_url(None, [])
       False
-      >>> validate_url('', [])
+      >>> validate_url("", [])
       False
 
     The valid_schemes list is checked::
 
-      >>> validate_url('http://example.com', ['http'])
+      >>> validate_url("http://example.com", ["http"])
       True
-      >>> validate_url('http://example.com', ['https', 'ftp'])
+      >>> validate_url("http://example.com", ["https", "ftp"])
       False
 
     A URL without a host name is not valid:
 
-      >>> validate_url('http://', ['http'])
+      >>> validate_url("http://", ["http"])
       False
 
     Unicode urls are converted to ascii for checking.  Failure to convert
     results in failure.
 
-      >>> validate_url(u'http://example.com', ['http'])
+      >>> validate_url("http://example.com", ["http"])
       True
-      >>> validate_url(u'http://example.com/test\u2026', ['http'])
+      >>> validate_url("http://example.com/test\u2026", ["http"])
       False
 
     """
@@ -147,15 +147,15 @@ def valid_webref(web_ref):
     """Returns True if web_ref is a valid download URL, or raises a
     LaunchpadValidationError.
 
-    >>> valid_webref('http://example.com')
+    >>> valid_webref("http://example.com")
     True
-    >>> valid_webref('https://example.com/foo/bar')
+    >>> valid_webref("https://example.com/foo/bar")
     True
-    >>> valid_webref('ftp://example.com/~ming')
+    >>> valid_webref("ftp://example.com/~ming")
     True
-    >>> valid_webref('sftp://example.com//absolute/path/maybe')
+    >>> valid_webref("sftp://example.com//absolute/path/maybe")
     True
-    >>> valid_webref('other://example.com/moo')
+    >>> valid_webref("other://example.com/moo")
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError: ...

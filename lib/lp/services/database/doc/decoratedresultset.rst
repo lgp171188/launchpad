@@ -18,7 +18,7 @@ First, we'll create the un-decorated result set of all distributions:
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from storm.store import Store
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> store = Store.of(ubuntu)
     >>> from lp.registry.model.distribution import Distribution
     >>> result_set = store.find(Distribution)
@@ -32,6 +32,7 @@ we can turn a model object into a string:
 
     >>> def result_decorator(distribution):
     ...     return "Dist name is: %s" % distribution.name
+    ...
 
 Creating the DecoratedResultSet
 -------------------------------
@@ -39,10 +40,10 @@ Creating the DecoratedResultSet
 The original result set and the decorator function are then used to
 create the decorated result set:
 
-    >>> from lp.services.database.decoratedresultset import (
-    ...     DecoratedResultSet)
-    >>> decorated_result_set = DecoratedResultSet(result_set,
-    ...     result_decorator)
+    >>> from lp.services.database.decoratedresultset import DecoratedResultSet
+    >>> decorated_result_set = DecoratedResultSet(
+    ...     result_set, result_decorator
+    ... )
 
 
 Using the DecoratedResultSet
@@ -54,6 +55,7 @@ decorated result set produces the decorated results:
 
     >>> for dist in decorated_result_set:
     ...     print(dist)
+    ...
     Dist name is: debian
     Dist name is: gentoo
     ...
@@ -73,6 +75,7 @@ decorated results:
     <lp.services.database.decoratedresultset.DecoratedResultSet object at ...>
     >>> for dist in decorated_result_set:
     ...     print(pretty(dist))
+    ...
     (<Distribution 'Debian' (debian)>, 'Dist name is: debian')
     (<Distribution 'Gentoo' (gentoo)>, 'Dist name is: gentoo')
     ...
@@ -83,9 +86,11 @@ decorated results:
 This works even if there are multiple levels:
 
     >>> drs_squared = DecoratedResultSet(
-    ...     decorated_result_set, lambda x: len(x)).config(return_both=True)
+    ...     decorated_result_set, lambda x: len(x)
+    ... ).config(return_both=True)
     >>> for dist in drs_squared:
     ...     print(dist)
+    ...
     (<Distribution 'Debian' (debian)>, 20)
     (<Distribution 'Gentoo' (gentoo)>, 20)
     ...
@@ -109,9 +114,11 @@ config option (https://bugs.launchpad.net/storm/+bug/217644):
 
     >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
     >>> from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
-    >>> results = store.find(BinaryPackageRelease,
-    ...     BinaryPackageRelease.id ==
-    ...         BinaryPackagePublishingHistory.binarypackagereleaseID)
+    >>> results = store.find(
+    ...     BinaryPackageRelease,
+    ...     BinaryPackageRelease.id
+    ...     == BinaryPackagePublishingHistory.binarypackagereleaseID,
+    ... )
     >>> results = results.config(distinct=True)
     >>> len(list(results))
     14
@@ -122,8 +129,10 @@ But this bug appears to be fixed, so we no longer override count():
     14
     >>> def dummy_result_decorator(result):
     ...     return result
-    >>> decorated_results = DecoratedResultSet(results,
-    ...     dummy_result_decorator)
+    ...
+    >>> decorated_results = DecoratedResultSet(
+    ...     results, dummy_result_decorator
+    ... )
     >>> len(list(results))
     14
     >>> decorated_results.count()
@@ -141,6 +150,7 @@ chunks of results at once.
     >>> def all_ones(rows):
     ...     print("that's a chunk of %d" % len(rows))
     ...     return (1 for row in rows)
+    ...
     >>> drs = DecoratedResultSet(results, bulk_decorator=all_ones)
     >>> list(drs)
     that's a chunk of 14
@@ -155,30 +165,41 @@ ignored in favour of the original results.
     >>> class FakeResultSet(list):
     ...     def count(self, *args, **kwargs):
     ...         return len(self)
+    ...
     ...     def first(self, *args, **kwargs):
     ...         return self[0]
+    ...
     ...     def last(self, *args, **kwargs):
     ...         return self[-1]
+    ...
     ...     def any(self, *args, **kwargs):
     ...         return self[-1]
+    ...
     ...     def one(self, *args, **kwargs):
     ...         return self[-1]
+    ...
     ...     def order_by(self, *args, **kwargs):
     ...         return FakeResultSet(self)
+    ...
     ...     def config(self, *args, **kwargs):
     ...         pass
+    ...
     ...     def copy(self, *args, **kwargs):
     ...         return FakeResultSet(self)
+    ...
     >>> rs = FakeResultSet(list(range(1, 5)))
     >>> def my_pih(result_set):
-    ...     print('this should run once only, count: %s' % len(result_set))
+    ...     print("this should run once only, count: %s" % len(result_set))
+    ...
     >>> def my_deco(result):
-    ...     print('> original value : %s' % result)
-    ...     return (result * 2)
+    ...     print("> original value : %s" % result)
+    ...     return result * 2
+    ...
 
     >>> my_drs = DecoratedResultSet(rs, my_deco, my_pih)
     >>> for res in my_drs:
-    ...     print(' decorated result: %s' % res)
+    ...     print(" decorated result: %s" % res)
+    ...
     this should run once only, count: 4
     > original value : 1
      decorated result: 2
@@ -198,11 +219,14 @@ passed.
 
     >>> def pre_iter(rows, slice):
     ...     print("pre iter", len(rows), slice.start, slice.stop)
+    ...
     >>> def decorate(row, row_index):
     ...     print("row", row.id, row_index)
+    ...
     >>> _ = result_set.order_by(Distribution.id)
     >>> drs = DecoratedResultSet(
-    ...     result_set, decorate, pre_iter, slice_info=True)
+    ...     result_set, decorate, pre_iter, slice_info=True
+    ... )
 
 We need enough rows to play with:
 

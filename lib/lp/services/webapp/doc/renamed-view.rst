@@ -18,8 +18,8 @@ like this:
 
     >>> request = LaunchpadTestRequest()
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> view = RenamedView(ubuntu, request, '+questions')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> view = RenamedView(ubuntu, request, "+questions")
 
 (Note that the RenamedView class doesn't need to be aware of the
 previous name. The old name will be hooked up with the RenamedView
@@ -34,7 +34,7 @@ update bookmarks.
     <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print(request.response.getHeader('Location'))
+    >>> print(request.response.getHeader("Location"))
     http://launchpad.test/ubuntu/+questions
 
 The view can also work for names registered on the root, and the
@@ -42,12 +42,12 @@ new_name can be a relative path.
 
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> root = getUtility(ILaunchpadRoot)
-    >>> view = RenamedView(root, LaunchpadTestRequest(), '+tour/index.html')
+    >>> view = RenamedView(root, LaunchpadTestRequest(), "+tour/index.html")
     >>> print(view())
     <BLANKLINE>
     >>> request.response.getStatus()
     301
-    >>> print(view.request.response.getHeader('Location'))
+    >>> print(view.request.response.getHeader("Location"))
     http://launchpad.test/+tour/index.html
 
 
@@ -57,12 +57,11 @@ Handling GET parameters
 If there was any query parameters on the request, they are appended
 to the redirected URL.
 
-    >>> request = LaunchpadTestRequest(
-    ...     QUERY_STRING='field.status=Open')
-    >>> view = RenamedView(ubuntu, request, '+questions')
+    >>> request = LaunchpadTestRequest(QUERY_STRING="field.status=Open")
+    >>> view = RenamedView(ubuntu, request, "+questions")
     >>> print(view())
     <BLANKLINE>
-    >>> print(request.response.getHeader('Location'))
+    >>> print(request.response.getHeader("Location"))
     http://launchpad.test/ubuntu/+questions?field.status=Open
 
 
@@ -73,11 +72,10 @@ The view also takes an optional 'rootsite' parameter, which will
 change the virtual host used for the redirection.
 
     >>> request = LaunchpadTestRequest()
-    >>> view = RenamedView(
-    ...     ubuntu, request, '+questions', rootsite='answers')
+    >>> view = RenamedView(ubuntu, request, "+questions", rootsite="answers")
     >>> print(view())
     <BLANKLINE>
-    >>> print(request.response.getHeader('Location'))
+    >>> print(request.response.getHeader("Location"))
     http://answers.launchpad.test/ubuntu/+questions
 
 
@@ -89,8 +87,8 @@ a NotFound error. For example, requesting a non-existent question will
 raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
 
     >>> request = LaunchpadTestRequest()
-    >>> view = RenamedView(ubuntu, request, '+tickets')
-    >>> view.publishTraverse(request, u'foo')
+    >>> view = RenamedView(ubuntu, request, "+tickets")
+    >>> view.publishTraverse(request, "foo")
     Traceback (most recent call last):
      ...
     zope.publisher.interfaces.NotFound:
@@ -104,7 +102,8 @@ Finally, it is possible to register RenamedView from ZCML. The
 browser:renamed-page is available for this purpose.
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
@@ -115,12 +114,13 @@ browser:renamed-page is available for this purpose.
     ...       rootsite="answers"
     ...       />
     ... </configure>
-    ... """)
+    ... """
+    ... )
 
     >>> from zope.component import getMultiAdapter
     >>> request = LaunchpadTestRequest()
-    >>> view = getMultiAdapter((ubuntu, request), name='+old_tickets_page')
+    >>> view = getMultiAdapter((ubuntu, request), name="+old_tickets_page")
     >>> print(view())
     <BLANKLINE>
-    >>> print(request.response.getHeader('Location'))
+    >>> print(request.response.getHeader("Location"))
     http://answers.launchpad.test/ubuntu/+questions

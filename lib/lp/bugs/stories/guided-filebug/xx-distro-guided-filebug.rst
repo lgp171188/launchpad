@@ -12,8 +12,9 @@ The example here are a little short - in reality we have a comprehensive
 database to find candidates from, our sample data has no real near-fits,
 see bug 612384 for the overall effort to provide a sensible search facility.
 
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "Thunderbird crashes opening")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "Thunderbird crashes opening"
     >>> user_browser.getControl("Continue").click()
 
 ...yields one similar bug.
@@ -27,7 +28,8 @@ see bug 612384 for the overall effort to provide a sensible search facility.
 Subscribing to one of the similar bugs takes us to the bug page.
 
     >>> user_browser.getControl(
-    ...     "Yes, this is the bug I'm trying to report").click()
+    ...     "Yes, this is the bug I'm trying to report"
+    ... ).click()
 
     >>> print(user_browser.url)
     http://bugs.launchpad.test/thunderbird/+bug/9
@@ -41,8 +43,9 @@ back...
     # We should use goBack() here but can't because of bug #98372:
     # zope.testbrowser truncates document content after goBack().
     >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "Thunderbird crashes when opening large emails")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "Thunderbird crashes when opening large emails"
     >>> user_browser.getControl("Continue").click()
 
 ...and continue filing our bug.
@@ -61,9 +64,11 @@ description.
 
     >>> page_soup = find_main_content(user_browser.contents)
     >>> field_labels = page_soup.find_all(
-    ...     'label', text=re.compile('Further information'))
+    ...     "label", text=re.compile("Further information")
+    ... )
     >>> for field_label in field_labels:
     ...     print(extract_text(field_label.parent))
+    ...
     Further information:
 
 Finally, let's submit the bug.
@@ -84,15 +89,17 @@ different in the user agent.
 
 Submitting a distinctive bug title...
 
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "Frobnobulator emits weird noises.")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "Frobnobulator emits weird noises."
     >>> user_browser.getControl("Continue").click()
 
 ...yields no similar bugs. In fact, the similar bugs table is not even
 shown.
 
     >>> similar_bugs_list = find_tag_by_id(
-    ...     user_browser.contents, "similar-bugs")
+    ...     user_browser.contents, "similar-bugs"
+    ... )
     >>> print(similar_bugs_list)
     None
 
@@ -100,8 +107,9 @@ But the bug can be filed as before.
 
     >>> user_browser.getControl(name="packagename_option").value = ["choose"]
     >>> user_browser.getControl("In what package").value = "mozilla-firefox"
-    >>> user_browser.getControl("Further information").value = (
-    ...     "Frobnobulator is a Firefox add-on, ...")
+    >>> user_browser.getControl(
+    ...     "Further information"
+    ... ).value = "Frobnobulator is a Firefox add-on, ..."
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> print(user_browser.url)

@@ -39,9 +39,8 @@ High Level
 ----------
 
     >>> import io
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
-    >>> data = b'This is some data'
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
+    >>> data = b"This is some data"
 
 We can create LibraryFileAliases using the ILibraryFileAliasSet utility.
 This name is a mouthful, but is consistent with the rest of our naming.
@@ -49,8 +48,12 @@ This name is a mouthful, but is consistent with the rest of our naming.
     >>> lfas = getUtility(ILibraryFileAliasSet)
     >>> from lp.services.librarian.interfaces import NEVER_EXPIRES
     >>> alias = lfas.create(
-    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
-    ...     NEVER_EXPIRES)
+    ...     "text.txt",
+    ...     len(data),
+    ...     io.BytesIO(data),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ... )
     >>> print(alias.mimetype)
     text/plain
 
@@ -65,7 +68,8 @@ because of this should probably never be used.
     True
 
     >>> alias = lfas.create(
-    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain')
+    ...     "text.txt", len(data), io.BytesIO(data), "text/plain"
+    ... )
 
 The default expiry of None means the file will expire a few days after
 it is no longer referenced in the database.
@@ -88,7 +92,8 @@ sha256.
     True
 
     >>> org_alias_id in [
-    ...     a.id for a in lfas.findBySHA256(alias.content.sha256)]
+    ...     a.id for a in lfas.findBySHA256(alias.content.sha256)
+    ... ]
     True
 
 We can get its URL too
@@ -96,16 +101,16 @@ We can get its URL too
     >>> from lp.services.config import config
     >>> import re
     >>> re.search(
-    ...     r'^%s\d+/text.txt$' % config.librarian.download_url,
-    ...     alias.http_url
-    ...     ) is not None
+    ...     r"^%s\d+/text.txt$" % config.librarian.download_url,
+    ...     alias.http_url,
+    ... ) is not None
     True
 
 Librarian also serves the same file through https, we use this for
 branding and similar inline-presented objects which would trigger
 security warnings on https pages otherwise.
 
-    >>> re.search(r'^https://.+/\d+/text.txt$', alias.https_url) is not None
+    >>> re.search(r"^https://.+/\d+/text.txt$", alias.https_url) is not None
     True
 
 And we even have a convenient method which returns either the http URL
@@ -115,25 +120,25 @@ or the https one, depending on a config value.
     False
 
     >>> re.search(
-    ...     r'^%s\d+/text.txt$' % config.librarian.download_url,
-    ...     alias.getURL()
-    ...     ) is not None
+    ...     r"^%s\d+/text.txt$" % config.librarian.download_url,
+    ...     alias.getURL(),
+    ... ) is not None
     True
 
     >>> from textwrap import dedent
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [librarian]
     ...     use_https: true
-    ...     """)
-    >>> config.push('test', test_data)
-    >>> re.search(
-    ...     r'^https://.+/\d+/text.txt$', alias.https_url
-    ...     ) is not None
+    ...     """
+    ... )
+    >>> config.push("test", test_data)
+    >>> re.search(r"^https://.+/\d+/text.txt$", alias.https_url) is not None
     True
 
 Reset 'use_https' to its original state.
 
-    >>> test_config_data = config.pop('test')
+    >>> test_config_data = config.pop("test")
 
 However, we can't access its contents until we have committed
 
@@ -197,8 +202,12 @@ access files in the Librarian.
     >>> from lp.services.librarian.interfaces.client import ILibrarianClient
     >>> client = getUtility(ILibrarianClient)
     >>> aid = client.addFile(
-    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
-    ...     NEVER_EXPIRES)
+    ...     "text.txt",
+    ...     len(data),
+    ...     io.BytesIO(data),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ... )
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
     >>> six.ensure_str(f.read())
@@ -206,14 +215,14 @@ access files in the Librarian.
 
     >>> url = client.getURLForAlias(aid)
     >>> re.search(
-    ...     r'^%s\d+/text.txt$' % config.librarian.download_url, url
-    ...     ) is not None
+    ...     r"^%s\d+/text.txt$" % config.librarian.download_url, url
+    ... ) is not None
     True
 
 When secure=True, the returned url has the id as part of the domain name
 and the protocol is https:
 
-    >>> expected = r'^https://i%d\..+:\d+/%d/text.txt$' % (aid, aid)
+    >>> expected = r"^https://i%d\..+:\d+/%d/text.txt$" % (aid, aid)
     >>> found = client.getURLForAlias(aid, secure=True)
     >>> re.search(expected, found) is not None
     True
@@ -229,7 +238,7 @@ Librarian reads are logged in the request timeline.
     >>> action.category
     'librarian-connection'
 
-    >>> action.detail.endswith('/text.txt')
+    >>> action.detail.endswith("/text.txt")
     True
 
     >>> _unused = f.read()
@@ -237,7 +246,7 @@ Librarian reads are logged in the request timeline.
     >>> action.category
     'librarian-read'
 
-    >>> action.detail.endswith('/text.txt')
+    >>> action.detail.endswith("/text.txt")
     True
 
 At this level we can also reverse the transactional semantics by using
@@ -248,7 +257,8 @@ rolls back. However, the records in the database will not be visible to
 the client until it begins a new transaction.
 
     >>> url = client.remoteAddFile(
-    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain')
+    ...     "text.txt", len(data), io.BytesIO(data), "text/plain"
+    ... )
     >>> print(url)
     http://.../text.txt
 
@@ -267,8 +277,12 @@ You can also set the expiry date on the file this way too:
     >>> from datetime import date, datetime
     >>> from pytz import utc
     >>> url = client.remoteAddFile(
-    ...     'text.txt', len(data), io.BytesIO(data), 'text/plain',
-    ...     expires=datetime(2005,9,1,12,0,0, tzinfo=utc))
+    ...     "text.txt",
+    ...     len(data),
+    ...     io.BytesIO(data),
+    ...     "text/plain",
+    ...     expires=datetime(2005, 9, 1, 12, 0, 0, tzinfo=utc),
+    ... )
     >>> transaction.abort()
 
 To check the expiry is set, we need to extract the alias id from the
@@ -277,7 +291,7 @@ because, except for test cases, the URL is the only thing useful
 (because the client can't see the database records yet).
 
     >>> import re
-    >>> match = re.search('/(\d+)/', url)
+    >>> match = re.search("/(\d+)/", url)
     >>> alias_id = int(match.group(1))
     >>> alias = lfas[alias_id]
     >>> print(alias.expires.isoformat())
@@ -297,7 +311,7 @@ librarian.
     >>> from zope.interface.verify import verifyObject
     >>> from lp.services.librarian.interfaces.client import (
     ...     IRestrictedLibrarianClient,
-    ...     )
+    ... )
     >>> restricted_client = getUtility(IRestrictedLibrarianClient)
     >>> verifyObject(IRestrictedLibrarianClient, restricted_client)
     True
@@ -305,10 +319,13 @@ librarian.
 File alias uploaded through the restricted librarian have the restricted
 attribute set.
 
-    >>> private_content = b'This is private data.'
+    >>> private_content = b"This is private data."
     >>> private_file_id = restricted_client.addFile(
-    ...     'private.txt', len(private_content), io.BytesIO(private_content),
-    ...     'text/plain')
+    ...     "private.txt",
+    ...     len(private_content),
+    ...     io.BytesIO(private_content),
+    ...     "text/plain",
+    ... )
     >>> file_alias = getUtility(ILibraryFileAliasSet)[private_file_id]
     >>> file_alias.restricted
     True
@@ -326,7 +343,8 @@ Restricted files are accessible with HTTP on a private domain.
     http://.../private.txt
 
     >>> file_alias.http_url.startswith(
-    ...     config.librarian.restricted_download_url)
+    ...     config.librarian.restricted_download_url
+    ... )
     True
 
 They can also be accessed externally using a time-limited token appended
@@ -339,14 +357,16 @@ provide such a token.
     >>> print(token_url)
     https://i...restricted.../private.txt?token=...
 
-    >>> token_url.startswith('https://i%d.restricted.' % file_alias.id)
+    >>> token_url.startswith("https://i%d.restricted." % file_alias.id)
     True
 
     >>> private_path = TimeLimitedToken.url_to_token_path(
-    ...        file_alias.private_url)
-    >>> url_token = token_url.split('=')[1].encode('ASCII')
+    ...     file_alias.private_url
+    ... )
+    >>> url_token = token_url.split("=")[1].encode("ASCII")
     >>> hashlib.sha256(url_token).hexdigest() == session_store().find(
-    ...     TimeLimitedToken, path=private_path).any().token
+    ...     TimeLimitedToken, path=private_path
+    ... ).any().token
     True
 
 LibraryFileAliasView doesn't work on restricted files. This is a
@@ -354,7 +374,7 @@ temporary measure until we're sure no restricted files leak into the
 traversal hierarchy.
 
     >>> from zope.component import getMultiAdapter
-    >>> view = getMultiAdapter((file_alias, request), name='+index')
+    >>> view = getMultiAdapter((file_alias, request), name="+index")
     >>> view.initialize()
     Traceback (most recent call last):
     ...
@@ -389,7 +409,8 @@ Trying to access that file directly on the normal librarian will fail
 
     >>> sneaky_url = file_url.replace(
     ...     config.librarian.restricted_download_url,
-    ...     config.librarian.download_url)
+    ...     config.librarian.download_url,
+    ... )
     >>> urlopen(sneaky_url).read()
     Traceback (most recent call last):
       ...
@@ -403,10 +424,13 @@ But downloading it from the restricted host, will work.
 Trying to retrieve a non-restricted file from the restricted librarian
 also fails:
 
-    >>> public_content = b'This is public data.'
+    >>> public_content = b"This is public data."
     >>> public_file_id = getUtility(ILibrarianClient).addFile(
-    ...     'public.txt', len(public_content), io.BytesIO(public_content),
-    ...     'text/plain')
+    ...     "public.txt",
+    ...     len(public_content),
+    ...     io.BytesIO(public_content),
+    ...     "text/plain",
+    ... )
     >>> file_alias = getUtility(ILibraryFileAliasSet)[public_file_id]
     >>> file_alias.restricted
     False
@@ -427,8 +451,11 @@ The remoteAddFile() on the restricted client, also creates a restricted
 file:
 
     >>> url = restricted_client.remoteAddFile(
-    ...     'another-private.txt', len(private_content),
-    ...     io.BytesIO(private_content), 'text/plain')
+    ...     "another-private.txt",
+    ...     len(private_content),
+    ...     io.BytesIO(private_content),
+    ...     "text/plain",
+    ... )
     >>> print(url)
     http://.../another-private.txt
 
@@ -444,8 +471,12 @@ Another way to create a restricted file is by using the restricted
 parameter to ILibraryFileAliasSet:
 
     >>> restricted_file = getUtility(ILibraryFileAliasSet).create(
-    ...     'yet-another-private.txt', len(private_content),
-    ...     io.BytesIO(private_content), 'text/plain', restricted=True)
+    ...     "yet-another-private.txt",
+    ...     len(private_content),
+    ...     io.BytesIO(private_content),
+    ...     "text/plain",
+    ...     restricted=True,
+    ... )
     >>> restricted_file.restricted
     True
 
@@ -456,19 +487,25 @@ So searching for the private content on the public librarian will fail:
 
     >>> transaction.commit()
     >>> search_query = "search?digest=%s" % restricted_file.content.sha1
-    >>> print(six.ensure_str(
-    ...     urlopen(config.librarian.download_url + search_query).read()))
+    >>> print(
+    ...     six.ensure_str(
+    ...         urlopen(config.librarian.download_url + search_query).read()
+    ...     )
+    ... )
     0
 
 But on the restricted server, this will work:
 
-    >>> result = six.ensure_str(urlopen(
-    ...     config.librarian.restricted_download_url + search_query).read())
+    >>> result = six.ensure_str(
+    ...     urlopen(
+    ...         config.librarian.restricted_download_url + search_query
+    ...     ).read()
+    ... )
     >>> result = result.splitlines()
     >>> print(result[0])
     3
 
-    >>> sorted(file_path.split('/')[1] for file_path in result[1:])
+    >>> sorted(file_path.split("/")[1] for file_path in result[1:])
     ['another-private.txt', 'private.txt', 'yet-another-private.txt']
 
 
@@ -478,7 +515,7 @@ Odds and Sods
 An UploadFailed will be raised if you try to create a file with no
 content
 
-    >>> client.addFile('test.txt', 0, io.BytesIO(b'hello'), 'text/plain')
+    >>> client.addFile("test.txt", 0, io.BytesIO(b"hello"), "text/plain")
     Traceback (most recent call last):
         [...]
     lp.services.librarian.interfaces.client.UploadFailed: Invalid length: 0
@@ -486,7 +523,8 @@ content
 If you really want a zero length file you can do it:
 
     >>> aid = client.addFile(
-    ...     'test.txt', 0, io.BytesIO(), 'text/plain', allow_zero_length=True)
+    ...     "test.txt", 0, io.BytesIO(), "text/plain", allow_zero_length=True
+    ... )
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
     >>> six.ensure_str(f.read())
@@ -495,7 +533,7 @@ If you really want a zero length file you can do it:
 An AssertionError will be raised if the number of bytes that could be
 read from the file don't match the declared size.
 
-    >>> client.addFile('test.txt', 42, io.BytesIO(), 'text/plain')
+    >>> client.addFile("test.txt", 42, io.BytesIO(), "text/plain")
     Traceback (most recent call last):
         [...]
     AssertionError: size is 42, but 0 were read from the file
@@ -503,28 +541,30 @@ read from the file don't match the declared size.
 Filenames with spaces in them work.
 
     >>> aid = client.addFile(
-    ...     'hot dog', len(data), io.BytesIO(data), 'text/plain')
+    ...     "hot dog", len(data), io.BytesIO(data), "text/plain"
+    ... )
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
     >>> six.ensure_str(f.read())
     'This is some data'
 
     >>> url = client.getURLForAlias(aid)
-    >>> re.search(r'/\d+/hot%20dog$', url) is not None
+    >>> re.search(r"/\d+/hot%20dog$", url) is not None
     True
 
 Unicode file names work.  Note that the filename in the resulting URL is
 encoded as UTF-8.
 
     >>> aid = client.addFile(
-    ...     u'Yow\N{INTERROBANG}', len(data), io.BytesIO(data), 'text/plain')
+    ...     "Yow\N{INTERROBANG}", len(data), io.BytesIO(data), "text/plain"
+    ... )
     >>> transaction.commit()
     >>> f = client.getFileByAlias(aid)
     >>> six.ensure_str(f.read())
     'This is some data'
 
     >>> url = client.getURLForAlias(aid)
-    >>> re.search(r'/\d+/Yow%E2%80%BD$', url) is not None
+    >>> re.search(r"/\d+/Yow%E2%80%BD$", url) is not None
     True
 
 Files will get garbage collected on production systems as per
@@ -557,10 +597,14 @@ URL.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> req = LaunchpadTestRequest()
     >>> alias = lfas.create(
-    ...     'text2.txt', len(data), io.BytesIO(data), 'text/plain',
-    ...     NEVER_EXPIRES)
+    ...     "text2.txt",
+    ...     len(data),
+    ...     io.BytesIO(data),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ... )
     >>> transaction.commit()
-    >>> lfa_view = getMultiAdapter((alias, req), name='+index')
+    >>> lfa_view = getMultiAdapter((alias, req), name="+index")
     >>> lfa_view.initialize()
     >>> req.response.getHeader("Location") == alias.getURL()
     True
@@ -571,17 +615,27 @@ File views setup
 
 We need some files to test different ways of accessing them.
 
-    >>> filename = 'public.txt'
-    >>> content = b'PUBLIC'
+    >>> filename = "public.txt"
+    >>> content = b"PUBLIC"
     >>> public_file = getUtility(ILibraryFileAliasSet).create(
-    ...     filename, len(content), io.BytesIO(content), 'text/plain',
-    ...     NEVER_EXPIRES, restricted=False)
+    ...     filename,
+    ...     len(content),
+    ...     io.BytesIO(content),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ...     restricted=False,
+    ... )
 
-    >>> filename = 'restricted.txt'
-    >>> content = b'RESTRICTED'
+    >>> filename = "restricted.txt"
+    >>> content = b"RESTRICTED"
     >>> restricted_file = getUtility(ILibraryFileAliasSet).create(
-    ...     filename, len(content), io.BytesIO(content), 'text/plain',
-    ...     NEVER_EXPIRES, restricted=True)
+    ...     filename,
+    ...     len(content),
+    ...     io.BytesIO(content),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ...     restricted=True,
+    ... )
 
     # Create a new LibraryFileAlias not referencing any LibraryFileContent
     # record. Such records are considered as being deleted.
@@ -590,7 +644,8 @@ We need some files to test different ways of accessing them.
     >>> from lp.services.database.interfaces import IMasterStore
 
     >>> deleted_file = LibraryFileAlias(
-    ...     content=None, filename='deleted.txt', mimetype='text/plain')
+    ...     content=None, filename="deleted.txt", mimetype="text/plain"
+    ... )
     >>> ignore = IMasterStore(LibraryFileAlias).add(deleted_file)
 
 Commit the just-created files.
@@ -612,11 +667,11 @@ LibraryFileAliasMD5View
 The MD5 summary for a file can be downloaded. The text file contains the
 hash and file name.
 
-    >>> view = create_view(public_file, '+md5')
+    >>> view = create_view(public_file, "+md5")
     >>> print(view.render())
     cd0c6092d6a6874f379fe4827ed1db8b public.txt
 
-    >>> print(view.request.response.getHeader('Content-type'))
+    >>> print(view.request.response.getHeader("Content-type"))
     text/plain
 
 
@@ -645,7 +700,7 @@ entries.
     >>> from lp.services.worlddata.interfaces.country import ICountrySet
     >>> country_set = getUtility(ICountrySet)
     >>> november_1st_2006 = date(2006, 11, 1)
-    >>> brazil = country_set['BR']
+    >>> brazil = country_set["BR"]
     >>> public_file.updateDownloadCount(november_1st_2006, brazil, count=1)
     >>> public_file.hits
     1
@@ -653,27 +708,32 @@ entries.
 This was the first hit for that file from Brazil on 2006 November first,
 so a new LibraryFileDownloadCount was created.
 
-    >>> from lp.services.librarian.model import (
-    ...        LibraryFileDownloadCount)
+    >>> from lp.services.librarian.model import LibraryFileDownloadCount
     >>> from storm.locals import Store
     >>> store = Store.of(public_file)
     >>> brazil_entry = store.find(
-    ...     LibraryFileDownloadCount, libraryfilealias=public_file,
-    ...     country=brazil, day=november_1st_2006).one()
+    ...     LibraryFileDownloadCount,
+    ...     libraryfilealias=public_file,
+    ...     country=brazil,
+    ...     day=november_1st_2006,
+    ... ).one()
     >>> brazil_entry.count
     1
 
 Below we simulate a hit from Japan on that same day, which will also
 create a new LibraryFileDownloadCount.
 
-    >>> japan = country_set['JP']
+    >>> japan = country_set["JP"]
     >>> public_file.updateDownloadCount(november_1st_2006, japan, count=3)
     >>> public_file.hits
     4
 
     >>> japan_entry = store.find(
-    ...     LibraryFileDownloadCount, libraryfilealias=public_file,
-    ...     country=japan, day=november_1st_2006).one()
+    ...     LibraryFileDownloadCount,
+    ...     libraryfilealias=public_file,
+    ...     country=japan,
+    ...     day=november_1st_2006,
+    ... ).one()
     >>> japan_entry.count
     3
 
@@ -696,8 +756,11 @@ created.
     16
 
     >>> brazil_entry2 = store.find(
-    ...     LibraryFileDownloadCount, libraryfilealias=public_file,
-    ...     country=brazil, day=november_2nd_2006).one()
+    ...     LibraryFileDownloadCount,
+    ...     libraryfilealias=public_file,
+    ...     country=brazil,
+    ...     day=november_2nd_2006,
+    ... ).one()
     >>> brazil_entry2.count
     10
 
@@ -715,9 +778,14 @@ downloaded.
     >>> public_file.last_downloaded == today - last_downloaded_date
     True
 
-    >>> content = b'something'
+    >>> content = b"something"
     >>> brand_new_file = getUtility(ILibraryFileAliasSet).create(
-    ...     'new.txt', len(content), io.BytesIO(content), 'text/plain',
-    ...     NEVER_EXPIRES, restricted=False)
+    ...     "new.txt",
+    ...     len(content),
+    ...     io.BytesIO(content),
+    ...     "text/plain",
+    ...     NEVER_EXPIRES,
+    ...     restricted=False,
+    ... )
     >>> print(brand_new_file.last_downloaded)
     None

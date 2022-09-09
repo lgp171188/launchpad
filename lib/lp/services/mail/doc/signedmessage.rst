@@ -9,10 +9,10 @@ the attributes are correctly set.
     >>> from lp.services.mail.interfaces import ISignedMessage
     >>> from lp.services.mail.signedmessage import signed_message_from_bytes
     >>> from lp.testing import verifyObject
-    >>> msg = signed_message_from_bytes(b'To: someone\n\nHello.')
+    >>> msg = signed_message_from_bytes(b"To: someone\n\nHello.")
     >>> verifyObject(ISignedMessage, msg)
     True
-    >>> msg['To']
+    >>> msg["To"]
     'someone'
     >>> print(six.ensure_text(msg.parsed_bytes))
     To: someone
@@ -25,11 +25,11 @@ read_test_message. Let's start with a simple message, where the
 signature is inline with the signed content:
 
     >>> from lp.services.mail.tests.helpers import read_test_message
-    >>> msg = read_test_message('signed_inline.txt')
+    >>> msg = read_test_message("signed_inline.txt")
 
 You can access the headers of the message:
 
-    >>> print(msg['From'])
+    >>> print(msg["From"])
     Sample Person <test@canonical.com>
 
 The raw byte string that was signed is available as msg.signedContent:
@@ -68,7 +68,7 @@ they have been dash escaped by the client. The dash escaping is done
 after the content has been signed, so the signed content should be
 unescaped.
 
-    >>> msg = read_test_message('signed_dash_escaped.txt')
+    >>> msg = read_test_message("signed_dash_escaped.txt")
     >>> print(msg.get_payload())
     -----BEGIN PGP SIGNED MESSAGE-----
     ...
@@ -86,7 +86,7 @@ unescaped.
 It also works when the signature is detached, that is the message
 contains of two MIME parts, the signed text, and the signature:
 
-    >>> msg = read_test_message('signed_detached.txt')
+    >>> msg = read_test_message("signed_detached.txt")
 
 The signed content includes the MIME headers as well:
 
@@ -99,7 +99,7 @@ The signed content includes the MIME headers as well:
 In signedMessage you can access the headers and the content
 separately:
 
-    >>> print(msg.signedMessage['Content-Type'])
+    >>> print(msg.signedMessage["Content-Type"])
     text/plain; charset=us-ascii
     >>> print(msg.signedMessage.get_payload())
     Some signed content.
@@ -118,7 +118,7 @@ And of course the signature is accessible as well:
 
 If the message is unsigned, all attributes will be None:
 
-    >>> msg = read_test_message('unsigned_multipart.txt')
+    >>> msg = read_test_message("unsigned_multipart.txt")
     >>> msg.signedContent is None
     True
     >>> msg.signedMessage is None
@@ -128,7 +128,7 @@ If the message is unsigned, all attributes will be None:
 
 It handles signed multipart messages as well:
 
-    >>> msg = read_test_message('signed_multipart.txt')
+    >>> msg = read_test_message("signed_multipart.txt")
     >>> content, attachment = msg.signedMessage.get_payload()
     >>> print(content.get_payload())
     Some signed content.
@@ -146,9 +146,9 @@ It handles signed multipart messages as well:
     =fBjf
     -----END PGP SIGNATURE-----
 
-    >>> msg = read_test_message('signed_folded_header.txt')
+    >>> msg = read_test_message("signed_folded_header.txt")
     >>> print(six.ensure_text(msg.signedContent))
-    ... #doctest: -NORMALIZE_WHITESPACE
+    ... # doctest: -NORMALIZE_WHITESPACE
     Content-Type: multipart/mixed;
      boundary="--------------------EuxKj2iCbKjpUGkD"
     ...

@@ -7,12 +7,13 @@ our Database Model for packages in a intuitive manner, they are:
     >>> from lp.registry.model.distribution import Distribution
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.soyuz.model.distributionsourcepackagerelease import (
-    ...     DistributionSourcePackageRelease)
+    ...     DistributionSourcePackageRelease,
+    ... )
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
     >>> from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     ...     IDistributionSourcePackageRelease,
-    ...     )
+    ... )
 
 
 DistributionSourcePackage class is tested in:
@@ -24,18 +25,20 @@ Combining Distribution and SourcePackageRelease:
     >>> print(distribution.name)
     ubuntu
 
-    >>> src_name = SourcePackageName.selectOneBy(name='pmount')
+    >>> src_name = SourcePackageName.selectOneBy(name="pmount")
     >>> print(src_name.name)
     pmount
 
     >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=src_name.id, version='0.1-1')
+    ...     sourcepackagenameID=src_name.id, version="0.1-1"
+    ... )
     >>> print(sourcepackagerelease.name)
     pmount
 
     >>> from lp.testing import verifyObject
-    >>> dspr = DistributionSourcePackageRelease(distribution,
-    ...                                         sourcepackagerelease)
+    >>> dspr = DistributionSourcePackageRelease(
+    ...     distribution, sourcepackagerelease
+    ... )
     >>> verifyObject(IDistributionSourcePackageRelease, dspr)
     True
 
@@ -56,42 +59,49 @@ been published in a main archive.
 
 First, publish a build in the main archive of ubuntutest.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
-    >>> from lp.soyuz.enums import (
-    ...     PackagePublishingStatus)
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...      SoyuzTestPublisher)
-    >>> login('foo.bar@canonical.com')
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> from lp.soyuz.enums import PackagePublishingStatus
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
+    >>> login("foo.bar@canonical.com")
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
     >>> source_pub = test_publisher.getPubSource(
     ...     status=PackagePublishingStatus.PUBLISHED,
-    ...     sourcename='foo',
-    ...     archive=ubuntutest.main_archive)
+    ...     sourcename="foo",
+    ...     archive=ubuntutest.main_archive,
+    ... )
     >>> [build] = source_pub.createMissingBuilds()
 
 We also need to ensure that a binary pkg release has been published in the
 archive:
 
     >>> binary_pkg_release = test_publisher.uploadBinaryForBuild(
-    ...     build, 'foo-bin')
+    ...     build, "foo-bin"
+    ... )
     >>> binary_pkg_pub_history = test_publisher.publishBinaryInArchive(
-    ...     binary_pkg_release, ubuntutest.main_archive)
+    ...     binary_pkg_release, ubuntutest.main_archive
+    ... )
 
 Next we create our DistributionSourcePackageRelease.
 
-    >>> breezy_autotest = ubuntutest['breezy-autotest']
+    >>> breezy_autotest = ubuntutest["breezy-autotest"]
     >>> ubuntutest_dspr_foo = DistributionSourcePackageRelease(
-    ...     ubuntutest, source_pub.sourcepackagerelease)
+    ...     ubuntutest, source_pub.sourcepackagerelease
+    ... )
 
 Create a helper for printing builds:
 
     >>> def print_builds(builds):
     ...     for build in builds:
-    ...         print("%s in %s" % (build.source_package_release.name,
-    ...                             build.archive.displayname))
+    ...         print(
+    ...             "%s in %s"
+    ...             % (
+    ...                 build.source_package_release.name,
+    ...                 build.archive.displayname,
+    ...             )
+    ...         )
+    ...
 
 Now we can query the builds:
 
@@ -102,13 +112,16 @@ If we add a build to the partner archive, it is included in the
 results as well.
 
     >>> partner_archive = ubuntutest.all_distro_archives[1]
-    >>> partner_pub = source_pub.copyTo(breezy_autotest, source_pub.pocket,
-    ...     partner_archive)
+    >>> partner_pub = source_pub.copyTo(
+    ...     breezy_autotest, source_pub.pocket, partner_archive
+    ... )
     >>> [partner_build] = partner_pub.createMissingBuilds()
     >>> binary_pkg_release = test_publisher.uploadBinaryForBuild(
-    ...     partner_build, 'foo-bin')
+    ...     partner_build, "foo-bin"
+    ... )
     >>> binary_pkg_pub_history = test_publisher.publishBinaryInArchive(
-    ...     binary_pkg_release, partner_archive)
+    ...     binary_pkg_release, partner_archive
+    ... )
 
     >>> print_builds(ubuntutest_dspr_foo.builds)
     foo in Partner Archive for Ubuntu Test
@@ -117,18 +130,22 @@ results as well.
 If we publish the source and binary in a PPA,
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> source_pub = test_publisher.getPubSource(
     ...     status=PackagePublishingStatus.PUBLISHED,
-    ...     sourcename='bar',
-    ...     archive=cprov.archive)
+    ...     sourcename="bar",
+    ...     archive=cprov.archive,
+    ... )
     >>> [build] = source_pub.createMissingBuilds()
     >>> binary_pkg_release = test_publisher.uploadBinaryForBuild(
-    ...     build, 'bar-bin')
+    ...     build, "bar-bin"
+    ... )
     >>> binary_pkg_pub_history = test_publisher.publishBinaryInArchive(
-    ...     binary_pkg_release, cprov.archive)
+    ...     binary_pkg_release, cprov.archive
+    ... )
     >>> ubuntutest_dspr_bar = DistributionSourcePackageRelease(
-    ...     ubuntutest, source_pub.sourcepackagerelease)
+    ...     ubuntutest, source_pub.sourcepackagerelease
+    ... )
 
 the build will not be returned.
 
@@ -137,10 +154,12 @@ the build will not be returned.
 But if the package is copied into the main archive (and the binary published
 there) then it will then be included in the results.
 
-    >>> main_pub = source_pub.copyTo(breezy_autotest, source_pub.pocket,
-    ...     ubuntutest.main_archive)
+    >>> main_pub = source_pub.copyTo(
+    ...     breezy_autotest, source_pub.pocket, ubuntutest.main_archive
+    ... )
     >>> binary_pkg_pub_history = test_publisher.publishBinaryInArchive(
-    ...     binary_pkg_release, ubuntutest.main_archive)
+    ...     binary_pkg_release, ubuntutest.main_archive
+    ... )
 
     >>> print_builds(ubuntutest_dspr_bar.builds)
     bar in PPA for Celso Providelo

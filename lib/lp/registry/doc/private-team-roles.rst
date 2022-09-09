@@ -12,18 +12,20 @@ Bug subscriptions
 
 Create the necessary teams.
 
-    >>> team_owner = factory.makePerson(name='team-owner')
+    >>> team_owner = factory.makePerson(name="team-owner")
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet,
     ...     PersonVisibility,
     ...     TeamMembershipPolicy,
-    ...     )
-    >>> admin_user = getUtility(IPersonSet).getByEmail('admin@canonical.com')
+    ... )
+    >>> admin_user = getUtility(IPersonSet).getByEmail("admin@canonical.com")
     >>> ignored = login_person(admin_user)
-    >>> priv_team = factory.makeTeam(name='private-team',
+    >>> priv_team = factory.makeTeam(
+    ...     name="private-team",
     ...     owner=team_owner,
     ...     visibility=PersonVisibility.PRIVATE,
-    ...     membership_policy=TeamMembershipPolicy.RESTRICTED)
+    ...     membership_policy=TeamMembershipPolicy.RESTRICTED,
+    ... )
 
 A private team can be subscribed to a bug.
 
@@ -74,13 +76,16 @@ Private teams can subscribe to branches.
     >>> from lp.code.enums import (
     ...     BranchSubscriptionDiffSize,
     ...     BranchSubscriptionNotificationLevel,
-    ...     CodeReviewNotificationLevel)
+    ...     CodeReviewNotificationLevel,
+    ... )
     >>> branch = factory.makeBranch()
     >>> subscription = branch.subscribe(
     ...     priv_team,
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
-    ...     CodeReviewNotificationLevel.STATUS, team_owner)
+    ...     CodeReviewNotificationLevel.STATUS,
+    ...     team_owner,
+    ... )
     >>> print(subscription.person.name)
     private-team
 
@@ -106,7 +111,9 @@ Private teams can subscribe to Git repositories.
     ...     priv_team,
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
-    ...     CodeReviewNotificationLevel.STATUS, team_owner)
+    ...     CodeReviewNotificationLevel.STATUS,
+    ...     team_owner,
+    ... )
     >>> print(subscription.person.name)
     private-team
 
@@ -122,14 +129,16 @@ Private teams can own PPAs.
 
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> archive_set = getUtility(IArchiveSet)
     >>> private_archive = archive_set.new(
-    ...     owner=priv_team, purpose=ArchivePurpose.PPA,
-    ...     distribution=ubuntu, name='private-team-archive',
-    ...     require_virtualized=False)
+    ...     owner=priv_team,
+    ...     purpose=ArchivePurpose.PPA,
+    ...     distribution=ubuntu,
+    ...     name="private-team-archive",
+    ...     require_virtualized=False,
+    ... )
 
 
 PPA subscriptions
@@ -137,17 +146,19 @@ PPA subscriptions
 
 Private teams can be subscribed to private PPAs.
 
-    >>> login('foo.bar@canonical.com')
-    >>> another_priv_team = factory.makeTeam(name='another-private-team',
+    >>> login("foo.bar@canonical.com")
+    >>> another_priv_team = factory.makeTeam(
+    ...     name="another-private-team",
     ...     owner=team_owner,
-    ...     visibility=PersonVisibility.PRIVATE)
+    ...     visibility=PersonVisibility.PRIVATE,
+    ... )
 
 We must login as the archive owner to add the subscription.
 
     >>> ignored = login_person(team_owner)
     >>> subscription = private_archive.newSubscription(
-    ...     subscriber=another_priv_team,
-    ...     registrant=team_owner)
+    ...     subscriber=another_priv_team, registrant=team_owner
+    ... )
     >>> transaction.commit()
 
 
@@ -160,9 +171,10 @@ Structural Subscription to Products
 Private teams can have structural subscriptions to products.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> sub = firefox.addSubscription(
-    ...     subscriber=priv_team, subscribed_by=team_owner)
+    ...     subscriber=priv_team, subscribed_by=team_owner
+    ... )
     >>> sub.target
     <Product at ...>
 
@@ -174,7 +186,8 @@ Private teams can have structural subscriptions to distros.
 
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> sub = ubuntu.addSubscription(
-    ...     subscriber=priv_team, subscribed_by=team_owner)
+    ...     subscriber=priv_team, subscribed_by=team_owner
+    ... )
     >>> sub.target
     <Distribution 'Ubuntu' (ubuntu)>
 
@@ -190,10 +203,12 @@ Only a person can register a project, not a team, so no team, public
 or private, can be the project registrant.
 
     >>> ignored = login_person(admin_user)
-    >>> public_team = factory.makeTeam(name='public-team',
+    >>> public_team = factory.makeTeam(
+    ...     name="public-team",
     ...     owner=team_owner,
     ...     visibility=PersonVisibility.PUBLIC,
-    ...     membership_policy=TeamMembershipPolicy.RESTRICTED)
+    ...     membership_policy=TeamMembershipPolicy.RESTRICTED,
+    ... )
     >>> product = factory.makeProduct(registrant=team_owner)
     >>> product = factory.makeProduct(registrant=public_team)
     >>> product = factory.makeProduct(registrant=priv_team)
@@ -241,8 +256,9 @@ Owner
 
 A public team and a private team can be a product series owner.
 
-    >>> product = factory.makeProduct(registrant=admin_user,
-    ...                               owner=public_team)
+    >>> product = factory.makeProduct(
+    ...     registrant=admin_user, owner=public_team
+    ... )
     >>> product_series = factory.makeProductSeries(product, owner=public_team)
     >>> product_series = factory.makeProductSeries(product, owner=priv_team)
 
@@ -252,8 +268,9 @@ Driver
 
 A public team and a private team can be a product series driver.
 
-    >>> product = factory.makeProduct(registrant=admin_user,
-    ...                               owner=public_team)
+    >>> product = factory.makeProduct(
+    ...     registrant=admin_user, owner=public_team
+    ... )
     >>> product_series = factory.makeProductSeries(product, owner=public_team)
     >>> product_series.driver = public_team
     >>> product_series.driver = priv_team
@@ -267,13 +284,16 @@ Owner
 
 A public team and a private team can be a product series owner.
 
-    >>> product = factory.makeProduct(registrant=admin_user,
-    ...                               owner=public_team)
+    >>> product = factory.makeProduct(
+    ...     registrant=admin_user, owner=public_team
+    ... )
     >>> product_series = factory.makeProductSeries(product, owner=public_team)
     >>> product_milestone = factory.makeMilestone(
-    ...     product=product, productseries=product_series)
+    ...     product=product, productseries=product_series
+    ... )
     >>> product_release = factory.makeProductRelease(
-    ...     product=product, milestone=product_milestone)
+    ...     product=product, milestone=product_milestone
+    ... )
     >>> product_release.owner = public_team
     >>> product_release.owner = priv_team
 
@@ -283,14 +303,20 @@ translation import queue entries.
 
     >>> product = factory.makeProduct(registrant=admin_user)
     >>> product_series = factory.makeProductSeries(
-    ...     product=product, owner=public_team)
+    ...     product=product, owner=public_team
+    ... )
     >>> product_release = factory.makeProductRelease(product=product)
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> import_queue = getUtility(ITranslationImportQueue)
     >>> entry = import_queue.addOrUpdateEntry(
-    ...     u'po/sr.po', b'foo', True, public_team,
-    ...      productseries=product_series)
+    ...     "po/sr.po",
+    ...     b"foo",
+    ...     True,
+    ...     public_team,
+    ...     productseries=product_series,
+    ... )
     >>> product.owner = public_team
     >>> product.owner = priv_team
 
@@ -303,10 +329,12 @@ Mixing public and private teams can create interesting situations.
     >>> from lp.registry.interfaces.person import PrivatePersonLinkageError
     >>> reviewer = factory.makePerson()
     >>> def join_team(joined_type, joiner_type):
-    ...     joined = factory.makeTeam(owner=team_owner,
-    ...                               visibility=joined_type)
-    ...     joiner = factory.makeTeam(owner=team_owner,
-    ...                               visibility=joiner_type)
+    ...     joined = factory.makeTeam(
+    ...         owner=team_owner, visibility=joined_type
+    ...     )
+    ...     joiner = factory.makeTeam(
+    ...         owner=team_owner, visibility=joiner_type
+    ...     )
     ...     print("%s <- %s: " % (joined_type, joiner_type), end="")
     ...     try:
     ...         joined.addMember(joiner, reviewer=reviewer)
@@ -314,6 +342,7 @@ Mixing public and private teams can create interesting situations.
     ...         print("Not Allowed")
     ...     else:
     ...         print("Allowed")
+    ...
 
     >>> public = PersonVisibility.PUBLIC
     >>> private = PersonVisibility.PRIVATE
@@ -324,6 +353,7 @@ Mixing public and private teams can create interesting situations.
     ...     for joiner in visibility_list:
     ...         join_team(joined, joiner)
     ...     print("---")
+    ...
     Public <- Public:  Allowed
     Public <- Private: Allowed
     ---

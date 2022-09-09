@@ -4,8 +4,8 @@ The set of branches
 The set of branches in Launchpad is represented by the collection found at
 /branches. By default it lists the 50 most recently changed branches.
 
-    >>> branches = webservice.get('/branches').jsonBody()
-    >>> len(branches['entries'])
+    >>> branches = webservice.get("/branches").jsonBody()
+    >>> len(branches["entries"])
     1
 
 
@@ -29,8 +29,9 @@ Getting a branch by URL
 .......................
 
     >>> found_branch = webservice.get(
-    ...     '/branches?ws.op=getByUrl&url=%s' % branch_url).jsonBody()
-    >>> found_branch['unique_name'] == branch_unique_name
+    ...     "/branches?ws.op=getByUrl&url=%s" % branch_url
+    ... ).jsonBody()
+    >>> found_branch["unique_name"] == branch_unique_name
     True
 
 
@@ -40,10 +41,11 @@ Getting many branches by URL
 The branches collection has a helper to get a lot of branches at once. This
 saves roundtrips and provides potential performance improvements.
 
-    >>> doesnt_exist = 'http://example.com/doesntexist'
+    >>> doesnt_exist = "http://example.com/doesntexist"
     >>> branches = webservice.get(
-    ...     '/branches?ws.op=getByUrls&urls=%s&urls=%s&urls=%s'
-    ...     % (branch_url, doesnt_exist, branch2_url))
+    ...     "/branches?ws.op=getByUrls&urls=%s&urls=%s&urls=%s"
+    ...     % (branch_url, doesnt_exist, branch2_url)
+    ... )
     >>> branches = branches.jsonBody()
 
 We gave three URLs, so we get back a dict with three branches.
@@ -59,7 +61,7 @@ The URL that refers to a branch that doesn't exist maps to None.
 The URLs that refer to real, honest-to-goodness existing branches map to those
 branches:
 
-    >>> print(branches[branch_url]['unique_name'] == branch_unique_name)
+    >>> print(branches[branch_url]["unique_name"] == branch_unique_name)
     True
-    >>> print(branches[branch2_url]['unique_name'] == branch2_unique_name)
+    >>> print(branches[branch2_url]["unique_name"] == branch2_unique_name)
     True

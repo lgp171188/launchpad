@@ -2,9 +2,13 @@
 order to prevent it from being abused, only Launchpad developers may
 access that page.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+soft-timeout HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 303 See Other
     ...
     Location: http://.../+soft-timeout/+login
@@ -13,10 +17,14 @@ access that page.
 Sample Person doesn't have access to the page since they aren't a
 Launchpad developer:
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+soft-timeout HTTP/1.1
     ... Authorization: Basic dGVzdEBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 403 Forbidden
     ...
 
@@ -27,10 +35,14 @@ no timeout value is set, no soft timeout will be generated, though.
     >>> config.database.soft_request_timeout is None
     True
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+soft-timeout HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     No soft timeout threshold is set.
@@ -40,21 +52,27 @@ slightly longer then the soft_request_timeout value to generate, thus
 causing a soft timeout to be logged.
 
     >>> from textwrap import dedent
-    >>> test_data = (dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     soft_request_timeout: 1
-    ...     """))
-    >>> config.push('base_test_data', test_data)
+    ...     """
+    ... )
+    >>> config.push("base_test_data", test_data)
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /+soft-timeout HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
     Soft timeout threshold is set to 1 ms. This page took ... ms to render.
 
-    >>> oops_capture.oopses[-1]['type']
+    >>> oops_capture.oopses[-1]["type"]
     'SoftRequestTimeout'
 
 Since the page rendered correctly, we assume it's a soft timeout error,
@@ -63,4 +81,4 @@ render the page.
 
 Let's reset the config value we changed:
 
-    >>> test_data = config.pop('base_test_data')
+    >>> test_data = config.pop("base_test_data")

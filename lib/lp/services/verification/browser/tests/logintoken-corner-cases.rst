@@ -16,28 +16,35 @@ user tried to re-post the form after validating one of their email addresses.
 
     >>> from lp.testing import login_person
     >>> from lp.services.verification.browser.logintoken import (
-    ...     ValidateEmailView)
+    ...     ValidateEmailView,
+    ... )
     >>> from lp.services.verification.interfaces.authtoken import (
-    ...     LoginTokenType)
+    ...     LoginTokenType,
+    ... )
     >>> from lp.services.verification.interfaces.logintoken import (
-    ...     ILoginTokenSet)
+    ...     ILoginTokenSet,
+    ... )
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> foo_bar = getUtility(IPersonSet).getByName('name16')
+    >>> foo_bar = getUtility(IPersonSet).getByName("name16")
     >>> ignored = login_person(foo_bar)
     >>> token = getUtility(ILoginTokenSet).new(
-    ...     requester=foo_bar, requesteremail='foo.bar@canonical.com',
-    ...     email='foo@barino.com', tokentype=LoginTokenType.VALIDATEEMAIL)
+    ...     requester=foo_bar,
+    ...     requesteremail="foo.bar@canonical.com",
+    ...     email="foo@barino.com",
+    ...     tokentype=LoginTokenType.VALIDATEEMAIL,
+    ... )
     >>> token.consume()
-    >>> form = {'field.actions.continue': 'Continue'}
+    >>> form = {"field.actions.continue": "Continue"}
     >>> view = ValidateEmailView(
-    ...     token, LaunchpadTestRequest(form=form, method='POST'))
+    ...     token, LaunchpadTestRequest(form=form, method="POST")
+    ... )
     >>> view.initialize()
 
     >>> response = view.request.response
     >>> response.getStatus()
     302
-    >>> response.getHeader('Location')
+    >>> response.getHeader("Location")
     'http://launchpad.test/token/...'
 

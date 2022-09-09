@@ -11,13 +11,13 @@ import re
 def expand_numbers(unicode_text, fill_digits=4):
     """Return a copy of the string with numbers zero filled.
 
-    >>> print(expand_numbers(u'hello world'))
+    >>> print(expand_numbers("hello world"))
     hello world
-    >>> print(expand_numbers(u'0.12.1'))
+    >>> print(expand_numbers("0.12.1"))
     0000.0012.0001
-    >>> print(expand_numbers(u'0.12.1', 2))
+    >>> print(expand_numbers("0.12.1", 2))
     00.12.01
-    >>> print(expand_numbers(u'branch-2-3.12'))
+    >>> print(expand_numbers("branch-2-3.12"))
     branch-0002-0003.0012
 
     """
@@ -40,13 +40,13 @@ reversed_numbers_table = dict(
 def _reversed_number_sort_key(text):
     """Return comparison value reversed for numbers only.
 
-    >>> print(_reversed_number_sort_key(u'9.3'))
+    >>> print(_reversed_number_sort_key("9.3"))
     0.6
-    >>> print(_reversed_number_sort_key(u'2.4'))
+    >>> print(_reversed_number_sort_key("2.4"))
     7.5
-    >>> print(_reversed_number_sort_key(u'hello'))
+    >>> print(_reversed_number_sort_key("hello"))
     hello
-    >>> print(_reversed_number_sort_key(u'bzr-0.13'))
+    >>> print(_reversed_number_sort_key("bzr-0.13"))
     bzr-9.86
 
     """
@@ -61,29 +61,39 @@ def _identity(x):
 def sorted_version_numbers(sequence, key=_identity):
     """Return a new sequence where 'newer' versions appear before 'older' ones.
 
-    >>> bzr_versions = [u'0.9', u'0.10', u'0.11']
+    >>> bzr_versions = ["0.9", "0.10", "0.11"]
     >>> for version in sorted_version_numbers(bzr_versions):
-    ...   print(version)
+    ...     print(version)
+    ...
     0.11
     0.10
     0.9
-    >>> bzr_versions = [u'bzr-0.9', u'bzr-0.10', u'bzr-0.11']
+    >>> bzr_versions = ["bzr-0.9", "bzr-0.10", "bzr-0.11"]
     >>> for version in sorted_version_numbers(bzr_versions):
-    ...   print(version)
+    ...     print(version)
+    ...
     bzr-0.11
     bzr-0.10
     bzr-0.9
 
     >>> class series:
-    ...   def __init__(self, name):
-    ...     self.name = name
-    >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
-    ...                 series('bzr-0.9'), series('bzr-0.10'),
-    ...                 series('bzr-0.11'), series('foo')]
+    ...     def __init__(self, name):
+    ...         self.name = name
+    ...
+    >>> bzr_versions = [
+    ...     series("0.9"),
+    ...     series("0.10"),
+    ...     series("0.11"),
+    ...     series("bzr-0.9"),
+    ...     series("bzr-0.10"),
+    ...     series("bzr-0.11"),
+    ...     series("foo"),
+    ... ]
     >>> from operator import attrgetter
-    >>> for version in sorted_version_numbers(bzr_versions,
-    ...                                       key=attrgetter('name')):
-    ...   print(version.name)
+    >>> for version in sorted_version_numbers(
+    ...     bzr_versions, key=attrgetter("name")
+    ... ):
+    ...     print(version.name)
     0.11
     0.10
     0.9
@@ -97,10 +107,14 @@ def sorted_version_numbers(sequence, key=_identity):
     considered as a version.
 
     >>> bzr_versions = [
-    ...     (series('0.9'), 8), (series('0.9'), 9), (series('0.9'), 10),
-    ...     (series('1.0'), 1)]
+    ...     (series("0.9"), 8),
+    ...     (series("0.9"), 9),
+    ...     (series("0.9"), 10),
+    ...     (series("1.0"), 1),
+    ... ]
     >>> for version, tiebreak in sorted_version_numbers(
-    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     bzr_versions, key=lambda item: item[0].name
+    ... ):
     ...     print(version.name, tiebreak)
     1.0 1
     0.9 8
@@ -108,10 +122,14 @@ def sorted_version_numbers(sequence, key=_identity):
     0.9 10
 
     >>> bzr_versions = [
-    ...     [series('0.9'), 8], [series('0.9'), 9], [series('0.9'), 10],
-    ...     [series('1.0'), 1]]
+    ...     [series("0.9"), 8],
+    ...     [series("0.9"), 9],
+    ...     [series("0.9"), 10],
+    ...     [series("1.0"), 1],
+    ... ]
     >>> for version, tiebreak in sorted_version_numbers(
-    ...         bzr_versions, key=lambda item: item[0].name):
+    ...     bzr_versions, key=lambda item: item[0].name
+    ... ):
     ...     print(version.name, tiebreak)
     1.0 1
     0.9 8
@@ -141,29 +159,39 @@ def sorted_dotted_numbers(sequence, key=_identity):
 
     The function returns a new sorted sequence.
 
-    >>> bzr_versions = [u'0.9', u'0.10', u'0.11']
+    >>> bzr_versions = ["0.9", "0.10", "0.11"]
     >>> for version in sorted_dotted_numbers(bzr_versions):
-    ...   print(version)
+    ...     print(version)
+    ...
     0.9
     0.10
     0.11
-    >>> bzr_versions = [u'bzr-0.9', u'bzr-0.10', u'bzr-0.11']
+    >>> bzr_versions = ["bzr-0.9", "bzr-0.10", "bzr-0.11"]
     >>> for version in sorted_dotted_numbers(bzr_versions):
-    ...   print(version)
+    ...     print(version)
+    ...
     bzr-0.9
     bzr-0.10
     bzr-0.11
 
     >>> class series:
-    ...   def __init__(self, name):
-    ...     self.name = name
-    >>> bzr_versions = [series('0.9'), series('0.10'), series('0.11'),
-    ...                 series('bzr-0.9'), series('bzr-0.10'),
-    ...                 series('bzr-0.11'), series('foo')]
+    ...     def __init__(self, name):
+    ...         self.name = name
+    ...
+    >>> bzr_versions = [
+    ...     series("0.9"),
+    ...     series("0.10"),
+    ...     series("0.11"),
+    ...     series("bzr-0.9"),
+    ...     series("bzr-0.10"),
+    ...     series("bzr-0.11"),
+    ...     series("foo"),
+    ... ]
     >>> from operator import attrgetter
-    >>> for version in sorted_dotted_numbers(bzr_versions,
-    ...                                      key=attrgetter('name')):
-    ...   print(version.name)
+    >>> for version in sorted_dotted_numbers(
+    ...     bzr_versions, key=attrgetter("name")
+    ... ):
+    ...     print(version.name)
     0.9
     0.10
     0.11

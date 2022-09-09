@@ -11,7 +11,7 @@ Normal widgets
 
 The new team form contains an example of a normal text widget.
 
-    >>> user_browser.open('http://launchpad.test/people/+newteam')
+    >>> user_browser.open("http://launchpad.test/people/+newteam")
     >>> content = find_main_content(user_browser.contents)
     >>> print(content)
     <...
@@ -52,10 +52,10 @@ Checkbox widgets
 
 Checkboxes have their label to the right. Let's look at one example.
 
-    >>> admin_browser.open(
-    ...     'http://launchpad.test/firefox/+review-license')
-    >>> print(find_tag_by_id(
-    ...     admin_browser.contents, 'launchpad-form-widgets'))
+    >>> admin_browser.open("http://launchpad.test/firefox/+review-license")
+    >>> print(
+    ...     find_tag_by_id(admin_browser.contents, "launchpad-form-widgets")
+    ... )
     <...
     <tr>
       <td colspan="2">
@@ -75,7 +75,7 @@ on the page. This is enabled by a special ++form++ namespace that causes
 just the form content to be rendered for any URL corresponding to an
 LPFormView:
 
-    >>> admin_browser.open('http://launchpad.test/evolution/+edit/++form++')
+    >>> admin_browser.open("http://launchpad.test/evolution/+edit/++form++")
     >>> print(admin_browser.contents)
     <div...
     <table class="form" id="launchpad-form-widgets">
@@ -85,9 +85,11 @@ LPFormView:
 Or for another example.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth='Basic celso.providelo@canonical.com:test')
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open(
-    ...   'http://launchpad.test/~cprov/+archive/ppa/+edit/++form++')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+edit/++form++"
+    ... )
     >>> print(cprov_browser.contents)
     <div...
     <table class="form" id="launchpad-form-widgets">
@@ -98,7 +100,8 @@ But it will not work for views that are not LPFormViews - even if they
 display forms.
 
     >>> cprov_browser.open(
-    ...     'http://launchpad.test/~cprov/+editsshkeys/++form++')
+    ...     "http://launchpad.test/~cprov/+editsshkeys/++form++"
+    ... )
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -106,7 +109,8 @@ display forms.
 Nor will it allow unauthorized access to data that it should not present.
 
     >>> browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+edit/++form++')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+edit/++form++"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

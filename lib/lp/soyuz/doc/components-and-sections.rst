@@ -42,7 +42,8 @@ Check we can use the set as a utility:
 Test iteration over the sampledata default components:
 
     >>> for c in component_set:
-    ...    print(c.name)
+    ...     print(c.name)
+    ...
     main
     restricted
     universe
@@ -53,7 +54,7 @@ by default, they are ordered by 'id'.
 
 Test __getitem__ method, retrieving a component by name:
 
-    >>> print(component_set['universe'].name)
+    >>> print(component_set["universe"].name)
     universe
 
 Test get method, retrieving a component by its id:
@@ -63,16 +64,16 @@ Test get method, retrieving a component by its id:
 
 New component creation for a given name:
 
-    >>> new_comp = component_set.new('test')
+    >>> new_comp = component_set.new("test")
     >>> print(new_comp.name)
     test
 
 Ensuring a component (if not found, create it):
 
-    >>> component_set.ensure('test').id == new_comp.id
+    >>> component_set.ensure("test").id == new_comp.id
     True
 
-    >>> component_set.ensure('test2').id == new_comp.id
+    >>> component_set.ensure("test2").id == new_comp.id
     False
 
 
@@ -108,7 +109,8 @@ Check we can use the set as a utility:
 Test iteration over the sampledata default sections:
 
     >>> for s in section_set:
-    ...    print(s.name)
+    ...     print(s.name)
+    ...
     base
     web
     editors
@@ -149,7 +151,7 @@ by default they are ordered by 'id'.
 
 Test __getitem__ method, retrieving a section by name:
 
-    >>> print(section_set['science'].name)
+    >>> print(section_set["science"].name)
     science
 
 Test get method, retrieving a section by its id:
@@ -159,14 +161,14 @@ Test get method, retrieving a section by its id:
 
 New section creation for a given name:
 
-    >>> new_sec = section_set.new('test')
+    >>> new_sec = section_set.new("test")
     >>> print(new_sec.name)
     test
 
 Ensuring a section (if not found, create it):
 
-    >>> section_set.ensure('test').id == new_sec.id
+    >>> section_set.ensure("test").id == new_sec.id
     True
 
-    >>> section_set.ensure('test2').id == new_sec.id
+    >>> section_set.ensure("test2").id == new_sec.id
     False

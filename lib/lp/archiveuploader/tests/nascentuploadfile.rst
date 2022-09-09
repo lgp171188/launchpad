@@ -19,7 +19,7 @@ Import the test keys so we have them ready for verification
 
 We need to be logged into the security model in order to get any further
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.archiveuploader.tests import datadir, getPolicy
 
 
@@ -38,8 +38,14 @@ Construct the base object with just enough data to do the check:
 
     >>> from lp.archiveuploader.nascentuploadfile import NascentUploadFile
     >>> upload_file = NascentUploadFile(
-    ...     "fake/path/to/file/package-1.1.2-3:0ubuntu4", None, 1,
-    ...     "section", None, None, None)
+    ...     "fake/path/to/file/package-1.1.2-3:0ubuntu4",
+    ...     None,
+    ...     1,
+    ...     "section",
+    ...     None,
+    ...     None,
+    ...     None,
+    ... )
 
 The filename tries to use an epoch in an invalid way:
 
@@ -53,8 +59,14 @@ The filename tries to use an epoch in an invalid way:
 With a good filename, no exception is raised.
 
     >>> upload_file = NascentUploadFile(
-    ...     "fake/path/to/file/package-1.1.2-1ubuntu1", None, 1,
-    ...     "section", None, None, None)
+    ...     "fake/path/to/file/package-1.1.2-1ubuntu1",
+    ...     None,
+    ...     1,
+    ...     "section",
+    ...     None,
+    ...     None,
+    ...     None,
+    ... )
 
     >>> upload_file.checkNameIsTaintFree()
 
@@ -66,19 +78,24 @@ A changesfile contains manifest of what is included (ou should be
 considered) for the upload in question.
 
     >>> modified_insecure_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> from lp.archiveuploader.changesfile import ChangesFile
     >>> from lp.services.log.logger import DevNullLogger
     >>> ed_binary_changes = ChangesFile(
-    ...     datadir('ed_0.2-20_i386.changes.binary-only'),
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20_i386.changes.binary-only"),
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> len(list(ed_binary_changes.parseChanges()))
     0
 
     >>> ed_source_changes = ChangesFile(
-    ...     datadir('ed_0.2-20_source.changes'),
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20_source.changes"),
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> len(list(ed_source_changes.parseChanges()))
     0
 
@@ -98,6 +115,7 @@ At this point the changesfile content is already parsed:
 
     >>> for item in ed_binary_changes.architectures:
     ...     print(item)
+    ...
     i386
 
     >>> print(ed_binary_changes.suite_name)
@@ -107,7 +125,8 @@ Push upload targeted suite into policy before the checks, nomally done
 by NascentUpload object:
 
     >>> modified_insecure_policy.setDistroSeriesAndPocket(
-    ...      ed_binary_changes.suite_name)
+    ...     ed_binary_changes.suite_name
+    ... )
 
 
 Build contained objects, any error during this process will be stored
@@ -127,18 +146,23 @@ At this point we can inspect the list of files contained in the upload.
 
     >>> for uploaded_file in ed_binary_changes.files:
     ...     print(uploaded_file.filename)
+    ...
     ed_0.2-20_i386.deb
 
     >>> for f in ed_binary_changes.binary_package_files:
     ...     print(f.filename)
+    ...
     ed_0.2-20_i386.deb
     >>> for f in ed_binary_changes.source_package_files:
     ...     print(f.filename)
+    ...
 
     >>> for f in ed_source_changes.binary_package_files:
     ...     print(f.filename)
+    ...
     >>> for f in ed_source_changes.source_package_files:
     ...     print(f.filename)
+    ...
     ed_0.2-20.dsc
     ed_0.2-20.diff.gz
     ed_0.2.orig.tar.gz
@@ -155,15 +179,17 @@ Make sure malformed changes file names are caught.
 We first create a misnamed copy of the changes file.
 
     >>> import os, shutil
-    >>> originalp = datadir('ed_0.2-20_i386.changes.binary-only')
-    >>> copyp = datadir('p-m_0.4.12-2~ppa2.changes')
+    >>> originalp = datadir("ed_0.2-20_i386.changes.binary-only")
+    >>> copyp = datadir("p-m_0.4.12-2~ppa2.changes")
     >>> _ = shutil.copyfile(originalp, copyp)
 
 And then invoke the name check on the changes file with the malformed name.
 
     >>> wrong_file_name = ChangesFile(
-    ...     datadir('p-m_0.4.12-2~ppa2.changes'),
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("p-m_0.4.12-2~ppa2.changes"),
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> [err] = list(wrong_file_name.checkFileName())
     >>> str(err)
     'p-m_0.4.12-2~ppa2.changes -> inappropriate changesfile name, ...'
@@ -180,7 +206,7 @@ A custom upload is essentially a tarball, so it matches the is_source
 regexp, even though it isn't actually a source file:
 
     >>> from lp.archiveuploader.utils import re_issource
-    >>> src_match = re_issource.match('dist-upgrader_1.0.tar.gz')
+    >>> src_match = re_issource.match("dist-upgrader_1.0.tar.gz")
     >>> print(src_match.group(0))
     dist-upgrader_1.0.tar.gz
     >>> print(src_match.group(1))
@@ -208,19 +234,19 @@ Note that the component_name and section_name are not checked for
 sanity, it'll be done later on, this method only checks if the
 section_name startswith 'raw-':
 
-    >>> ed_binary_changes.isCustom('foo-bar')
+    >>> ed_binary_changes.isCustom("foo-bar")
     False
-    >>> ed_binary_changes.isCustom('drops/foo-bar')
+    >>> ed_binary_changes.isCustom("drops/foo-bar")
     False
-    >>> ed_binary_changes.isCustom('drops/raw-biscuit')
+    >>> ed_binary_changes.isCustom("drops/raw-biscuit")
     True
-    >>> ed_binary_changes.isCustom('drops/rawbiscuit')
+    >>> ed_binary_changes.isCustom("drops/rawbiscuit")
     False
-    >>> ed_binary_changes.isCustom('drops/raw-biscuit/something')
+    >>> ed_binary_changes.isCustom("drops/raw-biscuit/something")
     True
-    >>> ed_binary_changes.isCustom('main/raw-installer')
+    >>> ed_binary_changes.isCustom("main/raw-installer")
     True
-    >>> ed_binary_changes.isCustom('main/law-installer')
+    >>> ed_binary_changes.isCustom("main/law-installer")
     False
 
 See the CustomUploadFile checks below for specific checks on custom
@@ -240,24 +266,24 @@ Note that the policy.{distroseries, pocket} must be already
 initialized before issuing any parse request, otherwise we can't
 generate proper PERSON_CREATION_RATIONALE_MESSAGES.
 
-    >>> sig_file_policy = getPolicy(name='insecure', distro='ubuntu')
-    >>> sig_file_policy.setDistroSeriesAndPocket('hoary')
+    >>> sig_file_policy = getPolicy(name="insecure", distro="ubuntu")
+    >>> sig_file_policy.setDistroSeriesAndPocket("hoary")
     >>> sig_file.policy = sig_file_policy
 
 Some fields extracted from the tag_file are required, they are always
 present in ChangesFile and DSCFile:
 
     >>> sig_file._dict = {}
-    >>> sig_file._dict['Source'] = 'some-source'
-    >>> sig_file._dict['Version'] = '6.6.6'
+    >>> sig_file._dict["Source"] = "some-source"
+    >>> sig_file._dict["Version"] = "6.6.6"
 
 After initialising sig_file we can parse addresses and look them up in
 Launchpad:
 
     >>> addr = sig_file.parseAddress("Foo Bar <foo.bar@canonical.com>")
-    >>> print(addr['person'].displayname)
+    >>> print(addr["person"].displayname)
     Foo Bar
-    >>> addr['person'].creation_comment is None
+    >>> addr["person"].creation_comment is None
     True
 
 If the address is unparsable, we get an error.
@@ -275,10 +301,10 @@ a new Person will be created.
     True
 
     >>> addr = sig_file.parseAddress("Baz <baz@canonical.com>")
-    >>> addr['person'].creation_rationale.name
+    >>> addr["person"].creation_rationale.name
     'SOURCEPACKAGEUPLOAD'
 
-    >>> print(addr['person'].creation_comment)
+    >>> print(addr["person"].creation_comment)
     when the some-source_6.6.6 package was uploaded to hoary/RELEASE
 
 If the use an un-initialized policy to create a launchpad person the
@@ -288,10 +314,10 @@ information, the upload target:
     >>> sig_file.policy.distroseries = None
 
     >>> addr = sig_file.parseAddress("Bar <bar@canonical.com>")
-    >>> addr['person'].creation_rationale.name
+    >>> addr["person"].creation_rationale.name
     'SOURCEPACKAGEUPLOAD'
 
-    >>> print(addr['person'].creation_comment)
+    >>> print(addr["person"].creation_comment)
     when the some-source_6.6.6 package was uploaded to (unknown)
 
 On ChangesFile objects we can have access to the enhanced address_structure
@@ -309,13 +335,13 @@ As we can see, this method also return an error generator.
 The built address_structure contains values that will be used during
 the upload processing:
 
-    >>> print(ed_binary_changes.maintainer['name'])
+    >>> print(ed_binary_changes.maintainer["name"])
     James Troup
-    >>> print(ed_binary_changes.maintainer['email'])
+    >>> print(ed_binary_changes.maintainer["email"])
     james@nocrew.org
-    >>> ed_binary_changes.maintainer['person']
+    >>> ed_binary_changes.maintainer["person"]
     <Person ...>
-    >>> print(ed_binary_changes.maintainer['person'].displayname)
+    >>> print(ed_binary_changes.maintainer["person"].displayname)
     James Troup
 
 
@@ -347,14 +373,20 @@ and storing a DSC file in the LP system.
 The DSC file itself contains information about what was used to build
 the given version of source.
 
-    >>> from lp.archiveuploader.dscfile import (
-    ...    DSCFile, DSCUploadedFile)
+    >>> from lp.archiveuploader.dscfile import DSCFile, DSCUploadedFile
 
     >>> ed_source_dsc = DSCFile(
-    ...     datadir('ed_0.2-20.dsc'),
-    ...     dict(MD5='de8b206f8fc57bd931f6226feac6644a'), 578, 'editors',
-    ...     'important', 'ed', '0.2-20', ed_source_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20.dsc"),
+    ...     dict(MD5="de8b206f8fc57bd931f6226feac6644a"),
+    ...     578,
+    ...     "editors",
+    ...     "important",
+    ...     "ed",
+    ...     "0.2-20",
+    ...     ed_source_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_source_dsc
     <lp.archiveuploader.dscfile.DSCFile ...>
@@ -381,7 +413,7 @@ The DSC is GPG-signed most of the time, so we can guarantee who was
 the author. The DSCFile class implements the same address parsing
 methods found in ChangesFile:
 
-    >>> print(ed_source_dsc.maintainer['person'].displayname)
+    >>> print(ed_source_dsc.maintainer["person"].displayname)
     James Troup
 
 The DSC signer IPerson:
@@ -408,10 +440,17 @@ Apart from other consistency checks, DSCFile is also able to check that
 the digest declared in the DSC matches the content of the files on disk:
 
     >>> ed_broken_dsc = DSCFile(
-    ...     datadir('ed_0.2-20.dsc'),
-    ...     dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 500, 'editors',
-    ...     'important', 'ed', '0.2-20', ed_source_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20.dsc"),
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     500,
+    ...     "editors",
+    ...     "important",
+    ...     "ed",
+    ...     "0.2-20",
+    ...     ed_source_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> errors = ed_broken_dsc.verify()
     >>> [str(err) for err in errors]
@@ -421,10 +460,17 @@ the digest declared in the DSC matches the content of the files on disk:
 It also verifies the file size when the checksum matches.
 
     >>> ed_broken_dsc = DSCFile(
-    ...     datadir('ed_0.2-20.dsc'),
-    ...     dict(MD5='de8b206f8fc57bd931f6226feac6644a'), 500, 'editors',
-    ...     'important', 'ed', '0.2-20', ed_source_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20.dsc"),
+    ...     dict(MD5="de8b206f8fc57bd931f6226feac6644a"),
+    ...     500,
+    ...     "editors",
+    ...     "important",
+    ...     "ed",
+    ...     "0.2-20",
+    ...     ed_source_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> errors = ed_broken_dsc.verify()
     >>> [str(err) for err in errors]
@@ -444,15 +490,19 @@ We can also inspect the list of files declared in this DSC:
 
     >>> for dsc_file in ed_source_dsc.files:
     ...     print(dsc_file.filename)
+    ...
     ed_0.2.orig.tar.gz
     ed_0.2-20.diff.gz
 
 The DSCUploadedFile also inherit the ability to verify file sanity:
 
     >>> ed_broken_dsc_file = DSCUploadedFile(
-    ...     datadir('ed_0.2-20.diff.gz'),
-    ...     dict(MD5='f9e1e5f13725f581919e9bfd6227ffff'), 500,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     datadir("ed_0.2-20.diff.gz"),
+    ...     dict(MD5="f9e1e5f13725f581919e9bfd6227ffff"),
+    ...     500,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> errors = ed_broken_dsc_file.verify()
     >>> [str(err) for err in errors]
     ['File ed_0.2-20.diff.gz mentioned in the changes has a MD5 mismatch.
@@ -464,13 +514,20 @@ DebBinaryUploadFile
 
 DebBinaryUploadFile models a binary .deb file.
 
-    >>> from lp.archiveuploader.nascentuploadfile import (
-    ...    DebBinaryUploadFile)
-    >>> ed_deb_path = datadir('ed_0.2-20_i386.deb')
+    >>> from lp.archiveuploader.nascentuploadfile import DebBinaryUploadFile
+    >>> ed_deb_path = datadir("ed_0.2-20_i386.deb")
     >>> ed_binary_deb = DebBinaryUploadFile(
-    ...     ed_deb_path, dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 15,
-    ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     ed_deb_path,
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     15,
+    ...     "main/editors",
+    ...     "important",
+    ...     "foo",
+    ...     "1.2",
+    ...     ed_binary_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
 
 Like the other files it can be verified:
 
@@ -481,9 +538,17 @@ Verification checks that the specified section matches the section in the
 changes file:
 
     >>> ed_binary_deb = DebBinaryUploadFile(
-    ...     ed_deb_path, dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 15,
-    ...     'main/net', 'important', 'foo', '1.2', ed_binary_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     ed_deb_path,
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     15,
+    ...     "main/net",
+    ...     "important",
+    ...     "foo",
+    ...     "1.2",
+    ...     ed_binary_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb
     control file lists section as main/editors but changes file has
@@ -492,9 +557,17 @@ changes file:
 It also checks the priority against the changes file:
 
     >>> ed_binary_deb = DebBinaryUploadFile(
-    ...     ed_deb_path, dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 15,
-    ...     'main/editors', 'extra', 'foo', '1.2', ed_binary_changes,
-    ...     modified_insecure_policy, DevNullLogger())
+    ...     ed_deb_path,
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     15,
+    ...     "main/editors",
+    ...     "extra",
+    ...     "foo",
+    ...     "1.2",
+    ...     ed_binary_changes,
+    ...     modified_insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb
     control file lists priority as important but changes file has extra.'...)]
@@ -504,14 +577,23 @@ being too new:
 
     >>> from lp.archiveuploader.uploadpolicy import ArchiveUploadType
     >>> old_only_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
     >>> old_only_policy.accepted_type = ArchiveUploadType.BINARY_ONLY
     >>> old_only_policy.future_time_grace = -20 * 365 * 24 * 60 * 60
 
     >>> ed_binary_deb = DebBinaryUploadFile(
-    ...     ed_deb_path, dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 15,
-    ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
-    ...     old_only_policy, DevNullLogger())
+    ...     ed_deb_path,
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     15,
+    ...     "main/editors",
+    ...     "important",
+    ...     "foo",
+    ...     "1.2",
+    ...     ed_binary_changes,
+    ...     old_only_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> list(ed_binary_deb.verifyDebTimestamp())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far into the future
@@ -520,13 +602,22 @@ being too new:
 ... as well as for being too old:
 
     >>> new_only_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
     >>> new_only_policy.accepted_type = ArchiveUploadType.BINARY_ONLY
     >>> new_only_policy.earliest_year = 2010
     >>> ed_binary_deb = DebBinaryUploadFile(
-    ...     ed_deb_path, dict(MD5='e31eeb0b6b3b87e1ea79378df864ffff'), 15,
-    ...     'main/editors', 'important', 'foo', '1.2', ed_binary_changes,
-    ...     new_only_policy, DevNullLogger())
+    ...     ed_deb_path,
+    ...     dict(MD5="e31eeb0b6b3b87e1ea79378df864ffff"),
+    ...     15,
+    ...     "main/editors",
+    ...     "important",
+    ...     "foo",
+    ...     "1.2",
+    ...     ed_binary_changes,
+    ...     new_only_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> list(ed_binary_deb.verify())
     [UploadError(...'ed_0.2-20_i386.deb:
     has 26 file(s) with a time stamp too far in the past

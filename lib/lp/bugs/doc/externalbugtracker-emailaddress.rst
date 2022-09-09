@@ -19,12 +19,11 @@ Since email addresses are not external bug trackers in the classic
 sense there is no ExternalBugTracker descendant for them. Trying to
 create a new ExternalBugTracker for an email address will fail.
 
-    >>> from lp.bugs.externalbugtracker import (
-    ...     get_external_bugtracker)
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.externalbugtracker import get_external_bugtracker
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> bug_tracker = get_external_bugtracker(
-    ...     new_bugtracker(BugTrackerType.EMAILADDRESS))
+    ...     new_bugtracker(BugTrackerType.EMAILADDRESS)
+    ... )
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownBugTrackerTypeError: EMAILADDRESS
@@ -38,16 +37,21 @@ mailto:<email-address>.
     >>> from lp.bugs.interfaces.bugtracker import (
     ...     IBugTracker,
     ...     IBugTrackerSet,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
     >>> email_tracker = getUtility(IBugTrackerSet).ensureBugTracker(
-    ...     baseurl='mailto:somebugaddress@example.com', owner=sample_person,
+    ...     baseurl="mailto:somebugaddress@example.com",
+    ...     owner=sample_person,
     ...     bugtrackertype=BugTrackerType.EMAILADDRESS,
-    ...     title="Sample email address tracker", summary="Nothing",
-    ...     contactdetails="None", name='email-tracker')
+    ...     title="Sample email address tracker",
+    ...     summary="Nothing",
+    ...     contactdetails="None",
+    ...     name="email-tracker",
+    ... )
     >>> verifyObject(IBugTracker, email_tracker)
     True
 
@@ -56,10 +60,13 @@ tracker with a name in the form auto-<local_name>, where local name is
 the local part of an email address (e.g. <local_name>@foobar.com).
 
     >>> other_tracker = getUtility(IBugTrackerSet).ensureBugTracker(
-    ...     baseurl='mailto:another.bugtracker@example.com',
-    ...     owner=sample_person, bugtrackertype=BugTrackerType.EMAILADDRESS,
-    ...     title="Sample email address tracker", summary="Nothing",
-    ...     contactdetails="None")
+    ...     baseurl="mailto:another.bugtracker@example.com",
+    ...     owner=sample_person,
+    ...     bugtrackertype=BugTrackerType.EMAILADDRESS,
+    ...     title="Sample email address tracker",
+    ...     summary="Nothing",
+    ...     contactdetails="None",
+    ... )
     >>> verifyObject(IBugTracker, other_tracker)
     True
 
@@ -83,8 +90,11 @@ we record a remotebug value of '' for the bugwatch (we can't use None
 because BugWatch.remotebug is a NOT NULL field).
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> bug_watch = example_bug.addWatch(bugtracker=email_tracker,
-    ...     remotebug='', owner=getUtility(ILaunchpadCelebrities).janitor)
+    >>> bug_watch = example_bug.addWatch(
+    ...     bugtracker=email_tracker,
+    ...     remotebug="",
+    ...     owner=getUtility(ILaunchpadCelebrities).janitor,
+    ... )
     >>> print(bug_watch.bugtracker.name)
     email-tracker
     >>> print(bug_watch.remotebug)
@@ -96,10 +106,12 @@ By contrast, if the message ID is known it is recorded in the remotebug
 field.
 
     >>> from email.utils import make_msgid
-    >>> message_id = make_msgid('launchpad')
-    >>> bug_watch = example_bug.addWatch(bugtracker=email_tracker,
+    >>> message_id = make_msgid("launchpad")
+    >>> bug_watch = example_bug.addWatch(
+    ...     bugtracker=email_tracker,
     ...     remotebug=message_id,
-    ...     owner=getUtility(ILaunchpadCelebrities).janitor)
+    ...     owner=getUtility(ILaunchpadCelebrities).janitor,
+    ... )
     >>> bug_watch.remotebug == message_id
     True
 
@@ -112,12 +124,13 @@ return an empty list.
     >>> from operator import attrgetter
 
     >>> for watch in sorted(
-    ...         email_tracker.latestwatches, key=attrgetter('remotebug')):
+    ...     email_tracker.latestwatches, key=attrgetter("remotebug")
+    ... ):
     ...     print(watch.remotebug)
     <BLANKLINE>
     ...launchpad@...
 
-    >>> email_tracker.getBugsWatching('')
+    >>> email_tracker.getBugsWatching("")
     []
 
     >>> email_tracker.getBugsWatching(message_id)
@@ -126,7 +139,7 @@ return an empty list.
 Similarly, Bug.getBugWatch() will always return None for email address
 bug trackers.
 
-    >>> print(example_bug.getBugWatch(email_tracker, ''))
+    >>> print(example_bug.getBugWatch(email_tracker, ""))
     None
 
     >>> print(example_bug.getBugWatch(email_tracker, message_id))

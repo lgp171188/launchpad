@@ -6,8 +6,9 @@ Malone provides an XML-RPC interface for filing bugs.
     >>> import xmlrpc.client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> filebug_api = xmlrpc.client.ServerProxy(
-    ...     'http://test@canonical.com:test@xmlrpc.launchpad.test/bugs/',
-    ...     transport=XMLRPCTestTransport())
+    ...     "http://test@canonical.com:test@xmlrpc.launchpad.test/bugs/",
+    ...     transport=XMLRPCTestTransport(),
+    ... )
 
 
 The filebug API
@@ -55,9 +56,11 @@ the XML-RPC interface.
 
     >>> def on_created_event(obj, event):
     ...     print("ObjectCreatedEvent: %r" % obj)
+    ...
 
     >>> on_created_listener = ZopeEventHandlerFixture(
-    ...     on_created_event, (IBug, IObjectCreatedEvent))
+    ...     on_created_event, (IBug, IObjectCreatedEvent)
+    ... )
     >>> on_created_listener.setUp()
 
 Reporting a product bug.
@@ -67,9 +70,11 @@ return value.)
 
     >>> def get_bug_id_from_url(url):
     ...     return int(url.split("/")[-1])
+    ...
 
     >>> params = dict(
-    ...     product='firefox', summary='the summary', comment='the comment')
+    ...     product="firefox", summary="the summary", comment="the comment"
+    ... )
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
@@ -96,7 +101,8 @@ return value.)
 Reporting a distro bug.
 
     >>> params = dict(
-    ...     distro='ubuntu', summary='another bug', comment='another comment')
+    ...     distro="ubuntu", summary="another bug", comment="another comment"
+    ... )
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
@@ -121,15 +127,19 @@ Reporting a distro bug.
 Reporting a package bug.
 
     >>> params = dict(
-    ...     distro='ubuntu', package='evolution', summary='email is cool',
-    ...     comment='email is nice', security_related=True,
-    ...     subscribers=["no-priv@canonical.com"])
+    ...     distro="ubuntu",
+    ...     package="evolution",
+    ...     summary="email is cool",
+    ...     comment="email is nice",
+    ...     security_related=True,
+    ...     subscribers=["no-priv@canonical.com"],
+    ... )
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
     http://bugs.launchpad.test/bugs/...
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> bug = bugset.get(get_bug_id_from_url(bug_url))
 
     >>> print(bug.title)
@@ -142,6 +152,7 @@ Reporting a package bug.
     True
     >>> for name in sorted(p.name for p in bug.getDirectSubscribers()):
     ...     print(name)
+    ...
     name12
     no-priv
     >>> bug.getIndirectSubscribers()
@@ -172,7 +183,7 @@ Failing to specify a product or distribution.
 
 Specifying *both* a product and distribution.
 
-    >>> params = dict(product='firefox', distro='ubuntu')
+    >>> params = dict(product="firefox", distro="ubuntu")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -181,7 +192,7 @@ Specifying *both* a product and distribution.
 
 Specifying a non-existent product.
 
-    >>> params = dict(product='nosuchproduct')
+    >>> params = dict(product="nosuchproduct")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -189,7 +200,7 @@ Specifying a non-existent product.
 
 Specifying a non-existent distribution.
 
-    >>> params = dict(distro='nosuchdistro')
+    >>> params = dict(distro="nosuchdistro")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -197,7 +208,7 @@ Specifying a non-existent distribution.
 
 Specifying a non-existent package.
 
-    >>> params = dict(distro='ubuntu', package='nosuchpackage')
+    >>> params = dict(distro="ubuntu", package="nosuchpackage")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -205,7 +216,7 @@ Specifying a non-existent package.
 
 Missing summary.
 
-    >>> params = dict(product='firefox')
+    >>> params = dict(product="firefox")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -213,7 +224,7 @@ Missing summary.
 
 Missing comment.
 
-    >>> params = dict(product='firefox', summary='the summary')
+    >>> params = dict(product="firefox", summary="the summary")
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -222,8 +233,11 @@ Missing comment.
 Invalid subscriber.
 
     >>> params = dict(
-    ...     product='firefox', summary='summary', comment='comment',
-    ...     subscribers=["foo.bar@canonical.com", "nosuch@subscriber.com"])
+    ...     product="firefox",
+    ...     summary="summary",
+    ...     comment="comment",
+    ...     subscribers=["foo.bar@canonical.com", "nosuch@subscriber.com"],
+    ... )
     >>> filebug_api.filebug(params)
     Traceback (most recent call last):
     ...
@@ -245,23 +259,24 @@ for authentication with external bug trackers.
     >>> from lp.testing import verifyObject
 
     >>> private_root = getUtility(IPrivateApplication)
-    >>> verifyObject(IPrivateMaloneApplication,
-    ...     private_root.bugs)
+    >>> verifyObject(IPrivateMaloneApplication, private_root.bugs)
     True
 
 The API provides a single method, newBugTrackerToken(), which returns
 the ID of the new LoginToken.
 
     >>> from lp.services.verification.interfaces.logintoken import (
-    ...     ILoginTokenSet)
+    ...     ILoginTokenSet,
+    ... )
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     IExternalBugTrackerTokenAPI)
-    >>> from lp.bugs.xmlrpc.bug import (
-    ...     ExternalBugTrackerTokenAPI)
+    ...     IExternalBugTrackerTokenAPI,
+    ... )
+    >>> from lp.bugs.xmlrpc.bug import ExternalBugTrackerTokenAPI
 
     >>> bugtracker_token_api = ExternalBugTrackerTokenAPI(
-    ...     private_root.bugs, LaunchpadTestRequest())
+    ...     private_root.bugs, LaunchpadTestRequest()
+    ... )
 
     >>> verifyObject(IExternalBugTrackerTokenAPI, bugtracker_token_api)
     True
@@ -279,8 +294,9 @@ The LoginToken generated will be of the LoginTokenType BUGTRACKER.
 These requests are all handled by the private xml-rpc server.
 
     >>> bugtracker_api = xmlrpc.client.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
-    ...     transport=XMLRPCTestTransport())
+    ...     "http://xmlrpc-private.launchpad.test:8087/bugs",
+    ...     transport=XMLRPCTestTransport(),
+    ... )
 
     >>> token_string = bugtracker_api.newBugTrackerToken()
     >>> token = getUtility(ILoginTokenSet)[token_string]

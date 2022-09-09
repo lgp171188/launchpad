@@ -7,26 +7,34 @@ information is required before they can be confirmed.
 No Privileges Person opens a bug and sets its status to 'Incomplete'.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bug/11/+editstatus')
-    >>> user_browser.getControl('Status').value = ['Incomplete']
-    >>> user_browser.getControl('Save Changes').click()
-    >>> print(extract_text(
-    ...     find_tags_by_class(user_browser.contents, 'statusINCOMPLETE')[0]))
+    ...     "http://bugs.launchpad.test/jokosher/+bug/11/+editstatus"
+    ... )
+    >>> user_browser.getControl("Status").value = ["Incomplete"]
+    >>> user_browser.getControl("Save Changes").click()
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(user_browser.contents, "statusINCOMPLETE")[
+    ...             0
+    ...         ]
+    ...     )
+    ... )
     Incomplete
 
 No Privileges Person can now search for the bug using the advanced
 search form.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
+    ...     "http://bugs.launchpad.test/jokosher/+bugs?advanced=1"
+    ... )
 
 Bugs that have been marked 'Incomplete' but for which no new information
 was supplied (through comments) are 'Incomplete (without response)'.
 
-    >>> user_browser.getControl(name='field.status:list').value = (
-    ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
-    >>> user_browser.getControl('Search', index=1).click()
-    >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').find('a')
+    >>> user_browser.getControl(name="field.status:list").value = [
+    ...     "INCOMPLETE_WITHOUT_RESPONSE"
+    ... ]
+    >>> user_browser.getControl("Search", index=1).click()
+    >>> find_tag_by_id(user_browser.contents, "bugs-table-listing").find("a")
     <a class="bugtitle"
        href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
@@ -34,25 +42,31 @@ Bugs that have been marked incomplete and for which new information was
 supplied are 'Incomplete (with response)'.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
-    >>> user_browser.getControl(name='field.status:list').value = (
-    ...     ['INCOMPLETE_WITH_RESPONSE'])
-    >>> user_browser.getControl('Search', index=1).click()
+    ...     "http://bugs.launchpad.test/jokosher/+bugs?advanced=1"
+    ... )
+    >>> user_browser.getControl(name="field.status:list").value = [
+    ...     "INCOMPLETE_WITH_RESPONSE"
+    ... ]
+    >>> user_browser.getControl("Search", index=1).click()
 
 The bug No Privileges Person examined earlier does not have any new
 information, so they do not see it in the list.
 
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(user_browser.contents, "bugs-table-listing")
+    ...     )
+    ... )
     No results for search
 
 No Privileges Person can supply new information by posting a new
 comment for the bug.
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher/+bug/11')
-    >>> user_browser.getControl(name='field.comment').value = (
-    ...     'More information here.')
-    >>> user_browser.getControl('Post Comment').click()
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
+    >>> user_browser.getControl(
+    ...     name="field.comment"
+    ... ).value = "More information here."
+    >>> user_browser.getControl("Post Comment").click()
 
     >>> import transaction
     >>> transaction.commit()
@@ -60,11 +74,13 @@ comment for the bug.
 They try again to find that bug using the advanced search form.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
-    >>> user_browser.getControl(name='field.status:list').value = (
-    ...     ['INCOMPLETE_WITH_RESPONSE'])
-    >>> user_browser.getControl('Search', index=1).click()
-    >>> find_tag_by_id(user_browser.contents, 'bugs-table-listing').find('a')
+    ...     "http://bugs.launchpad.test/jokosher/+bugs?advanced=1"
+    ... )
+    >>> user_browser.getControl(name="field.status:list").value = [
+    ...     "INCOMPLETE_WITH_RESPONSE"
+    ... ]
+    >>> user_browser.getControl("Search", index=1).click()
+    >>> find_tag_by_id(user_browser.contents, "bugs-table-listing").find("a")
     <a class="bugtitle"
        href="http://bugs.launchpad.test/jokosher/+bug/11">...</a>
 
@@ -73,13 +89,17 @@ Privileges Person makes sure that it no longer is in the list of
 incomplete bugs without response.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
-    >>> user_browser.getControl(name='field.status:list').value = (
-    ...     ['INCOMPLETE_WITH_RESPONSE'])
-    >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a class="bugtitle" '
-    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
-    ...     find_tag_by_id(user_browser.contents, 'bugs-table-listing'))
+    ...     "http://bugs.launchpad.test/jokosher/+bugs?advanced=1"
+    ... )
+    >>> user_browser.getControl(name="field.status:list").value = [
+    ...     "INCOMPLETE_WITH_RESPONSE"
+    ... ]
+    >>> user_browser.getControl("Search", index=1).click()
+    >>> (
+    ...     '<a class="bugtitle" '
+    ...     'href="http://bugs.launchpad.test/jokosher/+bug/11">'
+    ...     in find_tag_by_id(user_browser.contents, "bugs-table-listing")
+    ... )
     False
 
 
@@ -95,14 +115,15 @@ additional action is required to confirm the bug.
 Jokosher uses Launchpad to track bugs, so a notice is displayed
 stating that the bug report will be marked for expiration.
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher/+bug/11')
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'can-expire')))
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "can-expire"))
+    ... )
     This bug report will be marked for expiration in 59 days if no further
     activity occurs.
     (find out why)
 
-    >>> user_browser.getLink('find out why').url
+    >>> user_browser.getLink("find out why").url
     'https://help.launchpad.net/BugExpiry'
 
 If the time by which a bug should have been expired has passed but the
@@ -115,7 +136,7 @@ date. We alter the date_last_updated field of bug 11 to demonstrate this.
     >>> from datetime import timedelta
     >>> from lp.testing import login, logout
     >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> bug_11 = getUtility(IBugSet).get(11)
@@ -125,13 +146,14 @@ date. We alter the date_last_updated field of bug 11 to demonstrate this.
     >>> flush_database_updates()
     >>> logout()
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher/+bug/11')
-    >>> print(extract_text(
-    ...     find_tag_by_id(user_browser.contents, 'can-expire')))
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
+    >>> print(
+    ...     extract_text(find_tag_by_id(user_browser.contents, "can-expire"))
+    ... )
     This bug report was marked for expiration 1 days ago.
     (find out why)
 
-    >>> user_browser.getLink('find out why').url
+    >>> user_browser.getLink("find out why").url
     'https://help.launchpad.net/BugExpiry'
 
 The expirable bug search
@@ -141,19 +163,19 @@ Users can view a list of expirable bugs via a link on the project's
 bug page. To see the behaviour of the bug listing, we need another
 expirable bug. No Privileges Person marks another bug as Incomplete
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher/+bug/12')
-    >>> user_browser.getControl('Status').value = ['Incomplete']
-    >>> user_browser.getControl('Save Changes', index=0).click()
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/12")
+    >>> user_browser.getControl("Status").value = ["Incomplete"]
+    >>> user_browser.getControl("Save Changes", index=0).click()
 
 The project's bug page reports the number of bugs that will expire if
 they are not confirmed. No Privileges Person sees that Jokosher has 2
 bugs that can expire.
 
-    >>> user_browser.getLink('Bugs').click()
+    >>> user_browser.getLink("Bugs").click()
     >>> user_browser.title
     'Bugs : Jokosher'
 
-    >>> expirable_bugs_link = user_browser.getLink('Incomplete bugs')
+    >>> expirable_bugs_link = user_browser.getLink("Incomplete bugs")
 
 The link is to the expirable bugs page. No Privileges Person can see
 the bug they set to Incomplete previously.
@@ -174,7 +196,7 @@ the bug they set to Incomplete previously.
 This specialized list does not include the search form. So there is no
 'Search' button on the page:
 
-    >>> user_browser.getControl('Search', index=0).type
+    >>> user_browser.getControl("Search", index=0).type
     Traceback (most recent call last):
     ...
     LookupError: label ...'Search'
@@ -182,7 +204,7 @@ This specialized list does not include the search form. So there is no
 
 The 'Report a bug' link is also not present.
 
-    >>> user_browser.getLink('Report a bug')
+    >>> user_browser.getLink("Report a bug")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -192,11 +214,11 @@ bugs at the top of the list will expire before the ones at the bottom.
 When No Privileges Person adds a comment to the oldest bug, it is
 pushed to the bottom of the list.
 
-    >>> user_browser.getLink('Make Jokosher use autoaudiosink').click()
-    >>> user_browser.getControl(name='field.comment').value = "bump"
-    >>> user_browser.getControl('Post Comment').click()
-    >>> user_browser.getLink('Bugs').click()
-    >>> user_browser.getLink('Incomplete bugs').click()
+    >>> user_browser.getLink("Make Jokosher use autoaudiosink").click()
+    >>> user_browser.getControl(name="field.comment").value = "bump"
+    >>> user_browser.getControl("Post Comment").click()
+    >>> user_browser.getLink("Bugs").click()
+    >>> user_browser.getLink("Incomplete bugs").click()
     >>> print_bugtasks(user_browser.contents)
     12  Copy, Cut and Delete operations should work  ...
     11  Make Jokosher use autoaudiosink  ...
@@ -205,14 +227,14 @@ When No Privileges Person confirms the bug, the notice is removed.
 They see that the number on expirable bugs is updated when they return to
 Jokosher's bug page.
 
-    >>> user_browser.getLink('Make Jokosher use autoaudiosink').click()
-    >>> user_browser.getControl('Status').value = ['Confirmed']
-    >>> user_browser.getControl('Save Changes', index=0).click()
-    >>> print(find_tag_by_id(user_browser.contents, 'can-expire'))
+    >>> user_browser.getLink("Make Jokosher use autoaudiosink").click()
+    >>> user_browser.getControl("Status").value = ["Confirmed"]
+    >>> user_browser.getControl("Save Changes", index=0).click()
+    >>> print(find_tag_by_id(user_browser.contents, "can-expire"))
     None
 
-    >>> user_browser.getLink('Bugs').click()
-    >>> expirable_bugs_link = user_browser.getLink('Incomplete bugs')
+    >>> user_browser.getLink("Bugs").click()
+    >>> expirable_bugs_link = user_browser.getLink("Incomplete bugs")
     >>> expirable_bugs_link.click()
     >>> print_bugtasks(user_browser.contents)
     12  Copy, Cut and Delete operations should work ...
@@ -229,24 +251,26 @@ In order for this to work, the bug cannot be FIXRELEASED, which
 it is by default.  So we set the bug back to NEW.
 
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug_8 = getUtility(IBugSet).get(8)
     >>> bug_8.bugtasks[0].transitionToStatus(
-    ...     BugTaskStatus.NEW, bug_8.bugtasks[0].distribution.owner)
+    ...     BugTaskStatus.NEW, bug_8.bugtasks[0].distribution.owner
+    ... )
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/'
-    ...     '8')
-    >>> user_browser.getControl('Status').value = ['Incomplete']
-    >>> user_browser.getControl('Save Changes', index=0).click()
-    >>> print(find_tag_by_id(user_browser.contents, 'can-expire'))
+    ...     "http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/"
+    ...     "8"
+    ... )
+    >>> user_browser.getControl("Status").value = ["Incomplete"]
+    >>> user_browser.getControl("Save Changes", index=0).click()
+    >>> print(find_tag_by_id(user_browser.contents, "can-expire"))
     None
 
 If No Privileges Person hacks the URL to see a listing of Debian's
 expirable bugs they read that Debian does not use bug expiration.
 
-    >>> user_browser.open('http://bugs.launchpad.test/debian/+expirable-bugs')
+    >>> user_browser.open("http://bugs.launchpad.test/debian/+expirable-bugs")
     >>> print(extract_text(find_main_content(user_browser.contents).p))
     This project has not enabled bug expiration. No bugs can expire.
     Project administrator's may choose to enable bug expiration by
@@ -262,31 +286,42 @@ Incomplete (without response) bugs.
 We set bug #11 to Incomplete again.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bug/11/+editstatus')
-    >>> user_browser.getControl('Status').value = ['Incomplete']
-    >>> user_browser.getControl('Save Changes').click()
+    ...     "http://bugs.launchpad.test/jokosher/+bug/11/+editstatus"
+    ... )
+    >>> user_browser.getControl("Status").value = ["Incomplete"]
+    >>> user_browser.getControl("Save Changes").click()
 
 Since no new comments have been added after we changed the status to
 Incomplete, we can now find that bug searching for Incomplete (without
 response) bugs.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
-    >>> user_browser.getControl(name='field.status:list').value = (
-    ...     ['INCOMPLETE_WITHOUT_RESPONSE'])
-    >>> user_browser.getControl('Search', index=1).click()
-    >>> ('<a class="bugtitle" '
-    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
-    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    ...     "http://bugs.launchpad.test/jokosher/+bugs?advanced=1"
+    ... )
+    >>> user_browser.getControl(name="field.status:list").value = [
+    ...     "INCOMPLETE_WITHOUT_RESPONSE"
+    ... ]
+    >>> user_browser.getControl("Search", index=1).click()
+    >>> (
+    ...     '<a class="bugtitle" '
+    ...     'href="http://bugs.launchpad.test/jokosher/+bug/11">'
+    ...     in str(
+    ...         find_tag_by_id(user_browser.contents, "bugs-table-listing")
+    ...     )
+    ... )
     True
 
 A default search turns that bug up as well.
 
-    >>> user_browser.open('http://bugs.launchpad.test/jokosher')
-    >>> user_browser.getControl('Search', index=0).click()
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher")
+    >>> user_browser.getControl("Search", index=0).click()
     >>> print(user_browser.url)  # noqa
     http://bugs.launchpad.test/jokosher/+bugs?...&field.status%3Alist=INCOMPLETE_WITH_RESPONSE&field.status%3Alist=INCOMPLETE_WITHOUT_RESPONSE...
-    >>> ('<a class="bugtitle" '
-    ...  'href="http://bugs.launchpad.test/jokosher/+bug/11">' in
-    ...     str(find_tag_by_id(user_browser.contents, 'bugs-table-listing')))
+    >>> (
+    ...     '<a class="bugtitle" '
+    ...     'href="http://bugs.launchpad.test/jokosher/+bug/11">'
+    ...     in str(
+    ...         find_tag_by_id(user_browser.contents, "bugs-table-listing")
+    ...     )
+    ... )
     True

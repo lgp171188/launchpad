@@ -12,8 +12,10 @@ portion of the authentication process:
     >>> from openid.fetchers import setDefaultFetcher
     >>> from openid.store.memstore import MemoryStore
     >>> from lp.testopenid.testing.helpers import (
-    ...     complete_from_browser, make_identifier_select_endpoint,
-    ...     ZopeFetcher)
+    ...     complete_from_browser,
+    ...     make_identifier_select_endpoint,
+    ...     ZopeFetcher,
+    ... )
     >>> setDefaultFetcher(ZopeFetcher())
 
 The authentication process is started by the relying party issuing a
@@ -23,10 +25,13 @@ checkid_setup request, sending the user to Launchpad:
     >>> consumer = Consumer(session={}, store=openid_store)
 
     >>> request = consumer.beginWithoutDiscovery(
-    ...     make_identifier_select_endpoint())
-    >>> browser.open(request.redirectURL(
-    ...     'http://testopenid.test/',
-    ...     'http://testopenid.test/+echo'))
+    ...     make_identifier_select_endpoint()
+    ... )
+    >>> browser.open(
+    ...     request.redirectURL(
+    ...         "http://testopenid.test/", "http://testopenid.test/+echo"
+    ...     )
+    ... )
 
 At this point, the user is presented with a login form:
 
@@ -35,20 +40,21 @@ At this point, the user is presented with a login form:
 
 If the email address isn't registered, an error is shown:
 
-    >>> browser.getControl(name='field.email').value = 'does@not.exist'
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl(name="field.email").value = "does@not.exist"
+    >>> browser.getControl("Continue").click()
     >>> print(browser.title)
     Login
-    >>> for tag in find_tags_by_class(browser.contents, 'error'):
+    >>> for tag in find_tags_by_class(browser.contents, "error"):
     ...     print(extract_text(tag))
+    ...
     There is 1 error.
     Unknown email address.
 
 If the email address matches an account, the user is logged in and
 returned to the relying party, with the user's identity URL:
 
-    >>> browser.getControl(name='field.email').value = 'mark@example.com'
-    >>> browser.getControl('Continue').click()
+    >>> browser.getControl(name="field.email").value = "mark@example.com"
+    >>> browser.getControl("Continue").click()
     >>> print(browser.url)
     http://testopenid.test/+echo?...
     >>> info = complete_from_browser(consumer, browser)

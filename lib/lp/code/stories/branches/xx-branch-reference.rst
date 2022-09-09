@@ -17,16 +17,17 @@ before finding the real branch location.
 
 The first request made is to find the bzrdir format:
 
-    >>> branchurl = ('http://launchpad.test/~name12/+branch/'
-    ...              'gnome-terminal/main')
-    >>> anon_browser.open(branchurl + '/.bzr/branch-format')
+    >>> branchurl = (
+    ...     "http://launchpad.test/~name12/+branch/" "gnome-terminal/main"
+    ... )
+    >>> anon_browser.open(branchurl + "/.bzr/branch-format")
     >>> anon_browser.contents
     'Bazaar-NG meta directory, format 1\n'
 
 Once it has been determined that we have a meta-dir format bzrdir, the
 branch format is checked:
 
-    >>> anon_browser.open(branchurl + '/.bzr/branch/format')
+    >>> anon_browser.open(branchurl + "/.bzr/branch/format")
     >>> anon_browser.contents
     'Bazaar-NG Branch Reference Format 1\n'
 
@@ -34,7 +35,7 @@ Now Bazaar knows that it has a branch reference.  The final request is
 to find the real branch location.  We return Launchpad's HTTP URL for
 the branch:
 
-    >>> anon_browser.open(branchurl + '/.bzr/branch/location')
+    >>> anon_browser.open(branchurl + "/.bzr/branch/location")
     >>> anon_browser.contents
     'http://bazaar.launchpad.test/~name12/gnome-terminal/main'
 
@@ -45,8 +46,9 @@ Product Series Branch
 A branch can be nominated as representing a product series.  A branch
 reference is provided for product series too:
 
-    >>> anon_browser.open('http://launchpad.test/'
-    ...                   'evolution/trunk/.bzr/branch/location')
+    >>> anon_browser.open(
+    ...     "http://launchpad.test/" "evolution/trunk/.bzr/branch/location"
+    ... )
     >>> anon_browser.contents
     'http://bazaar.launchpad.test/~vcs-imports/evolution/main'
 
@@ -54,8 +56,9 @@ reference is provided for product series too:
 However, if a product series has no branch associated with it, we get
 a 404 error:
 
-    >>> anon_browser.open('http://launchpad.test/'
-    ...                   'firefox/1.0/.bzr/branch/location')
+    >>> anon_browser.open(
+    ...     "http://launchpad.test/" "firefox/1.0/.bzr/branch/location"
+    ... )
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ... '.bzr'
@@ -68,8 +71,9 @@ Each product has a series set as the development focus.  A branch
 reference is provided for a product, providing the branch for the
 development focus:
 
-    >>> anon_browser.open('http://launchpad.test/'
-    ...                   'evolution/.bzr/branch/location')
+    >>> anon_browser.open(
+    ...     "http://launchpad.test/" "evolution/.bzr/branch/location"
+    ... )
     >>> anon_browser.contents
     'http://bazaar.launchpad.test/~vcs-imports/evolution/main'
 
@@ -77,8 +81,9 @@ development focus:
 However, if the development focus of a product has no branch
 associated with it, we get a 404 error:
 
-    >>> anon_browser.open('http://launchpad.test/'
-    ...                   'firefox/.bzr/branch/location')
+    >>> anon_browser.open(
+    ...     "http://launchpad.test/" "firefox/.bzr/branch/location"
+    ... )
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ... '.bzr'

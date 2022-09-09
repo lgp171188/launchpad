@@ -4,14 +4,15 @@ Anonymous Nomination of Bugs for Release
 Anonymous users should not be able to nominate bugs for release because
 launchpad.Edit permission is required to do so.:
 
-    >>> anon_browser.open('http://bugs.launchpad.test/jokosher/+bug/12')
-    >>> anon_browser.getLink('Nominate for series')
+    >>> anon_browser.open("http://bugs.launchpad.test/jokosher/+bug/12")
+    >>> anon_browser.getLink("Nominate for series")
     Traceback (most recent call last):
       ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bug/12/+nominate')
+    ...     "http://bugs.launchpad.test/jokosher/+bug/12/+nominate"
+    ... )
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized: ...'launchpad.Edit'...

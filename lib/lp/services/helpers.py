@@ -29,18 +29,18 @@ def text_replaced(text, replacements, _cache={}):
     :arg text: An unicode or str to do the replacement.
     :arg replacements: A dictionary with the replacements that should be done
 
-    >>> text_replaced('', {'a':'b'})
+    >>> text_replaced("", {"a": "b"})
     ''
-    >>> text_replaced('a', {'a':'c'})
+    >>> text_replaced("a", {"a": "c"})
     'c'
-    >>> text_replaced('faa bar baz', {'a': 'A', 'aa': 'X'})
+    >>> text_replaced("faa bar baz", {"a": "A", "aa": "X"})
     'fX bAr bAz'
-    >>> text_replaced('1 2 3 4', {'1': '2', '2': '1'})
+    >>> text_replaced("1 2 3 4", {"1": "2", "2": "1"})
     '2 1 3 4'
 
     Unicode strings work too.
 
-    >>> replaced = text_replaced(u'1 2 3 4', {u'1': u'2', u'2': u'1'})
+    >>> replaced = text_replaced("1 2 3 4", {"1": "2", "2": "1"})
     >>> isinstance(replaced, str)
     True
     >>> print(replaced)
@@ -128,7 +128,7 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     >>> shortlist([1, 2])
     [1, 2]
 
-    >>> shortlist([1, 2, 3], 2) #doctest: +NORMALIZE_WHITESPACE
+    >>> shortlist([1, 2, 3], 2)  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
     UserWarning: shortlist() should not be used here. It's meant to listify
@@ -141,7 +141,8 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
     lp.services.helpers.ShortListTooBigError: Hard limit of 2 exceeded.
 
     >>> shortlist(
-    ...     [1, 2, 3, 4], 2, hardlimit=4) #doctest: +NORMALIZE_WHITESPACE
+    ...     [1, 2, 3, 4], 2, hardlimit=4
+    ... )  # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
     UserWarning: shortlist() should not be used here. It's meant to listify
@@ -149,7 +150,7 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
 
     It works on iterable also which don't support the extended slice protocol.
 
-    >>> iter(range(5))[:1] #doctest: +ELLIPSIS
+    >>> iter(range(5))[:1]  # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
     TypeError: ...
@@ -224,30 +225,30 @@ def filenameToContentType(fname):
 
     deb files
 
-    >>> filenameToContentType('test.deb')
+    >>> filenameToContentType("test.deb")
     'application/x-debian-package'
 
     text files
 
-    >>> filenameToContentType('test.txt')
+    >>> filenameToContentType("test.txt")
     'text/plain'
 
     Not recognized format
 
-    >>> filenameToContentType('test.tgz')
+    >>> filenameToContentType("test.tgz")
     'application/octet-stream'
 
     Build logs
-    >>> filenameToContentType('buildlog.txt.gz')
+    >>> filenameToContentType("buildlog.txt.gz")
     'text/plain'
 
     Various compressed files
 
-    >>> filenameToContentType('Packages.gz')
+    >>> filenameToContentType("Packages.gz")
     'application/x-gzip'
-    >>> filenameToContentType('Packages.bz2')
+    >>> filenameToContentType("Packages.bz2")
     'application/x-bzip2'
-    >>> filenameToContentType('Packages.xz')
+    >>> filenameToContentType("Packages.xz")
     'application/x-xz'
     """
     ftmap = OrderedDict(
@@ -278,11 +279,11 @@ def filenameToContentType(fname):
 def intOrZero(value):
     """Return int(value) or 0 if the conversion fails.
 
-    >>> intOrZero('1.23')
+    >>> intOrZero("1.23")
     0
-    >>> intOrZero('1.ab')
+    >>> intOrZero("1.ab")
     0
-    >>> intOrZero('2')
+    >>> intOrZero("2")
     2
     >>> intOrZero(None)
     0
