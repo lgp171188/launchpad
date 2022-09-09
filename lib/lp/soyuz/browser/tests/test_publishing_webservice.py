@@ -6,13 +6,16 @@
 from functools import partial
 
 from testtools.matchers import ContainsDict, Equals, Is
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.enums import BinaryPackageFormat
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.testing import (
     TestCaseWithFactory,
     api_url,
@@ -244,6 +247,10 @@ class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
             person, permission=OAuthPermission.READ_PUBLIC
         )
         with person_logged_in(person):
+            das = self.factory.makeDistroArchSeries()
+            archive = self.factory.makeArchive(
+                distribution=das.distroseries.distribution
+            )
             build = self.factory.makeCIBuild()
             bpn = self.factory.makeBinaryPackageName()
             bpr = build.createBinaryPackageRelease(
@@ -254,9 +261,11 @@ class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
                 BinaryPackageFormat.WHL,
                 False,
             )
-            bpph = self.factory.makeBinaryPackagePublishingHistory(
-                binarypackagerelease=bpr,
-                binpackageformat=BinaryPackageFormat.WHL,
+            [bpph] = getUtility(IPublishingSet).publishBinaries(
+                archive,
+                das.distroseries,
+                PackagePublishingPocket.RELEASE,
+                {bpr: (None, None, None, None)},
             )
             url = api_url(bpph)
 

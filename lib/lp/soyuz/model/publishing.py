@@ -898,7 +898,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     @property
     def priority_name(self):
         """See `IBinaryPackagePublishingHistory`"""
-        return self.priority.name
+        return self.priority.name if self.priority is not None else None
 
     @property
     def displayname(self):
