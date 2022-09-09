@@ -11,7 +11,14 @@ from charms.launchpad.base import (
     get_service_config,
     lazr_config_files,
 )
-from charms.reactive import helpers, set_state, when, when_not
+from charms.reactive import (
+    clear_flag,
+    helpers,
+    set_flag,
+    set_state,
+    when,
+    when_not,
+)
 from ols import base
 
 
@@ -106,3 +113,33 @@ def configure():
 @when("service.configured")
 def check_is_running():
     hookenv.status_set("active", "Ready")
+
+
+@when("nrpe-external-master.available", "service.configured")
+@when_not("launchpad.appserver.nrpe-external-master.published")
+def nrpe_available(nrpe):
+    config = hookenv.config()
+    healthy_regex = (
+        r"(\/\+icing\/rev[0-9a-f]+\/).*(Is your project registered yet\?)"
+    )
+    nrpe.add_check(
+        [
+            "/usr/lib/nagios/plugins/check_http",
+            "-H",
+            "localhost",
+            "-p",
+            str(config["port_main"]),
+            "-l",
+            "--regex=%s" % healthy_regex,
+        ],
+        name="check_launchpad_appserver",
+        description="Launchpad appserver",
+        context=config["nagios_context"],
+    )
+    set_flag("launchpad.appserver.nrpe-external-master.published")
+
+
+@when("launchpad.appserver.nrpe-external-master.published")
+@when_not("nrpe-external-master.available")
+def nrpe_unavailable():
+    clear_flag("launchpad.appserver.nrpe-external-master.published")
