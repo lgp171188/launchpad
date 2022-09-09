@@ -643,7 +643,7 @@ class RabbitMQLayer(BaseLayer):
 
     # The default timeout is 15 seconds, but increase this a bit to allow
     # some more leeway for slow test environments.
-    rabbit = RabbitServer(ctltimeout=60)
+    rabbit = RabbitServer(ctltimeout=120)
 
     _is_setup = False
 

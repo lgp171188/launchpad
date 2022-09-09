@@ -8,13 +8,10 @@ __all__ = [
 ]
 
 import operator
-import os.path
 from datetime import datetime
 from functools import partial
-from urllib.parse import urlsplit
 
 import pytz
-import six
 from breezy import urlutils
 from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import open_only_scheme
@@ -66,7 +63,6 @@ from lp.code.enums import (
 )
 from lp.code.errors import (
     AlreadyLatestFormat,
-    BranchFileNotFound,
     BranchMergeProposalExists,
     BranchTargetError,
     BranchTypeError,
@@ -142,12 +138,10 @@ from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.database.stormexpr import Array, ArrayAgg, ArrayIntersects
-from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.mail.notificationrecipientset import NotificationRecipientSet
-from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp import urlappend
 from lp.services.webapp.authorization import check_permission
@@ -899,64 +893,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     ):
         """See `IBranch`."""
         hosting_client = getUtility(IBranchHostingClient)
-        if enable_memcache is None:
-            enable_memcache = not getFeatureFlag(
-                "code.bzr.blob.disable_memcache"
-            )
         if revision_id is None:
             revision_id = self.last_scanned_id
-        if revision_id is None:
-            # revision_id may still be None if the branch scanner hasn't
-            # scanned this branch yet.  In this case, we won't be able to
-            # guarantee that subsequent calls to this method within the same
-            # transaction with revision_id=None will see the same revision,
-            # and we won't be able to cache file lists.  Neither is fatal,
-            # and this should be relatively rare.
-            enable_memcache = False
-        dirname = os.path.dirname(filename)
-        unset = object()
-        file_list = unset
-        if enable_memcache:
-            memcache_client = getUtility(IMemcacheClient)
-            instance_name = urlsplit(
-                config.codehosting.internal_bzr_api_endpoint
-            ).hostname
-            memcache_key = six.ensure_binary(
-                "%s:bzr-file-list:%s:%s:%s"
-                % (instance_name, self.id, revision_id, dirname)
-            )
-            description = "file list for %s:%s:%s" % (
-                self.unique_name,
-                revision_id,
-                dirname,
-            )
-            file_list = memcache_client.get_json(
-                memcache_key, logger, description, default=unset
-            )
-
-        if file_list is unset:
-            try:
-                inventory = hosting_client.getInventory(
-                    self.id, dirname, rev=revision_id
-                )
-                file_list = {
-                    entry["filename"]: entry["file_id"]
-                    for entry in inventory["filelist"]
-                }
-            except BranchFileNotFound:
-                file_list = None
-            if enable_memcache:
-                # Cache the file list in case there's a request for another
-                # file in the same directory.
-                memcache_client.set_json(
-                    memcache_key, file_list, logger=logger
-                )
-        file_id = (file_list or {}).get(os.path.basename(filename))
-        if file_id is None:
-            raise BranchFileNotFound(
-                self.unique_name, filename=filename, rev=revision_id
-            )
-        return hosting_client.getBlob(self.id, file_id, rev=revision_id)
+        return hosting_client.getBlob(self.id, filename, rev=revision_id)
 
     def getDiff(self, new, old=None):
         """See `IBranch`."""

@@ -105,11 +105,19 @@ class GPGHandler:
         with open(confpath, "w") as conf:
             # Avoid wasting time verifying the local keyring's consistency.
             conf.write("no-auto-check-trustdb\n")
+            # Use the loopback mode to allow using password callbacks.
+            conf.write("pinentry-mode loopback\n")
+            # Assume "yes" on most questions; this is needed to allow
+            # deletion of secret keys via GPGME.
+            conf.write("yes\n")
             # Prefer a SHA-2 hash where possible, otherwise GPG will fall
             # back to a hash it can use.
             conf.write(
                 "personal-digest-preferences SHA512 SHA384 SHA256 SHA224\n"
             )
+        agentconfpath = os.path.join(self.home, "gpg-agent.conf")
+        with open(agentconfpath, "w") as agentconf:
+            agentconf.write("allow-loopback-pinentry\n")
         # create a local atexit handler to remove the configuration directory
         # on normal termination.
 
@@ -126,11 +134,23 @@ class GPGHandler:
 
     def resetLocalState(self):
         """See IGPGHandler."""
-        # remove the public keyring, private keyring and the trust DB
-        for filename in ["pubring.gpg", "secring.gpg", "trustdb.gpg"]:
+        # Remove the public keyring, private keyring and the trust DB.
+        for filename in (
+            "pubring.gpg",
+            "pubring.kbx",
+            "secring.gpg",
+            "private-keys-v1.d",
+            "trustdb.gpg",
+        ):
             filename = os.path.join(self.home, filename)
             if os.path.exists(filename):
-                os.remove(filename)
+                if os.path.isdir(filename):
+                    shutil.rmtree(filename)
+                else:
+                    os.remove(filename)
+        # Kill any running gpg-agent for GnuPG 2
+        if shutil.which("gpgconf"):
+            subprocess.check_call(["gpgconf", "--kill", "gpg-agent"])
 
     def getVerifiedSignatureResilient(self, content, signature=None):
         """See IGPGHandler."""
@@ -301,6 +321,11 @@ class GPGHandler:
             del os.environ["GPG_AGENT_INFO"]
 
         context = get_gpgme_context()
+
+        def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
+            os.write(fd, b"\n")
+
+        context.passphrase_cb = passphrase_cb
         newkey = BytesIO(content)
         with gpgme_timeline("import", "new secret key"):
             import_result = context.import_(newkey)
@@ -686,22 +711,25 @@ class PymeKey:
             self.fingerprint,
         )
 
-    def export(self):
+    def export(self, secret_passphrase=""):
         """See `IPymeKey`."""
         if self.secret:
             # XXX cprov 20081014: gpgme_op_export() only supports public keys.
             # See http://www.fifi.org/cgi-bin/info2www?(gpgme)Exporting+Keys
-            p = subprocess.Popen(
+            return subprocess.run(
                 [
                     get_gpg_path(),
                     "--export-secret-keys",
                     "-a",
+                    "--passphrase-fd",
+                    "0",
                     self.fingerprint,
                 ],
+                input=secret_passphrase.encode(),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-            )
-            return p.stdout.read()
+                stderr=subprocess.DEVNULL,
+                check=True,
+            ).stdout
 
         context = get_gpgme_context()
         keydata = BytesIO()

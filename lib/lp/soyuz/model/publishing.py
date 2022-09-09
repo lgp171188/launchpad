@@ -212,13 +212,13 @@ class ArchivePublisherBase:
 
     @property
     def component_name(self):
-        """See `ISourcePackagePublishingHistory`"""
-        return self.component.name
+        """See `IPublishingView`."""
+        return self.component.name if self.component is not None else None
 
     @property
     def section_name(self):
-        """See `ISourcePackagePublishingHistory`"""
-        return self.section.name
+        """See `IPublishingView`."""
+        return self.section.name if self.section is not None else None
 
 
 @implementer(ISourcePackagePublishingHistory)

@@ -93,17 +93,17 @@ def landmark_key(landmark):
     return date + landmark["name"]
 
 
-@implementer(IBugSummaryDimension, IProductSeries, ISeriesBugTarget)
 @delegate_to(ISpecificationTarget, context="product")
+@implementer(IBugSummaryDimension, IProductSeries, ISeriesBugTarget)
 class ProductSeries(
     SQLBase,
+    SeriesMixin,
     BugTargetBase,
     HasMilestonesMixin,
     HasSpecificationsMixin,
     HasTranslationImportsMixin,
     HasTranslationTemplatesMixin,
     StructuralSubscriptionTargetMixin,
-    SeriesMixin,
 ):
     """A series of product releases."""
 

@@ -358,7 +358,9 @@ printing the context the key is generated.
 
     >>> def mock_key_generator(name, logger=None):
     ...     print('Generating:', name)
-    ...     key_path = os.path.join(gpgkeysdir, 'sign.only@canonical.com.sec')
+    ...     key_path = os.path.join(
+    ...         gpgkeysdir, 'ppa-sample@canonical.com.sec'
+    ...     )
     ...     with open(key_path, 'rb') as f:
     ...         return gpghandler.importSecretKey(f.read())
 
@@ -377,10 +379,10 @@ named after the user, even if the default PPA name is something different.
     Generating: Launchpad PPA for Not Celso Providelo
 
     >>> print(cprov.archive.signing_key.fingerprint)
-    447DBF38C4F9C4ED752246B77D88913717B05A8F
+    0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
     >>> print(named_ppa.signing_key.fingerprint)
-    447DBF38C4F9C4ED752246B77D88913717B05A8F
+    0D57E99656BEFB0897606EE9A022DD1F5001B46D
 
 Keys generated for copy archives use a different naming scheme.
 

@@ -22,7 +22,7 @@ from zope.component import getUtility
 from lp.archiveuploader.nascentupload import NascentUpload
 from lp.archiveuploader.uploadpolicy import findPolicyByName
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.interfaces import IGPGHandler, get_gpg_path
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import PackageUploadStatus
 from lp.testing.gpgkeys import import_secret_test_key
@@ -394,6 +394,7 @@ class FakePackager:
                 self.gpg_key_fingerprint is not None
             ), "Cannot build signed packages because the key is not set."
             debuild_options.append("-k%s" % self.gpg_key_fingerprint)
+            debuild_options.append("-p%s" % get_gpg_path())
 
         if include_orig:
             debuild_options.append("-sa")

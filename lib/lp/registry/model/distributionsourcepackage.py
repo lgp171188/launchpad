@@ -61,16 +61,6 @@ from lp.translations.model.customlanguagecode import (
 )
 
 
-def is_upstream_link_allowed(spph):
-    """Metapackages shouldn't have upstream links.
-
-    Metapackages normally are in the 'misc' section.
-    """
-    if spph is None:
-        return True
-    return spph.section.name == "misc"
-
-
 class DistributionSourcePackageProperty:
     def __init__(self, attrname, default=None):
         self.attrname = attrname
@@ -81,24 +71,7 @@ class DistributionSourcePackageProperty:
 
     def __set__(self, obj, value):
         if obj._self_in_database is None:
-            spph = (
-                Store.of(obj.distribution)
-                .find(
-                    SourcePackagePublishingHistory,
-                    SourcePackagePublishingHistory.distroseriesID
-                    == DistroSeries.id,
-                    DistroSeries.distributionID == obj.distribution.id,
-                    SourcePackagePublishingHistory.sourcepackagenameID
-                    == obj.sourcepackagename.id,
-                )
-                .order_by(Desc(SourcePackagePublishingHistory.id))
-                .first()
-            )
-            obj._new(
-                obj.distribution,
-                obj.sourcepackagename,
-                is_upstream_link_allowed(spph),
-            )
+            obj._new(obj.distribution, obj.sourcepackagename)
         setattr(obj._self_in_database, self.attrname, value)
 
 
@@ -130,9 +103,6 @@ class DistributionSourcePackage(
     )
     bug_count = DistributionSourcePackageProperty("bug_count")
     po_message_count = DistributionSourcePackageProperty("po_message_count")
-    is_upstream_link_allowed = DistributionSourcePackageProperty(
-        "is_upstream_link_allowed"
-    )
     enable_bugfiling_duplicate_search = DistributionSourcePackageProperty(
         "enable_bugfiling_duplicate_search", default=True
     )
@@ -555,11 +525,9 @@ class DistributionSourcePackage(
         )
 
     @classmethod
-    def _new(
-        cls, distribution, sourcepackagename, is_upstream_link_allowed=False
-    ):
+    def _new(cls, distribution, sourcepackagename):
         return DistributionSourcePackageInDatabase.new(
-            distribution, sourcepackagename, is_upstream_link_allowed
+            distribution, sourcepackagename
         )
 
     @classmethod
@@ -590,8 +558,7 @@ class DistributionSourcePackage(
             sourcepackagename = sourcepackage.sourcepackagename
         dsp = cls._get(distribution, sourcepackagename)
         if dsp is None:
-            upstream_link_allowed = is_upstream_link_allowed(spph)
-            cls._new(distribution, sourcepackagename, upstream_link_allowed)
+            cls._new(distribution, sourcepackagename)
 
 
 @implementer(transaction.interfaces.ISynchronizer)
@@ -632,7 +599,6 @@ class DistributionSourcePackageInDatabase(Storm):
 
     bug_count = Int()
     po_message_count = Int()
-    is_upstream_link_allowed = Bool()
     enable_bugfiling_duplicate_search = Bool()
 
     @property
@@ -706,9 +672,7 @@ class DistributionSourcePackageInDatabase(Storm):
         return dsp
 
     @classmethod
-    def new(
-        cls, distribution, sourcepackagename, is_upstream_link_allowed=False
-    ):
+    def new(cls, distribution, sourcepackagename):
         """Create a new DSP with the given parameters.
 
         Caches the `(distro_id, spn_id) --> dsp_id` mapping.
@@ -716,7 +680,6 @@ class DistributionSourcePackageInDatabase(Storm):
         dsp = DistributionSourcePackageInDatabase()
         dsp.distribution = distribution
         dsp.sourcepackagename = sourcepackagename
-        dsp.is_upstream_link_allowed = is_upstream_link_allowed
         Store.of(distribution).add(dsp)
         Store.of(distribution).flush()
         dsp_cache_key = distribution.id, sourcepackagename.id

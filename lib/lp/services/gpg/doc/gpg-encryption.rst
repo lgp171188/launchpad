@@ -117,3 +117,4 @@ What about a message encrypted for an unknown key.
     >>> plain is None
     True
 
+    >>> gpghandler.resetLocalState()

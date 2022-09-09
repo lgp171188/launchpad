@@ -561,7 +561,7 @@ class LaunchpadView(UserAttributeCache):
         return beta_info
 
 
-@implementer(IXMLRPCView, IMethodPublisher)
+@implementer(IMethodPublisher, IXMLRPCView)
 class LaunchpadXMLRPCView(UserAttributeCache):
     """Base class for writing XMLRPC view code."""
 

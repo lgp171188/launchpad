@@ -98,16 +98,13 @@ Now we can build the source package using the generated tarball.
     ...     print(changesfile.read())
     Format: ...
     Date: ...
-    Source: biscuit
-    Binary: biscuit
+    Source: biscuit...
     Architecture: source
     Version: 1.0-1
     Distribution: hoary
     Urgency: low
     Maintainer: Launchpad team <launchpad@lists.canonical.com>
-    Changed-By: Foo Bar <foo.bar@canonical.com>
-    Description:
-     biscuit    - Stuff for testing
+    Changed-By: Foo Bar <foo.bar@canonical.com>...
     Changes:
      biscuit (1.0-1) hoary; urgency=low
      .
