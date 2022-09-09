@@ -23,8 +23,8 @@ Other Linux distributions that have LXD should work too, though we don't
 test on them.
 
 For the containers, these instructions should work with Ubuntu 16.04 LTS or
-later.  We currently test on 16.04 and 18.04, with the aim of upgrading
-production to 18.04 soon.  20.04 is known not to work yet.
+later.  We currently test on 16.04, 18.04, and 20.04, with the aim of
+upgrading production to 20.04 soon.  22.04 is known not to work yet.
 
 .. note::
    Ubuntu 22.04 ships with cgroups v2 enabled by default. Since the 16.04
