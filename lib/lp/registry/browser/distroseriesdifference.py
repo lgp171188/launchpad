@@ -270,7 +270,6 @@ def get_message(comment):
 
 
 @adapter(IDistroSeriesDifferenceComment, IWebServiceClientRequest)
-@implementer(Interface)
 class CommentXHTMLRepresentation(LaunchpadView):
     """Render individual comments when requested via the API."""
 

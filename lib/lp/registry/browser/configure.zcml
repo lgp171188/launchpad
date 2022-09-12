@@ -247,6 +247,7 @@
     <adapter
         name="lazr.restful.EntryResource"
         factory="lp.registry.browser.distroseriesdifference.CommentXHTMLRepresentation"
+        provides="zope.interface.Interface"
         />
     <browser:menus
         module="lp.registry.browser.distroseries"
@@ -980,6 +981,7 @@
     <adapter
         name="lazr.restful.EntryResource"
         factory="lp.registry.browser.person.PersonXHTMLRepresentation"
+        provides="zope.interface.Interface"
         />
     <browser:page
         name="+review"
