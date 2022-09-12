@@ -47,54 +47,54 @@ def guess(s):
 
     ASCII is easy
 
-    >>> print(guess(b'hello'))
+    >>> print(guess(b"hello"))
     hello
 
     Unicode raises an exception to annoy lazy programmers. It should also
     catches bugs as if you have valid Unicode you shouldn't be going anywhere
     near this method.
 
-    >>> guess(u'Caution \N{BIOHAZARD SIGN}')
+    >>> guess("Caution \N{BIOHAZARD SIGN}")
     Traceback (most recent call last):
     ...
     TypeError: ...
 
     UTF-8 is our best guess
 
-    >>> print(guess(u'100% Pure Beef\N{TRADE MARK SIGN}'.encode('UTF-8')))
+    >>> print(guess("100% Pure Beef\N{TRADE MARK SIGN}".encode("UTF-8")))
     100% Pure Beef™
 
     But we fall back to ISO-8859-1 if UTF-8 fails
 
-    >>> u = u'Ol\N{LATIN SMALL LETTER E WITH ACUTE}'
-    >>> u.encode('UTF-8') == u.encode('ISO-8859-1')
+    >>> u = "Ol\N{LATIN SMALL LETTER E WITH ACUTE}"
+    >>> u.encode("UTF-8") == u.encode("ISO-8859-1")
     False
-    >>> print(guess(u.encode('UTF-8')))
+    >>> print(guess(u.encode("UTF-8")))
     Olé
-    >>> print(guess(u.encode('ISO-8859-1')))
+    >>> print(guess(u.encode("ISO-8859-1")))
     Olé
 
     However, if the string contains ISO-8859-1 control characters, it is
     probably a CP1252 document (Windows).
 
-    >>> u = u'Show me the \N{EURO SIGN}'
-    >>> u.encode('UTF-8') == u.encode('CP1252')
+    >>> u = "Show me the \N{EURO SIGN}"
+    >>> u.encode("UTF-8") == u.encode("CP1252")
     False
-    >>> print(guess(u.encode('UTF-8')))
+    >>> print(guess(u.encode("UTF-8")))
     Show me the €
-    >>> print(guess(u.encode('CP1252')))
+    >>> print(guess(u.encode("CP1252")))
     Show me the €
 
     We also check for characters common in ISO-8859-15 that are uncommon
     in ISO-8859-1, and use ISO-8859-15 if they are found.
 
-    >>> u = u'\N{LATIN SMALL LETTER S WITH CARON}'
-    >>> print(guess(u.encode('iso-8859-15')))
+    >>> u = "\N{LATIN SMALL LETTER S WITH CARON}"
+    >>> print(guess(u.encode("iso-8859-15")))
     š
 
     Strings with a BOM are unambiguous.
 
-    >>> print(guess(u'hello'.encode('UTF-16')))
+    >>> print(guess("hello".encode("UTF-16")))
     hello
 
     However, UTF-16 strings without a BOM will be interpreted as ISO-8859-1.
@@ -103,7 +103,7 @@ def guess(s):
     at the moment like ISO-2022-jp, BIG5, SHIFT-JIS etc. will be a bigger
     problem.
 
-    >>> guess(u'hello'.encode('UTF-16be')) == u'\x00h\x00e\x00l\x00l\x00o'
+    >>> guess("hello".encode("UTF-16be")) == "\x00h\x00e\x00l\x00l\x00o"
     True
 
     """
@@ -163,15 +163,15 @@ def escape_nonascii_uniquely(bogus_string):
     all the nonascii characters have been replaced with the same ascii
     character.
 
-    >>> print(len(b'\xa9'), len(b'\\xa9'))
+    >>> print(len(b"\xa9"), len(b"\\xa9"))
     1 4
-    >>> print(six.ensure_str(escape_nonascii_uniquely(b'hello \xa9')))
+    >>> print(six.ensure_str(escape_nonascii_uniquely(b"hello \xa9")))
     hello \xa9
 
     This string only has ascii characters, so escape_nonascii_uniquely()
     actually has no effect.
 
-    >>> print(six.ensure_str(escape_nonascii_uniquely(b'hello \\xa9')))
+    >>> print(six.ensure_str(escape_nonascii_uniquely(b"hello \\xa9")))
     hello \xa9
 
     :type bogus_string: bytes
@@ -191,13 +191,13 @@ def escape_nonascii_uniquely(bogus_string):
 def is_ascii_only(string):
     r"""Ensure that the string contains only ASCII characters.
 
-    >>> is_ascii_only(u'ascii only')
+    >>> is_ascii_only("ascii only")
     True
-    >>> is_ascii_only(b'ascii only')
+    >>> is_ascii_only(b"ascii only")
     True
-    >>> is_ascii_only(b'\xf4')
+    >>> is_ascii_only(b"\xf4")
     False
-    >>> is_ascii_only(u'\xf4')
+    >>> is_ascii_only("\xf4")
     False
     """
     try:

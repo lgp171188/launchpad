@@ -8,10 +8,11 @@ fashion.
 
 Let's prepare a few things we'll need for the subsequent tests.
 
-    >>> from lp.soyuz.adapters.packagelocation import (
-    ...     build_package_location)
+    >>> from lp.soyuz.adapters.packagelocation import build_package_location
     >>> from lp.soyuz.interfaces.packagecopyrequest import (
-    ...     IPackageCopyRequest, IPackageCopyRequestSet)
+    ...     IPackageCopyRequest,
+    ...     IPackageCopyRequestSet,
+    ... )
     >>> from lp.soyuz.enums import ArchivePurpose, PackageCopyStatus
     >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -21,38 +22,45 @@ Let's prepare a few things we'll need for the subsequent tests.
 In order to instantiate a package copy request we require a source and
 target package location.
 
-    >>> source = build_package_location('ubuntutest', suite='breezy-autotest')
-    >>> target = build_package_location('ubuntutest', suite='breezy-autotest')
+    >>> source = build_package_location("ubuntutest", suite="breezy-autotest")
+    >>> target = build_package_location("ubuntutest", suite="breezy-autotest")
 
 We'll be using Celso's identity along with the 'ubuntutest' distribution
 and a copy archive for rebuilds.
 
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> rebuild_archive = getUtility(IArchiveSet).new(
-    ...     owner=cprov, purpose=ArchivePurpose.COPY,
-    ...     distribution=ubuntutest, name='our-sample-copy-archive')
+    ...     owner=cprov,
+    ...     purpose=ArchivePurpose.COPY,
+    ...     distribution=ubuntutest,
+    ...     name="our-sample-copy-archive",
+    ... )
     >>> target.archive = rebuild_archive
 
 As well as Mark's identity and the 'ubuntu' distribution..
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> mark = getUtility(IPersonSet).getByName("mark")
     >>> snapshot_archive = getUtility(IArchiveSet).new(
-    ...     owner=mark, purpose=ArchivePurpose.COPY,
-    ...     distribution=ubuntu, name='our-sample-sbapshot-archive')
+    ...     owner=mark,
+    ...     purpose=ArchivePurpose.COPY,
+    ...     distribution=ubuntu,
+    ...     name="our-sample-sbapshot-archive",
+    ... )
 
 .. and a package location targeting ubuntu/warty and a different copy
 archive (for snaphots).
 
-    >>> snapshot_target = build_package_location('ubuntu', 'warty')
+    >>> snapshot_target = build_package_location("ubuntu", "warty")
     >>> snapshot_target.archive = snapshot_archive
 
 Finally, we have all that's needed to instantiate the package copy request.
 
     >>> pcr_set = getUtility(IPackageCopyRequestSet)
     >>> new_pcr = pcr_set.new(
-    ...     source, target, cprov, reason=u'We need to test this stuff!')
+    ...     source, target, cprov, reason="We need to test this stuff!"
+    ... )
 
 Let's have a look at it. Please note that the source and the target
 components are not set by default. Also, the date started and completed are
@@ -162,7 +170,8 @@ Now let's query for package copy requests belonging to a particular person
 and being in a certain state.
 
     >>> cancelled_pcrs = pcr_set.getByPersonAndStatus(
-    ...     mark, PackageCopyStatus.CANCELLED)
+    ...     mark, PackageCopyStatus.CANCELLED
+    ... )
     >>> cancelled_pcrs.count() == 1
     True
     >>> cancelled_pcrs[0].status == PackageCopyStatus.CANCELLED
@@ -179,7 +188,7 @@ methods.
 First we select all package copy requests with a matching source
 distroseries.
 
-    >>> breezy = ubuntutest['breezy-autotest']
+    >>> breezy = ubuntutest["breezy-autotest"]
     >>> breezy_source_pcrs = pcr_set.getBySourceDistroSeries(breezy)
 
 All five package copy requests have 'breezy-autotest' as their source
@@ -191,14 +200,19 @@ distroseries.
 Make sure that the returned package copy requests do have the proper source
 distroseries.
 
-    >>> len([pcr for pcr in breezy_source_pcrs
-    ...      if pcr.source_distroseries != breezy]) == 0
+    >>> len(
+    ...     [
+    ...         pcr
+    ...         for pcr in breezy_source_pcrs
+    ...         if pcr.source_distroseries != breezy
+    ...     ]
+    ... ) == 0
     True
 
 Now for the target distroseries, we are interested in package copy requests
 that target 'warty'.
 
-    >>> warty = ubuntu['warty']
+    >>> warty = ubuntu["warty"]
     >>> warty_target_pcrs = pcr_set.getByTargetDistroSeries(warty)
 
 Three out of five package copy requests have 'warty' as their target
@@ -210,8 +224,13 @@ distroseries.
 Make sure that the returned package copy requests do have the proper target
 distroseries.
 
-    >>> len([pcr for pcr in warty_target_pcrs
-    ...      if pcr.target_distroseries != warty]) == 0
+    >>> len(
+    ...     [
+    ...         pcr
+    ...         for pcr in warty_target_pcrs
+    ...         if pcr.target_distroseries != warty
+    ...     ]
+    ... ) == 0
     True
 
 Last but not least we want to see the package copy requests that target
@@ -221,8 +240,13 @@ the rebuild archive.
     >>> rebuild_pcrs.count() == 2
     True
 
-    >>> len([pcr for pcr in rebuild_pcrs
-    ...      if pcr.target_archive != rebuild_archive]) == 0
+    >>> len(
+    ...     [
+    ...         pcr
+    ...         for pcr in rebuild_pcrs
+    ...         if pcr.target_archive != rebuild_archive
+    ...     ]
+    ... ) == 0
     True
 
 The archive must be set in both the source and the target location. Otherwise

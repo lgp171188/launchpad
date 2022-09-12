@@ -150,8 +150,11 @@ We'll set the bug's heat to 0 first to demonstrate this.
     >>> from lp.bugs.adapters.bugchange import BugDescriptionChange
     >>> change = BugDescriptionChange(
     ...     when=utc_now(),
-    ...     person=bug.owner, what_changed='description',
-    ...     old_value=bug.description, new_value='Some text')
+    ...     person=bug.owner,
+    ...     what_changed="description",
+    ...     old_value=bug.description,
+    ...     new_value="Some text",
+    ... )
     >>> bug.addChange(change)
     >>> bug.heat
     8
@@ -171,14 +174,15 @@ out of date.
     >>> from lp.bugs.model.bug import Bug
     >>> from lp.services.database.interfaces import IStore
     >>> IStore(Bug).find(Bug).set(
-    ...     heat_last_updated=datetime.now(timezone('UTC')))
+    ...     heat_last_updated=datetime.now(timezone("UTC"))
+    ... )
 
 If we call getBugsWithOutdatedHeat() now, the set that is returned will
 be empty because all the bugs have been recently updated.
 getBugsWithOutdatedHeat() takes a single parameter, cutoff, which is the
 oldest a bug's heat can be before it gets included in the returned set.
 
-    >>> yesterday = datetime.now(timezone('UTC')) - timedelta(days=1)
+    >>> yesterday = datetime.now(timezone("UTC")) - timedelta(days=1)
     >>> getUtility(IBugSet).getBugsWithOutdatedHeat(yesterday).count()
     0
 
@@ -190,10 +194,10 @@ getBugsWithOutdatedHeat().
     >>> naked_bug = removeSecurityProxy(old_heat_bug)
     >>> naked_bug.heat = 0
     >>> naked_bug.heat_last_updated = datetime.now(
-    ...     timezone('UTC')) - timedelta(days=2)
+    ...     timezone("UTC")
+    ... ) - timedelta(days=2)
 
-    >>> outdated_bugs = getUtility(IBugSet).getBugsWithOutdatedHeat(
-    ...     yesterday)
+    >>> outdated_bugs = getUtility(IBugSet).getBugsWithOutdatedHeat(yesterday)
     >>> outdated_bugs.count()
     1
 
@@ -209,8 +213,7 @@ We'll set the new bug's heat_last_updated to None manually.
 
     >>> removeSecurityProxy(new_bug).heat_last_updated = None
 
-    >>> outdated_bugs = getUtility(IBugSet).getBugsWithOutdatedHeat(
-    ...     yesterday)
+    >>> outdated_bugs = getUtility(IBugSet).getBugsWithOutdatedHeat(yesterday)
     >>> outdated_bugs.count()
     2
 
@@ -255,10 +258,12 @@ heat of those bugs.
 
     >>> from lp.services.features.testing import FeatureFixture
     >>> flag = FeatureFixture(
-    ...     {'bugs.heat_updates.cutoff': yesterday.isoformat()})
+    ...     {"bugs.heat_updates.cutoff": yesterday.isoformat()}
+    ... )
 
     >>> with flag:
     ...     update_bug_heat(chunk_size=1)
+    ...
     DEBUG Updating heat for 1 bugs
 
 IBugSet.getBugsWithOutdatedHeat() will now return 1 item.
@@ -270,6 +275,7 @@ Update the rest in one big chunk.
 
     >>> with flag:
     ...     update_bug_heat(chunk_size=1000)
+    ...
     DEBUG Updating heat for 1 bugs
 
 IBugSet.getBugsWithOutdatedHeat() will now return an empty set since all

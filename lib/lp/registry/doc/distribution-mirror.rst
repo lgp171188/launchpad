@@ -13,7 +13,7 @@ to create a new mirror you should use the Distribution.newMirror method.
     ...     MirrorContent,
     ...     MirrorSpeed,
     ...     MirrorStatus,
-    ...     )
+    ... )
     >>> from lp.registry.interfaces.distroseries import IDistroSeriesSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -23,15 +23,20 @@ to create a new mirror you should use the Distribution.newMirror method.
     >>> mirrorset = getUtility(IDistributionMirrorSet)
     >>> distroset = getUtility(IDistributionSet)
     >>> ubuntu = distroset.get(1)
-    >>> owner = getUtility(IPersonSet).getByName('name16')
+    >>> owner = getUtility(IPersonSet).getByName("name16")
     >>> speed = MirrorSpeed.S2M
-    >>> brazil = getUtility(ICountrySet)['BR']
+    >>> brazil = getUtility(ICountrySet)["BR"]
     >>> content = MirrorContent.ARCHIVE
-    >>> http_base_url = 'http://foo.bar.com/pub'
+    >>> http_base_url = "http://foo.bar.com/pub"
     >>> whiteboard = "This mirror is based deep in the Amazon rainforest."
     >>> new_mirror = ubuntu.newMirror(
-    ...     owner, speed, brazil, content, http_base_url=http_base_url,
-    ...     whiteboard=whiteboard)
+    ...     owner,
+    ...     speed,
+    ...     brazil,
+    ...     content,
+    ...     http_base_url=http_base_url,
+    ...     whiteboard=whiteboard,
+    ... )
 
 When a new mirror is created we'll generate a unique name for it, based
 on its host name and content.
@@ -54,7 +59,8 @@ full functionality of Launchpad enabled:
     >>> print(kubuntu.name)
     kubuntu
     >>> poor_mirror = kubuntu.newMirror(
-    ...     owner, speed, brazil, content, http_base_url=http_base_url)
+    ...     owner, speed, brazil, content, http_base_url=http_base_url
+    ... )
     >>> print(poor_mirror)
     None
 
@@ -77,10 +83,12 @@ associated with a given mirror, we use the ensureMirrorDistroArchSeries
     >>> pocket = PackagePublishingPocket.RELEASE
     >>> warty_component = warty.components[0]
     >>> warty_i386_mirror = new_mirror.ensureMirrorDistroArchSeries(
-    ...     warty_i386, pocket, warty_component)
+    ...     warty_i386, pocket, warty_component
+    ... )
 
     >>> warty_mirror = new_mirror.ensureMirrorDistroSeriesSource(
-    ...     warty, pocket, warty_component)
+    ...     warty, pocket, warty_component
+    ... )
 
     >>> new_mirror.source_series.count()
     1
@@ -91,12 +99,14 @@ If we try to create another MirrorDistroArchSeries with the same arch
 series and pocket, that method will simply return the existing one.
 
     >>> same_warty_i386_mirror = new_mirror.ensureMirrorDistroArchSeries(
-    ...     warty_i386, pocket, warty_component)
+    ...     warty_i386, pocket, warty_component
+    ... )
     >>> same_warty_i386_mirror == warty_i386_mirror
     True
 
     >>> same_warty_mirror = new_mirror.ensureMirrorDistroSeriesSource(
-    ...     warty, pocket, warty_component)
+    ...     warty, pocket, warty_component
+    ... )
     >>> same_warty_mirror == warty_mirror
     True
 
@@ -105,9 +115,11 @@ MirrorDistroArchSeries/MirrorDistroSeriesSource if we find out their
 contents are not in a mirror where they used to be.
 
     >>> new_mirror.deleteMirrorDistroSeriesSource(
-    ...     warty, pocket, warty_component)
+    ...     warty, pocket, warty_component
+    ... )
     >>> new_mirror.deleteMirrorDistroArchSeries(
-    ...     warty_i386, pocket, warty_component)
+    ...     warty_i386, pocket, warty_component
+    ... )
 
     >>> new_mirror.source_series.count()
     0
@@ -119,8 +131,11 @@ ARCHIVE or RELEASE mirrors. This is available through the
 archive_mirrors and cdimage_mirrors properties of IDistribution.
 
     >>> for mirror in ubuntu.archive_mirrors:
-    ...     print('%s: %s, %s' %
-    ...           (mirror.name, mirror.speed.title, mirror.status.name))
+    ...     print(
+    ...         "%s: %s, %s"
+    ...         % (mirror.name, mirror.speed.title, mirror.status.name)
+    ...     )
+    ...
     canonical-archive: 100 Mbps, OFFICIAL
     archive-404-mirror: 512 Kbps, OFFICIAL
     archive-mirror: 128 Kbps, OFFICIAL
@@ -128,8 +143,11 @@ archive_mirrors and cdimage_mirrors properties of IDistribution.
     archive-redirect-mirror: 128 Kbps, OFFICIAL
 
     >>> for mirror in ubuntu.cdimage_mirrors:
-    ...     print('%s: %s, %s' %
-    ...           (mirror.name, mirror.speed.title, mirror.status.name))
+    ...     print(
+    ...         "%s: %s, %s"
+    ...         % (mirror.name, mirror.speed.title, mirror.status.name)
+    ...     )
+    ...
     canonical-releases: 100 Mbps, OFFICIAL
     releases-mirror: 2 Mbps, OFFICIAL
     releases-mirror2: 2 Mbps, OFFICIAL
@@ -139,15 +157,21 @@ The list of pending review mirrors can easily be obtained, so that the
 distribution owner can see all the ones that need to be reviewed.
 
     >>> for mirror in ubuntu.pending_review_mirrors:
-    ...     print('%s: %s, %s' %
-    ...           (mirror.name, mirror.speed.title, mirror.status.name))
+    ...     print(
+    ...         "%s: %s, %s"
+    ...         % (mirror.name, mirror.speed.title, mirror.status.name)
+    ...     )
+    ...
     random-releases-mirror: 100 Mbps, PENDING_REVIEW
 
 We also have a property which returns all unofficial mirrors.
 
     >>> for mirror in ubuntu.unofficial_mirrors:
-    ...     print('%s: %s, %s' %
-    ...           (mirror.name, mirror.speed.title, mirror.status.name))
+    ...     print(
+    ...         "%s: %s, %s"
+    ...         % (mirror.name, mirror.speed.title, mirror.status.name)
+    ...     )
+    ...
     invalid-mirror: 2 Mbps, UNOFFICIAL
 
 It's possible to retrieve a mirror by its name:
@@ -155,12 +179,12 @@ It's possible to retrieve a mirror by its name:
     >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distributionmirror import (
     ...     IDistributionMirror,
-    ...     )
-    >>> example_mirror = mirrorset.getByName('archive-mirror')
+    ... )
+    >>> example_mirror = mirrorset.getByName("archive-mirror")
     >>> verifyObject(IDistributionMirror, example_mirror)
     True
 
-    >>> print(mirrorset.getByName('non-existent-mirror'))
+    >>> print(mirrorset.getByName("non-existent-mirror"))
     None
 
 Or by any of its URLs (HTTP, FTP or Rsync)
@@ -168,26 +192,28 @@ First we'll have to add some of this URLs to sample data:
 
     >>> from lp.testing import login
     >>> login("mark@example.com")
-    >>> example_mirror.ftp_base_url = 'ftp://localhost/example-ftp'
-    >>> example_mirror.rsync_base_url = 'rsync://localhost/example-rsync'
+    >>> example_mirror.ftp_base_url = "ftp://localhost/example-ftp"
+    >>> example_mirror.rsync_base_url = "rsync://localhost/example-rsync"
 
 The getBy*Url methods return the corresponding mirrors:
 
     >>> http_mirror = mirrorset.getByHttpUrl(
-    ...     'http://localhost:11375/valid-mirror')
+    ...     "http://localhost:11375/valid-mirror"
+    ... )
 
-    >>> print(mirrorset.getByHttpUrl('http://non-existent-url'))
+    >>> print(mirrorset.getByHttpUrl("http://non-existent-url"))
     None
 
-    >>> ftp_mirror = mirrorset.getByFtpUrl('ftp://localhost/example-ftp')
+    >>> ftp_mirror = mirrorset.getByFtpUrl("ftp://localhost/example-ftp")
 
-    >>> print(mirrorset.getByFtpUrl('ftp://non-existent-url'))
+    >>> print(mirrorset.getByFtpUrl("ftp://non-existent-url"))
     None
 
     >>> rsync_mirror = mirrorset.getByRsyncUrl(
-    ...     'rsync://localhost/example-rsync')
+    ...     "rsync://localhost/example-rsync"
+    ... )
 
-    >>> print(mirrorset.getByRsyncUrl('rsync://non-existent-url'))
+    >>> print(mirrorset.getByRsyncUrl("rsync://non-existent-url"))
     None
 
 
@@ -203,11 +229,12 @@ In Germany we have a single cdimage mirror, so the list will contain
 that mirror followed by the main cdimage repository
 (releases.ubuntu.com), which is always appended to the end of the list.
 
-    >>> germany = getUtility(ICountrySet)['DE']
+    >>> germany = getUtility(ICountrySet)["DE"]
     >>> cdimage = MirrorContent.RELEASE
     >>> for mirror in mirror.distribution.getBestMirrorsForCountry(
-    ...         germany, cdimage):
-    ...     print('%s: %s' % (mirror.name, mirror.country.name))
+    ...     germany, cdimage
+    ... ):
+    ...     print("%s: %s" % (mirror.name, mirror.country.name))
     releases-mirror2: Germany
     canonical-releases: United Kingdom
 
@@ -217,8 +244,9 @@ will be directed to other mirrors in the same continet.
     >>> archive = MirrorContent.ARCHIVE
     >>> mirrors = ubuntu.getBestMirrorsForCountry(germany, archive)
     >>> for name, country_name in sorted(
-    ...         (mirror.name, mirror.country.name) for mirror in mirrors):
-    ...     print('%s: %s' % (name, country_name))
+    ...     (mirror.name, mirror.country.name) for mirror in mirrors
+    ... ):
+    ...     print("%s: %s" % (name, country_name))
     archive-404-mirror: France
     archive-mirror: France
     canonical-archive: United Kingdom
@@ -227,18 +255,21 @@ In brazil we don't have official archive or cdimage mirrors, so all we
 see is the main repository.
 
     >>> for mirror in ubuntu.getBestMirrorsForCountry(brazil, archive):
-    ...     print('%s: %s' % (mirror.name, mirror.country.name))
+    ...     print("%s: %s" % (mirror.name, mirror.country.name))
+    ...
     canonical-archive: United Kingdom
 
     >>> for mirror in ubuntu.getBestMirrorsForCountry(brazil, cdimage):
-    ...     print('%s: %s' % (mirror.name, mirror.country.name))
+    ...     print("%s: %s" % (mirror.name, mirror.country.name))
+    ...
     canonical-releases: United Kingdom
 
 If we fail to identify the user's country and pass None to
 getBestMirrorsForCountry() we'll get only the main repository as well.
 
     >>> for mirror in ubuntu.getBestMirrorsForCountry(None, archive):
-    ...     print('%s: %s' % (mirror.name, mirror.country.name))
+    ...     print("%s: %s" % (mirror.name, mirror.country.name))
+    ...
     canonical-archive: United Kingdom
 
 
@@ -254,6 +285,7 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
 
     >>> for mirror in mirrorset.getMirrorsToProbe(MirrorContent.ARCHIVE):
     ...     print(mirror.name)
+    ...
     canonical-archive
     archive-404-mirror
     archive-mirror
@@ -262,6 +294,7 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
 
     >>> for mirror in mirrorset.getMirrorsToProbe(MirrorContent.RELEASE):
     ...     print(mirror.name)
+    ...
     canonical-releases
     releases-mirror
     releases-mirror2
@@ -275,12 +308,16 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
     >>> _ = log_file.write(b"Fake probe, nothing useful here.")
     >>> _ = log_file.seek(0)
     >>> library_alias = getUtility(ILibraryFileAliasSet).create(
-    ...     name='foo', size=len(log_file.getvalue()),
-    ...     file=log_file, contentType='text/plain')
+    ...     name="foo",
+    ...     size=len(log_file.getvalue()),
+    ...     file=log_file,
+    ...     contentType="text/plain",
+    ... )
     >>> proberecord = valid_mirror.newProbeRecord(library_alias)
 
     >>> for mirror in mirrorset.getMirrorsToProbe(MirrorContent.ARCHIVE):
     ...     print(mirror.name)
+    ...
     canonical-archive
     archive-404-mirror
     archive-mirror2
@@ -288,6 +325,7 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
 
     >>> for mirror in mirrorset.getMirrorsToProbe(MirrorContent.RELEASE):
     ...     print(mirror.name)
+    ...
     canonical-releases
     releases-mirror
     releases-mirror2
@@ -298,9 +336,11 @@ argument, that, if True, will ignore previous probe records for all
 mirrors.
 
     >>> mirrors = mirrorset.getMirrorsToProbe(
-    ...     MirrorContent.ARCHIVE, ignore_last_probe=True)
+    ...     MirrorContent.ARCHIVE, ignore_last_probe=True
+    ... )
     >>> for mirror in mirrors:
     ...     print(mirror.name)
+    ...
     canonical-archive
     archive-404-mirror
     archive-mirror
@@ -316,19 +356,21 @@ the actual results are not ordered by the date the mirrors were last
 probed as we don't care about it anyway.
 
     >>> mirrors = mirrorset.getMirrorsToProbe(
-    ...     MirrorContent.ARCHIVE, ignore_last_probe=True)
+    ...     MirrorContent.ARCHIVE, ignore_last_probe=True
+    ... )
     >>> import pytz
-    >>> utc = pytz.timezone('UTC')
+    >>> utc = pytz.timezone("UTC")
     >>> now = datetime.now(utc)
     >>> for mirror in mirrors:
     ...     last_probe = mirror.last_probe_record
-    ...     last_probe_date = 'NEVER'
+    ...     last_probe_date = "NEVER"
     ...     if last_probe is not None:
     ...         if (now - last_probe.date_created).days < 1:
-    ...             last_probe_date = 'TODAY'
+    ...             last_probe_date = "TODAY"
     ...         else:
     ...             last_probe_date = last_probe.date_created.isoformat()
     ...     print(mirror.name, last_probe_date)
+    ...
     canonical-archive NEVER
     archive-404-mirror NEVER
     archive-mirror TODAY
@@ -336,13 +378,15 @@ probed as we don't care about it anyway.
     archive-redirect-mirror NEVER
 
     >>> mirrors = mirrorset.getMirrorsToProbe(
-    ...     MirrorContent.ARCHIVE, ignore_last_probe=True, limit=4)
+    ...     MirrorContent.ARCHIVE, ignore_last_probe=True, limit=4
+    ... )
     >>> for mirror in mirrors:
     ...     last_probe = mirror.last_probe_record
-    ...     last_probe_date = 'NEVER'
+    ...     last_probe_date = "NEVER"
     ...     if last_probe is not None:
     ...         last_probe_date = last_probe.date_created.isoformat()
     ...     print(mirror.name, last_probe_date)
+    ...
     canonical-archive NEVER
     archive-404-mirror NEVER
     archive-mirror2 2006-05-24...
@@ -358,7 +402,7 @@ up on the public mirror listings.
 
     >>> valid_mirror.enabled
     True
-    >>> log = 'Got a 404 on http://foo.bar/baz\n'
+    >>> log = "Got a 404 on http://foo.bar/baz\n"
     >>> valid_mirror.disable(notify_owner=True, log=log)
 
     # Commit, so the email is actually sent.
@@ -436,10 +480,11 @@ component, pocket] tuple). The paths to these files are given by the
 getExpectedPackagesPaths() and getExpectedSourcesPaths() methods of
 IDistributionMirror.
 
-    >>> mirror = mirrorset.getByName('archive-mirror2')
+    >>> mirror = mirrorset.getByName("archive-mirror2")
     >>> paths = mirror.getExpectedPackagesPaths()
     >>> for (series, pocket, component, path) in paths:
     ...     print(path)
+    ...
     dists/breezy-autotest/main/binary-i386/Packages.gz
     dists/breezy-autotest/restricted/binary-i386/Packages.gz
     dists/breezy-autotest/universe/binary-i386/Packages.gz
@@ -486,6 +531,7 @@ IDistributionMirror.
     >>> paths = mirror.getExpectedSourcesPaths()
     >>> for (series, pocket, component, path) in paths:
     ...     print(path)
+    ...
     dists/breezy-autotest/main/source/Sources.gz
     dists/breezy-autotest/restricted/source/Sources.gz
     dists/breezy-autotest/universe/source/Sources.gz
@@ -529,10 +575,12 @@ file stored in our tree, which is pointed by the
 config.distributionmirrorprober.releases_file_list_url option)
 
     >>> from lp.registry.scripts.distributionmirror_prober import (
-    ...     get_expected_cdimage_paths)
+    ...     get_expected_cdimage_paths,
+    ... )
     >>> for (series, flavour, paths) in get_expected_cdimage_paths():
     ...     for path in paths:
     ...         print(series.name, flavour, path)
+    ...
     hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-amd64.iso
     hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-i386.iso
     hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-powerpc.iso
@@ -569,16 +617,18 @@ On the warty release, component 'main' and pocket RELEASE , we had two
 uploads between 2005-09-15 and 2005-09-17, so at that time we could've
 checked if that mirror's last sync was in the last one or two days.
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> foo_mirror = ubuntu.getMirrorByName('foo.bar.com-archive')
-    >>> warty = ubuntu.getSeries('warty')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> foo_mirror = ubuntu.getMirrorByName("foo.bar.com-archive")
+    >>> warty = ubuntu.getSeries("warty")
     >>> warty_mirror = foo_mirror.ensureMirrorDistroSeriesSource(
-    ...     warty, PackagePublishingPocket.RELEASE, warty.components[0])
+    ...     warty, PackagePublishingPocket.RELEASE, warty.components[0]
+    ... )
 
     >>> when = datetime(2005, 9, 17, tzinfo=utc)
     >>> urls = warty_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))  # noqa
+    ...     print("%s: %s" % (freshness.name, url))  # noqa
+    ...
     UP: http://foo.bar.com/pub/pool/main/a/alsa-utils/alsa-utils_1.0.9a-4.dsc
     TWODAYSBEHIND:
     http://foo.bar.com/pub/pool/main/a/alsa-utils/alsa-utils_1.0.8-1ubuntu1.dsc
@@ -589,7 +639,8 @@ because there were no recent uploads there.
 
     >>> urls = warty_mirror.getURLsToCheckUpdateness()
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print("%s: %s" % (freshness.name, url))
+    ...
     UP: http://foo.bar.com/pub/pool/main/c/cdrkit/foobar-1.0.dsc
 
 If the mirror has no HTTP base url, we'll use the FTP one.
@@ -600,10 +651,12 @@ If the mirror has no HTTP base url, we'll use the FTP one.
     >>> http_url = naked_mirror.distribution_mirror.http_base_url
     >>> naked_mirror.distribution_mirror.http_base_url = None
     >>> naked_mirror.distribution_mirror.ftp_base_url = (
-    ...     'ftp://foo.bar.com/pub')
+    ...     "ftp://foo.bar.com/pub"
+    ... )
     >>> urls = warty_mirror.getURLsToCheckUpdateness()
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print("%s: %s" % (freshness.name, url))
+    ...
     UP: ftp://foo.bar.com/pub/pool/main/c/cdrkit/foobar-1.0.dsc
     >>> naked_mirror.distribution_mirror.http_base_url = http_url
 
@@ -616,18 +669,22 @@ so we need to skip that upload.
     >>> from lp.soyuz.model.files import BinaryPackageFile
 
     >>> warty_i386_mirror = foo_mirror.ensureMirrorDistroArchSeries(
-    ...     warty['i386'], PackagePublishingPocket.RELEASE,
-    ...     warty.components[0])
+    ...     warty["i386"],
+    ...     PackagePublishingPocket.RELEASE,
+    ...     warty.components[0],
+    ... )
     >>> warty_i386_mirror = removeSecurityProxy(warty_i386_mirror)
     >>> recent_freshness, threshold = warty_i386_mirror.freshness_times[0]
     >>> start = datetime(2005, 6, 20, tzinfo=utc)
     >>> end = datetime(2005, 6, 20, tzinfo=utc) + timedelta(hours=0.5)
     >>> time_interval = (start, end)
     >>> upload = warty_i386_mirror.getLatestPublishingEntry(
-    ...     time_interval, deb_only=False)
+    ...     time_interval, deb_only=False
+    ... )
 
     >>> bpf = BinaryPackageFile.selectOneBy(
-    ...     binarypackagereleaseID=upload.binarypackagerelease.id)
+    ...     binarypackagereleaseID=upload.binarypackagerelease.id
+    ... )
     >>> print(upload.binarypackagerelease.version)
     3.14156
     >>> print(bpf.filetype.title)
@@ -636,7 +693,8 @@ so we need to skip that upload.
     >>> when = datetime(2005, 6, 22, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))  # noqa
+    ...     print("%s: %s" % (freshness.name, url))  # noqa
+    ...
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
     ONEWEEKBEHIND:
     http://foo.bar.com/pub/pool/main/m/mozilla-firefox/mozilla-firefox_0.9_i386.deb
@@ -644,7 +702,8 @@ so we need to skip that upload.
     >>> when = datetime(2005, 6, 20, 0, 1, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))  # noqa
+    ...     print("%s: %s" % (freshness.name, url))  # noqa
+    ...
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
     TWODAYSBEHIND:
     http://foo.bar.com/pub/pool/main/m/mozilla-firefox/mozilla-firefox_0.9_i386.deb
@@ -655,10 +714,12 @@ If the mirror has no HTTP base url, we'll use the FTP one.
     >>> http_url = naked_mirror.distribution_mirror.http_base_url
     >>> naked_mirror.distribution_mirror.http_base_url = None
     >>> naked_mirror.distribution_mirror.ftp_base_url = (
-    ...     'ftp://foo.bar.com/pub')
+    ...     "ftp://foo.bar.com/pub"
+    ... )
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness()
     >>> for (freshness, url) in urls.items():
-    ...     print('%s: %s' % (freshness.name, url))
+    ...     print("%s: %s" % (freshness.name, url))
+    ...
     UP: ftp://foo.bar.com/pub/pool/main/c/cdrkit/foobar_1.0_all.deb
     >>> naked_mirror.distribution_mirror.http_base_url = http_url
 
@@ -669,26 +730,35 @@ Running the prober script
 First we need to run the http server that's going to answer our requests.
 
     >>> from lp.registry.tests.test_distributionmirror_prober import (
-    ...     HTTPServerTestSetup)
+    ...     HTTPServerTestSetup,
+    ... )
     >>> http_server = HTTPServerTestSetup()
     >>> http_server.setUp()
 
     >>> import subprocess
     >>> def run_prober(arguments):
-    ...     cmd = ('cronscripts/distributionmirror-prober.py %s '
-    ...            '--no-remote-hosts' % arguments)
+    ...     cmd = (
+    ...         "cronscripts/distributionmirror-prober.py %s "
+    ...         "--no-remote-hosts" % arguments
+    ...     )
     ...     prober = subprocess.Popen(
-    ...         cmd, shell=True,stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...         stderr=subprocess.PIPE, universal_newlines=True)
+    ...         cmd,
+    ...         shell=True,
+    ...         stdin=subprocess.PIPE,
+    ...         stdout=subprocess.PIPE,
+    ...         stderr=subprocess.PIPE,
+    ...         universal_newlines=True,
+    ...     )
     ...     stdout, stderr = prober.communicate()
     ...     return prober, stdout, stderr
+    ...
 
 Now we run the prober as another process, and check that the generated
 output doesn't contain any errors and that the number of mirrors probed
 is correct.
 
     >>> transaction.commit()
-    >>> prober, stdout, stderr = run_prober('--content-type=archive')
+    >>> prober, stdout, stderr = run_prober("--content-type=archive")
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
@@ -704,7 +774,7 @@ is correct.
     INFO    Done.
     <BLANKLINE>
 
-    >>> prober, stdout, stderr = run_prober('--content-type=cdimage')
+    >>> prober, stdout, stderr = run_prober("--content-type=cdimage")
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
@@ -722,7 +792,7 @@ If we run the prober again, it won't do anything, because it will realize
 that the mirrors were probed recently, and, by default, don't need to be
 probed again.
 
-    >>> prober, stdout, stderr = run_prober('--content-type=cdimage')
+    >>> prober, stdout, stderr = run_prober("--content-type=cdimage")
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
@@ -736,7 +806,7 @@ probed again.
 But we can override the default behaviour and tell the prober to check
 all official mirrors independently if they were probed recently or not.
 
-    >>> prober, stdout, stderr = run_prober('--content-type=cdimage --force')
+    >>> prober, stdout, stderr = run_prober("--content-type=cdimage --force")
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
@@ -754,12 +824,12 @@ shown on the public mirror listings. We'll keep probing these disabled
 mirrors and once they're reachable and don't fail the content check
 we'll enable them again.
 
-    >>> cdimage_mirror = mirrorset.getByName('releases-mirror')
+    >>> cdimage_mirror = mirrorset.getByName("releases-mirror")
     >>> cdimage_mirror.enabled
     True
     >>> cdimage_mirror.enabled = False
     >>> transaction.commit()
-    >>> prober, stdout, stderr = run_prober('--content-type=cdimage --force')
+    >>> prober, stdout, stderr = run_prober("--content-type=cdimage --force")
     >>> print(stderr)
     INFO    Creating lockfile:
             /var/lock/launchpad-distributionmirror-prober.lock
@@ -778,8 +848,11 @@ we'll enable them again.
     True
 
     >>> for mirror in ubuntu.disabled_mirrors:
-    ...     print('%s: %s, %s' %
-    ...           (mirror.name, mirror.speed.title, mirror.country.name))
+    ...     print(
+    ...         "%s: %s, %s"
+    ...         % (mirror.name, mirror.speed.title, mirror.country.name)
+    ...     )
+    ...
     archive-404-mirror: 512 Kbps, France
     unreachable-mirror: 512 Kbps, France
 
@@ -791,27 +864,37 @@ found in them.
 
 First, let's check the source and arch series of one archive mirror.
 
-    >>> archive_mirror = mirrorset.getByName('archive-mirror')
+    >>> archive_mirror = mirrorset.getByName("archive-mirror")
     >>> print(archive_mirror.name)
     archive-mirror
 
-    >>> mirror_arch_series = (
-    ...     archive_mirror.getSummarizedMirroredArchSeries())
+    >>> mirror_arch_series = archive_mirror.getSummarizedMirroredArchSeries()
 
     # We only have a few publishing records, so most of the cdimage mirrors
     # will have Unknown as their freshness.
     >>> for mirror_arch_series in mirror_arch_series:
-    ...     print('%s: %s' % (
-    ...         mirror_arch_series.distro_arch_series.displayname,
-    ...         mirror_arch_series.freshness.title))
+    ...     print(
+    ...         "%s: %s"
+    ...         % (
+    ...             mirror_arch_series.distro_arch_series.displayname,
+    ...             mirror_arch_series.freshness.title,
+    ...         )
+    ...     )
+    ...
     Ubuntu Warty i386: Up to date
 
     >>> mirror_source_series = (
-    ...     archive_mirror.getSummarizedMirroredSourceSeries())
+    ...     archive_mirror.getSummarizedMirroredSourceSeries()
+    ... )
     >>> for mirror_source_series in mirror_source_series:
-    ...     print('%s: %s' % (
-    ...         mirror_source_series.distroseries.displayname,
-    ...         mirror_source_series.freshness.title))
+    ...     print(
+    ...         "%s: %s"
+    ...         % (
+    ...             mirror_source_series.distroseries.displayname,
+    ...             mirror_source_series.freshness.title,
+    ...         )
+    ...     )
+    ...
     Warty: Up to date
     Hoary: Up to date
     Breezy Badger Autotest: Up to date
@@ -826,16 +909,20 @@ freshness will also be 'Up to date'.
 apt has supported HTTP redirects since Ubuntu 9.04, so mirrors that redirect
 are treated as good:
 
-    >>> archive_mirror = mirrorset.getByName('archive-redirect-mirror')
-    >>> mirror_arch_series = (
-    ...     archive_mirror.getSummarizedMirroredArchSeries())
+    >>> archive_mirror = mirrorset.getByName("archive-redirect-mirror")
+    >>> mirror_arch_series = archive_mirror.getSummarizedMirroredArchSeries()
 
     # We only have a few publishing records, so most of the cdimage mirrors
     # will have Unknown as their freshness.
     >>> for mirror_arch_series in mirror_arch_series:
-    ...     print('%s: %s' % (
-    ...         mirror_arch_series.distro_arch_series.displayname,
-    ...         mirror_arch_series.freshness.title))
+    ...     print(
+    ...         "%s: %s"
+    ...         % (
+    ...             mirror_arch_series.distro_arch_series.displayname,
+    ...             mirror_arch_series.freshness.title,
+    ...         )
+    ...     )
+    ...
     Ubuntu Warty i386: Up to date
 
 
@@ -847,8 +934,12 @@ Now we check the MirrorCDImageDistroSeriess of a cdimage mirror.
     >>> mirrored_series = []
     >>> for mirror_cdimage_series in cdimage_mirror.cdimage_series:
     ...     mirrored_series.append(
-    ...         (mirror_cdimage_series.distroseries.displayname,
-    ...          mirror_cdimage_series.flavour))
+    ...         (
+    ...             mirror_cdimage_series.distroseries.displayname,
+    ...             mirror_cdimage_series.flavour,
+    ...         )
+    ...     )
+    ...
     >>> print(pretty([series for series in sorted(mirrored_series)]))
     [('Hoary', 'kubuntu'), ('Hoary', 'ubuntu'), ('Warty', 'ubuntu')]
 
@@ -871,14 +962,13 @@ functions that achieve that.
 First we import the classes required to test the view:
 
     >>> from zope.component import getMultiAdapter
-    >>> from lp.registry.browser.distribution import (
-    ...     DistributionMirrorsView)
+    >>> from lp.registry.browser.distribution import DistributionMirrorsView
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
 Create a view to test:
 
     >>> request = LaunchpadTestRequest()
-    >>> view = getMultiAdapter((ubuntu, request), name='+archivemirrors')
+    >>> view = getMultiAdapter((ubuntu, request), name="+archivemirrors")
 
 Verify that the view is a DistributionMirrorsView:
 
@@ -891,11 +981,13 @@ the possible mirror speeds.
     >>> from lp.registry.interfaces.distributionmirror import MirrorSpeed
     >>> class MockMirror:
     ...     speed = None
+    ...
     >>> mirrors = []
     >>> for speed in MirrorSpeed.items:
     ...     a = MockMirror()
     ...     a.speed = speed
     ...     mirrors.append(a)
+    ...
     >>> print(view._sum_throughput(mirrors))
     187 Gbps
 
@@ -905,10 +997,11 @@ Changing mirror owners
 
 The mirror owner can change the owner to another user.
 
-    >>> owner = factory.makePerson(name='raccoon')
-    >>> new_owner = factory.makePerson(name='bear')
+    >>> owner = factory.makePerson(name="raccoon")
+    >>> new_owner = factory.makePerson(name="bear")
     >>> mirror = ubuntu.newMirror(
-    ...     owner, speed, brazil, content, http_base_url='http://a.ab/')
+    ...     owner, speed, brazil, content, http_base_url="http://a.ab/"
+    ... )
 
 
     >>> ignored = login_person(mirror.owner)
@@ -934,7 +1027,7 @@ Only mirrors which have never been probed can be deleted this way.
     ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> login('karl@canonical.com')
+    >>> login("karl@canonical.com")
     >>> cdimage_mirror.last_probe_record is not None
     True
     >>> cdimage_mirror.destroySelf()
@@ -942,12 +1035,12 @@ Only mirrors which have never been probed can be deleted this way.
     ...
     AssertionError: ...
 
-    >>> invalid_mirror = mirrorset.getByName('invalid-mirror')
+    >>> invalid_mirror = mirrorset.getByName("invalid-mirror")
     >>> invalid_mirror.last_probe_record is None
     True
     >>> invalid_mirror.destroySelf()
 
-    >>> mirrorset.getByName('invalid-mirror') is None
+    >>> mirrorset.getByName("invalid-mirror") is None
     True
 
 Country DNS mirrors
@@ -957,24 +1050,31 @@ Country DNS mirrors are mirrors which have been assigned
 $CC.archive.ubuntu.com or $CC.releases.ubuntu.com. These assignments are
 tracked in Launchpad.
 
-    >>> login('admin@canonical.com')
-    >>> ubuntu_distro = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> de_archive_mirror = factory.makeMirror(ubuntu_distro,
-    ...     "Technische Universitaet Dresden", country=82,
+    >>> login("admin@canonical.com")
+    >>> ubuntu_distro = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> de_archive_mirror = factory.makeMirror(
+    ...     ubuntu_distro,
+    ...     "Technische Universitaet Dresden",
+    ...     country=82,
     ...     http_url="http://ubuntu.mirror.tudos.de/ubuntu/",
-    ...     official_candidate=True)
-    >>> davis_station_archive = factory.makeMirror(ubuntu_distro,
-    ...     "Davis Station", country=9,
+    ...     official_candidate=True,
+    ... )
+    >>> davis_station_archive = factory.makeMirror(
+    ...     ubuntu_distro,
+    ...     "Davis Station",
+    ...     country=9,
     ...     http_url="http://mirror.davis.antarctica.org/ubuntu",
-    ...     official_candidate=True)
+    ...     official_candidate=True,
+    ... )
     >>> de_archive_mirror.status = MirrorStatus.OFFICIAL
     >>> de_archive_prober_log = factory.makeMirrorProbeRecord(
-    ...     de_archive_mirror)
+    ...     de_archive_mirror
+    ... )
 
 Normal users can access country_dns_mirror, can see if a mirror is eligible
 for the status, however, they may not change it:
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> de_archive_mirror.canTransitionToCountryMirror()
     True
     >>> de_archive_mirror.transitionToCountryMirror(True)
@@ -986,7 +1086,7 @@ for the status, however, they may not change it:
 
 Mirror listing administrators may change the status however:
 
-    >>> login('karl@canonical.com')
+    >>> login("karl@canonical.com")
     >>> de_archive_mirror.transitionToCountryMirror(True)
 
 Mirrors which are already set as country mirrors can't be 'set' as such
@@ -998,7 +1098,7 @@ again:
 
 There cannot be multiple country mirrors of one type for one country:
 
-    >>> login('karl@canonical.com')
+    >>> login("karl@canonical.com")
     >>> proberecord = factory.makeMirrorProbeRecord(davis_station_archive)
 
     >>> print(davis_station_archive.content.name)
@@ -1009,7 +1109,8 @@ There cannot be multiple country mirrors of one type for one country:
     Antarctica
 
     >>> archive_mirror2 = getUtility(IDistributionMirrorSet).getByName(
-    ...     'archive-mirror2')
+    ...     "archive-mirror2"
+    ... )
     >>> print(archive_mirror2.content.name)
     ARCHIVE
     >>> print(archive_mirror2.country_dns_mirror)
@@ -1028,10 +1129,13 @@ There cannot be multiple country mirrors of one type for one country:
 
 Mirrors which have not been probed may not be marked as country mirrors:
 
-    >>> linux_au_mirror = factory.makeMirror(ubuntu_distro,
-    ...     "Linux.org.au", country=14,
+    >>> linux_au_mirror = factory.makeMirror(
+    ...     ubuntu_distro,
+    ...     "Linux.org.au",
+    ...     country=14,
     ...     http_url="http://mirror.linux.org.au/ubuntu",
-    ...     official_candidate=True)
+    ...     official_candidate=True,
+    ... )
     >>> linux_au_mirror.status = MirrorStatus.OFFICIAL
     >>> linux_au_mirror.transitionToCountryMirror(True)
     Traceback (most recent call last):
@@ -1042,11 +1146,14 @@ Mirrors which have not been probed may not be marked as country mirrors:
 Mirrors which are not official or do not have an HTTP URL may not be set as
 country mirrors:
 
-    >>> login('admin@canonical.com')
-    >>> osuosl_mirror = factory.makeMirror(ubuntu_distro,
-    ...     "OSU Open Source Lab", country=226,
+    >>> login("admin@canonical.com")
+    >>> osuosl_mirror = factory.makeMirror(
+    ...     ubuntu_distro,
+    ...     "OSU Open Source Lab",
+    ...     country=226,
     ...     ftp_url="ftp://ubuntu.osuosl.org/pub/ubuntu/",
-    ...     official_candidate=True)
+    ...     official_candidate=True,
+    ... )
     >>> osuosl_mirror.status = MirrorStatus.OFFICIAL
     >>> print(osuosl_mirror.http_base_url)
     None

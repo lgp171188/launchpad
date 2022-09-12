@@ -6,36 +6,38 @@ administering language packs, right now, they are only able to request a full
 language pack export. This person/team can be changed by the distribution
 owner, on the +select-language-pack-admin page.
 
-    >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://translations.launchpad.test/ubuntu/')
-    >>> browser.getLink('Set language pack administrator')
+    >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
+    >>> browser.open("http://translations.launchpad.test/ubuntu/")
+    >>> browser.getLink("Set language pack administrator")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/'
-    ...     '+select-language-pack-admin')
+    ...     "http://translations.launchpad.test/ubuntu/"
+    ...     "+select-language-pack-admin"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
 
 Mark is one of the distribution owners, so he's able to reach that page.
 
-    >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://translations.launchpad.test/ubuntu/')
-    >>> browser.getLink('Set language pack administrator').click()
+    >>> browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> browser.open("http://translations.launchpad.test/ubuntu/")
+    >>> browser.getLink("Set language pack administrator").click()
 
 Current value is empty.
 
-    >>> browser.getControl('Language Pack Administrator').value
+    >>> browser.getControl("Language Pack Administrator").value
     ''
 
 And the admin is able to set it.
 
-    >>> browser.getControl('Language Pack Administrator').value = (
-    ...     'martin.pitt@canonical.com')
-    >>> browser.getControl('Change').click()
+    >>> browser.getControl(
+    ...     "Language Pack Administrator"
+    ... ).value = "martin.pitt@canonical.com"
+    >>> browser.getControl("Change").click()
     >>> print(browser.url)
     http://translations.launchpad.test/ubuntu/+select-language-pack-admin
-    >>> browser.getControl('Language Pack Administrator').value
+    >>> browser.getControl("Language Pack Administrator").value
     'martin.pitt@canonical.com'

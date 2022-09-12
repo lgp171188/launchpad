@@ -16,7 +16,8 @@ utf-8 as the preferred charset.
 Even if the user specifies that they don't want utf-8:
 
     >>> no_utf8_request = TestRequest(
-    ...     environ={'HTTP_ACCEPT_CHARSET': 'iso8859-1'})
+    ...     environ={"HTTP_ACCEPT_CHARSET": "iso8859-1"}
+    ... )
     >>> user_preferred = Utf8PreferredCharsets(no_utf8_request)
     >>> user_preferred.getPreferredCharsets()
     ['utf-8']

@@ -9,9 +9,10 @@ No Privileges Person visits the evolution-2.2 package in Ubuntu Hoary
 can see the search box on the translate page:
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/'
-    ...     '+source/evolution/+pots/evolution-2.2/es/+translate')
-    >>> user_browser.getControl('Search', index=0).value = "contact"
+    ...     "http://translations.launchpad.test/ubuntu/hoary/"
+    ...     "+source/evolution/+pots/evolution-2.2/es/+translate"
+    ... )
+    >>> user_browser.getControl("Search", index=0).value = "contact"
     >>> user_browser.getForm(id="search_form").submit()
     >>> user_browser.url
     'http://.../evolution-2.2/es/+translate?batch=10&show=all&search=contact'
@@ -23,14 +24,14 @@ All 4 results are still shown.
 
 Searching for a single-letter string fails.
 
-    >>> user_browser.getControl('Search', index=0).value = "a"
+    >>> user_browser.getControl("Search", index=0).value = "a"
     >>> user_browser.getForm(id="search_form").submit()
     >>> user_browser.url
     'http://.../evolution-2.2/es/+translate?batch=10&show=all&search=a'
 
 A warning is displayed.
 
-    >>> tags = find_tags_by_class(user_browser.contents, 'warning message')
+    >>> tags = find_tags_by_class(user_browser.contents, "warning message")
     >>> print(extract_text(tags[0]))
     Please try searching for a longer string.
 

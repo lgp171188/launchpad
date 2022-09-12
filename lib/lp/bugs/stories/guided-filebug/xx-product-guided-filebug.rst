@@ -6,32 +6,33 @@ page for a product starts by asking the user to see if their bug has
 already been reported.
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox")
-    >>> user_browser.getLink('Report a bug').click()
+    >>> user_browser.getLink("Report a bug").click()
 
 If no title is entered, the user is asked to supply one.
 
-    >>> user_browser.getControl('Summary', index=0).value
+    >>> user_browser.getControl("Summary", index=0).value
     ''
 
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+filebug'
 
-    >>> top_portlet = first_tag_by_class(
-    ...     user_browser.contents, 'top-portlet')
-    >>> for message in top_portlet.find_all(attrs={'class': 'error message'}):
+    >>> top_portlet = first_tag_by_class(user_browser.contents, "top-portlet")
+    >>> for message in top_portlet.find_all(attrs={"class": "error message"}):
     ...     print(message.decode_contents())
     There is 1 error.
     >>> for message in top_portlet.find_all(
-    ...         lambda node: node.attrs.get('class') == ['message']):
+    ...     lambda node: node.attrs.get("class") == ["message"]
+    ... ):
     ...     print(message.decode_contents())
     Required input is missing.
 
 The user fills in some keywords, and clicks a button to search existing
 bugs.
 
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "SVG images are broken")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "SVG images are broken"
     >>> user_browser.getControl("Continue").click()
 
 The form is self-posting, so the user is still at +filebug. This makes
@@ -57,7 +58,7 @@ If the user for some reason would erase the summary, an error message
 will be displayed as well.
 
     >>> user_browser.getControl("Further information").value = "not empty"
-    >>> user_browser.getControl("Summary", index=0).value = ''
+    >>> user_browser.getControl("Summary", index=0).value = ""
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/firefox/+filebug
@@ -66,8 +67,9 @@ will be displayed as well.
     <...
     No similar bug reports were found...
 
-    >>> for message in find_tags_by_class(user_browser.contents, 'message'):
+    >>> for message in find_tags_by_class(user_browser.contents, "message"):
     ...     print(message.decode_contents())
+    ...
     There is 1 error.
     Required input is missing.
 
@@ -89,8 +91,9 @@ subscribe to it instead of filing a new bug. This also loosely implies a
 "me too" vote.
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "SVG images are broken")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "SVG images are broken"
     >>> user_browser.getControl("Continue").click()
 
 As before, we get a list of similar bugs to choose from.
@@ -103,7 +106,8 @@ As before, we get a list of similar bugs to choose from.
 This one matches, so we mark it as affecting us.
 
     >>> user_browser.getControl(
-    ...     "Yes, this is the bug I'm trying to report").click()
+    ...     "Yes, this is the bug I'm trying to report"
+    ... ).click()
 
     >>> print(user_browser.url)
     http://bugs.launchpad.test/firefox/+bug/1
@@ -116,17 +120,20 @@ handled by a JavaScript FormOverlay, but for the sake of integration
 testing we'll test it here, too.
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "SVG images are broken")
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "SVG images are broken"
     >>> user_browser.getControl("Continue").click()
 
 There's a hidden field on the "yes, this is my bug" form, which we can
 set to ensure that we get subscribed to the bug.
 
     >>> user_browser.getControl(
-    ...     name="field.subscribe_to_existing_bug").value = 'yes'
+    ...     name="field.subscribe_to_existing_bug"
+    ... ).value = "yes"
     >>> user_browser.getControl(
-    ...     "Yes, this is the bug I'm trying to report").click()
+    ...     "Yes, this is the bug I'm trying to report"
+    ... ).click()
 
     >>> print_feedback_messages(user_browser.contents)
     This bug is already marked as affecting you.
@@ -143,24 +150,27 @@ different in the user agent.
 
 Submitting some distinctive details...
 
-    >>> user_browser.getControl('Summary', index=0).value = (
-    ...     "Frankenzombulon reanimated neighbour's dead pet")
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "Frankenzombulon reanimated neighbour's dead pet"
+    >>> user_browser.getControl("Continue").click()
 
 ...yields no similar bugs. In fact, the similar bugs table is not even
 shown.
 
     >>> similar_bugs_list = find_tag_by_id(
-    ...     user_browser.contents, "similar-bugs")
+    ...     user_browser.contents, "similar-bugs"
+    ... )
     >>> print(similar_bugs_list)
     None
 
 But, as before, entering a description and submitting the bug takes the
 user to the bug page.
 
-    >>> user_browser.getControl('Further information').value = (
-    ...     'Frankenzombulon is only meant to check my mail.')
-    >>> user_browser.getControl('Submit Bug Report').click()
+    >>> user_browser.getControl(
+    ...     "Further information"
+    ... ).value = "Frankenzombulon is only meant to check my mail."
+    >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/...'
 

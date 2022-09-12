@@ -17,7 +17,8 @@ at the same time _only_ the checkwatches DB user can create
 BugWatchActivity instances.
 
     >>> with lp_dbuser():
-    ...     bug_watch = factory.makeBugWatch(remote_bug='42')
+    ...     bug_watch = factory.makeBugWatch(remote_bug="42")
+    ...
 
 When a BugWatch is first created there has been no activity on it.
 
@@ -72,7 +73,8 @@ CheckwatchesMaster.updateBugWatches().
     >>> from lp.bugs.tests.externalbugtracker import TestExternalBugTracker
     >>> updater = CheckwatchesMaster(transaction, BufferLogger())
     >>> updater.updateBugWatches(
-    ...     TestExternalBugTracker('http://example.com'), [bug_watch])
+    ...     TestExternalBugTracker("http://example.com"), [bug_watch]
+    ... )
 
 An extra activity item will have been added to the BugWatch's activity
 property.
@@ -103,8 +105,9 @@ recorded in the activity entry for that update.
 
     >>> from lp.bugs.externalbugtracker.base import UnparsableBugData
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestBrokenExternalBugTracker)
-    >>> broken_bugtracker = TestBrokenExternalBugTracker('http://example.com')
+    ...     TestBrokenExternalBugTracker,
+    ... )
+    >>> broken_bugtracker = TestBrokenExternalBugTracker("http://example.com")
     >>> broken_bugtracker.get_remote_status_error = UnparsableBugData
 
     >>> updater.updateBugWatches(broken_bugtracker, [bug_watch])

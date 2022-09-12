@@ -9,6 +9,7 @@ special data needed for the layout.
     >>> from lp.app.browser.root import LaunchpadRootIndexView
     >>> def day():
     ...     return 4
+    ...
     >>> LaunchpadRootIndexView._get_day_of_year = staticmethod(day)
 
 The view has a provides a list of featured projects and a top project.
@@ -16,9 +17,10 @@ The view has a provides a list of featured projects and a top project.
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
 
     >>> root = getUtility(ILaunchpadRoot)
-    >>> view = create_initialized_view(root, name='index.html')
+    >>> view = create_initialized_view(root, name="index.html")
     >>> for project in view.featured_projects:
     ...     print(project.name)
+    ...
     applets bazaar firefox gentoo gnome-terminal mozilla thunderbird ubuntu
 
     >>> print(view.featured_projects_top.name)
@@ -35,6 +37,7 @@ project from the list of featured_projects.
 
     >>> for project in view.featured_projects:
     ...     print(project.name)
+    ...
     applets bazaar firefox gentoo mozilla thunderbird ubuntu
 
 If there are no featured projects, the top featured project is None.

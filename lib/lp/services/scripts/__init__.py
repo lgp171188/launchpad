@@ -138,7 +138,8 @@ def db_options(parser):
     >>> parser = OptionParser()
     >>> db_options(parser)
     >>> options, args = parser.parse_args(
-    ...     ['--dbname=foo', '--host=bar', '--user=baz', '--port=6432'])
+    ...     ["--dbname=foo", "--host=bar", "--user=baz", "--port=6432"]
+    ... )
     >>> options.dbname
     'foo'
     >>> options.dbhost

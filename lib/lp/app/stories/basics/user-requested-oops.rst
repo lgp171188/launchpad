@@ -14,9 +14,8 @@ page traversal.
 
 The OOPS id is put into the comment at the end of the document.
 
-    >>> (page, summary) = browser.contents.split('</body>')
+    >>> (page, summary) = browser.contents.split("</body>")
     >>> print(summary)
-    ...
     <!-- ...
     At least ... actions issued in ... seconds OOPS-...
     <BLANKLINE>
@@ -27,9 +26,8 @@ The OOPS id is put into the comment at the end of the document.
 The ++oops++ can be anywhere in the traversal.
 
     >>> browser.open("http://launchpad.test/gnome-terminal/++oops++/trunk")
-    >>> (page, summary) = browser.contents.split('</body>')
+    >>> (page, summary) = browser.contents.split("</body>")
     >>> print(summary)
-    ...
     <!-- ...
     At least ... actions issued in ... seconds OOPS-...
     <BLANKLINE>

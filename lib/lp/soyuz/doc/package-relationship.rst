@@ -31,7 +31,8 @@ element follows this format:
 For example:
 
     >>> relationship_line = (
-    ...    'gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 ( = 3.4.1-4sarge1)')
+    ...     "gcc-3.4-base, libc6 (>= 2.3.2.ds1-4), gcc-3.4 ( = 3.4.1-4sarge1)"
+    ... )
 
 Launchpad models package relationship elements via the
 IPackageRelationship instance. We use deb822 to parse the relationship
@@ -49,11 +50,12 @@ So we need to massage its result into the form we prefer:
 
     >>> def parse_relations(line):
     ...     for (rel,) in PkgRelation.parse_relations(relationship_line):
-    ...         if rel['version'] is None:
-    ...             operator, version = '', ''
+    ...         if rel["version"] is None:
+    ...             operator, version = "", ""
     ...         else:
-    ...             operator, version = rel['version']
-    ...         yield rel['name'], version, operator
+    ...             operator, version = rel["version"]
+    ...         yield rel["name"], version, operator
+    ...
     >>> parsed_relationships = list(parse_relations(relationship_line))
     >>> parsed_relationships
     [('gcc-3.4-base', '', ''), ('libc6', '2.3.2.ds1-4', '>='),
@@ -64,14 +66,15 @@ Now for each parsed element we can build an IPackageRelationship:
     >>> from lp.soyuz.browser.packagerelationship import PackageRelationship
     >>> from lp.soyuz.interfaces.packagerelationship import (
     ...     IPackageRelationship,
-    ...     )
+    ... )
     >>> from lp.testing import verifyObject
 
     >>> name, version, operator = parsed_relationships[1]
-    >>> fake_url = 'http://host/path'
+    >>> fake_url = "http://host/path"
 
     >>> pkg_relationship = PackageRelationship(
-    ...     name, operator, version, url=fake_url)
+    ...     name, operator, version, url=fake_url
+    ... )
 
     >>> verifyObject(IPackageRelationship, pkg_relationship)
     True

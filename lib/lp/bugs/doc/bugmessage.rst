@@ -33,18 +33,22 @@ bug watch.
     7
     >>> for message in bug_15.messages:
     ...     bug_message = getUtility(IBugMessageSet).getByBugAndMessage(
-    ...         bug_15, message)
+    ...         bug_15, message
+    ...     )
     ...     print(bug_message.bugwatch)
+    ...
     None
     <security proxied lp.bugs.model.bugwatch.BugWatch ...>
     ...
 
     >>> imported_comments = getUtility(IBugMessageSet).getImportedBugMessages(
-    ...     bug_15)
+    ...     bug_15
+    ... )
     >>> imported_comments.count()
     6
     >>> for bug_message in imported_comments:
     ...     print(bug_message.bugwatch)
+    ...
     <security proxied lp.bugs.model.bugwatch.BugWatch ...>
     ...
 
@@ -62,7 +66,8 @@ To create a bug message, use IBugMessageSet.createMessage:
     ...     subject="test message subject",
     ...     content="text message content",
     ...     owner=sample_person,
-    ...     bug=bug_one)
+    ...     bug=bug_one,
+    ... )
     >>> print(test_message.message.subject)
     test message subject
 
@@ -88,12 +93,15 @@ checkwatches db user, which does not have permission to alter karma
 scores.
 
     >>> bug_watch_updater = getUtility(IPersonSet).getByName(
-    ...     'bug-watch-updater')
+    ...     "bug-watch-updater"
+    ... )
     >>> for cve in bug_one.cves:
     ...     print(cve.displayname)
+    ...
     CVE-1999-8979
     >>> for bugwatch in bug_one.watches:
     ...     print(bugwatch.url)
+    ...
     https://bugzilla.mozilla.org/show_bug.cgi?id=123543
     https://bugzilla.mozilla.org/show_bug.cgi?id=2000
     https://bugzilla.mozilla.org/show_bug.cgi?id=42
@@ -105,13 +113,16 @@ scores.
     ...                one described here
     ...                http://some.bugzilla/show_bug.cgi?id=9876
     ...                See also CVE-1991-9911
-    ...             """)
+    ...             """,
+    ... )
     >>> for cve in bug_one.cves:
     ...     print(cve.displayname)
+    ...
     CVE-1991-9911
     CVE-1999-8979
     >>> for bugwatch in bug_one.watches:
     ...     print(bugwatch.url)
+    ...
     https://bugzilla.mozilla.org/show_bug.cgi?id=123543
     https://bugzilla.mozilla.org/show_bug.cgi?id=2000
     https://bugzilla.mozilla.org/show_bug.cgi?id=42
@@ -133,13 +144,14 @@ an external bug tracker.
 
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> message = getUtility(IMessageSet).fromText(
-    ...    'subject',
-    ...    """This is a comment from an external tracker. It has a link
+    ...     "subject",
+    ...     """This is a comment from an external tracker. It has a link
     ...       to even another tracker
     ...        http://some.bugzilla/show_bug.cgi?id=1234 and mentions
     ...        CVE-1991-3333
     ...    """,
-    ...    bug_watch_updater)
+    ...     bug_watch_updater,
+    ... )
     >>> bugmsg = bug_one.linkMessage(message)
     >>> bugmsg
     <BugMessage at...
@@ -147,11 +159,13 @@ an external bug tracker.
     4
     >>> for cve in bug_one.cves:
     ...     print(cve.displayname)
+    ...
     CVE-1991-3333
     CVE-1991-9911
     CVE-1999-8979
     >>> for bugwatch in bug_one.watches:
     ...     print(bugwatch.url)
+    ...
     https://bugzilla.mozilla.org/show_bug.cgi?id=123543
     https://bugzilla.mozilla.org/show_bug.cgi?id=2000
     https://bugzilla.mozilla.org/show_bug.cgi?id=42
@@ -170,7 +184,8 @@ to compare this value for every bug in a large set.
     >>> test_message = bug_one.newMessage(
     ...     owner=bug_watch_updater,
     ...     subject="test message subject",
-    ...     content="This is a test comment.")
+    ...     content="This is a test comment.",
+    ... )
 
     >>> from lp.services.database.sqlbase import flush_database_caches
     >>> flush_database_caches()

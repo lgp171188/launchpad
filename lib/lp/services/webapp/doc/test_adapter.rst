@@ -12,12 +12,17 @@ Imports and test setup:
     >>> from lazr.restful.utils import get_current_browser_request
     >>> from storm.zope.interfaces import IZStorm
     >>> from lp.services.database.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, PRIMARY_FLAVOR)
+    ...     IStoreSelector,
+    ...     MAIN_STORE,
+    ...     PRIMARY_FLAVOR,
+    ... )
     >>> from lp.services.config import config
     >>> import lp.services.webapp.adapter
     >>> from lp.services.webapp.adapter import (
-    ...     clear_request_started, get_request_statements,
-    ...     set_request_started)
+    ...     clear_request_started,
+    ...     get_request_statements,
+    ...     set_request_started,
+    ... )
     >>> from lp.testing.layers import DatabaseLayer
     >>> from lp.services.timeline.requesttimeline import get_request_timeline
 
@@ -27,7 +32,9 @@ IStoreSelector utility.
     >>> store = getUtility(IStoreSelector).get(MAIN_STORE, PRIMARY_FLAVOR)
     >>> dbname = DatabaseLayer._db_fixture.dbname
     >>> active_name = store.execute("SELECT current_database()").get_one()[0]
-    >>> if active_name != dbname: print('%s != %s' % (active_name, dbname))
+    >>> if active_name != dbname:
+    ...     print("%s != %s" % (active_name, dbname))
+    ...
     >>> active_name == dbname
     True
 
@@ -41,8 +48,8 @@ not maintained outside of a request:
 
     >>> get_request_statements()
     []
-    >>> store.execute('SELECT 1', noresult=True)
-    >>> store.execute('SELECT 2', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
+    >>> store.execute("SELECT 2", noresult=True)
     >>> get_request_statements()
     []
 
@@ -50,20 +57,27 @@ Now begin a request, and issue a number of statements.
 We include statements with bind variables to ensure these are logged
 correctly, especially for the case of LIKE which uses % characters.
     >>> set_request_started()
-    >>> store.execute('SELECT 1', noresult=True)
-    >>> store.execute('SELECT 2', noresult=True)
-    >>> store.execute('SELECT * FROM person where name = ?',
-    ...     [u'fred'], noresult=True)
-    >>> store.execute("SELECT * FROM person where name = '%s foo'",
-    ...     noresult=True)
-    >>> store.execute('SELECT * FROM person where id = ?',
-    ...     [2], noresult=True)
-    >>> store.execute("SELECT * FROM person where name like '%%' || ?",
-    ...     [u'fred'], noresult=True)
-    >>> store.execute("SELECT * FROM person where name like '%d foo'||'%%'",
-    ...     noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
+    >>> store.execute("SELECT 2", noresult=True)
+    >>> store.execute(
+    ...     "SELECT * FROM person where name = ?", ["fred"], noresult=True
+    ... )
+    >>> store.execute(
+    ...     "SELECT * FROM person where name = '%s foo'", noresult=True
+    ... )
+    >>> store.execute("SELECT * FROM person where id = ?", [2], noresult=True)
+    >>> store.execute(
+    ...     "SELECT * FROM person where name like '%%' || ?",
+    ...     ["fred"],
+    ...     noresult=True,
+    ... )
+    >>> store.execute(
+    ...     "SELECT * FROM person where name like '%d foo'||'%%'",
+    ...     noresult=True,
+    ... )
     >>> for _, _, _, statement, _ in get_request_statements():
     ...     print(statement)
+    ...
     SELECT 1
     SELECT 2
     SELECT * FROM person where name = E'fred'
@@ -76,9 +90,10 @@ A timeline is created too:
 
     >>> timeline = get_request_timeline(get_current_browser_request())
     >>> for action in timeline.actions:
-    ...    if not action.category.startswith("SQL-"):
-    ...        continue
-    ...    print(action.detail)
+    ...     if not action.category.startswith("SQL-"):
+    ...         continue
+    ...     print(action.detail)
+    ...
     SELECT 1
     SELECT 2
     SELECT * FROM person where name = E'fred'
@@ -100,11 +115,12 @@ statements.
 
     >>> from lp.services.limitedlist import LimitedList
     >>> set_request_started(request_statements=LimitedList(2))
-    >>> store.execute('SELECT 1', noresult=True)
-    >>> store.execute('SELECT 2', noresult=True)
-    >>> store.execute('SELECT 3', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
+    >>> store.execute("SELECT 2", noresult=True)
+    >>> store.execute("SELECT 3", noresult=True)
     >>> for _, _, _, statement, _ in get_request_statements():
     ...     print(statement)
+    ...
     SELECT 2
     SELECT 3
     >>> clear_request_started()
@@ -114,13 +130,14 @@ if we pass the transaction manager to set_request_started(). Note
 that aborted transactions are still in the status "Active".
 
     >>> set_request_started(txn=transaction.manager)
-    >>> store.execute('SELECT 1', noresult=True)
-    >>> store.execute('SELECT 2', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
+    >>> store.execute("SELECT 2", noresult=True)
     >>> transaction.commit()
-    >>> store.execute('SELECT 3', noresult=True)
+    >>> store.execute("SELECT 3", noresult=True)
     >>> transaction.abort()
     >>> for _, _, _, statement, _ in get_request_statements():
     ...     print(statement)
+    ...
     SELECT 1
     SELECT 2
     Transaction completed, status: Committed
@@ -135,6 +152,7 @@ it pass.
     >>> import warnings
     >>> with warnings.catch_warnings(record=True) as no_request_warning:
     ...     clear_request_started()
+    ...
     >>> print(no_request_warning[0].message)
     clear_request_started() called outside of a request
 
@@ -144,14 +162,16 @@ callable that filters action details to avoid using an inordinate amount of
 memory on logging.
 
     >>> def detail_filter(category, detail):
-    ...     if category != 'SQL-nostore':
-    ...         detail = '<redacted>'
+    ...     if category != "SQL-nostore":
+    ...         detail = "<redacted>"
     ...     return detail
+    ...
     >>> set_request_started(detail_filter=detail_filter)
-    >>> store.execute('SELECT 1', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
     >>> transaction.abort()
     >>> for _, _, _, statement, _ in get_request_statements():
     ...     print(statement)
+    ...
     <redacted>
     Transaction completed, status: Active
     >>> clear_request_started()
@@ -171,18 +191,18 @@ Connections created with the database adapter will use this timeout as
 the Postgres statement timeout (a value of zero means no timeout):
 
     >>> def current_statement_timeout(store):
-    ...     result = store.execute('SHOW statement_timeout')
+    ...     result = store.execute("SHOW statement_timeout")
     ...     timeout = result.get_one()[0]
     ...     # convert to milliseconds and round value to nearest 10ms
-    ...     if timeout == '0':
+    ...     if timeout == "0":
     ...         timeout = 0
-    ...     elif timeout.endswith('ms'):
+    ...     elif timeout.endswith("ms"):
     ...         timeout = int(timeout[:-2])
-    ...     elif timeout.endswith('s'):
+    ...     elif timeout.endswith("s"):
     ...         timeout = int(timeout[:-1]) * 1000
     ...     else:
-    ...         raise ValueError('Unknown timeout value: %s' % timeout)
-    ...     return '%dms' % round(timeout, -1)
+    ...         raise ValueError("Unknown timeout value: %s" % timeout)
+    ...     return "%dms" % round(timeout, -1)
     ...
     >>> def reset_store():
     ...     global store
@@ -191,6 +211,7 @@ the Postgres statement timeout (a value of zero means no timeout):
     ...     transaction.abort()
     ...     store.close()
     ...     store = getUtility(IStoreSelector).get(MAIN_STORE, PRIMARY_FLAVOR)
+    ...
 
     >>> set_request_started()
     >>> print(current_statement_timeout(store))
@@ -205,26 +226,30 @@ avoid random failures under load. Let's build one and plug it in:
     >>> _now = 0
     >>> def fake_time():
     ...     return float(_now)
+    ...
     >>> def time_travel(delta):
     ...     global _now
     ...     _now += delta
-    >>> lp.services.webapp.adapter.time = fake_time # Monkey patch
+    ...
+    >>> lp.services.webapp.adapter.time = fake_time  # Monkey patch
 
 
 Using the builtin pg_sleep() function, we can trigger the
 timeout by sleeping for 200ms with a 100ms statement timeout:
 
     >>> from textwrap import dedent
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     db_statement_timeout: 100
-    ...     """)
-    >>> config.push('base_test_data', test_data)
+    ...     """
+    ... )
+    >>> config.push("base_test_data", test_data)
     >>> reset_store()
     >>> set_request_started()
     >>> print(current_statement_timeout(store))
     100ms
-    >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
+    >>> store.execute("SELECT pg_sleep(0.200)", noresult=True)
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError:
@@ -247,7 +272,7 @@ set_request_started() is called in scripts.
     >>> set_request_started(enable_timeout=False)
     >>> print(current_statement_timeout(store))
     0ms
-    >>> store.execute('SELECT pg_sleep(0.200)', noresult=True)
+    >>> store.execute("SELECT pg_sleep(0.200)", noresult=True)
     >>> clear_request_started()
 
 
@@ -255,38 +280,40 @@ Now issue three statements, the first one taking less than the precision
 time but the second going over the threshold. We use the time machine
 to fake how long things take.
 
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     db_statement_timeout: 10000
     ...     db_statement_timeout_precision: 1000
-    ...     """)
-    >>> config.push('test', test_data)
+    ...     """
+    ... )
+    >>> config.push("test", test_data)
     >>> reset_store()
     >>> set_request_started()
 
-    >>> store.execute('SELECT TRUE', noresult=True)
+    >>> store.execute("SELECT TRUE", noresult=True)
     >>> print(current_statement_timeout(store))
     10000ms
-    >>> time_travel(0.5) # Forward in time 0.5 seconds
+    >>> time_travel(0.5)  # Forward in time 0.5 seconds
 
-    >>> store.execute('SELECT TRUE', noresult=True)
+    >>> store.execute("SELECT TRUE", noresult=True)
     >>> print(current_statement_timeout(store))
     10000ms
-    >>> time_travel(0.6) # Forward in time 0.6 seconds, now over precision
+    >>> time_travel(0.6)  # Forward in time 0.6 seconds, now over precision
 
 This invocation, the PostgreSQL statement timeout will be updated before
 issuing the SQL command as we have exceeded the precision period:
 
-    >>> store.execute('SELECT TRUE', noresult=True)
+    >>> store.execute("SELECT TRUE", noresult=True)
     >>> print(current_statement_timeout(store))
     8900ms
-    >>> time_travel(8.89) # 0.01s remaining before hard timeout
+    >>> time_travel(8.89)  # 0.01s remaining before hard timeout
 
 
 This final invocation, we will actually sleep to ensure that the
 timeout being reported by PostgreSQL is actually working:
 
-    >>> store.execute('SELECT pg_sleep(0.2)', noresult=True)
+    >>> store.execute("SELECT pg_sleep(0.2)", noresult=True)
     Traceback (most recent call last):
       ...
     lp.services.webapp.adapter.LaunchpadTimeoutError:
@@ -299,11 +326,13 @@ timeout being reported by PostgreSQL is actually working:
 
 Set the timeout to 5000ms for the next tests:
 
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     db_statement_timeout: 5000
-    ...     """)
-    >>> config.push('test', test_data)
+    ...     """
+    ... )
+    >>> config.push("test", test_data)
     >>> reset_store()
     >>> set_request_started()
     >>> print(current_statement_timeout(store))
@@ -335,7 +364,7 @@ Signal the start of a request:
 
 Perform an operation before the time limit expires:
 
-    >>> store.execute('SELECT 1', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
 
 Once the request has been completed, clear_request_started() should be
 called:
@@ -348,7 +377,7 @@ Set the request start time to 1 minute in the past, and execute
 another query:
 
     >>> set_request_started(time.time() - 60)
-    >>> store.execute('SELECT 2', noresult=True)
+    >>> store.execute("SELECT 2", noresult=True)
     Traceback (most recent call last):
     ...
     lp.services.webapp.adapter.RequestExpired: request expired.
@@ -384,7 +413,7 @@ affect other threads:
     >>> started_request = threading.Event()
     >>> statement_issued = threading.Event()
     >>> def foo():
-    ...     set_request_started(time.time() - 60) # timed out
+    ...     set_request_started(time.time() - 60)  # timed out
     ...     started_request.set()
     ...     statement_issued.wait()
     ...
@@ -392,7 +421,7 @@ affect other threads:
     >>> thread = threading.Thread(target=foo)
     >>> thread.start()
     >>> _ = started_request.wait()
-    >>> store.execute('SELECT 1', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
     >>> statement_issued.set()
     >>> thread.join()
     >>> clear_request_started()
@@ -411,7 +440,7 @@ remove the timeout:
     >>> thread = threading.Thread(target=bar)
     >>> thread.start()
     >>> _ = started_request.wait()
-    >>> store.execute('SELECT 1', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
     Traceback (most recent call last):
     ...
     lp.services.webapp.adapter.RequestExpired: request expired.
@@ -423,14 +452,16 @@ remove the timeout:
 
 If no timeout has been set, then requests will not time out:
 
-    >>> test_data = dedent("""
+    >>> test_data = dedent(
+    ...     """
     ...     [database]
     ...     db_statement_timeout: none
-    ...     """)
-    >>> config.push('test', test_data)
+    ...     """
+    ... )
+    >>> config.push("test", test_data)
     >>> reset_store()
     >>> set_request_started(time.time() - 60)
-    >>> store.execute('SELECT 1', noresult=True)
+    >>> store.execute("SELECT 1", noresult=True)
     >>> clear_request_started()
 
 
@@ -445,13 +476,16 @@ config section.  By default we connect as "launchpad"
     launchpad_main
 
     >>> from lp.services.config import dbconfig
-    >>> dbconfig.override(dbuser='statistician')
+    >>> dbconfig.override(dbuser="statistician")
     >>> reset_store()
     >>> print(store.execute("select current_user").get_one()[0])
     statistician
-    >>> store.execute("""
+    >>> store.execute(
+    ...     """
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
-    ...     """, noresult=True)
+    ...     """,
+    ...     noresult=True,
+    ... )
     Traceback (most recent call last):
     ...
     storm.database.InsufficientPrivilege:
@@ -462,9 +496,12 @@ This is not reset at the end of the transaction:
     >>> transaction.abort()
     >>> print(store.execute("select current_user").get_one()[0])
     statistician
-    >>> store.execute("""
+    >>> store.execute(
+    ...     """
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
-    ...     """, noresult=True)
+    ...     """,
+    ...     noresult=True,
+    ... )
     Traceback (most recent call last):
     ...
     storm.database.InsufficientPrivilege:
@@ -477,10 +514,13 @@ So you need to explicitly set the user back to the default:
     >>> reset_store()
     >>> print(store.execute("select current_user").get_one()[0])
     launchpad_main
-    >>> store.execute("""
+    >>> store.execute(
+    ...     """
     ...     INSERT INTO SourcePackageName(name) VALUES ('fnord4')
-    ...     """, noresult=True)
+    ...     """,
+    ...     noresult=True,
+    ... )
 
 Reset out config:
 
-    >>> base_test_data = config.pop('base_test_data')
+    >>> base_test_data = config.pop("base_test_data")

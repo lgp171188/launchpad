@@ -38,31 +38,39 @@ in the sampladata.
     ...         package_upload = source_release.package_upload
     ...         changesfile = source_release.upload_changesfile
     ...         if package_upload is None or changesfile is None:
-    ...            sources_missing_upload.append(source)
+    ...             sources_missing_upload.append(source)
     ...     builds_missing_upload = []
     ...     builds = list(
-    ...         archive.getBuildRecords(build_state=BuildStatus.FULLYBUILT))
+    ...         archive.getBuildRecords(build_state=BuildStatus.FULLYBUILT)
+    ...     )
     ...     for build in builds:
     ...         package_upload = build.package_upload
     ...         changesfile = build.upload_changesfile
     ...         if package_upload is None or changesfile is None:
-    ...            builds_missing_upload.append(builds)
-    ...     print('* %s' % archive.displayname)
-    ...     print('%d of %d sources and %d of %d builds missing uploads' % (
-    ...        len(sources_missing_upload), len(sources),
-    ...        len(builds_missing_upload), len(builds)))
+    ...             builds_missing_upload.append(builds)
+    ...     print("* %s" % archive.displayname)
+    ...     print(
+    ...         "%d of %d sources and %d of %d builds missing uploads"
+    ...         % (
+    ...             len(sources_missing_upload),
+    ...             len(sources),
+    ...             len(builds_missing_upload),
+    ...             len(builds),
+    ...         )
+    ...     )
+    ...
 
 As we can see from the results below, most of our sampledata are
 sources and builds directly imported into the system, not
 uploaded. However it's a legitimate scenario that doesn't break the
 assumptions done in the lookups.
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...     IDistributionSet)
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
     >>> for archive in ubuntu.all_distro_archives:
     ...     check_upload_lookups(archive)
+    ...
     * Primary Archive for Ubuntu Linux
     17 of 20 sources and 6 of 8 builds missing uploads
     * Partner Archive for Ubuntu Linux
@@ -70,6 +78,7 @@ assumptions done in the lookups.
 
     >>> for ppa in ubuntu.getAllPPAs():
     ...     check_upload_lookups(ppa)
+    ...
     * PPA for Celso Providelo
     2 of 3 sources and 3 of 3 builds missing uploads
     * PPA for Mark Shuttleworth
@@ -77,10 +86,10 @@ assumptions done in the lookups.
     * PPA for No Privileges Person
     0 of 0 sources and 0 of 0 builds missing uploads
 
-    >>> ubuntutest = getUtility(IDistributionSet).getByName(
-    ...     'ubuntutest')
+    >>> ubuntutest = getUtility(IDistributionSet).getByName("ubuntutest")
     >>> for archive in ubuntutest.all_distro_archives:
     ...     check_upload_lookups(archive)
+    ...
     * Primary Archive for Ubuntu Test
     1 of 1 sources and 0 of 0 builds missing uploads
     * Partner Archive for Ubuntu Test
@@ -96,13 +105,15 @@ tests.
     # Create a testing source and its binaries in
     # ubuntutest/breezy-autotest/i386.
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
     >>> source = test_publisher.getPubSource(
-    ...     sourcename='testing', version='1.0')
+    ...     sourcename="testing", version="1.0"
+    ... )
     >>> binaries = test_publisher.getPubBinaries(
-    ...     binaryname='testing-bin', pub_source=source)
+    ...     binaryname="testing-bin", pub_source=source
+    ... )
     >>> [build] = source.getBuilds()
     >>> transaction.commit()
     >>> login(ANONYMOUS)
@@ -137,12 +148,13 @@ The `PackageUpload` lookups are not restricted to the status of the
 upload, i.e., new, rejected, unapproved or accepted items are returned
 as well.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
-    >>> removeSecurityProxy(original_build_upload).status = (
-    ...     PassthroughStatusValue(PackageUploadStatus.NEW))
+    >>> removeSecurityProxy(
+    ...     original_build_upload
+    ... ).status = PassthroughStatusValue(PackageUploadStatus.NEW)
     >>> transaction.commit()
     >>> login(ANONYMOUS)
 

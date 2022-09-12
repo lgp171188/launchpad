@@ -10,24 +10,23 @@ no existing bug watches.
     >>> from zope.component import getUtility
     >>> from lp.testing import login, logout
     >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> bug12 = getUtility(IBugSet).get(12)
     >>> bug12.watches.count() == 0
     True
     >>> logout()
 
-    >>> user_browser.open(
-    ...     'http://bugs.launchpad.test/jokosher/+bug/12')
-    >>> user_browser.getLink('Also affects project').click()
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/12")
+    >>> user_browser.getLink("Also affects project").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/jokosher/+bug/12/+choose-affected-product'
 
-    >>> bug_url = 'https://bugzilla.mozilla.org/show_bug.cgi?id=900'
-    >>> user_browser.getControl('Project:').value = 'thunderbird'
-    >>> user_browser.getControl('Continue').click()
-    >>> user_browser.getControl('I have the URL').selected = True
-    >>> user_browser.getControl(name='field.bug_url').value = bug_url
-    >>> user_browser.getControl('Add to Bug Report').click()
+    >>> bug_url = "https://bugzilla.mozilla.org/show_bug.cgi?id=900"
+    >>> user_browser.getControl("Project:").value = "thunderbird"
+    >>> user_browser.getControl("Continue").click()
+    >>> user_browser.getControl("I have the URL").selected = True
+    >>> user_browser.getControl(name="field.bug_url").value = bug_url
+    >>> user_browser.getControl("Add to Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/thunderbird/+bug/12'
 
@@ -38,13 +37,14 @@ messages are displayed.
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     UNKNOWN_REMOTE_STATUS)
+    ...     UNKNOWN_REMOTE_STATUS,
+    ... )
     >>> from lp.bugs.interfaces.bugwatch import BugWatchActivityStatus
 
-    >>> login('foo.bar@canonical.com')
-    >>> tracker = getUtility(IBugTrackerSet).getByName('mozilla.org')
+    >>> login("foo.bar@canonical.com")
+    >>> tracker = getUtility(IBugTrackerSet).getByName("mozilla.org")
     >>> bug12 = getUtility(IBugSet).get(12)
-    >>> watch = removeSecurityProxy(bug12.getBugWatch(tracker, '900'))
+    >>> watch = removeSecurityProxy(bug12.getBugWatch(tracker, "900"))
     >>> watch.last_error_type = BugWatchActivityStatus.BUG_NOT_FOUND
     >>> watch.updateStatus(UNKNOWN_REMOTE_STATUS, BugTaskStatus.UNKNOWN)
     >>> logout()
@@ -53,42 +53,47 @@ The error, telling us that the bug wasn't found on the remote server,
 should now be displayed to the user, along with a link to the popup help
 for that error message.
 
-    >>> user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/12')
-    >>> for tag in find_tags_by_class(user_browser.contents,
-    ...     'error message'):
+    >>> user_browser.open("http://bugs.launchpad.test/thunderbird/+bug/12")
+    >>> for tag in find_tags_by_class(user_browser.contents, "error message"):
     ...     print(extract_text(tag.decode_contents()))
+    ...
     The Mozilla.org Bug Tracker bug #900 appears not to exist. Check
     that the bug number is correct. (what does this mean?)
 
-    >>> help_link = user_browser.getLink('(what does this mean?)')
+    >>> help_link = user_browser.getLink("(what does this mean?)")
     >>> print(help_link.url)
     http://bugs.launchpad.test/.../+error-help#BUG_NOT_FOUND
 
 It's also shown in the tooltip of the warning icon next to the bug watch
 in the bugtask table.
 
-    >>> icon = find_tag_by_id(user_browser.contents, 'bugwatch-error-sprite')
-    >>> print(icon.get('title'))
+    >>> icon = find_tag_by_id(user_browser.contents, "bugwatch-error-sprite")
+    >>> print(icon.get("title"))
     The Mozilla.org Bug Tracker bug #900 appears not to exist. Check
     that the bug number is correct.
 
 We can observe this for each of the BugWatchActivityStatus failure values:
 
     >>> from lp.bugs.interfaces.bugwatch import (
-    ...     BUG_WATCH_ACTIVITY_SUCCESS_STATUSES)
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     set_bugwatch_error_type)
+    ...     BUG_WATCH_ACTIVITY_SUCCESS_STATUSES,
+    ... )
+    >>> from lp.bugs.tests.externalbugtracker import set_bugwatch_error_type
 
     >>> failure_values = [
-    ...     value for value in sorted(BugWatchActivityStatus.items) if
-    ...     value not in BUG_WATCH_ACTIVITY_SUCCESS_STATUSES]
+    ...     value
+    ...     for value in sorted(BugWatchActivityStatus.items)
+    ...     if value not in BUG_WATCH_ACTIVITY_SUCCESS_STATUSES
+    ... ]
     >>> for item in failure_values:
     ...     set_bugwatch_error_type(watch, item)
     ...     user_browser.open(
-    ...         'http://bugs.launchpad.test/thunderbird/+bug/12')
-    ...     for tag in find_tags_by_class(user_browser.contents,
-    ...         'error message'):
+    ...         "http://bugs.launchpad.test/thunderbird/+bug/12"
+    ...     )
+    ...     for tag in find_tags_by_class(
+    ...         user_browser.contents, "error message"
+    ...     ):
     ...         print(extract_text(tag.decode_contents()))
+    ...
     Launchpad couldn't import bug #900 from The Mozilla.org Bug
     Tracker...
     The Mozilla.org Bug Tracker bug #900 appears not to exist. Check
@@ -123,6 +128,6 @@ message will go away.
     >>> nwatch.last_error_type = None
     >>> nwatch.updateStatus(UNKNOWN_REMOTE_STATUS, BugTaskStatus.UNKNOWN)
     >>> logout()
-    >>> user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/12')
-    >>> len(find_tags_by_class(user_browser.contents, 'error message'))
+    >>> user_browser.open("http://bugs.launchpad.test/thunderbird/+bug/12")
+    >>> len(find_tags_by_class(user_browser.contents, "error message"))
     0

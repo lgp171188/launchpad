@@ -7,43 +7,50 @@ First create a copy archive for us to see:
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.testing.factory import (
-    ...     remove_security_proxy_and_shout_at_engineer)
-    >>> login('foo.bar@canonical.com')
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
+    ...     remove_security_proxy_and_shout_at_engineer,
+    ... )
+    >>> login("foo.bar@canonical.com")
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
 
-    >>> joe = factory.makePerson(displayname='Joe Bloggs')
+    >>> joe = factory.makePerson(displayname="Joe Bloggs")
     >>> copy_location = factory.makeCopyArchiveLocation(
-    ...     distribution=ubuntu, owner=joe,
-    ...     name="intrepid-security-rebuild")
+    ...     distribution=ubuntu, owner=joe, name="intrepid-security-rebuild"
+    ... )
     >>> naked_copy_location = remove_security_proxy_and_shout_at_engineer(
-    ...     copy_location)
+    ...     copy_location
+    ... )
     >>> copy_archive = naked_copy_location.archive
     >>> copy_archive.enabled
     True
 
     >>> package_copy_request = ubuntu.main_archive.requestPackageCopy(
-    ...     naked_copy_location, copy_archive.owner)
+    ...     naked_copy_location, copy_archive.owner
+    ... )
 
-    >>> nopriv = getUtility(IPersonSet).getByName('no-priv')
+    >>> nopriv = getUtility(IPersonSet).getByName("no-priv")
     >>> disabled_location = factory.makeCopyArchiveLocation(
-    ...     distribution=ubuntu, owner=nopriv,
-    ...     name="disabled-security-rebuild", enabled=False)
+    ...     distribution=ubuntu,
+    ...     owner=nopriv,
+    ...     name="disabled-security-rebuild",
+    ...     enabled=False,
+    ... )
     >>> disabled_archive = remove_security_proxy_and_shout_at_engineer(
-    ...     disabled_location).archive
+    ...     disabled_location
+    ... ).archive
     >>> disabled_archive.enabled
     False
 
 And add some published packages so that this archive is considered
 an active one:
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> stp = SoyuzTestPublisher()
-    >>> hoary = ubuntu['hoary']
+    >>> hoary = ubuntu["hoary"]
     >>> unused = stp.setUpDefaultDistroSeries(distroseries=hoary)
     >>> stp.addFakeChroots(distroseries=hoary)
     >>> pub_src = stp.getPubSource(
-    ...     archive=copy_archive, architecturehintlist='any')
+    ...     archive=copy_archive, architecturehintlist="any"
+    ... )
     >>> pub_bins = stp.getPubBinaries(pub_source=pub_src)
 
     >>> logout()
@@ -83,24 +90,24 @@ Copy archives only have minor differences from PPAs in their presentation.
 In particular, the source.list entries are not displayed for a copy
 archive:
 
-    >>> print(find_tag_by_id(anon_browser.contents, 'sources-list-entries'))
+    >>> print(find_tag_by_id(anon_browser.contents, "sources-list-entries"))
     None
 
 The package counters are not displayed for a copy archive:
 
-    >>> print(find_tag_by_id(anon_browser.contents, 'package-counters'))
+    >>> print(find_tag_by_id(anon_browser.contents, "package-counters"))
     None
 
 Neither is the repository-size javascript present:
 
-    >>> print(find_tag_by_id(anon_browser.contents, 'repository-size-update'))
+    >>> print(find_tag_by_id(anon_browser.contents, "repository-size-update"))
     None
 
 Whereas, for a PPA which uses the same template, the sources list is
 present:
 
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive")
-    >>> print(find_tag_by_id(anon_browser.contents, 'sources-list-entries'))
+    >>> print(find_tag_by_id(anon_browser.contents, "sources-list-entries"))
     <pre ...id="sources-list-entries"...
     ...
     deb-src ...</pre>
@@ -119,19 +126,22 @@ permission to view them.
 
 First, create a private copy archive:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> copy_location = factory.makeCopyArchiveLocation(
-    ...     distribution=ubuntu,
-    ...     name="intrepid-private-security-rebuild")
+    ...     distribution=ubuntu, name="intrepid-private-security-rebuild"
+    ... )
     >>> naked_copy_location = remove_security_proxy_and_shout_at_engineer(
-    ...     copy_location)
+    ...     copy_location
+    ... )
     >>> copy_archive = naked_copy_location.archive
     >>> copy_archive.private = True
     >>> copy_archive.owner.display_name = "Harry Potter"
     >>> package_copy_request = ubuntu.main_archive.requestPackageCopy(
-    ...     naked_copy_location, copy_archive.owner)
+    ...     naked_copy_location, copy_archive.owner
+    ... )
     >>> pub_src = stp.getPubSource(
-    ...     archive=copy_archive, architecturehintlist='any')
+    ...     archive=copy_archive, architecturehintlist="any"
+    ... )
     >>> pub_bins = stp.getPubBinaries(pub_source=pub_src)
     >>> logout()
 
@@ -140,7 +150,7 @@ archive:
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(anon_browser.contents)
-    >>> 'intrepid-private-security-rebuild' in extract_text(main_content)
+    >>> "intrepid-private-security-rebuild" in extract_text(main_content)
     False
 
 But when logged in as the owner or admin, the private archive does display
@@ -148,7 +158,7 @@ For example:
 
     >>> admin_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(admin_browser.contents)
-    >>> 'intrepid-private-security-rebuild' in extract_text(main_content)
+    >>> "intrepid-private-security-rebuild" in extract_text(main_content)
     True
 
 Disabled copy archives are not presented in the copy archives list
@@ -156,11 +166,12 @@ when it's accessed anonymously.
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(anon_browser.contents)
-    >>> 'disabled-security-rebuild' in extract_text(main_content)
+    >>> "disabled-security-rebuild" in extract_text(main_content)
     False
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild")
+    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ... 'launchpad.SubscriberView')
@@ -169,26 +180,26 @@ Disabled copy archives have the title rendered in gray colour
 (class="disabled") and a warning message stating that the archive
 is disabled.
 
-    >>> nopriv_browser = setupBrowser(
-    ...     auth="Basic no-priv@canonical.com:test")
+    >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> nopriv_browser.open(
-    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild")
+    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild"
+    ... )
 
     >>> print(nopriv_browser.title)
     Copy archive disabled-security-rebuild for No Privileges Person : Ubuntu
 
     >>> main_content = find_main_content(nopriv_browser.contents)
-    >>> print(' '.join(main_content.h1['class']))
+    >>> print(" ".join(main_content.h1["class"]))
     disabled
 
-    >>> tag = first_tag_by_class(nopriv_browser.contents, 'warning message')
+    >>> tag = first_tag_by_class(nopriv_browser.contents, "warning message")
     >>> print(extract_text(tag))
     This archive has been disabled.
 
 When a COPY archive gets enabled, No Privileges users can still access
 it and the 'disabled' styling is gone.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> disabled_archive.enable()
     >>> logout()
 
@@ -198,10 +209,10 @@ it and the 'disabled' styling is gone.
     Copy archive disabled-security-rebuild for No Privileges Person : Ubuntu
 
     >>> main_content = find_main_content(nopriv_browser.contents)
-    >>> print(main_content.h1['class'])
+    >>> print(main_content.h1["class"])
     Traceback (most recent call last):
     KeyError: ...'class'
 
-    >>> print(first_tag_by_class(nopriv_browser.contents, 'warning message'))
+    >>> print(first_tag_by_class(nopriv_browser.contents, "warning message"))
     None
 

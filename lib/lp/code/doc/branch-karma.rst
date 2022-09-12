@@ -10,11 +10,13 @@ give karma for it.
 
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.services.database.interfaces import IStore
-    >>> code_category = IStore(KarmaCategory).find(
-    ...     KarmaCategory, name="code").one()
+    >>> code_category = (
+    ...     IStore(KarmaCategory).find(KarmaCategory, name="code").one()
+    ... )
     >>> code_karma_actions = code_category.karmaactions
     >>> for summary in sorted(
-    ...     [action.summary for action in code_karma_actions]):
+    ...     [action.summary for action in code_karma_actions]
+    ... ):
     ...     print(summary)
     A new revision by the user is available through Launchpad.
     Reviewer commented on a code review.
@@ -37,9 +39,9 @@ Registering branches
 
 Karma is added for registering a branch.
 
-    >>> login('test@canonical.com')
-    >>> fooix = factory.makeProduct(name='fooix')
-    >>> eric = factory.makePerson(name='eric')
+    >>> login("test@canonical.com")
+    >>> fooix = factory.makeProduct(name="fooix")
+    >>> eric = factory.makePerson(name="eric")
     >>> branch = factory.makeProductBranch(owner=eric, product=fooix)
     Karma added: action=branchcreated, product=fooix, person=eric
 
@@ -53,7 +55,7 @@ Linking bugs and branches
 
 You get karma for linking a bug to a branch.
 
-    >>> reporter = factory.makePerson(name='reporter')
+    >>> reporter = factory.makePerson(name="reporter")
     >>> bug = factory.makeBug(target=fooix, owner=reporter)
     Karma added: action=bugcreated, product=fooix, person=reporter
     >>> branch_link = bug.linkBranch(branch, eric)

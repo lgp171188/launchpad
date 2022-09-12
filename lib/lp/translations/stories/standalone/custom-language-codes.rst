@@ -18,19 +18,21 @@ package.
 
     >>> def find_custom_language_codes_link(browser):
     ...     """Find reference to custom language codes on a page."""
-    ...     return find_tag_by_id(browser.contents, 'custom-language-codes')
+    ...     return find_tag_by_id(browser.contents, "custom-language-codes")
+    ...
 
     >>> login(ANONYMOUS)
-    >>> owner = factory.makePerson(email='o@example.com')
-    >>> rosetta_admin = factory.makePerson(email='r@example.com')
+    >>> owner = factory.makePerson(email="o@example.com")
+    >>> rosetta_admin = factory.makePerson(email="r@example.com")
     >>> removeSecurityProxy(rosetta_admin).join(
-    ...     getUtility(ILaunchpadCelebrities).rosetta_experts)
+    ...     getUtility(ILaunchpadCelebrities).rosetta_experts
+    ... )
     >>> product = factory.makeProduct(displayname="Foo", owner=owner)
-    >>> trunk = product.getSeries('trunk')
+    >>> trunk = product.getSeries("trunk")
     >>> naked_product = removeSecurityProxy(product)
     >>> naked_product.translations_usage = ServiceUsage.LAUNCHPAD
     >>> template = factory.makePOTemplate(productseries=trunk)
-    >>> product_page = canonical_url(product, rootsite='translations')
+    >>> product_page = canonical_url(product, rootsite="translations")
     >>> logout()
 
     >>> owner_browser = setupBrowser("Basic o@example.com:test")
@@ -68,7 +70,7 @@ Other users don't see this link.
 
 Initially the page shows no custom language codes for the project.
 
-    >>> tag = find_tag_by_id(owner_browser.contents, 'empty')
+    >>> tag = find_tag_by_id(owner_browser.contents, "empty")
     >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
@@ -77,8 +79,8 @@ There is a link to add a custom language code.
     >>> owner_browser.getLink("Add a custom language code").click()
     >>> add_page = owner_browser.url
 
-    >>> owner_browser.getControl("Language code:").value = 'no'
-    >>> owner_browser.getControl("Language:").value = ['nn']
+    >>> owner_browser.getControl("Language code:").value = "no"
+    >>> owner_browser.getControl("Language:").value = ["nn"]
     >>> owner_browser.getControl("Add").click()
 
 This leads back to the custom language codes overview, where the new
@@ -87,7 +89,7 @@ code is now shown.
     >>> owner_browser.url == custom_language_codes_page
     True
 
-    >>> tag = find_tag_by_id(owner_browser.contents, 'nonempty')
+    >>> tag = find_tag_by_id(owner_browser.contents, "nonempty")
     >>> print(extract_text(tag.decode_contents()))
     Foo uses the following custom language codes:
     Code...     ...maps to language
@@ -110,8 +112,7 @@ to see there.
 The overview page leads back to the custom language codes overview.
 
     >>> code_page = owner_browser.url
-    >>> owner_browser.getLink(
-    ...     "custom language codes overview").click()
+    >>> owner_browser.getLink("custom language codes overview").click()
     >>> owner_browser.url == custom_language_codes_page
     True
 
@@ -129,7 +130,7 @@ This leads back to the overview page.
     >>> owner_browser.url == custom_language_codes_page
     True
 
-    >>> tag = find_tag_by_id(owner_browser.contents, 'empty')
+    >>> tag = find_tag_by_id(owner_browser.contents, "empty")
     >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
@@ -142,7 +143,7 @@ This can be convenient for debugging.
 
     >>> user_browser.open(custom_language_codes_page)
 
-    >>> tag = find_tag_by_id(user_browser.contents, 'empty')
+    >>> tag = find_tag_by_id(user_browser.contents, "empty")
     >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
@@ -164,12 +165,12 @@ And naturally, if the owner creates a custom language code again, an
 unprivileged user can't remove it.
 
     >>> owner_browser.open(add_page)
-    >>> owner_browser.getControl("Language code:").value = 'no'
-    >>> owner_browser.getControl("Language:").value = ['nn']
+    >>> owner_browser.getControl("Language code:").value = "no"
+    >>> owner_browser.getControl("Language:").value = ["nn"]
     >>> owner_browser.getControl("Add").click()
 
     >>> user_browser.open(custom_language_codes_page)
-    >>> tag = find_tag_by_id(user_browser.contents, 'nonempty')
+    >>> tag = find_tag_by_id(user_browser.contents, "nonempty")
     >>> print(extract_text(tag.decode_contents()))
     Foo uses the following custom language codes:
     Code...     ...maps to language
@@ -202,25 +203,31 @@ distribution's translation group is a translations administrator.
     >>> from lp.registry.model.sourcepackage import SourcePackage
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
 
-    >>> distro = factory.makeDistribution('distro')
+    >>> distro = factory.makeDistribution("distro")
     >>> distroseries = factory.makeDistroSeries(distribution=distro)
-    >>> sourcepackagename = SourcePackageName(name='bar')
+    >>> sourcepackagename = SourcePackageName(name="bar")
     >>> package = factory.makeSourcePackage(
-    ...     sourcepackagename=sourcepackagename, distroseries=distroseries)
+    ...     sourcepackagename=sourcepackagename, distroseries=distroseries
+    ... )
     >>> naked_distro = removeSecurityProxy(distro)
     >>> naked_distro.translations_usage = ServiceUsage.LAUNCHPAD
     >>> other_series = factory.makeDistroSeries(distribution=distro)
     >>> template = factory.makePOTemplate(
     ...     distroseries=package.distroseries,
-    ...     sourcepackagename=package.sourcepackagename)
+    ...     sourcepackagename=package.sourcepackagename,
+    ... )
     >>> package_page = canonical_url(package, rootsite="translations")
-    >>> page_in_other_series = canonical_url(SourcePackage(
-    ...     distroseries=other_series,
-    ...     sourcepackagename=package.sourcepackagename),
-    ...     rootsite="translations")
-    >>> translations_admin = factory.makePerson(email='ta@example.com')
+    >>> page_in_other_series = canonical_url(
+    ...     SourcePackage(
+    ...         distroseries=other_series,
+    ...         sourcepackagename=package.sourcepackagename,
+    ...     ),
+    ...     rootsite="translations",
+    ... )
+    >>> translations_admin = factory.makePerson(email="ta@example.com")
     >>> translationgroup = factory.makeTranslationGroup(
-    ...     owner=translations_admin)
+    ...     owner=translations_admin
+    ... )
     >>> removeSecurityProxy(distro).translationgroup = translationgroup
     >>> logout()
 
@@ -239,7 +246,7 @@ codes talks about a package, not a project.
     >>> translations_browser.getLink("define custom language codes").click()
     >>> custom_language_codes_page = translations_browser.url
 
-    >>> tag = find_tag_by_id(translations_browser.contents, 'empty')
+    >>> tag = find_tag_by_id(translations_browser.contents, "empty")
     >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.
 
@@ -248,13 +255,13 @@ A translations admin can add a language code.
     >>> translations_browser.getLink("Add a custom language code").click()
     >>> add_page = translations_browser.url
 
-    >>> translations_browser.getControl("Language code:").value = 'pt-br'
-    >>> translations_browser.getControl("Language:").value = ['pt_BR']
+    >>> translations_browser.getControl("Language code:").value = "pt-br"
+    >>> translations_browser.getControl("Language:").value = ["pt_BR"]
     >>> translations_browser.getControl("Add").click()
 
 The language code is displayed.
 
-    >>> tag = find_tag_by_id(translations_browser.contents, 'nonempty')
+    >>> tag = find_tag_by_id(translations_browser.contents, "nonempty")
     >>> print(extract_text(tag.decode_contents()))
     bar in Distro uses the following custom language codes:
     Code...     ...maps to language
@@ -271,7 +278,7 @@ release series of the same distribution.
     for this package.
 
     >>> translations_browser.getLink("define custom language codes").click()
-    >>> tag = find_tag_by_id(translations_browser.contents, 'nonempty')
+    >>> tag = find_tag_by_id(translations_browser.contents, "nonempty")
     >>> print(extract_text(tag.decode_contents()))
     bar in Distro uses the following custom language codes:
     Code...     ...maps to language
@@ -287,6 +294,6 @@ The new code has a link there...
     >>> translations_browser.getLink("remove custom language code").click()
     >>> translations_browser.getControl("Remove").click()
 
-    >>> tag = find_tag_by_id(translations_browser.contents, 'empty')
+    >>> tag = find_tag_by_id(translations_browser.contents, "empty")
     >>> print(extract_text(tag.decode_contents()))
     No custom language codes have been defined.

@@ -41,7 +41,8 @@ But only privileged users can edit bugtasks on locked bugs.
 
     >>> login("test@canonical.com")
     >>> getUtility(IBugSet).get(6).lock(
-    ...     who=sample_person, status=BugLockStatus.COMMENT_ONLY)
+    ...     who=sample_person, status=BugLockStatus.COMMENT_ONLY
+    ... )
     >>> logout()
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")

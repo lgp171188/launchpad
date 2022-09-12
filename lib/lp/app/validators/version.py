@@ -10,13 +10,13 @@ def valid_debian_version(version):
     (Except we appear to need to allow ~ characters, which is not documented
     in the spec.)
 
-    >>> valid_debian_version('1')
+    >>> valid_debian_version("1")
     True
-    >>> valid_debian_version('1.0')
+    >>> valid_debian_version("1.0")
     True
-    >>> valid_debian_version('1:1.0')
+    >>> valid_debian_version("1:1.0")
     True
-    >>> valid_debian_version('1.0-1')
+    >>> valid_debian_version("1.0-1")
     True
     >>> valid_debian_version("1:1.0-1")
     True
@@ -81,27 +81,27 @@ def sane_version(version):
     We may make it less strict if required, but it would be nice if we can
     enforce simple version strings because we use them in URLs
 
-    >>> sane_version('hello')
+    >>> sane_version("hello")
     True
-    >>> sane_version('HELLO')
+    >>> sane_version("HELLO")
     True
-    >>> sane_version('1.0')
+    >>> sane_version("1.0")
     True
-    >>> sane_version('12:45')
+    >>> sane_version("12:45")
     False
-    >>> sane_version('1b2')
+    >>> sane_version("1b2")
     True
-    >>> sane_version('1-')
+    >>> sane_version("1-")
     False
-    >>> sane_version('1-2')
+    >>> sane_version("1-2")
     True
-    >>> sane_version('-2')
+    >>> sane_version("-2")
     False
-    >>> sane_version('uncle sam')
+    >>> sane_version("uncle sam")
     False
-    >>> sane_version('uncle_sam')
+    >>> sane_version("uncle_sam")
     True
-    >>> sane_version('uncle-sam')
+    >>> sane_version("uncle-sam")
     True
     """
     import re

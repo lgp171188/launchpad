@@ -16,7 +16,7 @@ style widget) "speaks", i.e., its allowed values.
     >>> from lp.registry.interfaces.product import IProductSet
     >>> person_set = getUtility(IPersonSet)
     >>> product_set = getUtility(IProductSet)
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> launchbag = getUtility(IOpenLaunchBag)
     >>> launchbag.clear()
 
@@ -51,8 +51,8 @@ vocabulary registry.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> vocabulary_registry = getVocabularyRegistry()
     >>> def get_naked_vocab(context, name):
-    ...     return removeSecurityProxy(
-    ...         vocabulary_registry.get(context, name))
+    ...     return removeSecurityProxy(vocabulary_registry.get(context, name))
+    ...
     >>> product_vocabulary = vocabulary_registry.get(None, "Product")
     >>> product_vocabulary.displayname
     'Select a project'
@@ -69,7 +69,8 @@ BinaryAndSourcePackageNameVocabulary
 The list of binary and source package names, ordered by name.
 
     >>> package_name_vocabulary = vocabulary_registry.get(
-    ...     None, "BinaryAndSourcePackageName")
+    ...     None, "BinaryAndSourcePackageName"
+    ... )
     >>> package_name_vocabulary.displayname
     'Select a Package'
 
@@ -82,11 +83,13 @@ Let's demonstrate by searching for "mozilla-firefox", for which there is
 both a source and binary package of that name.
 
     >>> package_name_terms = package_name_vocabulary.searchForTerms(
-    ...     "mozilla-firefox")
+    ...     "mozilla-firefox"
+    ... )
     >>> package_name_terms.count()
     2
     >>> for term in package_name_terms:
-    ...     print('%s: %s' % (term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     mozilla-firefox: mozilla-firefox
     mozilla-firefox-data: mozilla-firefox-data
 
@@ -97,7 +100,8 @@ the source package named "mozilla".
     >>> package_name_terms.count()
     3
     >>> for term in package_name_terms:
-    ...     print('%s: %s' % (term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     mozilla: mozilla
     mozilla-firefox: mozilla-firefox
     mozilla-firefox-data: mozilla-firefox-data
@@ -108,7 +112,8 @@ The search does a case-insensitive, substring match.
     >>> package_name_terms.count()
     2
     >>> for term in package_name_terms:
-    ...     print('%s: %s' % (term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     linux-2.6.12: linux-2.6.12
     linux-source-2.6.15: linux-source-2.6.15
 
@@ -119,7 +124,7 @@ SourcePackageNameVocabulary
 All the source packages in Launchpad that are published in public archives
 of any distribution.
 
-    >>> spn_vocabulary = vocabulary_registry.get(None, 'SourcePackageName')
+    >>> spn_vocabulary = vocabulary_registry.get(None, "SourcePackageName")
     >>> len(spn_vocabulary)
     10
 
@@ -127,7 +132,8 @@ of any distribution.
     >>> len(spn_terms)
     2
     >>> for term in spn_terms:
-    ...     print('%s: %s' % (term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     mozilla: mozilla
     mozilla-firefox: mozilla-firefox
 
@@ -135,7 +141,8 @@ of any distribution.
     >>> len(spn_terms)
     1
     >>> for term in spn_terms:
-    ...     print('%s: %s' % (term.token, term.title))
+    ...     print("%s: %s" % (term.token, term.title))
+    ...
     pmount: pmount
 
 
@@ -148,7 +155,7 @@ All processors type available in Launchpad.
     >>> vocab.displayname
     'Select a processor'
 
-    >>> [term.token for term in vocab.searchForTerms('386')]
+    >>> [term.token for term in vocab.searchForTerms("386")]
     ['386']
 
 
@@ -161,7 +168,7 @@ collection. It provides the IHugeVocabulary interface.
     >>> from lp.testing import verifyObject
     >>> from lp.services.webapp.vocabulary import IHugeVocabulary
 
-    >>> vocabulary = get_naked_vocab(None, 'PPA')
+    >>> vocabulary = get_naked_vocab(None, "PPA")
     >>> verifyObject(IHugeVocabulary, vocabulary)
     True
 
@@ -171,8 +178,9 @@ collection. It provides the IHugeVocabulary interface.
 Iterations over the PPA vocabulary will return on PPA archives.
 
     >>> from operator import attrgetter
-    >>> for term in sorted(vocabulary, key=attrgetter('value.owner.name')):
+    >>> for term in sorted(vocabulary, key=attrgetter("value.owner.name")):
     ...     print(term.value.owner.name)
+    ...
     cprov
     mark
     no-priv
@@ -183,7 +191,7 @@ PPA vocabulary terms contain:
  * value: the IArchive object;
  * title: the first line of the PPA description text.
 
-    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> cprov_term = vocabulary.getTermByToken("~cprov/ubuntu/ppa")
 
     >>> print(cprov_term.token)
     ~cprov/ubuntu/ppa
@@ -196,7 +204,7 @@ PPA vocabulary terms contain:
 
 Not found terms result in LookupError.
 
-    >>> vocabulary.getTermByToken('foobar')
+    >>> vocabulary.getTermByToken("foobar")
     Traceback (most recent call last):
     ...
     LookupError: foobar
@@ -206,17 +214,18 @@ PPA vocabulary searches consider the owner FTI and the PPA FTI.
     >>> def print_search_results(results):
     ...     for archive in results:
     ...         term = vocabulary.toTerm(archive)
-    ...         print('%s: %s' % (term.token, term.title))
+    ...         print("%s: %s" % (term.token, term.title))
+    ...
 
-    >>> cprov_search = vocabulary.search(u'cprov')
+    >>> cprov_search = vocabulary.search("cprov")
     >>> print_search_results(cprov_search)
     ~cprov/ubuntu/ppa: packages to help my friends.
 
-    >>> celso_search = vocabulary.search(u'celso')
+    >>> celso_search = vocabulary.search("celso")
     >>> print_search_results(celso_search)
     ~cprov/ubuntu/ppa: packages to help my friends.
 
-    >>> friends_search = vocabulary.search(u'friends')
+    >>> friends_search = vocabulary.search("friends")
     >>> print_search_results(friends_search)
     ~cprov/ubuntu/ppa: packages to help my friends.
 
@@ -225,16 +234,19 @@ We will create an additional PPA for Celso named 'testing'
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
 
-    >>> login('foo.bar@canonical.com')
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> login("foo.bar@canonical.com")
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> cprov_testing = getUtility(IArchiveSet).new(
-    ...     owner=cprov, name='testing', purpose=ArchivePurpose.PPA,
-    ...     description='testing packages.')
+    ...     owner=cprov,
+    ...     name="testing",
+    ...     purpose=ArchivePurpose.PPA,
+    ...     description="testing packages.",
+    ... )
 
 Now, a search for 'cprov' will return 2 ppas and the result is ordered
 by PPA name.
 
-    >>> cprov_search = vocabulary.search(u'cprov')
+    >>> cprov_search = vocabulary.search("cprov")
     >>> print_search_results(cprov_search)
     ~cprov/ubuntu/ppa: packages to help my friends.
     ~cprov/ubuntu/testing: testing packages.
@@ -243,19 +255,19 @@ The vocabulary search also supports specific named PPA lookups
 following the same combined syntax used to build unique tokens, including
 some alternate and older forms.
 
-    >>> named_search = vocabulary.search(u'~cprov/ubuntu/testing')
+    >>> named_search = vocabulary.search("~cprov/ubuntu/testing")
     >>> print_search_results(named_search)
     ~cprov/ubuntu/testing: testing packages.
 
-    >>> named_search = vocabulary.search(u'~cprov/testing')
+    >>> named_search = vocabulary.search("~cprov/testing")
     >>> print_search_results(named_search)
     ~cprov/ubuntu/testing: testing packages.
 
-    >>> named_search = vocabulary.search(u'ppa:cprov/ubuntu/testing')
+    >>> named_search = vocabulary.search("ppa:cprov/ubuntu/testing")
     >>> print_search_results(named_search)
     ~cprov/ubuntu/testing: testing packages.
 
-    >>> named_search = vocabulary.search(u'ppa:cprov/testing')
+    >>> named_search = vocabulary.search("ppa:cprov/testing")
     >>> print_search_results(named_search)
     ~cprov/ubuntu/testing: testing packages.
 
@@ -265,14 +277,14 @@ line of the PPA description.
     >>> cprov.archive.description = "Single line."
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> cprov_term = vocabulary.getTermByToken("~cprov/ubuntu/ppa")
     >>> print(cprov_term.title)
     Single line.
 
     >>> cprov.archive.description = "First line\nSecond line."
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> cprov_term = vocabulary.getTermByToken("~cprov/ubuntu/ppa")
     >>> print(cprov_term.title)
     First line
 
@@ -281,12 +293,12 @@ PPAs with empty description are identified and have a title saying so.
     >>> cprov.archive.description = None
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> cprov_term = vocabulary.getTermByToken("~cprov/ubuntu/ppa")
     >>> print(cprov_term.title)
     No description available
 
 Queries on empty strings also results in a valid SelectResults.
 
-    >>> empty_search = vocabulary.search(u'')
+    >>> empty_search = vocabulary.search("")
     >>> empty_search.count() == 0
     True

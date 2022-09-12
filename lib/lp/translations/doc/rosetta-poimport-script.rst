@@ -7,16 +7,16 @@ PO import script
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue,
-    ...     )
+    ... )
     >>> from lp.services.config import config
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> import transaction
@@ -28,11 +28,12 @@ We don't care about a POTemplate we are working with, so just pick any.
 Provide a POFile with Last-Translator set to a user not existing in
 the sampledata.
 
-    >>> print(getUtility(IPersonSet).getByEmail('danilo@canonical.com'))
+    >>> print(getUtility(IPersonSet).getByEmail("danilo@canonical.com"))
     None
 
-    >>> pofile = potemplate.newPOFile('sr')
-    >>> pofile_content = six.ensure_binary('''
+    >>> pofile = potemplate.newPOFile("sr")
+    >>> pofile_content = six.ensure_binary(
+    ...     """
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-04 20:41+0100\\n"
@@ -42,12 +43,15 @@ the sampledata.
     ...
     ... msgid "Foo %%s"
     ... msgstr "Bar"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
 
 We clean the import queue.
 
     >>> for entry in translation_import_queue:
     ...     translation_import_queue.remove(entry)
+    ...
     >>> translation_import_queue.countEntries()
     0
 
@@ -62,12 +66,16 @@ only suggestions but full translations as well).
 
 We add a PO file to the import queue, approving it along the way.
 
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_content, False, cprov,
+    ...     pofile.path,
+    ...     pofile_content,
+    ...     False,
+    ...     cprov,
     ...     sourcepackagename=pofile.potemplate.sourcepackagename,
     ...     distroseries=pofile.potemplate.distroseries,
-    ...     productseries=pofile.potemplate.productseries)
+    ...     productseries=pofile.potemplate.productseries,
+    ... )
     >>> entry.pofile = pofile
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> transaction.commit()
@@ -79,12 +87,15 @@ has enough privileges for the script to run to completion.
 
     >>> import os
     >>> import subprocess
-    >>> script = os.path.join(config.root, "cronscripts",
-    ...                       "rosetta-poimport.py")
-    >>> process = subprocess.Popen([script],
-    ...                            stdout=subprocess.PIPE,
-    ...                            stderr=subprocess.PIPE,
-    ...                            universal_newlines=True)
+    >>> script = os.path.join(
+    ...     config.root, "cronscripts", "rosetta-poimport.py"
+    ... )
+    >>> process = subprocess.Popen(
+    ...     [script],
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0
@@ -97,7 +108,8 @@ has enough privileges for the script to run to completion.
 
 A new Account for 'danilo@canonical.com' is created.
 
-    >>> danilo = getUtility(IPersonSet).getByEmail('danilo@canonical.com',
-    ...     filter_status=False)
+    >>> danilo = getUtility(IPersonSet).getByEmail(
+    ...     "danilo@canonical.com", filter_status=False
+    ... )
     >>> print(danilo.displayname)
     Danilo Šegan

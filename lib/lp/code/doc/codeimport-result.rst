@@ -6,7 +6,9 @@ are accessed via a utility registered for the ICodeImportResultSet
 interface.
 
     >>> from lp.code.interfaces.codeimportresult import (
-    ...     ICodeImportResult, ICodeImportResultSet)
+    ...     ICodeImportResult,
+    ...     ICodeImportResultSet,
+    ... )
     >>> result_set = getUtility(ICodeImportResultSet)
     >>> from lp.testing import verifyObject
     >>> verifyObject(ICodeImportResultSet, result_set)
@@ -18,7 +20,7 @@ retrieving CodeImportResult objects.
 CodeImports are hidden from regular users currently. David Allouche is a
 member of the vcs-imports team and can access the objects freely.
 
-    >>> login('david.allouche@canonical.com')
+    >>> login("david.allouche@canonical.com")
 
 Creating CodeImportResults
 --------------------------
@@ -27,7 +29,7 @@ Creating CodeImportResult objects is usually done by the finishJob()
 method of the CodeImportWorkflow utility, but here we use the object
 factory.
 
-    >>> log_data = 'several\nlines\nof\nlog data'
+    >>> log_data = "several\nlines\nof\nlog data"
     >>> log_excerpt = log_data.splitlines()[-1]
     >>> log_alias = factory.makeLibraryFileAlias(content=log_data)
     >>> log_alias_id = log_alias.id
@@ -37,8 +39,7 @@ it.
 
     >>> from transaction import commit
     >>> commit()
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> log_alias = getUtility(ILibraryFileAliasSet)[log_alias_id]
 
     >>> sample_import = factory.makeCodeImport()
@@ -49,14 +50,18 @@ Then create a result object.
     >>> from pytz import UTC
     >>> from datetime import datetime, timedelta
     >>> time_source = time_counter(
-    ...     datetime(2008, 1, 1, tzinfo=UTC),
-    ...     timedelta(days=1))
+    ...     datetime(2008, 1, 1, tzinfo=UTC), timedelta(days=1)
+    ... )
     >>> odin = factory.makeCodeImportMachine(hostname="odin")
     >>> from lp.code.enums import CodeImportResultStatus
     >>> new_result = factory.makeCodeImportResult(
-    ...     sample_import, result_status=CodeImportResultStatus.SUCCESS,
-    ...     date_started=next(time_source), log_excerpt=log_excerpt,
-    ...     log_alias=log_alias, machine=odin)
+    ...     sample_import,
+    ...     result_status=CodeImportResultStatus.SUCCESS,
+    ...     date_started=next(time_source),
+    ...     log_excerpt=log_excerpt,
+    ...     log_alias=log_alias,
+    ...     machine=odin,
+    ... )
     >>> verifyObject(ICodeImportResult, new_result)
     True
 
@@ -73,7 +78,7 @@ read-only records of what happened.
 In order to read the actual log file, the transaction needs to be committed
 for the Librarian to save the file.
 
-    >>> print(new_result.log_file.read().decode('UTF-8'))
+    >>> print(new_result.log_file.read().decode("UTF-8"))
     several
     lines
     of
@@ -98,9 +103,11 @@ method works as expected.
 
     >>> oldest_result = new_result
     >>> middle_result = factory.makeCodeImportResult(
-    ...     sample_import, date_started = next(time_source))
+    ...     sample_import, date_started=next(time_source)
+    ... )
     >>> newest_result = factory.makeCodeImportResult(
-    ...     sample_import, date_started = next(time_source))
+    ...     sample_import, date_started=next(time_source)
+    ... )
 
 Results for other imports of course should not be present in the
 results, so we should create one of those just to be sure that it's

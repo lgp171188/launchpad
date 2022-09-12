@@ -1,8 +1,12 @@
 Check that the productrelease RDF export works.
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /firefox/trunk/0.9/+rdf HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     Content-Disposition: attachment; filename="firefox-trunk-0.9.rdf"
     Content-Length: ...

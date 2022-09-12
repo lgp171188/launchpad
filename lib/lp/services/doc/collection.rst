@@ -20,12 +20,15 @@ them.
     >>> store = IMasterStore(Product)
     >>> ok = store.execute("CREATE TEMP TABLE Kumquat(id integer UNIQUE)")
     >>> class Kumquat(Storm):
-    ...     __storm_table__ = 'Kumquat'
+    ...     __storm_table__ = "Kumquat"
     ...     id = Int(primary=True)
+    ...
     ...     def __init__(self, id):
     ...         self.id = id
+    ...
     ...     def __repr__(self):
     ...         return "Kumquat-%d" % self.id
+    ...
 
     >>> obj = store.add(Kumquat(1))
     >>> obj = store.add(Kumquat(2))
@@ -36,6 +39,7 @@ starting_table attribute tells Collection what it is a collection of.
     >>> from lp.services.database.collection import Collection
     >>> class KumquatCollection(Collection):
     ...     starting_table = Kumquat
+    ...
 
 The collection starts out "containing" all kumquats.  Nothing is queried
 yet until you invoke the "select" method, which returns a Storm result
@@ -73,12 +77,15 @@ You can join in arbitrary other classes, such as Guava.
 
     >>> ok = store.execute("CREATE TEMP TABLE Guava(id integer UNIQUE)")
     >>> class Guava(Storm):
-    ...     __storm_table__ = 'Guava'
+    ...     __storm_table__ = "Guava"
     ...     id = Int(primary=True)
+    ...
     ...     def __init__(self, id):
     ...         self.id = id
+    ...
     ...     def __repr__(self):
     ...         return "Guava-%d" % self.id
+    ...
     >>> obj = store.add(Guava(1))
     >>> obj = store.add(Guava(3))
     >>> join = collection.joinInner(Guava, Guava.id == Kumquat.id)

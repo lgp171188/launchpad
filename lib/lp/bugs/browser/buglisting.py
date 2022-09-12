@@ -146,13 +146,18 @@ def get_sortorder_from_request(request):
     >>> get_sortorder_from_request(LaunchpadTestRequest(form={}))
     ['-importance']
     >>> get_sortorder_from_request(
-    ...     LaunchpadTestRequest(form={'orderby': '-status'}))
+    ...     LaunchpadTestRequest(form={"orderby": "-status"})
+    ... )
     ['-status']
-    >>> get_sortorder_from_request(LaunchpadTestRequest(
-    ...     form={'orderby': 'status,-severity,importance'}))
+    >>> get_sortorder_from_request(
+    ...     LaunchpadTestRequest(
+    ...         form={"orderby": "status,-severity,importance"}
+    ...     )
+    ... )
     ['status', 'importance']
     >>> get_sortorder_from_request(
-    ...     LaunchpadTestRequest(form={'orderby': 'priority,-severity'}))
+    ...     LaunchpadTestRequest(form={"orderby": "priority,-severity"})
+    ... )
     ['-importance']
     """
     order_by_string = request.get("orderby", "")

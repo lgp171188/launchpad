@@ -13,26 +13,26 @@ Let's fill a IPackageRelationshipSet:
 
     >>> from lp.soyuz.browser.packagerelationship import (
     ...     PackageRelationshipSet,
-    ...     )
+    ... )
 
     >>> relationship_set = PackageRelationshipSet()
     >>> relationship_set.add(
-    ...    name="foobar",
-    ...    operator=">=",
-    ...    version="1.0.2",
-    ...    url="http://whatever/")
+    ...     name="foobar",
+    ...     operator=">=",
+    ...     version="1.0.2",
+    ...     url="http://whatever/",
+    ... )
 
     >>> relationship_set.add(
-    ...    name="test",
-    ...    operator="=",
-    ...    version="1.0",
-    ...    url=None)
+    ...     name="test", operator="=", version="1.0", url=None
+    ... )
 
 Note that iterations over PackageRelationshipSet are sorted
 alphabetically according to the relationship 'name':
 
     >>> for relationship in relationship_set:
     ...     print(relationship.name)
+    ...
     foobar
     test
 
@@ -45,7 +45,8 @@ Let's get the view class:
 
     >>> request = TestRequest(form={})
     >>> pkg_rel_view = queryMultiAdapter(
-    ...     (relationship_set, request), name="+render-list")
+    ...     (relationship_set, request), name="+render-list"
+    ... )
 
 This view has no methods, so just demonstrate that it renders
 correctly like:

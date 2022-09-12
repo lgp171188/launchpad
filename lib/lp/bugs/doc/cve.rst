@@ -32,9 +32,11 @@ CVE references can be created with the ICveSet utility.
 To create a CVE, call ICveSet.new(sequence, description,
     status=CveStatus.CANDIDATE)
 
-    >>> cve = cveset.new(sequence="2004-0276",
-    ...     description="A new CVE", status=CveStatus.ENTRY,
-    ...     )
+    >>> cve = cveset.new(
+    ...     sequence="2004-0276",
+    ...     description="A new CVE",
+    ...     status=CveStatus.ENTRY,
+    ... )
     >>> print(cve.displayname)
     CVE-2004-0276
 
@@ -52,7 +54,7 @@ supplied user is the person linking the CVEs.
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.linkCVE(cve, user=no_priv)
 
@@ -76,6 +78,7 @@ linked to a bug:
     >>> b = Bug.get(1)
     >>> for c in b.cves:
     ...     print(c.displayname)
+    ...
     CVE-1999-8979
 
 Let's add the new CVE:
@@ -95,9 +98,12 @@ Ah, but that was a bad idea. Let's unlink it.
 Alternatively, we can link CVEs to bugs by looking for CVEs in a
 string of text. The supplied user is the person linking the CVEs.
 
-    >>> b.findCvesInText('''
+    >>> b.findCvesInText(
+    ...     """
     ...     This bug is related to CVE-2004-0276
-    ... ''', user=no_priv)
+    ... """,
+    ...     user=no_priv,
+    ... )
     >>> cve in b.cves
     True
     >>> b.unlinkCVE(cve, user=no_priv)
@@ -106,17 +112,21 @@ Since users can comment on bugs that they can't see (eg. when Soyuz uses
 ~janitor to close bugs from changelogs), the normal privilege checks on
 linkCVE are bypassed.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from lp.app.enums import InformationType
     >>> private_bug = factory.makeBug(
-    ...     information_type=InformationType.USERDATA)
+    ...     information_type=InformationType.USERDATA
+    ... )
     >>> private_bug.linkCVE(cve, user=no_priv)
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
-    >>> private_bug.findCvesInText('''
+    >>> private_bug.findCvesInText(
+    ...     """
     ...     This bug is related to CVE-2004-0276
-    ... ''', user=no_priv)
+    ... """,
+    ...     user=no_priv,
+    ... )
     >>> cve in private_bug.cves
     True
     >>> private_bug.unlinkCVE(cve, user=private_bug.owner)
@@ -129,17 +139,22 @@ Since 2014, CVEs can have an identifier (sequence) longer than 4-digits.
 
 CVEs creation accepts 2014 format:
 
-    >>> cve_2014 = cveset.new(sequence="2014-999999",
-    ...     description="A new-style CVE sequence", status=CveStatus.ENTRY,
-    ...     )
+    >>> cve_2014 = cveset.new(
+    ...     sequence="2014-999999",
+    ...     description="A new-style CVE sequence",
+    ...     status=CveStatus.ENTRY,
+    ... )
     >>> print(cve_2014.displayname)
     CVE-2014-999999
 
 Text references to CVEs using 2014 format can be found:
 
-    >>> b.findCvesInText('''
+    >>> b.findCvesInText(
+    ...     """
     ...     This bug is related to CVE-2014-999999
-    ... ''', user=no_priv)
+    ... """,
+    ...     user=no_priv,
+    ... )
     >>> cve_2014 in b.cves
     True
     >>> b.unlinkCVE(cve_2014, user=no_priv)
@@ -159,7 +174,8 @@ ICveSet.getBugCvesForBugTasks:
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> bugcves = cveset.getBugCvesForBugTasks(ubuntu_tasks)
     >>> for (bug, cve) in bugcves:
-    ...     print('%d: %s' % (bug.id, cve.title))
+    ...     print("%d: %s" % (bug.id, cve.title))
+    ...
     1: CVE-1999-8979 (Entry)
     2: CVE-1999-2345 (Candidate)
 
@@ -177,7 +193,8 @@ surprisingly, the same the method above returned:
 
     >>> for bugtaskcve in cve_report.open_cve_bugtasks:
     ...     print(pretty([bugtask.title for bugtask in bugtaskcve.bugtasks]))
-    ...     print(pretty([cve['displayname'] for cve in bugtaskcve.cves]))
+    ...     print(pretty([cve["displayname"] for cve in bugtaskcve.cves]))
+    ...
     ['Bug #1 in mozilla-firefox (Ubuntu): "Firefox does not support SVG"']
     ['CVE-1999-8979']
     ['Bug #2 in Ubuntu: "Blackhole Trash folder"']

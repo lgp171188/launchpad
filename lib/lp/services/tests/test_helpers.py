@@ -20,7 +20,7 @@ def make_test_tarball_1():
     Check it looks vaguely sensible.
 
     >>> names = tarball.getnames()
-    >>> 'uberfrob-0.1/po/cy.po' in names
+    >>> "uberfrob-0.1/po/cy.po" in names
     True
     """
 
@@ -50,8 +50,8 @@ def make_test_tarball_2():
 
     Check the contents.
 
-    >>> f = tarball.extractfile('test/cy.po')
-    >>> print(f.readline().decode('UTF-8'))
+    >>> f = tarball.extractfile("test/cy.po")
+    >>> print(f.readline().decode("UTF-8"))
     # Test PO file.
     <BLANKLINE>
     """
@@ -98,10 +98,11 @@ def test_shortlist_returns_all_elements():
 
     >>> def warn(message, category=None, stacklevel=2):
     ...     if category is None:
-    ...         category = 'UserWarning'
+    ...         category = "UserWarning"
     ...     else:
     ...         category = category.__class__.__name__
     ...     print("%s: %s" % (category, message))
+    ...
 
     >>> old_warn = warnings.warn
     >>> warnings.warn = warn
@@ -110,11 +111,11 @@ def test_shortlist_returns_all_elements():
     printed.
 
     >>> from lp.services.helpers import shortlist
-    >>> shortlist(list(range(10)), longest_expected=5) #doctest: +ELLIPSIS
+    >>> shortlist(list(range(10)), longest_expected=5)  # doctest: +ELLIPSIS
     UserWarning: shortlist() should not...
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-    >>> shortlist(iter(range(10)), longest_expected=5) #doctest: +ELLIPSIS
+    >>> shortlist(iter(range(10)), longest_expected=5)  # doctest: +ELLIPSIS
     UserWarning: shortlist() should not...
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -141,18 +142,18 @@ def test_english_list():
         >>> english_list([])
         ''
 
-        >>> english_list(['Fred'])
+        >>> english_list(["Fred"])
         'Fred'
 
-        >>> english_list(['Fred', 'Bob'])
+        >>> english_list(["Fred", "Bob"])
         'Fred and Bob'
 
-        >>> english_list(['Fred', 'Bob', 'Harold'])
+        >>> english_list(["Fred", "Bob", "Harold"])
         'Fred, Bob, and Harold'
 
     It accepts any iterable that yields strings:
 
-        >>> english_list('12345')
+        >>> english_list("12345")
         '1, 2, 3, 4, and 5'
 
         >>> english_list(str(i) for i in range(5))
@@ -167,7 +168,7 @@ def test_english_list():
 
     The conjunction can be changed:
 
-        >>> english_list('123', 'or')
+        >>> english_list("123", "or")
         '1, 2, or 3'
     """
 

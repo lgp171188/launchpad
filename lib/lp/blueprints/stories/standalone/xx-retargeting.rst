@@ -14,10 +14,10 @@ administrator:
 The page contains a link back to the blueprint, in case we change our
 mind.
 
-    >>> back_link = admin_browser.getLink('Support Native SVG Objects')
+    >>> back_link = admin_browser.getLink("Support Native SVG Objects")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support'
-    >>> admin_browser.getLink('Cancel').url
+    >>> admin_browser.getLink("Cancel").url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support'
 
 We can move the blueprint to Evolution.
@@ -58,8 +58,9 @@ We stay on the same page and get an error message printed out:
     >>> admin_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support/+retarget'
 
-    >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
+    >>> for tag in find_tags_by_class(admin_browser.contents, "message"):
     ...     print(tag.decode_contents())
+    ...
     There is 1 error.
     <BLANKLINE>
     There is no project with the name 'foo bar'. Please check that name and

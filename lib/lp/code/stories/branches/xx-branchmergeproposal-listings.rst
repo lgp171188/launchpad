@@ -12,31 +12,33 @@ Create a new product and merge proposals for it
 
 Log-in an administrator to avoid permission problems.
 
-    >>> login('foo.bar@canonical.com')
-    >>> fooix = factory.makeProduct(name='fooix')
+    >>> login("foo.bar@canonical.com")
+    >>> fooix = factory.makeProduct(name="fooix")
 
 Make a trunk branch and set as the development focus branch.
 
-    >>> trunk = factory.makeProductBranch(product=fooix, name='trunk')
+    >>> trunk = factory.makeProductBranch(product=fooix, name="trunk")
     >>> fooix.development_focus.branch = trunk
 
 Make a single proposal for albert that is needing review by robert.
 
-    >>> albert = factory.makePerson(
-    ...     name='albert', email="albert@example.com")
-    >>> robert = factory.makePerson(name='robert')
+    >>> albert = factory.makePerson(name="albert", email="albert@example.com")
+    >>> robert = factory.makePerson(name="robert")
     >>> branch = factory.makeProductBranch(
-    ...     owner=albert, product=fooix, name='review')
+    ...     owner=albert, product=fooix, name="review"
+    ... )
     >>> proposal = branch.addLandingTarget(albert, trunk)
     >>> proposal.requestReview()
-    >>> _unused_vote = proposal.nominateReviewer(robert, albert,
-    ...                                          review_type='ui')
+    >>> _unused_vote = proposal.nominateReviewer(
+    ...     robert, albert, review_type="ui"
+    ... )
 
 Make two proposals for bob, one needing review, and one approved.
 
-    >>> bob = factory.makePerson(name='bob')
+    >>> bob = factory.makePerson(name="bob")
     >>> branch = factory.makeProductBranch(
-    ...     owner=bob, product=fooix, name='review')
+    ...     owner=bob, product=fooix, name="review"
+    ... )
     >>> proposal = branch.addLandingTarget(bob, trunk)
     >>> proposal.requestReview()
 
@@ -47,9 +49,10 @@ Ensure the date_created is later to ensure stable ordering.
     >>> removeSecurityProxy(proposal).date_created += timedelta(1)
 
     >>> branch = factory.makeProductBranch(
-    ...     owner=bob, product=fooix, name='approved')
+    ...     owner=bob, product=fooix, name="approved"
+    ... )
     >>> proposal = branch.addLandingTarget(bob, trunk)
-    >>> proposal.approveBranch(trunk.owner, 'some-revision')
+    >>> proposal.approveBranch(trunk.owner, "some-revision")
     >>> removeSecurityProxy(proposal).date_created += timedelta(2)
     >>> logout()
 
@@ -63,18 +66,18 @@ Listings from the main product code page
 Below the branch counts in the main content, there is a paragraph that lists
 the number of active reviews.
 
-    >>> browser.open('http://code.launchpad.test/fooix')
-    >>> print_tag_with_id(browser.contents, 'active-review-count')
+    >>> browser.open("http://code.launchpad.test/fooix")
+    >>> print_tag_with_id(browser.contents, "active-review-count")
     Fooix has 3 active reviews...
 
 In the same paragraph there is a link to all merge proposals.
 
-    >>> print_tag_with_id(browser.contents, 'all-merges')
+    >>> print_tag_with_id(browser.contents, "all-merges")
     See all merge proposals...
 
 The 'active reviews' text links to the active reviews page.
 
-    >>> browser.getLink('active reviews').click()
+    >>> browser.getLink("active reviews").click()
     >>> print(browser.title)
     Active reviews : Code : Fooix
 
@@ -98,8 +101,8 @@ Listings from the main person code page
 The summary before the branch listings also shows the number of active reviews
 and approved merges.
 
-    >>> browser.open('http://code.launchpad.test/~albert')
-    >>> print_tag_with_id(browser.contents, 'portlet-person-codesummary')
+    >>> browser.open("http://code.launchpad.test/~albert")
+    >>> print_tag_with_id(browser.contents, "portlet-person-codesummary")
     Branches
     Active reviews
     Source package recipes
@@ -108,8 +111,8 @@ and approved merges.
 The person's active reviews also lists all of their currently requested
 reviews.
 
-    >>> browser.open('http://code.launchpad.test/~robert/+activereviews')
-    >>> print_tag_with_id(browser.contents, 'proposals')
+    >>> browser.open("http://code.launchpad.test/~robert/+activereviews")
+    >>> print_tag_with_id(browser.contents, "proposals")
     Reviews Robert has to do
     Branch Merge Proposal             Requested By    Lines Activity
     lp://dev/~albert/fooix/review ... Albert ...            None
@@ -118,25 +121,28 @@ The requested reviews for a team will only ever show pending reviews, as a
 team cannot approve a review, only a person can.
 
     >>> from lp.registry.enums import TeamMembershipPolicy
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> team = factory.makeTeam(
-    ...     owner=albert, name="a-team", displayname="A-Team",
-    ...     membership_policy=TeamMembershipPolicy.MODERATED)
+    ...     owner=albert,
+    ...     name="a-team",
+    ...     displayname="A-Team",
+    ...     membership_policy=TeamMembershipPolicy.MODERATED,
+    ... )
     >>> logout()
 
-    >>> browser = setupBrowser(auth='Basic albert@example.com:test')
-    >>> browser.open('http://code.launchpad.test/~albert/fooix/review')
-    >>> browser.getLink('Ready for review').click()
-    >>> browser.getLink('Request another review').click()
-    >>> browser.getControl('Reviewer').value = 'a-team'
-    >>> browser.getControl('Review type').value = 'tag'
-    >>> browser.getControl('Request Review').click()
+    >>> browser = setupBrowser(auth="Basic albert@example.com:test")
+    >>> browser.open("http://code.launchpad.test/~albert/fooix/review")
+    >>> browser.getLink("Ready for review").click()
+    >>> browser.getLink("Request another review").click()
+    >>> browser.getControl("Reviewer").value = "a-team"
+    >>> browser.getControl("Review type").value = "tag"
+    >>> browser.getControl("Request Review").click()
 
 Since Albert is in the A-Team, he can do the pending review.
 
-    >>> browser.open('http://code.launchpad.test/~a-team')
-    >>> browser.getLink('Active reviews').click()
-    >>> print_tag_with_id(browser.contents, 'proposals')
+    >>> browser.open("http://code.launchpad.test/~a-team")
+    >>> browser.getLink("Active reviews").click()
+    >>> print_tag_with_id(browser.contents, "proposals")
     Requested reviews you can do
     Branch Merge Proposal             Requested By    Lines Activity
     lp://dev/~albert/fooix/review ... Albert ...            None
@@ -148,12 +154,12 @@ Listings from a branch page
 When looking at a branch that is a target of merge proposals, the user is
 shown a link and a count.
 
-    >>> browser.open('http://code.launchpad.test/fooix')
-    >>> browser.getLink('lp://dev/fooix').click()
-    >>> print_tag_with_id(browser.contents, 'landing-candidates')
+    >>> browser.open("http://code.launchpad.test/fooix")
+    >>> browser.getLink("lp://dev/fooix").click()
+    >>> print_tag_with_id(browser.contents, "landing-candidates")
     3 branches proposed for merging into this one.
 
-    >>> browser.getLink('3 branches').click()
+    >>> browser.getLink("3 branches").click()
     >>> print(browser.title)
     Active reviews : trunk : Code : Fooix
 
@@ -163,27 +169,29 @@ Line counts
 
 When a merge is initially proposed, it has no line count:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> proposal = factory.makeBranchMergeProposal()
     >>> proposal.requestReview()
     >>> url = canonical_url(
-    ...     proposal.target_branch.product, view_name='+activereviews',
-    ...     rootsite='code')
+    ...     proposal.target_branch.product,
+    ...     view_name="+activereviews",
+    ...     rootsite="code",
+    ... )
     >>> logout()
-    >>> browser = setupBrowser(auth='Basic albert@example.com:test')
+    >>> browser = setupBrowser(auth="Basic albert@example.com:test")
     >>> browser.open(url)
-    >>> print_tag_with_id(browser.contents, 'proposals')
+    >>> print_tag_with_id(browser.contents, "proposals")
     Other reviews you are not actively reviewing
     Branch Merge Proposal             Requested By    Lines Activity
     lp://dev/...                      ...                   None
 
 After a preview diff is added, it has a line count.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> diff = factory.makePreviewDiff(merge_proposal=proposal)
     >>> logout()
     >>> browser.open(url)
-    >>> print_tag_with_id(browser.contents, 'proposals')
+    >>> print_tag_with_id(browser.contents, "proposals")
     Other reviews you are not actively reviewing
     Branch Merge Proposal             Requested By    Lines Activity
     lp://dev/...                      ...             14    None

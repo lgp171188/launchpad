@@ -19,15 +19,23 @@ Mozilla's Bugzilla is an Issuezilla instance here:
     >>> from lp.bugs.tests.externalbugtracker import TestIssuezilla
     >>> from lp.services.log.logger import FakeLogger
     >>> txn = LaunchpadZopelessLayer.txn
-    >>> mozilla_bugzilla = getUtility(IBugTrackerSet).getByName('mozilla.org')
+    >>> mozilla_bugzilla = getUtility(IBugTrackerSet).getByName("mozilla.org")
     >>> issuezilla = TestIssuezilla(mozilla_bugzilla.baseurl)
     >>> transaction.commit()
     >>> with issuezilla.responses(post=False):
     ...     issuezilla._probe_version()
+    ...
     (2, 11)
     >>> for bug_watch in mozilla_bugzilla.watches:
-    ...     print("%s: %s %s" % (bug_watch.remotebug,
-    ...         bug_watch.remotestatus, bug_watch.remote_importance))
+    ...     print(
+    ...         "%s: %s %s"
+    ...         % (
+    ...             bug_watch.remotebug,
+    ...             bug_watch.remotestatus,
+    ...             bug_watch.remote_importance,
+    ...         )
+    ...     )
+    ...
     2000:
     123543:
     42: FUBAR BAZBAZ
@@ -36,14 +44,23 @@ Mozilla's Bugzilla is an Issuezilla instance here:
     >>> bug_watch_updater = CheckwatchesMaster(txn, logger=FakeLogger())
     >>> with issuezilla.responses():
     ...     bug_watch_updater.updateBugWatches(
-    ...         issuezilla, mozilla_bugzilla.watches)
+    ...         issuezilla, mozilla_bugzilla.watches
+    ...     )
+    ...
     INFO Updating 4 watches for 3 bugs on https://bugzilla.mozilla.org
     INFO Didn't find bug '42' on https://bugzilla.mozilla.org
     (local bugs: 1, 2).
 
     >>> for bug_watch in mozilla_bugzilla.watches:
-    ...     print("%s: %s %s" % (bug_watch.remotebug,
-    ...         bug_watch.remotestatus, bug_watch.remote_importance))
+    ...     print(
+    ...         "%s: %s %s"
+    ...         % (
+    ...             bug_watch.remotebug,
+    ...             bug_watch.remotestatus,
+    ...             bug_watch.remote_importance,
+    ...         )
+    ...     )
+    ...
     2000: RESOLVED FIXED LOW
     123543: ASSIGNED HIGH
     42: FUBAR BAZBAZ
@@ -64,6 +81,7 @@ Mozilla.org's using this old version. Here's the scoop:
     >>> transaction.commit()
     >>> with old_bugzilla.responses(post=False):
     ...     old_bugzilla._probe_version()
+    ...
     (2, 10)
 
   b) The tags are not prefixed with the bz: namespace:
@@ -76,14 +94,20 @@ Mozilla.org's using this old version. Here's the scoop:
 
 We support them just fine:
 
-    >>> remote_bugs = ['42', '123543']
+    >>> remote_bugs = ["42", "123543"]
     >>> with old_bugzilla.responses():
     ...     old_bugzilla.initializeRemoteBugDB(remote_bugs)
+    ...
     >>> for remote_bug in remote_bugs:
-    ...     print("%s: %s %s" % (
-    ...         remote_bug,
-    ...         old_bugzilla.getRemoteStatus(remote_bug),
-    ...         old_bugzilla.getRemoteImportance(remote_bug)))
+    ...     print(
+    ...         "%s: %s %s"
+    ...         % (
+    ...             remote_bug,
+    ...             old_bugzilla.getRemoteStatus(remote_bug),
+    ...             old_bugzilla.getRemoteImportance(remote_bug),
+    ...         )
+    ...     )
+    ...
     42: RESOLVED FIXED LOW BLOCKER
     123543: ASSIGNED HIGH BLOCKER
 
@@ -93,12 +117,12 @@ Bugzilla oddities
 
 Some Bugzillas have some weird properties that we need to cater for:
 
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestWeirdBugzilla)
+    >>> from lp.bugs.tests.externalbugtracker import TestWeirdBugzilla
     >>> weird_bugzilla = TestWeirdBugzilla(mozilla_bugzilla.baseurl)
     >>> transaction.commit()
     >>> with weird_bugzilla.responses(post=False):
     ...     weird_bugzilla._probe_version()
+    ...
     (2, 20)
 
   a) The bug status tag is <bz:status> and not <bz:bug_status>
@@ -116,14 +140,20 @@ Some Bugzillas have some weird properties that we need to cater for:
 
 Yet everything still works as expected:
 
-    >>> remote_bugs = ['2000', '123543']
+    >>> remote_bugs = ["2000", "123543"]
     >>> with weird_bugzilla.responses():
     ...     weird_bugzilla.initializeRemoteBugDB(remote_bugs)
+    ...
     >>> for remote_bug in remote_bugs:
-    ...     print("%s: %s %s" % (
-    ...         remote_bug,
-    ...         weird_bugzilla.getRemoteStatus(remote_bug),
-    ...         weird_bugzilla.getRemoteImportance(remote_bug)))
+    ...     print(
+    ...         "%s: %s %s"
+    ...         % (
+    ...             remote_bug,
+    ...             weird_bugzilla.getRemoteStatus(remote_bug),
+    ...             weird_bugzilla.getRemoteImportance(remote_bug),
+    ...         )
+    ...     )
+    ...
     2000: ASSIGNED HIGH BLOCKER
     123543: RESOLVED FIXED HIGH BLOCKER
 
@@ -134,19 +164,20 @@ Broken Bugzillas
 What does /not/ work as expected is parsing Bugzillas which produce
 invalid XML:
 
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestBrokenBugzilla)
+    >>> from lp.bugs.tests.externalbugtracker import TestBrokenBugzilla
     >>> broken_bugzilla = TestBrokenBugzilla(mozilla_bugzilla.baseurl)
     >>> transaction.commit()
     >>> with broken_bugzilla.responses(post=False):
     ...     broken_bugzilla._probe_version()
+    ...
     (2, 20)
     >>> "</foobar>" in broken_bugzilla._readBugItemFile()
     True
 
-    >>> remote_bugs = ['42', '2000']
+    >>> remote_bugs = ["42", "2000"]
     >>> with broken_bugzilla.responses():
     ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs)
+    ...
     Traceback (most recent call last):
     ...
     lp.bugs.externalbugtracker.base.UnparsableBugData:
@@ -154,13 +185,13 @@ invalid XML:
 
 However, embedded control characters do not generate errors.
 
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     AnotherBrokenBugzilla)
+    >>> from lp.bugs.tests.externalbugtracker import AnotherBrokenBugzilla
     >>> broken_bugzilla = AnotherBrokenBugzilla(mozilla_bugzilla.baseurl)
     >>> r"NOT\x01USED" in repr(broken_bugzilla._readBugItemFile())
     True
 
-    >>> remote_bugs = ['42', '2000']
+    >>> remote_bugs = ["42", "2000"]
     >>> transaction.commit()
     >>> with broken_bugzilla.responses():
-    ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs) # no exception
+    ...     broken_bugzilla.initializeRemoteBugDB(remote_bugs)  # no exception
+    ...

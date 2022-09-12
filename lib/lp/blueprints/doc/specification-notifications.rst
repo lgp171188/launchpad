@@ -11,17 +11,18 @@ Changing the status:
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> login('foo.bar@canonical.com')
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
-    >>> svg_support = firefox.getSpecification('svg-support')
+    >>> login("foo.bar@canonical.com")
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> svg_support = firefox.getSpecification("svg-support")
     >>> form = {
-    ...     'field.actions.change': 'Change',
-    ...     'field.definition_status': 'Drafting',
-    ...     'field.implementation_status':
-    ...         svg_support.implementation_status.title,
-    ...     }
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+status')
+    ...     "field.actions.change": "Change",
+    ...     "field.definition_status": "Drafting",
+    ...     "field.implementation_status": (
+    ...         svg_support.implementation_status.title
+    ...     ),
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+status")
     >>> edit_view.initialize()
 
     >>> import transaction
@@ -34,13 +35,20 @@ The notification was sent to the registrant, Foo Bar, the assignee, Carlos,
 the approver, Cprov, and the drafter, Robert.
 
     >>> related_people = [
-    ...     svg_support.owner, svg_support.assignee, svg_support.drafter,
-    ...     svg_support.approver]
+    ...     svg_support.owner,
+    ...     svg_support.assignee,
+    ...     svg_support.drafter,
+    ...     svg_support.approver,
+    ... ]
     >>> related_people += [
-    ...     subscription.person for subscription in svg_support.subscriptions]
+    ...     subscription.person for subscription in svg_support.subscriptions
+    ... ]
     >>> related_people_addresses = [
-    ...     [person.preferredemail.email] for person in set(related_people)]
-    >>> for addr in sorted(related_people_addresses): print(pretty(addr))
+    ...     [person.preferredemail.email] for person in set(related_people)
+    ... ]
+    >>> for addr in sorted(related_people_addresses):
+    ...     print(pretty(addr))
+    ...
     ['andrew.bennetts@ubuntulinux.com']
     ['carlos@canonical.com']
     ['celso.providelo@canonical.com']
@@ -50,7 +58,8 @@ the approver, Cprov, and the drafter, Robert.
     ['stuart.bishop@canonical.com']
 
     >>> sent_addresses = sorted(
-    ...     [to_addrs for from_addr, to_addrs, message in stub.test_emails])
+    ...     [to_addrs for from_addr, to_addrs, message in stub.test_emails]
+    ... )
     >>> sent_addresses == sorted(related_people_addresses)
     True
 
@@ -63,6 +72,7 @@ notifications were sent.
 
     >>> for subscription in svg_support.subscriptions:
     ...     print(subscription.person.preferredemail.email)
+    ...
     andrew.bennetts@ubuntulinux.com
     daf@canonical.com
     foo.bar@canonical.com
@@ -74,15 +84,17 @@ Let's set a different approver and add a subscriber.
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> stub.test_emails = []
-    >>> mark = getUtility(IPersonSet).getByEmail('mark@example.com')
+    >>> mark = getUtility(IPersonSet).getByEmail("mark@example.com")
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
     >>> svg_support.approver = mark
     >>> svg_support.subscribe(sample_person, sample_person, False)
     <...>
     >>> transaction.commit()
     >>> for fromaddr, toaddrs, message in stub.test_emails:
     ...     print(toaddrs)
+    ...
     ['test@canonical.com']
 
 Now if we edit the status, a notification will be sent to all the
@@ -90,13 +102,15 @@ previous people, and to the approver and the added subscriber:
 
     >>> stub.test_emails = []
     >>> form = {
-    ...     'field.actions.change': 'Change',
-    ...     'field.definition_status': 'Pending Approval',
-    ...     'field.implementation_status':
-    ...         svg_support.implementation_status.title,
-    ...     'field.needs_discussion': '1'}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+status')
+    ...     "field.actions.change": "Change",
+    ...     "field.definition_status": "Pending Approval",
+    ...     "field.implementation_status": (
+    ...         svg_support.implementation_status.title
+    ...     ),
+    ...     "field.needs_discussion": "1",
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+status")
     >>> edit_view.initialize()
     >>> transaction.commit()
 
@@ -104,7 +118,9 @@ The added subscriber will also receive a notification that they
 are now subscribed.
 
     >>> x = sorted(toaddrs for fromaddr, toaddrs, message in stub.test_emails)
-    >>> for addr in x: print(addr)
+    >>> for addr in x:
+    ...     print(addr)
+    ...
     ['andrew.bennetts@ubuntulinux.com']
     ['carlos@canonical.com']
     ['daf@canonical.com']
@@ -119,16 +135,17 @@ Now let's take a look at what the notification looks like:
     >>> import email
     >>> notifications = [
     ...     email.message_from_bytes(raw_message)
-    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
+    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)
+    ... ]
     >>> status_notification = notifications[0]
-    >>> status_notification['To']
+    >>> status_notification["To"]
     'andrew.bennetts@ubuntulinux.com'
-    >>> status_notification['From']
+    >>> status_notification["From"]
     'Foo Bar <foo.bar@canonical.com>'
-    >>> status_notification['Subject']
+    >>> status_notification["Subject"]
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body.decode('UTF-8'))
+    >>> print(body.decode("UTF-8"))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Drafting => Pending Approval
@@ -145,30 +162,34 @@ Whiteboard change:
     ...     "This is a long line, which will be wrapped in the email,"
     ...     " since it's longer than 72 characters.\n"
     ...     "\n"
-    ...     "Another paragraph")
+    ...     "Another paragraph"
+    ... )
     >>> form = {
-    ...     'field.actions.change': 'Change',
-    ...     'field.definition_status': 'Pending Approval',
-    ...     'field.implementation_status':
-    ...         svg_support.implementation_status.title,
-    ...     'field.whiteboard': new_whiteboard}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+status')
+    ...     "field.actions.change": "Change",
+    ...     "field.definition_status": "Pending Approval",
+    ...     "field.implementation_status": (
+    ...         svg_support.implementation_status.title
+    ...     ),
+    ...     "field.whiteboard": new_whiteboard,
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+status")
     >>> edit_view.initialize()
     >>> transaction.commit()
 
     >>> notifications = [
     ...     email.message_from_bytes(raw_message)
-    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
+    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)
+    ... ]
     >>> status_notification = notifications[0]
-    >>> status_notification['To']
+    >>> status_notification["To"]
     'andrew.bennetts@ubuntulinux.com'
-    >>> status_notification['From']
+    >>> status_notification["From"]
     'Foo Bar <foo.bar@canonical.com>'
-    >>> status_notification['Subject']
+    >>> status_notification["Subject"]
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body.decode('UTF-8'))
+    >>> print(body.decode("UTF-8"))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
     Whiteboard set to:
@@ -187,28 +208,31 @@ Definition status and whiteboard change:
 
     >>> stub.test_emails = []
     >>> form = {
-    ...     'field.actions.change': 'Change',
-    ...     'field.definition_status': 'Approved',
-    ...     'field.implementation_status':
-    ...         svg_support.implementation_status.title,
-    ...     'field.whiteboard': 'Excellent work.'}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+status')
+    ...     "field.actions.change": "Change",
+    ...     "field.definition_status": "Approved",
+    ...     "field.implementation_status": (
+    ...         svg_support.implementation_status.title
+    ...     ),
+    ...     "field.whiteboard": "Excellent work.",
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+status")
     >>> edit_view.initialize()
     >>> transaction.commit()
 
     >>> notifications = [
     ...     email.message_from_bytes(raw_message)
-    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
+    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)
+    ... ]
     >>> status_notification = notifications[0]
-    >>> status_notification['To']
+    >>> status_notification["To"]
     'andrew.bennetts@ubuntulinux.com'
-    >>> status_notification['From']
+    >>> status_notification["From"]
     'Foo Bar <foo.bar@canonical.com>'
-    >>> status_notification['Subject']
+    >>> status_notification["Subject"]
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body.decode('UTF-8'))
+    >>> print(body.decode("UTF-8"))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Definition Status: Pending Approval => Approved
@@ -229,26 +253,29 @@ Change priority:
 
     >>> stub.test_emails = []
     >>> form = {
-    ...     'field.actions.change': 'Change', 'field.priority': 'Essential',
-    ...     'field.direction_approved': 'on',
-    ...     'field.whiteboard': svg_support.whiteboard}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+priority')
+    ...     "field.actions.change": "Change",
+    ...     "field.priority": "Essential",
+    ...     "field.direction_approved": "on",
+    ...     "field.whiteboard": svg_support.whiteboard,
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+priority")
     >>> edit_view.initialize()
     >>> transaction.commit()
 
     >>> notifications = [
     ...     email.message_from_bytes(raw_message)
-    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
+    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)
+    ... ]
     >>> status_notification = notifications[0]
-    >>> status_notification['To']
+    >>> status_notification["To"]
     'andrew.bennetts@ubuntulinux.com'
-    >>> status_notification['From']
+    >>> status_notification["From"]
     'Foo Bar <foo.bar@canonical.com>'
-    >>> status_notification['Subject']
+    >>> status_notification["Subject"]
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body.decode('UTF-8'))
+    >>> print(body.decode("UTF-8"))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Priority: High => Essential
@@ -264,25 +291,29 @@ Change approver, assignee and drafter:
 
     >>> stub.test_emails = []
     >>> form = {
-    ...     'field.actions.change': 'Change', 'field.assignee': 'mark',
-    ...     'field.approver': '', 'field.drafter': 'foo.bar@canonical.com'}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
-    >>> edit_view = getMultiAdapter((svg_support, request), name='+people')
+    ...     "field.actions.change": "Change",
+    ...     "field.assignee": "mark",
+    ...     "field.approver": "",
+    ...     "field.drafter": "foo.bar@canonical.com",
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
+    >>> edit_view = getMultiAdapter((svg_support, request), name="+people")
     >>> edit_view.initialize()
     >>> transaction.commit()
 
     >>> notifications = [
     ...     email.message_from_bytes(raw_message)
-    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)]
+    ...     for from_addr, to_addrs, raw_message in sorted(stub.test_emails)
+    ... ]
     >>> status_notification = notifications[0]
-    >>> status_notification['To']
+    >>> status_notification["To"]
     'andrew.bennetts@ubuntulinux.com'
-    >>> status_notification['From']
+    >>> status_notification["From"]
     'Foo Bar <foo.bar@canonical.com>'
-    >>> status_notification['Subject']
+    >>> status_notification["Subject"]
     '[Blueprint svg-support] Support Native SVG Objects'
     >>> body = status_notification.get_payload(decode=True)
-    >>> print(body.decode('UTF-8'))
+    >>> print(body.decode("UTF-8"))
     Blueprint changed by Foo Bar:
     <BLANKLINE>
         Approver: Mark Shuttleworth => (none)
@@ -299,11 +330,14 @@ about, no notification is sent:
 
     >>> stub.test_emails = []
     >>> form = {
-    ...     'FORM_SUBMIT': 'Continue', 'field.productseries': '1',
-    ...     'field.whiteboard': 'Proposing for milestones...'}
-    >>> request = LaunchpadTestRequest(form=form, method='POST')
+    ...     "FORM_SUBMIT": "Continue",
+    ...     "field.productseries": "1",
+    ...     "field.whiteboard": "Proposing for milestones...",
+    ... }
+    >>> request = LaunchpadTestRequest(form=form, method="POST")
     >>> edit_view = getMultiAdapter(
-    ...     (svg_support, request), name='+setproductseries')
+    ...     (svg_support, request), name="+setproductseries"
+    ... )
     >>> edit_view.initialize()
     >>> transaction.commit()
     >>> len(stub.test_emails)

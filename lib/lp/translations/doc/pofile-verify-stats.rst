@@ -24,7 +24,8 @@ it directly.
     >>> import transaction
     >>> from lp.services.mail.stub import test_emails
     >>> from lp.translations.scripts.verify_pofile_stats import (
-    ...     VerifyPOFileStatsProcess)
+    ...     VerifyPOFileStatsProcess,
+    ... )
     >>> from lp.services.log.logger import FakeLogger
     >>> logger = FakeLogger()
     >>> VerifyPOFileStatsProcess(transaction, logger).run()
@@ -105,11 +106,12 @@ The Translations administrators also receive an email about the error.
     >>> to_addrs
     ['launchpad-error-reports@lists.canonical.com']
     >>> in_header = True
-    >>> for line in body.decode('UTF-8').splitlines():
+    >>> for line in body.decode("UTF-8").splitlines():
     ...     if in_header:
-    ...         in_header = (line != '')
+    ...         in_header = line != ""
     ...     else:
     ...         print(line)
+    ...
     The POFile statistics verifier encountered errors while checking cached
     statistics in the database:
     <BLANKLINE>
@@ -128,7 +130,8 @@ fixed by running the verifier directly.
 
     >>> from lp.testing.script import run_script
     >>> (returncode, out, err) = run_script(
-    ...     'cronscripts/rosetta-pofile-stats.py', ['--start-id=99'])
+    ...     "cronscripts/rosetta-pofile-stats.py", ["--start-id=99"]
+    ... )
     >>> print(returncode)
     0
     >>> print(err)

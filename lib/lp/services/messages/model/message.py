@@ -265,16 +265,16 @@ class Message(SQLBase):
 def get_parent_msgids(parsed_message):
     """Returns a list of message ids the mail was a reply to.
 
-    >>> get_parent_msgids({'In-Reply-To': '<msgid1>'})
+    >>> get_parent_msgids({"In-Reply-To": "<msgid1>"})
     ['<msgid1>']
 
-    >>> get_parent_msgids({'References': '<msgid1> <msgid2>'})
+    >>> get_parent_msgids({"References": "<msgid1> <msgid2>"})
     ['<msgid1>', '<msgid2>']
 
-    >>> get_parent_msgids({'In-Reply-To': '<msgid1> <msgid2>'})
+    >>> get_parent_msgids({"In-Reply-To": "<msgid1> <msgid2>"})
     ['<msgid1>', '<msgid2>']
 
-    >>> get_parent_msgids({'In-Reply-To': '', 'References': ''})
+    >>> get_parent_msgids({"In-Reply-To": "", "References": ""})
     []
 
     >>> get_parent_msgids({})
@@ -339,13 +339,13 @@ class MessageSet:
     def _decode_header(self, header):
         r"""Decode an RFC 2047 encoded header.
 
-            >>> MessageSet()._decode_header('=?iso-8859-1?q?F=F6=F6_b=E4r?=')
+            >>> MessageSet()._decode_header("=?iso-8859-1?q?F=F6=F6_b=E4r?=")
             u'F\xf6\xf6 b\xe4r'
 
         If the header isn't encoded properly, the characters that can't
         be decoded are replaced with unicode question marks.
 
-            >>> MessageSet()._decode_header('=?utf-8?q?F=F6?=')
+            >>> MessageSet()._decode_header("=?utf-8?q?F=F6?=")
             u'F\ufffd'
         """
         # Unfold the header before decoding it.

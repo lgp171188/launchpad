@@ -27,11 +27,11 @@ Let's use Salgado and the Launchpad Administrators team as an examples
 here, since they haven't uploaded custom logos yet.
 
     >>> from lp.registry.interfaces.person import IPerson, IPersonSet
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> salgado.logo is None
     True
 
-    >>> admins_team = getUtility(IPersonSet).getByName('admins')
+    >>> admins_team = getUtility(IPersonSet).getByName("admins")
     >>> admins_team.logo is None
     True
 
@@ -55,24 +55,26 @@ button allows the user to upload a new image.
     >>> from lp.app.widgets.image import ImageChangeWidget
     >>> add_style = ImageChangeWidget.ADD_STYLE
     >>> edit_style = ImageChangeWidget.EDIT_STYLE
-    >>> person_logo = IPerson['logo'].bind(salgado)
+    >>> person_logo = IPerson["logo"].bind(salgado)
     >>> widget = ImageChangeWidget(
-    ...     person_logo, LaunchpadTestRequest(), edit_style)
+    ...     person_logo, LaunchpadTestRequest(), edit_style
+    ... )
 
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> html = widget()
-    >>> print(BeautifulSoup(html).find('img').get('src'))
+    >>> print(BeautifulSoup(html).find("img").get("src"))
     /@@/person-logo
 
     >>> def print_radio_items(html):
     ...     soup = BeautifulSoup(html)
-    ...     for input in soup('input', {'type': 'radio'}):
-    ...         item = input.get('value')
-    ...         if input.get('checked'):
-    ...             item += ': SELECTED'
+    ...     for input in soup("input", {"type": "radio"}):
+    ...         item = input.get("value")
+    ...         if input.get("checked"):
+    ...             item += ": SELECTED"
     ...         else:
-    ...             item += ': NOT SELECTED'
+    ...             item += ": NOT SELECTED"
     ...         print(item)
+    ...
     >>> print_radio_items(html)
     keep: SELECTED
     change: NOT SELECTED
@@ -80,9 +82,8 @@ button allows the user to upload a new image.
 If we set any random file as salgado's logo, we'll see it there, as well
 as an option to delete the image that was just uploaded.
 
-    >>> from lp.services.librarian.interfaces import (
-    ...     ILibraryFileAliasSet)
-    >>> login('guilherme.salgado@canonical.com')
+    >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
+    >>> login("guilherme.salgado@canonical.com")
     >>> logo = getUtility(ILibraryFileAliasSet)[53]
     >>> salgado.logo = logo
 
@@ -90,10 +91,11 @@ as an option to delete the image that was just uploaded.
     # manually.
 
     >>> widget = ImageChangeWidget(
-    ...     person_logo, LaunchpadTestRequest(), edit_style)
+    ...     person_logo, LaunchpadTestRequest(), edit_style
+    ... )
 
     >>> html = widget()
-    >>> logo.getURL() == BeautifulSoup(html).find('img').get('src')
+    >>> logo.getURL() == BeautifulSoup(html).find("img").get("src")
     True
 
     >>> print_radio_items(html)
@@ -107,17 +109,19 @@ the widget. Let's see how it reacts.
 First, let's tell it to keep the existing image.
 
     >>> from lp.services.fields import KEEP_SAME_IMAGE
-    >>> form = {'field.logo.action': 'keep'}
+    >>> form = {"field.logo.action": "keep"}
     >>> widget = ImageChangeWidget(
-    ...     person_logo, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_logo, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue() == KEEP_SAME_IMAGE
     True
 
 Then we tell it to delete the existing one.
 
-    >>> form = {'field.logo.action': 'delete'}
+    >>> form = {"field.logo.action": "delete"}
     >>> widget = ImageChangeWidget(
-    ...     person_logo, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_logo, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue() is None
     True
 
@@ -128,14 +132,16 @@ And now we change it to a random image.
     >>> import os
     >>> logo_file_name = os.path.join(
     ...     os.path.dirname(canonical.launchpad.__file__),
-    ...     'images/team-logo.png')
-    >>> with open(logo_file_name, 'rb') as logo_file:
+    ...     "images/team-logo.png",
+    ... )
+    >>> with open(logo_file_name, "rb") as logo_file:
     ...     logo = io.BytesIO(logo_file.read())
-    >>> logo.filename = 'logo.png'
-    >>> form = {'field.logo.action': 'change',
-    ...         'field.logo.image': logo}
+    ...
+    >>> logo.filename = "logo.png"
+    >>> form = {"field.logo.action": "change", "field.logo.image": logo}
     >>> widget = ImageChangeWidget(
-    ...     person_logo, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_logo, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> fileupload = widget.getInputValue()
     >>> print(fileupload.filename)
     logo.png
@@ -147,10 +153,11 @@ In order for this widget to work on add forms, we need to make sure it
 works when its field is bounded to an object that doesn't have the
 attribute that the field represents.
 
-    >>> personset_logo = IPerson['logo'].bind(getUtility(IPersonSet))
-    >>> form = {'field.logo.action': 'keep'}
+    >>> personset_logo = IPerson["logo"].bind(getUtility(IPersonSet))
+    >>> form = {"field.logo.action": "keep"}
     >>> widget = ImageChangeWidget(
-    ...     personset_logo, LaunchpadTestRequest(form=form), add_style)
+    ...     personset_logo, LaunchpadTestRequest(form=form), add_style
+    ... )
 
 Note that in this case the KEEP_SAME_IMAGE flag doesn't make sense, so
 we return None, which is a sensible value that can be fed to a method
@@ -163,10 +170,10 @@ which creates a new database object for us.
     keep: SELECTED
     change: NOT SELECTED
 
-    >>> form = {'field.logo.action': 'change',
-    ...         'field.logo.image': logo}
+    >>> form = {"field.logo.action": "change", "field.logo.image": logo}
     >>> widget = ImageChangeWidget(
-    ...     personset_logo, LaunchpadTestRequest(form=form), add_style)
+    ...     personset_logo, LaunchpadTestRequest(form=form), add_style
+    ... )
     >>> print_radio_items(widget())
     keep: NOT SELECTED
     change: SELECTED
@@ -189,14 +196,13 @@ use a custom field (IconImageUpload) together with it. That field should
 not be used directly, since it specifies some constraints and defaults
 that are specific to each image, so you must subclass it before using.
 
-    >>> from lp.services.fields import (
-    ...     BaseImageUpload, IconImageUpload)
+    >>> from lp.services.fields import BaseImageUpload, IconImageUpload
 
 Note: the .bind method here is fetching the field from the IPerson
 schema (which should be an IconImageUpload, a subclass of
 BaseImageUpload) and binding it to Launchpad Administrators.
 
-    >>> person_icon = IPerson['icon'].bind(admins_team)
+    >>> person_icon = IPerson["icon"].bind(admins_team)
     >>> isinstance(person_icon, BaseImageUpload)
     True
 
@@ -249,13 +255,15 @@ have an image with a byte size smaller than person_mugshot.max_size BUT
 dimensions smaller than person_mugshot.dimensions, it must be rejected.
 
     >>> import PIL.Image
-    >>> person_mugshot = IPerson['mugshot'].bind(salgado)
+    >>> person_mugshot = IPerson["mugshot"].bind(salgado)
     >>> logo_file_name = os.path.join(
     ...     os.path.dirname(canonical.launchpad.__file__),
-    ...     'images/team-logo.png')
-    >>> with open(logo_file_name, 'rb') as logo_file:
+    ...     "images/team-logo.png",
+    ... )
+    >>> with open(logo_file_name, "rb") as logo_file:
     ...     logo = io.BytesIO(logo_file.read())
-    >>> logo.filename = 'logo.png'
+    ...
+    >>> logo.filename = "logo.png"
     >>> len(logo.getvalue()) <= person_mugshot.max_size
     True
 
@@ -263,9 +271,10 @@ dimensions smaller than person_mugshot.dimensions, it must be rejected.
     >>> image.size <= person_mugshot.dimensions
     True
 
-    >>> form = {'field.mugshot.action': 'change', 'field.mugshot.image': logo}
+    >>> form = {"field.mugshot.action": "change", "field.mugshot.image": logo}
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -278,10 +287,12 @@ the max_size:
 
     >>> mugshot_file_name = os.path.join(
     ...     os.path.dirname(canonical.launchpad.__file__),
-    ...     'images/team-mugshot.png')
-    >>> with open(mugshot_file_name, 'rb') as mugshot_file:
+    ...     "images/team-mugshot.png",
+    ... )
+    >>> with open(mugshot_file_name, "rb") as mugshot_file:
     ...     mugshot = io.BytesIO(mugshot_file.read())
-    >>> mugshot.filename = 'mugshot.png'
+    ...
+    >>> mugshot.filename = "mugshot.png"
 
 Image is a small enough file:
 
@@ -294,10 +305,13 @@ Image is the correct dimensions:
     >>> image.size == person_mugshot.dimensions
     True
 
-    >>> form = {'field.mugshot.action': 'change',
-    ...         'field.mugshot.image': mugshot}
+    >>> form = {
+    ...     "field.mugshot.action": "change",
+    ...     "field.mugshot.image": mugshot,
+    ... }
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> fileupload = widget.getInputValue()
     >>> print(fileupload.filename)
     mugshot.png
@@ -311,7 +325,8 @@ image, we'll get a validation error.
     >>> person_mugshot.max_size = len(mugshot.getvalue()) - 1
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -326,7 +341,8 @@ the maximum we allow.
     >>> person_mugshot.dimensions = (image.size[0] - 1, image.size[1] + 1)
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -337,7 +353,8 @@ the maximum we allow.
     >>> person_mugshot.dimensions = (image.size[0] + 1, image.size[1] - 1)
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -348,9 +365,10 @@ the maximum we allow.
 Finally, if the user specifies the 'change' action they must also provide
 a file to be uploaded.
 
-    >>> form = {'field.mugshot.action': 'change', 'field.mugshot.image': ''}
+    >>> form = {"field.mugshot.action": "change", "field.mugshot.image": ""}
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -368,13 +386,17 @@ by setting the exact_dimensions attribute of the field to False:
 
     >>> person_mugshot.exact_dimensions = False
     >>> person_mugshot.dimensions = (64, 64)
-    >>> with open(mugshot_file_name, 'rb') as mugshot_file:
+    >>> with open(mugshot_file_name, "rb") as mugshot_file:
     ...     mugshot = io.BytesIO(mugshot_file.read())
-    >>> mugshot.filename = 'mugshot.png'
-    >>> form = {'field.mugshot.action': 'change',
-    ...         'field.mugshot.image': mugshot}
+    ...
+    >>> mugshot.filename = "mugshot.png"
+    >>> form = {
+    ...     "field.mugshot.action": "change",
+    ...     "field.mugshot.image": mugshot,
+    ... }
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> widget.getInputValue()
     Traceback (most recent call last):
     ...
@@ -387,7 +409,8 @@ If the image is smaller than the dimensions, the input validates:
     >>> person_mugshot.dimensions = (256, 256)
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> fileupload = widget.getInputValue()
     >>> print(fileupload.filename)
     mugshot.png
@@ -397,7 +420,8 @@ The same occurs if the image matches the specified dimensions:
     >>> person_mugshot.dimensions = (192, 192)
     >>> _ = mugshot.seek(0)
     >>> widget = ImageChangeWidget(
-    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style)
+    ...     person_mugshot, LaunchpadTestRequest(form=form), edit_style
+    ... )
     >>> fileupload = widget.getInputValue()
     >>> print(fileupload.filename)
     mugshot.png

@@ -7,7 +7,9 @@ this behaviour and set some other response code.
 
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.services.webapp.adapter import (
-    ...     set_request_started, clear_request_started)
+    ...     set_request_started,
+    ...     clear_request_started,
+    ... )
     >>> from zope.component import getMultiAdapter
 
     >>> def render_using_default_view(error):
@@ -18,13 +20,13 @@ this behaviour and set some other response code.
     ...     try:
     ...         raise error
     ...     except Exception as error:
-    ...         request = LaunchpadTestRequest(
-    ...             environ={'PATH_INFO' : ''})
+    ...         request = LaunchpadTestRequest(environ={"PATH_INFO": ""})
     ...         set_request_started()
-    ...         request.oopsid = '100'
+    ...         request.oopsid = "100"
     ...         view = getMultiAdapter((error, request), name="index.html")
     ...         result = view()
     ...         return request.response, result
+    ...
 
 
 IRequestExpired exceptions have a 503 status code.

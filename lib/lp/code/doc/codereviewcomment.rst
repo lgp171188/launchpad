@@ -19,30 +19,38 @@ Creating CodeReviewComments
 
 CodeReviewComments are created from their BranchMergeProposals:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> factory = LaunchpadObjectFactory()
     >>> merge_proposal = factory.makeBranchMergeProposal()
     >>> sender = factory.makePerson(
-    ...     email='sender@example.com', displayname='Sender Person')
+    ...     email="sender@example.com", displayname="Sender Person"
+    ... )
     >>> comment = merge_proposal.createComment(
-    ...     sender, 'Please merge', 'This patch is very nice.')
+    ...     sender, "Please merge", "This patch is very nice."
+    ... )
 
 The initial email that gets sent out has the message_id stored in the merge
 proposal.  Subsequent comments are marked as replies to the initial email.
 
     >>> from lp.code.enums import CodeReviewVote
     >>> comment2 = merge_proposal.createComment(
-    ...     sender, 'No!', 'You are ugly and stupid',
-    ...     CodeReviewVote.DISAPPROVE)
+    ...     sender,
+    ...     "No!",
+    ...     "You are ugly and stupid",
+    ...     CodeReviewVote.DISAPPROVE,
+    ... )
     >>> comment2.message.parent is None
     True
 
 Comments can be marked as replies to particular comments.
 
     >>> comment3 = merge_proposal.createComment(
-    ...     sender, 'Hurt', "That wasn't a nice thing to say.",
-    ...     parent=comment2)
+    ...     sender,
+    ...     "Hurt",
+    ...     "That wasn't a nice thing to say.",
+    ...     parent=comment2,
+    ... )
     >>> comment3.message.parent == comment2.message
     True
 
@@ -60,33 +68,47 @@ If there is a subscriber to any of the branches involved in the merge,
 a notification is produced when the comment is created.
 
     >>> from lp.code.enums import (
-    ...     BranchSubscriptionDiffSize, BranchSubscriptionNotificationLevel,
-    ...     CodeReviewNotificationLevel)
+    ...     BranchSubscriptionDiffSize,
+    ...     BranchSubscriptionNotificationLevel,
+    ...     CodeReviewNotificationLevel,
+    ... )
     >>> source_subscriber = factory.makePerson(
-    ...     email='subscriber@example.com', displayname='Subscriber Person')
-    >>> _unused = merge_proposal.source_branch.subscribe(source_subscriber,
+    ...     email="subscriber@example.com", displayname="Subscriber Person"
+    ... )
+    >>> _unused = merge_proposal.source_branch.subscribe(
+    ...     source_subscriber,
     ...     BranchSubscriptionNotificationLevel.NOEMAIL,
     ...     BranchSubscriptionDiffSize.NODIFF,
-    ...     CodeReviewNotificationLevel.FULL, source_subscriber)
-    >>> from lp.testing.mail_helpers import (
-    ...     pop_notifications, print_emails)
+    ...     CodeReviewNotificationLevel.FULL,
+    ...     source_subscriber,
+    ... )
+    >>> from lp.testing.mail_helpers import pop_notifications, print_emails
     >>> _unused = pop_notifications()
     >>> merge_proposal.root_message_id = (
-    ...     '<201003111740.test.root@example.com>')
+    ...     "<201003111740.test.root@example.com>"
+    ... )
     >>> comment = merge_proposal.createComment(
-    ...     sender, 'Please merge', 'This patch is very nice.',
-    ...     vote=CodeReviewVote.APPROVE, review_type='DB')
+    ...     sender,
+    ...     "Please merge",
+    ...     "This patch is very nice.",
+    ...     vote=CodeReviewVote.APPROVE,
+    ...     review_type="DB",
+    ... )
 
 Now run the pending job to send the email.
 
     >>> from lp.code.interfaces.branchmergeproposal import (
-    ...     IBranchMergeProposalJobSource)
+    ...     IBranchMergeProposalJobSource,
+    ... )
     >>> [job] = list(getUtility(IBranchMergeProposalJobSource).iterReady())
     >>> job.run()
 
     >>> notifications = pop_notifications()
-    >>> notifications = [email for email in notifications if
-    ...                  email['X-Launchpad-Message-Rationale'] == 'Owner']
+    >>> notifications = [
+    ...     email
+    ...     for email in notifications
+    ...     if email["X-Launchpad-Message-Rationale"] == "Owner"
+    ... ]
     >>> print_emails(include_reply_to=True, notifications=notifications)
     From: Sender Person <mp+...@code.launchpad.test>
     To: ...
@@ -97,11 +119,11 @@ Now run the pending job to send the email.
     --...
     You are the owner of lp://dev/~...
     ----------------------------------------
-    >>> print(notifications[0]['X-Launchpad-Branch'])
+    >>> print(notifications[0]["X-Launchpad-Branch"])
     ~person-name.../product-name.../branch...
-    >>> notifications[0]['Message-Id'] == comment.message.rfc822msgid
+    >>> notifications[0]["Message-Id"] == comment.message.rfc822msgid
     True
-    >>> (notifications[0]['In-Reply-To'] == merge_proposal.root_message_id)
+    >>> (notifications[0]["In-Reply-To"] == merge_proposal.root_message_id)
     True
 
 

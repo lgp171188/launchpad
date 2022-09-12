@@ -16,9 +16,9 @@ based on IDistroArchSeries to handle them: get, add and update.
 
 Grab a distroarchseries:
 
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
-    >>> hoary_i386 = hoary['i386']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
+    >>> hoary_i386 = hoary["i386"]
 
 Grab some files to be used as Chroots (it doesn't really matter what
 they are, they simply need to be provide ILFA interface):
@@ -34,7 +34,7 @@ Check if getPocketChroot returns None for unknown chroots:
 
 Check if getChroot returns the 'default' argument on not found chroots:
 
-    >>> print(hoary_i386.getChroot(default='duuuuh'))
+    >>> print(hoary_i386.getChroot(default="duuuuh"))
     duuuuh
 
 Invoke addOrUpdateChroot for missing chroot, so it will insert a new
@@ -77,7 +77,8 @@ PocketChroots can also (per the name) be set for specific pockets:
 
     >>> chroot3 = getUtility(ILibraryFileAliasSet)[3]
     >>> p_chroot3 = hoary_i386.addOrUpdateChroot(
-    ...     chroot=chroot3, pocket=PackagePublishingPocket.UPDATES)
+    ...     chroot=chroot3, pocket=PackagePublishingPocket.UPDATES
+    ... )
     >>> print(p_chroot3.distroarchseries.architecturetag)
     i386
     >>> print(p_chroot3.pocket.name)
@@ -93,8 +94,11 @@ getPocketChroot falls back to depended-on pockets if necessary:
 
     >>> hoary_i386.getPocketChroot(PackagePublishingPocket.SECURITY).chroot.id
     2
-    >>> print(hoary_i386.getPocketChroot(
-    ...     PackagePublishingPocket.SECURITY, exact_pocket=True))
+    >>> print(
+    ...     hoary_i386.getPocketChroot(
+    ...         PackagePublishingPocket.SECURITY, exact_pocket=True
+    ...     )
+    ... )
     None
     >>> hoary_i386.getChroot(pocket=PackagePublishingPocket.SECURITY).id
     2

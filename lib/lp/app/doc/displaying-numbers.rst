@@ -9,34 +9,34 @@ bytes: Byte contractions
 The TALES formatter for numbers allows them to be rendered as byte
 contractions as per IEC60027-2:
 
-    >>> test_tales('foo/fmt:bytes', foo=0)
+    >>> test_tales("foo/fmt:bytes", foo=0)
     '0 bytes'
 
-    >>> test_tales('foo/fmt:bytes', foo=1)
+    >>> test_tales("foo/fmt:bytes", foo=1)
     '1 byte'
 
-    >>> test_tales('foo/fmt:bytes', foo=123)
+    >>> test_tales("foo/fmt:bytes", foo=123)
     '123 bytes'
 
-    >>> test_tales('foo/fmt:bytes', foo=1234)
+    >>> test_tales("foo/fmt:bytes", foo=1234)
     '1.2 KiB'
 
-    >>> test_tales('foo/fmt:bytes', foo=12345678)
+    >>> test_tales("foo/fmt:bytes", foo=12345678)
     '11.8 MiB'
 
-    >>> test_tales('foo/fmt:bytes', foo=12345567901)
+    >>> test_tales("foo/fmt:bytes", foo=12345567901)
     '11.5 GiB'
 
-    >>> test_tales('foo/fmt:bytes', foo=12345678901234)
+    >>> test_tales("foo/fmt:bytes", foo=12345678901234)
     '11.2 TiB'
 
-    >>> test_tales('foo/fmt:bytes', foo=123456789012345678)
+    >>> test_tales("foo/fmt:bytes", foo=123456789012345678)
     '109.7 PiB'
 
 We top out at YiB though, since there is no valid contraction above
 that (thank god!)
 
-    >>> test_tales('foo/fmt:bytes', foo=123456789012345678901234567890)
+    >>> test_tales("foo/fmt:bytes", foo=123456789012345678901234567890)
     '102121.1 YiB'
 
 float: Float formatting
@@ -48,7 +48,7 @@ to how the Python "%f" string formatter works:
 For instance:
 
     >>> foo = 12345.67890
-    >>> print(test_tales('foo/fmt:float/7.2', foo=foo))
+    >>> print(test_tales("foo/fmt:float/7.2", foo=foo))
     12345.68
 
 Is the same as:
@@ -58,31 +58,31 @@ Is the same as:
 
 Here's a set of exhaustive examples:
 
-    >>> test_tales('foo/fmt:float', foo=12345.67890)
+    >>> test_tales("foo/fmt:float", foo=12345.67890)
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError:
     'fmt:float requires a single decimal argument'
 
-    >>> test_tales('foo/fmt:float/0.3', foo=-12345.67890)
+    >>> test_tales("foo/fmt:float/0.3", foo=-12345.67890)
     '-12345.679'
 
-    >>> test_tales('foo/fmt:float/.4', foo=12345.67890)
+    >>> test_tales("foo/fmt:float/.4", foo=12345.67890)
     '12345.6789'
 
-    >>> test_tales('foo/fmt:float/-.2', foo=12345.67890)
+    >>> test_tales("foo/fmt:float/-.2", foo=12345.67890)
     '12345.68'
 
-    >>> test_tales('foo/fmt:float/-7.1', foo=-12345.67890)
+    >>> test_tales("foo/fmt:float/-7.1", foo=-12345.67890)
     '-12345.7'
 
-    >>> test_tales('foo/fmt:float/2', foo=12345.67890)
+    >>> test_tales("foo/fmt:float/2", foo=12345.67890)
     '12346'
 
-    >>> test_tales('foo/fmt:float/-2', foo=-12345.67890)
+    >>> test_tales("foo/fmt:float/-2", foo=-12345.67890)
     '-12346'
 
-    >>> test_tales('foo/fmt:float/bong', foo=12345.67890)
+    >>> test_tales("foo/fmt:float/bong", foo=12345.67890)
     Traceback (most recent call last):
     ...
     ValueError: ... float...bong...

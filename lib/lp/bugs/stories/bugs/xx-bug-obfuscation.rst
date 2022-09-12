@@ -10,13 +10,15 @@ No Privileges Person can see the email address in the bug's
 description in the bug page.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.test'
-    ...     '/debian/sarge/+source/mozilla-firefox/+bug/3')
+    ...     "http://bugs.launchpad.test"
+    ...     "/debian/sarge/+source/mozilla-firefox/+bug/3"
+    ... )
     >>> user_browser.title
     'Bug #3 ...'
 
     >>> description = find_tag_by_id(
-    ...     user_browser.contents, 'edit-description')
+    ...     user_browser.contents, "edit-description"
+    ... )
     >>> print(description.decode_contents())
     <BLANKLINE>
     ...<p>Shirtpkdf user@domain.org lkjd hlkjfds...
@@ -24,16 +26,18 @@ description in the bug page.
 An anonymous cannot see the email address anywhere in the page.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.test'
-    ...     '/debian/sarge/+source/mozilla-firefox/+bug/3')
+    ...     "http://bugs.launchpad.test"
+    ...     "/debian/sarge/+source/mozilla-firefox/+bug/3"
+    ... )
     >>> print(anon_browser.title)
     Bug #3 ...
 
-    >>> 'user@domain.org' in anon_browser.contents
+    >>> "user@domain.org" in anon_browser.contents
     False
 
     >>> description = find_tag_by_id(
-    ...     anon_browser.contents, 'edit-description')
+    ...     anon_browser.contents, "edit-description"
+    ... )
     >>> print(description.decode_contents())
     <BLANKLINE>
     ...<p>Shirtpkdf &lt;email address hidden&gt; lkjd hlkjfds...

@@ -22,9 +22,11 @@ the interface, but will usually want to customise the other properties and
 methods as well.
 
     >>> from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
-    ...     IBuildFarmJobBehaviour)
+    ...     IBuildFarmJobBehaviour,
+    ... )
     >>> from lp.buildmaster.model.buildfarmjobbehaviour import (
-    ...     BuildFarmJobBehaviourBase)
+    ...     BuildFarmJobBehaviourBase,
+    ... )
     >>> from zope.interface import implementer
 
     >>> @implementer(IBuildFarmJobBehaviour)
@@ -39,6 +41,7 @@ For this documentation, we'll also need a dummy new build farm job.
     >>> from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
     >>> class IMyNewBuildFarmJob(IBuildFarmJob):
     ...     """Normally defines job-type specific database fields."""
+    ...
     >>> @implementer(IMyNewBuildFarmJob)
     ... class MyNewBuildFarmJob:
     ...     pass
@@ -59,8 +62,8 @@ But for the sake of this documentation we'll add the adapter manually.
 
     >>> from zope.component import provideAdapter
     >>> provideAdapter(
-    ...     MyNewBuildBehaviour, (IMyNewBuildFarmJob,),
-    ...     IBuildFarmJobBehaviour)
+    ...     MyNewBuildBehaviour, (IMyNewBuildFarmJob,), IBuildFarmJobBehaviour
+    ... )
 
 This will then allow the builder to request and set the required behaviour
 from the current job. Bob the builder currently has a binary package job and
@@ -69,7 +72,7 @@ binary-build specific information.
 
     >>> from lp.buildmaster.model.builder import Builder
     >>> from lp.services.database.interfaces import IStore
-    >>> bob = IStore(Builder).find(Builder, Builder.name == 'bob').one()
+    >>> bob = IStore(Builder).find(Builder, Builder.name == "bob").one()
 
 Once the builder has the relevant behaviour, it is able to provide both
 general builder functionality of its own accord, while delegating any

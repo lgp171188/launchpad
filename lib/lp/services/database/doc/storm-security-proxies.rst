@@ -9,12 +9,12 @@ Do some imports.
 
 Login as Mark.
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
 
 Get Mark's person and another person, wrapped in security proxies.
 
-    >>> mark = getUtility(IPersonSet).getByName('mark')
-    >>> spiv = getUtility(IPersonSet).getByName('spiv')
+    >>> mark = getUtility(IPersonSet).getByName("mark")
+    >>> spiv = getUtility(IPersonSet).getByName("spiv")
     >>> print(type(mark))
     <... 'zope.security._proxy._Proxy'>
 

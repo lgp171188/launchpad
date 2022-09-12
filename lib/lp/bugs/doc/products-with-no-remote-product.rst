@@ -20,30 +20,34 @@ IProductSet.getProductsWithNoneRemoteProduct() is used for this.
 
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> factory = LaunchpadObjectFactory()
-    >>> product = factory.makeProduct(name=u'no-remote-product')
+    >>> product = factory.makeProduct(name="no-remote-product")
     >>> print(product.remote_product)
     None
 
     >>> products = getUtility(IProductSet).getProductsWithNoneRemoteProduct()
     >>> for product in products:
     ...     print(product.name)
+    ...
     no-remote-product
 
 When we update remote_product automatically, different heuristics are
 used depending on which bug tracker is used. Therefore the list of
 products can be filtered by bug tracker type.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
-    >>> bugzilla_product = factory.makeProduct(name=u'bugzilla-product')
+    >>> bugzilla_product = factory.makeProduct(name="bugzilla-product")
     >>> bugzilla = factory.makeBugTracker(
-    ...     bugtrackertype=BugTrackerType.BUGZILLA)
+    ...     bugtrackertype=BugTrackerType.BUGZILLA
+    ... )
     >>> bugzilla_product.bugtracker = bugzilla
-    >>> trac_product = factory.makeProduct(name=u'trac-product')
+    >>> trac_product = factory.makeProduct(name="trac-product")
     >>> trac = factory.makeBugTracker(bugtrackertype=BugTrackerType.TRAC)
     >>> trac_product.bugtracker = trac
     >>> products = getUtility(IProductSet).getProductsWithNoneRemoteProduct(
-    ...     bugtracker_type=BugTrackerType.BUGZILLA)
+    ...     bugtracker_type=BugTrackerType.BUGZILLA
+    ... )
     >>> for product in products:
     ...     print(product.name)
+    ...
     bugzilla-product

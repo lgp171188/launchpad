@@ -14,19 +14,21 @@ YUI grid classes for positioning.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from zope.browserpage import ViewPageTemplateFile
 
-    >>> user = factory.makePerson(name='waffles')
+    >>> user = factory.makePerson(name="waffles")
     >>> request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://launchpad.test',
-    ...     PATH_INFO='/~waffles/+layout')
+    ...     SERVER_URL="http://launchpad.test", PATH_INFO="/~waffles/+layout"
+    ... )
     >>> request.setPrincipal(user)
 
 The view can define the template's title in the page_title property.
 
     >>> class MainSideView(LaunchpadView):
     ...     """A simple view to test base-layout."""
-    ...     __launchpad_facetname__ = 'overview'
-    ...     template = ViewPageTemplateFile('../tests/testfiles/main-side.pt')
-    ...     page_title = 'Test base-layout: main_side'
+    ...
+    ...     __launchpad_facetname__ = "overview"
+    ...     template = ViewPageTemplateFile("../tests/testfiles/main-side.pt")
+    ...     page_title = "Test base-layout: main_side"
+    ...
 
 The main_side layout uses all the defined features of the base-layout
 template. The example template uses the epilogue, main, and side
@@ -56,9 +58,11 @@ content to take up all the horizontal space.
 
     >>> class MainOnlyView(LaunchpadView):
     ...     """A simple view to test base-layout."""
-    ...     __launchpad_facetname__ = 'overview'
-    ...     template = ViewPageTemplateFile('../tests/testfiles/main-only.pt')
-    ...     page_title = 'Test base-layout: main_only'
+    ...
+    ...     __launchpad_facetname__ = "overview"
+    ...     template = ViewPageTemplateFile("../tests/testfiles/main-only.pt")
+    ...     page_title = "Test base-layout: main_only"
+    ...
 
     >>> view = MainOnlyView(user, request)
     >>> html = view.render()
@@ -79,10 +83,13 @@ slots are rendered, as are the application tabs.
 
     >>> class SearchlessView(LaunchpadView):
     ...     """A simple view to test base-layout."""
-    ...     __launchpad_facetname__ = 'overview'
+    ...
+    ...     __launchpad_facetname__ = "overview"
     ...     template = ViewPageTemplateFile(
-    ...         '../tests/testfiles/searchless.pt')
-    ...     page_title = 'Test base-layout: searchless'
+    ...         "../tests/testfiles/searchless.pt"
+    ...     )
+    ...     page_title = "Test base-layout: searchless"
+    ...
 
     >>> view = SearchlessView(user, request)
     >>> html = view.render()
@@ -104,8 +111,7 @@ Page Diagnostics
 
 The page includes a comment after the body with diagnostic information.
 
-    >>> print(html[html.index('</body>') + 7:])
-    ...
+    >>> print(html[html.index("</body>") + 7 :])
     <!--
       Facet name: overview
       Page type: searchless
@@ -124,7 +130,7 @@ Page Headings
 The example layouts all used the heading slot to define a heading for their
 test. The template controlled the heading.
 
-    >>> content = find_tag_by_id(view.render(), 'maincontent')
+    >>> content = find_tag_by_id(view.render(), "maincontent")
     >>> print(content.h1)
     <h1>Heading</h1>
 
@@ -134,15 +140,19 @@ Page Footers
 
     >>> class BugsMainSideView(MainSideView):
     ...     """A simple view to test base-layout."""
-    ...     __launchpad_facetname__ = 'bugs'
+    ...
+    ...     __launchpad_facetname__ = "bugs"
+    ...
     >>> bugs_request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://bugs.launchpad.test',
-    ...     PATH_INFO='/~waffles/+layout')
+    ...     SERVER_URL="http://bugs.launchpad.test",
+    ...     PATH_INFO="/~waffles/+layout",
+    ... )
     >>> bugs_request.setPrincipal(user)
     >>> view = BugsMainSideView(user, bugs_request)
-    >>> footer = find_tag_by_id(html, 'footer')
-    >>> for tag in footer.find_all('a'):
-    ...     print(tag.string, tag['href'])
+    >>> footer = find_tag_by_id(html, "footer")
+    >>> for tag in footer.find_all("a"):
+    ...     print(tag.string, tag["href"])
+    ...
     None http://launchpad.test/
     Take the tour http://launchpad.test/+tour
     Read the guide https://help.launchpad.net/
@@ -167,13 +177,15 @@ attribute.
 
     >>> from lp.registry.interfaces.person import PersonVisibility
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> team = factory.makeTeam(
-    ...     owner=user, name='a-private-team',
-    ...     visibility=PersonVisibility.PRIVATE)
+    ...     owner=user,
+    ...     name="a-private-team",
+    ...     visibility=PersonVisibility.PRIVATE,
+    ... )
     >>> view = MainOnlyView(team, request)
-    >>> body = find_tag_by_id(view.render(), 'document')
-    >>> print(' '.join(body['class']))
+    >>> body = find_tag_by_id(view.render(), "document")
+    >>> print(" ".join(body["class"]))
     tab-overview
         main_only
         private
@@ -182,10 +194,10 @@ attribute.
 When the context is public, the 'public' class is in the class attribute.
 
     >>> login(ANONYMOUS)
-    >>> team = factory.makeTeam(owner=user, name='a-public-team')
+    >>> team = factory.makeTeam(owner=user, name="a-public-team")
     >>> view = MainOnlyView(team, request)
-    >>> body = find_tag_by_id(view.render(), 'document')
-    >>> print(' '.join(body['class']))
+    >>> body = find_tag_by_id(view.render(), "document")
+    >>> print(" ".join(body["class"]))
     tab-overview main_only public yui3-skin-sam
 
 
@@ -194,9 +206,9 @@ Notifications
 
 Notifications are displayed between the breadcrumbs and the page content.
 
-    >>> request.response.addInfoNotification('I cannot do that Dave.')
+    >>> request.response.addInfoNotification("I cannot do that Dave.")
     >>> view = MainOnlyView(user, request)
-    >>> body_tag = find_tag_by_id(view.render(), 'maincontent')
+    >>> body_tag = find_tag_by_id(view.render(), "maincontent")
     >>> print(str(body_tag))
     <div ... id="maincontent">
       ...
@@ -213,17 +225,21 @@ headers.
     >>> from zope.interface import Interface
     >>> class FormView(LaunchpadFormView):
     ...     """A simple view to test notifications."""
+    ...
     ...     class schema(Interface):
     ...         """A default schema."""
-    ...     @action('Test', name='test')
+    ...
+    ...     @action("Test", name="test")
     ...     def test_action(self, action, data):
     ...         pass
+    ...
 
-    >>> extra = {'HTTP_X_REQUESTED_WITH': 'XMLHttpRequest'}
+    >>> extra = {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}
     >>> request = LaunchpadTestRequest(
-    ...     method='POST', form={'field.actions.test': 'Test'}, **extra)
-    >>> request.response.addInfoNotification('I cannot do that Dave.')
+    ...     method="POST", form={"field.actions.test": "Test"}, **extra
+    ... )
+    >>> request.response.addInfoNotification("I cannot do that Dave.")
     >>> view = FormView(user, request)
     >>> view.initialize()
-    >>> print(request.response.getHeader('X-Lazr-Notifications'))
+    >>> print(request.response.getHeader("X-Lazr-Notifications"))
     [[20, "I cannot do that Dave."]]

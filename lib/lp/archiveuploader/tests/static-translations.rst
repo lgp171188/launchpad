@@ -11,8 +11,14 @@ PackageUploadCustomFormat.STATIC_TRANSLATIONS.
 
     >>> from lp.archiveuploader.nascentuploadfile import CustomUploadFile
     >>> custom_upload_file = CustomUploadFile(
-    ...     filepath="", checksums={}, size=1, priority_name="", policy=None,
-    ...     component_and_section="main/raw-translations-static", logger=None)
+    ...     filepath="",
+    ...     checksums={},
+    ...     size=1,
+    ...     priority_name="",
+    ...     policy=None,
+    ...     component_and_section="main/raw-translations-static",
+    ...     logger=None,
+    ... )
 
     >>> print(custom_upload_file.custom_type.name)
     STATIC_TRANSLATIONS
@@ -33,14 +39,17 @@ publishing behaviour using a mock PackageUploadCustom object:
     ...
     ...     def __init__(self):
     ...         self.customformat = (
-    ...             PackageUploadCustomFormat.STATIC_TRANSLATIONS)
+    ...             PackageUploadCustomFormat.STATIC_TRANSLATIONS
+    ...         )
 
 
-    >>> bat = getUtility(IDistributionSet)['ubuntu']['breezy-autotest']
+    >>> bat = getUtility(IDistributionSet)["ubuntu"]["breezy-autotest"]
     >>> package_upload = bat.createQueueEntry(
-    ...     pocket=PackagePublishingPocket.RELEASE, changesfilename="test",
+    ...     pocket=PackagePublishingPocket.RELEASE,
+    ...     changesfilename="test",
     ...     changesfilecontent=b"test",
-    ...     archive=bat.main_archive)
+    ...     archive=bat.main_archive,
+    ... )
     >>> custom_upload = MockPackageUploadCustom()
     >>> custom_upload.packageupload = package_upload
     >>> from lp.services.log.logger import FakeLogger

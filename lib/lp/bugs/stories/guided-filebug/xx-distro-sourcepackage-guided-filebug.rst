@@ -4,17 +4,19 @@ already exists. We given a summary that would match an existing
 Thunderbird bug.
 
     >>> user_browser.open(
-    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/"
-    ...     "+filebug")
-    >>> user_browser.getControl(name="field.title", index=0).value = (
-    ...     "Thunderbird crashes when opening large emails")
+    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/" "+filebug"
+    ... )
+    >>> user_browser.getControl(
+    ...     name="field.title", index=0
+    ... ).value = "Thunderbird crashes when opening large emails"
     >>> user_browser.getControl("Continue").click()
 
 In this case, since we search only Ubuntu Firefox bugs, there are no
 similar matching bugs.
 
     >>> similar_bugs_table = find_tag_by_id(
-    ...     user_browser.contents, "similar-bugs")
+    ...     user_browser.contents, "similar-bugs"
+    ... )
     >>> similar_bugs_table is None
     True
 

@@ -8,17 +8,20 @@ subject.  A cronscript is then responsible for picking up these
 notifications and sending them.
 
     >>> from lp.registry.interfaces.personnotification import (
-    ...     IPersonNotification, IPersonNotificationSet)
+    ...     IPersonNotification,
+    ...     IPersonNotificationSet,
+    ... )
     >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> notification_set = getUtility(IPersonNotificationSet)
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    >>> mark = getUtility(IPersonSet).getByName("mark")
 
 To add a new notification we need the recipient, the email body and its
 subject.
 
     >>> notification = notification_set.addNotification(
-    ...     mark, u'subject', u'body')
+    ...     mark, "subject", "body"
+    ... )
     >>> verifyObject(IPersonNotification, notification)
     True
     >>> print(notification.person.name)
@@ -33,20 +36,24 @@ getNotificationsToSend().
 
     >>> for n in notification_set.getNotificationsToSend():
     ...     print(n.subject)
+    ...
     subject
 
 We can also retrieve notifications that are older than a certain date.
 
     >>> import pytz
     >>> from datetime import datetime, timedelta
-    >>> now = datetime.now(pytz.timezone('UTC'))
+    >>> now = datetime.now(pytz.timezone("UTC"))
     >>> for n in notification_set.getNotificationsOlderThan(now):
     ...     print(n.subject)
+    ...
     subject
 
     >>> yesterday = now - timedelta(days=1)
-    >>> [n.subject
-    ...  for n in notification_set.getNotificationsOlderThan(yesterday)]
+    >>> [
+    ...     n.subject
+    ...     for n in notification_set.getNotificationsOlderThan(yesterday)
+    ... ]
     []
 
 A notification has a send() method which creates an email message and
@@ -67,25 +74,32 @@ The send-person-notifications script will send all pending
 notifications.
 
     >>> notification = notification_set.addNotification(
-    ...     mark, u'subject2', u'body2')
+    ...     mark, "subject2", "body2"
+    ... )
 
 This includes notifications to teams owned by other teams.
 
     >>> owning_team = factory.makeTeam()
     >>> team = factory.makeTeam(owner=owning_team)
     >>> team_notification = notification_set.addNotification(
-    ...     team, u'subject3', u'body3')
+    ...     team, "subject3", "body3"
+    ... )
     >>> for n in notification_set.getNotificationsToSend():
     ...     print(n.subject)
+    ...
     subject2
     subject3
     >>> transaction.commit()
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     'cronscripts/send-person-notifications.py -q', shell=True,
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     "cronscripts/send-person-notifications.py -q",
+    ...     shell=True,
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(out)
     <BLANKLINE>

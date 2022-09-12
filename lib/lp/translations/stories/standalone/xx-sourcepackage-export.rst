@@ -14,11 +14,12 @@ translations."
 
 Mark is a qualified user.
 
-    >>> browser = setupBrowser(auth='Basic mark@example.com:test')
+    >>> browser = setupBrowser(auth="Basic mark@example.com:test")
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'mozilla/')
-    >>> download = browser.getLink('download a full tarball')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "mozilla/"
+    ... )
+    >>> download = browser.getLink("download a full tarball")
     >>> download_url = download.url
     >>> download.click()
     >>> print(browser.url)
@@ -43,10 +44,11 @@ reasonable level.
     ...     page and sees that the two have consistent access rules.
     ...     """
     ...     browser.open(
-    ...         'http://translations.launchpad.test/'
-    ...         'ubuntu/hoary/+source/mozilla/')
+    ...         "http://translations.launchpad.test/"
+    ...         "ubuntu/hoary/+source/mozilla/"
+    ...     )
     ...     try:
-    ...         browser.getLink('download a full tarball').click()
+    ...         browser.getLink("download a full tarball").click()
     ...     except LinkNotFoundError:
     ...         see_link = False
     ...     else:
@@ -66,6 +68,7 @@ reasonable level.
     ...             return "Download link shown to unauthorized user."
     ...
     ...     return have_access
+    ...
 
 An arbitrary user visiting the package's translations page does not see
 the download link for the full package, and cannot download.
@@ -93,20 +96,24 @@ admin or expert, but he is one of the owners of a translation group.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> personset = getUtility(IPersonSet)
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
 
-    >>> carlos = personset.getByName('carlos')
+    >>> carlos = personset.getByName("carlos")
     >>> oofy = factory.makePerson(
-    ...     email='oofy@drones.example.com', name='oofy',
-    ...     displayname='Oofy Prosser')
-    >>> rosetta_admins = personset.getByName('rosetta-admins')
+    ...     email="oofy@drones.example.com",
+    ...     name="oofy",
+    ...     displayname="Oofy Prosser",
+    ... )
+    >>> rosetta_admins = personset.getByName("rosetta-admins")
     >>> ignored = rosetta_admins.addMember(oofy, carlos)
 
     >>> gussie = factory.makePerson(
-    ...     email='gussie@drones.example.com', name='gussie',
-    ...     displayname='Gussie Fink-Nottle')
+    ...     email="gussie@drones.example.com",
+    ...     name="gussie",
+    ...     displayname="Gussie Fink-Nottle",
+    ... )
     >>> translators = factory.makeTeam(gussie)
     >>> group = factory.makeTranslationGroup(translators)
 
@@ -114,18 +121,19 @@ admin or expert, but he is one of the owners of a translation group.
 
 Oofy can download translations; Gussie cannot.
 
-    >>> oofy_browser = setupBrowser(auth='Basic oofy@drones.example.com:test')
+    >>> oofy_browser = setupBrowser(auth="Basic oofy@drones.example.com:test")
     >>> can_download_translations(oofy_browser)
     True
 
     >>> gussie_browser = setupBrowser(
-    ...     auth='Basic gussie@drones.example.com:test')
+    ...     auth="Basic gussie@drones.example.com:test"
+    ... )
     >>> can_download_translations(gussie_browser)
     False
 
 Gussie's translation group takes charge of Ubuntu translations.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> ubuntu.translationgroup = group
     >>> logout()
 
@@ -138,8 +146,8 @@ translations.
 User "cprov" is neither a member of the translation group nor a Rosetta
 expert.
 
-    >>> login('foo.bar@canonical.com')
-    >>> cprov = personset.getByName('cprov')
+    >>> login("foo.bar@canonical.com")
+    >>> cprov = personset.getByName("cprov")
     >>> cprov.inTeam(group.owner)
     False
 
@@ -152,7 +160,8 @@ expert.
 "cprov" is able to download translations as an Ubuntu uploader.
 
     >>> ubuntu_member_browser = setupBrowser(
-    ...     auth='Basic cprov@ubuntu.com:test')
+    ...     auth="Basic cprov@ubuntu.com:test"
+    ... )
     >>> can_download_translations(ubuntu_member_browser)
     True
 
@@ -164,12 +173,13 @@ The "Download" link leads to a page that lets the user select an export
 format, and request the download.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/mozilla/+export')
+    ...     "http://translations.launchpad.test/"
+    ...     "ubuntu/hoary/+source/mozilla/+export"
+    ... )
     >>> browser.title
     'Download : Hoary (5.04) : Translations : mozilla package : Ubuntu'
 
-    >>> browser.getControl('Request Download').click()
+    >>> browser.getControl("Request Download").click()
 
     >>> print(browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/mozilla
@@ -191,12 +201,14 @@ their native file format.
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.translations.model.potemplate import POTemplateSubset
     >>> from lp.translations.interfaces.translationfileformat import (
-    ...     TranslationFileFormat)
+    ...     TranslationFileFormat,
+    ... )
     >>> login(ANONYMOUS)
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> hoary = ubuntu.getSeries("hoary")
     >>> hoary_subset = POTemplateSubset(distroseries=hoary)
     >>> an_evolution_template = hoary_subset.getPOTemplateByPath(
-    ...     'po/evolution-2.2.pot')
+    ...     "po/evolution-2.2.pot"
+    ... )
     >>> logout()
 
 If the file format for one of these templates were different from the
@@ -204,16 +216,18 @@ other's, a warning would appear on the export request form that wasn't
 there before.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/evolution/+export')
+    ...     "http://translations.launchpad.test/"
+    ...     "ubuntu/hoary/+source/evolution/+export"
+    ... )
     >>> print_feedback_messages(browser.contents)
 
     >>> an_evolution_template.source_file_format = TranslationFileFormat.MO
     >>> flush_database_updates()
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/'
-    ...     'ubuntu/hoary/+source/evolution/+export')
+    ...     "http://translations.launchpad.test/"
+    ...     "ubuntu/hoary/+source/evolution/+export"
+    ... )
     >>> print_feedback_messages(browser.contents)
     This package has templates with different native file formats.  If you
     proceed, all translations will be exported in the single format you

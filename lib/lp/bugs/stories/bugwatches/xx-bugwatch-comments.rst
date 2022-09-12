@@ -6,7 +6,7 @@ Comments can be imported from remote bugtrackers.
 These comments can be displayed like any other comments on a bug. Bug
 #15 has a bug watch against a debbugs bug.
 
-    >>> user_browser.open('http://launchpad.test/bugs/15')
+    >>> user_browser.open("http://launchpad.test/bugs/15")
     >>> print_comments(user_browser.contents)
     <div class="comment-text editable-message-text"
          itemprop="commentText"><p>Package: gnome-volume...manager...
@@ -32,7 +32,7 @@ These comments can be displayed like any other comments on a bug. Bug
 The comments imported for a watch can be seen on that watch's +comments
 page. This page isn't linked to, so we need to browse to it directly.
 
-    >>> user_browser.open('http://launchpad.test/bugs/15/+watch/11/+comments')
+    >>> user_browser.open("http://launchpad.test/bugs/15/+watch/11/+comments")
     >>> user_browser.url
     'http://launchpad.test/bugs/15/+watch/11/+comments'
 

@@ -18,14 +18,15 @@ Kubuntu must enable answers to access questions.
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.registry.interfaces.distribution import IDistributionSet
 
-    >>> login('admin@canonical.com')
-    >>> getUtility(IDistributionSet)['kubuntu'].answers_usage = (
-    ...     ServiceUsage.LAUNCHPAD)
+    >>> login("admin@canonical.com")
+    >>> getUtility(IDistributionSet)[
+    ...     "kubuntu"
+    ... ].answers_usage = ServiceUsage.LAUNCHPAD
     >>> transaction.commit()
     >>> logout()
 
-    >>> browser.open('http://answers.launchpad.test/kubuntu')
-    >>> browser.getLink('All FAQs').click()
+    >>> browser.open("http://answers.launchpad.test/kubuntu")
+    >>> browser.getLink("All FAQs").click()
 
 Unfortunately, it seems that nobody has problems or questions about
 Kubuntu:
@@ -35,7 +36,7 @@ Kubuntu:
     >>> print(browser.title)
     FAQs for Kubuntu : Questions : Kubuntu
 
-    >>> print(extract_text(find_main_content(browser.contents).find('p')))
+    >>> print(extract_text(find_main_content(browser.contents).find("p")))
     There are no FAQs for Kubuntu.
 
 
@@ -45,14 +46,14 @@ Browsing FAQs
 She learns through Fozzie Bear that support for Kubuntu is really
 happening on the Ubuntu project.
 
-    >>> browser.open('http://answers.launchpad.test/ubuntu')
-    >>> browser.getLink('All FAQs').click()
+    >>> browser.open("http://answers.launchpad.test/ubuntu")
+    >>> browser.getLink("All FAQs").click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
 
 She sees a listing of the current FAQs about Ubuntu:
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faqs-listing')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faqs-listing")))
     How can I play MP3/Divx/DVDs/Quicktime/Realmedia files or view
         Flash/Java web pages
     How can I customize my desktop?
@@ -62,10 +63,10 @@ She sees a listing of the current FAQs about Ubuntu:
 
 There is a 'Next' link to see the second batch of results:
 
-    >>> browser.getLink('Next').click()
+    >>> browser.getLink("Next").click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faqs-listing')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faqs-listing")))
     Wireless Networking Documentation
 
 Going back to the first page, she realises that when she leaves the
@@ -73,17 +74,18 @@ mouse over a FAQ title, the beginning of the FAQ's content appears in
 a pop-up:
 
     >>> import re
-    >>> browser.getLink('First').click()
+    >>> browser.getLink("First").click()
     >>> faq_link = find_main_content(browser.contents).find(
-    ...     'a', text=re.compile('How can I play MP3/Divx/DVDs'))
-    >>> print(faq_link.find_parent('li')['title'])
+    ...     "a", text=re.compile("How can I play MP3/Divx/DVDs")
+    ... )
+    >>> print(faq_link.find_parent("li")["title"])
     Playing many common formats such as DVIX, MP3, DVD, or Flash ...
 
 She clicks on FAQ's title to display the complete FAQ content:
 
     >>> from lp.services.helpers import backslashreplace
 
-    >>> browser.getLink('How can I play MP3/Divx').click()
+    >>> browser.getLink("How can I play MP3/Divx").click()
     >>> print(backslashreplace(browser.title))
     FAQ #6 : Questions : Ubuntu
     >>> print(browser.url)
@@ -91,7 +93,7 @@ She clicks on FAQ's title to display the complete FAQ content:
 
 The FAQ page has a link back to the FAQ listing:
 
-    >>> browser.getLink('List all FAQs').click()
+    >>> browser.getLink("List all FAQs").click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
     >>> print(browser.url)
@@ -104,61 +106,62 @@ Searching FAQs
 All FAQs listing have a search box at the top, where the user can
 enter keywords that be used to filter the displayed FAQs.
 
-    >>> browser.getControl(name='field.search_text').value = 'crash on boot'
-    >>> browser.getControl('Search', index=0).click()
+    >>> browser.getControl(name="field.search_text").value = "crash on boot"
+    >>> browser.getControl("Search", index=0).click()
     >>> print(backslashreplace(browser.title))
     FAQs matching \u201ccrash on boot\u201d for Ubuntu : Questions : Ubuntu
 
 When no matches are found, a simple message is displayed:
 
-    >>> message = find_main_content(browser.contents).find('p')
+    >>> message = find_main_content(browser.contents).find("p")
     >>> print(backslashreplace(extract_text(message)))
     There are no FAQs for Ubuntu matching \u201ccrash on boot\u201d.
 
 Otherwise, the listing only contains the matching FAQs.
 
-    >>> browser.getControl(name='field.search_text').value = 'wifi'
-    >>> browser.getControl('Search', index=0).click()
+    >>> browser.getControl(name="field.search_text").value = "wifi"
+    >>> browser.getControl("Search", index=0).click()
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faqs-listing')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faqs-listing")))
     Wireless Networking Documentation
 
 When searching for FAQs, a link to the questions matching the same
 keywords is displayed. (The link is only displayed when there are
 matches.)
 
-    >>> browser.getControl(name='field.search_text').value = 'plugin'
-    >>> browser.getControl('Search', index=0).click()
+    >>> browser.getControl(name="field.search_text").value = "plugin"
+    >>> browser.getControl("Search", index=0).click()
 
-    >>> message = find_main_content(browser.contents).find('p')
+    >>> message = find_main_content(browser.contents).find("p")
     >>> print(extract_text(message))
     You can also consult the list of 1 question(s) matching “plugin”.
 
 Following the link will show the questions results:
 
-    >>> browser.getLink('1 question(s)').click()
+    >>> browser.getLink("1 question(s)").click()
     >>> print(browser.title)
     Questions : Ubuntu
 
-    >>> questions = find_tag_by_id(browser.contents, 'question-listing')
-    >>> for question in questions.find_all('td', 'questionTITLE'):
-    ...     print(question.find('a').decode_contents())
+    >>> questions = find_tag_by_id(browser.contents, "question-listing")
+    >>> for question in questions.find_all("td", "questionTITLE"):
+    ...     print(question.find("a").decode_contents())
+    ...
     Installation of Java Runtime Environment for Mozilla
 
 On the question page, there is also a link to consult the FAQs matching
 the same keywords.
 
-    >>> message = find_tag_by_id(browser.contents, 'found-matching-faqs')
+    >>> message = find_tag_by_id(browser.contents, "found-matching-faqs")
     >>> print(extract_text(message))
     You can also consult the list of 1 FAQ(s) matching “plugin”.
 
 Following the link will show the questions results:
 
-    >>> browser.getLink('1 FAQ(s)').click()
+    >>> browser.getLink("1 FAQ(s)").click()
     >>> print(backslashreplace(browser.title))
     FAQs matching \u201cplugin\u201d for Ubuntu : Questions : Ubuntu
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'faqs-listing')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "faqs-listing")))
     How can I play MP3/Divx/DVDs/Quicktime/Realmedia files or view
         Flash/Java web pages
 
@@ -170,9 +173,10 @@ Although distribution source packages aren't directly associated with
 FAQs, the 'All FAQs' link that appears in that context links to the
 distribution FAQs.
 
-    >>> browser.open('http://answers.launchpad.test/ubuntu/'
-    ...              '+source/mozilla-firefox')
-    >>> browser.getLink('All FAQs').click()
+    >>> browser.open(
+    ...     "http://answers.launchpad.test/ubuntu/" "+source/mozilla-firefox"
+    ... )
+    >>> browser.getLink("All FAQs").click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
     >>> print(browser.url)
@@ -184,12 +188,12 @@ Accessing an FAQ directly
 
 Asking for a non-existent FAQ or an invalid ID will raise a 404 error.
 
-    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/171717')
+    >>> anon_browser.open("http://answers.launchpad.test/ubuntu/+faq/171717")
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...
 
-    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/bad')
+    >>> anon_browser.open("http://answers.launchpad.test/ubuntu/+faq/bad")
     Traceback (most recent call last):
       ...
     zope.publisher.interfaces.NotFound: ...

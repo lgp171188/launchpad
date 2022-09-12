@@ -19,9 +19,13 @@ files are saved.
     >>> import tempfile
     >>> directory = tempfile.mkdtemp()
     >>> process = Popen(
-    ...     'scripts/cache-country-mirrors.py -q %s' % directory,
-    ...     shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-    ...     universal_newlines=True)
+    ...     "scripts/cache-country-mirrors.py -q %s" % directory,
+    ...     shell=True,
+    ...     stdin=PIPE,
+    ...     stdout=PIPE,
+    ...     stderr=PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(out)
     <BLANKLINE>
@@ -39,13 +43,14 @@ look good.
     >>> files = os.listdir(directory)
     >>> len(files)
     240
-    >>> set(['BR.txt', 'AR.txt', 'CO.txt', 'CL.txt']).issubset(files)
+    >>> set(["BR.txt", "AR.txt", "CO.txt", "CL.txt"]).issubset(files)
     True
-    >>> fr_txt_path = os.path.join(directory, 'FR.txt')
-    >>> print('%o' % stat.S_IMODE(os.stat(fr_txt_path).st_mode))
+    >>> fr_txt_path = os.path.join(directory, "FR.txt")
+    >>> print("%o" % stat.S_IMODE(os.stat(fr_txt_path).st_mode))
     644
-    >>> for line in sorted(open(fr_txt_path).read().split('\n')):
+    >>> for line in sorted(open(fr_txt_path).read().split("\n")):
     ...     print(line)
+    ...
     http://archive.ubuntu.com/ubuntu/
     http://localhost:11375/archive-mirror/
     http://localhost:11375/valid-mirror/

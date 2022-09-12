@@ -9,10 +9,14 @@ already tested in lazr.restful.
 
     >>> def get_collection(version="devel", start=0, size=2):
     ...     collection = webservice.get(
-    ...         ("/people?ws.op=find&text=s&ws.start=%s&ws.size=%s" %
-    ...          (start, size)),
-    ...         api_version=version)
+    ...         (
+    ...             "/people?ws.op=find&text=s&ws.start=%s&ws.size=%s"
+    ...             % (start, size)
+    ...         ),
+    ...         api_version=version,
+    ...     )
     ...     return collection.jsonBody()
+    ...
 
 
 Normally, the total size of a collection is not served along with the
@@ -21,11 +25,12 @@ collection; it's available by following the total_size_link.
     >>> collection = get_collection()
     >>> for key in sorted(collection.keys()):
     ...     print(key)
+    ...
     entries
     next_collection_link
     start
     total_size_link
-    >>> print(webservice.get(collection['total_size_link']).jsonBody())
+    >>> print(webservice.get(collection["total_size_link"]).jsonBody())
     9
 
 If an entire collection fits on one page (making the size of the
@@ -35,10 +40,11 @@ collection obvious), 'total_size' is served instead of
     >>> collection = get_collection(size=100)
     >>> for key in sorted(collection.keys()):
     ...     print(key)
+    ...
     entries
     start
     total_size
-    >>> print(collection['total_size'])
+    >>> print(collection["total_size"])
     9
 
 If the last page of the collection is fetched (making the total size
@@ -48,9 +54,10 @@ of the collection semi-obvious), 'total_size' is served instead of
     >>> collection = get_collection(start=8)
     >>> for key in sorted(collection.keys()):
     ...     print(key)
+    ...
     entries
     prev_collection_link
     start
     total_size
-    >>> print(collection['total_size'])
+    >>> print(collection["total_size"])
     9

@@ -1590,7 +1590,6 @@ class FormatPreviewDiffView(LaunchpadView, DiffRenderingMixin):
 
 
 @adapter(IPreviewDiff, IWebServiceClientRequest)
-@implementer(Interface)
 class PreviewDiffHTMLRepresentation:
     def __init__(self, diff, request):
         self.diff = diff

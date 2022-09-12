@@ -7,14 +7,11 @@ easier to users of the external bug tracker to get more information
 about the bug.
 
     >>> from zope.interface import implementer
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestExternalBugTracker)
-    >>> from lp.bugs.interfaces.externalbugtracker import (
-    ...     ISupportsBackLinking)
+    >>> from lp.bugs.tests.externalbugtracker import TestExternalBugTracker
+    >>> from lp.bugs.interfaces.externalbugtracker import ISupportsBackLinking
 
     >>> @implementer(ISupportsBackLinking)
     ... class BackLinkingExternalBugTracker(TestExternalBugTracker):
-    ...
     ...     def __init__(self, baseurl):
     ...         super().__init__(baseurl)
     ...         self.last_launchpad_bug_id = None
@@ -23,8 +20,9 @@ about the bug.
     ...         print("Getting Launchpad id for bug %s" % remote_bug)
     ...         return self.last_launchpad_bug_id
     ...
-    ...     def setLaunchpadBugId(self, remote_bug, launchpad_bug_id,
-    ...                           launchpad_bug_url):
+    ...     def setLaunchpadBugId(
+    ...         self, remote_bug, launchpad_bug_id, launchpad_bug_url
+    ...     ):
     ...         self.last_launchpad_bug_id = launchpad_bug_id
     ...         print("Setting Launchpad id for bug %s" % remote_bug)
 
@@ -33,28 +31,29 @@ The methods are called by the CheckwatchesMaster class:
     >>> from lp.testing.dbuser import switch_dbuser
     >>> txn = transaction
 
-    >>> switch_dbuser('launchpad')
+    >>> switch_dbuser("launchpad")
 
-    >>> bug_watch = factory.makeBugWatch('42')
+    >>> bug_watch = factory.makeBugWatch("42")
     >>> bug_watch.bug.default_bugtask.bugwatch = bug_watch
-    >>> bug_watch_2 = factory.makeBugWatch('42', bug_watch.bugtracker)
+    >>> bug_watch_2 = factory.makeBugWatch("42", bug_watch.bugtracker)
     >>> bug_watch_2.bug.default_bugtask.bugwatch = bug_watch_2
-    >>> bug_watch_without_bugtask = (
-    ...     factory.makeBugWatch('42', bug_watch.bugtracker))
+    >>> bug_watch_without_bugtask = factory.makeBugWatch(
+    ...     "42", bug_watch.bugtracker
+    ... )
 
     >>> unlinked_bug = factory.makeBug()
 
     >>> txn.commit()
-    >>> switch_dbuser('checkwatches')
+    >>> switch_dbuser("checkwatches")
 
     >>> from lp.services.log.logger import DevNullLogger
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
-    >>> checkwatches_master = CheckwatchesMaster(
-    ...     txn, logger=DevNullLogger())
+    >>> checkwatches_master = CheckwatchesMaster(txn, logger=DevNullLogger())
     >>> txn.commit()
 
     >>> external_bugtracker = BackLinkingExternalBugTracker(
-    ...     'http://example.com/')
+    ...     "http://example.com/"
+    ... )
 
     >>> checkwatches_master.updateBugWatches(external_bugtracker, [bug_watch])
     Getting Launchpad id for bug 42
@@ -67,7 +66,8 @@ For comment syncing and back-linking to be attempted, bug watches must
 be related to a bug task, not just a bug.
 
     >>> checkwatches_master.updateBugWatches(
-    ...     external_bugtracker, [bug_watch_without_bugtask])
+    ...     external_bugtracker, [bug_watch_without_bugtask]
+    ... )
 
 
 BugWatchUpdater.linkLaunchpadBug()
@@ -97,11 +97,14 @@ be called on our BackLinkingExternalBugTracker.
 
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.bugs.scripts.checkwatches.tests.test_bugwatchupdater import (
-    ...     make_bug_watch_updater)
+    ...     make_bug_watch_updater,
+    ... )
 
     >>> bug_watch_updater = make_bug_watch_updater(
     ...     CheckwatchesMaster(transaction, logger=FakeLogger()),
-    ...     bug_watch, external_bugtracker)
+    ...     bug_watch,
+    ...     external_bugtracker,
+    ... )
     >>> bug_watch_updater.linkLaunchpadBug()
     Getting Launchpad id for bug 42
 
@@ -113,8 +116,11 @@ Launchpad bug ID isn't valid, setLaunchpadBugId() to correct the error.
 
 unlinked_bug doesn't link to bug 42 on the remote bug tracker.
 
-    >>> print(unlinked_bug.getBugWatch(
-    ...     bug_watch.bugtracker, bug_watch.remotebug))
+    >>> print(
+    ...     unlinked_bug.getBugWatch(
+    ...         bug_watch.bugtracker, bug_watch.remotebug
+    ...     )
+    ... )
     None
 
 However, the remote bug currently thinks that unlinked_bug does in

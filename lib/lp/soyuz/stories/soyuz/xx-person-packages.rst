@@ -14,7 +14,7 @@ display up to the most recent 30 items in each category.  However, it
 has more links that take the user to batched listings in each category
 where all items can be perused.
 
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'navlinks')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "navlinks")))
     Related packages
     Maintained packages
     Uploaded packages
@@ -35,7 +35,7 @@ Each category on the summary page has a heading that shows how many
 packages are being displayed.
 
     >>> browser.open("http://launchpad.test/~mark/+related-packages")
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "packages")))
     Maintained packages
     Displaying first 5 packages out of 7 total
     ...
@@ -93,7 +93,7 @@ to the page that lists maintained packages in batches.
 
     >>> browser.open("http://launchpad.test/~mark/+related-packages")
     >>> browser.getLink("Maintained packages").click()
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "packages")))
     1...5 of 7 results
     ...
     Name        Uploaded to  Version   When        Failures
@@ -104,13 +104,13 @@ The Maintained packages page only has data if the person or team has
 maintained packages to show. No-priv does not maintain packages.
 
     >>> anon_browser.open("http://launchpad.test/~no-priv")
-    >>> print_tag_with_id(anon_browser.contents, 'ppas')
+    >>> print_tag_with_id(anon_browser.contents, "ppas")
     Personal package archives
     PPA for No Privileges Person
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~no-priv/+maintained-packages")
-    >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'packages')))
+    ...     "http://launchpad.test/~no-priv/+maintained-packages"
+    ... )
+    >>> print(extract_text(find_tag_by_id(anon_browser.contents, "packages")))
     Name...
     No Privileges Person does not maintain any packages.
 
@@ -118,7 +118,7 @@ The navigation link to "Uploaded packages" takes the user to the
 page that lists uploaded packages in batches.
 
     >>> browser.getLink("Uploaded packages").click()
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "packages")))
     1...5 of 6 results
     ...
     Name    Uploaded to          Version When        Failures
@@ -129,7 +129,7 @@ The navigation link to "PPA packages" takes the user to the
 page that lists PPA packages in batches.
 
     >>> browser.getLink("PPA packages").click()
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
+    >>> print(extract_text(find_tag_by_id(browser.contents, "packages")))
     1...1 of 1 result
     ...
     Name      Uploaded to           Version  When        Failures
@@ -160,13 +160,14 @@ Let's make a helper function to print the PPA packages from the page:
     ...     rows = find_tags_by_class(browser.contents, "ppa_row")
     ...     for row in rows:
     ...         print(extract_text(row))
+    ...
 
 Make a function to update the cached latest person source package release
 records.
 
     >>> from lp.scripts.garbo import (
     ...     PopulateLatestPersonSourcePackageReleaseCache,
-    ...     )
+    ... )
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.testing.dbuser import switch_dbuser
@@ -177,15 +178,17 @@ records.
     ...     store = IMasterStore(Archive)
     ...     if delete_all:
     ...         store.execute(
-    ...             "delete from latestpersonsourcepackagereleasecache")
+    ...             "delete from latestpersonsourcepackagereleasecache"
+    ...         )
     ...     flush_database_updates()
-    ...     switch_dbuser('garbo_frequently')
+    ...     switch_dbuser("garbo_frequently")
     ...     if delete_all:
     ...         store.execute("delete from garbojobstate")
     ...     job = PopulateLatestPersonSourcePackageReleaseCache(FakeLogger())
     ...     while not job.isDone():
     ...         job(chunk_size=100)
-    ...     switch_dbuser('launchpad')
+    ...     switch_dbuser("launchpad")
+    ...
 
 
 Create some new source packages, source1 and source2, both created by cprov
@@ -200,28 +203,32 @@ so that they appear in his +packages page.
     >>> from lp.soyuz.enums import PackagePublishingStatus
 
     >>> login("foo.bar@canonical.com")
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
-    >>> nopriv = getUtility(IPersonSet).getByName('no-priv')
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
+    >>> nopriv = getUtility(IPersonSet).getByName("no-priv")
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> nopriv_private_ppa = factory.makeArchive(
-    ...     owner=nopriv, name="p3a", distribution=ubuntu, private=True)
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    ...     owner=nopriv, name="p3a", distribution=ubuntu, private=True
+    ... )
+    >>> mark = getUtility(IPersonSet).getByName("mark")
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
     >>> source1 = test_publisher.getPubSource(
     ...     status=PackagePublishingStatus.PUBLISHED,
-    ...     sourcename='source1',
+    ...     sourcename="source1",
     ...     archive=cprov.archive,
     ...     distroseries=cprov.archive.distribution.currentseries,
-    ...     date_uploaded=UTC_NOW - SQL("INTERVAL '1 second'"))
-    >>> source1.sourcepackagerelease.creator=cprov
+    ...     date_uploaded=UTC_NOW - SQL("INTERVAL '1 second'"),
+    ... )
+    >>> source1.sourcepackagerelease.creator = cprov
     >>> source1_mark = source1.copyTo(
-    ...     source1.distroseries, source1.pocket, mark.archive)
+    ...     source1.distroseries, source1.pocket, mark.archive
+    ... )
     >>> source2 = test_publisher.getPubSource(
     ...     status=PackagePublishingStatus.PUBLISHED,
-    ...     sourcename='source2',
-    ...     archive=nopriv_private_ppa)
-    >>> source2.sourcepackagerelease.creator=cprov
+    ...     sourcename="source2",
+    ...     archive=nopriv_private_ppa,
+    ... )
+    >>> source2.sourcepackagerelease.creator = cprov
 
     >>> update_cached_records()
     >>> logout()
@@ -231,7 +238,7 @@ published in no-priv's Private PPA.
 
 Make user_browser a known user that does not conflict with "no-priv":
 
-    >>> user_browser = setupBrowser(auth='Basic test@canonical.com:test')
+    >>> user_browser = setupBrowser(auth="Basic test@canonical.com:test")
 
 
 Cprov's +related-packages page
@@ -277,12 +284,12 @@ both packages:
 Let's move the publication of source1 from mark's public archive to his
 private one and the view the page again.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> mark_private_ppa = factory.makeArchive(
-    ...     owner=mark, name="p3a", distribution=ubuntu, private=True)
+    ...     owner=mark, name="p3a", distribution=ubuntu, private=True
+    ... )
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> removeSecurityProxy(source1_mark).archive = (
-    ...     mark_private_ppa)
+    >>> removeSecurityProxy(source1_mark).archive = mark_private_ppa
     >>> logout()
 
     Update the releases cache table.
@@ -303,11 +310,11 @@ of mark's archive.
 Let's move the publication of source1 from cprov's public archive to
 his private one:
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> cprov_private_ppa = factory.makeArchive(
-    ...     owner=cprov, name="p3a", distribution=ubuntu, private=True)
-    >>> removeSecurityProxy(source1).archive = (
-    ...     cprov_private_ppa)
+    ...     owner=cprov, name="p3a", distribution=ubuntu, private=True
+    ... )
+    >>> removeSecurityProxy(source1).archive = cprov_private_ppa
     >>> source1.sourcepackagerelease.upload_archive = cprov_private_ppa
     >>> logout()
 
@@ -325,11 +332,13 @@ Now we'll publish it in the primary archive.
     >>> login("foo.bar@canonical.com")
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> primary = getUtility(IArchiveSet).getByDistroPurpose(ubuntu,
-    ...     ArchivePurpose.PRIMARY)
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> primary = getUtility(IArchiveSet).getByDistroPurpose(
+    ...     ubuntu, ArchivePurpose.PRIMARY
+    ... )
     >>> source1_ubuntu = source1.copyTo(
-    ...     source1.distroseries, source1.pocket, primary)
+    ...     source1.distroseries, source1.pocket, primary
+    ... )
     >>> source1_ubuntu.setPublished()
     >>> update_cached_records()
     >>> logout()
@@ -381,11 +390,12 @@ First list the packages in the PPA.
 Then delete the 'source2' package.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.test/~no-priv/+archive/p3a/+delete-packages")
-    >>> admin_browser.getControl(
-    ...    name='field.selected_sources').value = ['%s' % source2.id]
-    >>> admin_browser.getControl(
-    ...     "Deletion comment").value = "Bug 184490"
+    ...     "http://launchpad.test/~no-priv/+archive/p3a/+delete-packages"
+    ... )
+    >>> admin_browser.getControl(name="field.selected_sources").value = [
+    ...     "%s" % source2.id
+    ... ]
+    >>> admin_browser.getControl("Deletion comment").value = "Bug 184490"
     >>> admin_browser.getControl("Request Deletion").click()
 
     >>> print_feedback_messages(admin_browser.contents)
@@ -394,12 +404,13 @@ Then delete the 'source2' package.
     Deletion comment: Bug 184490
 
     >>> def print_ppa_packages(contents):
-    ...     packages = find_tags_by_class(contents, 'archive_package_row')
+    ...     packages = find_tags_by_class(contents, "archive_package_row")
     ...     for pkg in packages:
     ...         print(extract_text(pkg))
-    ...     empty_section = find_tag_by_id(contents, 'empty-result')
+    ...     empty_section = find_tag_by_id(contents, "empty-result")
     ...     if empty_section is not None:
     ...         print(extract_text(empty_section))
+    ...
     >>> print_ppa_packages(admin_browser.contents)
     Source             Published   Status     Series   Section  Build Status
     source2 - 666...               Deleted    ...
@@ -418,9 +429,11 @@ Please note also that disabled archives are not viewable by anonymous users.
 
     >>> def print_archive_package_rows(contents):
     ...     package_table = find_tag_by_id(
-    ...         anon_browser.contents, 'packages_list')
-    ...     for ppa_row in package_table.find_all('tr'):
+    ...         anon_browser.contents, "packages_list"
+    ...     )
+    ...     for ppa_row in package_table.find_all("tr"):
     ...         print(extract_text(ppa_row))
+    ...
 
     >>> anon_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     >>> print_archive_package_rows(anon_browser)

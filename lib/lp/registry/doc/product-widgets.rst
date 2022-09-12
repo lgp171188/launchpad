@@ -20,7 +20,7 @@ down menu for choosing the correct tracker.
 Firefox uses Launchpad as its bug tracker.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> firefox.official_malone
     True
 
@@ -32,10 +32,12 @@ in a specified external location.
     >>> from lp.app.widgets.product import ProductBugTrackerWidget
     >>> from lp.registry.interfaces.product import IProduct
 
-    >>> product_bugtracker = IProduct['bugtracker'].bind(firefox)
+    >>> product_bugtracker = IProduct["bugtracker"].bind(firefox)
     >>> widget = ProductBugTrackerWidget(
-    ...     product_bugtracker, product_bugtracker.vocabulary,
-    ...     LaunchpadTestRequest())
+    ...     product_bugtracker,
+    ...     product_bugtracker.vocabulary,
+    ...     LaunchpadTestRequest(),
+    ... )
 
 Firefox has not yet selected a bug tracker.
 
@@ -47,15 +49,16 @@ Firefox has not yet selected a bug tracker.
     >>> from lp.testing.pages import extract_text
     >>> def print_items(html):
     ...     soup = BeautifulSoup(html)
-    ...     labels = soup('label')
+    ...     labels = soup("label")
     ...     for label in labels:
     ...         control = label.previous.previous
-    ...         if control['type'] == 'radio' and control.get('checked'):
-    ...             print('[X]', extract_text(label))
-    ...         elif control['type'] == 'radio':
-    ...             print('[ ]', extract_text(label))
+    ...         if control["type"] == "radio" and control.get("checked"):
+    ...             print("[X]", extract_text(label))
+    ...         elif control["type"] == "radio":
+    ...             print("[ ]", extract_text(label))
     ...         else:
     ...             pass
+    ...
     >>> print_items(widget())
     [ ] In Launchpad
     [ ] In a registered bug tracker:
@@ -68,8 +71,8 @@ this bug tracker as selected.
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> tracker_set = getUtility(IBugTrackerSet)
 
-    >>> gnome_bugzilla = tracker_set.getByName('gnome-bugzilla')
-    >>> login('foo.bar@canonical.com')
+    >>> gnome_bugzilla = tracker_set.getByName("gnome-bugzilla")
+    >>> login("foo.bar@canonical.com")
     >>> firefox.projectgroup.bugtracker = gnome_bugzilla
 
     >>> print_items(widget())
@@ -92,7 +95,7 @@ On second thought, Firefox has no specified bug tracker.
 Calling the widget's setRenderedValue() with a specific bug tracker overrides
 the display of the selected bug tracker.
 
-    >>> mozilla_bugtracker = tracker_set.getByName('mozilla.org')
+    >>> mozilla_bugtracker = tracker_set.getByName("mozilla.org")
     >>> widget.setRenderedValue(mozilla_bugtracker)
 
     >>> print_items(widget())
@@ -104,7 +107,7 @@ the display of the selected bug tracker.
 When the bug tracker is an Email Address bug tracker, the "By emailing" option
 is shown as selected instead.
 
-    >>> email_bugtracker = tracker_set.getByName('email')
+    >>> email_bugtracker = tracker_set.getByName("email")
     >>> widget.setRenderedValue(email_bugtracker)
 
     >>> print_items(widget())
@@ -127,12 +130,14 @@ A user selects the Malone bug tracker, indicating that bugs are tracked in
 Launchpad.
 
     >>> form = {
-    ...     'field.bugtracker': 'malone',
-    ...     'field.bugtracker.bugtracker': 'debbugs',
-    ...     }
+    ...     "field.bugtracker": "malone",
+    ...     "field.bugtracker.bugtracker": "debbugs",
+    ... }
     >>> widget = ProductBugTrackerWidget(
-    ...     product_bugtracker, product_bugtracker.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     product_bugtracker,
+    ...     product_bugtracker.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
 
     # This is just a generic object so there's no other way to test it.
     >>> widget.getInputValue() is product_bugtracker.malone_marker
@@ -147,10 +152,12 @@ the bug tracker to have the correct value.
 By indicating an external bug tracker, the selected bug tracker will be
 returned.
 
-    >>> form['field.bugtracker'] = 'external'
+    >>> form["field.bugtracker"] = "external"
     >>> widget = ProductBugTrackerWidget(
-    ...     product_bugtracker, product_bugtracker.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     product_bugtracker,
+    ...     product_bugtracker.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> debbugs = widget.getInputValue()
     >>> print(debbugs.name)
     debbugs
@@ -163,10 +170,12 @@ input value.
 
 The project's bug tracker, or no bug tracker, at all is selected.
 
-    >>> form['field.bugtracker'] = 'project'
+    >>> form["field.bugtracker"] = "project"
     >>> widget = ProductBugTrackerWidget(
-    ...     product_bugtracker, product_bugtracker.vocabulary,
-    ...     LaunchpadTestRequest(form=form))
+    ...     product_bugtracker,
+    ...     product_bugtracker.vocabulary,
+    ...     LaunchpadTestRequest(form=form),
+    ... )
     >>> print(widget.getInputValue())
     None
 
@@ -188,7 +197,7 @@ marker object.
 Passing a bug tracker to the field's set method will unset official_malone and
 set the bug tracker.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> product_bugtracker.set(firefox, debbugs)
     >>> firefox.official_malone
     False
@@ -217,12 +226,13 @@ the 4 choices.
 
     >>> def print_controls(html):
     ...     soup = BeautifulSoup(html)
-    ...     controls = soup('input')
+    ...     controls = soup("input")
     ...     for control in controls:
-    ...         if control['type'] != 'hidden':
-    ...             if 'subordinate' in control.parent.get('class', ''):
-    ...                 print('--')
-    ...             print(control['id'], control['type'])
+    ...         if control["type"] != "hidden":
+    ...             if "subordinate" in control.parent.get("class", ""):
+    ...                 print("--")
+    ...             print(control["id"], control["type"])
+    ...
 
     >>> print_controls(widget())
     field.bugtracker.0 radio
@@ -242,10 +252,10 @@ A custom widget is used to display a link to the licence policy.
 
     >>> from lp.app.widgets.product import LicenseWidget
 
-    >>> form = {'field.licenses': []}
+    >>> form = {"field.licenses": []}
 
     >>> product = getUtility(IProductSet).get(1)
-    >>> licenses_field = IProduct['licenses'].bind(product)
+    >>> licenses_field = IProduct["licenses"].bind(product)
     >>> vtype = licenses_field.value_type
     >>> request = LaunchpadTestRequest(form=form)
     >>> license_widget = LicenseWidget(licenses_field, vtype, request)
@@ -257,7 +267,7 @@ presented ordered to appear in a 3 column list.
     >>> from lp.testing.pages import find_tag_by_id
 
     >>> html = license_widget()
-    >>> print(extract_text(find_tag_by_id(html, 'recommended')))
+    >>> print(extract_text(find_tag_by_id(html, "recommended")))
     Apache Licence view licence
     GNU Affero GPL v3 view licence
     GNU LGPL v2.1 view licence
@@ -268,7 +278,7 @@ presented ordered to appear in a 3 column list.
     GNU GPL v3 view licence
     MIT / X / Expat Licence view licence
 
-    >>> print(extract_text(find_tag_by_id(html, 'more')))
+    >>> print(extract_text(find_tag_by_id(html, "more")))
     Academic Free Licence view licence
     Eclipse Public Licence view licence
     PHP Licence view licence
@@ -287,48 +297,50 @@ presented ordered to appear in a 3 column list.
     Open Software Licence v 3.0 view licence
 
 
-    >>> print(extract_text(find_tag_by_id(html, 'special')))
+    >>> print(extract_text(find_tag_by_id(html, "special")))
     I don't know yet
     Other/Proprietary
     Other/Open Source
 
 There is a deprecated section that is generally not visible...
 
-    >>> print(find_tag_by_id(html, 'deprecated'))
+    >>> print(find_tag_by_id(html, "deprecated"))
     None
 
 ...unless the old "Perl licence" is selected.
 
-    >>> form['field.licenses'] = ['PERL']
+    >>> form["field.licenses"] = ["PERL"]
     >>> request = LaunchpadTestRequest(form=form)
     >>> license_widget = LicenseWidget(licenses_field, vtype, request)
     >>> html = license_widget()
-    >>> print(extract_text(find_tag_by_id(html, 'deprecated')))
+    >>> print(extract_text(find_tag_by_id(html, "deprecated")))
     Perl Licence
 
 One licence, the GNU GPL v2, is selected.
 
-    >>> form['field.licenses'] = ['GNU_GPL_V2']
+    >>> form["field.licenses"] = ["GNU_GPL_V2"]
     >>> request = LaunchpadTestRequest(form=form)
     >>> license_widget = LicenseWidget(licenses_field, vtype, request)
 
     >>> def print_checked_items(html, links=False):
     ...     soup = BeautifulSoup(html)
-    ...     for label in soup.find_all('label'):
+    ...     for label in soup.find_all("label"):
     ...         if not isinstance(label.next, Tag):
     ...             continue
-    ...         if label.next.get('checked'):
-    ...             print('[X]', end=' ')
+    ...         if label.next.get("checked"):
+    ...             print("[X]", end=" ")
     ...         else:
-    ...             print('[ ]', end=' ')
-    ...         print(extract_text(label), end='')
+    ...             print("[ ]", end=" ")
+    ...         print(extract_text(label), end="")
     ...         if links and label.a is not None:
-    ...             print(' <%s>' % label.a.get('href'))
+    ...             print(" <%s>" % label.a.get("href"))
     ...         else:
     ...             print()
+    ...
 
     >>> for item in license_widget.getInputValue():
     ...     print(repr(item))
+    ...
     <DBItem License.GNU_GPL_V2, (130) ...>
 
     >>> print_checked_items(license_widget())
@@ -344,7 +356,7 @@ One licence, the GNU GPL v2, is selected.
 
 A second licence is selected.
 
-    >>> form['field.licenses'] = ['GNU_LGPL_V2_1', 'GNU_GPL_V2']
+    >>> form["field.licenses"] = ["GNU_LGPL_V2_1", "GNU_GPL_V2"]
     >>> request = LaunchpadTestRequest(form=form)
     >>> license_widget = LicenseWidget(licenses_field, vtype, request)
 
@@ -391,7 +403,7 @@ GhostWidget to suppress the markup.
 
     >>> from lp.app.widgets.product import GhostWidget
 
-    >>> license_info = IProduct['license_info'].bind(firefox)
+    >>> license_info = IProduct["license_info"].bind(firefox)
     >>> ghost_widget = GhostWidget(license_info, LaunchpadTestRequest())
     >>> ghost_widget.visible
     False
@@ -407,17 +419,22 @@ Launchpad form macros do not generate table rows for the GhostWidget.
     >>> from lp.app.browser.launchpadform import LaunchpadFormView
 
     >>> class GhostWidgetView(LaunchpadFormView):
-    ...     page_title = 'Test'
+    ...     page_title = "Test"
     ...     template = ViewPageTemplateFile(
-    ...         config.root + '/lib/lp/app/templates/generic-edit.pt')
+    ...         config.root + "/lib/lp/app/templates/generic-edit.pt"
+    ...     )
     ...     schema = IProduct
-    ...     field_names = ['license_info']
+    ...     field_names = ["license_info"]
     ...     custom_widget_license_info = GhostWidget
+    ...
 
     >>> request = LaunchpadTestRequest()
     >>> request.setPrincipal(factory.makePerson())
     >>> view = GhostWidgetView(firefox, request)
     >>> view.initialize()
-    >>> print(extract_text(find_tag_by_id(
-    ...     view.render(), 'launchpad-form-widgets')))
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(view.render(), "launchpad-form-widgets")
+    ...     )
+    ... )
     <BLANKLINE>

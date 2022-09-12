@@ -5,23 +5,23 @@ If a user has lp.Edit or lp.View on any PPAs, they are accessible from the
 user's page in a section titled "Personal package archives".  If not, then
 that section is not present and there are no links to the ppa pages.
 
-    >>> anon_browser.open('http://launchpad.test/~matsubara')
-    >>> print(find_tag_by_id(anon_browser.contents, 'ppas'))
+    >>> anon_browser.open("http://launchpad.test/~matsubara")
+    >>> print(find_tag_by_id(anon_browser.contents, "ppas"))
     None
 
 Navigating to cprov's personal page:
 
-    >>> anon_browser.open('http://launchpad.test/~cprov')
+    >>> anon_browser.open("http://launchpad.test/~cprov")
 
 For context where a PPA is already present it is listed.
 
-    >>> print_tag_with_id(anon_browser.contents, 'ppas')
+    >>> print_tag_with_id(anon_browser.contents, "ppas")
     Personal package archives
     PPA for Celso Providelo
 
 And the users can click on the item and will be taken to the PPA page.
 
-    >>> anon_browser.getLink('PPA for Celso Providelo').click()
+    >>> anon_browser.getLink("PPA for Celso Providelo").click()
 
     >>> anon_browser.url
     'http://launchpad.test/~cprov/+archive/ubuntu/ppa'
@@ -32,18 +32,19 @@ And the users can click on the item and will be taken to the PPA page.
 There is a link that allows users with permission to create a PPA.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth="Basic celso.providelo@canonical.com:test")
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open("http://launchpad.test/~cprov")
-    >>> cprov_browser.getLink('Launchpad Buildd Admins').click()
+    >>> cprov_browser.getLink("Launchpad Buildd Admins").click()
 
     >>> print(cprov_browser.title)
     Launchpad Buildd Admins in Launchpad
 
-    >>> print_tag_with_id(cprov_browser.contents, 'ppas')
+    >>> print_tag_with_id(cprov_browser.contents, "ppas")
     Personal package archives
     Create a new PPA
 
-    >>> print(cprov_browser.getLink('Create a new PPA').url)
+    >>> print(cprov_browser.getLink("Create a new PPA").url)
     http://launchpad.test/~launchpad-buildd-admins/+activate-ppa
 
 While navigating around the PPA the "structural location" includes a PPA:
@@ -62,11 +63,13 @@ While navigating around the PPA the "structural location" includes a PPA:
 The PPA breadcrumb follows the PPA displayname.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth="Basic celso.providelo@canonical.com:test")
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open("http://launchpad.test/~cprov/+archive/ubuntu/ppa")
     >>> cprov_browser.getLink("Change details").click()
     >>> cprov_browser.getControl(
-    ...    name="field.displayname").value = 'Default PPA'
+    ...     name="field.displayname"
+    ... ).value = "Default PPA"
     >>> cprov_browser.getControl("Save").click()
 
     >>> print_location(cprov_browser.contents)
@@ -84,17 +87,17 @@ The user can view all the package details using the 'View package details'
 link. This link is the first link displayed within
 the packages listing portlet.
 
-    >>> packages_portlet = find_tag_by_id(anon_browser.contents, 'packages')
-    >>> print(packages_portlet.find('a').string)
+    >>> packages_portlet = find_tag_by_id(anon_browser.contents, "packages")
+    >>> print(packages_portlet.find("a").string)
     View package details
-    >>> anon_browser.getLink('View package details').click()
+    >>> anon_browser.getLink("View package details").click()
     >>> print(anon_browser.title)
     Packages in...
 
 You can see the build details of the packages in the archive by using
 the 'View all builds' link.
 
-    >>> anon_browser.getLink('View all builds').click()
+    >>> anon_browser.getLink("View all builds").click()
     >>> print(anon_browser.title)
     Builds : Default PPA : Celso Providelo
 
@@ -103,14 +106,14 @@ the 'View all builds' link.
 
 The user could return to the 'PPA' overview by using the breadcrumb link.
 
-    >>> print(anon_browser.getLink('Default PPA').url)
+    >>> print(anon_browser.getLink("Default PPA").url)
     http://launchpad.test/~cprov/+archive/ubuntu/ppa
 
 The user can navigate to an individual build details:
 
-    >>> anon_browser.getControl('All states').click()
-    >>> anon_browser.getControl('Filter').click()
-    >>> anon_browser.getLink('i386 build of iceweasel').click()
+    >>> anon_browser.getControl("All states").click()
+    >>> anon_browser.getControl("Filter").click()
+    >>> anon_browser.getLink("i386 build of iceweasel").click()
     >>> print(anon_browser.title)
     i386 build of iceweasel 1.0 : Default PPA : Celso Providelo
 
@@ -128,27 +131,28 @@ The user can navigate to an individual build details:
 
 From that page the user can return to the PPA overview.
 
-    >>> anon_browser.getLink('Default PPA').url
+    >>> anon_browser.getLink("Default PPA").url
     'http://launchpad.test/~cprov/+archive/ubuntu/ppa'
 
 When the number of packages in the PPA is large the user will see them
 displayed in batches.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa?batch=1')
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa?batch=1"
+    ... )
 
 Since they are on the first page, the 'First' and 'Previous' links are
 inactive:
 
-    >>> 'Previous' in anon_browser.contents
+    >>> "Previous" in anon_browser.contents
     True
-    >>> anon_browser.getLink('Previous')
+    >>> anon_browser.getLink("Previous")
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
-    >>> 'First' in anon_browser.contents
+    >>> "First" in anon_browser.contents
     True
-    >>> anon_browser.getLink('First')
+    >>> anon_browser.getLink("First")
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
@@ -156,24 +160,24 @@ inactive:
 The user does not see the package they are looking for and proceeds to the
 next page.
 
-    >>> anon_browser.getLink('Next').click()
+    >>> anon_browser.getLink("Next").click()
 
 The package of interest is not on this page either so they go to the
 next page.
 
-    >>> anon_browser.getLink('Next').click()
+    >>> anon_browser.getLink("Next").click()
 
 This is the last page, so the next and last links are inactive.
 
-    >>> 'Next' in anon_browser.contents
+    >>> "Next" in anon_browser.contents
     True
-    >>> anon_browser.getLink('Next')
+    >>> anon_browser.getLink("Next")
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
-    >>> 'Last' in anon_browser.contents
+    >>> "Last" in anon_browser.contents
     True
-    >>> anon_browser.getLink('Last')
+    >>> anon_browser.getLink("Last")
     Traceback (most recent call last):
       ..
     zope.testbrowser.browser.LinkNotFoundError
@@ -182,9 +186,9 @@ The 'First' and 'Previous' links, however, are now active.
 
     >>> from urllib.parse import unquote
 
-    >>> unquote(anon_browser.getLink('First').url)
+    >>> unquote(anon_browser.getLink("First").url)
     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+index?batch=1'
 
-    >>> unquote(anon_browser.getLink('Previous').url)  # noqa
+    >>> unquote(anon_browser.getLink("Previous").url)  # noqa
     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+index?batch=1&direction=backwards&memo=2&start=1'
 

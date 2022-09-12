@@ -22,9 +22,10 @@ perform the last step of the workflow for adding a GPG key.
     >>> from zope.component import getMultiAdapter
     >>> from lp.services.verification.interfaces.authtoken import (
     ...     LoginTokenType,
-    ...     )
+    ... )
     >>> from lp.services.verification.interfaces.logintoken import (
-    ...     ILoginTokenSet)
+    ...     ILoginTokenSet,
+    ... )
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.model.person import PersonSet
 
@@ -34,14 +35,17 @@ perform the last step of the workflow for adding a GPG key.
     >>> person_set = PersonSet()
     >>> login_token_set = getUtility(ILoginTokenSet)
 
-    >>> sample_person = person_set.getByEmail('test@canonical.com')
+    >>> sample_person = person_set.getByEmail("test@canonical.com")
     >>> sample_person.hide_email_addresses
     True
 
     >>> login_token = login_token_set.new(
-    ...     sample_person, 'test@canonical.com', 'test@canonical.com',
+    ...     sample_person,
+    ...     "test@canonical.com",
+    ...     "test@canonical.com",
     ...     LoginTokenType.VALIDATEGPG,
-    ...     fingerprint='A419AE861E88BC9E04B9C26FBA2B9389DFD20543')
+    ...     fingerprint="A419AE861E88BC9E04B9C26FBA2B9389DFD20543",
+    ... )
 
     # Start our stub GPG keyserver so that the key can be fetched by the page.
     >>> from lp.testing.keyserver import KeyServerTac
@@ -49,18 +53,24 @@ perform the last step of the workflow for adding a GPG key.
     >>> tac.setUp()
 
     >>> request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://launchpad.test',
-    ...     PATH_INFO='/token/%s/+validategpg' % login_token.token,
-    ...     method='POST', form={'field.actions.continue': 'Continue'})
+    ...     SERVER_URL="http://launchpad.test",
+    ...     PATH_INFO="/token/%s/+validategpg" % login_token.token,
+    ...     method="POST",
+    ...     form={"field.actions.continue": "Continue"},
+    ... )
     >>> login(ANONYMOUS, request)
     >>> validategpg_view = getMultiAdapter(
-    ...     (login_token, request), name="+validategpg")
+    ...     (login_token, request), name="+validategpg"
+    ... )
     >>> print(validategpg_view.account)
     None
     >>> validategpg_view.initialize()
-    >>> print("\n".join(
-    ...     notification.message
-    ...     for notification in validategpg_view.request.notifications))
+    >>> print(
+    ...     "\n".join(
+    ...         notification.message
+    ...         for notification in validategpg_view.request.notifications
+    ...     )
+    ... )
     The key 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543 was successfully
     validated...
     >>> tac.tearDown()

@@ -11,7 +11,7 @@ to view the archive, or admins, can see the publication.
 We create two PPAs, one public and one private. Both PPAs are populated
 with some source and binary publishings.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> public_ppa = factory.makeArchive(private=False)
     >>> private_ppa = factory.makeArchive(private=True)
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
@@ -34,7 +34,7 @@ the public PPA:
 
 A regular user can see them too:
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> print(public_ppa.getPublishedSources().first().displayname)
     foo 666 in breezy-autotest
 
@@ -57,7 +57,7 @@ But when querying the private PPA, anonymous access will be refused:
 
 As is for a regular user.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> source_pub = private_ppa.getPublishedSources().first()
     Traceback (most recent call last):
     ...
@@ -80,7 +80,7 @@ But the owner can see them.
 
 As can an administrator.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> print(public_ppa.getPublishedSources().first().displayname)
     foo 666 in breezy-autotest
 

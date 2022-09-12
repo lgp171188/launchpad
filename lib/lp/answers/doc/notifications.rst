@@ -7,14 +7,17 @@ Let's start with creating a question, and see what the resulting
 notification looks like:
 
     >>> from lp.answers.tests.test_question_notifications import (
-    ...     pop_questionemailjobs)
+    ...     pop_questionemailjobs,
+    ... )
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> sample_person = getUtility(ILaunchBag).user
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu_question = ubuntu.newQuestion(
-    ...     sample_person, "Can't install Ubuntu",
-    ...    "I insert the install CD in the CD-ROM drive, but it won't boot.")
+    ...     sample_person,
+    ...     "Can't install Ubuntu",
+    ...     "I insert the install CD in the CD-ROM drive, but it won't boot.",
+    ... )
 
 The notifications get sent to the question's subscribers, the question's
 target answer contacts as well as to the question's assignee. Initially,
@@ -27,6 +30,7 @@ is sent:
 
     >>> for sub in ubuntu_question.subscriptions:
     ...     print(sub.person.displayname)
+    ...
     Sample Person
 
     >>> notifications = pop_questionemailjobs()
@@ -57,7 +61,7 @@ footer the reason why the user is receiving the notification.
 The notification also includes a 'X-Launchpad-Question' header that
 contains information about the question.
 
-    >>> print(add_notification.headers['X-Launchpad-Question'])
+    >>> print(add_notification.headers["X-Launchpad-Question"])
     distribution=ubuntu; sourcepackage=None; status=Open;
     assignee=None; priority=Normal; language=en
 
@@ -66,16 +70,16 @@ notified about the changes as well:
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
     >>> login(ubuntu_team.teamowner.preferredemail.email)
-    >>> ubuntu_team.addLanguage(getUtility(ILanguageSet)['en'])
+    >>> ubuntu_team.addLanguage(getUtility(ILanguageSet)["en"])
     >>> ubuntu.addAnswerContact(ubuntu_team, ubuntu_team.teamowner)
     True
 
 And assign this question to Foo Bar, so that they will also receive
 notifications:
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> ubuntu_question.assignee = getUtility(ILaunchBag).user
 
 
@@ -87,16 +91,18 @@ will be sent.
 
     >>> from lp.services.webapp.snapshot import notify_modified
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> with notify_modified(
-    ...         ubuntu_question, ['title', 'description', 'target']):
+    ...     ubuntu_question, ["title", "description", "target"]
+    ... ):
     ...     ubuntu_question.title = "Installer doesn't work on a Mac"
     ...     ubuntu_question.description = (
     ...         "I insert the install CD in the CD-ROM\n"
     ...         "drive, but it won't boot.\n"
     ...         "\n"
-    ...         "It boots straight into MacOS 9.")
-    ...     ubuntu_question.target = ubuntu.getSourcePackage('libstdc++')
+    ...         "It boots straight into MacOS 9."
+    ...     )
+    ...     ubuntu_question.target = ubuntu.getSourcePackage("libstdc++")
 
 Three copies of the notification got sent, one to Sample Person, one to
 Foo Bar, and one to Ubuntu Team:
@@ -126,8 +132,9 @@ status whiteboard, priority. For example, if a question is # transferred
 to another QuestionTarget and priority is changed, # the notification
 does not include priority.
 
-    >>> with notify_modified(ubuntu_question, ['target']):
+    >>> with notify_modified(ubuntu_question, ["target"]):
     ...     ubuntu_question.target = ubuntu
+    ...
     >>> notifications = pop_questionemailjobs()
     >>> edit_notification = notifications[1]
     >>> print(edit_notification.body)
@@ -138,10 +145,11 @@ does not include priority.
 
 Changing the assignee will trigger a notification.
 
-    >>> login('foo.bar@canonical.com')
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> with notify_modified(ubuntu_question, ['assignee']):
+    >>> login("foo.bar@canonical.com")
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> with notify_modified(ubuntu_question, ["assignee"]):
     ...     ubuntu_question.assignee = no_priv
+    ...
     >>> notifications = pop_questionemailjobs()
     >>> edit_notification = notifications[1]
     >>> print(edit_notification.body)
@@ -153,8 +161,9 @@ Changing the assignee will trigger a notification.
 If we trigger a modification event when no changes worth notifying about
 was made, no notification is sent:
 
-    >>> with notify_modified(ubuntu_question, ['status']):
+    >>> with notify_modified(ubuntu_question, ["status"]):
     ...     pass
+    ...
 
     >>> notifications = pop_questionemailjobs()
     >>> len(notifications)
@@ -177,13 +186,16 @@ has been linked to it:
 
     >>> from lp.bugs.interfaces.bug import CreateBugParams
 
-    >>> login('no-priv@canonical.com')
-    >>> with notify_modified(ubuntu_question, ['bugs']):
+    >>> login("no-priv@canonical.com")
+    >>> with notify_modified(ubuntu_question, ["bugs"]):
     ...     params = CreateBugParams(
-    ...         owner=no_priv, title="Installer fails on a Mac PPC",
-    ...         comment=ubuntu_question.description)
+    ...         owner=no_priv,
+    ...         title="Installer fails on a Mac PPC",
+    ...         comment=ubuntu_question.description,
+    ...     )
     ...     bug = ubuntu_question.target.createBug(params)
     ...     ubuntu_question.linkBug(bug)
+    ...
     True
 
     >>> notifications = pop_questionemailjobs()
@@ -205,8 +217,9 @@ Bug Unlinked Notification
 
 A notification is also sent when a bug is unlinked from the question:
 
-    >>> with notify_modified(ubuntu_question, ['bugs']):
+    >>> with notify_modified(ubuntu_question, ["bugs"]):
     ...     ubuntu_question.unlinkBug(bug)
+    ...
     True
 
     >>> notifications = pop_questionemailjobs()
@@ -239,7 +252,8 @@ The content of the notification will be different depending on the
 workflow action done.
 
     >>> request_message = ubuntu_question.requestInfo(
-    ...     no_priv, "What is your Mac model?")
+    ...     no_priv, "What is your Mac model?"
+    ... )
 
     >>> notifications = pop_questionemailjobs()
     >>> support_notification = notifications[1]
@@ -281,9 +295,9 @@ extra footer.
 Of course, if the owner unsubscribes from the question, they won't receive
 a notification.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> ubuntu_question.unsubscribe(sample_person, sample_person)
-    >>> message = ubuntu_question.giveInfo('A PowerMac 7200.')
+    >>> message = ubuntu_question.giveInfo("A PowerMac 7200.")
 
     >>> notifications = pop_questionemailjobs()
     >>> print(notifications[1].body)
@@ -298,7 +312,7 @@ a notification.
 The notification for new messages on the question contain a 'References'
 header to the previous message for threading purpose.
 
-    >>> references = notifications[0].headers['References']
+    >>> references = notifications[0].headers["References"]
     >>> print(references)
     <...>
 
@@ -318,9 +332,10 @@ giveInfo() transitions, let's see the other ones.
 Notifications for expireQuestion()
 ..................................
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> message = ubuntu_question.expireQuestion(
-    ...     no_priv, "Expired because of no recent activity.")
+    ...     no_priv, "Expired because of no recent activity."
+    ... )
     >>> notifications = pop_questionemailjobs()
 
 Default notification when the question is expired:
@@ -359,17 +374,20 @@ Notifications for reopen()
 (This example will also show that comments are wrapped for 72 columns
 display.)
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> email_msg = getUtility(IMessageSet).fromText(
     ...     subject=(
     ...         "Re: [Question %d]: Installer doesn't work on "
-    ...         "a Mac" % ubuntu_question.id),
+    ...         "a Mac" % ubuntu_question.id
+    ...     ),
     ...     content=(
     ...         "I really need some help. I tried googling a bit but didn't "
     ...         "find anything useful.\n\nPlease provide some help to a "
-    ...         "newbie."),
-    ...     owner=sample_person)
+    ...         "newbie."
+    ...     ),
+    ...     owner=sample_person,
+    ... )
     >>> message = ubuntu_question.reopen(email_msg)
     >>> notifications = pop_questionemailjobs()
 
@@ -410,14 +428,16 @@ Notification received by the owner:
 Notifications for giveAnswer()
 ..............................
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> answer_message = ubuntu_question.giveAnswer(
-    ...     no_priv, "Actually, your model is an OldWorld Mac. It needs "
+    ...     no_priv,
+    ...     "Actually, your model is an OldWorld Mac. It needs "
     ...     "some configuration on the Mac side to boot the installer. You "
     ...     "will need to install BootX and some other files in your System "
     ...     "Folder.\n\nConsult "
     ...     "https://help.ubuntu.com/community/Installation/OldWorldMacs "
-    ...     "for all the details.")
+    ...     "for all the details.",
+    ... )
 
     >>> notifications = pop_questionemailjobs()
 
@@ -466,10 +486,12 @@ Notification received by the owner:
 Notifications for confirm()
 ...........................
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> message = ubuntu_question.confirmAnswer(
     ...     "I've installed BootX and the installer CD is now booting. "
-    ...     "Thanks!", answer=answer_message)
+    ...     "Thanks!",
+    ...     answer=answer_message,
+    ... )
 
     >>> notifications = pop_questionemailjobs()
 
@@ -499,10 +521,12 @@ Notification received by the owner:
 Notifications for addComment()
 ..............................
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> message = ubuntu_question.addComment(
-    ...     no_priv, "Unless you have lots of RAM... and even then, the "
-    ...     "system will probably be very slow.")
+    ...     no_priv,
+    ...     "Unless you have lots of RAM... and even then, the "
+    ...     "system will probably be very slow.",
+    ... )
 
     >>> notifications = pop_questionemailjobs()
 
@@ -530,10 +554,11 @@ Notification received by the owner:
 Notifications for reject()
 ..........................
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> foo_bar = getUtility(ILaunchBag).user
     >>> message = ubuntu_question.reject(
-    ...     foo_bar, "Yeah! It will be awfully slow.")
+    ...     foo_bar, "Yeah! It will be awfully slow."
+    ... )
 
     >>> notifications = pop_questionemailjobs()
 
@@ -571,9 +596,10 @@ Notifications for setStatus()
 .............................
 
     >>> from lp.answers.enums import QuestionStatus
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> message = ubuntu_question.setStatus(
-    ...     foo_bar, QuestionStatus.SOLVED, "The rejection was a mistake.")
+    ...     foo_bar, QuestionStatus.SOLVED, "The rejection was a mistake."
+    ... )
 
     >>> notifications = pop_questionemailjobs()
 
@@ -606,20 +632,22 @@ Notifications for linkFAQ()
 When a user links a FAQ to a question, the notification includes that
 information before the message.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> firefox_question = firefox.newQuestion(
-    ...     no_priv, 'How can I play Flash?', 'I want Flash!')
+    ...     no_priv, "How can I play Flash?", "I want Flash!"
+    ... )
     >>> ignore = pop_questionemailjobs()
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> firefox_faq = firefox.getFAQ(10)
     >>> print(firefox_faq.title)
     How do I install plugins (Shockwave, QuickTime, etc.)?
 
     >>> message = firefox_question.linkFAQ(
-    ...     sample_person, firefox_faq, "Read the FAQ.")
+    ...     sample_person, firefox_faq, "Read the FAQ."
+    ... )
     >>> notifications = pop_questionemailjobs()
 
     >>> print(notifications[0].body)
@@ -640,7 +668,8 @@ information before the message.
 If the FAQ is unlinked, the notification will look like:
 
     >>> message = firefox_question.linkFAQ(
-    ...     sample_person, None, "Sorry, this wasn't so useful.")
+    ...     sample_person, None, "Sorry, this wasn't so useful."
+    ... )
     >>> notifications = pop_questionemailjobs()
 
     >>> print(notifications[0].body)
@@ -678,30 +707,33 @@ receive notifications related to it.
     # Register salgado as answer contact, this makes the pt_BR language
     # supported in Ubuntu.
 
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> ubuntu.addAnswerContact(salgado, salgado)
     True
 
     >>> from operator import attrgetter
     >>> for lang in sorted(
-    ...         ubuntu.getSupportedLanguages(), key=attrgetter('code')):
+    ...     ubuntu.getSupportedLanguages(), key=attrgetter("code")
+    ... ):
     ...     print(lang.code)
     en
     pt_BR
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> pt_BR_question = ubuntu.newQuestion(
-    ...     sample_person, title=(
-    ...     u"Abrir uma p\xe1gina que requer java quebra o firefox"),
+    ...     sample_person,
+    ...     title=("Abrir uma p\xe1gina que requer java quebra o firefox"),
     ...     description=(
-    ...         u'Eu uso Ubuntu em um AMD64 e instalei o plugin java '
-    ...         u'blackdown. O plugin \xe9 exibido em about:plugins e '
-    ...         u'quando eu abro a pagina '
-    ...         u'http://java.com/en/download/help/testvm.xml, ela carrega '
-    ...         u'corretamente e mostra a minha versao do java. No entanto, '
-    ...         u'mover o mouse na pagina faz com que o firefox quebre.'),
-    ...     language=getUtility(ILanguageSet)['pt_BR'])
+    ...         "Eu uso Ubuntu em um AMD64 e instalei o plugin java "
+    ...         "blackdown. O plugin \xe9 exibido em about:plugins e "
+    ...         "quando eu abro a pagina "
+    ...         "http://java.com/en/download/help/testvm.xml, ela carrega "
+    ...         "corretamente e mostra a minha versao do java. No entanto, "
+    ...         "mover o mouse na pagina faz com que o firefox quebre."
+    ...     ),
+    ...     language=getUtility(ILanguageSet)["pt_BR"],
+    ... )
     >>> notifications = pop_questionemailjobs()
 
     >>> print(backslashreplace(notifications[0].subject))
@@ -712,7 +744,8 @@ status changed, only the subscribers speaking that language will receive
 the notifications.
 
     >>> pt_BR_question.giveInfo(
-    ...     "Veja o screenshot: http://tinyurl.com/y8jq8z")
+    ...     "Veja o screenshot: http://tinyurl.com/y8jq8z"
+    ... )
     <lp.answers.model.questionmessage.QuestionMessage...>
 
     >>> ignore = pop_questionemailjobs()
@@ -726,11 +759,13 @@ For example, the French language is not spoken by any Ubuntu answer
 contacts. So after posting a question in French, a notification will be
 sent to the support list about that question:
 
-    >>> french = getUtility(ILanguageSet)['fr']
+    >>> french = getUtility(ILanguageSet)["fr"]
     >>> french_question = ubuntu.newQuestion(
-    ...     sample_person, title="Impossible d'installer Ubuntu",
-    ...     description=u"Le CD ne semble pas fonctionn\xe9.",
-    ...     language=french)
+    ...     sample_person,
+    ...     title="Impossible d'installer Ubuntu",
+    ...     description="Le CD ne semble pas fonctionn\xe9.",
+    ...     language=french,
+    ... )
     >>> notifications = pop_questionemailjobs()
 
     >>> print(notifications[1].subject)
@@ -742,6 +777,7 @@ sent to the support list about that question:
 
     >>> def recode_text(notification):
     ...     return backslashreplace(notification.body)
+    ...
 
     >>> notification_body = recode_text(notifications[1])
     >>> print(notification_body)
@@ -772,8 +808,9 @@ No notification will be sent to the answer contacts when this question
 is modified. Only the owner will receive a modification notification
 with a warning appended to it.
 
-    >>> with notify_modified(french_question, ['title']):
-    ...     french_question.title = u"CD d'Ubuntu ne d\xe9marre pas"
+    >>> with notify_modified(french_question, ["title"]):
+    ...     french_question.title = "CD d'Ubuntu ne d\xe9marre pas"
+    ...
     >>> notifications = pop_questionemailjobs()
 
     >>> notification_body = recode_text(notifications[0])

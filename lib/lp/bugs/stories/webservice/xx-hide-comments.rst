@@ -10,9 +10,14 @@ The number of the comment in the bug's message list is zero
 indexed.  To hide the third comment in the list of comments
 for bug 11:
 
-    >>> print(webservice.named_post(
-    ...     '/bugs/11', 'setCommentVisibility',
-    ...     comment_number=2, visible=False))
+    >>> print(
+    ...     webservice.named_post(
+    ...         "/bugs/11",
+    ...         "setCommentVisibility",
+    ...         comment_number=2,
+    ...         visible=False,
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
 
@@ -24,10 +29,11 @@ not access in the Bug.messages array.
     >>> from zope.component import getUtility
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.bugmessage import IBugMessageSet
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug_11 = getUtility(IBugSet).get(11)
     >>> bug_message = getUtility(IBugMessageSet).getByBugAndMessage(
-    ...     bug_11, bug_11.messages[2])
+    ...     bug_11, bug_11.messages[2]
+    ... )
     >>> bug_message.message.visible
     False
     >>> logout()
@@ -35,18 +41,24 @@ not access in the Bug.messages array.
 Since the array order is the same, the message can be marked
 visible again.
 
-    >>> print(webservice.named_post(
-    ...     '/bugs/11', 'setCommentVisibility',
-    ...     comment_number=2, visible=True))
+    >>> print(
+    ...     webservice.named_post(
+    ...         "/bugs/11",
+    ...         "setCommentVisibility",
+    ...         comment_number=2,
+    ...         visible=True,
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
 
 And indeed, the comment is visible again.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bug_11 = getUtility(IBugSet).get(11)
     >>> bug_message = getUtility(IBugMessageSet).getByBugAndMessage(
-    ...     bug_11, bug_11.messages[2])
+    ...     bug_11, bug_11.messages[2]
+    ... )
     >>> bug_message.message.visible
     True
     >>> logout()
@@ -54,8 +66,13 @@ And indeed, the comment is visible again.
 This method can only be accessed by Launchpad admins.  (In the example
 above, the default "webservice" uses an admin account.)
 
-    >>> print(user_webservice.named_post(
-    ...     '/bugs/11', 'setCommentVisibility',
-    ...     comment_number=1, visible=False))
+    >>> print(
+    ...     user_webservice.named_post(
+    ...         "/bugs/11",
+    ...         "setCommentVisibility",
+    ...         comment_number=1,
+    ...         visible=False,
+    ...     )
+    ... )
     HTTP/1.1 401 Unauthorized
     ...

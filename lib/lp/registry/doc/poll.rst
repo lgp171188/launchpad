@@ -18,42 +18,52 @@ reasons why we teams can have polls attached to them.
     ...     IPollSubset,
     ...     PollAlgorithm,
     ...     PollSecrecy,
-    ...     )
+    ... )
 
-    >>> team = getUtility(IPersonSet).getByName('ubuntu-team')
-    >>> member = getUtility(IPersonSet).getByName('stevea')
-    >>> member2 = getUtility(IPersonSet).getByName('jdub')
-    >>> member3 = getUtility(IPersonSet).getByName('kamion')
-    >>> member4 = getUtility(IPersonSet).getByName('name16')
-    >>> member5 = getUtility(IPersonSet).getByName('limi')
-    >>> nonmember = getUtility(IPersonSet).getByName('justdave')
-    >>> now = datetime.now(pytz.timezone('UTC'))
+    >>> team = getUtility(IPersonSet).getByName("ubuntu-team")
+    >>> member = getUtility(IPersonSet).getByName("stevea")
+    >>> member2 = getUtility(IPersonSet).getByName("jdub")
+    >>> member3 = getUtility(IPersonSet).getByName("kamion")
+    >>> member4 = getUtility(IPersonSet).getByName("name16")
+    >>> member5 = getUtility(IPersonSet).getByName("limi")
+    >>> nonmember = getUtility(IPersonSet).getByName("justdave")
+    >>> now = datetime.now(pytz.timezone("UTC"))
     >>> onesec = timedelta(seconds=1)
 
 We need to login with one of the administrators of the team named
 'ubuntu-team' to be able to create/edit polls.
-    >>> login('colin.watson@ubuntulinux.com')
+    >>> login("colin.watson@ubuntulinux.com")
 
 First we get an object implementing IPollSubset, which is the set of polls for
 a given team (in our case, the 'Ubuntu Team')
     >>> pollsubset = IPollSubset(team)
 
 Now we create a new poll on this team.
-    >>> opendate = datetime(2005, 1, 1, tzinfo=pytz.timezone('UTC'))
+    >>> opendate = datetime(2005, 1, 1, tzinfo=pytz.timezone("UTC"))
     >>> closedate = opendate + timedelta(weeks=2)
-    >>> title = u"2005 Leader's Elections"
-    >>> proposition = u"Who's going to be the next leader?"
+    >>> title = "2005 Leader's Elections"
+    >>> proposition = "Who's going to be the next leader?"
     >>> type = PollAlgorithm.SIMPLE
     >>> secrecy = PollSecrecy.SECRET
     >>> allowspoilt = True
     >>> poll = pollsubset.new(
-    ...     u"leader-election", title, proposition, opendate,
-    ...     closedate, secrecy, allowspoilt, type)
+    ...     "leader-election",
+    ...     title,
+    ...     proposition,
+    ...     opendate,
+    ...     closedate,
+    ...     secrecy,
+    ...     allowspoilt,
+    ...     type,
+    ... )
 
 We also create a new poll that hasn't yet been opened, which we'll use later.
     >>> _ = factory.makePoll(
-    ...     team, 'not-yet-opened', 'A public poll that has not opened yet',
-    ...     'Whatever proposition.')
+    ...     team,
+    ...     "not-yet-opened",
+    ...     "A public poll that has not opened yet",
+    ...     "Whatever proposition.",
+    ... )
 
 Now we test the if the poll is open or closed in some specific dates.
     >>> poll.isOpen(when=opendate)
@@ -72,6 +82,7 @@ Here we'll query using three different dates:
 Query for open polls in the exact second the poll is opening.
     >>> for p in pollsubset.getOpenPolls(when=opendate):
     ...     print(p.name)
+    ...
     leader-election
     never-closes
     never-closes2
@@ -81,6 +92,7 @@ Query for open polls in the exact second the poll is opening.
 Query for closed polls, one second after the poll closes.
     >>> for p in pollsubset.getClosedPolls(when=closedate + onesec):
     ...     print(p.name)
+    ...
     director-2004
     leader-2004
     leader-election
@@ -88,6 +100,7 @@ Query for closed polls, one second after the poll closes.
 Query for not-yet-opened polls, one second before the poll opens.
     >>> for p in pollsubset.getNotYetOpenedPolls(when=opendate - onesec):
     ...     print(p.name)
+    ...
     leader-election
     not-yet-opened
 
@@ -97,11 +110,12 @@ start with zero options. We're responsible for adding new ones.
     0
 
 Let's add some options to this poll, so people can start voting. :)
-    >>> will = poll.newOption(u'wgraham', u'Will Graham')
-    >>> jack = poll.newOption(u'jcrawford', u'Jack Crawford')
-    >>> francis = poll.newOption(u'fd', u'Francis Dolarhyde')
+    >>> will = poll.newOption("wgraham", "Will Graham")
+    >>> jack = poll.newOption("jcrawford", "Jack Crawford")
+    >>> francis = poll.newOption("fd", "Francis Dolarhyde")
     >>> for o in poll.getActiveOptions():
     ...     print(o.title)
+    ...
     Francis Dolarhyde
     Jack Crawford
     Will Graham
@@ -114,6 +128,7 @@ option as inactive, so people can't vote on it.
     >>> flush_database_updates()
     >>> for o in poll.getActiveOptions():
     ...     print(o.title)
+    ...
     Jack Crawford
     Will Graham
 
@@ -121,6 +136,7 @@ If the poll is not yet opened, it's possible to simply remove a given option.
     >>> poll.removeOption(will, when=opendate - onesec)
     >>> for o in poll.getAllOptions():
     ...     print(o.title)
+    ...
     Francis Dolarhyde
     Jack Crawford
 
@@ -134,18 +150,25 @@ still open.
 Now we create a Condorcet poll on this team and add some options to it, so
 people can start voting.
 
-    >>> title = u"2005 Director's Elections"
-    >>> proposition = u"Who's going to be the next director?"
+    >>> title = "2005 Director's Elections"
+    >>> proposition = "Who's going to be the next director?"
     >>> type = PollAlgorithm.CONDORCET
     >>> secrecy = PollSecrecy.SECRET
     >>> allowspoilt = True
     >>> poll2 = pollsubset.new(
-    ...     u"director-election", title, proposition,
-    ...     opendate, closedate, secrecy, allowspoilt, type)
-    >>> a = poll2.newOption(u'A', u'Option A')
-    >>> b = poll2.newOption(u'B', u'Option B')
-    >>> c = poll2.newOption(u'C', u'Option C')
-    >>> d = poll2.newOption(u'D', u'Option D')
+    ...     "director-election",
+    ...     title,
+    ...     proposition,
+    ...     opendate,
+    ...     closedate,
+    ...     secrecy,
+    ...     allowspoilt,
+    ...     type,
+    ... )
+    >>> a = poll2.newOption("A", "Option A")
+    >>> b = poll2.newOption("B", "Option B")
+    >>> c = poll2.newOption("C", "Option C")
+    >>> d = poll2.newOption("D", "Option D")
 
     >>> options = {b: 1, d: 2, c: 3}
     >>> votes = poll2.storeCondorcetVote(member, options, when=opendate)
@@ -158,6 +181,7 @@ people can start voting.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> for row in poll2.getPairwiseMatrix():
     ...     print(pretty(removeSecurityProxy(row)))
+    ...
     [None, 2, 2, 2]
     [2, None, 2, 2]
     [1, 1, None, 1]

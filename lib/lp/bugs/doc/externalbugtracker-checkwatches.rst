@@ -19,8 +19,7 @@ get_external_bugtracker
 get_external_bugtracker is used to get an ExternalBugTracker suitable
 for a particular bugtracker.
 
-    >>> from lp.bugs.externalbugtracker import (
-    ...     get_external_bugtracker)
+    >>> from lp.bugs.externalbugtracker import get_external_bugtracker
     >>> from lp.services.scripts import log
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
 
@@ -33,10 +32,10 @@ get_external_bugtracker supports five external bug tracker types:
     ...     BugTrackerType.ROUNDUP,
     ...     BugTrackerType.RT,
     ...     BugTrackerType.SOURCEFORGE,
-    ...     BugTrackerType.TRAC]
+    ...     BugTrackerType.TRAC,
+    ... ]
 
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> txn = LaunchpadZopelessLayer.txn
     >>> for bugtracker_type in bugtracker_types:
@@ -47,8 +46,8 @@ get_external_bugtracker supports five external bug tracker types:
     ...         external_bugtracker = get_external_bugtracker(bugtracker)
     ...     finally:
     ...         log.setLevel(log.level - 100)
-    ...     print("%s --> %s" % (bugtracker_type.title,
-    ...         external_bugtracker))
+    ...     print("%s --> %s" % (bugtracker_type.title, external_bugtracker))
+    ...
     Bugzilla --> <lp.bugs...bugzilla.Bugzilla ...>
     Debbugs --> <lp.bugs...debbugs.DebBugs ...>
     Mantis --> <lp.bugs...mantis.Mantis object at ...>

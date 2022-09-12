@@ -5,7 +5,9 @@ There are two Launchpad radio widgets, one that shows descriptions,
 and one that doesn't.
 
     >>> from lp.app.widgets.itemswidgets import (
-    ...     LaunchpadRadioWidget, LaunchpadRadioWidgetWithDescription)
+    ...     LaunchpadRadioWidget,
+    ...     LaunchpadRadioWidgetWithDescription,
+    ... )
 
 The LaunchpadRadioWidget is mostly used to display items from
 an enumerated type.
@@ -14,18 +16,20 @@ an enumerated type.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.code.interfaces.branch import IBranch
     >>> branch = factory.makeAnyBranch()
-    >>> branch_type_field = IBranch['branch_type'].bind(branch)
+    >>> branch_type_field = IBranch["branch_type"].bind(branch)
     >>> request = LaunchpadTestRequest()
     >>> radio_widget = LaunchpadRadioWidget(
-    ...     branch_type_field, branch_type_field.vocabulary, request)
+    ...     branch_type_field, branch_type_field.vocabulary, request
+    ... )
     >>> radio_widget.setRenderedValue(branch_type_field.vocabulary.HOSTED)
 
 The widget is rendered as a collection of labels with the radio
 buttons inside.
 
     >>> html = BeautifulSoup(radio_widget())
-    >>> for label in html.find_all('label'):
-    ...     print(label.decode_contents(formatter='html'))
+    >>> for label in html.find_all("label"):
+    ...     print(label.decode_contents(formatter="html"))
+    ...
     <input checked="checked" class="radioType" id="field.branch_type.0"
            name="field.branch_type" type="radio" value="HOSTED"/>&nbsp;Hosted
     <input class="radioType" id="field.branch_type.1" name="field.branch_type"
@@ -43,7 +47,8 @@ The LaunchpadRadioWidgetWithDescription widget renders the descriptions
 along with the titles from the enumerated type vocabulary.
 
     >>> radio_widget = LaunchpadRadioWidgetWithDescription(
-    ...     branch_type_field, branch_type_field.vocabulary, request)
+    ...     branch_type_field, branch_type_field.vocabulary, request
+    ... )
     >>> radio_widget.setRenderedValue(branch_type_field.vocabulary.HOSTED)
 
 The widget is rendered in a table with the descriptions lined up
@@ -99,12 +104,14 @@ rows are not rendered.
     >>> from lazr.enum import EnumeratedType, Item
     >>> class SomeFruit(EnumeratedType):
     ...     "A choice of fruit."
-    ...     APPLE = Item('Apple')
-    ...     PEAR = Item('Pear')
-    ...     ORANGE = Item('Orange')
+    ...     APPLE = Item("Apple")
+    ...     PEAR = Item("Pear")
+    ...     ORANGE = Item("Orange")
+    ...
 
     >>> radio_widget = LaunchpadRadioWidgetWithDescription(
-    ...     branch_type_field, SomeFruit, request)
+    ...     branch_type_field, SomeFruit, request
+    ... )
     >>> print(radio_widget())
     <table class="radio-button-widget"><tr>
       <td><input class="radioType" id="field.branch_type.0"
@@ -128,8 +135,8 @@ Sometimes, it is desirable to display to the user additional, context specific
 information to explain the choices available for selection. This can be done
 by setting the optional extra_hint and extra_hint_class attributes on the
 widget.
-    >>> radio_widget.extra_hint = 'Some additional information'
-    >>> radio_widget.extra_hint_class = 'inline-informational'
+    >>> radio_widget.extra_hint = "Some additional information"
+    >>> radio_widget.extra_hint_class = "inline-informational"
     >>> print(radio_widget())
     <div class="inline-informational">Some additional information</div>
     <table class="radio-button-widget"><tr>
@@ -149,14 +156,18 @@ are rendered as 'yes' and 'no'; a missing value radio item is not rendered.
     >>> from lp.app.widgets.itemswidgets import LaunchpadBooleanRadioWidget
 
     >>> field = Bool(
-    ...     __name__='sentient',
-    ...     title=u"Are you sentient?",
-    ...     description=u"Are you human or a bot?",
-    ...     required=False, readonly=False, default=True)
+    ...     __name__="sentient",
+    ...     title="Are you sentient?",
+    ...     description="Are you human or a bot?",
+    ...     required=False,
+    ...     readonly=False,
+    ...     default=True,
+    ... )
 
     >>> class Agent:
     ...     def __init__(self, sentient):
     ...         self.sentient = sentient
+    ...
 
     >>> agent = Agent(True)
     >>> bound_field = field.bind(agent)
@@ -174,8 +185,8 @@ are rendered as 'yes' and 'no'; a missing value radio item is not rendered.
 The labels for True and False values can be set using the true_label and
 false_label attributes.
 
-    >>> radio_widget.true_label = 'I think therefore I am'
-    >>> radio_widget.false_label = 'I am a turing test'
+    >>> radio_widget.true_label = "I think therefore I am"
+    >>> radio_widget.false_label = "I am a turing test"
     >>> print(radio_widget())
     <label style="font-weight: normal"><input
         class="radioType" checked="checked" id="field.sentient.0"

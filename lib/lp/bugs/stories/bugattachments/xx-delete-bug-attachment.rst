@@ -5,21 +5,24 @@ If some attachment gets added which isn't relevant to the bug, it can be
 deleted again from the bug attachment edit page.
 
     >>> from io import BytesIO
-    >>> user_browser.open('http://launchpad.test/bugs/2')
-    >>> user_browser.open(user_browser.url + '/+addcomment')
-    >>> foo_file = BytesIO(b'V1agra.')
-    >>> user_browser.getControl('Attachment').add_file(
-    ...   foo_file, 'text/plain', 'foo.txt')
-    >>> user_browser.getControl('Description').value = 'Great deal'
-    >>> user_browser.getControl('Post Comment').click()
+    >>> user_browser.open("http://launchpad.test/bugs/2")
+    >>> user_browser.open(user_browser.url + "/+addcomment")
+    >>> foo_file = BytesIO(b"V1agra.")
+    >>> user_browser.getControl("Attachment").add_file(
+    ...     foo_file, "text/plain", "foo.txt"
+    ... )
+    >>> user_browser.getControl("Description").value = "Great deal"
+    >>> user_browser.getControl("Post Comment").click()
 
 The attachment is now visible on the bug page.
 
-    >>> user_browser.open('http://launchpad.test/bugs/2')
+    >>> user_browser.open("http://launchpad.test/bugs/2")
     >>> attachment_portlet = find_portlet(
-    ...     user_browser.contents, 'Bug attachments')
-    >>> for li in attachment_portlet.find_all('li', 'download-attachment'):
+    ...     user_browser.contents, "Bug attachments"
+    ... )
+    >>> for li in attachment_portlet.find_all("li", "download-attachment"):
     ...     print(li.a.decode_contents())
+    ...
     Great deal
 
 There will also be a comment with a link to the attachment in its body.
@@ -43,45 +46,48 @@ If we go to the attachment edit page, there's an option to delete the
 attachment.
 
     >>> import re
-    >>> user_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
+    >>> user_browser.getLink(url=re.compile(r".*/\+attachment/\d+$")).click()
     >>> print(user_browser.title)
     Bug #2...
-    >>> user_browser.getControl('Delete Attachment') is not None
+    >>> user_browser.getControl("Delete Attachment") is not None
     True
 
 But this delete option should not be shown for other users.
 
     >>> from lp.testing.pages import setupBrowserForUser
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> another_user = factory.makePerson()
     >>> another_browser = setupBrowserForUser(another_user)
     >>> logout()
 
-    >>> another_browser.open('http://launchpad.test/bugs/2')
+    >>> another_browser.open("http://launchpad.test/bugs/2")
     >>> another_browser.getLink(
-    ...     url=re.compile(r'.*/\+attachment/\d+$')).click()
+    ...     url=re.compile(r".*/\+attachment/\d+$")
+    ... ).click()
     >>> print(another_browser.title)
     Bug #2...
     >>> try:
-    ...     another_browser.getControl('Delete Attachment')
+    ...     another_browser.getControl("Delete Attachment")
     ...     raise ValueError("'Delete Attachment' button shouldn't be here!")
     ... except LookupError:
     ...     pass
+    ...
 
 If the button is pressed, the attachment will be deleted, which means
 that it won't show up in the attachments portlet anymore. Since there
 aren't any other attachments, the portlet won't show up at all.
 
-    >>> user_browser.getControl('Delete Attachment').click()
+    >>> user_browser.getControl("Delete Attachment").click()
     >>> user_browser.url
     'http://.../+bug/2'
-    >>> for message in find_tags_by_class(user_browser.contents, 'message'):
+    >>> for message in find_tags_by_class(user_browser.contents, "message"):
     ...     print(message.decode_contents())
+    ...
     Attachment
     "<a href="http://bugs.launchpad.test/...+files/foo.txt">Great deal</a>"
     has been deleted.
 
-    >>> print(find_portlet(user_browser.contents, 'Bug attachments'))
+    >>> print(find_portlet(user_browser.contents, "Bug attachments"))
     None
 
 Since the attachment has been deleted, the comment referencing it will no

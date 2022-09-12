@@ -181,6 +181,7 @@ def main(instance_name=None):
         # See bug 656213 for why we do this carefully.
         os.environ.setdefault("LPCONFIG", instance_name)
     os.environ["STORM_CEXTENSIONS"] = "1"
+    os.environ["ZOPE_INTERFACE_STRICT_IRO"] = "1"
     add_custom_loglevels()
     customizeMimetypes()
     silence_warnings()

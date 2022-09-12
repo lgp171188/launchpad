@@ -31,11 +31,12 @@ User files a bug
 ================
 
     >>> from lp.bugs.interfaces.bug import CreateBugParams
-    >>> firefox = getUtility(IProductSet)['firefox']
+    >>> firefox = getUtility(IProductSet)["firefox"]
     >>> params = CreateBugParams(
     ...     title="a test bug",
     ...     comment="this is only a test bug\nplease ignore",
-    ...     owner=user)
+    ...     owner=user,
+    ... )
     >>> bug = firefox.createBug(params)
     >>> latest_activity = bug.activity.last()
     >>> latest_activity.person == user
@@ -51,6 +52,7 @@ Bug title edited
 
     >>> with notify_modified(bug, ["title", "description"]):
     ...     bug.title = "new bug title"
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     summary
@@ -66,17 +68,27 @@ Source package assignment edited
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
-    >>> mozilla_firefox = getUtility(ISourcePackageNameSet)['mozilla-firefox']
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> mozilla_firefox = getUtility(ISourcePackageNameSet)["mozilla-firefox"]
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> source_package_assignment = getUtility(IBugTaskSet).createTask(
-    ...     bug, user, ubuntu.getSourcePackage(mozilla_firefox))
+    ...     bug, user, ubuntu.getSourcePackage(mozilla_firefox)
+    ... )
     >>> edit_fields = [
-    ...     "distribution", "sourcepackagename", "milestone", "status",
-    ...     "importance", "assignee", "bugwatch"]
+    ...     "distribution",
+    ...     "sourcepackagename",
+    ...     "milestone",
+    ...     "status",
+    ...     "importance",
+    ...     "assignee",
+    ...     "bugwatch",
+    ... ]
     >>> with notify_modified(source_package_assignment, edit_fields):
     ...     source_package_assignment.transitionToStatus(
-    ...         BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.CONFIRMED, getUtility(ILaunchBag).user
+    ...     )
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     mozilla-firefox (Ubuntu): status
@@ -114,13 +126,21 @@ Upstream product assignment edited
 ==================================
 
     >>> product_assignment = getUtility(IBugTaskSet).createTask(
-    ...   bug, user, getUtility(IProductSet)['thunderbird'])
+    ...     bug, user, getUtility(IProductSet)["thunderbird"]
+    ... )
     >>> edit_fields = [
-    ...     "product", "milestone", "status", "assignee", "bugwatch",
-    ...     "importance"]
+    ...     "product",
+    ...     "milestone",
+    ...     "status",
+    ...     "assignee",
+    ...     "bugwatch",
+    ...     "importance",
+    ... ]
     >>> with notify_modified(product_assignment, edit_fields):
     ...     product_assignment.transitionToStatus(
-    ...         BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
+    ...         BugTaskStatus.INVALID, getUtility(ILaunchBag).user
+    ...     )
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     thunderbird: status
@@ -138,11 +158,18 @@ Bug report is marked as a duplicate of another bug report
 =========================================================
 
     >>> edit_fields = [
-    ...     "id", "title", "description", "name",
-    ...     "private", "duplicateof", "security_related"]
+    ...     "id",
+    ...     "title",
+    ...     "description",
+    ...     "name",
+    ...     "private",
+    ...     "duplicateof",
+    ...     "security_related",
+    ... ]
     >>> with notify_modified(bug, edit_fields):
     ...     latest_bug = factory.makeBug()
     ...     bug.markAsDuplicate(latest_bug)
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     marked as duplicate
@@ -156,11 +183,18 @@ Bug report has its duplicate marker changed to another bug report
 =================================================================
 
     >>> edit_fields = [
-    ...     "id", "title", "description", "name", "private", "duplicateof",
-    ...     "security_related"]
+    ...     "id",
+    ...     "title",
+    ...     "description",
+    ...     "name",
+    ...     "private",
+    ...     "duplicateof",
+    ...     "security_related",
+    ... ]
     >>> with notify_modified(bug, edit_fields):
     ...     another_bug = factory.makeBug()
     ...     bug.markAsDuplicate(another_bug)
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     changed duplicate marker
@@ -174,10 +208,17 @@ The bug report is un-duplicated
 ===============================
 
     >>> edit_fields = [
-    ...     "id", "title", "description", "name", "private", "duplicateof",
-    ...     "security_related"]
+    ...     "id",
+    ...     "title",
+    ...     "description",
+    ...     "name",
+    ...     "private",
+    ...     "duplicateof",
+    ...     "security_related",
+    ... ]
     >>> with notify_modified(bug, edit_fields):
     ...     bug.markAsDuplicate(None)
+    ...
     >>> latest_activity = bug.activity.last()
     >>> print(latest_activity.whatchanged)
     removed duplicate marker
@@ -195,8 +236,14 @@ the duplicates are automatically duped to the same master bug.  These changes
 are then reflected in the activity log for each bug itself.
 
     >>> edit_fields = [
-    ...     "id", "title", "description", "name", "private", "duplicateof",
-    ...     "security_related"]
+    ...     "id",
+    ...     "title",
+    ...     "description",
+    ...     "name",
+    ...     "private",
+    ...     "duplicateof",
+    ...     "security_related",
+    ... ]
     >>> initial_bug = factory.makeBug()
     >>> dupe_one = factory.makeBug()
     >>> dupe_two = factory.makeBug()
@@ -238,15 +285,20 @@ know about.
     >>> from datetime import datetime
     >>> from lp.bugs.browser.bugtask import BugActivityItem
     >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> from lp.bugs.interfaces.bugactivity import (
-    ...     IBugActivitySet)
+    >>> from lp.bugs.interfaces.bugactivity import IBugActivitySet
 
     >>> nowish = datetime(
-    ...     2009, 3, 26, 16, 40, 31, tzinfo=pytz.timezone('UTC'))
+    ...     2009, 3, 26, 16, 40, 31, tzinfo=pytz.timezone("UTC")
+    ... )
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='summary', oldvalue='Old value',
-    ...     newvalue='New value', person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="summary",
+    ...     oldvalue="Old value",
+    ...     newvalue="New value",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
 
 The BugActivityItem offers properties that can be used to render the
@@ -267,9 +319,14 @@ with HTML line-breaks.
 BugActivityItem delegates to IBugActivity, so we can still access the
 original BugActivity's properties if we want.
 
-    >>> print("%s: %s => %s" % (
-    ...     activity_item.whatchanged, activity_item.oldvalue,
-    ...     activity_item.newvalue))
+    >>> print(
+    ...     "%s: %s => %s"
+    ...     % (
+    ...         activity_item.whatchanged,
+    ...         activity_item.oldvalue,
+    ...         activity_item.newvalue,
+    ...     )
+    ... )
     summary: Old value => New value
 
 For simpler changes, activity_item.change_details will simply return the
@@ -277,17 +334,26 @@ change in the form old_value -> new_value. The arrow will be represented
 by the unicode character &#8594;.
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='security vulnerability',
-    ...     oldvalue='no', newvalue='yes', person=user,
-    ...     datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="security vulnerability",
+    ...     oldvalue="no",
+    ...     newvalue="yes",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
 
     >>> print(activity_item.change_details)
     no &#8594; yes
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='visibility', oldvalue='public',
-    ...     newvalue='private', person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="visibility",
+    ...     oldvalue="public",
+    ...     newvalue="private",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
 
     >>> print(activity_item.change_details)
@@ -297,8 +363,13 @@ Tag changes use the _formatted_tags_change property of BugActivityItem
 to create a nicely formatted change_details.
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='tags', oldvalue='tag1 tag2',
-    ...     newvalue='tag1 tag3', person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="tags",
+    ...     oldvalue="tag1 tag2",
+    ...     newvalue="tag1 tag3",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
     >>> print(activity_item._formatted_tags_change)
     added: tag3
@@ -315,8 +386,13 @@ that was changed (using the `attribute` property on the bug activity
 discussed above).
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='malone: status', oldvalue='New',
-    ...     newvalue='Triaged', person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="malone: status",
+    ...     oldvalue="New",
+    ...     newvalue="Triaged",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
 
     >>> print(activity_item.change_summary)
@@ -331,16 +407,25 @@ For assignee changes, BugActivityItem will ensure that old or new values
 of None will be converted to the string 'nobody'.
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='malone: assignee', oldvalue=None,
-    ...     newvalue='somebody', person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="malone: assignee",
+    ...     oldvalue=None,
+    ...     newvalue="somebody",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
     >>> print(activity_item.change_details)
     nobody &#8594; somebody
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='malone: assignee',
-    ...     oldvalue='somebody', newvalue=None, person=user,
-    ...     datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="malone: assignee",
+    ...     oldvalue="somebody",
+    ...     newvalue=None,
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
     >>> print(activity_item.change_details)
     somebody &#8594; nobody
@@ -349,10 +434,16 @@ For changes to a bug's description, we simply return the word 'updated,'
 since such changes may be too long to be useful as a diff.
 
     >>> activity = getUtility(IBugActivitySet).new(
-    ...     bug=bug_one, whatchanged='description',
-    ...     oldvalue='Old description', newvalue='New description',
-    ...     person=user, datechanged=nowish)
+    ...     bug=bug_one,
+    ...     whatchanged="description",
+    ...     oldvalue="Old description",
+    ...     newvalue="New description",
+    ...     person=user,
+    ...     datechanged=nowish,
+    ... )
     >>> activity_item = BugActivityItem(activity)
-    >>> print("%s: %s" % (
-    ...     activity_item.change_summary, activity_item.change_details))
+    >>> print(
+    ...     "%s: %s"
+    ...     % (activity_item.change_summary, activity_item.change_details)
+    ... )
     description: updated

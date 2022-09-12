@@ -11,11 +11,14 @@ its ancestor will be tested here.
 
     >>> import xmlrpc.client
     >>> from lp.bugs.tests.externalbugtracker import (
-    ...     TestBugzillaAPIXMLRPCTransport)
+    ...     TestBugzillaAPIXMLRPCTransport,
+    ... )
     >>> bugzilla_transport = TestBugzillaAPIXMLRPCTransport(
-    ...     'http://example.com/xmlrpc.cgi')
+    ...     "http://example.com/xmlrpc.cgi"
+    ... )
     >>> server = xmlrpc.client.ServerProxy(
-    ...     'http://example.com/xmlrpc.cgi', transport=bugzilla_transport)
+    ...     "http://example.com/xmlrpc.cgi", transport=bugzilla_transport
+    ... )
 
 
 Version discovery
@@ -38,7 +41,8 @@ Users can log in to the Bugzilla instance by calling User.login(). This
 method will return the user's user ID in a dict.
 
     >>> server.User.login(
-    ...     {'login': 'foo.bar@canonical.com', 'password': 'test'})
+    ...     {"login": "foo.bar@canonical.com", "password": "test"}
+    ... )
     {'id': 0}
 
 The Bugzilla_logincookie will now have been set for the transport, too.
@@ -50,8 +54,7 @@ The Bugzilla_logincookie will now have been set for the transport, too.
 Trying to log in with an incorrect username or password will result in
 an error being raised.
 
-    >>> server.User.login(
-    ...     {'login': 'test@canonical.com', 'password': 'test'})
+    >>> server.User.login({"login": "test@canonical.com", "password": "test"})
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault:
@@ -67,6 +70,7 @@ the remote server.
     >>> time_dict = server.Bugzilla.time()
     >>> for key in sorted(time_dict):
     ...     print("%s: %s" % (key, time_dict[key]))
+    ...
     db_time: 2008-05-01 01:01:01
     tz_name: UTC
     tz_offset: +0000
@@ -79,10 +83,11 @@ web_time items will be in the server's local timezone whilst
 web_time_utc will be in UTC.
 
     >>> bugzilla_transport.utc_offset = 60**2
-    >>> bugzilla_transport.timezone = 'CET'
+    >>> bugzilla_transport.timezone = "CET"
     >>> time_dict = server.Bugzilla.time()
     >>> for key in sorted(time_dict):
     ...     print("%s: %s" % (key, time_dict[key]))
+    ...
     db_time: 2008-05-01 01:01:01
     tz_name: CET
     tz_offset: +0100
@@ -98,11 +103,11 @@ The Bugzilla API method Bug.get() allows us to get one or more bugs from
 the remote server. It takes a list of bug IDs to return and returns a
 list of dicts containing those bugs' data.
 
-    >>> return_value = server.Bug.get(
-    ...     {'ids': [1], 'permissive': True})
-    >>> [bug_dict] = return_value['bugs']
+    >>> return_value = server.Bug.get({"ids": [1], "permissive": True})
+    >>> [bug_dict] = return_value["bugs"]
     >>> for key in sorted(bug_dict):
     ...     print("%s: %s" % (key, bug_dict[key]))
+    ...
     alias:
     assigned_to: test@canonical.com
     component: GPPSystems
@@ -137,16 +142,19 @@ date / time.
 
     >>> from datetime import datetime
     >>> last_change_time = datetime(2008, 6, 11, 9, 0, 0)
-    >>> return_value = server.Bug.search({
-    ...     'last_change_time': last_change_time,
-    ...     })
+    >>> return_value = server.Bug.search(
+    ...     {
+    ...         "last_change_time": last_change_time,
+    ...     }
+    ... )
 
-    >>> bug_dicts = return_value['bugs']
+    >>> bug_dicts = return_value["bugs"]
     >>> assert len(bug_dicts) == 1, "There should only be one bug dict."
 
     >>> bug_dict = bug_dicts[0]
     >>> for key in sorted(bug_dict):
     ...     print("%s: %s" % (key, bug_dict[key]))
+    ...
     alias: bug-two
     assigned_to: marvin@heartofgold.ship
     component: Crew
@@ -167,15 +175,18 @@ Specifying a range of IDs when calling Bug.search() will limit the
 results to those IDs.
 
     >>> last_change_time = datetime(2007, 6, 10, 1, 1, 1)
-    >>> return_value = server.Bug.search({
-    ...     'id': [1],
-    ...     'last_change_time': last_change_time,
-    ...     })
+    >>> return_value = server.Bug.search(
+    ...     {
+    ...         "id": [1],
+    ...         "last_change_time": last_change_time,
+    ...     }
+    ... )
 
-    >>> bug_dicts = return_value['bugs']
+    >>> bug_dicts = return_value["bugs"]
     >>> for bug_dict in bug_dicts:
     ...     for key in sorted(bug_dict):
     ...         print("%s: %s" % (key, bug_dict[key]))
+    ...
     alias:
     assigned_to: test@canonical.com
     component: GPPSystems
@@ -197,24 +208,29 @@ returned.
 
     >>> from datetime import timedelta
     >>> last_change_time = datetime.now() + timedelta(days=42)
-    >>> return_value = server.Bug.search({
-    ...     'last_change_time': last_change_time,
-    ...     })
+    >>> return_value = server.Bug.search(
+    ...     {
+    ...         "last_change_time": last_change_time,
+    ...     }
+    ... )
 
-    >>> bug_dicts = return_value['bugs']
+    >>> bug_dicts = return_value["bugs"]
     >>> len(bug_dicts)
     0
 
 It's possible to search for bugs filed on a particular product.
 
-    >>> return_value = server.Bug.search({
-    ...     'product': ['HeartOfGold'],
-    ...     })
+    >>> return_value = server.Bug.search(
+    ...     {
+    ...         "product": ["HeartOfGold"],
+    ...     }
+    ... )
 
-    >>> bug_dicts = return_value['bugs']
+    >>> bug_dicts = return_value["bugs"]
     >>> for bug_dict in bug_dicts:
     ...     for key in sorted(bug_dict):
     ...         print("%s: %s" % (key, bug_dict[key]))
+    ...
     alias: bug-two
     assigned_to: marvin@heartofgold.ship
     component: Crew
@@ -233,13 +249,16 @@ It's possible to search for bugs filed on a particular product.
 
 You can search for more than one product.
 
-    >>> return_value = server.Bug.search({
-    ...     'product': ['HeartOfGold', 'Marvin'],
-    ...     })
-    >>> bug_dicts = return_value['bugs']
+    >>> return_value = server.Bug.search(
+    ...     {
+    ...         "product": ["HeartOfGold", "Marvin"],
+    ...     }
+    ... )
+    >>> bug_dicts = return_value["bugs"]
     >>> for bug_dict in bug_dicts:
     ...     for key in sorted(bug_dict):
     ...         print("%s: %s" % (key, bug_dict[key]))
+    ...
     alias:
     assigned_to: test@canonical.com
     component: GPPSystems
@@ -295,25 +314,28 @@ comments for a particular bug or set of bugs. We'll define a helper
 method to print out comments for us.
 
     >>> import operator
-    >>> def print_bug_comments(bugs_dict, sort_key='id'):
+    >>> def print_bug_comments(bugs_dict, sort_key="id"):
     ...     for key in sorted(bugs_dict):
     ...         print("Bug %s:" % key)
     ...         bug_comments = sorted(
-    ...             bugs_dict[key]['comments'],
-    ...             key=operator.itemgetter(sort_key))
+    ...             bugs_dict[key]["comments"],
+    ...             key=operator.itemgetter(sort_key),
+    ...         )
     ...
     ...         for comment in bug_comments:
     ...             for comment_key in sorted(comment):
-    ...                 print("    %s: %s" % (
-    ...                     comment_key, comment[comment_key]))
+    ...                 print(
+    ...                     "    %s: %s" % (comment_key, comment[comment_key])
+    ...                 )
     ...             print()
     ...         print()
+    ...
 
 Passing a list of bug IDs to Bug.comments() will cause it to return all
 the comments for those bugs.
 
-    >>> return_dict = server.Bug.comments({'ids': [1, 2]})
-    >>> bugs_dict = return_dict['bugs']
+    >>> return_dict = server.Bug.comments({"ids": [1, 2]})
+    >>> bugs_dict = return_dict["bugs"]
 
     >>> print_bug_comments(bugs_dict)
     Bug 1:
@@ -367,15 +389,15 @@ the comments for those bugs.
 Passing a list of comment IDs to Bug.comments will cause it to return
 those comments in a 'comments' dict.
 
-    >>> return_dict = server.Bug.comments({'comment_ids': [1, 4]})
-    >>> comments_dict = return_dict['comments']
+    >>> return_dict = server.Bug.comments({"comment_ids": [1, 4]})
+    >>> comments_dict = return_dict["comments"]
 
     >>> for comment_id, comment in comments_dict.items():
     ...     print("Comment %s:" % comment_id)
     ...     for comment_key in sorted(comment):
-    ...         print("    %s: %s" % (
-    ...             comment_key, comment[comment_key]))
+    ...         print("    %s: %s" % (comment_key, comment[comment_key]))
     ...     print()
+    ...
     Comment 1:
         author: trillian
         bug_id: 1
@@ -395,17 +417,18 @@ those comments in a 'comments' dict.
 Note that only comments have been returned when only 'comment_ids' have
 been passed. The bugs dict is empty.
 
-    >>> print(return_dict['bugs'])
+    >>> print(return_dict["bugs"])
     {}
 
 Passing an include_fields parameter allows us to limit which fields are
 returned for each comment.
 
     >>> return_dict = server.Bug.comments(
-    ...     {'ids': [1, 2], 'include_fields': ('id', 'author', 'creator')})
-    >>> bugs_dict = return_dict['bugs']
+    ...     {"ids": [1, 2], "include_fields": ("id", "author", "creator")}
+    ... )
+    >>> bugs_dict = return_dict["bugs"]
 
-    >>> print_bug_comments(bugs_dict, sort_key='id')
+    >>> print_bug_comments(bugs_dict, sort_key="id")
     Bug 1:
         author: trillian
         id: 1
@@ -428,14 +451,15 @@ returned for each comment.
         id: 6
 
     >>> return_dict = server.Bug.comments(
-    ...     {'comment_ids': [1, 4], 'include_fields': ('id', 'author')})
-    >>> comments_dict = return_dict['comments']
+    ...     {"comment_ids": [1, 4], "include_fields": ("id", "author")}
+    ... )
+    >>> comments_dict = return_dict["comments"]
 
     >>> for comment_id, comment in comments_dict.items():
     ...     print("Comment %s:" % comment_id)
     ...     for comment_key in sorted(comment):
-    ...         print("    %s: %s" % (
-    ...             comment_key, comment[comment_key]))
+    ...         print("    %s: %s" % (comment_key, comment[comment_key]))
+    ...
     Comment 1:
         author: trillian
         id: 1
@@ -455,7 +479,7 @@ of the comment to be added to it.
 add_comment() requires authentication.
 
     >>> bugzilla_transport.expireCookie(bugzilla_transport.auth_cookie)
-    >>> server.Bug.add_comment({'id': 1, 'comment': "This won't work"})
+    >>> server.Bug.add_comment({"id": 1, "comment": "This won't work"})
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 410: 'Login Required'>
@@ -464,22 +488,21 @@ Bug.add_comment() will return the integer comment ID of the new comment
 on the remote server.
 
     >>> comment = "I'm supposed to write something apposite here."
-    >>> bugzilla_transport.setCookie('Bugzilla_logincookie=open sesame')
-    >>> return_dict = server.Bug.add_comment({'id': 1, 'comment': comment})
+    >>> bugzilla_transport.setCookie("Bugzilla_logincookie=open sesame")
+    >>> return_dict = server.Bug.add_comment({"id": 1, "comment": comment})
     >>> return_dict
     {'id': 7}
 
 The comment will be stored with the other comments on the remote server.
 
-    >>> return_dict = server.Bug.comments({
-    ...     'id': [1], 'comment_ids': [7]})
-    >>> comments_dict = return_dict['comments']
+    >>> return_dict = server.Bug.comments({"id": [1], "comment_ids": [7]})
+    >>> comments_dict = return_dict["comments"]
 
     >>> for comment_id, comment in comments_dict.items():
     ...     print("Comment %s:" % comment_id)
     ...     for comment_key in sorted(comment):
-    ...         print("    %s: %s" % (
-    ...             comment_key, comment[comment_key]))
+    ...         print("    %s: %s" % (comment_key, comment[comment_key]))
+    ...
     Comment 7:
         author: launchpad
         bug_id: 1
@@ -491,7 +514,7 @@ The comment will be stored with the other comments on the remote server.
 If add_comment is called on a bug that doesn't exist a fault will be
 raised.
 
-    >>> server.Bug.add_comment({'id': 42, 'comment': "This breaks"})
+    >>> server.Bug.add_comment({"id": 42, "comment": "This breaks"})
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault: <Fault 101: 'Bug #42 does not exist.'>
@@ -506,18 +529,19 @@ instance by calling the Bug.update_see_also() method.
 URLs can be added to the list of "See also" links by passing them in the
 `add` parameter.
 
-    >>> server.Bug.update_see_also({
-    ...     'ids': [1], 'add': ['https://launchpad.net/bugs/15']})
+    >>> server.Bug.update_see_also(
+    ...     {"ids": [1], "add": ["https://launchpad.net/bugs/15"]}
+    ... )
     {'changes': {1: {'see_also':
         {'added': ['https://launchpad.net/bugs/15']}}}}
 
 The URL will now have been added to the bug's see_also list.
 
-    >>> return_value = server.Bug.get(
-    ...     {'ids': [1], 'permissive': True})
-    >>> bug_dict = return_value['bugs'][0]
+    >>> return_value = server.Bug.get({"ids": [1], "permissive": True})
+    >>> bug_dict = return_value["bugs"][0]
     >>> for key in sorted(bug_dict):
     ...     print("%s: %s" % (key, bug_dict.get(key)))
+    ...
     alias:
     assigned_to: test@canonical.com
     component: GPPSystems
@@ -536,14 +560,16 @@ The URL will now have been added to the bug's see_also list.
 
 Any attempt to add the same URL again will simply be ignored.
 
-    >>> server.Bug.update_see_also({
-    ...     'ids': [1], 'add': ['https://launchpad.net/bugs/15']})
+    >>> server.Bug.update_see_also(
+    ...     {"ids": [1], "add": ["https://launchpad.net/bugs/15"]}
+    ... )
     {'changes': {}}
 
 Trying to add a non Bugzilla or Launchpad URL will raise a Fault.
 
-    >>> server.Bug.update_see_also({
-    ...     'ids': [1], 'add': ['http://example.com/fail']});
+    >>> server.Bug.update_see_also(
+    ...     {"ids": [1], "add": ["http://example.com/fail"]}
+    ... )
     Traceback (most recent call last):
       ...
     xmlrpc.client.Fault:
@@ -551,16 +577,21 @@ Trying to add a non Bugzilla or Launchpad URL will raise a Fault.
 
 It's also possible to remove items from a bug's see_also list.
 
-    >>> server.Bug.update_see_also({
-    ...     'ids': [1], 'remove': ['https://launchpad.net/bugs/15']})
+    >>> server.Bug.update_see_also(
+    ...     {"ids": [1], "remove": ["https://launchpad.net/bugs/15"]}
+    ... )
     {'changes': {1: {'see_also':
         {'removed': ['https://launchpad.net/bugs/15']}}}}
 
 If a URL is passed in both the `add` and `remove` argument, it will be
 added (i.e. `add` overrides `remove`).
 
-    >>> server.Bug.update_see_also({
-    ...     'ids': [1], 'add': ['https://launchpad.net/bugs/14'],
-    ...     'remove': ['https://launchpad.test/bugs/14']})
+    >>> server.Bug.update_see_also(
+    ...     {
+    ...         "ids": [1],
+    ...         "add": ["https://launchpad.net/bugs/14"],
+    ...         "remove": ["https://launchpad.test/bugs/14"],
+    ...     }
+    ... )
     {'changes': {1: {'see_also':
         {'added': ['https://launchpad.net/bugs/14']}}}}

@@ -6,7 +6,7 @@ Sprints or meetings can be coordinated using Launchpad.
     >>> from datetime import (
     ...     datetime,
     ...     timedelta,
-    ...     )
+    ... )
     >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.blueprints.interfaces.sprint import ISprintSet
@@ -27,15 +27,16 @@ properties which give us the sprints relevant to them.
     >>> productset = getUtility(IProductSet)
     >>> projectset = getUtility(IProjectGroupSet)
     >>> distroset = getUtility(IDistributionSet)
-    >>> firefox = productset.getByName('firefox')
-    >>> ubuntu = distroset.getByName('ubuntu')
-    >>> mozilla = projectset.getByName('mozilla')
+    >>> firefox = productset.getByName("firefox")
+    >>> ubuntu = distroset.getByName("ubuntu")
+    >>> mozilla = projectset.getByName("mozilla")
 
 Make a new sprint and add some relevant specifications to it.
 
     >>> futurista = factory.makeSprint(
-    ...     name='futurista',
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1))
+    ...     name="futurista",
+    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ... )
     >>> firefox_spec = firefox.specifications(futurista.owner)[0]
     >>> _ = firefox_spec.linkSprint(futurista, futurista.owner)
     >>> ubuntu_spec = ubuntu.specifications(futurista.owner)[0]
@@ -45,31 +46,37 @@ We have coming_sprints, giving us up to 5 relevant events that are up-
 and-coming (sorted by the starting date):
 
     >>> for sprint in firefox.coming_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
 
     >>> for sprint in ubuntu.coming_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
 
     >>> for sprint in mozilla.coming_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
 
 And we have sprints, giving us all sprints relevant to that pillar
 (sorted descending by the starting date):
 
     >>> for sprint in firefox.sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
     ubz 2005-10-07
 
     >>> for sprint in ubuntu.sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
 
     >>> for sprint in mozilla.sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     futurista ...-...-...
     ubz 2005-10-07
 
@@ -77,14 +84,17 @@ We also have past_sprints, giving all sprints relevant to that pillar
 that are not coming sprints.
 
     >>> for sprint in firefox.past_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     ubz 2005-10-07
 
     >>> for sprint in ubuntu.past_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
 
     >>> for sprint in mozilla.past_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
     ubz 2005-10-07
 
 Now, these sprint APIs show only sprints with specifications that are
@@ -102,6 +112,7 @@ exact functionality we're testing.
     >>> futurista = SprintSet()["futurista"]
     >>> for sprintspec in futurista.specificationLinks():
     ...     sprintspec.status = SprintSpecificationStatus.PROPOSED
+    ...
 
 Flush the updates to the database so we'll see them.
 
@@ -113,10 +124,12 @@ Flush the updates to the database so we'll see them.
 See, there are no ubuntu sprints.
 
     >>> for sprint in ubuntu.sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
 
     >>> for sprint in ubuntu.coming_sprints:
-    ...     print(sprint.name, sprint.time_starts.strftime('%Y-%m-%d'))
+    ...     print(sprint.name, sprint.time_starts.strftime("%Y-%m-%d"))
+    ...
 
 
 Specification Listings
@@ -148,7 +161,8 @@ And there are three incomplete specs:
 
     >>> filter = [SpecificationFilter.INCOMPLETE]
     >>> for spec in ubz.specifications(None, filter=filter):
-    ...    print(spec.name, spec.is_complete)
+    ...     print(spec.name, spec.is_complete)
+    ...
     svg-support False
     extension-manager-upgrades False
     e4x False
@@ -157,7 +171,8 @@ If we ask for all specs, we get them in the order of priority.
 
     >>> filter = [SpecificationFilter.ALL]
     >>> for spec in ubz.specifications(None, filter=filter):
-    ...    print(spec.priority.title, spec.name)
+    ...     print(spec.priority.title, spec.name)
+    ...
     High svg-support
     Medium extension-manager-upgrades
     Not e4x
@@ -166,6 +181,7 @@ And if we ask just for specs, we get them all
 
     >>> for spec in ubz.specifications(None):
     ...     print(spec.name, spec.is_complete)
+    ...
     svg-support False
     extension-manager-upgrades False
     e4x False
@@ -175,7 +191,7 @@ Inactive products are excluded from the listings.
     >>> from lp.testing import login
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> login("foo.bar@canonical.com")
 
     # Unlink the source packages so the project can be deactivated.
@@ -202,9 +218,9 @@ attribute.
 
     >>> person_set = getUtility(IPersonSet)
     >>> paris = sprintset["paris"]
-    >>> sample_person = person_set.getByEmail('test@canonical.com')
-    >>> nopriv_person = person_set.getByEmail('no-priv@canonical.com')
-    >>> admin_person = person_set.getByEmail('foo.bar@canonical.com')
+    >>> sample_person = person_set.getByEmail("test@canonical.com")
+    >>> nopriv_person = person_set.getByEmail("no-priv@canonical.com")
+    >>> admin_person = person_set.getByEmail("foo.bar@canonical.com")
 
 We can use the `isDriver` method on sprint objects to determine whether
 a user is considered a driver for a sprint.
@@ -233,7 +249,7 @@ Sprint attendance
 
 The sprint attend() method adds a user's attendance to a sprint.
 
-    >>> person = factory.makePerson(name='mustard')
+    >>> person = factory.makePerson(name="mustard")
     >>> time_starts = datetime(2005, 10, 7, 9, 0, 0, 0, pytz.UTC)
     >>> time_ends = datetime(2005, 10, 17, 19, 5, 0, 0, pytz.UTC)
     >>> sprint_attendance = ubz.attend(person, time_starts, time_ends, True)
@@ -276,6 +292,7 @@ objects.
 
     >>> for attendance in ubz.attendances:
     ...     print(attendance.attendee.name)
+    ...
     mustard
 
 

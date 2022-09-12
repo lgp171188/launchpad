@@ -5,7 +5,9 @@ In Launchpad we use email addresses to uniquely identify a person. This is why
 email addresses must be unique.
 
     >>> from lp.services.identity.interfaces.emailaddress import (
-    ...     IEmailAddress, IEmailAddressSet)
+    ...     IEmailAddress,
+    ...     IEmailAddressSet,
+    ... )
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> emailset = getUtility(IEmailAddressSet)
     >>> person = factory.makePerson()
@@ -34,7 +36,7 @@ Trying to register an email address that already exists will raise an
 exception.
 
     >>> personset = getUtility(IPersonSet)
-    >>> foobar = personset.getByName('name16')
+    >>> foobar = personset.getByName("name16")
     >>> emailset.new(email.email, foobar)
     Traceback (most recent call last):
     ...
@@ -51,8 +53,7 @@ The email address verification is case insensitive as well:
 
 Registering a new email address works -- and preserves case -- though:
 
-    >>> emailaddress = emailset.new(
-    ...     'oink@Canonical.com', foobar)
+    >>> emailaddress = emailset.new("oink@Canonical.com", foobar)
     >>> print(emailaddress.email)
     oink@Canonical.com
 
@@ -64,9 +65,10 @@ Generating SHA1 hashes for RDF output is easy:
 There's a convenience method on IEmailAddressSet to pull preferred email
 addresses for a set of people:
 
-    >>> guadamen = personset.getByName('guadamen')
+    >>> guadamen = personset.getByName("guadamen")
     >>> for emailaddress in emailset.getPreferredEmailForPeople(
-    ...         guadamen.allmembers):
+    ...     guadamen.allmembers
+    ... ):
     ...     print(emailaddress.email)
     celso.providelo@canonical.com
     colin.watson@ubuntulinux.com
@@ -87,9 +89,9 @@ Email addresses may be deleted if they're not a person's preferred one
 or the address of a team's mailing list.
 
     >>> ignored = login_person(foobar)
-    >>> emailaddress = emailset.getByEmail('oink@canonical.com')
+    >>> emailaddress = emailset.getByEmail("oink@canonical.com")
     >>> emailaddress.destroySelf()
-    >>> print(emailset.getByEmail('oink@canonical.com'))
+    >>> print(emailset.getByEmail("oink@canonical.com"))
     None
 
 Otherwise, UndeletableEmailAddress is raised.
@@ -100,8 +102,7 @@ Otherwise, UndeletableEmailAddress is raised.
     lp.services.identity.model.emailaddress.UndeletableEmailAddress:
     This is a person's preferred email...
 
-    >>> from lp.registry.tests.mailinglists_helper import (
-    ...     new_list_for_team)
+    >>> from lp.registry.tests.mailinglists_helper import new_list_for_team
     >>> mailing_list = new_list_for_team(guadamen)
     >>> email = emailset.getByEmail(guadamen.mailing_list.address)
     >>> email.destroySelf()

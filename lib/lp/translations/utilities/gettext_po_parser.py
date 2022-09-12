@@ -779,14 +779,14 @@ class POParser:
         >>> from lp.services.helpers import backslashreplace
 
         >>> parser = POParser()
-        >>> print(parser._parseQuotedString(u'\"abc\"'))
+        >>> print(parser._parseQuotedString('"abc"'))
         abc
-        >>> print(parser._parseQuotedString(u'\"abc\\ndef\"'))
+        >>> print(parser._parseQuotedString('"abc\\ndef"'))
         abc
         def
-        >>> print(parser._parseQuotedString(u'\"ab\x63\"'))
+        >>> print(parser._parseQuotedString('"ab\x63"'))
         abc
-        >>> print(parser._parseQuotedString(u'\"ab\143\"'))
+        >>> print(parser._parseQuotedString('"ab\143"'))
         abc
 
         After the string has been converted to unicode, the backslash
@@ -796,7 +796,7 @@ class POParser:
 
         We don't know the encoding of the escaped characters and cannot be
         just recoded as Unicode so it's a TranslationFormatInvalidInputError
-        >>> utf8_string = u'"view \\302\\253${version_title}\\302\\273"'
+        >>> utf8_string = '"view \\302\\253${version_title}\\302\\273"'
         >>> parser._parseQuotedString(utf8_string)
         ... # doctest: +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
@@ -807,7 +807,8 @@ class POParser:
         string.
 
         >>> class FakeHeader:
-        ...     charset = 'UTF-8'
+        ...     charset = "UTF-8"
+        ...
         >>> parser._translation_file = TranslationFileData()
         >>> parser._translation_file.header = FakeHeader()
         >>> print(backslashreplace(parser._parseQuotedString(utf8_string)))
@@ -817,7 +818,7 @@ class POParser:
         exception when we have an escaped char that is not valid in the
         declared encoding of the original string:
 
-        >>> iso8859_1_string = u'"foo \\xf9"'
+        >>> iso8859_1_string = '"foo \\xf9"'
         >>> parser._parseQuotedString(iso8859_1_string)
         ... # doctest: +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
@@ -827,17 +828,17 @@ class POParser:
         An error will be raised if the entire string isn't contained in
         quotes properly:
 
-        >>> parser._parseQuotedString(u'abc')
+        >>> parser._parseQuotedString("abc")
         ... # doctest: +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
           ...
         lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String is not quoted
-        >>> parser._parseQuotedString(u'\"ab')
+        >>> parser._parseQuotedString('"ab')
         ... # doctest: +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
           ...
         lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: String not terminated
-        >>> parser._parseQuotedString(u'\"ab\"x')
+        >>> parser._parseQuotedString('"ab"x')
         ... # doctest: +NORMALIZE_WHITESPACE
         Traceback (most recent call last):
           ...

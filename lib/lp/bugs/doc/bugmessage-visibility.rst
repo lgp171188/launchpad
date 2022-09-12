@@ -20,7 +20,8 @@ A bug message has a visible field, which is True by default.
     ...     subject="new message for visibility test",
     ...     content="new message for visibility test",
     ...     owner=sample_person,
-    ...     bug=bug_one)
+    ...     bug=bug_one,
+    ... )
     >>> new_message.message.visible
     True
 
@@ -28,7 +29,7 @@ Only Admins and registry experts can hide bug messages using the visible
 field.
 
     # Login an Admin user and set visible to False.
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> abugmessage = bugmessageset.get(1)
     >>> abugmessage.message.visible
     True
@@ -38,7 +39,7 @@ field.
 
     # Non-privileged users should not be able to
     # make comments visible again.
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> abugmessage = bugmessageset.get(1)
     >>> abugmessage.message.visible
     False

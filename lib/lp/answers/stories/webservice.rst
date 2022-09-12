@@ -15,28 +15,33 @@ contact, and asker, and three questions.
     >>> lang_set = getUtility(ILanguageSet)
 
     >>> login(ADMIN_EMAIL)
-    >>> _contact = factory.makePerson(name='contact')
-    >>> _project = factory.makeProduct(name='my-project', owner=_contact)
-    >>> _contact.addLanguage(lang_set['en'])
+    >>> _contact = factory.makePerson(name="contact")
+    >>> _project = factory.makeProduct(name="my-project", owner=_contact)
+    >>> _contact.addLanguage(lang_set["en"])
     >>> _project.answers_usage = ServiceUsage.LAUNCHPAD
     >>> success = _project.addAnswerContact(_contact, _contact)
     >>> _team = factory.makeTeam(
     ...     owner=_contact,
-    ...     name='my-team',
-    ...     membership_policy=TeamMembershipPolicy.RESTRICTED)
-    >>> _team_project = factory.makeProduct(name='team-project', owner=_team)
-    >>> _asker = factory.makePerson(name='asker')
+    ...     name="my-team",
+    ...     membership_policy=TeamMembershipPolicy.RESTRICTED,
+    ... )
+    >>> _team_project = factory.makeProduct(name="team-project", owner=_team)
+    >>> _asker = factory.makePerson(name="asker")
     >>> _question_1 = factory.makeQuestion(
-    ...     target=_project, title="Q 1 great", owner=_asker)
+    ...     target=_project, title="Q 1 great", owner=_asker
+    ... )
     >>> _question_2 = factory.makeQuestion(
-    ...     target=_project, title="Q 2 greater", owner=_asker)
+    ...     target=_project, title="Q 2 greater", owner=_asker
+    ... )
     >>> _question_3 = factory.makeQuestion(
-    ...     target=_team_project, title="Q 3 greatest", owner=_asker)
-    >>> _message = _question_1.giveAnswer(_contact, 'This is the answer')
+    ...     target=_team_project, title="Q 3 greatest", owner=_asker
+    ... )
+    >>> _message = _question_1.giveAnswer(_contact, "This is the answer")
     >>> logout()
 
     >>> contact_webservice = webservice_for_person(
-    ...     _contact, permission=OAuthPermission.WRITE_PUBLIC)
+    ...     _contact, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
 
 
 Answer contacts
@@ -48,50 +53,74 @@ language. Scripts should call the canUserAlterAnswerContact method first to
 verify that the person can changed.
 
     >>> project = contact_webservice.get(
-    ...     '/my-project', api_version='devel').jsonBody()
+    ...     "/my-project", api_version="devel"
+    ... ).jsonBody()
     >>> contact = contact_webservice.get(
-    ...     '/~contact', api_version='devel').jsonBody()
+    ...     "/~contact", api_version="devel"
+    ... ).jsonBody()
     >>> contact_webservice.named_get(
-    ...     project['self_link'], 'canUserAlterAnswerContact',
-    ...     person=contact['self_link'], api_version='devel').jsonBody()
+    ...     project["self_link"],
+    ...     "canUserAlterAnswerContact",
+    ...     person=contact["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     True
 
     >>> contact_webservice.named_post(
-    ...     project['self_link'], 'removeAnswerContact',
-    ...     person=contact['self_link'], api_version='devel').jsonBody()
+    ...     project["self_link"],
+    ...     "removeAnswerContact",
+    ...     person=contact["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     True
 
     >>> contact_webservice.named_post(
-    ...     project['self_link'], 'addAnswerContact',
-    ...     person=contact['self_link'], api_version='devel').jsonBody()
+    ...     project["self_link"],
+    ...     "addAnswerContact",
+    ...     person=contact["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     True
 
 Users can also make the teams they administer answer contacts using
 addAnswerContact and removeAnswerContact if the team has a preferred language.
 
     >>> team = contact_webservice.get(
-    ...     '/~my-team', api_version='devel').jsonBody()
+    ...     "/~my-team", api_version="devel"
+    ... ).jsonBody()
     >>> team_project = contact_webservice.get(
-    ...     '/team-project', api_version='devel').jsonBody()
+    ...     "/team-project", api_version="devel"
+    ... ).jsonBody()
     >>> contact_webservice.named_get(
-    ...     team_project['self_link'], 'canUserAlterAnswerContact',
-    ...     person=team['self_link'], api_version='devel').jsonBody()
+    ...     team_project["self_link"],
+    ...     "canUserAlterAnswerContact",
+    ...     person=team["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     True
 
     >>> contact_webservice.named_post(
-    ...     team['self_link'], 'addLanguage',
-    ...     language='/+languages/fr', api_version='devel').jsonBody()
+    ...     team["self_link"],
+    ...     "addLanguage",
+    ...     language="/+languages/fr",
+    ...     api_version="devel",
+    ... ).jsonBody()
     >>> contact_webservice.named_post(
-    ...     team_project['self_link'], 'addAnswerContact',
-    ...     person=team['self_link'], api_version='devel').jsonBody()
+    ...     team_project["self_link"],
+    ...     "addAnswerContact",
+    ...     person=team["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     True
 
 Anyone can get the collection of languages spoken by at least one
 answer contact by calling getSupportedLanguages.
 
     >>> languages = anon_webservice.named_get(
-    ...     team_project['self_link'], 'getSupportedLanguages',
-    ...     api_version='devel').jsonBody()
+    ...     team_project["self_link"],
+    ...     "getSupportedLanguages",
+    ...     api_version="devel",
+    ... ).jsonBody()
     >>> print_self_link_of_entries(languages)
     http://.../+languages/en
     http://.../+languages/fr
@@ -100,11 +129,15 @@ Anyone can retrieve the collection of answer contacts for a language using
 getAnswerContactsForLanguage.
 
     >>> english = anon_webservice.get(
-    ...     '/+languages/en', api_version='devel').jsonBody()
+    ...     "/+languages/en", api_version="devel"
+    ... ).jsonBody()
 
     >>> contacts = anon_webservice.named_get(
-    ...     project['self_link'], 'getAnswerContactsForLanguage',
-    ...     language=english['self_link'], api_version='devel').jsonBody()
+    ...     project["self_link"],
+    ...     "getAnswerContactsForLanguage",
+    ...     language=english["self_link"],
+    ...     api_version="devel",
+    ... ).jsonBody()
     >>> print_self_link_of_entries(contacts)
     http://.../~contact
 
@@ -112,8 +145,10 @@ Anyone can retrieve the collection of `IQuestionTarget`s that a person
 is an answer contact for using getDirectAnswerQuestionTargets.
 
     >>> targets = anon_webservice.named_get(
-    ...     contact['self_link'], 'getDirectAnswerQuestionTargets',
-    ...     api_version='devel').jsonBody()
+    ...     contact["self_link"],
+    ...     "getDirectAnswerQuestionTargets",
+    ...     api_version="devel",
+    ... ).jsonBody()
     >>> print_self_link_of_entries(targets)
     http://api.launchpad.test/devel/my-project
 
@@ -121,8 +156,10 @@ Anyone can retrieve the collection of `IQuestionTarget`s that a person's
 teams is an answer contact for using getTeamAnswerQuestionTargets.
 
     >>> targets = anon_webservice.named_get(
-    ...     contact['self_link'], 'getTeamAnswerQuestionTargets',
-    ...     api_version='devel').jsonBody()
+    ...     contact["self_link"],
+    ...     "getTeamAnswerQuestionTargets",
+    ...     api_version="devel",
+    ... ).jsonBody()
     >>> print_self_link_of_entries(targets)
     http://api.launchpad.test/devel/team-project
 
@@ -135,17 +172,20 @@ searchQuestions. The question will that match the precise search criteria
 called with searchQuestions.
 
     >>> questions = anon_webservice.named_get(
-    ...     project['self_link'], 'searchQuestions',
-    ...     search_text='q great',
-    ...     status=['Open', 'Needs information', 'Answered'],
-    ...     language=[english['self_link']],
-    ...     sort='oldest first',
-    ...     api_version='devel').jsonBody()
-    >>> for question in questions['entries']:
-    ...     print(question['title'])
+    ...     project["self_link"],
+    ...     "searchQuestions",
+    ...     search_text="q great",
+    ...     status=["Open", "Needs information", "Answered"],
+    ...     language=[english["self_link"]],
+    ...     sort="oldest first",
+    ...     api_version="devel",
+    ... ).jsonBody()
+    >>> for question in questions["entries"]:
+    ...     print(question["title"])
+    ...
     Q 1 great
 
-    >>> print(questions['total_size'])
+    >>> print(questions["total_size"])
     1
 
 Anyone can retrieve a collection of questions from an `IQuestionTarget` that
@@ -154,11 +194,14 @@ words that might appear in a question's title or description.
 findSimilarQuestions uses natural language techniques to match the question.
 
     >>> questions = anon_webservice.named_get(
-    ...     project['self_link'], 'findSimilarQuestions',
-    ...     phrase='q great',
-    ...     api_version='devel').jsonBody()
-    >>> for question in questions['entries']:
-    ...     print(question['title'])
+    ...     project["self_link"],
+    ...     "findSimilarQuestions",
+    ...     phrase="q great",
+    ...     api_version="devel",
+    ... ).jsonBody()
+    >>> for question in questions["entries"]:
+    ...     print(question["title"])
+    ...
     Q 1 great
     Q 2 greater
 
@@ -166,9 +209,12 @@ Anyone can retrieve a specific question from an `IQuestionTarget` calling
 getQuestion with the question Id.
 
     >>> question_1 = anon_webservice.named_get(
-    ...     project['self_link'], 'getQuestion', question_id=_question_1.id,
-    ...     api_version='devel').jsonBody()
-    >>> print(question_1['title'])
+    ...     project["self_link"],
+    ...     "getQuestion",
+    ...     question_id=_question_1.id,
+    ...     api_version="devel",
+    ... ).jsonBody()
+    >>> print(question_1["title"])
     Q 1 great
 
 
@@ -177,15 +223,18 @@ searchQuestions. The question will that match the precise search criteria
 called with searchQuestions.
 
     >>> questions = anon_webservice.named_get(
-    ...     contact['self_link'], 'searchQuestions',
-    ...     search_text='q great',
-    ...     status=['Open', 'Needs information', 'Answered'],
-    ...     language=[english['self_link']],
+    ...     contact["self_link"],
+    ...     "searchQuestions",
+    ...     search_text="q great",
+    ...     status=["Open", "Needs information", "Answered"],
+    ...     language=[english["self_link"]],
     ...     needs_attention=False,
-    ...     sort='oldest first',
-    ...     api_version='devel').jsonBody()
-    >>> for question in questions['entries']:
-    ...     print(question['title'])
+    ...     sort="oldest first",
+    ...     api_version="devel",
+    ... ).jsonBody()
+    >>> for question in questions["entries"]:
+    ...     print(question["title"])
+    ...
     Q 1 great
 
 
@@ -227,9 +276,9 @@ An `IQuestionMessage` provides the IMessage fields and additional fields
 that indicate how the message changed the question.
 
     >>> messages = anon_webservice.get(
-    ...     question_1['messages_collection_link'],
-    ...     api_version='devel').jsonBody()
-    >>> pprint_entry(messages['entries'][0])
+    ...     question_1["messages_collection_link"], api_version="devel"
+    ... ).jsonBody()
+    >>> pprint_entry(messages["entries"][0])
     action: 'Answer'
     bug_attachments_collection_link: '...'
     content: 'This is the answer'

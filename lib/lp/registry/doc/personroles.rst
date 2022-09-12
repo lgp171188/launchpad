@@ -124,5 +124,5 @@ method isOneOf makes checking all of these a breeze.
     >>> spec.assignee = person
     >>> print(roles.isOwner(spec))
     False
-    >>> print(roles.isOneOf(spec, ['owner', 'approver', 'assignee']))
+    >>> print(roles.isOneOf(spec, ["owner", "approver", "assignee"]))
     True

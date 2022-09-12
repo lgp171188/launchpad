@@ -13,12 +13,11 @@ bug watches on Trac bug trackers is externalbugtracker.Trac, which implements
 IExternalBugTracker.
 
     >>> from lp.bugs.externalbugtracker import Trac
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.bugs.interfaces.externalbugtracker import IExternalBugTracker
-    >>> trac = Trac('http://example.com/')
+    >>> trac = Trac("http://example.com/")
     >>> verifyObject(IExternalBugTracker, trac)
     True
 
@@ -37,11 +36,13 @@ to validate the token.
     >>> import responses
     >>> from lp.bugs.externalbugtracker.trac import TracLPPlugin
 
-    >>> trac = Trac('http://example.com/')
+    >>> trac = Trac("http://example.com/")
     >>> with responses.RequestsMock() as requests_mock:
     ...     requests_mock.add(
-    ...         'GET', 'http://example.com/launchpad-auth/check', status=401)
+    ...         "GET", "http://example.com/launchpad-auth/check", status=401
+    ...     )
     ...     chosen_trac = trac.getExternalBugTrackerToUse()
+    ...
     >>> isinstance(chosen_trac, TracLPPlugin)
     True
     >>> print(chosen_trac.baseurl)
@@ -59,8 +60,10 @@ Trac installations:
 
     >>> with responses.RequestsMock() as requests_mock:
     ...     requests_mock.add(
-    ...         'GET', 'http://example.com/launchpad-auth/check')
+    ...         "GET", "http://example.com/launchpad-auth/check"
+    ...     )
     ...     chosen_trac = trac.getExternalBugTrackerToUse()
+    ...
     >>> isinstance(chosen_trac, TracLPPlugin)
     False
     >>> print(chosen_trac.baseurl)
@@ -71,9 +74,12 @@ the external bug tracker that groks the plugin is selected:
 
     >>> with responses.RequestsMock() as requests_mock:
     ...     requests_mock.add(
-    ...         'GET', 'http://example.com/launchpad-auth/check',
-    ...         headers={'Set-Cookie': 'trac_auth=1234'})
+    ...         "GET",
+    ...         "http://example.com/launchpad-auth/check",
+    ...         headers={"Set-Cookie": "trac_auth=1234"},
+    ...     )
     ...     chosen_trac = trac.getExternalBugTrackerToUse()
+    ...
     >>> isinstance(chosen_trac, TracLPPlugin)
     True
     >>> print(chosen_trac.baseurl)
@@ -83,8 +89,10 @@ If a 404 is returned, the normal Trac instance is returned.
 
     >>> with responses.RequestsMock() as requests_mock:
     ...     requests_mock.add(
-    ...         'GET', 'http://example.com/launchpad-auth/check', status=404)
+    ...         "GET", "http://example.com/launchpad-auth/check", status=404
+    ...     )
     ...     chosen_trac = trac.getExternalBugTrackerToUse()
+    ...
     >>> chosen_trac is trac
     True
 
@@ -95,9 +103,12 @@ persists.
     >>> from requests.exceptions import ConnectTimeout
     >>> with responses.RequestsMock() as requests_mock:
     ...     requests_mock.add(
-    ...         'GET', 'http://example.com/launchpad-auth/check',
-    ...         body=ConnectTimeout())
+    ...         "GET",
+    ...         "http://example.com/launchpad-auth/check",
+    ...         body=ConnectTimeout(),
+    ...     )
     ...     chosen_trac = trac.getExternalBugTrackerToUse()
+    ...
     >>> chosen_trac is trac
     True
 
@@ -108,36 +119,36 @@ Status Conversion
 The basic Trac ticket statuses map to Launchpad bug statuses.
 Trac.convertRemoteStatus() handles the conversion.
 
-    >>> trac = Trac('http://example.com/')
-    >>> trac.convertRemoteStatus('open').title
+    >>> trac = Trac("http://example.com/")
+    >>> trac.convertRemoteStatus("open").title
     'New'
-    >>> trac.convertRemoteStatus('new').title
+    >>> trac.convertRemoteStatus("new").title
     'New'
-    >>> trac.convertRemoteStatus('reopened').title
+    >>> trac.convertRemoteStatus("reopened").title
     'New'
-    >>> trac.convertRemoteStatus('accepted').title
+    >>> trac.convertRemoteStatus("accepted").title
     'Confirmed'
-    >>> trac.convertRemoteStatus('assigned').title
+    >>> trac.convertRemoteStatus("assigned").title
     'Confirmed'
-    >>> trac.convertRemoteStatus('fixed').title
+    >>> trac.convertRemoteStatus("fixed").title
     'Fix Released'
-    >>> trac.convertRemoteStatus('closed').title
+    >>> trac.convertRemoteStatus("closed").title
     'Fix Released'
-    >>> trac.convertRemoteStatus('invalid').title
+    >>> trac.convertRemoteStatus("invalid").title
     'Invalid'
-    >>> trac.convertRemoteStatus('wontfix').title
+    >>> trac.convertRemoteStatus("wontfix").title
     "Won't Fix"
-    >>> trac.convertRemoteStatus('duplicate').title
+    >>> trac.convertRemoteStatus("duplicate").title
     'Confirmed'
-    >>> trac.convertRemoteStatus('worksforme').title
+    >>> trac.convertRemoteStatus("worksforme").title
     'Invalid'
-    >>> trac.convertRemoteStatus('fixverified').title
+    >>> trac.convertRemoteStatus("fixverified").title
     'Fix Released'
 
 If the status isn't one that our Trac ExternalBugTracker can understand
 an UnknownRemoteStatusError will be raised.
 
-    >>> trac.convertRemoteStatus('eggs').title
+    >>> trac.convertRemoteStatus("eggs").title
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: eggs
@@ -154,9 +165,10 @@ We use a test-oriented implementation for the purposes of these tests, which
 avoids relying on a network connection.
 
     >>> from lp.bugs.tests.externalbugtracker import TestTrac
-    >>> trac = TestTrac(u'http://test.trac/')
+    >>> trac = TestTrac("http://test.trac/")
     >>> with trac.responses():
     ...     trac.initializeRemoteBugDB([1])
+    ...
     >>> sorted(trac.bugs.keys())
     [1]
 
@@ -164,6 +176,7 @@ If we initialize with a different set of keys we overwrite the first set:
 
     >>> with trac.responses():
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10, 11, 12])
+    ...
     >>> sorted(trac.bugs.keys())
     [6, 7, 8, 9, 10, 11, 12]
 
@@ -181,6 +194,7 @@ one-at-a-time:
 
     >>> with trac.responses(trace_calls=True):
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
+    ...
     GET http://test.trac/ticket/6
     GET http://test.trac/ticket/6?format=csv
     GET http://test.trac/ticket/6?format=csv
@@ -195,6 +209,7 @@ fetched as a batch:
     >>> trac.batch_query_threshold = 4
     >>> with trac.responses(trace_calls=True):
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
+    ...
     GET http://test.trac/query?id=6&id=7...&format=csv
 
 The batch updating method will also be used in cases where the Trac instance
@@ -203,6 +218,7 @@ doesn't support CSV exports of individual tickets:
     >>> trac.batch_query_threshold = 10
     >>> with trac.responses(trace_calls=True, supports_single_exports=False):
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
+    ...
     GET http://test.trac/ticket/6
     GET http://test.trac/ticket/6?format=csv
     GET http://test.trac/query?id=6&id=7...&format=csv
@@ -214,6 +230,7 @@ test.
 
     >>> with trac.responses(broken=True):
     ...     trac.initializeRemoteBugDB([6, 7, 8, 9, 10])
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
@@ -224,6 +241,7 @@ This is also true of the single bug export mode.
 
     >>> with trac.responses(broken=True):
     ...     trac.initializeRemoteBugDB([6])
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
@@ -242,19 +260,20 @@ Both the single and batch ticket import modes use the _fetchBugData()
 method to retrieve the CSV data from the remote Trac instance. This
 method accepts a URL from which to retrieve the data as a parameter.
 
-    >>> query_url = 'http://test.trac/query?id=%s&format=csv'
-    >>> query_string = '&id='.join(['1', '2', '3', '4', '5'])
+    >>> query_url = "http://test.trac/query?id=%s&format=csv"
+    >>> query_string = "&id=".join(["1", "2", "3", "4", "5"])
     >>> query_url = query_url % query_string
 
     >>> with trac.responses(trace_calls=True, supports_single_exports=False):
     ...     remote_bugs = trac._fetchBugData(query_url)
+    ...
     GET http://test.trac/query?id=1&id=2...&format=csv
 
 However, _fetchBugData() doesn't actually check the results it returns
 except for checking that they are valid Trac CSV exports. in this case,
 the IDs returned are nothing like the ones we asked for:
 
-    >>> bug_ids = sorted(int(bug['id']) for bug in remote_bugs)
+    >>> bug_ids = sorted(int(bug["id"]) for bug in remote_bugs)
     >>> print(bug_ids)
     [1, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153]
 
@@ -263,6 +282,7 @@ export, it will raise an UnparsableBugData error.
 
     >>> with trac.responses(broken=True):
     ...     trac._fetchBugData(query_url)
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnparsableBugData: External bugtracker
@@ -279,21 +299,25 @@ First, we create some bug watches to test with:
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
 
     >>> example_bug_tracker = new_bugtracker(BugTrackerType.TRAC)
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> example_bug = getUtility(IBugSet).get(10)
     >>> example_bugwatch = example_bug.addWatch(
-    ...     example_bug_tracker, '1',
-    ...     getUtility(ILaunchpadCelebrities).janitor)
+    ...     example_bug_tracker,
+    ...     "1",
+    ...     getUtility(ILaunchpadCelebrities).janitor,
+    ... )
 
 
 Collect the Example.com watches:
 
     >>> for bug_watch in example_bug_tracker.watches:
     ...     print("%s: %s" % (bug_watch.remotebug, bug_watch.remotestatus))
+    ...
     1: None
 
 And have a Trac instance process them:
@@ -304,16 +328,18 @@ And have a Trac instance process them:
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
     >>> txn = LaunchpadZopelessLayer.txn
-    >>> bug_watch_updater = CheckwatchesMaster(
-    ...     txn, FakeLogger())
+    >>> bug_watch_updater = CheckwatchesMaster(txn, FakeLogger())
     >>> trac = TestTrac(example_bug_tracker.baseurl)
     >>> with trac.responses():
     ...     bug_watch_updater.updateBugWatches(
-    ...         trac, example_bug_tracker.watches)
+    ...         trac, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
 
     >>> for bug_watch in example_bug_tracker.watches:
     ...     print("%s: %s" % (bug_watch.remotebug, bug_watch.remotestatus))
+    ...
     1: fixed
 
 We'll add some more watches now.
@@ -323,45 +349,54 @@ We'll add some more watches now.
     >>> bug_watch_set = getUtility(IBugWatchSet)
     >>> bug_watches = dict(
     ...     (int(bug_watch.remotebug), bug_watch.id)
-    ...     for bug_watch in example_bug_tracker.watches)
+    ...     for bug_watch in example_bug_tracker.watches
+    ... )
 
     >>> for remote_bug, bug_watch_id in bug_watches.items():
     ...     bug_watch = getUtility(IBugWatchSet).get(bug_watch_id)
     ...     print("%s: %s" % (remote_bug, bug_watch.remotestatus))
+    ...
     1: fixed
 
     >>> remote_bugs = [
-    ...     (143, 'fixed'),
-    ...     (144, 'assigned'),
-    ...     (145, 'duplicate'),
-    ...     (146, 'invalid'),
-    ...     (147, 'worksforme'),
-    ...     (148, 'wontfix'),
-    ...     (149, 'reopened'),
-    ...     (150, 'new'),
-    ...     (151, 'new'),
-    ...     (152, 'new'),
-    ...     (153, 'new'),
+    ...     (143, "fixed"),
+    ...     (144, "assigned"),
+    ...     (145, "duplicate"),
+    ...     (146, "invalid"),
+    ...     (147, "worksforme"),
+    ...     (148, "wontfix"),
+    ...     (149, "reopened"),
+    ...     (150, "new"),
+    ...     (151, "new"),
+    ...     (152, "new"),
+    ...     (153, "new"),
     ... ]
 
     >>> for remote_bug_id, remote_status in remote_bugs:
     ...     bug_watch = bug_watch_set.createBugWatch(
-    ...         bug=example_bug, owner=sample_person,
+    ...         bug=example_bug,
+    ...         owner=sample_person,
     ...         bugtracker=example_bug_tracker,
-    ...         remotebug=str(remote_bug_id))
+    ...         remotebug=str(remote_bug_id),
+    ...     )
     ...     bug_watches[remote_bug_id] = bug_watch.id
+    ...
 
     >>> with trac.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
-    ...         trac, example_bug_tracker.watches)
+    ...         trac, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 12 watches for 12 bugs on http://bugs.some.where
     GET http://bugs.some.where/query?id=...
 
     >>> for remote_bug_id in sorted(bug_watches.keys()):
     ...     bug_watch = getUtility(IBugWatchSet).get(
-    ...         bug_watches[remote_bug_id])
+    ...         bug_watches[remote_bug_id]
+    ...     )
     ...     remote_status = bug_watch.remotestatus
-    ...     print('Remote bug %d: %s' % (remote_bug_id, remote_status))
+    ...     print("Remote bug %d: %s" % (remote_bug_id, remote_status))
+    ...
     Remote bug 1: fixed
     Remote bug 143: fixed
     Remote bug 144: assigned
@@ -392,9 +427,10 @@ watch hasn't altered:
     >>> from operator import attrgetter
     >>> sorted_bug_watches = sorted(
     ...     (bug_watch for bug_watch in example_bug_tracker.watches),
-    ...     key=attrgetter('remotebug'))
+    ...     key=attrgetter("remotebug"),
+    ... )
     >>> bug_watch = sorted_bug_watches[-1]
-    >>> now = datetime.now(pytz.timezone('UTC'))
+    >>> now = datetime.now(pytz.timezone("UTC"))
     >>> bug_watch.lastchanged = now - timedelta(weeks=2)
     >>> old_last_changed = bug_watch.lastchanged
     >>> print(bug_watch.remotebug)
@@ -405,6 +441,7 @@ watch hasn't altered:
     >>> trac.batch_query_threshold = 0
     >>> with trac.responses():
     ...     bug_watch_updater.updateBugWatches(trac, [bug_watch])
+    ...
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
 
     >>> bug_watch.lastchanged == old_last_changed

@@ -16,51 +16,55 @@ Sample Person creates the team, thus becoming its owner.
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> person_set = getUtility(IPersonSet)
-    >>> sample_person = person_set.getByEmail('test@canonical.com')
+    >>> sample_person = person_set.getByEmail("test@canonical.com")
     >>> aardvarks = factory.makeTeam(
-    ...     sample_person,
-    ...     'The Electric Aardvark Sausages', name='aardvarks')
+    ...     sample_person, "The Electric Aardvark Sausages", name="aardvarks"
+    ... )
 
 Sample Person can access the +mailinglist page.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> login('test@canonical.com')
-    >>> view = create_initialized_view(aardvarks, '+mailinglist')
-    >>> check_permission('launchpad.Moderate', view)
+    >>> login("test@canonical.com")
+    >>> view = create_initialized_view(aardvarks, "+mailinglist")
+    >>> check_permission("launchpad.Moderate", view)
     True
 
 No Privileges Person is added as a member of the Aardvarks.
 
-    >>> no_priv = person_set.getByEmail('no-priv@canonical.com')
+    >>> no_priv = person_set.getByEmail("no-priv@canonical.com")
     >>> ignored = aardvarks.addMember(no_priv, sample_person)
 
 But regular members can't access the +mailinglist page.
 
-    >>> login('no-priv@canonical.com')
-    >>> view = create_initialized_view(aardvarks, '+mailinglist')
-    >>> check_permission('launchpad.Moderate', view)
+    >>> login("no-priv@canonical.com")
+    >>> view = create_initialized_view(aardvarks, "+mailinglist")
+    >>> check_permission("launchpad.Moderate", view)
     False
 
 Sample Person trusts No Privileges Person so they make no-priv a team
 administrator.
 
     >>> from lp.registry.interfaces.teammembership import (
-    ...     ITeamMembershipSet, TeamMembershipStatus)
+    ...     ITeamMembershipSet,
+    ...     TeamMembershipStatus,
+    ... )
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> team_membership = getUtility(ITeamMembershipSet).getByPersonAndTeam(
-    ...     no_priv, aardvarks)
+    ...     no_priv, aardvarks
+    ... )
     >>> team_membership.status
     <DBItem TeamMembershipStatus.APPROVED...
     >>> ignored = team_membership.setStatus(
-    ...     TeamMembershipStatus.ADMIN, sample_person)
+    ...     TeamMembershipStatus.ADMIN, sample_person
+    ... )
 
 Now No Privileges Person has permission to request mailing lists.
 
-    >>> login('no-priv@canonical.com')
-    >>> view = create_initialized_view(aardvarks, '+mailinglist')
-    >>> check_permission('launchpad.Moderate', view)
+    >>> login("no-priv@canonical.com")
+    >>> view = create_initialized_view(aardvarks, "+mailinglist")
+    >>> check_permission("launchpad.Moderate", view)
     True
 
 
@@ -74,7 +78,8 @@ about.  This is not enforced by Launchpad, and a purging a list invokes
 no communication between the two systems.
 
     >>> team_one, list_one = factory.makeTeamAndMailingList(
-    ...     'team-one', 'no-priv')
+    ...     "team-one", "no-priv"
+    ... )
 
     >>> the_owner = team_one.teamowner
 
@@ -86,7 +91,9 @@ no communication between the two systems.
     >>> def create_view(principal, form=None):
     ...     login_person(principal)
     ...     return create_initialized_view(
-    ...         team_one, '+mailinglist', form=form)
+    ...         team_one, "+mailinglist", form=form
+    ...     )
+    ...
 
 Nobody can purge an active mailing list, the team owner...
 
@@ -115,9 +122,9 @@ Even subverting the form will not trick Launchpad into purging the list.
     >>> transaction.commit()
 
     >>> view = create_view(
-    ...     an_admin,
-    ...     {'field.actions.purge_list': u'Purge this Mailing List'})
-    >>> print('\n'.join(view.errors))
+    ...     an_admin, {"field.actions.purge_list": "Purge this Mailing List"}
+    ... )
+    >>> print("\n".join(view.errors))
     This list cannot be purged.
 
 Now the team owner deactivates the mailing list.  When this completes
@@ -126,7 +133,7 @@ Mailman side.
 
     >>> from lp.registry.tests.mailinglists_helper import mailman
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> list_one.deactivate()
     >>> mailman.act()
     >>> transaction.commit()

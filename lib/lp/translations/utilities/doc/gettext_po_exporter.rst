@@ -5,11 +5,15 @@ To export translation files from Rosetta, the data must be displayed in po
 file fomrat which is a text file format.
 
     >>> from lp.translations.interfaces.translations import (
-    ...     TranslationConstants)
+    ...     TranslationConstants,
+    ... )
     >>> from lp.translations.utilities.gettext_po_exporter import (
-    ...     comments_text_representation, export_translation_message)
+    ...     comments_text_representation,
+    ...     export_translation_message,
+    ... )
     >>> from lp.translations.utilities.translation_common_format import (
-    ...     TranslationMessageData)
+    ...     TranslationMessageData,
+    ... )
 
 comments_text_representation
 ----------------------------
@@ -18,30 +22,33 @@ Special comments are created from metadata of each translation message.
 Message flags are represented by the #, comment.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo'
+    >>> translation_message.msgid_singular = "foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
-    >>> translation_message.flags = ('fuzzy', )
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
+    >>> translation_message.flags = ("fuzzy",)
     >>> print(comments_text_representation(translation_message))
     #, fuzzy
 
 Multiple flags are divided by commas.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'%d foo'
+    >>> translation_message.msgid_singular = "%d foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'%d bar')
-    >>> translation_message.flags = ('fuzzy', 'c-format')
+    ...     TranslationConstants.SINGULAR_FORM, "%d bar"
+    ... )
+    >>> translation_message.flags = ("fuzzy", "c-format")
     >>> print(comments_text_representation(translation_message))
     #, fuzzy, c-format
 
 Simple comments are preceded by a single # sign.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'a'
+    >>> translation_message.msgid_singular = "a"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'b')
-    >>> translation_message.comment = u' blah\n'
+    ...     TranslationConstants.SINGULAR_FORM, "b"
+    ... )
+    >>> translation_message.comment = " blah\n"
     >>> print(comments_text_representation(translation_message))
     # blah
 
@@ -49,10 +56,11 @@ Any other comments have been stored verbatim during import and are now
 prepended with a # sign again.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo'
+    >>> translation_message.msgid_singular = "foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
-    >>> translation_message.comment = u'  line1\n| msgid line2\n'
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
+    >>> translation_message.comment = "  line1\n| msgid line2\n"
     >>> print(comments_text_representation(translation_message))
     #  line1
     #| msgid line2
@@ -60,11 +68,12 @@ prepended with a # sign again.
 The order of comments must be kept, so #| are moved to the end.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo'
+    >>> translation_message.msgid_singular = "foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
-    >>> translation_message.comment = u'  line1\n| msgid line2\n'
-    >>> translation_message.file_references = u'src/file.c'
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
+    >>> translation_message.comment = "  line1\n| msgid line2\n"
+    >>> translation_message.file_references = "src/file.c"
     >>> print(comments_text_representation(translation_message))
     #  line1
     #: src/file.c
@@ -87,35 +96,39 @@ msgid "a really long"
 with a wrapping width of 21.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abcdefghijkl'
+    >>> translation_message.msgid_singular = "abcdefghijkl"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid "abcdefghijkl"
     msgstr "z"
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abcdefghijklmnopqr'
+    >>> translation_message.msgid_singular = "abcdefghijklmnopqr"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "abcdefghijklmnopqr"
     msgstr "z"
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abcdef hijklm'
+    >>> translation_message.msgid_singular = "abcdef hijklm"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "abcdef hijklm"
     msgstr "z"
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abcdefghijklmnopqr st'
+    >>> translation_message.msgid_singular = "abcdefghijklmnopqr st"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "abcdefghijklmnopqr "
@@ -125,9 +138,10 @@ with a wrapping width of 21.
 Newlines in the text interfere with wrapping.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abc\ndef'
+    >>> translation_message.msgid_singular = "abc\ndef"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "abc\n"
@@ -137,9 +151,10 @@ Newlines in the text interfere with wrapping.
 But not when it's just a line that ends with a newline char
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'abc\n'
+    >>> translation_message.msgid_singular = "abc\n"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'def\n')
+    ...     TranslationConstants.SINGULAR_FORM, "def\n"
+    ... )
     >>> print(export_translation_message(translation_message))
     msgid "abc\n"
     msgstr "def\n"
@@ -148,12 +163,14 @@ It's time to test the wrapping with the '-' char:
 
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
-    ...     u"WARNING: unsafe enclosing directory permissions on homedir"
-    ...     u" `%s'\n")
+    ...     "WARNING: unsafe enclosing directory permissions on homedir"
+    ...     " `%s'\n"
+    ... )
     >>> translation_message.addTranslation(
     ...     TranslationConstants.SINGULAR_FORM,
-    ...     u"WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses"
-    ...         u" des Home-Verzeichnisses `%s'\n")
+    ...     "WARNUNG: Unsichere Zugriffsrechte des umgebenden Verzeichnisses"
+    ...     " des Home-Verzeichnisses `%s'\n",
+    ... )
     >>> print(export_translation_message(translation_message))  # noqa
     msgid "WARNING: unsafe enclosing directory permissions on homedir `%s'\n"
     msgstr ""
@@ -164,8 +181,9 @@ When we changed the wrapping code, we got a bug with this string.
 
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
-    ...     u"The location and hierarchy of the Evolution contact folders has"
-    ...         u" changed since Evolution 1.x.\n\n")
+    ...     "The location and hierarchy of the Evolution contact folders has"
+    ...     " changed since Evolution 1.x.\n\n"
+    ... )
     >>> print(export_translation_message(translation_message))
     msgid ""
     "The location and hierarchy of the Evolution contact folders has changed "
@@ -179,7 +197,8 @@ creating a broken PO message.  This is the test for bug #46156.
 
     >>> translation_message = TranslationMessageData()
     >>> translation_message.msgid_singular = (
-    ...     u"1234567890abcde word\"1234567890abcdefghij")
+    ...     '1234567890abcde word"1234567890abcdefghij'
+    ... )
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcde "
@@ -192,8 +211,7 @@ inside a single long word in the middle of the escape sequence
 like \" or \\:
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = (
-    ...     u"1234567890abcdefghij\\klmno")
+    >>> translation_message.msgid_singular = "1234567890abcdefghij\\klmno"
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefghij"
@@ -201,8 +219,7 @@ like \" or \\:
     msgstr ""
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = (
-    ...     u"1234567890abcdefgh\\ijklmno")
+    >>> translation_message.msgid_singular = "1234567890abcdefgh\\ijklmno"
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefgh\\"
@@ -210,8 +227,7 @@ like \" or \\:
     msgstr ""
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = (
-    ...     u"1234567890abcdefg\\\\hijklmno")
+    >>> translation_message.msgid_singular = "1234567890abcdefg\\\\hijklmno"
     >>> print(export_translation_message(translation_message, wrap_width=20))
     msgid ""
     "1234567890abcdefg\\"
@@ -221,8 +237,7 @@ like \" or \\:
 For compatibility with msgcat -w, it also wraps on \\ properly.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = (
-    ...     u"\\\\\\\\\\")
+    >>> translation_message.msgid_singular = "\\\\\\\\\\"
     >>> print(export_translation_message(translation_message, wrap_width=5))
     msgid ""
     "\\\\"
@@ -239,7 +254,7 @@ For compatibility with msgcat -w, it also wraps on \\ properly.
 There are a couple of other characters that will be escaped in the
 output, too.
 
-    >>> translation_message.msgid_singular = (u'"\t\r')
+    >>> translation_message.msgid_singular = '"\t\r'
     >>> print(export_translation_message(translation_message, wrap_width=10))
     msgid ""
     "\"\t\r"
@@ -252,9 +267,10 @@ Putting it all together to export full translation messages in the correct
 format.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo'
+    >>> translation_message.msgid_singular = "foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
     >>> print(export_translation_message(translation_message))
     msgid "foo"
     msgstr "bar"
@@ -268,7 +284,7 @@ Obsolete entries are prefixed with #~ .
 
 Also, obsolete entries preserve fuzzy strings.
 
-    >>> translation_message.flags = ('fuzzy', )
+    >>> translation_message.flags = ("fuzzy",)
     >>> print(export_translation_message(translation_message))
     #, fuzzy
     #~ msgid "foo"
@@ -277,12 +293,14 @@ Also, obsolete entries preserve fuzzy strings.
 Plural forms have its own way to represent translations.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo'
-    >>> translation_message.msgid_plural = u'foos'
+    >>> translation_message.msgid_singular = "foo"
+    >>> translation_message.msgid_plural = "foos"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.PLURAL_FORM, u'bars')
+    ...     TranslationConstants.PLURAL_FORM, "bars"
+    ... )
     >>> translation_message.nplurals = 2
     >>> print(export_translation_message(translation_message))
     msgid "foo"
@@ -293,9 +311,10 @@ Plural forms have its own way to represent translations.
 Backslashes are escaped (doubled) and quotes are backslashed.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'foo"bar\\baz'
+    >>> translation_message.msgid_singular = 'foo"bar\\baz'
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'z')
+    ...     TranslationConstants.SINGULAR_FORM, "z"
+    ... )
     >>> print(export_translation_message(translation_message))
     msgid "foo\"bar\\baz"
     msgstr "z"
@@ -303,7 +322,7 @@ Backslashes are escaped (doubled) and quotes are backslashed.
 Tabs are backslashed too, with standard C syntax.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.msgid_singular = u'\tServer name: %s'
+    >>> translation_message.msgid_singular = "\tServer name: %s"
     >>> print(export_translation_message(translation_message))
     msgid "\tServer name: %s"
     msgstr ""
@@ -311,10 +330,11 @@ Tabs are backslashed too, with standard C syntax.
 You can have context on messages.
 
     >>> translation_message = TranslationMessageData()
-    >>> translation_message.context = u'bla'
-    >>> translation_message.msgid_singular = u'foo'
+    >>> translation_message.context = "bla"
+    >>> translation_message.msgid_singular = "foo"
     >>> translation_message.addTranslation(
-    ...     TranslationConstants.SINGULAR_FORM, u'bar')
+    ...     TranslationConstants.SINGULAR_FORM, "bar"
+    ... )
     >>> print(export_translation_message(translation_message))
     msgctxt "bla"
     msgid "foo"

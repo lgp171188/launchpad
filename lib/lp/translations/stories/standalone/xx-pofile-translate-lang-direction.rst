@@ -11,46 +11,52 @@ The input boxes on the Rosetta translation form provide this information
 through the "lang" and "dir" HTML attributes.  Note that HTML uses a dash as
 the separator in language codes rather than an underscore.
 
-    >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
+    >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/en_AU/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/en_AU/+translate"
+    ... )
     >>> control = browser.getControl(
-    ...     name="msgset_130_en_AU_translation_0_new")
-    >>> print(control._control.attrs.get('dir'))
+    ...     name="msgset_130_en_AU_translation_0_new"
+    ... )
+    >>> print(control._control.attrs.get("dir"))
     ltr
     >>> control = browser.getControl(
-    ...     name="msgset_139_en_AU_translation_0_new")
-    >>> print(control._control.attrs.get('dir'))
+    ...     name="msgset_139_en_AU_translation_0_new"
+    ... )
+    >>> print(control._control.attrs.get("dir"))
     ltr
 
 When entering Hebrew translations, the form controls are set to right to left:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/he/+translate')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/he/+translate"
+    ... )
     >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
-    >>> print(control._control.attrs.get('dir'))
+    >>> print(control._control.attrs.get("dir"))
     rtl
     >>> control = browser.getControl(name="msgset_139_he_translation_0_new")
-    >>> print(control._control.attrs.get('dir'))
+    >>> print(control._control.attrs.get("dir"))
     rtl
 
 If we post the form with suggestions, the form controls are still set to rtl:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/he/+translate'
-    ...     '?field.alternative_language=es')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/he/+translate"
+    ...     "?field.alternative_language=es"
+    ... )
     >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
-    >>> print(control._control.attrs.get('dir'))
+    >>> print(control._control.attrs.get("dir"))
     rtl
 
 But suggestion text is tagged with its language code and its own text
 direction:
 
-    >>> print(find_tag_by_id(
-    ...     browser.contents, 'msgset_130_es_suggestion_562_0'))
+    >>> print(
+    ...     find_tag_by_id(browser.contents, "msgset_130_es_suggestion_562_0")
+    ... )
     <label dir="ltr" for="msgset_130_es_suggestion_562_0_radiobutton"
       id="msgset_130_es_suggestion_562_0" lang="es"
       style="white-space: normal">libreta de direcciones de Evolution</label>

@@ -9,8 +9,9 @@ But for those people who do see the separate page, the page has the
 same navigation as the bug page itself.
 
     >>> admin_browser.open(
-    ... 'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1'
-    ... '/nominations/2/+editstatus')
+    ...     "http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1"
+    ...     "/nominations/2/+editstatus"
+    ... )
     >>> print_location(admin_browser.contents)
     Hierarchy: Ubuntu > mozilla-firefox package > Bug #1...
     Tabs:

@@ -103,20 +103,23 @@ class StepsToGo:
     ...     def __init__(self, traversed, stack):
     ...         self._traversed_names = traversed
     ...         self.stack = stack
+    ...
     ...     def getTraversalStack(self):
     ...         return self.stack
+    ...
     ...     def setTraversalStack(self, stack):
     ...         self.stack = stack
+    ...
 
-    >>> request = FakeRequest([], ['baz', 'bar', 'foo'])
+    >>> request = FakeRequest([], ["baz", "bar", "foo"])
     >>> stepstogo = StepsToGo(request)
     >>> stepstogo.startswith()
     True
-    >>> stepstogo.startswith('foo')
+    >>> stepstogo.startswith("foo")
     True
-    >>> stepstogo.startswith('foo', 'bar')
+    >>> stepstogo.startswith("foo", "bar")
     True
-    >>> stepstogo.startswith('foo', 'baz')
+    >>> stepstogo.startswith("foo", "baz")
     False
     >>> len(stepstogo)
     3
@@ -137,7 +140,7 @@ class StepsToGo:
     >>> bool(stepstogo)
     False
 
-    >>> request = FakeRequest([], ['baz', 'bar', 'foo'])
+    >>> request = FakeRequest([], ["baz", "bar", "foo"])
     >>> list(StepsToGo(request))
     ['foo', 'bar', 'baz']
 
@@ -918,7 +921,7 @@ class LaunchpadTestRequest(
 ):
     """Mock request for use in unit and functional tests.
 
-    >>> request = LaunchpadTestRequest(SERVER_URL='http://127.0.0.1/foo/bar')
+    >>> request = LaunchpadTestRequest(SERVER_URL="http://127.0.0.1/foo/bar")
 
     This class subclasses TestRequest - the standard Mock request object
     used in unit tests
@@ -948,10 +951,11 @@ class LaunchpadTestRequest(
     It also provides the query_string_params dict that is available from
     LaunchpadBrowserRequest.
 
-    >>> request = LaunchpadTestRequest(SERVER_URL='http://127.0.0.1/foo/bar',
-    ...     QUERY_STRING='a=1&b=2&c=3')
-    >>> request.charsets = ['utf-8']
-    >>> request.query_string_params == {'a': ['1'], 'b': ['2'], 'c': ['3']}
+    >>> request = LaunchpadTestRequest(
+    ...     SERVER_URL="http://127.0.0.1/foo/bar", QUERY_STRING="a=1&b=2&c=3"
+    ... )
+    >>> request.charsets = ["utf-8"]
+    >>> request.query_string_params == {"a": ["1"], "b": ["2"], "c": ["3"]}
     True
 
     If force_fresh_login_for_testing is set to True, the
@@ -1058,7 +1062,7 @@ class LaunchpadTestResponse(LaunchpadBrowserResponse):
     >>> INotificationResponse.providedBy(response)
     True
 
-    >>> response.addWarningNotification('Warning Notification')
+    >>> response.addWarningNotification("Warning Notification")
     >>> print(request.notifications[0].message)
     Warning Notification
     """

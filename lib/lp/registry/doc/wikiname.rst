@@ -6,16 +6,16 @@ IWikiNameSet utility.
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.role import IHasOwner
-    >>> from lp.registry.interfaces.wikiname import (
-    ...     IWikiName, IWikiNameSet)
+    >>> from lp.registry.interfaces.wikiname import IWikiName, IWikiNameSet
 
 The new() method of IWikiNameSet takes the person who will be associated
 with the Wikiname, the Wiki's base URL and the name of the person's page
 on that wiki.
 
-    >>> salgado = getUtility(IPersonSet).getByName('salgado')
+    >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> wiki_name = getUtility(IWikiNameSet).new(
-    ...     salgado, 'https://wiki.canonical.com/', 'Salgado')
+    ...     salgado, "https://wiki.canonical.com/", "Salgado"
+    ... )
 
 The returned WikiName object provides both IWikiName and IHasOwner.
 
@@ -30,5 +30,6 @@ and name, through IPerson.wiki_names.
 
     >>> for wiki in salgado.wiki_names:
     ...     print("%s%s" % (wiki.wiki, wiki.wikiname))
+    ...
     https://wiki.canonical.com/Salgado
     https://wiki.ubuntu.com/GuilhermeSalgado

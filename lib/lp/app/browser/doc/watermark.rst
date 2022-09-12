@@ -16,19 +16,22 @@ object that implements IRootContext.
     >>> from lp.app.browser.launchpad import Hierarchy
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> class TrivialView:
-    ...     __name__ = '+trivial'
+    ...     __name__ = "+trivial"
+    ...
     ...     def __init__(self, context):
     ...         self.context = context
+    ...
     >>> def get_hierarchy(obj, viewcls=TrivialView):
     ...     req = LaunchpadTestRequest()
     ...     view = viewcls(obj)
     ...     req.traversed_objects.append(view.context)
     ...     req.traversed_objects.append(view)
     ...     return Hierarchy(view, req)
+    ...
 
 Products directly implement IRootContext.
 
-    >>> widget = factory.makeProduct(displayname='Widget')
+    >>> widget = factory.makeProduct(displayname="Widget")
     >>> print(get_hierarchy(widget).heading())
     <h...><a...>Widget</a></h...>
 
@@ -40,13 +43,13 @@ A series of the product still show the product watermark.
 
 ProjectGroups also directly implement IRootContext ...
 
-    >>> kde = factory.makeProject(displayname='KDE')
+    >>> kde = factory.makeProject(displayname="KDE")
     >>> print(get_hierarchy(kde).heading())
     <h...><a...>KDE</a></h...>
 
 ... as do distributions ...
 
-    >>> mint = factory.makeDistribution(displayname='Mint Linux')
+    >>> mint = factory.makeDistribution(displayname="Mint Linux")
     >>> print(get_hierarchy(mint).heading())
     <h...><a...>Mint Linux</a></h...>
 
@@ -73,7 +76,8 @@ Launchpad.net).
 Any HTML in the context title will be escaped to avoid XSS vulnerabilities.
 
     >>> person = factory.makePerson(
-    ...     displayname="Fubar<br/><script>alert('XSS')</script>")
+    ...     displayname="Fubar<br/><script>alert('XSS')</script>"
+    ... )
     >>> print(get_hierarchy(person).heading())  # noqa
     <h...><a...>Fubar&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a></h...>
 

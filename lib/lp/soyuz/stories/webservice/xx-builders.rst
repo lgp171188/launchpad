@@ -6,13 +6,15 @@ The webservice exposes a top-level collection called "builders" which
 contains all the registered builders in the Launchpad build farm.
 
     >>> nopriv_launchpad = launchpadlib_for(
-    ...     'builders test', 'no-priv', version='devel')
+    ...     "builders test", "no-priv", version="devel"
+    ... )
     >>> builders = nopriv_launchpad.builders
 
 Iterating over the collection is possible:
 
     >>> for builder in builders:
     ...     print(builder)
+    ...
     http://api.launchpad.test/devel/builders/bob
     http://api.launchpad.test/devel/builders/frog
 
@@ -25,6 +27,7 @@ Each builder has a number of properties exposed:
 
     >>> for attribute in bob.lp_attributes:
     ...     print(attribute)
+    ...
     self_link
     ...
     active
@@ -65,7 +68,8 @@ have permission to save changes:
 'cprov', who is a buildd-admin, is able to change the data:
 
     >>> cprov_launchpad = launchpadlib_for(
-    ...     'builders test', 'cprov', version='devel')
+    ...     "builders test", "cprov", version="devel"
+    ... )
     >>> bob = cprov_launchpad.builders.getByName(name="bob")
     >>> bob.active = False
     >>> bob.lp_save()

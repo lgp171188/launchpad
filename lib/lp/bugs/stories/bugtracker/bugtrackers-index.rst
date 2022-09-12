@@ -4,24 +4,31 @@ Bug trackers in Launchpad
 The bug trackers index page has the same navigation as the main Bugs
 page, with the addition of a breadcrumb itself.
 
-    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers')
+    >>> user_browser.open("http://launchpad.test/bugs/bugtrackers")
     >>> print(user_browser.title)
     Bug trackers registered in Launchpad
 
 The page presents a table with all bugtrackers currently registered:
 
     >>> def print_tracker_table(browser):
-    ...     table = find_tag_by_id(browser.contents, 'trackers')
-    ...     for row in table.tbody.find_all('tr'):
-    ...         title, location, linked, type, watches = row.find_all('td')
-    ...         print('------------------------')
-    ...         print('\n'.join([
-    ...             extract_text(title),
-    ...             extract_text(location),
-    ...             '  --> %s' % (location.a and location.a.get('href')),
-    ...             ' '.join(extract_text(linked).split()),
-    ...             extract_text(type),
-    ...             extract_text(watches)]))
+    ...     table = find_tag_by_id(browser.contents, "trackers")
+    ...     for row in table.tbody.find_all("tr"):
+    ...         title, location, linked, type, watches = row.find_all("td")
+    ...         print("------------------------")
+    ...         print(
+    ...             "\n".join(
+    ...                 [
+    ...                     extract_text(title),
+    ...                     extract_text(location),
+    ...                     "  --> %s"
+    ...                     % (location.a and location.a.get("href")),
+    ...                     " ".join(extract_text(linked).split()),
+    ...                     extract_text(type),
+    ...                     extract_text(watches),
+    ...                 ]
+    ...             )
+    ...         )
+    ...
 
     >>> print_tracker_table(user_browser)
     ------------------------
@@ -53,12 +60,14 @@ of the bug tracker might contain an email address - especially
 auto-created ones - so the title is also obfuscated.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/bugs/bugtrackers/email/+edit')
-    >>> admin_browser.getControl('Title').value = (
-    ...     'an@email.address bug tracker')
-    >>> admin_browser.getControl('Change').click()
+    ...     "http://launchpad.test/bugs/bugtrackers/email/+edit"
+    ... )
+    >>> admin_browser.getControl(
+    ...     "Title"
+    ... ).value = "an@email.address bug tracker"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> anon_browser.open('http://launchpad.test/bugs/bugtrackers')
+    >>> anon_browser.open("http://launchpad.test/bugs/bugtrackers")
     >>> print_tracker_table(anon_browser)
     ------------------------
     ...
@@ -74,8 +83,9 @@ auto-created ones - so the title is also obfuscated.
 The watch counts match the number of bugs listed, of course:
 
     >>> user_browser.getLink("Debian Bug tracker").click()
-    >>> nav = find_tags_by_class(user_browser.contents,
-    ...     'batch-navigation-index')
+    >>> nav = find_tags_by_class(
+    ...     user_browser.contents, "batch-navigation-index"
+    ... )
     >>> print(extract_text(nav[0]))
     1 → 5 of 5 results
 
@@ -84,18 +94,19 @@ Let's link a pair to debbugs:
 
     >>> def link_to_debbugs(name):
     ...     admin_browser.open(
-    ...         "http://launchpad.test/%s/+configure-bugtracker" % name)
+    ...         "http://launchpad.test/%s/+configure-bugtracker" % name
+    ...     )
     ...     admin_browser.getControl("In a registered bug tracker").click()
     ...     bt = admin_browser.getControl(name="field.bugtracker.bugtracker")
-    ...     bt.value = 'debbugs'
+    ...     bt.value = "debbugs"
     ...     admin_browser.getControl("Change").click()
     ...
-    >>> link_to_debbugs('upstart')
-    >>> link_to_debbugs('derby')
+    >>> link_to_debbugs("upstart")
+    >>> link_to_debbugs("derby")
 
 And re-render the table:
 
-    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers')
+    >>> user_browser.open("http://launchpad.test/bugs/bugtrackers")
     >>> print_tracker_table(user_browser)
     ------------------------
     Debian Bug tracker
@@ -114,10 +125,10 @@ And re-render the table:
 Add a third and a fourth to show ellipsizing. Note that projects
 linked to bugtrackers are also linked.
 
-    >>> link_to_debbugs('a52dec')
-    >>> link_to_debbugs('iso-codes')
+    >>> link_to_debbugs("a52dec")
+    >>> link_to_debbugs("iso-codes")
 
-    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers')
+    >>> user_browser.open("http://launchpad.test/bugs/bugtrackers")
     >>> print_tracker_table(user_browser)
     ------------------------
     Debian Bug tracker

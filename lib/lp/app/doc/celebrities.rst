@@ -25,7 +25,7 @@ The 'admins' team contain the user who have super-power over all of
 Launchpad. This team is accessible through the admin attribute.
 
     >>> personset = getUtility(IPersonSet)
-    >>> admins = personset.getByName('admins')
+    >>> admins = personset.getByName("admins")
     >>> celebs.admin == admins
     True
 
@@ -35,7 +35,7 @@ vcs-imports
 
 The vcs-imports celebrity owns the branches created by importd.
 
-    >>> vcs_imports = personset.getByName('vcs-imports')
+    >>> vcs_imports = personset.getByName("vcs-imports")
     >>> celebs.vcs_imports == vcs_imports
     True
 
@@ -46,7 +46,7 @@ english
 The English language is used in many places.  It's the native language
 for translation, as well as for Launchpad itself.
 
-    >>> english = getUtility(ILanguageSet).getLanguageByCode('en')
+    >>> english = getUtility(ILanguageSet).getLanguageByCode("en")
     >>> english == celebs.english
     True
 
@@ -57,7 +57,7 @@ registry_experts
 The registry_experts celebrity has permissions to perform registry
 gardening operations.
 
-    >>> registry = personset.getByName('registry')
+    >>> registry = personset.getByName("registry")
     >>> celebs.registry_experts == registry
     True
 
@@ -68,7 +68,7 @@ buildd_admin
 The buildd_admin celebrity has permission to perform routine task in the
 buildfarm.
 
-    >>> buildd_admin = personset.getByName('launchpad-buildd-admins')
+    >>> buildd_admin = personset.getByName("launchpad-buildd-admins")
     >>> celebs.buildd_admin == buildd_admin
     True
 
@@ -78,7 +78,7 @@ bug_watch_updater
 
 The bug_watch_updater celebrity updates the bug watches.
 
-    >>> bug_watch_updater = personset.getByName('bug-watch-updater')
+    >>> bug_watch_updater = personset.getByName("bug-watch-updater")
     >>> celebs.bug_watch_updater == bug_watch_updater
     True
 
@@ -90,7 +90,7 @@ For all the products using SourceForge, we have a single registered
 tracker
 
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
-    >>> sf_tracker = getUtility(IBugTrackerSet).getByName('sf')
+    >>> sf_tracker = getUtility(IBugTrackerSet).getByName("sf")
     >>> celebs.sourceforge_tracker == sf_tracker
     True
 
@@ -102,7 +102,7 @@ We have the Launchpad Janitor which takes care of expiring old
 questions, team memberships when they reach their expiry date, and old
 incomplete bugtasks.
 
-    >>> janitor = personset.getByName('janitor')
+    >>> janitor = personset.getByName("janitor")
     >>> celebs.janitor == janitor
     True
 
@@ -113,7 +113,7 @@ launchpad
 The Launchpad product itself.
 
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> launchpad = getUtility(IProductSet).getByName('launchpad')
+    >>> launchpad = getUtility(IProductSet).getByName("launchpad")
     >>> celebs.launchpad == launchpad
     True
 
@@ -124,7 +124,7 @@ obsolete_junk
 The 'Obsolete Junk' project is used to hold undeletable objects like
 productseries that other projects no longer want.
 
-    >>> obsolete_junk = getUtility(IProductSet).getByName('obsolete-junk')
+    >>> obsolete_junk = getUtility(IProductSet).getByName("obsolete-junk")
     >>> celebs.obsolete_junk == obsolete_junk
     True
 
@@ -136,7 +136,7 @@ There is a 'Commercial Subscription Admins' team that has administrative
 power over the licence review process and has the ability to de-activate
 projects.
 
-    >>> commercial_admin = personset.getByName('commercial-admins')
+    >>> commercial_admin = personset.getByName("commercial-admins")
     >>> celebs.commercial_admin == commercial_admin
     True
 
@@ -148,8 +148,7 @@ There is a 'Savannah Bug Tracker' bugtracker which represents the bug
 tracker for all registered Savannah projects.
 
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
-    >>> savannah_tracker = getUtility(IBugTrackerSet).getByName(
-    ...     'savannah')
+    >>> savannah_tracker = getUtility(IBugTrackerSet).getByName("savannah")
     >>> celebs.savannah_tracker == savannah_tracker
     True
 
@@ -158,6 +157,7 @@ http://savannah.nognu.org/
 
     >>> for alias in celebs.savannah_tracker.aliases:
     ...     print(alias)
+    ...
     http://savannah.nognu.org/
 
 
@@ -167,7 +167,7 @@ Gnome Bugzilla
 There is a 'Gnome Bugzilla' celebrity, which is used to represent the
 Gnome Bugzilla instance by the checkwatches script.
 
-    >>> gnome_bugzilla = getUtility(IBugTrackerSet).getByName('gnome-bugs')
+    >>> gnome_bugzilla = getUtility(IBugTrackerSet).getByName("gnome-bugs")
     >>> celebs.gnome_bugzilla == gnome_bugzilla
     True
 
@@ -177,7 +177,7 @@ PPA key guard
 
 There is a 'PPA key guard' celebrity which owns all PPA 'signing_keys'.
 
-    >>> ppa_key_guard = personset.getByName('ppa-key-guard')
+    >>> ppa_key_guard = personset.getByName("ppa-key-guard")
     >>> celebs.ppa_key_guard == ppa_key_guard
     True
 
@@ -189,7 +189,7 @@ There's a celebrity for the Ubuntu technical board, the 'techboard'
 team. It's used for determining who is allowed to create new package
 sets.
 
-    >>> ubuntu_techboard = personset.getByName('techboard')
+    >>> ubuntu_techboard = personset.getByName("techboard")
     >>> print(ubuntu_techboard.name)
     techboard
 
@@ -210,22 +210,28 @@ adding/removing the appropriate "in_" attribute(s).
     ...     for name in ILaunchpadCelebrities.names():
     ...         if IPerson.providedBy(getattr(celebs, name)):
     ...             yield "in_" + name
+    ...
     >>> def get_person_roles_names():
     ...     for name in IPersonRoles.names():
     ...         if name.startswith("in_"):
     ...             yield name
+    ...
 
 Treating the lists as sets and determining their difference gives us a
 clear picture of what is missing where.
 
     >>> person_celebrity_names = set(get_person_celebrity_names())
     >>> person_roles_names = set(get_person_roles_names())
-    >>> print("Please add to IPersonRoles: " + (
-    ...       ", ".join(list(person_celebrity_names - person_roles_names))))
+    >>> print(
+    ...     "Please add to IPersonRoles: "
+    ...     + (", ".join(list(person_celebrity_names - person_roles_names)))
+    ... )
     Please add to IPersonRoles:
 
-    >>> print("Please remove from IPersonRoles: " + (
-    ...       ", ".join(list(person_roles_names - person_celebrity_names))))
+    >>> print(
+    ...     "Please remove from IPersonRoles: "
+    ...     + (", ".join(list(person_roles_names - person_celebrity_names)))
+    ... )
     Please remove from IPersonRoles:
 
 
@@ -240,13 +246,13 @@ We can ask if a person has celebrity status.
     >>> celebs.isCelebrityPerson(obsolete_junk.name)
     False
 
-    >>> celebs.isCelebrityPerson('admins')
+    >>> celebs.isCelebrityPerson("admins")
     True
 
-    >>> celebs.isCelebrityPerson('admin')
+    >>> celebs.isCelebrityPerson("admin")
     False
 
-    >>> celebs.isCelebrityPerson('janitor')
+    >>> celebs.isCelebrityPerson("janitor")
     True
 
 

@@ -35,9 +35,13 @@ of its variants.
 
     # We don't want this test to fail when we add new person entries, so we
     # compare it against a base number.
-    >>> Person.select(Person.q.membership_policy==proxied_policy).count() > 60
+    >>> Person.select(
+    ...     Person.q.membership_policy == proxied_policy
+    ... ).count() > 60
     True
-    >>> person = Person.select(Person.q.membership_policy==proxied_policy)[0]
+    >>> person = Person.select(Person.q.membership_policy == proxied_policy)[
+    ...     0
+    ... ]
     >>> person.membership_policy.name
     'MODERATED'
 

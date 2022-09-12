@@ -15,13 +15,13 @@ The count: namespace to get numbers
 
 count:len gives you a number which is len(thing).
 
-    >>> test_tales('foo/count:len', foo=[])
+    >>> test_tales("foo/count:len", foo=[])
     0
 
-    >>> test_tales('foo/count:len', foo=[1, 2, 3])
+    >>> test_tales("foo/count:len", foo=[1, 2, 3])
     3
 
-    >>> test_tales('foo/count:len', foo=object())
+    >>> test_tales("foo/count:len", foo=object())
     Traceback (most recent call last):
     ...
     TypeError: object of type 'object' has no len()
@@ -42,7 +42,7 @@ available for Person, Product, ProjectGroup, Sprint and Distributions, since
 they all implement IHasLogo, IHasMugshot and IHasIcon.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    >>> mark = getUtility(IPersonSet).getByName("mark")
     >>> test_tales("person/image:sprite_css", person=mark)
     'sprite person'
 
@@ -57,7 +57,7 @@ The Mugshot is presented in an <img> tag.
 For people we even have different images in case the person in question
 is not an actual launchpad user.
 
-    >>> matsubara = getUtility(IPersonSet).getByName('matsubara')
+    >>> matsubara = getUtility(IPersonSet).getByName("matsubara")
     >>> matsubara.is_valid_person
     False
 
@@ -74,8 +74,9 @@ We also have image:icon for KarmaCategory:
 
     >>> from lp.registry.model.karma import KarmaCategory
     >>> from lp.services.database.interfaces import IStore
-    >>> for category in IStore(KarmaCategory).find(
-    ...         KarmaCategory).order_by("title"):
+    >>> for category in (
+    ...     IStore(KarmaCategory).find(KarmaCategory).order_by("title")
+    ... ):
     ...     print(test_tales("category/image:icon", category=category))
     <img ... title="Answer Tracker" src="/@@/question" />
     <img ... title="Bazaar Branches" src="/@@/branch" />
@@ -99,9 +100,8 @@ personal package archives (PPAs).
 
 Then distribution main archives (primary and partner).
 
-    >>> from lp.registry.interfaces.distribution import (
-    ...      IDistributionSet)
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> [primary, partner] = ubuntu.all_distro_archives
 
     >>> print(test_tales("archive/image:icon", archive=primary))
@@ -115,8 +115,11 @@ And finally Copy archives.
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
     >>> copy = getUtility(IArchiveSet).new(
-    ...     owner=mark, purpose=ArchivePurpose.COPY,
-    ...     distribution=ubuntu, name='rebuild')
+    ...     owner=mark,
+    ...     purpose=ArchivePurpose.COPY,
+    ...     distribution=ubuntu,
+    ...     name="rebuild",
+    ... )
 
     >>> print(test_tales("archive/image:icon", archive=copy))
     <img ... src="/@@/distribution" />
@@ -125,10 +128,11 @@ PPAs have a 'link' formatter, which returns the appropriate HTML used
 for referring to them in other pages and a 'reference' formatter which
 displays the unique ppa reference.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> owner = factory.makePerson(name="joe", displayname="Joe Smith")
     >>> public_ppa = factory.makeArchive(
-    ...     name='ppa', private=False, owner=owner)
+    ...     name="ppa", private=False, owner=owner
+    ... )
     >>> login(ANONYMOUS)
     >>> print(test_tales("ppa/fmt:link", ppa=public_ppa))
     <a href="/~joe/+archive/ubuntu/ppa"
@@ -139,7 +143,7 @@ displays the unique ppa reference.
 Disabled PPAs links use a different icon and are only linkified for
 users with launchpad.View on them.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> public_ppa.disable()
 
     >>> print(test_tales("ppa/fmt:link", ppa=public_ppa))
@@ -154,9 +158,10 @@ users with launchpad.View on them.
 Private PPAs links are not rendered for users without launchpad.View on
 them.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> private_ppa = factory.makeArchive(
-    ...     name='pppa', private=True, owner=owner)
+    ...     name="pppa", private=True, owner=owner
+    ... )
 
     >>> print(test_tales("ppa/fmt:link", ppa=private_ppa))
     <a href="/~joe/+archive/ubuntu/pppa"
@@ -205,7 +210,7 @@ The 'reference' formatter is meaningless for non-PPA archives.
 
 We also have icons for builds which may have different dimensions.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> stp = SoyuzTestPublisher()
     >>> stp.prepareBreezyAutotest()
@@ -314,40 +319,49 @@ fmt:rfc822utcdatetime.
 
     >>> from datetime import datetime
     >>> dt = datetime(2005, 4, 1, 16, 22)
-    >>> test_tales('dt/fmt:date', dt=dt)
+    >>> test_tales("dt/fmt:date", dt=dt)
     '2005-04-01'
 
-    >>> test_tales('dt/fmt:time', dt=dt)
+    >>> test_tales("dt/fmt:time", dt=dt)
     '16:22:00'
 
-    >>> test_tales('dt/fmt:datetime', dt=dt)
+    >>> test_tales("dt/fmt:datetime", dt=dt)
     '2005-04-01 16:22:00'
 
-    >>> test_tales('dt/fmt:rfc822utcdatetime', dt=dt)
+    >>> test_tales("dt/fmt:rfc822utcdatetime", dt=dt)
     'Fri, 01 Apr 2005 16:22:00 -0000'
 
 To truncate a long string, use fmt:shorten:
 
-    >>> print(test_tales('foo/fmt:shorten/8', foo='abcdefghij'))
+    >>> print(test_tales("foo/fmt:shorten/8", foo="abcdefghij"))
     abcde...
 
 To ellipsize the middle of a string. use fmt:ellipsize and pass the max
 length.
 
-    >>> print(test_tales('foo/fmt:ellipsize/25',
-    ...     foo='foo-bar-baz-bazoo_22.443.tar.gz'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:ellipsize/25", foo="foo-bar-baz-bazoo_22.443.tar.gz"
+    ...     )
+    ... )
     foo-bar-baz....443.tar.gz
 
 The string is not ellipsized if it is less than the max length.
 
-    >>> print(test_tales('foo/fmt:ellipsize/25',
-    ...     foo='firefox_0.9.2.orig.tar.gz'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:ellipsize/25", foo="firefox_0.9.2.orig.tar.gz"
+    ...     )
+    ... )
     firefox_0.9.2.orig.tar.gz
 
 To preserve newlines in text when displaying as HTML, use fmt:nl_to_br:
 
-    >>> print(test_tales('foo/fmt:nl_to_br',
-    ...             foo='icicle\nbicycle\ntricycle & troika'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:nl_to_br", foo="icicle\nbicycle\ntricycle & troika"
+    ...     )
+    ... )
     icicle<br />
     bicycle<br />
     tricycle &amp; troika
@@ -356,28 +370,33 @@ To "<pre>" format a string, use fmt:nice_pre:
 
     >>> import textwrap
     >>> for line in textwrap.wrap(
-    ...         test_tales('foo/fmt:nice_pre', foo='hello & goodbye')):
+    ...     test_tales("foo/fmt:nice_pre", foo="hello & goodbye")
+    ... ):
     ...     print(line)
     <pre class="wrap">hello &amp; goodbye</pre>
 
 Add manual word breaks to long words in a string:
 
-    >>> print(test_tales('foo/fmt:break-long-words', foo='short words'))
+    >>> print(test_tales("foo/fmt:break-long-words", foo="short words"))
     short words
 
-    >>> print(test_tales('foo/fmt:break-long-words',
-    ...     foo='<http://launchpad.net/products/launchpad>'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:break-long-words",
+    ...         foo="<http://launchpad.net/products/launchpad>",
+    ...     )
+    ... )
     &lt;http:/<wbr />/launchpad.<wbr />...<wbr />launchpad&gt;
 
 To get a int with its thousands separated by a comma, use fmt:intcomma.
 
-    >>> test_tales('foo/fmt:intcomma', foo=1234567890)
+    >>> test_tales("foo/fmt:intcomma", foo=1234567890)
     '1,234,567,890'
 
-    >>> test_tales('foo/fmt:intcomma', foo=123)
+    >>> test_tales("foo/fmt:intcomma", foo=123)
     '123'
 
-    >>> test_tales('foo/fmt:intcomma', foo=1239.45)
+    >>> test_tales("foo/fmt:intcomma", foo=1239.45)
     Traceback (most recent call last):
     ...
     AssertionError:...
@@ -403,8 +422,10 @@ to simulate a browser request -- that's why we login() here.
 
 fmt:url accepts an rootsite extension to make URLs to a specific application.
 
-    >>> login(ANONYMOUS,
-    ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
+    >>> login(
+    ...     ANONYMOUS,
+    ...     LaunchpadTestRequest(SERVER_URL="http://code.launchpad.net"),
+    ... )
 
     >>> print(test_tales("person/fmt:url:bugs", person=mark))
     http://bugs.launchpad.test/~mark
@@ -427,23 +448,26 @@ The fmt: namespace to get a web service URL
 The `fmt:api_url` expression gives you the absolute API path to an object.
 This path is everything after the web service version number.
 
-    >>> login(ANONYMOUS,
-    ...     LaunchpadTestRequest(SERVER_URL='http://bugs.launchpad.net'))
+    >>> login(
+    ...     ANONYMOUS,
+    ...     LaunchpadTestRequest(SERVER_URL="http://bugs.launchpad.net"),
+    ... )
 
-    >>> bob = factory.makePerson(name='bob')
+    >>> bob = factory.makePerson(name="bob")
     >>> print(test_tales("person/fmt:api_url", person=bob))
     /~bob
 
-    >>> freewidget = factory.makeProduct(name='freewidget')
+    >>> freewidget = factory.makeProduct(name="freewidget")
     >>> print(test_tales("product/fmt:api_url", product=freewidget))
     /freewidget
 
-    >>> debuntu = factory.makeDistribution(name='debuntu')
+    >>> debuntu = factory.makeDistribution(name="debuntu")
     >>> print(test_tales("distro/fmt:api_url", distro=debuntu))
     /debuntu
 
     >>> branch = factory.makeProductBranch(
-    ...     owner=bob, product=freewidget, name='fix-bug')
+    ...     owner=bob, product=freewidget, name="fix-bug"
+    ... )
     >>> print(test_tales("branch/fmt:api_url", branch=branch))
     /~bob/freewidget/fix-bug
 
@@ -488,14 +512,16 @@ containing the person name and an icon.
     >>> print(test_tales("person/fmt:link", person=matsubara))
     <a href=".../~matsubara" class="sprite person-inactive">Diogo ...</a>
 
-    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
     >>> print(test_tales("person/fmt:link", person=ubuntu_team))
     <a href=".../~ubuntu-team" class="sprite team">Ubuntu Team</a>
 
 The link can make the URL go to a specific app.
 
-    >>> login(ANONYMOUS,
-    ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
+    >>> login(
+    ...     ANONYMOUS,
+    ...     LaunchpadTestRequest(SERVER_URL="http://code.launchpad.net"),
+    ... )
 
     >>> print(test_tales("pillar/fmt:link:translations", pillar=ubuntu))
     <a ...http://translations.launchpad.test/ubuntu...
@@ -527,10 +553,11 @@ The person's displayname is escaped to prevent markup from being
 interpreted by the browser. For example, a script added to Sample
 Person's displayname will be escaped; averting a XSS vulnerability.
 
-    >>> login('test@canonical.com')
-    >>> sample_person = getUtility(IPersonSet).getByName('name12')
+    >>> login("test@canonical.com")
+    >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> sample_person.display_name = (
-    ...     "Sample Person<br/><script>alert('XSS')</script>")
+    ...     "Sample Person<br/><script>alert('XSS')</script>"
+    ... )
     >>> print(test_tales("person/fmt:link", person=sample_person))
     <a href=".../~name12"...>Sample
       Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>
@@ -567,10 +594,11 @@ Branches
 For branches, fmt:link links to the branch page.
 
     >>> from lp.testing import login_person
-    >>> eric = factory.makePerson(name='eric')
-    >>> fooix = factory.makeProduct(name='fooix')
+    >>> eric = factory.makePerson(name="eric")
+    >>> fooix = factory.makeProduct(name="fooix")
     >>> branch = factory.makeProductBranch(
-    ...     owner=eric, product=fooix, name='bar', title='The branch title')
+    ...     owner=eric, product=fooix, name="bar", title="The branch title"
+    ... )
     >>> print(test_tales("branch/fmt:link", branch=branch))
     <a href=".../~eric/fooix/bar"
       class="sprite branch">lp://dev/~eric/fooix/bar</a>
@@ -595,7 +623,8 @@ Git repositories
 For Git repositories, fmt:link links to the repository page.
 
     >>> repository = factory.makeGitRepository(
-    ...     owner=eric, target=fooix, name=u'bar')
+    ...     owner=eric, target=fooix, name="bar"
+    ... )
     >>> print(test_tales("repository/fmt:link", repository=repository))
     <a href=".../~eric/fooix/+git/bar">lp:~eric/fooix/+git/bar</a>
 
@@ -605,7 +634,7 @@ Git references
 
 For Git references, fmt:link links to the reference page.
 
-    >>> [ref] = factory.makeGitRefs(repository=repository, paths=[u"master"])
+    >>> [ref] = factory.makeGitRefs(repository=repository, paths=["master"])
     >>> print(test_tales("ref/fmt:link", ref=ref))  # noqa
     <a href=".../~eric/fooix/+git/bar/+ref/master">~eric/fooix/+git/bar:master</a>
 
@@ -633,7 +662,7 @@ Their titles are escaped so that they display correctly. This also
 prevents a XSS vulnerability where malicious code injected into the
 title might be interpreted by the browser.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> bug.title = "Oops<br/><script>alert('XSS')</script>"
     >>> print(test_tales("bug/fmt:link", bug=getUtility(IBugSet).get(1)))
     <a href=".../bugs/1" ...>Bug #1:
@@ -651,11 +680,14 @@ Branch subscriptions show the person and branch name.  For users without
 adequate permissions, a link is not generated.
 
     >>> branch = factory.makeProductBranch(
-    ...     owner=eric, product=fooix, name='my-branch', title='My Branch')
+    ...     owner=eric, product=fooix, name="my-branch", title="My Branch"
+    ... )
     >>> michael = factory.makePerson(
-    ...     name='michael', displayname='Michael the Viking')
+    ...     name="michael", displayname="Michael the Viking"
+    ... )
     >>> subscription = factory.makeBranchSubscription(
-    ...     branch=branch, person=michael)
+    ...     branch=branch, person=michael
+    ... )
     >>> print(test_tales("subscription/fmt:link", subscription=subscription))
     Subscription of Michael the Viking to lp://dev/~eric/fooix/my-branch
 
@@ -673,9 +705,10 @@ titles:
 Merge proposals
 ...............
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> source = factory.makeProductBranch(
-    ...     product=fooix, owner=eric, name="fix")
+    ...     product=fooix, owner=eric, name="fix"
+    ... )
     >>> target = factory.makeProductBranch(product=fooix)
     >>> fooix.development_focus.branch = target
     >>> proposal = source.addLandingTarget(eric, target)
@@ -687,17 +720,17 @@ Code review comments
 ....................
 
     >>> comment = factory.makeCodeReviewComment()
-    >>> print(test_tales('comment/fmt:url', comment=comment))
+    >>> print(test_tales("comment/fmt:url", comment=comment))
     http:.../~person-name.../product-name.../branch.../+merge/.../comments/...
 
-    >>> print(test_tales('comment/fmt:link', comment=comment))
+    >>> print(test_tales("comment/fmt:link", comment=comment))
     <a href="...">Comment by Person-name...</a>
 
 
 Bug branches
 ............
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> branch = factory.makeAnyBranch()
     >>> bug = factory.makeBug()
     >>> bug.linkBranch(branch, branch.owner)
@@ -713,7 +746,7 @@ The fmt:link for a code import takes you to the branch that the code
 import is associated with.  The primary reason that this is here is to
 support the branch deletion code.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> code_import = factory.makeCodeImport(branch_name="trunk")
     >>> print(test_tales("code_import/fmt:link", code_import=code_import))
     <a href=".../trunk">Import of...</a>
@@ -732,9 +765,10 @@ size), plus extra links for the MD5 hash and signature of that PRF.
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> def print_hrefs_with_titles(html):
     ...     soup = BeautifulSoup(html)
-    ...     for link in soup.find_all('a'):
+    ...     for link in soup.find_all("a"):
     ...         attrs = dict(link.attrs)
-    ...         print("%s: %s" % (attrs.get('href'), attrs.get('title', '')))
+    ...         print("%s: %s" % (attrs.get("href"), attrs.get("title", "")))
+    ...
 
     >>> release_file = factory.makeProductReleaseFile()
     >>> html = test_tales("release_file/fmt:link", release_file=release_file)
@@ -746,8 +780,7 @@ size), plus extra links for the MD5 hash and signature of that PRF.
 When the ProductReleaseFile is not signed, the link for the signature is
 not included.
 
-    >>> release_file = factory.makeProductReleaseFile(
-    ...     signed=False)
+    >>> release_file = factory.makeProductReleaseFile(signed=False)
     >>> html = test_tales("release_file/fmt:link", release_file=release_file)
     >>> soup = BeautifulSoup(html)
     >>> print_hrefs_with_titles(html)
@@ -762,7 +795,8 @@ The url for the release file can be retrieved using fmt:url.
 HTML in the file description is escaped in the fmt:link.
 
     >>> release_file = factory.makeProductReleaseFile(
-    ...     signed=False, description='><script>XSS failed</script>')
+    ...     signed=False, description="><script>XSS failed</script>"
+    ... )
     >>> print(test_tales("release_file/fmt:link", release_file=release_file))
     <img ...
     <a title="&gt;&lt;script&gt;XSS failed&lt;/script&gt; (4 bytes)"
@@ -774,8 +808,12 @@ Product series
 ..............
 
     >>> product_series = factory.makeProductSeries()
-    >>> print("'%s'" % test_tales(
-    ...     "product_series/fmt:link", product_series=product_series))
+    >>> print(
+    ...     "'%s'"
+    ...     % test_tales(
+    ...         "product_series/fmt:link", product_series=product_series
+    ...     )
+    ... )
     '... series...'
 
 
@@ -783,12 +821,15 @@ Blueprints
 ..........
 
     >>> from lp.blueprints.interfaces.specification import (
-    ...     SpecificationPriority)
-    >>> login('test@canonical.com')
+    ...     SpecificationPriority,
+    ... )
+    >>> login("test@canonical.com")
     >>> specification = factory.makeSpecification(
-    ...     priority=SpecificationPriority.UNDEFINED)
-    >>> print(test_tales(
-    ...     "specification/fmt:link", specification=specification))
+    ...     priority=SpecificationPriority.UNDEFINED
+    ... )
+    >>> print(
+    ...     test_tales("specification/fmt:link", specification=specification)
+    ... )
     <a...class="sprite blueprint-undefined">...</a>
 
 
@@ -796,11 +837,16 @@ Blueprint branches
 ..................
 
     >>> specification = factory.makeSpecification(
-    ...     priority=SpecificationPriority.UNDEFINED)
+    ...     priority=SpecificationPriority.UNDEFINED
+    ... )
     >>> branch = factory.makeAnyBranch()
     >>> specification_branch = specification.linkBranch(branch, branch.owner)
-    >>> print(test_tales("specification_branch/fmt:link",
-    ...     specification_branch=specification_branch))
+    >>> print(
+    ...     test_tales(
+    ...         "specification_branch/fmt:link",
+    ...         specification_branch=specification_branch,
+    ...     )
+    ... )
     <a...class="sprite blueprint-undefined">...</a>
 
 
@@ -808,7 +854,7 @@ Projects
 ........
 
     >>> product = factory.makeProduct()
-    >>> print(test_tales('product/fmt:link', product=product))
+    >>> print(test_tales("product/fmt:link", product=product))
     <a href=... class="sprite product">...</a>
 
 
@@ -845,10 +891,12 @@ Bug Trackers
 ............
 
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
-    >>> bugtracker = getUtility(IBugTrackerSet).getByName('email')
-    >>> bugtracker.title = 'an@email.address bug tracker'
-    >>> bugtracker.aliases = [u'mailto:eatme@wundrlnd.com',
-    ...                       u'http://bugs.vikingsrool.no/']
+    >>> bugtracker = getUtility(IBugTrackerSet).getByName("email")
+    >>> bugtracker.title = "an@email.address bug tracker"
+    >>> bugtracker.aliases = [
+    ...     "mailto:eatme@wundrlnd.com",
+    ...     "http://bugs.vikingsrool.no/",
+    ... ]
 
 The "standard" 'url' name is supported:
 
@@ -863,15 +911,30 @@ which help when hiding email addresses from users who are not logged in.
 
     >>> def print_formatted_bugtrackers():
     ...     expression = "bugtracker/fmt:%s"
-    ...     for format in ['link', 'external-link', 'external-title-link']:
-    ...         print("%s -->\n  '%s'" % (
-    ...             format, test_tales(expression % format,
-    ...                                bugtracker=bugtracker)))
-    ...     print("aliases -->\n  [%s]" % (', '.join(
-    ...         "'%s'" % alias for alias in test_tales(
-    ...             expression % 'aliases', bugtracker=bugtracker))))
+    ...     for format in ["link", "external-link", "external-title-link"]:
+    ...         print(
+    ...             "%s -->\n  '%s'"
+    ...             % (
+    ...                 format,
+    ...                 test_tales(
+    ...                     expression % format, bugtracker=bugtracker
+    ...                 ),
+    ...             )
+    ...         )
+    ...     print(
+    ...         "aliases -->\n  [%s]"
+    ...         % (
+    ...             ", ".join(
+    ...                 "'%s'" % alias
+    ...                 for alias in test_tales(
+    ...                     expression % "aliases", bugtracker=bugtracker
+    ...                 )
+    ...             )
+    ...         )
+    ...     )
+    ...
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> print_formatted_bugtrackers()
     link -->
       '<a href=".../bugs/bugtrackers/email">an@email.address bug tracker</a>'
@@ -895,7 +958,7 @@ which help when hiding email addresses from users who are not logged in.
     aliases -->
       ['http://bugs.vikingsrool.no/', 'mailto:<email address hidden>']
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
 
 Bug Watches
@@ -905,13 +968,15 @@ Bug Watches
     >>> sf_bugwatch = getUtility(IBugWatchSet).createBugWatch(
     ...     getUtility(IBugSet).get(12),
     ...     getUtility(ILaunchBag).user,
-    ...     getUtility(IBugTrackerSet).getByName('sf'),
-    ...     '1234')
+    ...     getUtility(IBugTrackerSet).getByName("sf"),
+    ...     "1234",
+    ... )
     >>> email_bugwatch = getUtility(IBugWatchSet).createBugWatch(
-    ...     getUtility(IBugSet).get(12),                   # bug
-    ...     getUtility(ILaunchBag).user,                   # owner
-    ...     getUtility(IBugTrackerSet).getByName('email'), # bugtracker
-    ...     '')                                            # remotebug
+    ...     getUtility(IBugSet).get(12),  # bug
+    ...     getUtility(ILaunchBag).user,  # owner
+    ...     getUtility(IBugTrackerSet).getByName("email"),  # bugtracker
+    ...     "",
+    ... )  # remotebug
 
 The "standard" 'url' name is supported:
 
@@ -924,23 +989,30 @@ The "standard" 'url' name is supported:
 As are 'external-link' and 'external-link-short', which help when hiding
 email addresses from users who are not logged in:
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
     >>> print(test_tales("bugwatch/fmt:external-link", bugwatch=sf_bugwatch))
     <a class="link-external"
        href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch))
+    >>> print(
+    ...     test_tales(
+    ...         "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch
+    ...     )
+    ... )
     <a class="link-external"
        href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link", bugwatch=email_bugwatch))
+    >>> print(
+    ...     test_tales("bugwatch/fmt:external-link", bugwatch=email_bugwatch)
+    ... )
     <a class="link-external" href="mailto:bugs@example.com">email</a>
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch))
+    >>> print(
+    ...     test_tales(
+    ...         "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch
+    ...     )
+    ... )
     <a class="link-external" href="mailto:bugs@example.com">&mdash;</a>
 
     >>> login(ANONYMOUS)
@@ -949,20 +1021,27 @@ email addresses from users who are not logged in:
     <a class="link-external"
        href="http://sourceforge.net/support/tracker.php?aid=1234">sf #1234</a>
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch))
+    >>> print(
+    ...     test_tales(
+    ...         "bugwatch/fmt:external-link-short", bugwatch=sf_bugwatch
+    ...     )
+    ... )
     <a class="link-external"
        href="http://sourceforge.net/support/tracker.php?aid=1234">1234</a>
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link", bugwatch=email_bugwatch))
+    >>> print(
+    ...     test_tales("bugwatch/fmt:external-link", bugwatch=email_bugwatch)
+    ... )
     email
 
-    >>> print(test_tales(
-    ...     "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch))
+    >>> print(
+    ...     test_tales(
+    ...         "bugwatch/fmt:external-link-short", bugwatch=email_bugwatch
+    ...     )
+    ... )
     &mdash;
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
 
 The fmt: namespace to get strings (hiding)
@@ -971,27 +1050,31 @@ The fmt: namespace to get strings (hiding)
 PGP blocks, signatures and full-quoted parts of a message can be wrapped
 in markup to hide them:
 
-    >>> pgp_open = ('-----BEGIN PGP SIGNED MESSAGE-----\n'
-    ...             'Hash: SHA1\n'
-    ...             '\n')
-    >>> text = ('Top quoting is simply bad netiquette.\n'
-    ...         'The words of the leading text should be displayed\n'
-    ...         'normally--no markup to hide it from view.\n'
-    ...         'Raise your hand if you can read this.\n'
-    ...         '\n')
-    >>> signature = ('-- \n'
-    ...              '__C U R T I S  C.  H O V E Y_______\n'
-    ...              'sinzui.is@example.org\n'
-    ...              'Guilty of stealing everything I am.\n'
-    ...              '\n')
-    >>> pgp_close = ('-----BEGIN PGP SIGNATURE-----\n'
-    ...              'Version: GnuPG v1.4.1 (GNU/Linux)\n'
-    ...              'Comment: Using GnuPG with Thunderbird\n'
-    ...              '\n'
-    ...              'iD8DBQFED60Y0F+nu1YWqI0RAqrNAJ9hTww5vqDbxp4xJS8ek58W\n'
-    ...              'T2PIWy0CUJsX8RXSt/M51WE=\n'
-    ...              '=J2S5\n'
-    ...              '-----END PGP SIGNATURE-----\n')
+    >>> pgp_open = "-----BEGIN PGP SIGNED MESSAGE-----\n" "Hash: SHA1\n" "\n"
+    >>> text = (
+    ...     "Top quoting is simply bad netiquette.\n"
+    ...     "The words of the leading text should be displayed\n"
+    ...     "normally--no markup to hide it from view.\n"
+    ...     "Raise your hand if you can read this.\n"
+    ...     "\n"
+    ... )
+    >>> signature = (
+    ...     "-- \n"
+    ...     "__C U R T I S  C.  H O V E Y_______\n"
+    ...     "sinzui.is@example.org\n"
+    ...     "Guilty of stealing everything I am.\n"
+    ...     "\n"
+    ... )
+    >>> pgp_close = (
+    ...     "-----BEGIN PGP SIGNATURE-----\n"
+    ...     "Version: GnuPG v1.4.1 (GNU/Linux)\n"
+    ...     "Comment: Using GnuPG with Thunderbird\n"
+    ...     "\n"
+    ...     "iD8DBQFED60Y0F+nu1YWqI0RAqrNAJ9hTww5vqDbxp4xJS8ek58W\n"
+    ...     "T2PIWy0CUJsX8RXSt/M51WE=\n"
+    ...     "=J2S5\n"
+    ...     "-----END PGP SIGNATURE-----\n"
+    ... )
 
 The email-to-html formatter marks up text as html using the text-to-html
 formatter, then adds additional markup to identify signatures and quoted
@@ -1002,15 +1085,13 @@ or change the behaviour of the text as needed.
 When given simple paragraphs it behaves just as the text-to-html
 formatter.
 
-    >>> print(test_tales('foo/fmt:email-to-html',
-    ...                  foo=text))
+    >>> print(test_tales("foo/fmt:email-to-html", foo=text))
     <p>Top quoting is simply bad netiquette.<br />
     The words of the leading text should be displayed<br />
     normally--no markup to hide it from view.<br />
     Raise your hand if you can read this.</p>
 
-    >>> print(test_tales('foo/fmt:text-to-html',
-    ...                  foo=text))
+    >>> print(test_tales("foo/fmt:text-to-html", foo=text))
     <p>Top quoting is simply bad netiquette.<br />
     The words of the leading text should be displayed<br />
     normally--no markup to hide it from view.<br />
@@ -1023,8 +1104,12 @@ Marking PGP blocks
 PGP signed messages have opening and closing blocks that are wrapped in
 a foldable span.
 
-    >>> print(test_tales('foo/fmt:email-to-html',
-    ...                  foo='\n'.join([pgp_open, text, pgp_close])))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:email-to-html",
+    ...         foo="\n".join([pgp_open, text, pgp_close]),
+    ...     )
+    ... )
     <p><span class="foldable">-----BEGIN PGP SIGNED MESSAGE-----<br />
     Hash: SHA1
     </span></p>
@@ -1046,8 +1131,11 @@ In this example, we see the main paragraph and the signature marked up
 as HTML. All the text inside the signature is wrapped with the foldable
 span.
 
-    >>> print(test_tales('foo/fmt:email-to-html',
-    ...                  foo='\n'.join([text, signature])))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:email-to-html", foo="\n".join([text, signature])
+    ...     )
+    ... )
     <p>Top quoting is simply bad netiquette.<br />
     The words of the leading text should be displayed<br />
     normally--no markup to hide it from view.<br />
@@ -1068,17 +1156,25 @@ of the main paragraph and the quoted paragraph, only the lines that
 start with the quote identifier ('> ' in this case) are wrapped with the
 foldable-quoted span.
 
-    >>> quoted_text = ('Somebody said sometime ago:\n'
-    ...                '> 1. Remove the letters  c, j, q, x, w\n'
-    ...                '>    from the English Language.\n'
-    ...                '> 2. Remove the penny from US currency.\n'
-    ...                '\n')
-    >>> quoted_text_all = ('> continuing from a previous thought.\n'
-    ...                    '> 3. Get new handwriting.\n'
-    ...                    '> 4. Add Year Zero to the calendar.\n'
-    ...                    '\n')
-    >>> print(test_tales('foo/fmt:email-to-html',
-    ...                  foo='\n'.join([text, quoted_text, quoted_text_all])))
+    >>> quoted_text = (
+    ...     "Somebody said sometime ago:\n"
+    ...     "> 1. Remove the letters  c, j, q, x, w\n"
+    ...     ">    from the English Language.\n"
+    ...     "> 2. Remove the penny from US currency.\n"
+    ...     "\n"
+    ... )
+    >>> quoted_text_all = (
+    ...     "> continuing from a previous thought.\n"
+    ...     "> 3. Get new handwriting.\n"
+    ...     "> 4. Add Year Zero to the calendar.\n"
+    ...     "\n"
+    ... )
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:email-to-html",
+    ...         foo="\n".join([text, quoted_text, quoted_text_all]),
+    ...     )
+    ... )
     <p>Top quoting is simply bad netiquette.<br />
     The words of the leading text should be displayed<br />
     normally--no markup to hide it from view.<br />
@@ -1101,9 +1197,14 @@ Different kinds of content can be marked up in a single call
 The formatter is indifferent to the number and kinds of paragraphs it
 must markup. We can format the three examples at the same time.
 
-    >>> print(test_tales('foo/fmt:email-to-html',
-    ...     foo='\n'.join(
-    ...         [text, quoted_text, text, quoted_text_all, signature])))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:email-to-html",
+    ...         foo="\n".join(
+    ...             [text, quoted_text, text, quoted_text_all, signature]
+    ...         ),
+    ...     )
+    ... )
     <p>Top quoting is simply bad netiquette.<br />
     The words of the leading text should be displayed<br />
     normally--no markup to hide it from view.<br />
@@ -1134,10 +1235,10 @@ Escaping strings
 
 To escape a string you should use fmt:escape.
 
-    >>> print(test_tales('foo/fmt:escape', foo='some value'))
+    >>> print(test_tales("foo/fmt:escape", foo="some value"))
     some value
 
-    >>> print(test_tales('foo/fmt:escape', foo='some <br /> value'))
+    >>> print(test_tales("foo/fmt:escape", foo="some <br /> value"))
     some &lt;br /&gt; value
 
 
@@ -1149,34 +1250,34 @@ the start of the string is not a letter. If any invalid characters are
 stripped out, to ensure the id is unique, a base64 encoding is appended to the
 id.
 
-    >>> print(test_tales('foo/fmt:css-id', foo='beta2-milestone'))
+    >>> print(test_tales("foo/fmt:css-id", foo="beta2-milestone"))
     beta2-milestone
 
-    >>> print(test_tales('foo/fmt:css-id', foo='user name'))
+    >>> print(test_tales("foo/fmt:css-id", foo="user name"))
     user-name-dXNlciBuYW1l
 
-    >>> print(test_tales('foo/fmt:css-id', foo='1.0.1_series'))
+    >>> print(test_tales("foo/fmt:css-id", foo="1.0.1_series"))
     j1-0-1_series
 
 An optional prefix for the if can be added to the path. It too will be
 escaped.
 
-    >>> print(test_tales('foo/fmt:css-id/series-', foo='1.0.1_series'))
+    >>> print(test_tales("foo/fmt:css-id/series-", foo="1.0.1_series"))
     series-1-0-1_series
 
-    >>> print(test_tales('foo/fmt:css-id/series_', foo='1.0.1_series'))
+    >>> print(test_tales("foo/fmt:css-id/series_", foo="1.0.1_series"))
     series_1-0-1_series
 
-    >>> print(test_tales('foo/fmt:css-id/0series-', foo='1.0.1_series'))
+    >>> print(test_tales("foo/fmt:css-id/0series-", foo="1.0.1_series"))
     j0series-1-0-1_series
 
 Zope fields are rendered with a period, and we need to ensure there is a way
 to retain the periods in the css id even though we would prefer not to.
 
-    >>> print(test_tales('foo/fmt:zope-css-id', foo='field.bug.target'))
+    >>> print(test_tales("foo/fmt:zope-css-id", foo="field.bug.target"))
     field.bug.target
 
-    >>> print(test_tales('foo/fmt:zope-css-id', foo='field.gtk+_package'))
+    >>> print(test_tales("foo/fmt:zope-css-id", foo="field.gtk+_package"))
     field.gtk-_package-ZmllbGQuZ3RrK19wYWNrYWdl
 
 The fmt: namespace to get strings (obfuscation)
@@ -1188,80 +1289,114 @@ unauthenticated users, the email address can be hidden. The address is
 replaced with the message '<email address hidden>'.
 
     >>> login(ANONYMOUS)
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='name.surname@company.com'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email", foo="name.surname@company.com"
+    ...     )
+    ... )
     <email address hidden>
 
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='name@organization.org.cc'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email", foo="name@organization.org.cc"
+    ...     )
+    ... )
     <email address hidden>
 
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='name+sub@domain.org'))
+    >>> print(
+    ...     test_tales("foo/fmt:obfuscate-email", foo="name+sub@domain.org")
+    ... )
     <email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email',
-    ...     foo='long_name@host.long-network.org.cc'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email",
+    ...         foo="long_name@host.long-network.org.cc",
+    ...     )
+    ... )
     <email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email',
-    ...     foo='"long/name="@organization.org'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email", foo='"long/name="@organization.org'
+    ...     )
+    ... )
     "<email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email',
-    ...     foo='long-name@building.museum'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email", foo="long-name@building.museum"
+    ...     )
+    ... )
     <email address hidden>
 
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='foo@staticmethod.com'))
+    >>> print(
+    ...     test_tales("foo/fmt:obfuscate-email", foo="foo@staticmethod.com")
+    ... )
     <email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo='<foo@bar.com>'))
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo="<foo@bar.com>"))
     <email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email/fmt:text-to-html',
-    ...     foo=signature))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email/fmt:text-to-html", foo=signature
+    ...     )
+    ... )
     <p>--<br />
     __C U R T I S  C.  H O V E Y_______<br />
     &lt;email address hidden&gt;<br />
     Guilty of stealing everything I am.</p>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email',
-    ...     foo='mailto:long-name@very.long.dom.cc'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email",
+    ...         foo="mailto:long-name@very.long.dom.cc",
+    ...     )
+    ... )
     mailto:<email address hidden>
 
-    >>> print(test_tales('foo/fmt:obfuscate-email',
-    ...     foo='http://person:password@site.net'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email",
+    ...         foo="http://person:password@site.net",
+    ...     )
+    ... )
     http://person:<email address hidden>
 
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='name @ host.school.edu'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:obfuscate-email", foo="name @ host.school.edu"
+    ...     )
+    ... )
     name @ host.school.edu
 
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo='person@host'))
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo="person@host"))
     person@host
 
-    >>> print(test_tales(
-    ...     'foo/fmt:obfuscate-email', foo='(head, tail)=@array'))
+    >>> print(
+    ...     test_tales("foo/fmt:obfuscate-email", foo="(head, tail)=@array")
+    ... )
     (head, tail)=@array
 
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo='@staticmethod'))
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo="@staticmethod"))
     @staticmethod
 
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo='element/@attribute'))
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo="element/@attribute"))
     element/@attribute
 
     >>> bad_address = (
     ...     "medicalwei@sara:~$ Spinning................................"
-    ...     "...........................................................not")
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo=bad_address))
+    ...     "...........................................................not"
+    ... )
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo=bad_address))
     medicalwei@sara:~$ ...
 
 However, if the user is authenticated, the email address is not
 obfuscated.
 
-    >>> login('no-priv@canonical.com')
-    >>> print(test_tales('foo/fmt:obfuscate-email', foo='user@site.net'))
+    >>> login("no-priv@canonical.com")
+    >>> print(test_tales("foo/fmt:obfuscate-email", foo="user@site.net"))
     user@site.net
 
 
@@ -1273,15 +1408,24 @@ Launchpad and linkify them to point at the profile page for that person.
 The resulting HTML includes a person icon next to the linked text to
 emphasise the linkage.
 
-    >>> print("'%s'" % test_tales('foo/fmt:linkify-email',
-    ...     foo='I am the mighty foo.bar@canonical.com hear me roar.'))
+    >>> print(
+    ...     "'%s'"
+    ...     % test_tales(
+    ...         "foo/fmt:linkify-email",
+    ...         foo="I am the mighty foo.bar@canonical.com hear me roar.",
+    ...     )
+    ... )
     '...<a href="http://launchpad.test/~name16"
           class="sprite person">foo.bar@canonical.com</a>...'
 
 Multiple addresses may be linkified at once:
 
-    >>> print(test_tales('foo/fmt:linkify-email',
-    ...     foo='foo.bar@canonical.com and cprov@ubuntu.com'))
+    >>> print(
+    ...     test_tales(
+    ...         "foo/fmt:linkify-email",
+    ...         foo="foo.bar@canonical.com and cprov@ubuntu.com",
+    ...     )
+    ... )
     <a href="http://launchpad.test/~name16"
        class="sprite person">foo.bar@canonical.com</a>
     and <a href="http://launchpad.test/~cprov"
@@ -1289,24 +1433,24 @@ Multiple addresses may be linkified at once:
 
 Team addresses are linkified with a team icon:
 
-    >>> print(test_tales('foo/fmt:linkify-email', foo='support@ubuntu.com'))
+    >>> print(test_tales("foo/fmt:linkify-email", foo="support@ubuntu.com"))
     <a href="http://launchpad.test/~ubuntu-team"
        class="sprite team">support@ubuntu.com</a>
 
 Unknown email addresses are not altered in any way:
 
-    >>> print(test_tales('foo/fmt:linkify-email', foo='nobody@example.com'))
+    >>> print(test_tales("foo/fmt:linkify-email", foo="nobody@example.com"))
     nobody@example.com
 
 Users who specify that their email addresses must be hidden also do not
 get linkified.  test@canonical.com is hidden:
 
     >>> person_set = getUtility(IPersonSet)
-    >>> discreet_user = person_set.getByEmail('test@canonical.com')
+    >>> discreet_user = person_set.getByEmail("test@canonical.com")
     >>> discreet_user.hide_email_addresses
     True
 
-    >>> print(test_tales('foo/fmt:linkify-email', foo='test@canonical.com'))
+    >>> print(test_tales("foo/fmt:linkify-email", foo="test@canonical.com"))
     test@canonical.com
 
 
@@ -1319,12 +1463,12 @@ Test the 'fmt:url' namespace for canonical urls.
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
     >>> @implementer(ICanonicalUrlData)
     ... class ObjectThatHasUrl:
-    ...     path = 'bonobo/saki'
+    ...     path = "bonobo/saki"
     ...     inside = None
     ...     rootsite = None
 
     >>> object_having_url = ObjectThatHasUrl()
-    >>> print(test_tales('foo/fmt:url', foo=object_having_url))
+    >>> print(test_tales("foo/fmt:url", foo=object_having_url))
     /bonobo/saki
 
 Now, we need to test that it gets the correct application URL from the
@@ -1334,8 +1478,11 @@ Make a mock-up IBrowserRequest, and use this as the interaction.
 
     >>> from zope.interface import implementer
     >>> from lp.services.webapp.interfaces import (
-    ...     ILaunchpadBrowserApplicationRequest)
-    >>> @implementer(ILaunchpadBrowserApplicationRequest,)
+    ...     ILaunchpadBrowserApplicationRequest,
+    ... )
+    >>> @implementer(
+    ...     ILaunchpadBrowserApplicationRequest,
+    ... )
     ... class MockBrowserRequest:
     ...
     ...     interaction = None
@@ -1345,10 +1492,10 @@ Make a mock-up IBrowserRequest, and use this as the interaction.
     ...         self.annotations = {}
     ...
     ...     def getRootURL(self, rootsite):
-    ...         return self.getApplicationURL() + '/'
+    ...         return self.getApplicationURL() + "/"
     ...
     ...     def getApplicationURL(self):
-    ...         return 'https://mandrill.example.org:23'
+    ...         return "https://mandrill.example.org:23"
     ...
     ...     def setPrincipal(self, principal):
     ...         self.principal = principal
@@ -1360,7 +1507,7 @@ Make a mock-up IBrowserRequest, and use this as the interaction.
 Note how the URL has only a path part, because it is for the same site
 as the current request.
 
-    >>> print(test_tales('foo/fmt:url', foo=object_having_url))
+    >>> print(test_tales("foo/fmt:url", foo=object_having_url))
     /bonobo/saki
 
 
@@ -1375,49 +1522,49 @@ in content classes.
 Everything you can do with 'something/fmt:foo', you should be able to do
 with 'None/fmt:foo'.
 
-    >>> test_tales('foo/fmt:shorten', foo=None)
+    >>> test_tales("foo/fmt:shorten", foo=None)
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: 'you need to traverse a number
     after fmt:shorten'
 
-    >>> test_tales('foo/fmt:shorten/8', foo=None)
+    >>> test_tales("foo/fmt:shorten/8", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:nl_to_br', foo=None)
+    >>> test_tales("foo/fmt:nl_to_br", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:nice_pre', foo=None)
+    >>> test_tales("foo/fmt:nice_pre", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:break-long-words', foo=None)
+    >>> test_tales("foo/fmt:break-long-words", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:date', foo=None)
+    >>> test_tales("foo/fmt:date", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:time', foo=None)
+    >>> test_tales("foo/fmt:time", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:datetime', foo=None)
+    >>> test_tales("foo/fmt:datetime", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:rfc822utcdatetime', foo=None)
+    >>> test_tales("foo/fmt:rfc822utcdatetime", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:pagetitle', foo=None)
+    >>> test_tales("foo/fmt:pagetitle", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:text-to-html', foo=None)
+    >>> test_tales("foo/fmt:text-to-html", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:email-to-html', foo=None)
+    >>> test_tales("foo/fmt:email-to-html", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:url', foo=None)
+    >>> test_tales("foo/fmt:url", foo=None)
     ''
 
-    >>> test_tales('foo/fmt:exactduration', foo=None)
+    >>> test_tales("foo/fmt:exactduration", foo=None)
     ''
 
 
@@ -1432,7 +1579,7 @@ Test the 'lp:' namespace for presenting DBSchema items.
 
     >>> from lp.soyuz.enums import BinaryPackageFormat
     >>> deb = BinaryPackageFormat.DEB.value
-    >>> test_tales('deb/lp:BinaryPackageFormat', deb=deb)
+    >>> test_tales("deb/lp:BinaryPackageFormat", deb=deb)
     'Ubuntu Package'
 
 
@@ -1442,17 +1589,17 @@ The someobject/required:some.Permission helper
 Test the 'required:' namespace.  We're already logged in as the
 anonymous user, and anonymous users can't edit any person:
 
-    >>> test_tales('person/required:launchpad.Edit', person=mark)
+    >>> test_tales("person/required:launchpad.Edit", person=mark)
     False
 
 Anonymous users can do anything with the zope.Public permission.
 
-    >>> test_tales('person/required:zope.Public', person=mark)
+    >>> test_tales("person/required:zope.Public", person=mark)
     True
 
 Queries about permissions that don't exist will raise an exception:
 
-    >>> test_tales('person/required:mushroom.Badger', person=mark)
+    >>> test_tales("person/required:mushroom.Badger", person=mark)
     Traceback (most recent call last):
     ...
     ValueError: ('Undefined permission ID', 'mushroom.Badger')
@@ -1469,16 +1616,16 @@ To be fixed upstream.
 
     >>> deb = BinaryPackageFormat.DEB
     >>> udeb = BinaryPackageFormat.UDEB
-    >>> test_tales('deb/enumvalue:DEB', deb=deb)
+    >>> test_tales("deb/enumvalue:DEB", deb=deb)
     True
 
-    >>> test_tales('deb/enumvalue:DEB', deb=udeb)
+    >>> test_tales("deb/enumvalue:DEB", deb=udeb)
     False
 
 We don't get a ValueError when we use a value that doesn't appear in the
 DBSchema the item comes from.
 
-    >>> test_tales('deb/enumvalue:CHEESEFISH', deb=udeb)
+    >>> test_tales("deb/enumvalue:CHEESEFISH", deb=udeb)
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: 'The enumerated type
@@ -1494,13 +1641,13 @@ dbschema items too:
 
     >>> from zope.security.proxy import ProxyFactory
     >>> wrapped_deb = ProxyFactory(BinaryPackageFormat.DEB)
-    >>> test_tales('deb/enumvalue:DEB', deb=wrapped_deb)
+    >>> test_tales("deb/enumvalue:DEB", deb=wrapped_deb)
     True
 
-    >>> test_tales('deb/enumvalue:UDEB', deb=wrapped_deb)
+    >>> test_tales("deb/enumvalue:UDEB", deb=wrapped_deb)
     False
 
-    >>> test_tales('deb/enumvalue:CHEESEFISH', deb=wrapped_deb)
+    >>> test_tales("deb/enumvalue:CHEESEFISH", deb=wrapped_deb)
     Traceback (most recent call last):
     ...
     zope.location.interfaces.LocationError: 'The enumerated type
@@ -1515,45 +1662,45 @@ approximate durations.
 
     >>> from datetime import timedelta
     >>> delta = timedelta(days=2)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '2 days, 0 hours, 0 minutes, 0.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '2 days'
 
     >>> delta = timedelta(days=12, hours=6, minutes=30)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '12 days, 6 hours, 30 minutes, 0.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '12 days'
 
     >>> delta = timedelta(days=0, minutes=62)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '1 hour, 2 minutes, 0.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '1 hour'
 
     >>> delta = timedelta(days=0, minutes=82)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '1 hour, 22 minutes, 0.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '1 hour 20 minutes'
 
     >>> delta = timedelta(days=0, seconds=62)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '1 minute, 2.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '1 minute'
 
     >>> delta = timedelta(days=0, seconds=90)
-    >>> test_tales('delta/fmt:exactduration', delta=delta)
+    >>> test_tales("delta/fmt:exactduration", delta=delta)
     '1 minute, 30.0 seconds'
 
-    >>> test_tales('delta/fmt:approximateduration', delta=delta)
+    >>> test_tales("delta/fmt:approximateduration", delta=delta)
     '2 minutes'
 
 
@@ -1569,14 +1716,14 @@ MenuLinks (ILink) can be formatted anchored text and icons.
 
     >>> request = LaunchpadTestRequest()
     >>> login(ANONYMOUS, request)
-    >>> link = Link('+place', 'text', 'summary', icon='icon', enabled=True)
+    >>> link = Link("+place", "text", "summary", icon="icon", enabled=True)
     >>> menu_link = MenuLink(link)
     >>> menu_link.url = "http://launchpad.test/+place"
-    >>> menu_link.name = 'test_link'
+    >>> menu_link.name = "test_link"
 
 The link can be rendered as an anchored icon.
 
-    >>> print(test_tales('menu_link/fmt:icon', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:icon", menu_link=menu_link))
     <a class="menu-link-test_link sprite icon action-icon"
        href="http://launchpad.test/+place"
        title="summary">text</a>
@@ -1584,7 +1731,7 @@ The link can be rendered as an anchored icon.
 The default rendering can be explicitly called too, text with an icon to
 the left.
 
-    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:link", menu_link=menu_link))
     <a class="menu-link-test_link sprite icon"
        href="http://launchpad.test/+place"
        title="summary">text</a>
@@ -1592,20 +1739,20 @@ the left.
 The 'edit', 'remove' and 'trash-icon' links are rendered icons followed
 by text. They have both the sprite and modify CSS classes.
 
-    >>> menu_link.icon = 'edit'
-    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    >>> menu_link.icon = "edit"
+    >>> print(test_tales("menu_link/fmt:link", menu_link=menu_link))
     <a class="menu-link-test_link sprite modify edit"
        href="http://launchpad.test/+place"
        title="summary">text</a>
 
-    >>> menu_link.icon = 'remove'
-    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    >>> menu_link.icon = "remove"
+    >>> print(test_tales("menu_link/fmt:link", menu_link=menu_link))
     <a class="menu-link-test_link sprite modify remove"
        href="http://launchpad.test/+place"
        title="summary">text</a>
 
-    >>> menu_link.icon = 'trash-icon'
-    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    >>> menu_link.icon = "trash-icon"
+    >>> print(test_tales("menu_link/fmt:link", menu_link=menu_link))
     <a class="menu-link-test_link sprite modify trash-icon"
        href="http://launchpad.test/+place"
        title="summary">text</a>
@@ -1614,35 +1761,35 @@ fmt:icon-link and fmt:link-icon are deprecated. They are an alias for
 fmt:link. They do not control formatting as they once did; fmt:link
 controls the format based on the icon name.
 
-    >>> menu_link.icon = 'icon'
-    >>> print(test_tales('menu_link/fmt:icon-link', menu_link=menu_link))
+    >>> menu_link.icon = "icon"
+    >>> print(test_tales("menu_link/fmt:icon-link", menu_link=menu_link))
     <a class="menu-link-test_link sprite icon"
        href="http://launchpad.test/+place"
        title="summary">text</a>
 
-    >>> print(test_tales('menu_link/fmt:link-icon', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:link-icon", menu_link=menu_link))
     <a class="menu-link-test_link sprite icon"
        href="http://launchpad.test/+place"
        title="summary">text</a>
 
 And the url format is also available.
 
-    >>> print(test_tales('menu_link/fmt:url', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:url", menu_link=menu_link))
     http://launchpad.test/+place
 
 If the link is disabled, no markup is rendered.
 
     >>> menu_link.enabled = False
-    >>> print(test_tales('menu_link/fmt:icon', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:icon", menu_link=menu_link))
     <BLANKLINE>
 
-    >>> print(test_tales('menu_link/fmt:link-icon', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:link-icon", menu_link=menu_link))
     <BLANKLINE>
 
-    >>> print(test_tales('menu_link/fmt:link', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:link", menu_link=menu_link))
     <BLANKLINE>
 
-    >>> print(test_tales('menu_link/fmt:url', menu_link=menu_link))
+    >>> print(test_tales("menu_link/fmt:url", menu_link=menu_link))
     <BLANKLINE>
 
 
@@ -1656,18 +1803,18 @@ Any object can be converted to the 'public' CSS class. The object does
 not need to implement IPrivacy.
 
     >>> thing = object()
-    >>> print(test_tales('context/fmt:global-css', context=thing))
+    >>> print(test_tales("context/fmt:global-css", context=thing))
     public
 
 The CSS class honors the state of the object's privacy if the object
 supports the private attribute. If the object is not private, the class
 is 'public'.
 
-    >>> bug = factory.makeBug(title='public-and-private')
+    >>> bug = factory.makeBug(title="public-and-private")
     >>> print(bug.private)
     False
 
-    >>> print(test_tales('context/fmt:global-css', context=bug))
+    >>> print(test_tales("context/fmt:global-css", context=bug))
     public
 
 If the private attribute is True, the class is 'private'.
@@ -1677,7 +1824,7 @@ If the private attribute is True, the class is 'private'.
     >>> bug.setPrivate(True, owner)
     True
 
-    >>> print(test_tales('context/fmt:global-css', context=bug))
+    >>> print(test_tales("context/fmt:global-css", context=bug))
     private
 
     >>> login(ANONYMOUS)
@@ -1695,8 +1842,8 @@ and Launchpad admins can see the details.
 
 Foo Bar is an administrator so they can see all.
 
-    >>> login('foo.bar@canonical.com')
-    >>> myteam = getUtility(IPersonSet).getByName('myteam')
+    >>> login("foo.bar@canonical.com")
+    >>> myteam = getUtility(IPersonSet).getByName("myteam")
     >>> print(test_tales("team/fmt:link", team=myteam))
     <a ...class="sprite team private"...>My Team</a>
 
@@ -1708,7 +1855,7 @@ Foo Bar is an administrator so they can see all.
 
 Owner is a member of myteam so they can see all.
 
-    >>> login('owner@canonical.com')
+    >>> login("owner@canonical.com")
     >>> print(test_tales("team/fmt:link", team=myteam))
     <a ...class="sprite team private"...>My Team</a>
 
@@ -1721,7 +1868,7 @@ Owner is a member of myteam so they can see all.
 No Priv is neither a member of myteam nor an administrator, so the
 information about myteam is hidden.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> print(test_tales("team/fmt:link", team=myteam))
     <span ...class="sprite team"...>&lt;hidden&gt;</span>
 

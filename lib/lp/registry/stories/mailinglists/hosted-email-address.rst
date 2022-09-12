@@ -6,9 +6,10 @@ the EmailAddress table.  These are not deleted when a team's contact address
 is changed from a hosted ML to an external address, in order to ensure that
 the address is reserved for the team which owns the ML.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> team, mailing_list = factory.makeTeamAndMailingList(
-    ...     'aardvarks', 'no-priv')
+    ...     "aardvarks", "no-priv"
+    ... )
     >>> transaction.commit()
 
     >>> from lp.services.identity.model.emailaddress import EmailAddressSet
@@ -21,12 +22,12 @@ The team owner sets the contact address to the hosted mailing list.
     >>> from lp.testing.pages import strip_label
 
     >>> logout()
-    >>> user_browser.open('http://launchpad.test/~aardvarks/+edit')
-    >>> user_browser.getLink(url='+contactaddress').click()
-    >>> user_browser.getControl('The Launchpad mailing list').selected = True
-    >>> user_browser.getControl('Change').click()
+    >>> user_browser.open("http://launchpad.test/~aardvarks/+edit")
     >>> user_browser.getLink(url="+contactaddress").click()
-    >>> control = user_browser.getControl(name='field.contact_method')
+    >>> user_browser.getControl("The Launchpad mailing list").selected = True
+    >>> user_browser.getControl("Change").click()
+    >>> user_browser.getLink(url="+contactaddress").click()
+    >>> control = user_browser.getControl(name="field.contact_method")
     >>> [strip_label(label) for label in control.displayValue]
     ['The Launchpad mailing list for this team...]
 
@@ -35,10 +36,11 @@ Launchpad sends that address a confirmation message.
 
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
-    >>> user_browser.getControl('Another email address').selected = True
+    >>> user_browser.getControl("Another email address").selected = True
     >>> user_browser.getControl(
-    ...     name='field.contact_address').value = 'bar@example.com'
-    >>> user_browser.getControl('Change').click()
+    ...     name="field.contact_address"
+    ... ).value = "bar@example.com"
+    >>> user_browser.getControl("Change").click()
     >>> print(user_browser.title)
     Aardvarks in Launchpad
     >>> print_feedback_messages(user_browser.contents)
@@ -48,28 +50,29 @@ Launchpad sends that address a confirmation message.
     []
     >>> import email
     >>> msg = email.message_from_bytes(raw_msg)
-    >>> print(msg['From'])
+    >>> print(msg["From"])
     Launchpad Email Validator <noreply@launchpad.net>
-    >>> print(msg['Subject'])
+    >>> print(msg["Subject"])
     Launchpad: Validate your team's contact email address
 
 When the confirmation token url is followed, the external email address is
 confirmed.
 
     >>> from lp.services.verification.tests.logintoken import (
-    ...     get_token_url_from_email)
+    ...     get_token_url_from_email,
+    ... )
     >>> token_url = get_token_url_from_email(raw_msg)
     >>> user_browser.open(token_url)
     >>> print(user_browser.title)
     Confirm email address
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.getControl("Continue").click()
     >>> print(user_browser.title)
     Aardvarks in Launchpad
     >>> print_feedback_messages(user_browser.contents)
     Email address successfully confirmed.
 
     >>> user_browser.getLink(url="+contactaddress").click()
-    >>> control = user_browser.getControl(name='field.contact_method')
+    >>> control = user_browser.getControl(name="field.contact_method")
     >>> [strip_label(label) for label in control.displayValue]
     ['Another email address']
 

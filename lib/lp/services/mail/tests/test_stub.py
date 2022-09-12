@@ -19,26 +19,29 @@ def test_simple_sendmail():
     >>> from lp.services.mail import stub
     >>> from lp.services.mail.sendmail import simple_sendmail
 
-    >>> body = 'The email body'
-    >>> subject = 'The email subject'
+    >>> body = "The email body"
+    >>> subject = "The email subject"
     >>> message_id1 = simple_sendmail(
-    ...     'nobody1@example.com', ['nobody2@example.com'], subject, body
-    ...     )
+    ...     "nobody1@example.com", ["nobody2@example.com"], subject, body
+    ... )
 
     We should have a message id, a string
 
     >>> bool(message_id1)
     True
-    >>> isinstance(message_id1,str)
+    >>> isinstance(message_id1, str)
     True
 
     We can also send arbitrary headers through. Note how Python's
     email package handles Message-Id headers
 
     >>> message_id2 = simple_sendmail(
-    ...     'nobody@example.com', ['nobody2@example.com'], subject, body,
-    ...     {'Message-Id': '<myMessageId>', 'X-Fnord': 'True'}
-    ...     )
+    ...     "nobody@example.com",
+    ...     ["nobody2@example.com"],
+    ...     subject,
+    ...     body,
+    ...     {"Message-Id": "<myMessageId>", "X-Fnord": "True"},
+    ... )
     >>> message_id2
     'myMessageId'
 
@@ -62,9 +65,11 @@ def test_simple_sendmail():
 
     >>> sorted_test_emails = sorted(
     ...     list(stub.test_emails),
-    ...     key=lambda email: message_from_bytes(email[2])['From'])
+    ...     key=lambda email: message_from_bytes(email[2])["From"],
+    ... )
     >>> for from_addr, to_addrs, raw_message in sorted_test_emails:
-    ...     print(from_addr, to_addrs, b'nobody@example.com' in raw_message)
+    ...     print(from_addr, to_addrs, b"nobody@example.com" in raw_message)
+    ...
     bounces@canonical.com ['nobody2@example.com'] False
     bounces@canonical.com ['nobody2@example.com'] True
 
@@ -77,33 +82,33 @@ def test_simple_sendmail():
     The message should be a sane RFC2822 document
 
     >>> message = message_from_bytes(raw_message)
-    >>> message['From']
+    >>> message["From"]
     'nobody@example.com'
-    >>> message['To']
+    >>> message["To"]
     'nobody2@example.com'
-    >>> message['Subject'] == subject
+    >>> message["Subject"] == subject
     True
-    >>> message['Message-Id']
+    >>> message["Message-Id"]
     '<myMessageId>'
     >>> message.get_payload() == body
     True
 
     Character set should be utf-8 as per Bug #39758. utf8 isn't good enough.
 
-    >>> message['Content-Type']
+    >>> message["Content-Type"]
     'text/plain; charset="utf-8"'
 
     And we want quoted printable, as it generally makes things readable
     and for languages it doesn't help, the only downside to base64 is bloat.
 
-    >>> message['Content-Transfer-Encoding']
+    >>> message["Content-Transfer-Encoding"]
     'quoted-printable'
 
     The message has a number of additional headers added by default.
     'X-Generated-By' not only indicates that the source is Launchpad, but
     shows the git revision and instance name.
 
-    >>> message.get_params(header='X-Generated-By')
+    >>> message.get_params(header="X-Generated-By")
     ... # doctest: +NORMALIZE_WHITESPACE,+ELLIPSIS
     [('Launchpad (canonical.com)', ''),
      ('revision', '0000000000000000000000000000000000000000'),

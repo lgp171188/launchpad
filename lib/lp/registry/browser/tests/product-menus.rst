@@ -11,8 +11,11 @@ test all the product menu classes below.
 
     >>> from lp.testing.menu import check_menu_links
     >>> from lp.registry.browser.product import (
-    ...     ProductBugsMenu, ProductNavigationMenu,
-    ...     ProductOverviewMenu, ProductSpecificationsMenu)
+    ...     ProductBugsMenu,
+    ...     ProductNavigationMenu,
+    ...     ProductOverviewMenu,
+    ...     ProductSpecificationsMenu,
+    ... )
 
     >>> product = factory.makeProduct()
 

@@ -51,21 +51,23 @@ def ipaddress_from_request(request):
     don't bother to do much error checking to ensure the IP address is at
     all valid, beyond what the ipaddress module gives us.
 
-    >>> ipaddress_from_request({'REMOTE_ADDR': '1.1.1.1'})
+    >>> ipaddress_from_request({"REMOTE_ADDR": "1.1.1.1"})
     '1.1.1.1'
-    >>> ipaddress_from_request({
-    ...     'HTTP_X_FORWARDED_FOR': '66.66.66.66',
-    ...     'REMOTE_ADDR': '1.1.1.1'
-    ...     })
+    >>> ipaddress_from_request(
+    ...     {"HTTP_X_FORWARDED_FOR": "66.66.66.66", "REMOTE_ADDR": "1.1.1.1"}
+    ... )
     '66.66.66.66'
-    >>> ipaddress_from_request({'HTTP_X_FORWARDED_FOR':
-    ...     'localhost, 127.0.0.1, 255.255.255.255,1.1.1.1'
-    ...     })
+    >>> ipaddress_from_request(
+    ...     {
+    ...         "HTTP_X_FORWARDED_FOR": (
+    ...             "localhost, 127.0.0.1, 255.255.255.255,1.1.1.1"
+    ...         )
+    ...     }
+    ... )
     '1.1.1.1'
-    >>> ipaddress_from_request({
-    ...     'HTTP_X_FORWARDED_FOR': 'nonsense',
-    ...     'REMOTE_ADDR': '1.1.1.1'
-    ...     })
+    >>> ipaddress_from_request(
+    ...     {"HTTP_X_FORWARDED_FOR": "nonsense", "REMOTE_ADDR": "1.1.1.1"}
+    ... )
     """
     ipaddresses = request.get("HTTP_X_FORWARDED_FOR")
 

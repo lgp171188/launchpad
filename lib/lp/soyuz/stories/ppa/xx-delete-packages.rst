@@ -9,27 +9,31 @@ Anonymous and an ordinary user cannot access Celso's PPA package
 console, even if they try the URL directly.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> anon_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> anon_browser.getLink("Delete packages").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> anon_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+delete-packages"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> user_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> user_browser.getLink("Delete packages").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
     >>> user_browser.open(
-    ...    'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+delete-packages"
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ..., 'launchpad.Edit')
@@ -38,16 +42,19 @@ Only Celso and Foo bar can access the 'Delete packages' page for
 Celso's PPA.
 
     >>> cprov_browser = setupBrowser(
-    ...     auth="Basic celso.providelo@canonical.com:test")
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> cprov_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> cprov_browser.getLink("Delete packages").click()
     >>> print(cprov_browser.title)
     Delete packages from PPA for Celso Providelo...
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> admin_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> admin_browser.getLink("Delete packages").click()
     >>> print(admin_browser.title)
     Delete packages from PPA for Celso Providelo...
 
@@ -68,20 +75,20 @@ sources is presented,
 An informational message also directs the user to the PPA delete package help
 page via a link:
 
-    >>> admin_browser.getLink('deleting a package').url
+    >>> admin_browser.getLink("deleting a package").url
     'https://help.launchpad.net/Packaging/PPA/Deleting'
 
 The user can update the form to only list published sources with name
 matching the given text.
 
     >>> admin_browser.getControl(
-    ...     name='field.name_filter').value = 'nonexistentpackage'
+    ...     name="field.name_filter"
+    ... ).value = "nonexistentpackage"
     >>> admin_browser.getControl("Filter").click()
     >>> print_ppa_packages(admin_browser.contents)
     No matching package for 'nonexistentpackage'.
 
-    >>> admin_browser.getControl(
-    ...     name='field.name_filter').value = 'pmount'
+    >>> admin_browser.getControl(name="field.name_filter").value = "pmount"
     >>> admin_browser.getControl("Filter").click()
     >>> print_ppa_packages(admin_browser.contents)
     Source           Published   Status     Series          Section  Build
@@ -92,8 +99,9 @@ The user may delete packages from a PPA without providing a reason
 (deletion comment). Let's try it on mark's archive.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/~mark/+archive/ppa/+packages')
-    >>> admin_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~mark/+archive/ppa/+packages"
+    ... )
+    >>> admin_browser.getLink("Delete packages").click()
     >>> print_ppa_packages(admin_browser.contents)
     Source            Published   Status     Series          Section  Build
         Status
@@ -101,11 +109,11 @@ The user may delete packages from a PPA without providing a reason
 
 Please note that the 'deletion_comment' field (which is optional) is empty.
 
-    >>> admin_browser.getControl('Deletion comment').value
+    >>> admin_browser.getControl("Deletion comment").value
     ''
 
-    >>> admin_browser.getControl(name='field.name_filter').value = ''
-    >>> admin_browser.getControl(name='field.selected_sources').value = ['31']
+    >>> admin_browser.getControl(name="field.name_filter").value = ""
+    >>> admin_browser.getControl(name="field.selected_sources").value = ["31"]
     >>> admin_browser.getControl("Request Deletion").click()
     >>> print_feedback_messages(admin_browser.contents)
     Source and binaries deleted by Foo Bar:
@@ -121,8 +129,9 @@ The single package in mark's archive was deleted successfully.
 Now back to cprov's archive for the remaining tests.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> admin_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> admin_browser.getLink("Delete packages").click()
 
 Deletion requires, at least, one selected a source, otherwise an error
 is issued.
@@ -143,9 +152,10 @@ automatically quote the text entered by the user resulting in an
 entirely readable content.
 
     >>> admin_browser.getControl("Filter").click()
-    >>> admin_browser.getControl(name='field.selected_sources').value = ['27']
+    >>> admin_browser.getControl(name="field.selected_sources").value = ["27"]
     >>> admin_browser.getControl(
-    ...     "Deletion comment").value = "DO <where is my XSS ?> IT"
+    ...     "Deletion comment"
+    ... ).value = "DO <where is my XSS ?> IT"
     >>> admin_browser.getControl("Request Deletion").click()
 
     >>> print_feedback_messages(admin_browser.contents)
@@ -164,18 +174,20 @@ invalid data.
 
 An nonexistent source:
 
-    >>> admin_browser.getControl(
-    ...    name='field.selected_sources').value = ['100']
-    >>> admin_browser.getControl('Request Deletion').click()
+    >>> admin_browser.getControl(name="field.selected_sources").value = [
+    ...     "100"
+    ... ]
+    >>> admin_browser.getControl("Request Deletion").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
     No sources selected.
 
 An invalid value.
 
-    >>> admin_browser.getControl(
-    ...    name='field.selected_sources').value = ['blah']
-    >>> admin_browser.getControl('Request Deletion').click()
+    >>> admin_browser.getControl(name="field.selected_sources").value = [
+    ...     "blah"
+    ... ]
+    >>> admin_browser.getControl("Request Deletion").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
     No sources selected.
@@ -184,24 +196,25 @@ The deleted record is now presented accordingly in the +index page. We
 will use another browser to inspect the results of our deletions.
 
     >>> cprov_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
     >>> print_ppa_packages(cprov_browser.contents)
     Source            Published   Status     Series          Section  Build
         Status
     iceweasel...(...) 2007-07-09  Published  Warty           Editors  i386
     pmount - 0.1-1    2007-07-09  Published  Warty           Editors
 
-    >>> cprov_browser.getControl(
-    ...    name='field.status_filter').value = ['superseded']
-    >>> cprov_browser.getControl('Filter', index=0).click()
+    >>> cprov_browser.getControl(name="field.status_filter").value = [
+    ...     "superseded"
+    ... ]
+    >>> cprov_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(cprov_browser.contents)
     Source           Published   Status     Series          Section  Build
         Status
     cdrkit - 1.0     2007-07-09  Deleted    Breezy-autotest Editors  i386
 
-    >>> cprov_browser.getControl(
-    ...    name='field.status_filter').value = ['']
-    >>> cprov_browser.getControl('Filter', index=0).click()
+    >>> cprov_browser.getControl(name="field.status_filter").value = [""]
+    >>> cprov_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(cprov_browser.contents)
     Source            Published   Status     Series          Section  Build
         Status
@@ -213,17 +226,21 @@ Before deleting the remaining sources we will save a in this state for
 the form re-submission tests.
 
     >>> re_post_browser = setupBrowser(
-    ...     auth="Basic foo.bar@canonical.com:test")
+    ...     auth="Basic foo.bar@canonical.com:test"
+    ... )
     >>> re_post_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
-    >>> re_post_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+packages"
+    ... )
+    >>> re_post_browser.getLink("Delete packages").click()
 
 Multiple packages can be deleted in one single batch.
 
     >>> admin_browser.getControl("Filter").click()
 
-    >>> admin_browser.getControl(
-    ...    name='field.selected_sources').value = ['28', '29']
+    >>> admin_browser.getControl(name="field.selected_sources").value = [
+    ...     "28",
+    ...     "29",
+    ... ]
     >>> admin_browser.getControl("Deletion comment").value = "DO IT AGAIN !"
     >>> admin_browser.getControl("Request Deletion").click()
 
@@ -238,26 +255,32 @@ Multiple packages can be deleted in one single batch.
     >>> from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     >>> IStore(SourcePackagePublishingHistory).find(
     ...     SourcePackagePublishingHistory,
-    ...     SourcePackagePublishingHistory.id.is_in([27, 28, 29])).set(
-    ...         scheduleddeletiondate=UTC_NOW)
+    ...     SourcePackagePublishingHistory.id.is_in([27, 28, 29]),
+    ... ).set(scheduleddeletiondate=UTC_NOW)
     >>> transaction.commit()
 
 The page doesn't present the form anymore, since there are no sources
 available for deletion.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+delete-packages"
+    ... )
     >>> main_content = find_main_content(admin_browser.contents)
-    >>> print(extract_text(
-    ...   find_tags_by_class(str(main_content), 'top-portlet')[0]))
+    >>> print(
+    ...     extract_text(
+    ...         find_tags_by_class(str(main_content), "top-portlet")[0]
+    ...     )
+    ... )
     This PPA does not contain any source packages published.
 
 All the packages were deleted via the admin_browser, now we will
 re-POST the same deletion request via the browser saved in the
 previous state to check if the bug 185922 is really fixed.
 
-    >>> re_post_browser.getControl(
-    ...    name='field.selected_sources').value = ['28', '29']
+    >>> re_post_browser.getControl(name="field.selected_sources").value = [
+    ...     "28",
+    ...     "29",
+    ... ]
     >>> re_post_browser.getControl("Deletion comment").value = "DO IT AGAIN !"
     >>> re_post_browser.getControl("Request Deletion").click()
 
@@ -269,9 +292,8 @@ previous state to check if the bug 185922 is really fixed.
 
 Any user can see that all packages present in Celso's PPA are deleted.
 
-    >>> cprov_browser.getControl(
-    ...    name='field.status_filter').value = ['']
-    >>> cprov_browser.getControl('Filter', index=0).click()
+    >>> cprov_browser.getControl(name="field.status_filter").value = [""]
+    >>> cprov_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(cprov_browser.contents)
     Source            Published   Status     Series          Section  Build
         Status
@@ -283,8 +305,9 @@ PPAs that don't contain any published source packages, do not present
 the 'Delete packages' link.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
-    >>> admin_browser.getLink('Delete packages').click()
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+packages"
+    ... )
+    >>> admin_browser.getLink("Delete packages").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -294,7 +317,8 @@ for PPAs that do not contain any published packages, instead a clear
 message is presented.
 
     >>> admin_browser.open(
-    ...    'http://launchpad.test/~no-priv/+archive/ppa/+delete-packages')
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+delete-packages"
+    ... )
     >>> print(admin_browser.title)
     Delete packages from PPA for No Privileges Person...
 
@@ -327,30 +351,35 @@ SUPERSEDED source with a PUBLISHED binary in No Privileged Person's PPA.
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
     >>> fake_chroot = getUtility(ILibraryFileAliasSet)[1]
     >>> trash = hoary["i386"].addOrUpdateChroot(fake_chroot)
 
     >>> test_publisher = SoyuzTestPublisher()
 
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> test_publisher.person = name16
 
     >>> foo_pub_src = test_publisher.getPubSource(
-    ...     version="1.0", architecturehintlist='i386',
-    ...     distroseries=hoary, archive=no_priv.archive,
-    ...     status=PackagePublishingStatus.SUPERSEDED)
+    ...     version="1.0",
+    ...     architecturehintlist="i386",
+    ...     distroseries=hoary,
+    ...     archive=no_priv.archive,
+    ...     status=PackagePublishingStatus.SUPERSEDED,
+    ... )
     >>> foo_pub_src.datesuperseded = UTC_NOW
     >>> foo_pub_src.datemadepending = UTC_NOW
 
     >>> foo_pub_binaries = test_publisher.getPubBinaries(
-    ...     distroseries=hoary, pub_source=foo_pub_src,
-    ...     status=PackagePublishingStatus.PUBLISHED)
+    ...     distroseries=hoary,
+    ...     pub_source=foo_pub_src,
+    ...     status=PackagePublishingStatus.PUBLISHED,
+    ... )
 
     >>> logout()
     >>> import transaction
@@ -360,10 +389,12 @@ The SUPERSEDED source we have just added is listed in the PPA
 overview page.
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
-    >>> user_browser.getControl(
-    ...    name='field.status_filter').value = ['superseded']
-    >>> user_browser.getControl('Filter', index=0).click()
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+packages"
+    ... )
+    >>> user_browser.getControl(name="field.status_filter").value = [
+    ...     "superseded"
+    ... ]
+    >>> user_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(user_browser.contents)
     Source           Published   Status     Series          Section  Build
         Status
@@ -374,7 +405,8 @@ presence of 'Built packages' and the binary filename in the 'Files'
 section indicates to the user that it is still published.
 
     >>> expander_url = user_browser.getLink(
-    ...     id='pub%s-expander' % foo_pub_src.id).url
+    ...     id="pub%s-expander" % foo_pub_src.id
+    ... ).url
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
@@ -391,7 +423,7 @@ section indicates to the user that it is still published.
 Even if the source added is recorded as SUPERSEDED, it is still
 available for deletion because it contains a PUBLISHED binary.
 
-    >>> user_browser.getLink('Delete packages').click()
+    >>> user_browser.getLink("Delete packages").click()
     >>> print(user_browser.title)
     Delete packages from PPA for No Privileges Person...
 
@@ -401,7 +433,8 @@ available for deletion because it contains a PUBLISHED binary.
     foo - 1.0  (changes file)     Superseded Hoary           Base
 
     >>> expander_url = user_browser.getLink(
-    ...     id='pub%s-expander' % foo_pub_src.id).url
+    ...     id="pub%s-expander" % foo_pub_src.id
+    ... ).url
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
@@ -418,23 +451,25 @@ available for deletion because it contains a PUBLISHED binary.
 The list of 'deletable' sources can be filtered by status. The default
 filter is 'Any Status', but the user can choose another.
 
-    >>> print(user_browser.getControl(name='field.status_filter').value)
+    >>> print(user_browser.getControl(name="field.status_filter").value)
     ['']
 
 When the user selects 'Published' filter and update the results, no
 records are presented. No error message should be shown, since no text
 filter was added.
 
-    >>> user_browser.getControl(
-    ...     name='field.status_filter').value = ['published']
+    >>> user_browser.getControl(name="field.status_filter").value = [
+    ...     "published"
+    ... ]
     >>> user_browser.getControl("Filter").click()
     >>> print_ppa_packages(user_browser.contents)
 
 
 When they select 'Superseded' the SUPERSEDED source shows up again.
 
-    >>> user_browser.getControl(
-    ...     name='field.status_filter').value = ['superseded']
+    >>> user_browser.getControl(name="field.status_filter").value = [
+    ...     "superseded"
+    ... ]
     >>> user_browser.getControl("Filter").click()
     >>> print_ppa_packages(user_browser.contents)
     Source           Published   Status     Series          Section  Build
@@ -447,9 +482,11 @@ source and binaries are marked as DELETED and the corresponding
 
     >>> deletion_comment = (
     ...     "Deletion of a number of base pairs that is not evenly "
-    ...     "divisible by three will lead to a frameshift mutation.")
-    >>> user_browser.getControl(
-    ...    name='field.selected_sources').value = [str(foo_pub_src.id)]
+    ...     "divisible by three will lead to a frameshift mutation."
+    ... )
+    >>> user_browser.getControl(name="field.selected_sources").value = [
+    ...     str(foo_pub_src.id)
+    ... ]
     >>> user_browser.getControl("Deletion comment").value = deletion_comment
     >>> user_browser.getControl("Request Deletion").click()
 
@@ -468,17 +505,20 @@ Please note also how the deletion comment is displayed in its entirety as
 opposed to being truncated after the first 20 characters.
 
     >>> user_browser.open(
-    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
-    >>> user_browser.getControl(
-    ...    name='field.status_filter').value = ['superseded']
-    >>> user_browser.getControl('Filter', index=0).click()
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+packages"
+    ... )
+    >>> user_browser.getControl(name="field.status_filter").value = [
+    ...     "superseded"
+    ... ]
+    >>> user_browser.getControl("Filter", index=0).click()
     >>> print_ppa_packages(user_browser.contents)
     Source           Published   Status     Series          Section  Build
         Status
     foo - 1.0 (changes file)      Deleted    Hoary           Base
 
     >>> expander_url = user_browser.getLink(
-    ...     id='pub%s-expander' % foo_pub_src.id).url
+    ...     id="pub%s-expander" % foo_pub_src.id
+    ... ).url
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
@@ -501,10 +541,11 @@ Remove the just deleted publication from disk setting its
 'dateremoved' attribute.
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> login('foo.bar@canonical.com')
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
+    >>> login("foo.bar@canonical.com")
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> deleted_pub = no_priv.archive.getPublishedSources(
-    ...     status=PackagePublishingStatus.DELETED).first()
+    ...     status=PackagePublishingStatus.DELETED
+    ... ).first()
     >>> removeSecurityProxy(deleted_pub).dateremoved = deleted_pub.datecreated
     >>> logout()
 
@@ -514,12 +555,14 @@ Remove the just deleted publication from disk setting its
 Now the 'Removed from disk' notice is rendered inside the expandable
 area.
 
-    >>> user_browser.getControl(
-    ...    name='field.status_filter').value = ['superseded']
-    >>> user_browser.getControl('Filter', index=0).click()
+    >>> user_browser.getControl(name="field.status_filter").value = [
+    ...     "superseded"
+    ... ]
+    >>> user_browser.getControl("Filter", index=0).click()
 
     >>> expander_url = user_browser.getLink(
-    ...     id='pub%s-expander' % foo_pub_src.id).url
+    ...     id="pub%s-expander" % foo_pub_src.id
+    ... ).url
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
@@ -537,7 +580,7 @@ The message for the file links does not appear for non-PPA publishings
 as it would refer to non-existent links.
 
     >>> user_browser.open("http://launchpad.test/ubuntu/+source/foobar/1.0")
-    >>> user_browser.getLink('See full publishing history').click()
+    >>> user_browser.getLink("See full publishing history").click()
     >>> print(extract_text(find_main_content(user_browser.contents)))
     Publishing history of foobar 1.0 source package in Ubuntu
     ...

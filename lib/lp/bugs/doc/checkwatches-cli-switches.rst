@@ -15,13 +15,12 @@ We'll update all bugtrackers so that the test doesn't try to make any
 external connections.
 
     >>> cur = cursor()
-    >>> cur.execute("UPDATE BugWatch SET lastchecked=%s" %
-    ...     sqlvalues(UTC_NOW))
+    >>> cur.execute("UPDATE BugWatch SET lastchecked=%s" % sqlvalues(UTC_NOW))
     >>> transaction.commit()
 
     >>> updater = CheckwatchesMaster(transaction, logger=FakeLogger())
 
-    >>> updater.updateBugTrackers(['debbugs', 'gnome-bugzilla'])
+    >>> updater.updateBugTrackers(["debbugs", "gnome-bugzilla"])
     DEBUG...No watches to update on http://bugs.debian.org
     DEBUG...No watches to update on http://bugzilla.gnome.org/bugs
 
@@ -30,10 +29,11 @@ If a bug tracker is disabled checkwatches won't try to update it.
     >>> from lp.testing.dbuser import lp_dbuser
 
     >>> with lp_dbuser():
-    ...     login('foo.bar@canonical.com')
-    ...     bug_tracker = factory.makeBugTracker('http://example.com')
+    ...     login("foo.bar@canonical.com")
+    ...     bug_tracker = factory.makeBugTracker("http://example.com")
     ...     bug_tracker.active = False
     ...     bug_tracker_name = bug_tracker.name
+    ...
 
     >>> updater.updateBugTrackers([bug_tracker_name])
     DEBUG...Updates are disabled for bug tracker at http://example.com
@@ -46,29 +46,35 @@ line.
     >>> from lp.services.config import config
 
     >>> class TestCheckWatchesCronScript(CheckWatchesCronScript):
-    ...
     ...     def __init__(self, name, dbuser=None, test_args=None):
     ...         super().__init__(name, dbuser, test_args)
     ...         self.txn = transaction
     ...
     ...     def handle_options(self):
     ...         self.logger = FakeLogger()
+    ...
 
     >>> def run_cronscript_with_args(args):
     ...     # It may seem a bit weird to do this rather than letting the
     ...     # LaunchpadScript code handle it, but doing that means that
     ...     # LayerIsolationErrors get raised as it leaves threads lying
     ...     # around.
-    ...     login('bugwatch@bugs.launchpad.net')
+    ...     login("bugwatch@bugs.launchpad.net")
     ...     transaction.commit()
     ...     checkwatches_cronscript = TestCheckWatchesCronScript(
-    ...         "checkwatches", config.checkwatches.dbuser,
-    ...         test_args=args)
+    ...         "checkwatches", config.checkwatches.dbuser, test_args=args
+    ...     )
     ...     checkwatches_cronscript.main()
+    ...
 
-    >>> run_cronscript_with_args([
-    ...     '--bug-tracker=mozilla.org', '--bug-tracker=debbugs', '-v',
-    ...     '--batch-size=10'])
+    >>> run_cronscript_with_args(
+    ...     [
+    ...         "--bug-tracker=mozilla.org",
+    ...         "--bug-tracker=debbugs",
+    ...         "-v",
+    ...         "--batch-size=10",
+    ...     ]
+    ... )
     DEBUG Using a global batch size of 10
     DEBUG No watches to update on https://bugzilla.mozilla.org/
     DEBUG No watches to update on http://bugs.debian.org
@@ -91,13 +97,14 @@ demonstrate this.
 
     >>> factory = LaunchpadObjectFactory()
     >>> with lp_dbuser():
-    ...     login('foo.bar@canonical.com')
-    ...     savannah = getUtility(IBugTrackerSet).getByName('savannah')
+    ...     login("foo.bar@canonical.com")
+    ...     savannah = getUtility(IBugTrackerSet).getByName("savannah")
     ...     for i in range(5):
     ...         bug_watch = factory.makeBugWatch(bugtracker=savannah)
-    ...         bug_watch.lastchecked = datetime.now(pytz.timezone('UTC'))
+    ...         bug_watch.lastchecked = datetime.now(pytz.timezone("UTC"))
+    ...
 
-    >>> run_cronscript_with_args(['-vvt', 'savannah', '--reset'])
+    >>> run_cronscript_with_args(["-vvt", "savannah", "--reset"])
     INFO Resetting 5 bug watches for bug tracker 'savannah'
     INFO Updating 5 watches on bug tracker 'savannah'
     INFO 'Unsupported Bugtracker' error updating http://savannah.gnu.org/:
@@ -114,9 +121,12 @@ tracker option fully.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     ['cronscripts/checkwatches.py', '-h'],
-    ...     stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-    ...     stderr=subprocess.PIPE, universal_newlines=True)
+    ...     ["cronscripts/checkwatches.py", "-h"],
+    ...     stdin=subprocess.PIPE,
+    ...     stdout=subprocess.PIPE,
+    ...     stderr=subprocess.PIPE,
+    ...     universal_newlines=True,
+    ... )
     >>> (out, err) = process.communicate()
     >>> print(out)
     Usage: checkwatches.py [options]

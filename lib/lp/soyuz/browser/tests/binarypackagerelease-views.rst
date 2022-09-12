@@ -18,7 +18,8 @@ Get a "mock" request:
 Let's instantiate the view for +portlet-details:
 
     >>> pmount_view = getMultiAdapter(
-    ...     (pmount_bin, request), name="+portlet-details")
+    ...     (pmount_bin, request), name="+portlet-details"
+    ... )
 
 Main functionality of this class is to provide abstracted model of the
 stored package relationships. They are provided as a
@@ -29,7 +30,7 @@ IPackageRelationshipSet. (see package-relationship.rst).
 
     >>> from lp.soyuz.interfaces.packagerelationship import (
     ...     IPackageRelationshipSet,
-    ...     )
+    ... )
     >>> from lp.testing import verifyObject
 
     >>> verifyObject(IPackageRelationshipSet, pmount_deps)
@@ -49,7 +50,8 @@ question. In this case 'url' will be None, which indicates no link
 should be rendered for this dependency.
 
     >>> for dep in pmount_deps:
-    ...    print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...     print(pretty((dep.name, dep.operator, dep.version, dep.url)))
+    ...
     ('at', '>=', '3.14156', 'http://launchpad.test/ubuntu/hoary/i386/at')
     ('linux-2.6.12', None, '',
      'http://launchpad.test/ubuntu/hoary/i386/linux-2.6.12')

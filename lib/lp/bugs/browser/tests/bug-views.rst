@@ -17,8 +17,10 @@ an event listener to demonstrate this.
 
     >>> def on_created_event(object, event):
     ...     print("ObjectCreatedEvent: %r" % object)
+    ...
     >>> on_created_listener = ZopeEventHandlerFixture(
-    ...     on_created_event, (IBug, IObjectCreatedEvent))
+    ...     on_created_event, (IBug, IObjectCreatedEvent)
+    ... )
     >>> on_created_listener.setUp()
 
 1. Filing a bug on a distribution.
@@ -34,7 +36,7 @@ comment, of the bug report.
     >>> from lp.services.webapp.interfaces import (
     ...     ILaunchBag,
     ...     IOpenLaunchBag,
-    ...     )
+    ... )
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.bugtask import IBugTaskSet
@@ -49,11 +51,14 @@ comment, of the bug report.
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.title': 'bug in bin pkg',
-    ...           'field.comment': 'a bug in a bin pkg',
-    ...           'packagename_option': 'choose',
-    ...           'field.packagename': 'linux-2.6.12',
-    ...           'field.actions.submit_bug': 'Submit Bug Report'})
+    ...     form={
+    ...         "field.title": "bug in bin pkg",
+    ...         "field.comment": "a bug in a bin pkg",
+    ...         "packagename_option": "choose",
+    ...         "field.packagename": "linux-2.6.12",
+    ...         "field.actions.submit_bug": "Submit Bug Report",
+    ...     },
+    ... )
 
     >>> ubuntu_filebug = getMultiAdapter((ubuntu, request), name="+filebug")
     >>> launchbag.clear()
@@ -66,7 +71,8 @@ comment, of the bug report.
 
     >>> current_user = getUtility(ILaunchBag).user
     >>> search_params = BugTaskSearchParams(
-    ...     searchtext=u"bin pkg", user=current_user)
+    ...     searchtext="bin pkg", user=current_user
+    ... )
 
     >>> latest_ubuntu_bugtask = ubuntu.searchTasks(search_params)[0]
 
@@ -87,9 +93,12 @@ the bugtask.
     >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.title': 'a firefox bug',
-    ...           'field.comment': 'a test bug',
-    ...           'field.actions.submit_bug': 'Submit Bug Report'})
+    ...     form={
+    ...         "field.title": "a firefox bug",
+    ...         "field.comment": "a test bug",
+    ...         "field.actions.submit_bug": "Submit Bug Report",
+    ...     },
+    ... )
 
     >>> firefox_filebug = getMultiAdapter((firefox, request), name="+filebug")
 
@@ -104,14 +113,18 @@ You can also access the +filebug page from a sourcepackage.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.title': 'a firefox bug',
-    ...           'field.comment': 'a test bug',
-    ...           'packagename_option': 'choose',
-    ...           'field.packagename': 'mozilla-firefox',
-    ...           'field.actions.submit_bug': 'Submit Bug Report'})
+    ...     form={
+    ...         "field.title": "a firefox bug",
+    ...         "field.comment": "a test bug",
+    ...         "packagename_option": "choose",
+    ...         "field.packagename": "mozilla-firefox",
+    ...         "field.actions.submit_bug": "Submit Bug Report",
+    ...     },
+    ... )
 
     >>> ubuntu_firefox_filebug = getMultiAdapter(
-    ...     (ubuntu_firefox, request), name="+filebug")
+    ...     (ubuntu_firefox, request), name="+filebug"
+    ... )
 
     >>> launchbag.add(ubuntu)
 
@@ -133,22 +146,30 @@ To add new comments, users POST to the +addcomment page:
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.subject': latest_ubuntu_bugtask.bug.title,
-    ...           'field.comment': 'I can reproduce this bug.',
-    ...           'field.actions.save': 'Save Changes'})
+    ...     form={
+    ...         "field.subject": latest_ubuntu_bugtask.bug.title,
+    ...         "field.comment": "I can reproduce this bug.",
+    ...         "field.actions.save": "Save Changes",
+    ...     },
+    ... )
     >>> ubuntu_addcomment = getMultiAdapter(
-    ...     (latest_ubuntu_bugtask, request), name="+addcomment-form")
+    ...     (latest_ubuntu_bugtask, request), name="+addcomment-form"
+    ... )
     >>> ubuntu_addcomment.initialize()
 
 They may even, by mistake, post the same comment twice:
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.subject': latest_ubuntu_bugtask.bug.title,
-    ...           'field.comment': 'I can reproduce this bug.',
-    ...           'field.actions.save': 'Save Changes'})
+    ...     form={
+    ...         "field.subject": latest_ubuntu_bugtask.bug.title,
+    ...         "field.comment": "I can reproduce this bug.",
+    ...         "field.actions.save": "Save Changes",
+    ...     },
+    ... )
     >>> ubuntu_addcomment = getMultiAdapter(
-    ...     (latest_ubuntu_bugtask, request), name="+addcomment-form")
+    ...     (latest_ubuntu_bugtask, request), name="+addcomment-form"
+    ... )
     >>> ubuntu_addcomment.initialize()
 
 Comments are cached in the view, so we need to flush updates and then
@@ -158,11 +179,13 @@ grab a new view to actually see them:
     >>> transaction.commit()
 
     >>> ubuntu_bugview = getMultiAdapter(
-    ...     (latest_ubuntu_bugtask, request), name="+index")
+    ...     (latest_ubuntu_bugtask, request), name="+index"
+    ... )
     >>> print(len(ubuntu_bugview.comments))
     3
     >>> for c in ubuntu_bugview.comments:
     ...     print("%d %s: %s" % (c.index, c.owner.name, c.text_contents))
+    ...
     0 name16: a bug in a bin pkg
     1 name16: I can reproduce this bug.
     2 name16: I can reproduce this bug.
@@ -199,8 +222,11 @@ If we go ahead and modify the description, however:
 The displayable comments for a bug can be obtained from the view
 property activity_and_comments.
 
-    >>> comments = [event.get('comment') for event in
-    ...     ubuntu_bugview.activity_and_comments if event.get('comment')]
+    >>> comments = [
+    ...     event.get("comment")
+    ...     for event in ubuntu_bugview.activity_and_comments
+    ...     if event.get("comment")
+    ... ]
 
 Because we omit the first comment, and because the third comment is
 identical to the second, we really only display one comment:
@@ -209,6 +235,7 @@ identical to the second, we really only display one comment:
     1
     >>> for c in comments:
     ...     print("%d %s: %s" % (c.index, c.owner.name, c.text_contents))
+    ...
     1 name16: I can reproduce this bug.
 
 (Unregister our listener, since we no longer need it.)
@@ -243,14 +270,16 @@ duplicate link remains in the current context.
 
 
     >>> bug_page_view = getMultiAdapter(
-    ...     (bug_five_in_firefox.bug, request), name="+portlet-duplicates")
+    ...     (bug_five_in_firefox.bug, request), name="+portlet-duplicates"
+    ... )
 
     >>> bug_six = bugset.get(6)
 
     >>> getUtility(IOpenLaunchBag).add(bug_five_in_firefox)
 
     >>> for dupe in bug_page_view.duplicates():
-    ...     print(dupe['url'])
+    ...     print(dupe["url"])
+    ...
     http://.../firefox/+bug/6
 
 Bug 2 is not reported in Firefox. Let's mark bug 2 as a dupe of bug 5,
@@ -261,10 +290,12 @@ and see how the returned link changes.
     >>> bug_two.markAsDuplicate(bug_five)
 
     >>> bug_page_view = getMultiAdapter(
-    ...     (bug_five_in_firefox.bug, request), name="+portlet-duplicates")
+    ...     (bug_five_in_firefox.bug, request), name="+portlet-duplicates"
+    ... )
 
     >>> for dupe in bug_page_view.duplicates():
-    ...     print(dupe['url'])
+    ...     print(dupe["url"])
+    ...
     http://.../bugs/2
     ...
 
@@ -280,36 +311,46 @@ the the attachment itself and a ProxiedLibraryFileAlias for the
 librarian file of the attachment.
 
     >>> from lp.bugs.browser.bug import BugView
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> request = LaunchpadTestRequest()
     >>> bug_seven = bugset.get(7)
     >>> attachment_1 = factory.makeBugAttachment(
-    ...     bug=bug_seven, description='attachment 1', is_patch=False,
-    ...     filename='a1')
+    ...     bug=bug_seven,
+    ...     description="attachment 1",
+    ...     is_patch=False,
+    ...     filename="a1",
+    ... )
     >>> attachment_2 = factory.makeBugAttachment(
-    ...     bug=bug_seven, description='attachment 2', is_patch=False,
-    ...     filename='a2')
+    ...     bug=bug_seven,
+    ...     description="attachment 2",
+    ...     is_patch=False,
+    ...     filename="a2",
+    ... )
     >>> patch_1 = factory.makeBugAttachment(
-    ...     bug=bug_seven, description='patch 1', is_patch=True,
-    ...     filename='p1')
+    ...     bug=bug_seven, description="patch 1", is_patch=True, filename="p1"
+    ... )
     >>> patch_2 = factory.makeBugAttachment(
-    ...     bug=bug_seven, description='patch 2', is_patch=True,
-    ...     filename='p2')
+    ...     bug=bug_seven, description="patch 2", is_patch=True, filename="p2"
+    ... )
     >>> view = BugView(bug_seven, request)
     >>> for attachment in view.regular_attachments:
-    ...     print(attachment['attachment'].title)
+    ...     print(attachment["attachment"].title)
+    ...
     attachment 1
     attachment 2
     >>> for patch in view.patches:
-    ...     print(patch['attachment'].title)
+    ...     print(patch["attachment"].title)
+    ...
     patch 1
     patch 2
     >>> for attachment in view.regular_attachments:
-    ...     print(attachment['file'].http_url)
+    ...     print(attachment["file"].http_url)
+    ...
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a1
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a2
     >>> for patch in view.patches:
-    ...     print(patch['file'].http_url)
+    ...     print(patch["file"].http_url)
+    ...
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p1
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p2
 
@@ -324,7 +365,7 @@ subscribed to it.
 If the user isn't subscribed to the bug , 'Subscribe' is shown.
 
     >>> login("foo.bar@canonical.com")
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.isSubscribed(foo_bar)
     False
@@ -354,7 +395,7 @@ If we subscribe Foo Bar, 'Edit subscription' is shown.
 If we subscribe one of the teams that Foo Bar is a member of, it will
 still say 'Edit subscription':
 
-    >>> launchpad_team = getUtility(IPersonSet).getByName('launchpad')
+    >>> launchpad_team = getUtility(IPersonSet).getByName("launchpad")
     >>> foo_bar.inTeam(launchpad_team)
     True
     >>> bug_one.subscribe(launchpad_team, launchpad_team)
@@ -450,7 +491,8 @@ and nominations and various links like "Does this bug affect you" and
 
     >>> bugtasks_and_nominations_view = getMultiAdapter(
     ...     (bug_one_bugtask.bug, request),
-    ...     name="+bugtasks-and-nominations-portal")
+    ...     name="+bugtasks-and-nominations-portal",
+    ... )
     >>> bugtasks_and_nominations_view.initialize()
 
 The bugtasks and nominations table itself is rendered with the
@@ -460,7 +502,8 @@ The bugtasks and nominations table itself is rendered with the
 
     >>> bugtasks_and_nominations_view = getMultiAdapter(
     ...     (bug_one_bugtask.bug, request),
-    ...     name="+bugtasks-and-nominations-table")
+    ...     name="+bugtasks-and-nominations-table",
+    ... )
     >>> bugtasks_and_nominations_view.initialize()
 
 The getBugTaskAndNominationViews method returns a list of views for
@@ -479,17 +522,24 @@ task anyway.
     ...         return "nomination"
     ...     else:
     ...         return "unknown"
+    ...
 
     >>> def print_tasks_and_nominations(task_and_nomination_views):
     ...     for task_or_nomination_view in task_and_nomination_views:
     ...         task_or_nomination = task_or_nomination_view.context
-    ...         print("%s, %s, %s" % (
-    ...             get_object_type(task_or_nomination),
-    ...             task_or_nomination.status.title,
-    ...             task_or_nomination.target.bugtargetdisplayname))
+    ...         print(
+    ...             "%s, %s, %s"
+    ...             % (
+    ...                 get_object_type(task_or_nomination),
+    ...                 task_or_nomination.status.title,
+    ...                 task_or_nomination.target.bugtargetdisplayname,
+    ...             )
+    ...         )
+    ...
 
     >>> task_and_nomination_views = (
-    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews())
+    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews()
+    ... )
 
     >>> print_tasks_and_nominations(task_and_nomination_views)
     bugtask, New, Mozilla Firefox
@@ -501,12 +551,12 @@ task anyway.
 After creating bug supervisors for Ubuntu and Firefox Let's nominate the bug
 for upstream and an Ubuntu series and see how the list changes.
 
-    >>> from lp.testing.sampledata import (ADMIN_EMAIL)
+    >>> from lp.testing.sampledata import ADMIN_EMAIL
     >>> from zope.component import getUtility
     >>> from zope.security.proxy import removeSecurityProxy
     >>>
     >>> login(ADMIN_EMAIL)
-    >>> nominator = factory.makePerson(name='nominator')
+    >>> nominator = factory.makePerson(name="nominator")
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu = removeSecurityProxy(ubuntu)
     >>> ubuntu.bug_supervisor = nominator
@@ -528,7 +578,8 @@ for upstream and an Ubuntu series and see how the list changes.
     <BugNomination ...>
 
     >>> task_and_nomination_views = (
-    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews())
+    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews()
+    ... )
 
     >>> print_tasks_and_nominations(task_and_nomination_views)
     bugtask, New, Mozilla Firefox
@@ -552,7 +603,8 @@ A nomination row will be included for evolution now too.
 
     >>> bugtasks_and_nominations_view.initialize()
     >>> task_and_nomination_views = (
-    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews())
+    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews()
+    ... )
 
     >>> print_tasks_and_nominations(task_and_nomination_views)
     bugtask, New, Mozilla Firefox
@@ -584,7 +636,8 @@ approve/decline nominations.)
 
     >>> bugtasks_and_nominations_view.initialize()
     >>> task_and_nomination_views = (
-    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews())
+    ...     bugtasks_and_nominations_view.getBugTaskAndNominationViews()
+    ... )
 
     >>> print_tasks_and_nominations(task_and_nomination_views)
     bugtask, New, Mozilla Firefox
@@ -611,7 +664,8 @@ initialize the test harness.
     >>> from lp.bugs.browser.bug import BugEditView
     >>> class BugEditViewTest(BugEditView):
     ...     def index(self):
-    ...         print('EDIT BUG')
+    ...         print("EDIT BUG")
+    ...
 
     >>> firefox_task = bug_one.bugtasks[0]
     >>> print(firefox_task.bugtargetdisplayname)
@@ -631,13 +685,14 @@ Initially, the normal edit page is shown, with a single button.
 If we fill in some values and submit the action, the view will redirect
 and the bug will have been edited.
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> edit_values = {
-    ...     'field.title': u'New title',
-    ...     'field.description': u'New description.',
-    ...     'field.tags': u'doc'}
+    ...     "field.title": "New title",
+    ...     "field.description": "New description.",
+    ...     "field.tags": "doc",
+    ... }
 
-    >>> bug_edit.submit('change', edit_values)
+    >>> bug_edit.submit("change", edit_values)
     >>> bug_edit.hasErrors()
     False
     >>> bug_edit.wasRedirected()
@@ -648,6 +703,7 @@ and the bug will have been edited.
     New description.
     >>> for tag in bug_one.tags:
     ...     print(tag)
+    ...
     doc
 
 Emails are sent out by adding entries to the bugnotification table. We
@@ -661,22 +717,26 @@ need to know how many messages are currently in that table.
 Add 'new-tag' multiple times so that we can verify that it will only be added
 once.
 
-    >>> edit_values['field.tags'] = u'new-tag doc new-tag'
-    >>> bug_edit.submit('change', edit_values)
+    >>> edit_values["field.tags"] = "new-tag doc new-tag"
+    >>> bug_edit.submit("change", edit_values)
     >>> bug_edit.hasErrors()
     False
     >>> bug_edit.wasRedirected()
     True
     >>> for tag in bug_one.tags:
     ...     print(tag)
+    ...
     doc
     new-tag
 
 Since the 'new-tag' was added, a new entry in the bugnotification table
 should exist.
 
-    >>> bn_set = IStore(BugNotification).find(
-    ...     BugNotification, bug=bug_one).order_by(BugNotification.id)
+    >>> bn_set = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification, bug=bug_one)
+    ...     .order_by(BugNotification.id)
+    ... )
     >>> start_bugnotification_count == bn_set.count() - 1
     True
     >>> print(bn_set.last().message.text_contents)
@@ -703,65 +763,89 @@ First, some set-up.
     ... )
     >>> from lp.bugs.enums import BugLockStatus
     >>> nowish = datetime(
-    ...     2009, 3, 26, 21, 37, 45, tzinfo=pytz.timezone('UTC'))
+    ...     2009, 3, 26, 21, 37, 45, tzinfo=pytz.timezone("UTC")
+    ... )
 
-    >>> login('foo.bar@canonical.com')
-    >>> product = factory.makeProduct(name='testproduct')
+    >>> login("foo.bar@canonical.com")
+    >>> product = factory.makeProduct(name="testproduct")
     >>> bug = factory.makeBug(title="A bug title", target=product)
     >>> title_change = BugTitleChange(
-    ...     when=nowish, person=foo_bar, what_changed='title',
-    ...     old_value=bug.title, new_value="A new bug title")
+    ...     when=nowish,
+    ...     person=foo_bar,
+    ...     what_changed="title",
+    ...     old_value=bug.title,
+    ...     new_value="A new bug title",
+    ... )
     >>> bug.addChange(title_change)
 
     >>> nowish = nowish + timedelta(days=1)
     >>> locked = BugLocked(
     ...     when=nowish,
-    ...     person=foo_bar, old_status=BugLockStatus.UNLOCKED,
-    ...     new_status=BugLockStatus.COMMENT_ONLY, reason='too hot')
+    ...     person=foo_bar,
+    ...     old_status=BugLockStatus.UNLOCKED,
+    ...     new_status=BugLockStatus.COMMENT_ONLY,
+    ...     reason="too hot",
+    ... )
     >>> bug.addChange(locked)
     >>> nowish = nowish + timedelta(days=1)
     >>> lock_reason_updated = BugLockReasonSet(
-    ...     when=nowish, person=foo_bar, old_reason='too hot',
-    ...     new_reason='too hot!')
+    ...     when=nowish,
+    ...     person=foo_bar,
+    ...     old_reason="too hot",
+    ...     new_reason="too hot!",
+    ... )
     >>> bug.addChange(lock_reason_updated)
     >>> nowish = nowish + timedelta(days=1)
     >>> lock_reason_unset = BugLockReasonSet(
-    ...     when=nowish, person=foo_bar, old_reason='too hot!',
-    ...     new_reason=None)
+    ...     when=nowish,
+    ...     person=foo_bar,
+    ...     old_reason="too hot!",
+    ...     new_reason=None,
+    ... )
     >>> bug.addChange(lock_reason_unset)
     >>> nowish = nowish + timedelta(days=1)
     >>> unlocked = BugUnlocked(
-    ...     when=nowish, person=foo_bar,
-    ...     old_status=BugLockStatus.COMMENT_ONLY)
+    ...     when=nowish, person=foo_bar, old_status=BugLockStatus.COMMENT_ONLY
+    ... )
     >>> bug.addChange(unlocked)
     >>> nowish = nowish + timedelta(days=1)
     >>> importance_explanation_set = BugTaskImportanceExplanationChange(
-    ...     when=nowish, person=foo_bar,
-    ...     what_changed='importance explanation',
-    ...     old_value=None, new_value='This is a security issue',
-    ...     bug_task=bug.default_bugtask)
+    ...     when=nowish,
+    ...     person=foo_bar,
+    ...     what_changed="importance explanation",
+    ...     old_value=None,
+    ...     new_value="This is a security issue",
+    ...     bug_task=bug.default_bugtask,
+    ... )
     >>> bug.addChange(importance_explanation_set)
     >>> status_explanation_set = BugTaskStatusExplanationChange(
-    ...     when=nowish, person=foo_bar, what_changed='status explanation',
-    ...     old_value=None, new_value='Blocked on foo',
-    ...     bug_task=bug.default_bugtask)
+    ...     when=nowish,
+    ...     person=foo_bar,
+    ...     what_changed="status explanation",
+    ...     old_value=None,
+    ...     new_value="Blocked on foo",
+    ...     bug_task=bug.default_bugtask,
+    ... )
     >>> bug.addChange(status_explanation_set)
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
-    ...     form={'field.subject': bug.title,
-    ...           'field.comment': "A comment, for the reading of.",
-    ...           'field.actions.save': 'Save Changes'})
+    ...     form={
+    ...         "field.subject": bug.title,
+    ...         "field.comment": "A comment, for the reading of.",
+    ...         "field.actions.save": "Save Changes",
+    ...     },
+    ... )
     >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+addcomment-form")
+    ...     (bug.bugtasks[0], request), name="+addcomment-form"
+    ... )
     >>> view.initialize()
 
     >>> flush_database_updates()
     >>> transaction.commit()
 
     >>> request = LaunchpadTestRequest(method="GET")
-    >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+index")
+    >>> view = getMultiAdapter((bug.bugtasks[0], request), name="+index")
 
 The activity_and_comments property of BugTaskView is a list of comments
 and activity on a bug, ordered by the date that they occurred. Each item
@@ -775,42 +859,48 @@ order, the comments and activity that have taken place on a bug.
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
     ...     form={
-    ...         'testproduct.status': 'Confirmed',
-    ...         'testproduct.actions.save': 'Save Changes',
-    ...         })
-    >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+editstatus")
+    ...         "testproduct.status": "Confirmed",
+    ...         "testproduct.actions.save": "Save Changes",
+    ...     },
+    ... )
+    >>> view = getMultiAdapter((bug.bugtasks[0], request), name="+editstatus")
     >>> view.initialize()
 
-    >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+index")
+    >>> view = getMultiAdapter((bug.bugtasks[0], request), name="+index")
     >>> view.initialize()
 
     >>> def print_activities(activities):
     ...     for activity in activities:
-    ...         target_name = activity['target']
+    ...         target_name = activity["target"]
     ...         if target_name is None:
     ...             print("Changed:")
     ...         else:
     ...             print("Changed in %s:" % target_name)
-    ...         activity_items = activity['activity']
+    ...         activity_items = activity["activity"]
     ...         for activity_item in activity_items:
-    ...             print("* %s: %s => %s" % (
-    ...                 activity_item.change_summary,
-    ...                 activity_item.oldvalue,
-    ...                 activity_item.newvalue))
+    ...             print(
+    ...                 "* %s: %s => %s"
+    ...                 % (
+    ...                     activity_item.change_summary,
+    ...                     activity_item.oldvalue,
+    ...                     activity_item.newvalue,
+    ...                 )
+    ...             )
+    ...
 
     >>> def print_comment(comment):
     ...     print(comment.text_for_display)
     ...     print_activities(comment.activity)
+    ...
 
     >>> def print_activity_and_comments(activity_and_comments):
     ...     for activity_or_comment in activity_and_comments:
     ...         print("-- {person.name} --".format(**activity_or_comment))
-    ...         if 'activity' in activity_or_comment:
+    ...         if "activity" in activity_or_comment:
     ...             print_activities(activity_or_comment["activity"])
-    ...         if 'comment' in activity_or_comment:
+    ...         if "comment" in activity_or_comment:
     ...             print_comment(activity_or_comment["comment"])
+    ...
 
     >>> print_activity_and_comments(view.activity_and_comments)
     -- name16 --
@@ -845,17 +935,16 @@ comments and activity together.
     >>> request = LaunchpadTestRequest(
     ...     method="POST",
     ...     form={
-    ...         'testproduct.status': 'Confirmed',
-    ...         'testproduct.importance': 'High',
-    ...         'testproduct.comment_on_change': "I triaged it.",
-    ...         'testproduct.actions.save': 'Save Changes',
-    ...         })
-    >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+editstatus")
+    ...         "testproduct.status": "Confirmed",
+    ...         "testproduct.importance": "High",
+    ...         "testproduct.comment_on_change": "I triaged it.",
+    ...         "testproduct.actions.save": "Save Changes",
+    ...     },
+    ... )
+    >>> view = getMultiAdapter((bug.bugtasks[0], request), name="+editstatus")
     >>> view.initialize()
 
-    >>> view = getMultiAdapter(
-    ...     (bug.bugtasks[0], request), name="+index")
+    >>> view = getMultiAdapter((bug.bugtasks[0], request), name="+index")
     >>> view.initialize()
 
 Looking at activity_and_comments will give us the same results as
@@ -900,11 +989,10 @@ using the +filebug-show-similar view of a BugTarget.
 The +filebug-show-similar view takes a single parameter, 'title'. It
 uses this to search for similar bugs.
 
-    >>> request = LaunchpadTestRequest(
-    ...     method="GET",
-    ...     form={'title': 'a'})
+    >>> request = LaunchpadTestRequest(method="GET", form={"title": "a"})
     >>> view = getMultiAdapter(
-    ...     (firefox, request), name="+filebug-show-similar")
+    ...     (firefox, request), name="+filebug-show-similar"
+    ... )
     >>> view.initialize()
 
 The view offers a list of bugs similar to the one whose title we just
@@ -912,6 +1000,7 @@ searched for.
 
     >>> for bug in view.similar_bugs:
     ...     print(bug.title)
+    ...
     New title
     Reflow problems with complex page layouts
     Firefox install instructions should be complete
@@ -920,11 +1009,13 @@ searched for.
 If we refine the search criteria, we'll get different results.
 
     >>> request = LaunchpadTestRequest(
-    ...     method="GET",
-    ...     form={'title': 'problems'})
+    ...     method="GET", form={"title": "problems"}
+    ... )
     >>> view = getMultiAdapter(
-    ...     (firefox, request), name="+filebug-show-similar")
+    ...     (firefox, request), name="+filebug-show-similar"
+    ... )
     >>> view.initialize()
     >>> for bug in view.similar_bugs:
     ...     print(bug.title)
+    ...
     Reflow problems with complex page layouts

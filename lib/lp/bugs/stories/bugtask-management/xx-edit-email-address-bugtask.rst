@@ -10,8 +10,7 @@ Editing Email Address bugtasks
     >>> from zope.security.proxy import removeSecurityProxy
     >>> def widget_visibility(user, url):
     ...     naked_email = removeSecurityProxy(user.preferredemail)
-    ...     browser = setupBrowser(
-    ...         "Basic %s:test" % naked_email.email)
+    ...     browser = setupBrowser("Basic %s:test" % naked_email.email)
     ...     transaction.commit()
     ...     logout()
     ...     browser.open(url)
@@ -28,10 +27,12 @@ Editing Email Address bugtasks
     ...     else:
     ...         importance = True
     ...     return status, importance
+    ...
 
     >>> def print_widget_visibility(user, url):
     ...     status, importance = widget_visibility(user, url)
-    ...     print('Status: %s\nImportance: %s' % (status, importance))
+    ...     print("Status: %s\nImportance: %s" % (status, importance))
+    ...
 
 
 "Normal" (not Email Address) bugtasks
@@ -44,16 +45,20 @@ tracker, because status and importance are updated by checkwatches.
 To prepare, we must add a task that references a bug tracked
 elsewhere:
 
-    >>> user_browser.open('http://bugs.launchpad.test/'
-    ...                   'jokosher/+bug/12/+choose-affected-product')
-    >>> user_browser.getControl('Project').value = u'gnome-terminal'
-    >>> user_browser.getControl('Continue').click()
-    >>> user_browser.getControl('I have the URL').selected = True
-    >>> user_browser.getControl(name='field.bug_url').value = (
-    ...     u'http://mantis.bugtracker/view.php?id=1234')
-    >>> user_browser.getControl('Add to Bug Report').click()
+    >>> user_browser.open(
+    ...     "http://bugs.launchpad.test/"
+    ...     "jokosher/+bug/12/+choose-affected-product"
+    ... )
+    >>> user_browser.getControl("Project").value = "gnome-terminal"
+    >>> user_browser.getControl("Continue").click()
+    >>> user_browser.getControl("I have the URL").selected = True
     >>> user_browser.getControl(
-    ...     'Register Bug Tracker and Add to Bug Report').click()
+    ...     name="field.bug_url"
+    ... ).value = "http://mantis.bugtracker/view.php?id=1234"
+    >>> user_browser.getControl("Add to Bug Report").click()
+    >>> user_browser.getControl(
+    ...     "Register Bug Tracker and Add to Bug Report"
+    ... ).click()
 
     >>> user_browser.url
     'http://bugs.launchpad.test/gnome-terminal/+bug/12'
@@ -68,8 +73,11 @@ The product owner cannot see the Status or Importance widgets:
     name12
     >>> print_widget_visibility(
     ...     user=gnome_terminal.owner,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'gnome-terminal/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/"
+    ...         "gnome-terminal/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: False
     Importance: False
 
@@ -79,8 +87,11 @@ Nor can an ordinary user:
     >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> print_widget_visibility(
     ...     user=no_priv,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'gnome-terminal/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/"
+    ...         "gnome-terminal/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: False
     Importance: False
 
@@ -90,8 +101,11 @@ And the bug supervisor can't see the widgets either.
     >>> gnome_terminal.bug_supervisor = no_priv
     >>> print_widget_visibility(
     ...     user=no_priv,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'gnome-terminal/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/"
+    ...         "gnome-terminal/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: False
     Importance: False
 
@@ -105,15 +119,17 @@ will be editable.
 To prepare, we add a task that references a bug that's tracked by
 email:
 
-    >>> user_browser.open('http://bugs.launchpad.test/'
-    ...                   'gnome-terminal/+bug/12/+choose-affected-product')
-    >>> user_browser.getControl('Project').value = u'alsa-utils'
-    >>> user_browser.getControl('Continue').click()
-    >>> user_browser.getControl('I have already emailed').selected = True
+    >>> user_browser.open(
+    ...     "http://bugs.launchpad.test/"
+    ...     "gnome-terminal/+bug/12/+choose-affected-product"
+    ... )
+    >>> user_browser.getControl("Project").value = "alsa-utils"
+    >>> user_browser.getControl("Continue").click()
+    >>> user_browser.getControl("I have already emailed").selected = True
     >>> user_browser.getControl(
-    ...     name='field.upstream_email_address_done').value = (
-    ...     u'bugs@example.com')
-    >>> user_browser.getControl('Add to Bug Report').click()
+    ...     name="field.upstream_email_address_done"
+    ... ).value = "bugs@example.com"
+    >>> user_browser.getControl("Add to Bug Report").click()
 
     >>> user_browser.url
     'http://bugs.launchpad.test/alsa-utils/+bug/12'
@@ -129,8 +145,10 @@ The owner can see the Status and Importance widgets.
 
     >>> print_widget_visibility(
     ...     user=alsa_utils.owner,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'alsa-utils/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/" "alsa-utils/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: True
     Importance: True
 
@@ -143,8 +161,10 @@ the importance of a bugtask in Alsa Utils.
 
     >>> print_widget_visibility(
     ...     user=no_priv,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'alsa-utils/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/" "alsa-utils/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: True
     Importance: False
 
@@ -154,7 +174,9 @@ A bug supervisor can see both.
     >>> alsa_utils.bug_supervisor = no_priv
     >>> print_widget_visibility(
     ...     user=no_priv,
-    ...     url=('http://bugs.launchpad.test/'
-    ...          'alsa-utils/+bug/12/+editstatus'))
+    ...     url=(
+    ...         "http://bugs.launchpad.test/" "alsa-utils/+bug/12/+editstatus"
+    ...     ),
+    ... )
     Status: True
     Importance: True

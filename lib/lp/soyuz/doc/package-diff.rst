@@ -17,11 +17,11 @@ let's use 'pmount' sources.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> pmount = ubuntu.getSourcePackage('pmount')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> pmount = ubuntu.getSourcePackage("pmount")
 
-    >>> pmount_from = pmount.getVersion('0.1-1').sourcepackagerelease
-    >>> pmount_to = pmount.getVersion('0.1-2').sourcepackagerelease
+    >>> pmount_from = pmount.getVersion("0.1-1").sourcepackagerelease
+    >>> pmount_to = pmount.getVersion("0.1-2").sourcepackagerelease
 
 A packageDiff can be created from the two packages by calling
 requestDiffTo(). It takes two arguments: the user requesting the
@@ -29,9 +29,10 @@ packageDiff, and the sourcepackagerelease to that has the changes.
 
 Requesting a diff from pmount_0.1-1 to pmount_0.1-2.
 
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> package_diff = pmount_from.requestDiffTo(
-    ...     requester=cprov, to_sourcepackagerelease=pmount_to)
+    ...     requester=cprov, to_sourcepackagerelease=pmount_to
+    ... )
 
 Let's inspect the PackageDiff record created.
 
@@ -57,7 +58,8 @@ Its main attributes are:
    source used in the diff.
 
     >>> from lp.soyuz.interfaces.sourcepackagerelease import (
-    ...     ISourcePackageRelease)
+    ...     ISourcePackageRelease,
+    ... )
     >>> verifyObject(ISourcePackageRelease, package_diff.from_source)
     True
 
@@ -101,7 +103,8 @@ An attempt to record an already recorded DiffRequest will result in an
 error:
 
     >>> dup_diff = pmount_from.requestDiffTo(
-    ...     requester=cprov, to_sourcepackagerelease=pmount_to)
+    ...     requester=cprov, to_sourcepackagerelease=pmount_to
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.packagediff.PackageDiffAlreadyRequested:
@@ -121,17 +124,16 @@ chroot in hoary in order to be able to accept the NEW packages.
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.soyuz.interfaces.component import IComponentSet
 
-    >>> hoary = ubuntu.getSeries('hoary')
-    >>> breezy_autotest = ubuntu.getSeries('breezy-autotest')
+    >>> hoary = ubuntu.getSeries("hoary")
+    >>> breezy_autotest = ubuntu.getSeries("breezy-autotest")
 
-    >>> universe = getUtility(IComponentSet)['universe']
-    >>> selection = ComponentSelection(
-    ...     distroseries=hoary, component=universe)
+    >>> universe = getUtility(IComponentSet)["universe"]
+    >>> selection = ComponentSelection(distroseries=hoary, component=universe)
 
     >>> fake_chroot = LibraryFileAlias.get(1)
-    >>> hoary_i386 = hoary['i386']
+    >>> hoary_i386 = hoary["i386"]
     >>> unused = hoary_i386.addOrUpdateChroot(fake_chroot)
-    >>> breezy_autotest_i386 = breezy_autotest['i386']
+    >>> breezy_autotest_i386 = breezy_autotest["i386"]
     >>> unused = breezy_autotest_i386.addOrUpdateChroot(fake_chroot)
 
 `FakePackager` (see fakepackager.rst) handles the packaging and upload
@@ -139,9 +141,10 @@ of a new source series for us. We can use this to avoid messing with
 sampledata to create valid packages.
 
     >>> from lp.soyuz.tests.fakepackager import FakePackager
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> packager = FakePackager(
-    ...     'biscuit', '1.0', 'foo.bar@canonical.com-passwordless.sec')
+    ...     "biscuit", "1.0", "foo.bar@canonical.com-passwordless.sec"
+    ... )
 
 And setup the test_keys in order to build and upload signed packages.
 
@@ -153,7 +156,7 @@ suitable ancentry, no diff is requested.
 
     >>> packager.buildUpstream()
     >>> packager.buildSource(signed=False)
-    >>> biscuit_one_pub = packager.uploadSourceVersion('1.0-1', policy='sync')
+    >>> biscuit_one_pub = packager.uploadSourceVersion("1.0-1", policy="sync")
 
     >>> len(biscuit_one_pub.sourcepackagerelease.package_diffs)
     0
@@ -161,10 +164,11 @@ suitable ancentry, no diff is requested.
 When 1.0-8 is uploaded and 1.0-1 is published, the upload-processor
 requests a diff, since there is a suitable ancestry.
 
-    >>> packager.buildVersion('1.0-8', changelog_text="cookies")
+    >>> packager.buildVersion("1.0-8", changelog_text="cookies")
     >>> packager.buildSource(signed=False)
     >>> biscuit_eight_pub = packager.uploadSourceVersion(
-    ...     '1.0-8', policy='sync')
+    ...     "1.0-8", policy="sync"
+    ... )
 
     >>> [diff] = biscuit_eight_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -179,10 +183,11 @@ and ubuntu/breezy-autotest.
 We upload version '1.0-9' to hoary-updates and get the diff against
 the last published version in the RELEASE pocket.
 
-    >>> packager.buildVersion('1.0-9', changelog_text="cookies")
+    >>> packager.buildVersion("1.0-9", changelog_text="cookies")
     >>> packager.buildSource(signed=False)
     >>> biscuit_nine_pub = packager.uploadSourceVersion(
-    ...     '1.0-9', policy='sync', suite='hoary-updates')
+    ...     "1.0-9", policy="sync", suite="hoary-updates"
+    ... )
 
     >>> [diff] = biscuit_nine_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -193,10 +198,11 @@ gets diffed against the last version present in the RELEASE pocket of
 the previous distroseries and *not* the highest previous version
 present in ubuntu distribution, the hoary-updates one.
 
-    >>> packager.buildVersion('1.0-12', changelog_text="chips")
+    >>> packager.buildVersion("1.0-12", changelog_text="chips")
     >>> packager.buildSource(signed=False)
     >>> biscuit_twelve_pub = packager.uploadSourceVersion(
-    ...     '1.0-12', policy='sync', suite='breezy-autotest')
+    ...     "1.0-12", policy="sync", suite="breezy-autotest"
+    ... )
 
     >>> [diff] = biscuit_twelve_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -205,10 +211,11 @@ present in ubuntu distribution, the hoary-updates one.
 The subsequent version uploaded to hoary-updates will get a diff
 against 1.0-9.
 
-    >>> packager.buildVersion('1.0-10', changelog_text="cookies")
+    >>> packager.buildVersion("1.0-10", changelog_text="cookies")
     >>> packager.buildSource(signed=False)
     >>> biscuit_ten_pub = packager.uploadSourceVersion(
-    ...     '1.0-10', policy='sync', suite='hoary-updates')
+    ...     "1.0-10", policy="sync", suite="hoary-updates"
+    ... )
 
     >>> [diff] = biscuit_ten_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -217,10 +224,11 @@ against 1.0-9.
 An upload to other pocket, in this case hoary-proposed, will get a diff
 against the last version in the RELEASE pocket.
 
-    >>> packager.buildVersion('1.0-11', changelog_text="cookies")
+    >>> packager.buildVersion("1.0-11", changelog_text="cookies")
     >>> packager.buildSource(signed=False)
     >>> biscuit_eleven_pub = packager.uploadSourceVersion(
-    ...     '1.0-11', policy='sync', suite='hoary-proposed')
+    ...     "1.0-11", policy="sync", suite="hoary-proposed"
+    ... )
 
     >>> [diff] = biscuit_eleven_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -231,18 +239,20 @@ Foo Bar.
 
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> foobar = getUtility(IPersonSet).getByName('name16')
+    >>> foobar = getUtility(IPersonSet).getByName("name16")
     >>> ppa = getUtility(IArchiveSet).new(
-    ...     owner=foobar, distribution=ubuntu, purpose=ArchivePurpose.PPA)
+    ...     owner=foobar, distribution=ubuntu, purpose=ArchivePurpose.PPA
+    ... )
 
 We will upload version 1.0-2 to Foo Bar's PPA and since it was never
 published in the PPA context it will get a diff against the last
 version in the PRIMARY archive in the RELEASE pocket.
 
-    >>> packager.buildVersion('1.0-2', changelog_text="unterzeichnet")
+    >>> packager.buildVersion("1.0-2", changelog_text="unterzeichnet")
     >>> packager.buildSource()
     >>> biscuit_two_pub = packager.uploadSourceVersion(
-    ...     '1.0-2', archive=foobar.archive)
+    ...     "1.0-2", archive=foobar.archive
+    ... )
 
     >>> [diff] = biscuit_two_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -251,10 +261,11 @@ version in the PRIMARY archive in the RELEASE pocket.
 A subsequent upload in the PPA context will get a diff against 1.0-2,
 the version found in its context.
 
-    >>> packager.buildVersion('1.0-3', changelog_text="unterzeichnet")
+    >>> packager.buildVersion("1.0-3", changelog_text="unterzeichnet")
     >>> packager.buildSource()
     >>> biscuit_three_pub = packager.uploadSourceVersion(
-    ...     '1.0-3', archive=foobar.archive)
+    ...     "1.0-3", archive=foobar.archive
+    ... )
 
     >>> [diff] = biscuit_three_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
@@ -288,26 +299,33 @@ The auxiliary function below will facilitate the viewing of diff results.
     ...         return None
     ...     lfa.open()
     ...     jail = tempfile.mkdtemp()
-    ...     local = os.path.abspath('')
+    ...     local = os.path.abspath("")
     ...     jail = tempfile.mkdtemp()
-    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), 'wb')
+    ...     fhandle = open(os.path.join(jail, "the.diff.gz"), "wb")
     ...     copy_and_close(lfa, fhandle)
     ...     os.chdir(jail)
     ...     p = subprocess.Popen(
-    ...          ['gunzip', "the.diff.gz"], stdout=subprocess.PIPE)
+    ...         ["gunzip", "the.diff.gz"], stdout=subprocess.PIPE
+    ...     )
     ...     p.communicate()
     ...     p = subprocess.Popen(
-    ...          ['splitdiff', "-a", "-d", "-p1", "the.diff"],
-    ...          stdout=subprocess.PIPE)
+    ...         ["splitdiff", "-a", "-d", "-p1", "the.diff"],
+    ...         stdout=subprocess.PIPE,
+    ...     )
     ...     p.communicate()
-    ...     diffs = [filename for filename in sorted(os.listdir('.'))
-    ...              if filename != 'the.diff']
+    ...     diffs = [
+    ...         filename
+    ...         for filename in sorted(os.listdir("."))
+    ...         if filename != "the.diff"
+    ...     ]
     ...     ordered_diff_contents = [
-    ...         re.sub(r'^diff .*\n', '', open(diff).read(), flags=re.M)
-    ...         for diff in diffs]
+    ...         re.sub(r"^diff .*\n", "", open(diff).read(), flags=re.M)
+    ...         for diff in diffs
+    ...     ]
     ...     os.chdir(local)
     ...     shutil.rmtree(jail)
     ...     return "".join(ordered_diff_contents)
+    ...
 
 Let's obtain the diff that was created when package "biscuit - 1.0-8"
 was uploaded.
@@ -391,10 +409,10 @@ for users to view it.
     >>> con.request("HEAD", path)
     >>> resp = con.getresponse()
 
-    >>> print(resp.getheader('content-encoding'))
+    >>> print(resp.getheader("content-encoding"))
     gzip
 
-    >>> print(resp.getheader('content-type'))
+    >>> print(resp.getheader("content-type"))
     text/plain
 
 
@@ -423,8 +441,13 @@ stored.
     ...     diff_first_id = diffs[0].id
     ...     for diff in diff_set:
     ...         id_diff = diff.id - diff_first_id
-    ...         print(diff.from_source.name, diff.title,
-    ...               diff.date_fulfilled is not None, id_diff)
+    ...         print(
+    ...             diff.from_source.name,
+    ...             diff.title,
+    ...             diff.date_fulfilled is not None,
+    ...             id_diff,
+    ...         )
+    ...
 
     >>> print_diffs(packagediff_set)
     biscuit diff from 1.0-2 to 1.0-3               False   0
@@ -440,8 +463,10 @@ All package diffs targeting a set of source package releases can also
 be requested.  The results are ordered by the source package release
 ID:
 
-    >>> sprs = [biscuit_eight_pub.sourcepackagerelease,
-    ...         biscuit_nine_pub.sourcepackagerelease]
+    >>> sprs = [
+    ...     biscuit_eight_pub.sourcepackagerelease,
+    ...     biscuit_nine_pub.sourcepackagerelease,
+    ... ]
     >>> print_diffs(packagediff_set.getDiffsToReleases(sprs))
     biscuit diff from 1.0-1 to 1.0-8 True 0
     biscuit diff from 1.0-8 to 1.0-9 False 1
@@ -479,17 +504,20 @@ they simply re-upload the source as it is in ubuntu to their PPA and check
 if it builds correctly.
 
     >>> packager = FakePackager(
-    ...     'staging', '1.0', 'foo.bar@canonical.com-passwordless.sec')
+    ...     "staging", "1.0", "foo.bar@canonical.com-passwordless.sec"
+    ... )
 
-    >>> packager.buildUpstream(suite='breezy-autotest')
+    >>> packager.buildUpstream(suite="breezy-autotest")
     >>> packager.buildSource()
     >>> staging_ubuntu_pub = packager.uploadSourceVersion(
-    ...     '1.0-1', policy='sync')
+    ...     "1.0-1", policy="sync"
+    ... )
     >>> len(staging_ubuntu_pub.sourcepackagerelease.package_diffs)
     0
 
     >>> staging_ppa_pub = packager.uploadSourceVersion(
-    ...     '1.0-1', archive=foobar.archive)
+    ...     "1.0-1", archive=foobar.archive
+    ... )
     >>> [diff] = staging_ppa_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
     diff from 1.0-1 (in Ubuntu) to 1.0-1
@@ -526,23 +554,26 @@ First we upload a version of 'collision' source package to the ubuntu
 primary archive.
 
     >>> packager = FakePackager(
-    ...     'collision', '1.0', 'foo.bar@canonical.com-passwordless.sec')
+    ...     "collision", "1.0", "foo.bar@canonical.com-passwordless.sec"
+    ... )
 
-    >>> packager.buildUpstream(suite='breezy-autotest')
+    >>> packager.buildUpstream(suite="breezy-autotest")
     >>> packager.buildSource()
     >>> collision_ubuntu_pub = packager.uploadSourceVersion(
-    ...     '1.0-1', policy='sync')
+    ...     "1.0-1", policy="sync"
+    ... )
     >>> len(collision_ubuntu_pub.sourcepackagerelease.package_diffs)
     0
 
 Then we taint the package content and rebuild the same source package
 version before uploading it again to Foo Bar's PPA.
 
-    >>> packager._appendContents('I am evil.')
+    >>> packager._appendContents("I am evil.")
     >>> packager.buildSource()
 
     >>> collision_ppa_pub = packager.uploadSourceVersion(
-    ...     '1.0-1', archive=foobar.archive)
+    ...     "1.0-1", archive=foobar.archive
+    ... )
     >>> [diff] = collision_ppa_pub.sourcepackagerelease.package_diffs
     >>> print(diff.title)
     diff from 1.0-1 (in Ubuntu) to 1.0-1
@@ -555,14 +586,17 @@ and dsc files have different contents.
     >>> for file in diff.from_source.files:
     ...     lfa = file.libraryfile
     ...     file_set.add((lfa.filename, lfa.content.md5))
+    ...
 
     >>> for file in diff.to_source.files:
     ...     lfa = file.libraryfile
     ...     file_set.add((lfa.filename, lfa.content.md5))
+    ...
 
     >>> distinct_files = [filename for filename, md5 in file_set]
     >>> for filename in sorted(distinct_files):
     ...     print(filename)
+    ...
     collision_1.0-1.diff.gz
     collision_1.0-1.diff.gz
     collision_1.0-1.dsc
@@ -614,20 +648,21 @@ In order to cause a 'debdiff' failure we will taint the DSC file of an
 uploaded source.
 
     >>> packager = FakePackager(
-    ...     'broken-source', '1.0', 'foo.bar@canonical.com-passwordless.sec')
+    ...     "broken-source", "1.0", "foo.bar@canonical.com-passwordless.sec"
+    ... )
 
-    >>> packager.buildUpstream(suite='breezy-autotest')
+    >>> packager.buildUpstream(suite="breezy-autotest")
     >>> packager.buildSource()
-    >>> ignore = packager.uploadSourceVersion('1.0-1', policy='sync')
+    >>> ignore = packager.uploadSourceVersion("1.0-1", policy="sync")
 
-    >>> packager.buildVersion('1.0-2', changelog_text="I am broken.")
+    >>> packager.buildVersion("1.0-2", changelog_text="I am broken.")
     >>> packager.buildSource()
-    >>> pub = packager.uploadSourceVersion(
-    ...     '1.0-2', archive=foobar.archive)
+    >>> pub = packager.uploadSourceVersion("1.0-2", archive=foobar.archive)
     >>> transaction.commit()
 
     >>> from lp.services.librarianserver.testing.server import (
-    ...     fillLibrarianFile)
+    ...     fillLibrarianFile,
+    ... )
     >>> [orig, upload_diff, dsc] = pub.sourcepackagerelease.files
     >>> fillLibrarianFile(dsc.libraryfile.id)
 

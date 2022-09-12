@@ -9,21 +9,21 @@ canonical URL.
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.product import IProductSet
     >>> login(ANONYMOUS)
-    >>> getUtility(IProductSet)['firefox'].aliases
+    >>> getUtility(IProductSet)["firefox"].aliases
     []
     >>> logout()
 
-    >>> browser.open('http://launchpad.test/firefox')
+    >>> browser.open("http://launchpad.test/firefox")
 
-    >>> browser.open('http://launchpad.test/iceweasel')
+    >>> browser.open("http://launchpad.test/iceweasel")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
 
-    >>> login('mark@example.com')
-    >>> getUtility(IProductSet)['firefox'].setAliases(['iceweasel'])
+    >>> login("mark@example.com")
+    >>> getUtility(IProductSet)["firefox"].setAliases(["iceweasel"])
     >>> logout()
 
-    >>> browser.open('http://launchpad.test/iceweasel')
+    >>> browser.open("http://launchpad.test/iceweasel")
     >>> browser.url
     'http://launchpad.test/firefox'

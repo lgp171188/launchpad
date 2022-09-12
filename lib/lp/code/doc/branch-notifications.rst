@@ -31,41 +31,53 @@ also sends the email to the list of recipients.
 
     >>> from zope.component import getUtility
     >>> from lp.code.enums import (
-    ...     BranchSubscriptionNotificationLevel, BranchSubscriptionDiffSize,
-    ...     CodeReviewNotificationLevel)
+    ...     BranchSubscriptionNotificationLevel,
+    ...     BranchSubscriptionDiffSize,
+    ...     CodeReviewNotificationLevel,
+    ... )
     >>> from lp.code.interfaces.branchlookup import IBranchLookup
     >>> from lp.code.mail.branch import BranchMailer
     >>> from lp.testing.mail_helpers import pop_notifications
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
-    ...     '~name12/firefox/main')
+    ...     "~name12/firefox/main"
+    ... )
     >>> subscription = branch.subscribe(
     ...     branch.owner,
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL, branch.owner)
-    >>> BranchMailer.forRevision(branch, 'foo@canonical.com',
-    ...     'The contents.', None, 'Subject line', revno=1).sendAll()
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ...     branch.owner,
+    ... )
+    >>> BranchMailer.forRevision(
+    ...     branch,
+    ...     "foo@canonical.com",
+    ...     "The contents.",
+    ...     None,
+    ...     "Subject line",
+    ...     revno=1,
+    ... ).sendAll()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
     1
     >>> branch_notification = notifications[0]
-    >>> print(branch_notification['To'])
+    >>> print(branch_notification["To"])
     Sample Person <test@canonical.com>
-    >>> print(branch_notification['From'])
+    >>> print(branch_notification["From"])
     foo@canonical.com
-    >>> print(branch_notification['Subject'])
+    >>> print(branch_notification["Subject"])
     Subject line
-    >>> print(branch_notification['X-Launchpad-Project'])
+    >>> print(branch_notification["X-Launchpad-Project"])
     firefox
-    >>> print(branch_notification['X-Launchpad-Branch'])
+    >>> print(branch_notification["X-Launchpad-Branch"])
     ~name12/firefox/main
-    >>> print(branch_notification['X-Launchpad-Message-Rationale'])
+    >>> print(branch_notification["X-Launchpad-Message-Rationale"])
     Subscriber
-    >>> print(branch_notification['X-Launchpad-Message-For'])
+    >>> print(branch_notification["X-Launchpad-Message-For"])
     name12
-    >>> notification_body = (
-    ...     branch_notification.get_payload(decode=True).decode())
+    >>> notification_body = branch_notification.get_payload(
+    ...     decode=True
+    ... ).decode()
     >>> print(notification_body)
     ... # noqa
     ... # doctest: -NORMALIZE_WHITESPACE
@@ -108,57 +120,84 @@ previous one.  The size limit is one of the following:
     >>> def subscribe_user_by_email(branch, email, level, size, level2):
     ...     subscriber = personset.getByEmail(email)
     ...     branch.subscribe(subscriber, level, size, level2, subscriber)
+    ...
 
-    >>> subscribe_user_by_email(branch, 'no-priv@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "no-priv@canonical.com",
     ...     BranchSubscriptionNotificationLevel.NOEMAIL,
     ...     BranchSubscriptionDiffSize.NODIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'test@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "test@canonical.com",
     ...     BranchSubscriptionNotificationLevel.ATTRIBUTEONLY,
     ...     BranchSubscriptionDiffSize.NODIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'carlos@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "carlos@canonical.com",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.NODIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'jeff.waugh@ubuntulinux.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "jeff.waugh@ubuntulinux.com",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.HALFKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'celso.providelo@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "celso.providelo@canonical.com",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.ONEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'daf@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "daf@canonical.com",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.FIVEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_user_by_email(branch, 'mark@example.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "mark@example.com",
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
 Team are subscribed in the same way.
 
     >>> def subscribe_team_by_name(branch, name, level, size, level2):
     ...     team = personset.getByName(name)
     ...     branch.subscribe(team, level, size, level2, team.teamowner)
+    ...
 
-    >>> subscribe_team_by_name(branch, 'launchpad',
+    >>> subscribe_team_by_name(
+    ...     branch,
+    ...     "launchpad",
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
 And to make sure we have them:
 
     >>> for subscription in branch.subscriptions:
     ...     print(subscription.person.name)
+    ...
     no-priv
     name12
     carlos
@@ -184,11 +223,13 @@ to allow email filtering.
     >>> recipients = branch.getNotificationRecipients()
     >>> interested_levels = (
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
-    ...     BranchSubscriptionNotificationLevel.FULL)
+    ...     BranchSubscriptionNotificationLevel.FULL,
+    ... )
     >>> for email in recipients.getEmails():
     ...     subscription, header = recipients.getReason(email)
     ...     if subscription.notification_level in interested_levels:
     ...         print(email, subscription.max_diff_lines.title, header)
+    ...
     carlos@canonical.com          Don't send diffs  Subscriber
     celso.providelo@canonical.com 1000 lines        Subscriber
     daf@canonical.com             5000 lines        Subscriber
@@ -203,27 +244,30 @@ Limiting the size of diff received by email
     # A helper function to print out the To header and
     # email body
     >>> def print_to_and_body(email):
-    ...     attachment = b''
+    ...     attachment = b""
     ...     if email.is_multipart():
     ...         root = email.get_payload()
     ...         body = root[0].get_payload(decode=True)
     ...         if len(root) > 1:
-    ...             attachment = b'\n' + root[1].get_payload(decode=True)
+    ...             attachment = b"\n" + root[1].get_payload(decode=True)
     ...     else:
     ...         body = email.get_payload(decode=True)
-    ...     print('To: %s\n%s%s' % (
-    ...         email['To'], body.decode(), attachment.decode()))
+    ...     print(
+    ...         "To: %s\n%s%s"
+    ...         % (email["To"], body.decode(), attachment.decode())
+    ...     )
+    ...
 
 We need to create some sufficiently large diffs to compare against.
 
-    >>> diff = '\n'.join([str(value) for value in range(6000)])
-    >>> message = 'Test message.\n'
+    >>> diff = "\n".join([str(value) for value in range(6000)])
+    >>> message = "Test message.\n"
 
 Send the revision notifications.
 
     >>> BranchMailer.forRevision(
-    ...     branch, 'no-reply@canonical.com', message, diff,
-    ...     None, revno=1234).sendAll()
+    ...     branch, "no-reply@canonical.com", message, diff, None, revno=1234
+    ... ).sendAll()
     >>> notifications = pop_notifications()
     >>> len(notifications)
     6
@@ -237,11 +281,11 @@ Send the revision notifications.
 
 There are also some useful headers for filtering emails.
 
-    >>> print(msg['X-Launchpad-Branch'])
+    >>> print(msg["X-Launchpad-Branch"])
     ~name12/firefox/main
-    >>> print(msg['X-Launchpad-Branch-Revision-Number'])
+    >>> print(msg["X-Launchpad-Branch-Revision-Number"])
     1234
-    >>> print(msg['X-Launchpad-Project'])
+    >>> print(msg["X-Launchpad-Project"])
     firefox
     >>> print_to_and_body(notifications.pop(0))
     To: Celso Providelo <celso.providelo@canonical.com>
@@ -294,10 +338,10 @@ Mark's unsubscription link is to his personal branch subscription.
 
 And just to be sure, lets create one with 800 lines.
 
-    >>> diff = '\n'.join([str(value) for value in range(800)])
+    >>> diff = "\n".join([str(value) for value in range(800)])
     >>> BranchMailer.forRevision(
-    ...     branch, 'no-reply@canonical.com', message, diff,
-    ...     None, revno=1234).sendAll()
+    ...     branch, "no-reply@canonical.com", message, diff, None, revno=1234
+    ... ).sendAll()
     >>> notifications = pop_notifications()
     >>> len(notifications)
     6
@@ -360,6 +404,7 @@ Unsubscribe everybody.
 
     >>> for subscription in branch.subscriptions:
     ...     branch.unsubscribe(subscription.person, subscription.person)
+    ...
     >>> len(list(branch.subscriptions))
     0
 
@@ -375,29 +420,39 @@ from a team registration.
 If a team is registered, and that team has an email address assigned,
 then that email address is used for the notifications.
 
-    >>> subscribe_user_by_email(branch, 'david.allouche@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "david.allouche@canonical.com",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.HALFKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
-    >>> subscribe_team_by_name(branch, 'vcs-imports',
+    >>> subscribe_team_by_name(
+    ...     branch,
+    ...     "vcs-imports",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.FIVEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
 The ubuntu-team has an email address supplied (support@ubuntu.com), so
 that is used rather than the email addresses of the seven members.
 
-    >>> subscribe_team_by_name(branch, 'ubuntu-team',
+    >>> subscribe_team_by_name(
+    ...     branch,
+    ...     "ubuntu-team",
     ...     BranchSubscriptionNotificationLevel.DIFFSONLY,
     ...     BranchSubscriptionDiffSize.ONEKLINES,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
     >>> recipients = branch.getNotificationRecipients()
     >>> for email in recipients.getEmails():
     ...     subscription, header = recipients.getReason(email)
     ...     if subscription.notification_level in interested_levels:
     ...         print(email, subscription.max_diff_lines.title, header)
+    ...
     david.allouche@canonical.com  500 lines   Subscriber
     foo.bar@canonical.com        5000 lines   Subscriber @vcs-imports
     robertc@robertcollins.net    5000 lines   Subscriber @vcs-imports
@@ -411,12 +466,15 @@ Attribute emails
     # and the email body
     >>> def print_email_details(email):
     ...     body = email.get_payload(decode=True)
-    ...     if email.get_param('charset') is not None:
-    ...         body = body.decode(email.get_param('charset'))
+    ...     if email.get_param("charset") is not None:
+    ...         body = body.decode(email.get_param("charset"))
     ...     else:
-    ...         body = body.decode('iso-8859-1')
-    ...     print(u'To: %s\nFrom: %s\nSubject: %s\n%s' % (
-    ...         email['To'], email['From'], email['Subject'], body))
+    ...         body = body.decode("iso-8859-1")
+    ...     print(
+    ...         "To: %s\nFrom: %s\nSubject: %s\n%s"
+    ...         % (email["To"], email["From"], email["Subject"], body)
+    ...     )
+    ...
 
 It is the form infrastructure that fires off the ObjectModifedEvent,
 so we'll fake that bit here.  The page tests will check the emails
@@ -424,10 +482,13 @@ sent.
 
 Resubscribe our test user.
 
-    >>> subscribe_user_by_email(branch, 'test@canonical.com',
+    >>> subscribe_user_by_email(
+    ...     branch,
+    ...     "test@canonical.com",
     ...     BranchSubscriptionNotificationLevel.ATTRIBUTEONLY,
     ...     BranchSubscriptionDiffSize.NODIFF,
-    ...     CodeReviewNotificationLevel.NOEMAIL)
+    ...     CodeReviewNotificationLevel.NOEMAIL,
+    ... )
 
     >>> from lp.code.interfaces.branchjob import IBranchModifiedMailJobSource
     >>> from lp.services.config import config
@@ -441,14 +502,16 @@ Resubscribe our test user.
     ...     logger = DevNullLogger()
     ...     with dbuser(config.IBranchModifiedMailJobSource.dbuser):
     ...         JobRunner.fromReady(job_source, logger=logger).runAll()
+    ...
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
 Even though the branch notification emails don't use the field
 names just now, we'll pass them through anyway.
 
-    >>> with notify_modified(branch, ['whiteboard']):
-    ...     branch.whiteboard = 'This is the new whiteboard'
+    >>> with notify_modified(branch, ["whiteboard"]):
+    ...     branch.whiteboard = "This is the new whiteboard"
+    ...
     >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
@@ -484,22 +547,29 @@ So, if all the UI fields are changed, you should get an email that looks
 something like this:
 
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
-    ...     '~name12/firefox/main')
+    ...     "~name12/firefox/main"
+    ... )
 
     >>> from lp.code.enums import BranchLifecycleStatus
     >>> updated_fields = [
-    ...     'name', 'title', 'summary', 'url', 'whiteboard',
-    ...     'lifecycle_status',
-    ...     ]
+    ...     "name",
+    ...     "title",
+    ...     "summary",
+    ...     "url",
+    ...     "whiteboard",
+    ...     "lifecycle_status",
+    ... ]
     >>> with notify_modified(branch, updated_fields):
-    ...     branch.name = 'new-name'
-    ...     branch.url = 'http://example.com/foo'
+    ...     branch.name = "new-name"
+    ...     branch.url = "http://example.com/foo"
     ...     branch.whiteboard = (
-    ...         'This is a multiline whiteboard\n'
-    ...         'with a really long line that should invoke the splitting '
-    ...         'algorithm in the mail wrapper to make sure that the line '
-    ...         'is not too long')
+    ...         "This is a multiline whiteboard\n"
+    ...         "with a really long line that should invoke the splitting "
+    ...         "algorithm in the mail wrapper to make sure that the line "
+    ...         "is not too long"
+    ...     )
     ...     branch.lifecycle_status = BranchLifecycleStatus.EXPERIMENTAL
+    ...
     >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
@@ -537,16 +607,18 @@ Unicode in emails
 All the text fields of a branch are considered unicode, so the email
 must also handle the unicode.
 
-    >>> with notify_modified(branch, ['whiteboard']):
-    ...     branch.whiteboard = u'A new \ua000 summary'
+    >>> with notify_modified(branch, ["whiteboard"]):
+    ...     branch.whiteboard = "A new \ua000 summary"
+    ...
     >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
     1
     >>> email = notifications.pop()
-    >>> for line in email.get_payload(
-    ...         decode=True).decode('utf-8').splitlines():
+    >>> for line in (
+    ...     email.get_payload(decode=True).decode("utf-8").splitlines()
+    ... ):
     ...     print(line)
     Whiteboard changed to:
     <BLANKLINE>
@@ -568,7 +640,8 @@ If another user modified some branch attributes, then an email is sent
 to the branch owner.
 
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
-    ...     '~name12/gnome-terminal/main')
+    ...     "~name12/gnome-terminal/main"
+    ... )
 
 There are no subscribers to this branch.
 
@@ -577,11 +650,13 @@ There are no subscribers to this branch.
 
 Login as an admin user so we can alter the branch.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> with notify_modified(branch, ['whiteboard']):
+    >>> with notify_modified(branch, ["whiteboard"]):
     ...     branch.whiteboard = (
-    ...         'Please refrain from bad language in a public arena.')
+    ...         "Please refrain from bad language in a public arena."
+    ...     )
+    ...
     >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()

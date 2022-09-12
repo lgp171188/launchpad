@@ -314,7 +314,7 @@ def quote(x):
     query will be a Unicode string (the entire query will be encoded
     before sending across the wire to the database).
 
-    >>> quoted = quote(u"\N{TRADE MARK SIGN}")
+    >>> quoted = quote("\N{TRADE MARK SIGN}")
     >>> isinstance(quoted, str)
     True
     >>> print(backslashreplace(quoted))
@@ -336,16 +336,16 @@ def quote(x):
     stripped the time component from the value).  By itself, the sqlrepr
     function has the following output:
 
-    >>> sqlrepr(datetime(2003, 12, 4, 13, 45, 50), 'postgres')
+    >>> sqlrepr(datetime(2003, 12, 4, 13, 45, 50), "postgres")
     "'2003-12-04T13:45:50'"
 
     This function also special cases set objects, which SQLObject's
     sqlrepr() doesn't know how to handle.
 
-    >>> quote(set([1,2,3]))
+    >>> quote(set([1, 2, 3]))
     '(1, 2, 3)'
 
-    >>> quote(frozenset([1,2,3]))
+    >>> quote(frozenset([1, 2, 3]))
     '(1, 2, 3)'
     """
     if isinstance(x, datetime):
@@ -414,7 +414,7 @@ def quote_identifier(identifier):
     In SQL, identifiers are quoted using " rather than ' which is reserved
     for strings.
 
-    >>> print(quoteIdentifier('hello'))
+    >>> print(quoteIdentifier("hello"))
     "hello"
     >>> print(quoteIdentifier("'"))
     "'"
@@ -450,22 +450,38 @@ def convert_storm_clause_to_string(storm_clause):
     >>> print(convert_storm_clause_to_string(BugTask.id == 16))
     BugTask.id = 16
 
-    >>> print(convert_storm_clause_to_string(
-    ...     BugTask.importance == BugTaskImportance.UNKNOWN))
+    >>> print(
+    ...     convert_storm_clause_to_string(
+    ...         BugTask.importance == BugTaskImportance.UNKNOWN
+    ...     )
+    ... )
     BugTask.importance = 999
 
     >>> print(convert_storm_clause_to_string(Bug.title == "foo'bar'"))
     Bug.title = E'foo''bar'''
 
-    >>> print(convert_storm_clause_to_string(
-    ...     Or(BugTask.importance == BugTaskImportance.UNKNOWN,
-    ...        BugTask.importance == BugTaskImportance.HIGH)))
+    >>> print(
+    ...     convert_storm_clause_to_string(
+    ...         Or(
+    ...             BugTask.importance == BugTaskImportance.UNKNOWN,
+    ...             BugTask.importance == BugTaskImportance.HIGH,
+    ...         )
+    ...     )
+    ... )
     BugTask.importance = 999 OR BugTask.importance = 40
 
-    >>> print(convert_storm_clause_to_string(
-    ...    And(Bug.title == 'foo', BugTask.bug == Bug.id,
-    ...        Or(BugTask.importance == BugTaskImportance.UNKNOWN,
-    ...           BugTask.importance == BugTaskImportance.HIGH))))
+    >>> print(
+    ...     convert_storm_clause_to_string(
+    ...         And(
+    ...             Bug.title == "foo",
+    ...             BugTask.bug == Bug.id,
+    ...             Or(
+    ...                 BugTask.importance == BugTaskImportance.UNKNOWN,
+    ...                 BugTask.importance == BugTaskImportance.HIGH,
+    ...             ),
+    ...         )
+    ...     )
+    ... )
     Bug.title = E'foo' AND BugTask.bug = Bug.id AND
     (BugTask.importance = 999 OR BugTask.importance = 40)
     """

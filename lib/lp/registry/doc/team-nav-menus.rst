@@ -10,11 +10,11 @@ The team pages have their own navigation menu.
     >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> personset = getUtility(IPersonSet)
-    >>> ubuntu_team = personset.getByName('name18')
+    >>> ubuntu_team = personset.getByName("name18")
 
 The default navigation menu is registered for the 'overview' facet.
 
-    >>> print(queryAdapter(ubuntu_team, INavigationMenu, name='overview'))
+    >>> print(queryAdapter(ubuntu_team, INavigationMenu, name="overview"))
     <...TeamOverviewNavigationMenu ...>
 
     # Set up the test request so the MenuAPI knows what facet to use for
@@ -23,11 +23,11 @@ The default navigation menu is registered for the 'overview' facet.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> request = LaunchpadTestRequest()
     >>> fake_view = LaunchpadView(ubuntu_team, request)
-    >>> fake_view.__launchpad_facetname__ = 'overview'
+    >>> fake_view.__launchpad_facetname__ = "overview"
     >>> request._last_obj_traversed = fake_view
     >>> login(ANONYMOUS, request)
 
-    >>> links = test_tales('context/menu:navigation', context=ubuntu_team)
+    >>> links = test_tales("context/menu:navigation", context=ubuntu_team)
     >>> summarise_tal_links(links)
     link members
         url: .../~name18/+members

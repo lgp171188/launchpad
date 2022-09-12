@@ -68,10 +68,10 @@ def base_url_permutations(base_url):
     variants, so that queryByBaseURL can match a base URL, even if it
     doesn't match exactly what is stored in the database.
 
-    >>> base_url_permutations('http://foo/bar')
+    >>> base_url_permutations("http://foo/bar")
     ['http://foo/bar', 'http://foo/bar/',
      'https://foo/bar', 'https://foo/bar/']
-    >>> base_url_permutations('example.org/bar')
+    >>> base_url_permutations("example.org/bar")
     ['example.org/bar',
      'http://example.org/bar', 'http://example.org/bar/',
      'https://example.org/bar', 'https://example.org/bar/']

@@ -4,28 +4,30 @@ Exporting Files from PO Templates Through the Web
 Not logged in users can't access the +export page.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary'
-    ...     '/+source/evolution/+pots/evolution-2.2/')
-    >>> anon_browser.getLink('download').click()
+    ...     "http://translations.launchpad.test/ubuntu/hoary"
+    ...     "/+source/evolution/+pots/evolution-2.2/"
+    ... )
+    >>> anon_browser.getLink("download").click()
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
 
 Logged in as a regular user, the +export page is accessible.
 
-    >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
+    >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary'
-    ...     '/+source/evolution/+pots/evolution-2.2')
-    >>> browser.getLink('download').click()
+    ...     "http://translations.launchpad.test/ubuntu/hoary"
+    ...     "/+source/evolution/+pots/evolution-2.2"
+    ... )
+    >>> browser.getLink("download").click()
     >>> print(browser.title)
     Download translations : Template “evolution-2.2” ...
 
 If we POST without the appropriate format included, we tell the user off:
 
-    >>> browser.getControl('Everything').selected = True
-    >>> browser.getControl('Format:').clear()
-    >>> browser.getControl('Request Download').click()
+    >>> browser.getControl("Everything").selected = True
+    >>> browser.getControl("Format:").clear()
+    >>> browser.getControl("Request Download").click()
 
     >>> print_feedback_messages(browser.contents)
     Please select a valid format for download.
@@ -33,9 +35,9 @@ If we POST without the appropriate format included, we tell the user off:
 If we choose 'Selected files' but don't select any PO file, we should receive
 a nice error message.
 
-    >>> browser.getControl('Selected files:').selected = True
-    >>> browser.getControl('Format:').value = ['PO']
-    >>> browser.getControl('Request Download').click()
+    >>> browser.getControl("Selected files:").selected = True
+    >>> browser.getControl("Format:").value = ["PO"]
+    >>> browser.getControl("Request Download").click()
 
     >>> print_feedback_messages(browser.contents)
     Please select at least one translation or template.
@@ -44,9 +46,9 @@ If we POST the page with valid data, it should add the request to the queue.
 Note that when we choose 'Everything', one request for the PO template is
 added to the export queue and individual requests are added for the PO files.
 
-    >>> browser.getControl('Everything').selected = True
-    >>> browser.getControl('Format:').value = ['PO']
-    >>> browser.getControl('Request Download').click()
+    >>> browser.getControl("Everything").selected = True
+    >>> browser.getControl("Format:").value = ["PO"]
+    >>> browser.getControl("Request Download").click()
     >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2
 
@@ -57,11 +59,11 @@ We can also request only the PO Template. By doing this we're basically adding
 a duplicate request for the PO template to the export queue.
 This is a no-op: (See bug https://launchpad.net/rosetta/+bug/1558)
 
-    >>> browser.getLink('download').click()
-    >>> browser.getControl('Selected files:').selected = True
-    >>> browser.getControl('The PO template').selected = True
-    >>> browser.getControl('Format:').value = ['PO']
-    >>> browser.getControl('Request Download').click()
+    >>> browser.getLink("download").click()
+    >>> browser.getControl("Selected files:").selected = True
+    >>> browser.getControl("The PO template").selected = True
+    >>> browser.getControl("Format:").value = ["PO"]
+    >>> browser.getControl("Request Download").click()
     >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2
 

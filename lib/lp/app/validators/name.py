@@ -22,9 +22,9 @@ def sanitize_name(name):
     The characters not allowed in Launchpad names are described by
     invalid_name_pattern.
 
-    >>> print(sanitize_name('foo_bar'))
+    >>> print(sanitize_name("foo_bar"))
     foobar
-    >>> print(sanitize_name('baz bar $fd'))
+    >>> print(sanitize_name("baz bar $fd"))
     bazbarfd
     """
     return invalid_name_pattern.sub("", name)
@@ -40,13 +40,13 @@ def valid_name(name):
     such as binary packages or arch branches where naming conventions already
     exists, so they may use their own specialized name validators
 
-    >>> valid_name('hello')
+    >>> valid_name("hello")
     True
-    >>> valid_name('helLo')
+    >>> valid_name("helLo")
     False
-    >>> valid_name('he')
+    >>> valid_name("he")
     True
-    >>> valid_name('h')
+    >>> valid_name("h")
     False
     """
     if valid_name_pattern.match(name):

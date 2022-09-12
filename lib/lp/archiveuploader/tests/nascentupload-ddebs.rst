@@ -14,15 +14,14 @@ feature.
     >>> from lp.services.config import config
     >>> from lp.testing.dbuser import switch_dbuser
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...     SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 
     >>> test_publisher = SoyuzTestPublisher()
 
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
     >>> unused = test_publisher.setUpDefaultDistroSeries(hoary)
 
@@ -30,7 +29,8 @@ We first upload a new source, 'debug - 1.0-1'. Because this is NEW,
 it is in the queue awaiting overrides and acceptance.
 
     >>> src = getUploadForSource(
-    ...     'suite/debug_1.0-1/debug_1.0-1_source.changes')
+    ...     "suite/debug_1.0-1/debug_1.0-1_source.changes"
+    ... )
     >>> src.process()
     >>> result = src.do_accept()
     >>> print(src.queue_root.status.name)
@@ -45,7 +45,8 @@ default overrides. It is now pending publication.
     DONE
 
     >>> src_pub = src.queue_root.archive.getPublishedSources(
-    ...     name='debug', version='1.0-1', exact_match=True).one()
+    ...     name="debug", version="1.0-1", exact_match=True
+    ... ).one()
 
     >>> print(src_pub.displayname, src_pub.status.name)
     debug 1.0-1 in hoary PENDING
@@ -54,8 +55,7 @@ At this point a deb and a ddeb, produced during a normal build
 process, are uploaded. This is exactly the same procedure used for
 binary uploads with only ordinary debs.
 
-    >>> bin = getUploadForBinary(
-    ...     'suite/debug_1.0-1/debug_1.0-1_i386.changes')
+    >>> bin = getUploadForBinary("suite/debug_1.0-1/debug_1.0-1_i386.changes")
 
 Because the DEB is new, the binary upload is held in NEW.
 
@@ -84,14 +84,15 @@ We override the binary to main/devel, and accept it into the archive.
     >>> from operator import attrgetter
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> from lp.soyuz.interfaces.section import ISectionSet
-    >>> main = getUtility(IComponentSet)['main']
-    >>> universe = getUtility(IComponentSet)['universe']
-    >>> devel = getUtility(ISectionSet)['devel']
+    >>> main = getUtility(IComponentSet)["main"]
+    >>> universe = getUtility(IComponentSet)["universe"]
+    >>> devel = getUtility(ISectionSet)["devel"]
 
-    >>> switch_dbuser('launchpad')
+    >>> switch_dbuser("launchpad")
 
     >>> bin.queue_root.overrideBinaries(
-    ...     [{"component": main, "section": devel}], [main, universe])
+    ...     [{"component": main, "section": devel}], [main, universe]
+    ... )
     True
     >>> bin.queue_root.acceptFromQueue()
 
@@ -101,16 +102,24 @@ We override the binary to main/devel, and accept it into the archive.
     >>> switch_dbuser(config.uploadqueue.dbuser)
 
     >>> bin_pubs = sorted(
-    ...     bin.queue_root.realiseUpload(), key=attrgetter('displayname'))
+    ...     bin.queue_root.realiseUpload(), key=attrgetter("displayname")
+    ... )
 
-    >>> switch_dbuser('uploader')
+    >>> switch_dbuser("uploader")
 
 Now, both, binary and debug-symbol packages are pending publication.
 
     >>> for bin_pub in bin_pubs:
-    ...     print('%s %s %s %s' % (
-    ...         bin_pub.displayname, bin_pub.status.name,
-    ...         bin_pub.component.name, bin_pub.section.name))
+    ...     print(
+    ...         "%s %s %s %s"
+    ...         % (
+    ...             bin_pub.displayname,
+    ...             bin_pub.status.name,
+    ...             bin_pub.component.name,
+    ...             bin_pub.section.name,
+    ...         )
+    ...     )
+    ...
     debug-bin 1.0-1 in hoary i386 PENDING main devel
     debug-bin-dbgsym 1.0-1 in hoary i386 PENDING main devel
 
@@ -135,6 +144,7 @@ And its corresponding file is also stored as DDEB filetype.
 
     >>> for bin_file in ddeb.files:
     ...     print(bin_file.libraryfile.filename, bin_file.filetype.name)
+    ...
     debug-bin-dbgsym_1.0-1_i386.ddeb DDEB
 
 
@@ -146,7 +156,8 @@ DDEBs or DDEBs without matching DEBs will cause the upload to be
 rejected.
 
     >>> bin = getUploadForBinary(
-    ...     'suite/debug_1.0-1_broken/debug_1.0-1_i386.changes')
+    ...     "suite/debug_1.0-1_broken/debug_1.0-1_i386.changes"
+    ... )
     >>> bin.process()
     >>> bin.is_rejected
     True

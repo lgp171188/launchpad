@@ -5,8 +5,9 @@ At the top level we provide the collection of all distributions, with
 Ubuntu and its flavours being the first on the list.
 
     >>> distros = webservice.get("/distros").jsonBody()
-    >>> for entry in distros['entries']:
-    ...     print(entry['self_link'])
+    >>> for entry in distros["entries"]:
+    ...     print(entry["self_link"])
+    ...
     http://.../ubuntu
     http://.../kubuntu
     http://.../ubuntutest
@@ -16,8 +17,8 @@ Ubuntu and its flavours being the first on the list.
 And for every distribution we publish most of its attributes.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
-    >>> distro = distros['entries'][0]
-    >>> ubuntu = webservice.get(distro['self_link']).jsonBody()
+    >>> distro = distros["entries"][0]
+    >>> ubuntu = webservice.get(distro["self_link"]).jsonBody()
     >>> pprint_entry(ubuntu)
     active: True
     active_milestones_collection_link: 'http://.../ubuntu/active_milestones'
@@ -81,16 +82,18 @@ Distribution has some custom operations.
 "getSeries" returns the named distribution series for the distribution.
 
     >>> series = webservice.named_get(
-    ...     ubuntu['self_link'], 'getSeries',
-    ...     name_or_version='hoary').jsonBody()
-    >>> print(series['self_link'])
+    ...     ubuntu["self_link"], "getSeries", name_or_version="hoary"
+    ... ).jsonBody()
+    >>> print(series["self_link"])
     http://.../ubuntu/hoary
 
 Requesting a series that does not exist is results in a not found error.
 
-    >>> print(webservice.named_get(
-    ...     ubuntu['self_link'], 'getSeries',
-    ...     name_or_version='fnord'))
+    >>> print(
+    ...     webservice.named_get(
+    ...         ubuntu["self_link"], "getSeries", name_or_version="fnord"
+    ...     )
+    ... )
     HTTP/1.1 404 Not Found
     ...
     No such distribution series: 'fnord'.
@@ -99,44 +102,51 @@ Requesting a series that does not exist is results in a not found error.
 distribution that are marked as in development.
 
     >>> dev_series = webservice.named_get(
-    ...     ubuntu['self_link'], 'getDevelopmentSeries').jsonBody()
-    >>> for entry in sorted(dev_series['entries']):
-    ...     print(entry['self_link'])
+    ...     ubuntu["self_link"], "getDevelopmentSeries"
+    ... ).jsonBody()
+    >>> for entry in sorted(dev_series["entries"]):
+    ...     print(entry["self_link"])
+    ...
     http://.../ubuntu/hoary
 
 "getMilestone" returns a milestone for the given name, or None if there
 is no milestone for the given name.
 
-    >>> distro = distros['entries'][3]
-    >>> debian = webservice.get(distro['self_link']).jsonBody()
+    >>> distro = distros["entries"][3]
+    >>> debian = webservice.get(distro["self_link"]).jsonBody()
 
     >>> milestone_3_1 = webservice.named_get(
-    ...     debian['self_link'], "getMilestone", name="3.1").jsonBody()
-    >>> print(milestone_3_1['self_link'])
+    ...     debian["self_link"], "getMilestone", name="3.1"
+    ... ).jsonBody()
+    >>> print(milestone_3_1["self_link"])
     http://.../debian/+milestone/3.1
 
-    >>> print(webservice.named_get(
-    ...     debian['self_link'], "getMilestone", name="fnord").jsonBody())
+    >>> print(
+    ...     webservice.named_get(
+    ...         debian["self_link"], "getMilestone", name="fnord"
+    ...     ).jsonBody()
+    ... )
     None
 
 "getSourcePackage" returns a distribution source package for the given
 name.
 
     >>> alsa_utils = webservice.named_get(
-    ...     ubuntu['self_link'], 'getSourcePackage',
-    ...     name='alsa-utils').jsonBody()
-    >>> print(alsa_utils['self_link'])
+    ...     ubuntu["self_link"], "getSourcePackage", name="alsa-utils"
+    ... ).jsonBody()
+    >>> print(alsa_utils["self_link"])
     http://.../ubuntu/+source/alsa-utils
 
 "searchSourcePackages" returns a collection of distribution source
 packages matching (substring) the given text.
 
     >>> alsa_results = webservice.named_get(
-    ...     ubuntu['self_link'], 'searchSourcePackages',
-    ...     source_match='a').jsonBody()
+    ...     ubuntu["self_link"], "searchSourcePackages", source_match="a"
+    ... ).jsonBody()
 
-    >>> for entry in alsa_results['entries']:
-    ...     print(entry['self_link'])
+    >>> for entry in alsa_results["entries"]:
+    ...     print(entry["self_link"])
+    ...
     http://.../ubuntu/+source/alsa-utils
     http://.../ubuntu/+source/commercialpackage
     http://.../ubuntu/+source/foobar
@@ -146,16 +156,16 @@ packages matching (substring) the given text.
 "getArchive" returns a distribution archive (not a PPA) with the given name.
 
     >>> partner = webservice.named_get(
-    ...     ubuntu['self_link'], 'getArchive',
-    ...     name='partner').jsonBody()
-    >>> print(partner['self_link'])
+    ...     ubuntu["self_link"], "getArchive", name="partner"
+    ... ).jsonBody()
+    >>> print(partner["self_link"])
     http://.../ubuntu/+archive/partner
 
 "getMirrorByName" returns a mirror by its unique name.
 
     >>> canonical_releases = webservice.named_get(
-    ...     ubuntu['self_link'], 'getMirrorByName',
-    ...     name='canonical-releases').jsonBody()
+    ...     ubuntu["self_link"], "getMirrorByName", name="canonical-releases"
+    ... ).jsonBody()
     >>> pprint_entry(canonical_releases)
     base_url: 'http://releases.ubuntu.com/'
     content: 'CD Image'
@@ -194,40 +204,47 @@ Prepare stuff.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from simplejson import dumps
 
-    >>> login('admin@canonical.com')
-    >>> ubuntu_distro = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> showa_station = factory.makeMirror(ubuntu_distro,
-    ...     "Showa Station", country=9,
+    >>> login("admin@canonical.com")
+    >>> ubuntu_distro = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> showa_station = factory.makeMirror(
+    ...     ubuntu_distro,
+    ...     "Showa Station",
+    ...     country=9,
     ...     http_url="http://mirror.showa.antarctica.org/ubuntu",
-    ...     official_candidate=True)
+    ...     official_candidate=True,
+    ... )
     >>> showa_station_log = factory.makeMirrorProbeRecord(showa_station)
 
     >>> login(ANONYMOUS)
-    >>> karl_db = getUtility(IPersonSet).getByName('karl')
-    >>> karl_webservice = webservice_for_person(karl_db,
-    ...     permission=OAuthPermission.WRITE_PUBLIC)
+    >>> karl_db = getUtility(IPersonSet).getByName("karl")
+    >>> karl_webservice = webservice_for_person(
+    ...     karl_db, permission=OAuthPermission.WRITE_PUBLIC
+    ... )
     >>> logout()
 
 Mark new mirror as official and a country mirror.
 
-    >>> patch = {
-    ...     u'status': 'Official',
-    ...     u'country_dns_mirror': True
-    ... }
+    >>> patch = {"status": "Official", "country_dns_mirror": True}
 
     >>> antarctica_patch_target = webservice.named_get(
-    ...     ubuntu['self_link'], 'getMirrorByName',
-    ...     name='mirror.showa.antarctica.org-archive').jsonBody()
+    ...     ubuntu["self_link"],
+    ...     "getMirrorByName",
+    ...     name="mirror.showa.antarctica.org-archive",
+    ... ).jsonBody()
 
     >>> response = karl_webservice.patch(
-    ...     antarctica_patch_target['self_link'], 'application/json',
-    ...     dumps(patch))
+    ...     antarctica_patch_target["self_link"],
+    ...     "application/json",
+    ...     dumps(patch),
+    ... )
 
     >>> antarctica = webservice.get("/+countries/AQ").jsonBody()
     >>> antarctica_country_mirror_archive = webservice.named_get(
-    ...     ubuntu['self_link'], 'getCountryMirror',
-    ...     country=antarctica['self_link'],
-    ...     mirror_type="Archive").jsonBody()
+    ...     ubuntu["self_link"],
+    ...     "getCountryMirror",
+    ...     country=antarctica["self_link"],
+    ...     mirror_type="Archive",
+    ... ).jsonBody()
     >>> pprint_entry(antarctica_country_mirror_archive)
     base_url: 'http://mirror.showa.antarctica.org/ubuntu/'
     content: 'Archive'
@@ -237,9 +254,11 @@ Mark new mirror as official and a country mirror.
 
     >>> uk = webservice.get("/+countries/GB").jsonBody()
     >>> uk_country_mirror_archive = webservice.named_get(
-    ...     ubuntu['self_link'], 'getCountryMirror',
-    ...     country=uk['self_link'],
-    ...     mirror_type="Archive")
+    ...     ubuntu["self_link"],
+    ...     "getCountryMirror",
+    ...     country=uk["self_link"],
+    ...     mirror_type="Archive",
+    ... )
     >>> print(uk_country_mirror_archive.jsonBody())
     None
 
@@ -247,9 +266,11 @@ For "getCountryMirror", the mirror_type parameter must be "Archive" or
 "CD Images":
 
     >>> uk_country_mirror_archive = webservice.named_get(
-    ...     ubuntu['self_link'], 'getCountryMirror',
-    ...     country=uk['self_link'],
-    ...     mirror_type="Bogus")
+    ...     ubuntu["self_link"],
+    ...     "getCountryMirror",
+    ...     country=uk["self_link"],
+    ...     mirror_type="Bogus",
+    ... )
     >>> print(uk_country_mirror_archive.jsonBody())
     Traceback (most recent call last):
     ...

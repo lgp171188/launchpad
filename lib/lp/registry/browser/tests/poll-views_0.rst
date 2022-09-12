@@ -12,7 +12,7 @@ First import some stuff and setup some things we'll use in this test.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
     >>> login("test@canonical.com")
-    >>> ubuntu_team = getUtility(IPersonSet).getByName('ubuntu-team')
+    >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
 
 
 Creating new polls
@@ -26,19 +26,22 @@ with a proper explanation of why it failed.
 
     >>> eleven_hours_from_now = datetime.now() + timedelta(hours=11)
     >>> eleven_hours_from_now = eleven_hours_from_now.strftime(
-    ...     '%Y-%m-%d %H:%M:%S')
+    ...     "%Y-%m-%d %H:%M:%S"
+    ... )
     >>> one_year_from_now = (
-    ...     datetime.now(pytz.UTC) + timedelta(days=365)).strftime('%Y-%m-%d')
+    ...     datetime.now(pytz.UTC) + timedelta(days=365)
+    ... ).strftime("%Y-%m-%d")
     >>> form = {
-    ...     'field.name': 'test-poll',
-    ...     'field.title': 'test-poll',
-    ...     'field.proposition': 'test-poll',
-    ...     'field.allowspoilt': '1',
-    ...     'field.secrecy': 'SECRET',
-    ...     'field.dateopens': eleven_hours_from_now,
-    ...     'field.datecloses': one_year_from_now,
-    ...     'field.actions.continue': 'Continue'}
-    >>> request = LaunchpadTestRequest(method='POST', form=form)
+    ...     "field.name": "test-poll",
+    ...     "field.title": "test-poll",
+    ...     "field.proposition": "test-poll",
+    ...     "field.allowspoilt": "1",
+    ...     "field.secrecy": "SECRET",
+    ...     "field.dateopens": eleven_hours_from_now,
+    ...     "field.datecloses": one_year_from_now,
+    ...     "field.actions.continue": "Continue",
+    ... }
+    >>> request = LaunchpadTestRequest(method="POST", form=form)
     >>> new_poll = getMultiAdapter((ubuntu_team, request), name="+newpoll")
     >>> new_poll.initialize()
     >>> print("\n".join(new_poll.errors))
@@ -48,9 +51,10 @@ Now we successfully create a poll which starts 12h from now.
 
     >>> twelve_hours_from_now = datetime.now() + timedelta(hours=12)
     >>> twelve_hours_from_now = twelve_hours_from_now.strftime(
-    ...     '%Y-%m-%d %H:%M:%S')
-    >>> form['field.dateopens'] = twelve_hours_from_now
-    >>> request = LaunchpadTestRequest(method='POST', form=form)
+    ...     "%Y-%m-%d %H:%M:%S"
+    ... )
+    >>> form["field.dateopens"] = twelve_hours_from_now
+    >>> request = LaunchpadTestRequest(method="POST", form=form)
     >>> new_poll = getMultiAdapter((ubuntu_team, request), name="+newpoll")
     >>> new_poll.initialize()
     >>> new_poll.errors
@@ -61,7 +65,8 @@ Displaying results of condorcet polls
 -------------------------------------
 
     >>> poll = getUtility(IPollSet).getByTeamAndName(
-    ...     ubuntu_team, u'director-2004')
+    ...     ubuntu_team, "director-2004"
+    ... )
     >>> poll.type.title
     'Condorcet Voting'
 
@@ -73,6 +78,7 @@ matrix as a python list, with the necessary headers (the option's names).
     >>> poll_results = getMultiAdapter((poll, TestRequest()), name="+index")
     >>> for row in poll_results.getPairwiseMatrixWithHeaders():
     ...     print(pretty(row))
+    ...
     [None, 'A', 'B', 'C', 'D']
     ['A', None, 2, 2, 2]
     ['B', 2, None, 2, 2]
@@ -86,13 +92,14 @@ This is not allowed, and apart from not linking to the +vote page and not
 even displaying its content for a closed poll, we also have some lower
 level checks.
 
-    >>> request = TestRequest(form={'changevote': 'Change Vote'})
-    >>> request.method = 'POST'
+    >>> request = TestRequest(form={"changevote": "Change Vote"})
+    >>> request.method = "POST"
     >>> voting_page = getMultiAdapter((poll, request), name="+vote")
     >>> form_processed = False
     >>> def form_processing():
     ...     global form_processed
     ...     form_processed = True
+    ...
     >>> voting_page.processCondorcetVotingForm = form_processing
     >>> voting_page.initialize()
 

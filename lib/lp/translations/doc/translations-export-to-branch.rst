@@ -7,7 +7,8 @@ to that branch.
 
     >>> from lp.services.scripts.tests import run_script
     >>> ret_code, stdout, stderr = run_script(
-    ...     'cronscripts/translations-export-to-branch.py', [])
+    ...     "cronscripts/translations-export-to-branch.py", []
+    ... )
     >>> ret_code
     0
     >>> print(stdout)
@@ -19,7 +20,8 @@ to that branch.
     INFO Processed 0 item(s); 0 failure(s), 0 unpushed branch(es).
 
     >>> from lp.translations.scripts.translations_to_branch import (
-    ...     ExportTranslationsToBranch)
+    ...     ExportTranslationsToBranch,
+    ... )
 
 The script uses the DirectBranchCommit mechanism to write translation
 files into the branches.  We mock it up here.
@@ -28,6 +30,7 @@ files into the branches.  We mock it up here.
 
     >>> class MockDirectBranchCommit:
     ...     """Mock DirectBranchCommit.  Prints actions."""
+    ...
     ...     simulate_race = False
     ...     bzrbranch = None
     ...     written_files = 0
@@ -53,11 +56,13 @@ files into the branches.  We mock it up here.
     ...
     ...     def unlock(self):
     ...         self.logger.info("Unlock.")
+    ...
 
     >>> from lp.services.log.logger import FakeLogger
 
     >>> class MockExportTranslationsToBranch(ExportTranslationsToBranch):
     ...     """Test version of ExportTranslationsToBranch."""
+    ...
     ...     simulate_race = False
     ...     simulated_latest_commit = None
     ...     config_name = "translations_export_to_branch"
@@ -73,6 +78,7 @@ files into the branches.  We mock it up here.
     ...         committer = MockDirectBranchCommit(self.logger)
     ...         committer.simulate_race = self.simulate_race
     ...         return committer
+    ...
 
 The Gazblachko project is set up to export its trunk translations to a
 branch.
@@ -80,14 +86,18 @@ branch.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.app.enums import ServiceUsage
 
-    >>> gazblachko = removeSecurityProxy(factory.makeProduct(
-    ...     name='gazblachko', displayname='Gazblachko'))
+    >>> gazblachko = removeSecurityProxy(
+    ...     factory.makeProduct(name="gazblachko", displayname="Gazblachko")
+    ... )
     >>> gazblachko.translations_usage = ServiceUsage.LAUNCHPAD
 
-    >>> branch = removeSecurityProxy(factory.makeBranch(
-    ...     name='gazpo', owner=gazblachko.owner, product=gazblachko))
+    >>> branch = removeSecurityProxy(
+    ...     factory.makeBranch(
+    ...         name="gazpo", owner=gazblachko.owner, product=gazblachko
+    ...     )
+    ... )
 
-    >>> trunk = removeSecurityProxy(gazblachko).getSeries('trunk')
+    >>> trunk = removeSecurityProxy(gazblachko).getSeries("trunk")
     >>> trunk.translations_branch = branch
 
     >>> import transaction
@@ -98,41 +108,56 @@ have Dutch translations.
 
     >>> def setup_template_and_translations(path, name, iscurrent=True):
     ...     """Set up template, Dutch translations for Gazblachko."""
-    ...     template = removeSecurityProxy(factory.makePOTemplate(
-    ...         productseries=trunk, owner=gazblachko.owner, name=name,
-    ...         path=path))
+    ...     template = removeSecurityProxy(
+    ...         factory.makePOTemplate(
+    ...             productseries=trunk,
+    ...             owner=gazblachko.owner,
+    ...             name=name,
+    ...             path=path,
+    ...         )
+    ...     )
     ...
     ...     potmsgset = factory.makePOTMsgSet(
-    ...         template, singular='%s msgid' % name, sequence=1)
+    ...         template, singular="%s msgid" % name, sequence=1
+    ...     )
     ...
     ...     pofile = factory.makePOFile(
-    ...         'nl', potemplate=template, owner=gazblachko.owner)
+    ...         "nl", potemplate=template, owner=gazblachko.owner
+    ...     )
     ...
     ...     factory.makeCurrentTranslationMessage(
-    ...         pofile=pofile, potmsgset=potmsgset,
-    ...         translator=gazblachko.owner, reviewer=gazblachko.owner,
-    ...         translations=['%s msgstr' % name])
+    ...         pofile=pofile,
+    ...         potmsgset=potmsgset,
+    ...         translator=gazblachko.owner,
+    ...         reviewer=gazblachko.owner,
+    ...         translations=["%s msgstr" % name],
+    ...     )
     ...
     ...     if not iscurrent:
     ...         removeSecurityProxy(template).iscurrent = False
     ...
     ...     return pofile
+    ...
 
     >>> main_pofile = setup_template_and_translations(
-    ...     'po/main/gazpot.pot', 'maingazpot')
+    ...     "po/main/gazpot.pot", "maingazpot"
+    ... )
 
     >>> module_pofile = setup_template_and_translations(
-    ...     'po/module/module.pot', 'gazmod')
+    ...     "po/module/module.pot", "gazmod"
+    ... )
 
     >>> old_pofile = setup_template_and_translations(
-    ...     'po/gazpot.pot', 'oldgazpot', iscurrent=False)
+    ...     "po/gazpot.pot", "oldgazpot", iscurrent=False
+    ... )
 
 When the translations-export-to-branch script runs, it feeds the
 translations to the DirectBranchCommit.
 
     >>> transaction.commit()
     >>> script = MockExportTranslationsToBranch(
-    ...     'export-to-branch', test_args=[])
+    ...     "export-to-branch", test_args=[]
+    ... )
     >>> script.main()
     INFO Exporting to translations branches.
     INFO Exporting Gazblachko trunk series.
@@ -226,27 +251,33 @@ won't work, so we email a notification to the branch owner.
     >>> from lp.codehosting.vfs import get_rw_server
     >>> from lp.services.mail import stub
     >>> from lp.testing.factory import (
-    ...     remove_security_proxy_and_shout_at_engineer)
+    ...     remove_security_proxy_and_shout_at_engineer,
+    ... )
     >>> productseries = factory.makeProductSeries()
     >>> naked_productseries = remove_security_proxy_and_shout_at_engineer(
-    ...     productseries)
+    ...     productseries
+    ... )
     >>> naked_productseries.translations_branch = factory.makeBranch()
     >>> template = factory.makePOTemplate(productseries=productseries)
     >>> potmsgset = factory.makePOTMsgSet(template)
     >>> pofile = removeSecurityProxy(
-    ...     factory.makePOFile('nl', potemplate=template))
+    ...     factory.makePOFile("nl", potemplate=template)
+    ... )
     >>> tm = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset, translator=template.owner)
+    ...     pofile=pofile, potmsgset=potmsgset, translator=template.owner
+    ... )
 
     >>> server = get_rw_server(direct_database=True)
     >>> server.start_server()
     >>> real_script = ExportTranslationsToBranch(
-    ...     'export-to-branch', test_args=[])
+    ...     "export-to-branch", test_args=[]
+    ... )
     >>> real_script.logger = FakeLogger()
     >>> try:
     ...     real_script._exportToBranches([productseries])
     ... finally:
     ...     server.destroy()
+    ...
     INFO Exporting ...
     INFO Processed 1 item(s); 0 failure(s), 1 unpushed branch(es).
 
@@ -255,7 +286,7 @@ won't work, so we email a notification to the branch owner.
 
     >>> sender, recipients, body = stub.test_emails.pop()
     >>> message = email.message_from_bytes(body)
-    >>> print(message['Subject'])
+    >>> print(message["Subject"])
     Launchpad: translations branch has not been set up.
 
     >>> print(message.get_payload())

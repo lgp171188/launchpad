@@ -28,11 +28,12 @@ def normalize_arguments(string_args):
     This function loops through all the argument and joins the quoted strings
     into a single arguments.
 
-        >>> normalize_arguments(['"This', 'is', 'a', 'long', 'string."'])
+        >>> normalize_arguments(['"This', "is", "a", "long", 'string."'])
         ['This is a long string.']
 
         >>> normalize_arguments(
-        ...     ['"First', 'string"', '"Second', 'string"', 'foo'])
+        ...     ['"First', 'string"', '"Second', 'string"', "foo"]
+        ... )
         ['First string', 'Second string', 'foo']
     """
     result = []

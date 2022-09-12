@@ -26,15 +26,16 @@ distribution package.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.testing.dbuser import switch_dbuser
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
-    >>> switch_dbuser('launchpad')
+    >>> switch_dbuser("launchpad")
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> ubuntu_hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> ubuntu_hoary = ubuntu.getSeries("hoary")
 
     >>> bug_params = CreateBugParams(
-    ...     getUtility(ILaunchBag).user, "Test bug", "Test bug.")
+    ...     getUtility(ILaunchBag).user, "Test bug", "Test bug."
+    ... )
 
 The package source uploads are represented as PackageUpload items
 that are associated with PackageUploadSource items and a changes
@@ -53,11 +54,14 @@ for close_bugs_for_queue_item to operate on.
 
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> def add_package_upload(
-    ...        source_release, fixing_text,
-    ...        pocket=PackagePublishingPocket.RELEASE,
-    ...        archive=None, distroseries=None):
+    ...     source_release,
+    ...     fixing_text,
+    ...     pocket=PackagePublishingPocket.RELEASE,
+    ...     archive=None,
+    ...     distroseries=None,
+    ... ):
     ...     """Create a PackageUpload record."""
-    ...     changes = (changes_template % fixing_text).encode('UTF-8')
+    ...     changes = (changes_template % fixing_text).encode("UTF-8")
     ...     if distroseries is None:
     ...         distroseries = ubuntu_hoary
     ...     if archive is None:
@@ -65,8 +69,9 @@ for close_bugs_for_queue_item to operate on.
     ...     queue_item = distroseries.createQueueEntry(
     ...         archive=archive,
     ...         pocket=pocket,
-    ...         changesfilename='%s.changes' % source_release.name,
-    ...         changesfilecontent=changes)
+    ...         changesfilename="%s.changes" % source_release.name,
+    ...         changesfilecontent=changes,
+    ...     )
     ...     queue_item.addSource(source_release)
     ...     return queue_item
 
@@ -75,9 +80,10 @@ packages in the sample data (e.g. pmount, cdrkit) using this helper function.
 
 Now we can make a bug and a package upload for pmount.
 
-    >>> pmount_ubuntu = ubuntu.getSourcePackage('pmount')
+    >>> pmount_ubuntu = ubuntu.getSourcePackage("pmount")
     >>> pmount_release = pmount_ubuntu.getVersion(
-    ...     '0.1-1').sourcepackagerelease
+    ...     "0.1-1"
+    ... ).sourcepackagerelease
 
     >>> pmount_bug_id = pmount_ubuntu.createBug(bug_params).id
 
@@ -98,12 +104,14 @@ header will close the specified bug.
     ...     bug = getUtility(IBugSet).get(bug_id)
     ...     [task] = bug.bugtasks
     ...     return task.status.name
+    ...
 
     >>> print_single_task_status(pmount_bug_id)
     'NEW'
 
     >>> from lp.soyuz.model.processacceptedbugsjob import (
-    ...     close_bugs_for_queue_item)
+    ...     close_bugs_for_queue_item,
+    ... )
     >>> close_bugs_for_queue_item(queue_item)
 
     >>> print_single_task_status(pmount_bug_id)
@@ -112,7 +120,7 @@ header will close the specified bug.
 The changelog associated with the SourcePackageRelease is automatically
 added as a comment from the janitor.
 
-    >>> switch_dbuser('launchpad')
+    >>> switch_dbuser("launchpad")
     >>> pmount_bug = getUtility(IBugSet).get(pmount_bug_id)
     >>> last_comment = pmount_bug.messages[-1]
     >>> print(pmount_release.creator.displayname)
@@ -147,12 +155,19 @@ single email later.
 
     >>> from lp.bugs.model.bugnotification import BugNotification
     >>> from lp.services.database.interfaces import IStore
-    >>> notifications = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id)
+    >>> notifications = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ... )
     >>> for notification in list(notifications)[-2:]:
-    ...     print("From %s:\n%s\n" % (
-    ...         notification.message.owner.displayname,
-    ...         notification.message.text_contents))
+    ...     print(
+    ...         "From %s:\n%s\n"
+    ...         % (
+    ...             notification.message.owner.displayname,
+    ...             notification.message.text_contents,
+    ...         )
+    ...     )
     From Launchpad Janitor:
     ** Changed in: pmount (Ubuntu)
            Status: New => Fix Released
@@ -180,11 +195,16 @@ packages are synced from Debian.
 
     >>> close_bugs_for_queue_item(queue_item)
 
-    >>> notifications = IStore(BugNotification).find(
-    ...     BugNotification).order_by(BugNotification.id)
+    >>> notifications = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(BugNotification.id)
+    ... )
     >>> new_notifications = notifications[number_of_old_notifications:]
-    >>> [notification.message.text_contents
-    ...  for notification in new_notifications]
+    >>> [
+    ...     notification.message.text_contents
+    ...     for notification in new_notifications
+    ... ]
     []
 
 
@@ -198,10 +218,11 @@ call close_bugs_for_queue_item() and then check the status again.
     ...         print(print_single_task_status(bug_id))
     ...     switch_dbuser(test_dbuser)
     ...     close_bugs_for_queue_item(queue_item)
-    ...     switch_dbuser('launchpad')
+    ...     switch_dbuser("launchpad")
     ...     print("After:")
     ...     for bug_id in bug_id_list:
     ...         print(print_single_task_status(bug_id))
+    ...
 
 
 Uploads to pocket PROPOSED should not close bugs, see bug #125279 for
@@ -209,14 +230,16 @@ further information.  Here we upload a package, cdrkit, to the proposed pocket
 for the ubuntu distro.  The bug status before and after calling
 close_bugs_for_queue_item is "NEW".
 
-    >>> cdrkit_ubuntu = ubuntu.getSourcePackage('cdrkit')
+    >>> cdrkit_ubuntu = ubuntu.getSourcePackage("cdrkit")
     >>> cdrkit_release = cdrkit_ubuntu.currentrelease.sourcepackagerelease
 
     >>> cdrkit_bug_id = cdrkit_ubuntu.createBug(bug_params).id
 
     >>> queue_item = add_package_upload(
-    ...     cdrkit_release, cdrkit_bug_id,
-    ...     pocket=PackagePublishingPocket.PROPOSED)
+    ...     cdrkit_release,
+    ...     cdrkit_bug_id,
+    ...     pocket=PackagePublishingPocket.PROPOSED,
+    ... )
 
     >>> close_bugs_and_check_status([cdrkit_bug_id], queue_item)
     Before: NEW
@@ -226,8 +249,10 @@ Similarly, uploads to the backports pocket will not close bugs. (See bug
 #295621).
 
     >>> queue_item = add_package_upload(
-    ...     cdrkit_release, cdrkit_bug_id,
-    ...     pocket=PackagePublishingPocket.BACKPORTS)
+    ...     cdrkit_release,
+    ...     cdrkit_bug_id,
+    ...     pocket=PackagePublishingPocket.BACKPORTS,
+    ... )
 
     >>> close_bugs_and_check_status([cdrkit_bug_id], queue_item)
     Before: NEW
@@ -238,9 +263,10 @@ package, cdrkit, to cprov's PPA.  The bug status before and after calling
 close_bugs_for_queue_item is "NEW".
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> arbitrary_ppa = getUtility(IPersonSet).getByName('cprov').archive
+    >>> arbitrary_ppa = getUtility(IPersonSet).getByName("cprov").archive
     >>> queue_item = add_package_upload(
-    ...     cdrkit_release, cdrkit_bug_id, archive=arbitrary_ppa)
+    ...     cdrkit_release, cdrkit_bug_id, archive=arbitrary_ppa
+    ... )
 
     >>> close_bugs_and_check_status([cdrkit_bug_id], queue_item)
     Before: NEW
@@ -253,8 +279,7 @@ header, each will be marked as Fix Released. If a nonexistent bug,
     >>> pmount_bug_id = pmount_ubuntu.createBug(bug_params).id
     >>> another_pmount_bug_id = pmount_ubuntu.createBug(bug_params).id
 
-    >>> fixing_text = "%d 666 %d" % (
-    ...     pmount_bug_id, another_pmount_bug_id)
+    >>> fixing_text = "%d 666 %d" % (pmount_bug_id, another_pmount_bug_id)
 
     >>> queue_item = add_package_upload(pmount_release, fixing_text)
     >>> bug_list = [pmount_bug_id, another_pmount_bug_id]
@@ -269,7 +294,7 @@ process-accepted.py
 The closing of bugs are done in process-accepted.py, right after the
 queue items have been processed.
 
-    >>> switch_dbuser('launchpad')
+    >>> switch_dbuser("launchpad")
 
     >>> queue_item = add_package_upload(pmount_release, fixing_text)
     >>> queue_item.setAccepted()
@@ -279,12 +304,14 @@ queue items have been processed.
     >>> pmount_bug = getUtility(IBugSet).get(pmount_bug_id)
     >>> [pmount_task] = pmount_bug.bugtasks
     >>> pmount_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, pmount_task.distribution.owner)
+    ...     BugTaskStatus.CONFIRMED, pmount_task.distribution.owner
+    ... )
 
     >>> another_pmount_bug = getUtility(IBugSet).get(another_pmount_bug_id)
     >>> [another_pmount_task] = another_pmount_bug.bugtasks
     >>> another_pmount_task.transitionToStatus(
-    ...     BugTaskStatus.CONFIRMED, another_pmount_task.distribution.owner)
+    ...     BugTaskStatus.CONFIRMED, another_pmount_task.distribution.owner
+    ... )
 
 
     >>> print_single_task_status(pmount_bug_id)
@@ -300,8 +327,8 @@ queue items have been processed.
     >>> from lp.services.config import config
     >>> script = os.path.join(config.root, "scripts/process-accepted.py")
     >>> process = subprocess.Popen(
-    ...     [script, "ubuntu"],
-    ...     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ...     [script, "ubuntu"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ... )
     >>> stdout, stderr = process.communicate()
     >>> process.returncode
     0

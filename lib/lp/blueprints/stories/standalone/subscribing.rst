@@ -11,7 +11,7 @@ subscribe to the spec about E4X.
 First, let's make sure we can see the link called "Subscribe..."
 
     >>> browser.open("http://blueprints.launchpad.test/firefox/+spec/e4x")
-    >>> subscribe_link = browser.getLink('Subscribe')
+    >>> subscribe_link = browser.getLink("Subscribe")
     >>> subscribe_link is not None
     True
 
@@ -25,16 +25,17 @@ If I try to go to the subscription page I will be told to login.
 And let's make sure we can see the subscription page. We will log in as
 Carlos.
 
-    >>> browser.addHeader('Authorization', 'Basic carlos@canonical.com:test')
+    >>> browser.addHeader("Authorization", "Basic carlos@canonical.com:test")
     >>> browser.open(
-    ...     "http://blueprints.launchpad.test/firefox/+spec/e4x/+subscribe")
+    ...     "http://blueprints.launchpad.test/firefox/+spec/e4x/+subscribe"
+    ... )
     >>> print(browser.title)
     Subscribe to blueprint : Support E4X in EcmaScript :
     Blueprints : Mozilla Firefox
 
 The page links back to the blueprint page, in case we change our minds.
 
-    >>> back_link = browser.getLink('Support E4X in EcmaScript')
+    >>> back_link = browser.getLink("Support E4X in EcmaScript")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'
 
@@ -42,7 +43,7 @@ There should be a control to set whether or not participation in
 discussions of this feature is essential. We will say we want to be
 essential to this feature planning:
 
-    >>> essential = browser.getControl('essential')
+    >>> essential = browser.getControl("essential")
     >>> essential.selected
     False
 
@@ -51,16 +52,16 @@ essential to this feature planning:
 Now, we'll POST the form. We should see a message that we have just
 subscribed.
 
-    >>> browser.getControl('Subscribe').click()
-    >>> 'You have subscribed to this blueprint' in browser.contents
+    >>> browser.getControl("Subscribe").click()
+    >>> "You have subscribed to this blueprint" in browser.contents
     True
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> "subscriber-essential" in browser.contents
     True
 
 Now the link should say "Update subscription" in the actions menu.
 
-    >>> submod_link = browser.getLink('Update subscription')
+    >>> submod_link = browser.getLink("Update subscription")
     >>> submod_link is not None
     True
 
@@ -68,47 +69,47 @@ OK. Now, let's say we want to change the essential field. Let's follow
 the link to modify the subscription. It should currently be checked.
 
     >>> submod_link.click()
-    >>> essential = browser.getControl('essential')
+    >>> essential = browser.getControl("essential")
     >>> essential.selected
     True
 
 We will unset the essential flag and resubmit:
 
     >>> essential.selected = False
-    >>> browser.getControl('Change').click()
-    >>> 'Your subscription has been updated' in browser.contents
+    >>> browser.getControl("Change").click()
+    >>> "Your subscription has been updated" in browser.contents
     True
 
-    >>> 'subscriber-inessential' in browser.contents
+    >>> "subscriber-inessential" in browser.contents
     True
 
 It's also possible to change the essential flag clicking on the star
 icon in the Subscribers portlet.
 
-    >>> browser.getLink(url='/+subscription/carlos').click()
-    >>> browser.getControl('Participation essential').selected = True
-    >>> browser.getControl('Change').click()
+    >>> browser.getLink(url="/+subscription/carlos").click()
+    >>> browser.getControl("Participation essential").selected = True
+    >>> browser.getControl("Change").click()
     >>> browser.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> "subscriber-essential" in browser.contents
     True
 
 We don't really want to be subscribed, so lets unsubscribe from that
 spec. We click the remove icon in the subscribers list, and now the
 unsubscribe confirmation page loads.
 
-    >>> unsubit = browser.getLink(id='unsubscribe-subscriber-13')
+    >>> unsubit = browser.getLink(id="unsubscribe-subscriber-13")
     >>> unsubit.click()
-    >>> confirm = browser.getControl('Unsubscribe')
+    >>> confirm = browser.getControl("Unsubscribe")
     >>> confirm.click()
-    >>> 'You have unsubscribed from this blueprint.' in browser.contents
+    >>> "You have unsubscribed from this blueprint." in browser.contents
     True
 
-    >>> 'subscriber-inessential' in browser.contents
+    >>> "subscriber-inessential" in browser.contents
     False
 
-    >>> 'subscriber-essential' in browser.contents
+    >>> "subscriber-essential" in browser.contents
     False
 
 
@@ -118,13 +119,13 @@ Subscribing other users
 When we want other users to track a specification we can subscribe them.
 
     >>> browser.open("http://blueprints.launchpad.test/firefox/+spec/e4x")
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> back_link = browser.getLink('Support E4X in EcmaScript')
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> back_link = browser.getLink("Support E4X in EcmaScript")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'
 
-    >>> browser.getControl('Subscriber').value = 'stub'
-    >>> browser.getControl('Subscribe').click()
+    >>> browser.getControl("Subscriber").value = "stub"
+    >>> browser.getControl("Subscribe").click()
     >>> msg = "Stuart Bishop has been subscribed to this blueprint."
     >>> msg in browser.contents
     True
@@ -134,13 +135,13 @@ email.
 
     >>> from lp.testing.mail_helpers import pop_notifications
     >>> last_email = pop_notifications()[-1]
-    >>> last_email['To']
+    >>> last_email["To"]
     '...stuart.bishop@canonical.com...'
 
-    >>> last_email['From']
+    >>> last_email["From"]
     '...carlos@canonical.com...'
 
-    >>> last_email['Subject']
+    >>> last_email["Subject"]
     '...[Blueprint e4x]...'
 
     >>> last_email.get_payload()
@@ -151,51 +152,53 @@ simply go through the process again, this time ticking the relevant
 checkbox.
 
     >>> browser.open("http://blueprints.launchpad.test/firefox/+spec/e4x")
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> browser.getControl('Subscriber').value = 'stub'
-    >>> browser.getControl(name='field.essential').value = 'yes'
-    >>> browser.getControl('Subscribe').click()
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> browser.getControl("Subscriber").value = "stub"
+    >>> browser.getControl(name="field.essential").value = "yes"
+    >>> browser.getControl("Subscribe").click()
 
 We now check that the subscriptions portlet is showing the correct information
 based on the subscription change we have made above.
 
-    >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
+    >>> subscribers = find_tags_by_class(browser.contents, "subscriber")
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.find_all('a')
-    ...     img = a_tags[0].find('img')
-    ...     print(img['src'], end=' ')
+    ...     a_tags = subscriber.find_all("a")
+    ...     img = a_tags[0].find("img")
+    ...     print(img["src"], end=" ")
     ...     print(a_tags[1].string)
+    ...
     /@@/subscriber-essential Stuart Bishop
 
 When we change a user's subscription, they get notified by email. Teams
 can be subscribed to a blueprint too
 
     >>> last_email = pop_notifications()[-1]
-    >>> '[Participation essential]' in last_email.get_payload()
+    >>> "[Participation essential]" in last_email.get_payload()
     True
 
 We can click the icon next to a user's name to get to the subscription edit
 page.
 
-    >>> browser.getLink(url='/+subscription/stub').click()
-    >>> browser.getControl(name='field.essential').value = None
-    >>> browser.getControl('Change').click()
+    >>> browser.getLink(url="/+subscription/stub").click()
+    >>> browser.getControl(name="field.essential").value = None
+    >>> browser.getControl("Change").click()
 
 We now check that the subscriptions portlet is showing the correct information
 based on the subscription change we have made above.
 
-    >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
+    >>> subscribers = find_tags_by_class(browser.contents, "subscriber")
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.find_all('a')
-    ...     img = a_tags[0].find('img')
-    ...     print(img['src'], end=' ')
+    ...     a_tags = subscriber.find_all("a")
+    ...     img = a_tags[0].find("img")
+    ...     print(img["src"], end=" ")
     ...     print(a_tags[1].string)
+    ...
     /@@/subscriber-inessential Stuart Bishop
 
 And check the email notification too.
 
     >>> last_email = pop_notifications()[-1]
-    >>> '[Participation non-essential]' in last_email.get_payload()
+    >>> "[Participation non-essential]" in last_email.get_payload()
     True
 
 Subscribing teams
@@ -212,49 +215,54 @@ spec will cause email notifications to be sent to each of its members.
     >>> from zope.component import getUtility
     >>> from lp.services.mail.helpers import get_contact_email_addresses
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> person_set = getUtility(IPersonSet)
-    >>> admins = person_set.getByName('admins')
+    >>> admins = person_set.getByName("admins")
     >>> admins_contact_email_addresses = sorted(
-    ...     get_contact_email_addresses(admins))
-    >>> ubuntu_team = person_set.getByName('ubuntu-team')
+    ...     get_contact_email_addresses(admins)
+    ... )
+    >>> ubuntu_team = person_set.getByName("ubuntu-team")
     >>> ubuntu_team_contact_email_addresses = sorted(
-    ...     get_contact_email_addresses(ubuntu_team))
+    ...     get_contact_email_addresses(ubuntu_team)
+    ... )
     >>> logout()
 
     >>> browser.open(
     ...     "http://blueprints.launchpad.test/"
-    ...     "kubuntu/+spec/krunch-desktop-plan")
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> browser.getControl('Subscriber').value = 'admins'
-    >>> browser.getControl(name='field.essential').value = None
-    >>> browser.getControl('Subscribe').click()
+    ...     "kubuntu/+spec/krunch-desktop-plan"
+    ... )
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> browser.getControl("Subscriber").value = "admins"
+    >>> browser.getControl(name="field.essential").value = None
+    >>> browser.getControl("Subscribe").click()
 
 We created a subscription for the Launchpad Admins, but because the team
 does not have a preferred email address, an email is sent to each active
 member who has a preferred email registered.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> print(admins.preferredemail)
     None
 
     >>> admins_contact_email_addresses == sorted(
-    ...     [message['To'] for message in pop_notifications()])
+    ...     [message["To"] for message in pop_notifications()]
+    ... )
     True
 
     >>> logout()
 
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> browser.getControl('Subscriber').value = 'admins'
-    >>> browser.getControl(name='field.essential').value = 'yes'
-    >>> browser.getControl('Subscribe').click()
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> browser.getControl("Subscriber").value = "admins"
+    >>> browser.getControl(name="field.essential").value = "yes"
+    >>> browser.getControl("Subscribe").click()
 
 We modified the Launchpad Admins team's subscription and again, an email
 is sent to each active member.
 
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> admins_contact_email_addresses == sorted(
-    ...     [message['To'] for message in pop_notifications()])
+    ...     [message["To"] for message in pop_notifications()]
+    ... )
     True
 
 The Ubuntu Team does have a preferred email address.
@@ -263,46 +271,51 @@ The Ubuntu Team does have a preferred email address.
     <...EmailAddress...>
 
     >>> logout()
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> browser.getControl('Subscriber').value = 'ubuntu-team'
-    >>> browser.getControl(name='field.essential').value = None
-    >>> browser.getControl('Subscribe').click()
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> browser.getControl("Subscriber").value = "ubuntu-team"
+    >>> browser.getControl(name="field.essential").value = None
+    >>> browser.getControl("Subscribe").click()
 
 Because the current logged in user carlos is a member of the admins team it is
 possible to unsubscribe the team. We click the remove icon in the subscribers
 list, and now the unsubscribe confirmation page loads.
 
-    >>> unsubit = browser.getLink(id='unsubscribe-subscriber-25')
+    >>> unsubit = browser.getLink(id="unsubscribe-subscriber-25")
     >>> unsubit.click()
-    >>> confirm = browser.getControl('Unsubscribe')
+    >>> confirm = browser.getControl("Unsubscribe")
     >>> confirm.click()
     >>> msg = (
     ...     "Launchpad Administrators has been unsubscribed from this "
-    ...     "blueprint.")
+    ...     "blueprint."
+    ... )
     >>> msg in browser.contents
     True
 
 We subscribe the Ubuntu Team and an email is sent to the team's
 preferred email address.
 
-    >>> login('no-priv@canonical.com')
-    >>> ([message['To'] for message in pop_notifications()] ==
-    ...     [str(ubuntu_team.preferredemail.email)])
+    >>> login("no-priv@canonical.com")
+    >>> (
+    ...     [message["To"] for message in pop_notifications()]
+    ...     == [str(ubuntu_team.preferredemail.email)]
+    ... )
     True
 
     >>> logout()
 
-    >>> browser.getLink('Subscribe someone else').click()
-    >>> browser.getControl('Subscriber').value = 'ubuntu-team'
-    >>> browser.getControl(name='field.essential').value = 'yes'
-    >>> browser.getControl('Subscribe').click()
+    >>> browser.getLink("Subscribe someone else").click()
+    >>> browser.getControl("Subscriber").value = "ubuntu-team"
+    >>> browser.getControl(name="field.essential").value = "yes"
+    >>> browser.getControl("Subscribe").click()
 
 We modified the Ubuntu Team's subscription and again, an email is sent
 to the team's preferred email address.
 
-    >>> login('no-priv@canonical.com')
-    >>> ([message['To'] for message in pop_notifications()] ==
-    ...     [str(ubuntu_team.preferredemail.email)])
+    >>> login("no-priv@canonical.com")
+    >>> (
+    ...     [message["To"] for message in pop_notifications()]
+    ...     == [str(ubuntu_team.preferredemail.email)]
+    ... )
     True
 
     >>> logout()
@@ -316,13 +329,15 @@ representing whether the person is essential to the specification or
 not.
 
     >>> browser.open(
-    ...   "http://blueprints.launchpad.test/firefox/+spec/svg-support")
-    >>> subscribers = find_tags_by_class(browser.contents, 'subscriber')
+    ...     "http://blueprints.launchpad.test/firefox/+spec/svg-support"
+    ... )
+    >>> subscribers = find_tags_by_class(browser.contents, "subscriber")
     >>> for subscriber in subscribers:
-    ...     a_tags = subscriber.find_all('a')
-    ...     img = a_tags[0].find('img')
-    ...     print(img['src'], end=' ')
+    ...     a_tags = subscriber.find_all("a")
+    ...     img = a_tags[0].find("img")
+    ...     print(img["src"], end=" ")
     ...     print(a_tags[1].string)
+    ...
     /@@/subscriber-essential Andrew Bennetts
     /@@/subscriber-inessential Dafydd Harries
     /@@/subscriber-inessential Foo Bar

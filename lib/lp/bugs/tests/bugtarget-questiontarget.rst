@@ -18,7 +18,7 @@ DistributionSourcePackages.
     >>> from lp.answers.interfaces.questiontarget import IQuestionTarget
     >>> from lp.bugs.interfaces.bugtarget import IBugTarget
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> IBugTarget.providedBy(bugtarget)
     True
 
@@ -33,7 +33,7 @@ The primary use case for converting a bug into a question is when a bug
 contact recognises a bug is really a question. No Privileges Person
 create a a new bug on the bugtarget. It will be converted to a question.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> bug = filebug(bugtarget, "Print is broken", status=BugTaskStatus.NEW)
 
@@ -63,12 +63,11 @@ message about why the report is a question.
 
     >>> from lp.registry.interfaces.person import IPersonSet
 
-    >>> login('test@canonical.com')
-    >>> sample_person = getUtility(IPersonSet).getByName('name12')
+    >>> login("test@canonical.com")
+    >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> bug_subscription = bug.subscribe(sample_person, sample_person)
 
-    >>> question = bug.convertToQuestion(
-    ...     sample_person, "This is a question.")
+    >>> question = bug.convertToQuestion(sample_person, "This is a question.")
 
 The bug and the question share identical attributes.
 
@@ -122,19 +121,23 @@ question and that the bugtasks are Invalid.
 
     >>> bug.clearBugNotificationRecipientsCache()
     >>> recipients = bug.getBugNotificationRecipients()
-    >>> 'no-priv@canonical.com' in recipients.getEmails()
+    >>> "no-priv@canonical.com" in recipients.getEmails()
     True
 
-    >>> 'test@canonical.com' in recipients.getEmails()
+    >>> "test@canonical.com" in recipients.getEmails()
     True
 
     >>> from storm.locals import Desc
     >>> from lp.bugs.model.bugnotification import BugNotification
     >>> from lp.services.database.interfaces import IStore
-    >>> bug_notifications = IStore(BugNotification).find(
-    ...     BugNotification).order_by(Desc(BugNotification.id))
+    >>> bug_notifications = (
+    ...     IStore(BugNotification)
+    ...     .find(BugNotification)
+    ...     .order_by(Desc(BugNotification.id))
+    ... )
     >>> for notification in bug_notifications:
     ...     print(notification.message.text_contents)
+    ...
     ** Converted to question:
        http://answers.launchpad.test/.../+question/...
     ** Changed in: ...
@@ -169,10 +172,12 @@ just the question created from the bug.
 
     >>> for bug in question.bugs:
     ...     print(bug.title)
+    ...
     Print is broken
 
     >>> for question in bug.questions:
     ...     print(question.title)
+    ...
     Print is broken
 
 
@@ -183,9 +188,10 @@ In the rare instance where a bug has more than one bugtask, there must
 be exactly one bugtask having a non-Invalid status. The question's
 target come from the bugtask's target.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> big_bug = filebug(
-    ...     bugtarget, "Print is borked", status=BugTaskStatus.NEW)
+    ...     bugtarget, "Print is borked", status=BugTaskStatus.NEW
+    ... )
 
     >>> evo_project = factory.makeProduct()
     >>> evo_bugtask = factory.makeBugTask(bug=big_bug, target=evo_project)
@@ -193,7 +199,7 @@ target come from the bugtask's target.
     >>> len(bugtasks) > 1
     True
 
-    >>> len([bt for bt in bugtasks if bt.status.title != 'Invalid']) > 1
+    >>> len([bt for bt in bugtasks if bt.status.title != "Invalid"]) > 1
     True
 
     >>> big_bug.canBeAQuestion()
@@ -204,8 +210,13 @@ bugtask can provide the QuestionTarget. Note that the comment is not
 provided
 
     >>> evo_bugtask.transitionToStatus(BugTaskStatus.INVALID, sample_person)
-    >>> len([bt for bt in bugtasks
-    ...     if bt.status.title == 'New' and bt.conjoined_primary is None])
+    >>> len(
+    ...     [
+    ...         bt
+    ...         for bt in bugtasks
+    ...         if bt.status.title == "New" and bt.conjoined_primary is None
+    ...     ]
+    ... )
     1
 
     >>> big_bug.canBeAQuestion()
@@ -215,8 +226,9 @@ provided
     >>> print(question.title)
     Print is borked
 
-    >>> len(bugtasks) == len([
-    ...     bt for bt in bugtasks if bt.status.title == 'Invalid'])
+    >>> len(bugtasks) == len(
+    ...     [bt for bt in bugtasks if bt.status.title == "Invalid"]
+    ... )
     True
 
 

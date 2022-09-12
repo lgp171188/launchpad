@@ -21,11 +21,11 @@ def sanitize_username(username):
     The characters not allowed in Launchpad usernames are described by
     `username_invalid_pattern`.
 
-    >>> print(sanitize_username('foo_bar'))
+    >>> print(sanitize_username("foo_bar"))
     foobar
-    >>> print(sanitize_username('foo.bar+baz'))
+    >>> print(sanitize_username("foo.bar+baz"))
     foobarbaz
-    >>> print(sanitize_username('-#foo -$fd?.0+-'))
+    >>> print(sanitize_username("-#foo -$fd?.0+-"))
     foo-fd0
 
     """
@@ -38,27 +38,27 @@ def valid_username(username):
     Launchpad `username` (`Person.name`) attribute is designed to serve as
     an human-friendly identifier to a identity across multiple services.
 
-    >>> valid_username('hello')
+    >>> valid_username("hello")
     True
-    >>> valid_username('helLo')
+    >>> valid_username("helLo")
     False
-    >>> valid_username('hel|o')
+    >>> valid_username("hel|o")
     False
-    >>> valid_username('hel.o')
+    >>> valid_username("hel.o")
     False
-    >>> valid_username('hel+o')
+    >>> valid_username("hel+o")
     False
-    >>> valid_username('he')
+    >>> valid_username("he")
     False
-    >>> valid_username('hel')
+    >>> valid_username("hel")
     True
-    >>> valid_username('h' * 32)
+    >>> valid_username("h" * 32)
     True
-    >>> valid_username('h' * 33)
+    >>> valid_username("h" * 33)
     False
-    >>> valid_username('-he')
+    >>> valid_username("-he")
     False
-    >>> valid_username('he-')
+    >>> valid_username("he-")
     False
 
     """

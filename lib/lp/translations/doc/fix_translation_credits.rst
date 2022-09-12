@@ -5,7 +5,8 @@ Marks all existing translation credits as translated.
 
     >>> from lp.testing.script import run_script
     >>> (returncode, out, err) = run_script(
-    ...     'scripts/rosetta/fix_translation_credits.py')
+    ...     "scripts/rosetta/fix_translation_credits.py"
+    ... )
     >>> print(returncode)
     0
     >>> print(err)

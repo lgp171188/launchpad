@@ -12,13 +12,14 @@ will work with spanish in Hoary first.
     >>> from lp.registry.interfaces.distroseries import IDistroSeriesSet
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> from lp.translations.interfaces.distroserieslanguage import (
-    ...     IDistroSeriesLanguage)
+    ...     IDistroSeriesLanguage,
+    ... )
     >>> distroseriesset = getUtility(IDistroSeriesSet)
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> hoary = distroseriesset.queryByName(ubuntu, "hoary")
     >>> print(hoary.name)
     hoary
-    >>> spanish = getUtility(ILanguageSet)['es']
+    >>> spanish = getUtility(ILanguageSet)["es"]
     >>> hoary_spanish = hoary.getDistroSeriesLanguage(spanish)
 
 DistroSeriesLanguage provides basic `title` describing what is it about.
@@ -32,6 +33,7 @@ contain messages.
 
     >>> for po in hoary_spanish.pofiles:
     ...     print(po.potemplate.name)
+    ...
     evolution-2.2
     pmount
     pkgconf-mozilla
@@ -42,6 +44,7 @@ There are however more templates than the ones that have messages:
     >>> hoary_templates = list(hoary.getCurrentTranslationTemplates())
     >>> for template in hoary_templates:
     ...     print(template.name)
+    ...
     evolution-2.2
     man
     man
@@ -59,9 +62,15 @@ don't.
     ...     Creates `PlaceholderPOFile`s where needed.  Prints types.
     ...     """
     ...     for pofile in distroserieslanguage.getPOFilesFor(templates):
-    ...         print("%s (%s) %s" % (
-    ...             pofile.potemplate.name, pofile.language.code,
-    ...             removeSecurityProxy(pofile).__class__))
+    ...         print(
+    ...             "%s (%s) %s"
+    ...             % (
+    ...                 pofile.potemplate.name,
+    ...                 pofile.language.code,
+    ...                 removeSecurityProxy(pofile).__class__,
+    ...             )
+    ...         )
+    ...
 
     >>> print_augmented_pofiles(hoary_spanish, hoary_templates)
     evolution-2.2     (es)   <class '...pofile.POFile'>
@@ -80,6 +89,7 @@ listing.
 
     >>> for potemplate in hoary.getTranslationTemplates():
     ...     print(potemplate.name)
+    ...
     evolution-2.2
     disabled-template
     man
@@ -89,20 +99,20 @@ listing.
 
 This is the one obsolete template.
 
-    >>> potemplate = hoary.getTranslationTemplateByName('disabled-template')
+    >>> potemplate = hoary.getTranslationTemplateByName("disabled-template")
     >>> print(potemplate.iscurrent)
     False
 
 Also, we can see that the template has an Spanish translation that
 hoary_spanish.pofiles is hiding as expected.
 
-    >>> print(potemplate.getPOFileByLang('es').title)
+    >>> print(potemplate.getPOFileByLang("es").title)
     Spanish (es) translation of disabled-template in Ubuntu Hoary package
     "evolution"
 
 We also have EmptyDistroSeriesLanguages.
 
-    >>> amharic = getUtility(ILanguageSet)['am']
+    >>> amharic = getUtility(ILanguageSet)["am"]
     >>> hoary_amharic = hoary.getDistroSeriesLanguageOrEmpty(amharic)
     >>> print(hoary_amharic.__class__)
     <class '...EmptyDistroSeriesLanguage'>
@@ -110,7 +120,7 @@ We also have EmptyDistroSeriesLanguages.
 English is not a translatable language because we store the source messages
 as English. Thus English cannot be an EmptyDistroSeriesLanguage.
 
-    >>> english = getUtility(ILanguageSet)['en']
+    >>> english = getUtility(ILanguageSet)["en"]
     >>> hoary_english = hoary.getDistroSeriesLanguageOrEmpty(english)
     Traceback (most recent call last):
     ...
@@ -169,7 +179,7 @@ that changes the default sort order.
 We need to login so we can poke at the potemplates.
 
     >>> from lp.testing import login
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
 We set their priorities so that the lowest alpha-sort one has the highest
 priority.
@@ -186,6 +196,7 @@ And now we can confirm that priority does in fact dominate:
 
     >>> for pot in hoary.getCurrentTranslationTemplates():
     ...     print(pot.priority, pot.name)
+    ...
     9 pmount
     8 pkgconf-mozilla
     7 man
@@ -196,7 +207,8 @@ And now this priority should also dominate the distroseries language
 pofile sort order:
 
     >>> print_augmented_pofiles(
-    ...     hoary_amharic, hoary.getCurrentTranslationTemplates())
+    ...     hoary_amharic, hoary.getCurrentTranslationTemplates()
+    ... )
     pmount           (am)  <class '...pofile.PlaceholderPOFile'>
     pkgconf-mozilla  (am)  <class '...pofile.PlaceholderPOFile'>
     man              (am)  <class '...pofile.PlaceholderPOFile'>

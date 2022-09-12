@@ -9,8 +9,8 @@ objects for the distribution.
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.enums import PackagePublishingStatus
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> debian = getUtility(IDistributionSet).getByName('debian')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> debian = getUtility(IDistributionSet).getByName("debian")
 
 
 Handling Personal Package Archives
@@ -24,9 +24,9 @@ Handling Personal Package Archives
  * getPendingPublicationPPAs
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> mark = getUtility(IPersonSet).getByName('mark')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> mark = getUtility(IPersonSet).getByName("mark")
 
 
 Iteration over all PPAs
@@ -37,12 +37,14 @@ the distribution in question:
 
     >>> for archive in ubuntu.getAllPPAs():
     ...     print(archive.owner.name)
+    ...
     cprov
     mark
     no-priv
 
     >>> for archive in debian.getAllPPAs():
     ...     print(archive.owner.name)
+    ...
 
 
 Searching PPAs
@@ -70,6 +72,7 @@ There is only one 'active' PPA:
     >>> result = ubuntu.searchPPAs()
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     cprov
     mark
 
@@ -78,28 +81,33 @@ and its  'contents description' (see package-cache.rst).
 
     >>> for owner in [cprov, mark, no_priv]:
     ...     print("%s: %s" % (owner.name, owner.archive.description))
+    ...
     cprov: packages to help my friends.
     mark: packages to help the humanity (you know, ubuntu)
     no-priv: I am not allowed to say, I have no privs.
 
-    >>> result = ubuntu.searchPPAs(text=u'friend')
+    >>> result = ubuntu.searchPPAs(text="friend")
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     cprov
 
-    >>> result = ubuntu.searchPPAs(text=u'oink')
+    >>> result = ubuntu.searchPPAs(text="oink")
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
 
-    >>> result = ubuntu.searchPPAs(text=u'packages')
+    >>> result = ubuntu.searchPPAs(text="packages")
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     cprov
     mark
 
-    >>> result = ubuntu.searchPPAs(text=u'help')
+    >>> result = ubuntu.searchPPAs(text="help")
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     cprov
     mark
 
@@ -108,32 +116,36 @@ Including 'inactive' PPAs:
     >>> result = ubuntu.searchPPAs(show_inactive=True)
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     cprov
     mark
     no-priv
 
-    >>> result = ubuntu.searchPPAs(text=u'priv', show_inactive=True)
+    >>> result = ubuntu.searchPPAs(text="priv", show_inactive=True)
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     no-priv
 
-    >>> result = ubuntu.searchPPAs(text=u'ubuntu', show_inactive=True)
+    >>> result = ubuntu.searchPPAs(text="ubuntu", show_inactive=True)
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
     mark
 
 The searchPPAs() method only returns the PPAs of active users.
 
     >>> from lp.services.identity.interfaces.account import AccountStatus
-    >>> login('admin@canonical.com')
-    >>> no_priv.setAccountStatus(AccountStatus.SUSPENDED, None, 'spammer!')
+    >>> login("admin@canonical.com")
+    >>> no_priv.setAccountStatus(AccountStatus.SUSPENDED, None, "spammer!")
 
-    >>> result = ubuntu.searchPPAs(text=u'priv', show_inactive=True)
+    >>> result = ubuntu.searchPPAs(text="priv", show_inactive=True)
     >>> for archive in result:
     ...     print(archive.owner.name)
+    ...
 
-    >>> no_priv.setAccountStatus(AccountStatus.DEACTIVATED, None, 'oops')
-    >>> no_priv.setAccountStatus(AccountStatus.ACTIVE, None, 'login')
+    >>> no_priv.setAccountStatus(AccountStatus.DEACTIVATED, None, "oops")
+    >>> no_priv.setAccountStatus(AccountStatus.ACTIVE, None, "login")
 
 
 Retrieving only pending-acceptance PPAs
@@ -150,11 +162,14 @@ Nothing is pending-acceptance in sampledata:
 
 Create a NEW PackageUpload record for cprov PPA:
 
-    >>> hoary = ubuntu['hoary']
-    >>> login('mark@example.com')
+    >>> hoary = ubuntu["hoary"]
+    >>> login("mark@example.com")
     >>> queue = hoary.createQueueEntry(
-    ...      pocket=PackagePublishingPocket.RELEASE, archive=cprov.archive,
-    ...      changesfilename='foo', changesfilecontent=b'bar')
+    ...     pocket=PackagePublishingPocket.RELEASE,
+    ...     archive=cprov.archive,
+    ...     changesfilename="foo",
+    ...     changesfilecontent=b"bar",
+    ... )
     >>> queue.status.name
     'NEW'
 
@@ -210,7 +225,7 @@ source to another location within the PPA.
 
     >>> cprov_src = cprov.archive.getPublishedSources().first()
 
-    >>> warty = ubuntu['warty']
+    >>> warty = ubuntu["warty"]
     >>> pocket_release = PackagePublishingPocket.RELEASE
     >>> src_pub = cprov_src.copyTo(warty, pocket_release, cprov.archive)
     >>> print(src_pub.status.name)
@@ -232,7 +247,7 @@ We can also make Celso's PPA pending publication by deleting a published
 source.
 
     >>> login("celso.providelo@canonical.com")
-    >>> cprov_src.requestDeletion(cprov, 'go away !')
+    >>> cprov_src.requestDeletion(cprov, "go away !")
     >>> src_pub = cprov_src
 
     >>> [pending_ppa] = ubuntu.getPendingPublicationPPAs()
@@ -244,7 +259,7 @@ longer pending. process-death-row will do the rest.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.services.database.constants import UTC_NOW
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> removeSecurityProxy(src_pub).scheduleddeletiondate = UTC_NOW
     >>> ubuntu.getPendingPublicationPPAs().count()
     0
@@ -260,17 +275,20 @@ state. In order to test this behaviour we will copy some binaries within
 Celso's PPA.
 
     >>> cprov_bin = factory.makeBinaryPackagePublishingHistory(
-    ...     archive=cprov.archive, status=PackagePublishingStatus.PUBLISHED)
+    ...     archive=cprov.archive, status=PackagePublishingStatus.PUBLISHED
+    ... )
     >>> spr = cprov_bin.binarypackagerelease.build.source_package_release
     >>> spr.publishings[0].setPublished()
     >>> pending_binaries = cprov_bin.copyTo(
-    ...     warty, pocket_release, cprov.archive)
+    ...     warty, pocket_release, cprov.archive
+    ... )
 
 The copied binaries are pending publication, thus Celso's PPA gets
 listed in the PPA pending-publication results.
 
     >>> for pub in pending_binaries:
     ...     print(pub.status.name)
+    ...
     PENDING
     PENDING
 
@@ -283,6 +301,7 @@ publication results:
 
     >>> for pub in pending_binaries:
     ...     pub.setPublished()
+    ...
 
     >>> ubuntu.getPendingPublicationPPAs().count()
     0
@@ -290,14 +309,14 @@ publication results:
 A binary deletion will also make Celso's PPA pending publication.
 
     >>> login("celso.providelo@canonical.com")
-    >>> cprov_bin.requestDeletion(cprov, 'go away !')
+    >>> cprov_bin.requestDeletion(cprov, "go away !")
     >>> bin_pub = cprov_bin
 
     >>> [pending_ppa] = ubuntu.getPendingPublicationPPAs()
     >>> pending_ppa.id == cprov.archive.id
     True
 
-    >>> login('mark@example.com')
+    >>> login("mark@example.com")
     >>> removeSecurityProxy(bin_pub).scheduleddeletiondate = UTC_NOW
     >>> ubuntu.getPendingPublicationPPAs().count()
     0
@@ -315,20 +334,21 @@ Distribution Archives
 `IDistribution.all_distro_archives` returns all archives associated with
 the distribution.  This list does not, therefore, include PPAs.
 
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
     >>> for archive in ubuntutest.all_distro_archives:
     ...     print(archive.purpose.title)
+    ...
     Primary Archive
     Partner Archive
 
 `IDistribution.getArchiveByComponent` retrieves an IArchive given a
 component name.  If the component is unknown, None is returned.
 
-    >>> partner_archive = ubuntutest.getArchiveByComponent('partner')
+    >>> partner_archive = ubuntutest.getArchiveByComponent("partner")
     >>> print(partner_archive.displayname)
     Partner Archive for Ubuntu Test
 
-    >>> other_archive = ubuntutest.getArchiveByComponent('dodgycomponent')
+    >>> other_archive = ubuntutest.getArchiveByComponent("dodgycomponent")
     >>> print(other_archive)
     None
 
@@ -336,14 +356,14 @@ Multiple components, specially the debian-compatibility ones points to
 the PRIMARY archive. This relationship is established so we can import
 their packages in the correct archive.
 
-    >>> main_archive = ubuntutest.getArchiveByComponent('main')
+    >>> main_archive = ubuntutest.getArchiveByComponent("main")
     >>> print(main_archive.displayname)
     Primary Archive for Ubuntu Test
 
-    >>> non_free_archive = ubuntutest.getArchiveByComponent('non-free')
+    >>> non_free_archive = ubuntutest.getArchiveByComponent("non-free")
     >>> print(non_free_archive.displayname)
     Primary Archive for Ubuntu Test
 
-    >>> contrib_archive = ubuntutest.getArchiveByComponent('contrib')
+    >>> contrib_archive = ubuntutest.getArchiveByComponent("contrib")
     >>> print(contrib_archive.displayname)
     Primary Archive for Ubuntu Test

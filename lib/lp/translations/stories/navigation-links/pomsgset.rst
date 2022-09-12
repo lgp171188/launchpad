@@ -4,8 +4,9 @@ structural object.
 Taking an IPOMsgSet for IProductSeries context:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
-    ...     'evolution-2.2/es/1')
+    ...     "http://translations.launchpad.test/evolution/trunk/+pots/"
+    ...     "evolution-2.2/es/1"
+    ... )
 
 We get a +translate page because that's the only page for an IPOMsgSet and the
 system forwards automatically there.
@@ -26,8 +27,9 @@ The Application tabs should point to IProductSeries URLs.
 Taking an IPOMsgSet for ISourcePackage context:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
-    ...     'evolution/+pots/evolution-2.2/es/1')
+    ...     "http://translations.launchpad.test/ubuntu/hoary/+source/"
+    ...     "evolution/+pots/evolution-2.2/es/1"
+    ... )
 
 We get a +translate page because that's the only page for an IPOMsgSet and the
 system forwards automatically there.

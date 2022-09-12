@@ -13,9 +13,11 @@ Let's define a helper function to make it easier to construct a view.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> def create_view(context, name, form=None):
     ...     view = getMultiAdapter(
-    ...         (context, LaunchpadTestRequest(form=form)), name=name)
+    ...         (context, LaunchpadTestRequest(form=form)), name=name
+    ...     )
     ...     view.initialize()
     ...     return view
+    ...
 
 
 Assigned bugs
@@ -26,24 +28,28 @@ All bug tasks assigned to this person.
 By default, only bugtasks with any of the statuses listed in
 lp.bugs.interfaces.bugtask.UNRESOLVED_BUGTASK_STATUSES are included:
 
-    >>> assigned_bugtasks_view = create_view(name16, '+assignedbugs')
+    >>> assigned_bugtasks_view = create_view(name16, "+assignedbugs")
     >>> assigned_bugtasks = list(assigned_bugtasks_view.search().batch)
-    >>> sorted([(bugtask.bug.id, bugtask.status.name)
-    ...         for bugtask in assigned_bugtasks])
+    >>> sorted(
+    ...     [
+    ...         (bugtask.bug.id, bugtask.status.name)
+    ...         for bugtask in assigned_bugtasks
+    ...     ]
+    ... )
     [(7, 'NEW')]
 
 Using the advanced form we can query for closed bugs.
 
     >>> form = {
-    ...     'orderby': u'-importance',
-    ...     'advanced': 1,
-    ...     'search': 'Search',
-    ...     'field.status': 'Fix Released'}
+    ...     "orderby": "-importance",
+    ...     "advanced": 1,
+    ...     "search": "Search",
+    ...     "field.status": "Fix Released",
+    ... }
 
-    >>> closed_bugtasks_view = create_view(name16, '+assignedbugs', form)
+    >>> closed_bugtasks_view = create_view(name16, "+assignedbugs", form)
     >>> closed_bugtasks = list(closed_bugtasks_view.search().batch)
-    >>> [(bugtask.bug.id, bugtask.status.name)
-    ...     for bugtask in closed_bugtasks]
+    >>> [(bugtask.bug.id, bugtask.status.name) for bugtask in closed_bugtasks]
     [(8, 'FIXRELEASED')]
 
 
@@ -53,12 +59,23 @@ Reported bugs
 All bug tasks reported by someone. By default we'll get assigned and
 unassigned bug tasks.
 
-    >>> reported_bugtasks_view = create_view(name16, '+reportedbugs')
+    >>> reported_bugtasks_view = create_view(name16, "+reportedbugs")
     >>> reported_bugtasks = list(reported_bugtasks_view.search().batch)
-    >>> print(pretty(sorted([
-    ...     (bugtask.bug.id, bugtask.status.name, bugtask.bug.owner.name,
-    ...      getattr(bugtask.assignee, 'name', None))
-    ...     for bugtask in reported_bugtasks])))
+    >>> print(
+    ...     pretty(
+    ...         sorted(
+    ...             [
+    ...                 (
+    ...                     bugtask.bug.id,
+    ...                     bugtask.status.name,
+    ...                     bugtask.bug.owner.name,
+    ...                     getattr(bugtask.assignee, "name", None),
+    ...                 )
+    ...                 for bugtask in reported_bugtasks
+    ...             ]
+    ...         )
+    ...     )
+    ... )
     [(3, 'NEW', 'name16', None),
      (7, 'NEW', 'name16', 'name16'),
      (9, 'CONFIRMED', 'name16', None),
@@ -72,17 +89,30 @@ But the advanced search allows us to query only the bug tasks that aren't
 assigned.
 
     >>> form = {
-    ...     'orderby': u'-importance', 'assignee_option': 'none',
-    ...     'field.assignee': '', 'advanced': 1,
-    ...     'search': 'Search'}
-    >>> reported_bugtasks_view = create_view(name16, '+reportedbugs', form)
+    ...     "orderby": "-importance",
+    ...     "assignee_option": "none",
+    ...     "field.assignee": "",
+    ...     "advanced": 1,
+    ...     "search": "Search",
+    ... }
+    >>> reported_bugtasks_view = create_view(name16, "+reportedbugs", form)
     >>> reported_bugtasks = sorted(
     ...     reported_bugtasks_view.search().batch,
-    ...     key=lambda bugtask: (bugtask.bug.id, bugtask.id))
-    >>> print(pretty([
-    ...     (bugtask.bug.id, bugtask.status.name, bugtask.bug.owner.name,
-    ...      getattr(bugtask.assignee, 'name', None))
-    ...     for bugtask in reported_bugtasks]))
+    ...     key=lambda bugtask: (bugtask.bug.id, bugtask.id),
+    ... )
+    >>> print(
+    ...     pretty(
+    ...         [
+    ...             (
+    ...                 bugtask.bug.id,
+    ...                 bugtask.status.name,
+    ...                 bugtask.bug.owner.name,
+    ...                 getattr(bugtask.assignee, "name", None),
+    ...             )
+    ...             for bugtask in reported_bugtasks
+    ...         ]
+    ...     )
+    ... )
     [(3, 'NEW', 'name16', None),
      (9, 'CONFIRMED', 'name16', None),
      (10, 'NEW', 'name16', None),
@@ -109,29 +139,39 @@ Let's first close a bug setting its status to 'Invalid'.
     9
     >>> old_status = bug_task.status
     >>> bug_task.transitionToStatus(
-    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
+    ...     BugTaskStatus.INVALID, getUtility(ILaunchBag).user
+    ... )
     >>> flush_database_updates()
 
 And now we query for it.
 
     >>> form = {
-    ...     'orderby': u'-importance',
-    ...     'assignee_option': 'none',
-    ...     'field.assignee': '',
-    ...     'advanced': 1,
-    ...     'field.status': 'Invalid',
-    ...     'search': 'Search bugs reported by Foo Bar'}
+    ...     "orderby": "-importance",
+    ...     "assignee_option": "none",
+    ...     "field.assignee": "",
+    ...     "advanced": 1,
+    ...     "field.status": "Invalid",
+    ...     "search": "Search bugs reported by Foo Bar",
+    ... }
     >>> closed_reported_bugtasks_view = create_view(
-    ...     name16, '+reportedbugs', form)
+    ...     name16, "+reportedbugs", form
+    ... )
     >>> closed_reported_bugtasks = list(
-    ...     closed_reported_bugtasks_view.search().batch)
-    >>> sorted([(bugtask.bug.id, bugtask.status.name,
-    ...          getattr(bugtask.assignee, 'name', None))
-    ...         for bugtask in closed_reported_bugtasks])
+    ...     closed_reported_bugtasks_view.search().batch
+    ... )
+    >>> sorted(
+    ...     [
+    ...         (
+    ...             bugtask.bug.id,
+    ...             bugtask.status.name,
+    ...             getattr(bugtask.assignee, "name", None),
+    ...         )
+    ...         for bugtask in closed_reported_bugtasks
+    ...     ]
+    ... )
     [(9, 'INVALID', None)]
 
-    >>> bug_task.transitionToStatus(
-    ...     old_status, getUtility(ILaunchBag).user)
+    >>> bug_task.transitionToStatus(old_status, getUtility(ILaunchBag).user)
     >>> flush_database_updates()
 
 
@@ -142,10 +182,14 @@ All bug tasks someone is subscribed to. By default we'll get bug tasks
 with any importance.
 
     >>> name12 = getUtility(IPersonSet).get(12)
-    >>> subscribed_bugtasks_view = create_view(name12, '+subscribedbugs')
+    >>> subscribed_bugtasks_view = create_view(name12, "+subscribedbugs")
     >>> subscribed_bugtasks = list(subscribed_bugtasks_view.search().batch)
-    >>> sorted([(bugtask.bug.id, bugtask.status.name, bugtask.importance.name)
-    ...         for bugtask in subscribed_bugtasks])
+    >>> sorted(
+    ...     [
+    ...         (bugtask.bug.id, bugtask.status.name, bugtask.importance.name)
+    ...         for bugtask in subscribed_bugtasks
+    ...     ]
+    ... )
     [(1, 'CONFIRMED', 'LOW'),
      (1, 'NEW', 'LOW'),
      (1, 'NEW', 'MEDIUM'),
@@ -156,20 +200,33 @@ with any importance.
 Using the advanced form we can query for closed bugs someone is subscribed to.
 
     >>> form = {
-    ...     'orderby': u'-importance',
-    ...     'assignee_option': 'any',
-    ...     'field.assignee': '',
-    ...     'advanced': 1,
-    ...     'field.status': 'Fix Released',
-    ...     'search': "Search bugs Sample Person is CC'd to"}
+    ...     "orderby": "-importance",
+    ...     "assignee_option": "any",
+    ...     "field.assignee": "",
+    ...     "advanced": 1,
+    ...     "field.status": "Fix Released",
+    ...     "search": "Search bugs Sample Person is CC'd to",
+    ... }
     >>> closed_subscribed_bugtasks_view = create_view(
-    ...     name12, '+subscribedbugs', form)
+    ...     name12, "+subscribedbugs", form
+    ... )
     >>> closed_subscribed_bugtasks = list(
-    ...     closed_subscribed_bugtasks_view.search().batch)
-    >>> print(pretty(sorted([
-    ...     (bugtask.bug.id, bugtask.status.name,
-    ...      getattr(bugtask.assignee, 'name', None))
-    ...     for bugtask in closed_subscribed_bugtasks])))
+    ...     closed_subscribed_bugtasks_view.search().batch
+    ... )
+    >>> print(
+    ...     pretty(
+    ...         sorted(
+    ...             [
+    ...                 (
+    ...                     bugtask.bug.id,
+    ...                     bugtask.status.name,
+    ...                     getattr(bugtask.assignee, "name", None),
+    ...                 )
+    ...                 for bugtask in closed_subscribed_bugtasks
+    ...             ]
+    ...         )
+    ...     )
+    ... )
     [(8, 'FIXRELEASED', 'name16')]
 
 
@@ -183,47 +240,48 @@ Finally, there is a helper method that returns a list of dicts used to
 render the overview report.
 
     >>> packagebugs_search_view = create_view(
-    ...     name16, name="+packagebugs", form=form)
+    ...     name16, name="+packagebugs", form=form
+    ... )
 
     >>> package_bug_counts = packagebugs_search_view.package_bug_counts
     >>> len(package_bug_counts)
     2
     >>> ubuntu_firefox_bugcounts = package_bug_counts[0]
 
-    >>> print(ubuntu_firefox_bugcounts['package_name'])
+    >>> print(ubuntu_firefox_bugcounts["package_name"])
     mozilla-firefox in Ubuntu
-    >>> print(ubuntu_firefox_bugcounts['package_search_url'])  # noqa
+    >>> print(ubuntu_firefox_bugcounts["package_search_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
 
-    >>> print(ubuntu_firefox_bugcounts['open_bugs_count'])
+    >>> print(ubuntu_firefox_bugcounts["open_bugs_count"])
     1
-    >>> print(ubuntu_firefox_bugcounts['critical_bugs_count'])
+    >>> print(ubuntu_firefox_bugcounts["critical_bugs_count"])
     0
-    >>> print(ubuntu_firefox_bugcounts['unassigned_bugs_count'])
+    >>> print(ubuntu_firefox_bugcounts["unassigned_bugs_count"])
     1
-    >>> print(ubuntu_firefox_bugcounts['inprogress_bugs_count'])
+    >>> print(ubuntu_firefox_bugcounts["inprogress_bugs_count"])
     0
 
-    >>> print(ubuntu_firefox_bugcounts['open_bugs_url'])  # noqa
+    >>> print(ubuntu_firefox_bugcounts["open_bugs_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
-    >>> print(ubuntu_firefox_bugcounts['critical_bugs_url'])  # noqa
+    >>> print(ubuntu_firefox_bugcounts["critical_bugs_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.importance=Critical&field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
-    >>> print(ubuntu_firefox_bugcounts['unassigned_bugs_url'])  # noqa
+    >>> print(ubuntu_firefox_bugcounts["unassigned_bugs_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?assignee_option=none&field.status=New&field.status=Incomplete&field.status=Confirmed&field.status=Triaged&field.status=In+Progress&field.status=Fix+Committed&search=Search
-    >>> print(ubuntu_firefox_bugcounts['inprogress_bugs_url'])  # noqa
+    >>> print(ubuntu_firefox_bugcounts["inprogress_bugs_url"])  # noqa
     http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox?field.status=In+Progress&search=Search
 
 The total number of bugs, broken down in the same ways as the package
 bug counts, is also available.
 
     >>> total_counts = packagebugs_search_view.total_bug_counts
-    >>> print(total_counts['open_bugs_count'])
+    >>> print(total_counts["open_bugs_count"])
     1
-    >>> print(total_counts['critical_bugs_count'])
+    >>> print(total_counts["critical_bugs_count"])
     0
-    >>> print(total_counts['unassigned_bugs_count'])
+    >>> print(total_counts["unassigned_bugs_count"])
     1
-    >>> print(total_counts['inprogress_bugs_count'])
+    >>> print(total_counts["inprogress_bugs_count"])
     0
 
 Adding another bug will update the totals returned by
@@ -237,42 +295,43 @@ packagebugs_search_view.total_bug_counts.
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu_mozilla_firefox = ubuntu.getSourcePackage("mozilla-firefox")
     >>> bug_params = CreateBugParams(
-    ...     owner=name16,
-    ...     title="Some new bug",
-    ...     comment="this is a new bug")
+    ...     owner=name16, title="Some new bug", comment="this is a new bug"
+    ... )
     >>> new_bug = ubuntu_mozilla_firefox.createBug(bug_params)
     >>> new_bug.bugtasks[0].transitionToImportance(
-    ...     BugTaskImportance.CRITICAL, name16)
+    ...     BugTaskImportance.CRITICAL, name16
+    ... )
     >>> flush_database_updates()
 
 We re-create the view since total_bug_counts and package_bug_counts are
 cached properties.
 
     >>> packagebugs_search_view = create_view(
-    ...     name16, name="+packagebugs", form=form)
+    ...     name16, name="+packagebugs", form=form
+    ... )
 
 We can see that the firefox bug counts have been altered:
 
     >>> firefox_bug_counts = packagebugs_search_view.package_bug_counts[0]
-    >>> print(firefox_bug_counts['open_bugs_count'])
+    >>> print(firefox_bug_counts["open_bugs_count"])
     2
-    >>> print(firefox_bug_counts['critical_bugs_count'])
+    >>> print(firefox_bug_counts["critical_bugs_count"])
     1
-    >>> print(firefox_bug_counts['unassigned_bugs_count'])
+    >>> print(firefox_bug_counts["unassigned_bugs_count"])
     2
-    >>> print(firefox_bug_counts['inprogress_bugs_count'])
+    >>> print(firefox_bug_counts["inprogress_bugs_count"])
     0
 
 And the total bug counts reflect this:
 
     >>> total_counts = packagebugs_search_view.total_bug_counts
-    >>> print(total_counts['open_bugs_count'])
+    >>> print(total_counts["open_bugs_count"])
     2
-    >>> print(total_counts['critical_bugs_count'])
+    >>> print(total_counts["critical_bugs_count"])
     1
-    >>> print(total_counts['unassigned_bugs_count'])
+    >>> print(total_counts["unassigned_bugs_count"])
     2
-    >>> print(total_counts['inprogress_bugs_count'])
+    >>> print(total_counts["inprogress_bugs_count"])
     0
 
 Adding a new bug to a package other than Ubuntu Firefox will naturally
@@ -280,52 +339,53 @@ alter the total bug counts but not the firefox ones. Here, we use the
 other package listed in name16's package bug listing overview, which is
 pmount:
 
-    >>> print(packagebugs_search_view.package_bug_counts[1]['package_name'])
+    >>> print(packagebugs_search_view.package_bug_counts[1]["package_name"])
     pmount in Ubuntu
 
-    >>> pmount = ubuntu.getSourcePackage('pmount')
+    >>> pmount = ubuntu.getSourcePackage("pmount")
     >>> new_bug = pmount.createBug(bug_params)
     >>> bug_task = new_bug.getBugTask(pmount)
     >>> bug_task.transitionToStatus(BugTaskStatus.INPROGRESS, name16)
     >>> flush_database_updates()
 
     >>> packagebugs_search_view = create_view(
-    ...     name16, name="+packagebugs", form=form)
+    ...     name16, name="+packagebugs", form=form
+    ... )
 
 So the total counts will have changed:
 
     >>> total_counts = packagebugs_search_view.total_bug_counts
-    >>> print(total_counts['open_bugs_count'])
+    >>> print(total_counts["open_bugs_count"])
     3
-    >>> print(total_counts['critical_bugs_count'])
+    >>> print(total_counts["critical_bugs_count"])
     1
-    >>> print(total_counts['unassigned_bugs_count'])
+    >>> print(total_counts["unassigned_bugs_count"])
     3
-    >>> print(total_counts['inprogress_bugs_count'])
+    >>> print(total_counts["inprogress_bugs_count"])
     1
 
 Whilst the firefox ones remain static:
 
     >>> firefox_bug_counts = packagebugs_search_view.package_bug_counts[0]
-    >>> print(firefox_bug_counts['open_bugs_count'])
+    >>> print(firefox_bug_counts["open_bugs_count"])
     2
-    >>> print(firefox_bug_counts['critical_bugs_count'])
+    >>> print(firefox_bug_counts["critical_bugs_count"])
     1
-    >>> print(firefox_bug_counts['unassigned_bugs_count'])
+    >>> print(firefox_bug_counts["unassigned_bugs_count"])
     2
-    >>> print(firefox_bug_counts['inprogress_bugs_count'])
+    >>> print(firefox_bug_counts["inprogress_bugs_count"])
     0
 
 And the pmount counts make up the difference between the two:
 
     >>> pmount_bug_counts = packagebugs_search_view.package_bug_counts[1]
-    >>> print(pmount_bug_counts['open_bugs_count'])
+    >>> print(pmount_bug_counts["open_bugs_count"])
     1
-    >>> print(pmount_bug_counts['critical_bugs_count'])
+    >>> print(pmount_bug_counts["critical_bugs_count"])
     0
-    >>> print(pmount_bug_counts['unassigned_bugs_count'])
+    >>> print(pmount_bug_counts["unassigned_bugs_count"])
     1
-    >>> print(pmount_bug_counts['inprogress_bugs_count'])
+    >>> print(pmount_bug_counts["inprogress_bugs_count"])
     1
 
     >>> transaction.abort()
@@ -338,8 +398,8 @@ It is possible to search for all the bugs commented on by a specific Person
 using that Person's +commentedbugs page. Since No Privileges Person hasn't
 commented on any bugs, viewing their +commentedbugs page will return no bugs:
 
-    >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
-    >>> commented_bugtasks_view = create_view(no_priv, '+commentedbugs')
+    >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
+    >>> commented_bugtasks_view = create_view(no_priv, "+commentedbugs")
     >>> commented_bugs = list(commented_bugtasks_view.search().batch)
     >>> [bugtask.bug.id for bugtask in sorted(commented_bugs)]
     []
@@ -351,10 +411,10 @@ particular bug (see bug 1357):
 
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> bug_one = getUtility(IBugSet).get(1)
-    >>> bug_one.newMessage(no_priv, 'Some message', 'Contents')
+    >>> bug_one.newMessage(no_priv, "Some message", "Contents")
     <Message at ...>
 
-    >>> commented_bugtasks_view = create_view(no_priv, '+commentedbugs')
+    >>> commented_bugtasks_view = create_view(no_priv, "+commentedbugs")
     >>> commented_bugs = list(commented_bugtasks_view.search().batch)
     >>> [bugtask.bug.id for bugtask in commented_bugs]
     [1, 1, 1]
@@ -375,8 +435,7 @@ bug tasks found.
 Related bugs
 ............
 
-    >>> related_bugs_view = create_view(
-    ...     user, '+bugs', {'advanced': 1})
+    >>> related_bugs_view = create_view(user, "+bugs", {"advanced": 1})
 
 A new user will have no related bugs, and therefore no related
 milestones.
@@ -389,7 +448,7 @@ milestones.
 Even if the user registers a product with a milestone, the list of
 relevant milestones remains empty.
 
-    >>> product = factory.makeProduct(owner=user, displayname='Coughing Bob')
+    >>> product = factory.makeProduct(owner=user, displayname="Coughing Bob")
     >>> milestone09 = factory.makeMilestone(product=product, name="0.9")
 
     >>> print(pretty(related_bugs_view.getMilestoneWidgetValues()))
@@ -424,7 +483,8 @@ Reported bugs
 Similar behaviour is found when searching for reported bugs.
 
     >>> reported_bugs_view = create_view(
-    ...     user, '+reportedbugs', {'advanced': 1})
+    ...     user, "+reportedbugs", {"advanced": 1}
+    ... )
 
 The earlier bug was reported by our user, so the assigned milestone
 will already appear.
@@ -454,7 +514,8 @@ Assigned bugs
 .............
 
     >>> assigned_bugs_view = create_view(
-    ...     user, '+assignedbugs', {'advanced': 1})
+    ...     user, "+assignedbugs", {"advanced": 1}
+    ... )
 
 No bugs have been assigned to our user, so no relevant milestones are
 found.
@@ -476,7 +537,8 @@ Commented bugs
 ..............
 
     >>> commented_bugs_view = create_view(
-    ...     user, '+commentedbugs', {'advanced': 1})
+    ...     user, "+commentedbugs", {"advanced": 1}
+    ... )
 
 Our user has not commented on any bugs, so no relevant milestones are
 found.
@@ -500,7 +562,8 @@ Subscribed bugs
 
     >>> new_user = factory.makePerson()
     >>> subscribed_bugs_view = create_view(
-    ...     new_user, '+subscribedbugs', {'advanced': 1})
+    ...     new_user, "+subscribedbugs", {"advanced": 1}
+    ... )
 
 Our new_user is not subscribed to any bugs, so no relevant milestones
 are found.

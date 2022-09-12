@@ -31,8 +31,9 @@ def test_split_paragraphs():
     Paragraphs are yielded as a list of lines in the paragraph.
 
       >>> from lp.app.browser.stringformatter import split_paragraphs
-      >>> for paragraph in split_paragraphs('\na\nb\n\nc\nd\n\n\n'):
+      >>> for paragraph in split_paragraphs("\na\nb\n\nc\nd\n\n\n"):
       ...     print(paragraph)
+      ...
       ['a', 'b']
       ['c', 'd']
     """
@@ -49,13 +50,18 @@ def test_re_substitute():
       >>> from lp.app.browser.stringformatter import re_substitute
 
       >>> def match_func(match):
-      ...     return '[%s]' % match.group()
+      ...     return "[%s]" % match.group()
+      ...
       >>> def nomatch_func(text):
-      ...     return '{%s}' % text
+      ...     return "{%s}" % text
+      ...
 
-      >>> pat = re.compile('a{2,6}')
-      >>> print(re_substitute(pat, match_func, nomatch_func,
-      ...                     'bbaaaabbbbaaaaaaa aaaaaaaab'))
+      >>> pat = re.compile("a{2,6}")
+      >>> print(
+      ...     re_substitute(
+      ...         pat, match_func, nomatch_func, "bbaaaabbbbaaaaaaa aaaaaaaab"
+      ...     )
+      ... )
       {bb}[aaaa]{bbbb}[aaaaaa]{a }[aaaaaa][aa]{b}
     """
 
@@ -69,18 +75,18 @@ def test_add_word_breaks():
 
       >>> from lp.app.browser.stringformatter import add_word_breaks
 
-      >>> print(add_word_breaks('abcdefghijklmnop'))
+      >>> print(add_word_breaks("abcdefghijklmnop"))
       abcdefghijklmno<wbr />p
 
-      >>> print(add_word_breaks('abcdef/ghijklmnop'))
+      >>> print(add_word_breaks("abcdef/ghijklmnop"))
       abcdef/<wbr />ghijklmnop
 
-      >>> print(add_word_breaks('ab/cdefghijklmnop'))
+      >>> print(add_word_breaks("ab/cdefghijklmnop"))
       ab/cdefghijklmn<wbr />op
 
     The string can contain HTML entities, which do not get split:
 
-      >>> print(add_word_breaks('abcdef&anentity;hijklmnop'))
+      >>> print(add_word_breaks("abcdef&anentity;hijklmnop"))
       abcdef&anentity;<wbr />hijklmnop
     """
 
@@ -93,22 +99,24 @@ def test_break_long_words():
 
       >>> from lp.app.browser.stringformatter import break_long_words
 
-      >>> print(break_long_words('1234567890123456'))
+      >>> print(break_long_words("1234567890123456"))
       1234567890123456
 
-      >>> print(break_long_words('12345678901234567890'))
+      >>> print(break_long_words("12345678901234567890"))
       123456789012345<wbr />67890
 
       >>> print(break_long_words('<tag a12345678901234567890="foo"></tag>'))
       <tag a12345678901234567890="foo"></tag>
 
-      >>> print(break_long_words('12345678901234567890 1234567890.1234567890'))
+      >>> print(
+      ...     break_long_words("12345678901234567890 1234567890.1234567890")
+      ... )
       123456789012345<wbr />67890 1234567890.<wbr />1234567890
 
-      >>> print(break_long_words('1234567890&abcdefghi;123'))
+      >>> print(break_long_words("1234567890&abcdefghi;123"))
       1234567890&abcdefghi;123
 
-      >>> print(break_long_words('<tag>1234567890123456</tag>'))
+      >>> print(break_long_words("<tag>1234567890123456</tag>"))
       <tag>1234567890123456</tag>
     """
 

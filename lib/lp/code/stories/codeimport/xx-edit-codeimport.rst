@@ -14,8 +14,9 @@ can see a link to edit the details.
     >>> login(ANONYMOUS)
     >>> registrant = factory.makePerson()
     >>> svn_import = factory.makeProductCodeImport(
-    ...     svn_branch_url='svn://svn.example.com/fooix/trunk',
-    ...     registrant=registrant)
+    ...     svn_branch_url="svn://svn.example.com/fooix/trunk",
+    ...     registrant=registrant,
+    ... )
     >>> svn_import_location = str(canonical_url(svn_import.branch))
     >>> svn_import_branch_unique_name = svn_import.branch.unique_name
 
@@ -25,7 +26,7 @@ can see a link to edit the details.
     # Must remove the security proxy because IEmailAddress.email is protected.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> email = removeSecurityProxy(registrant.preferredemail).email
-    >>> import_browser = setupBrowser(auth='Basic %s:test' % str(email))
+    >>> import_browser = setupBrowser(auth="Basic %s:test" % str(email))
     >>> logout()
 
 
@@ -41,8 +42,10 @@ do not get an Edit link.
 
     >>> def print_import_details(browser):
     ...     div = find_tag_by_id(
-    ...         browser.contents, 'branch-import-details').div.div
+    ...         browser.contents, "branch-import-details"
+    ...     ).div.div
     ...     print(extract_text(div))
+    ...
     >>> anon_browser.open(svn_import_location)
     >>> print_import_details(anon_browser)
     Import Status: Reviewed
@@ -66,11 +69,11 @@ If the user attempts to hack the URL to edit the import details,
 they will get a not authorised page if the branch has a code import,
 and a 404 if the branch doesn't have an import.
 
-    >>> anon_browser.open(svn_import_location + '/+edit-import')
+    >>> anon_browser.open(svn_import_location + "/+edit-import")
     Traceback (most recent call last):
     zope.security.interfaces.Unauthorized: (... 'launchpad.Edit')
 
-    >>> admin_browser.open(hosted_branch_location + '/+edit-import')
+    >>> admin_browser.open(hosted_branch_location + "/+edit-import")
     Traceback (most recent call last):
     lp.app.errors.NotFoundError
 
@@ -79,7 +82,7 @@ Editing details
 ---------------
 
     >>> import_browser.open(svn_import_location)
-    >>> import_browser.getLink('Edit import source or review import')
+    >>> import_browser.getLink("Edit import source or review import")
     <Link text='Edit import source or review import' url='.../+edit-import'>
 
 
@@ -94,16 +97,20 @@ last import completed, and so in this case in about three hours.
 We log in as "david.allouche" since he has super-user privileges for code
 imports.
 
-    >>> login('david.allouche@canonical.com')
+    >>> login("david.allouche@canonical.com")
     >>> from lp.code.tests.codeimporthelpers import (
-    ...     make_finished_import, get_import_for_branch_name)
+    ...     make_finished_import,
+    ...     get_import_for_branch_name,
+    ... )
     >>> from datetime import datetime
     >>> import pytz
     >>> date_finished = datetime(2007, 9, 10, 12, tzinfo=pytz.UTC)
     >>> code_import = get_import_for_branch_name(
-    ...     svn_import_branch_unique_name)
-    >>> code_import = make_finished_import(code_import, factory=factory,
-    ...                                    date_finished=date_finished)
+    ...     svn_import_branch_unique_name
+    ... )
+    >>> code_import = make_finished_import(
+    ...     code_import, factory=factory, date_finished=date_finished
+    ... )
     >>> logout()
 
     >>> import_browser.open(svn_import_location)
@@ -123,15 +130,16 @@ If an import is waiting for its next update, any logged in user can
 click a button to request an immediate import.
 
     >>> sample_person_browser = setupBrowser(
-    ...     auth='Basic test@canonical.com:test')
+    ...     auth="Basic test@canonical.com:test"
+    ... )
     >>> sample_person_browser.open(import_browser.url)
-    >>> sample_person_browser.getControl('Import Now')
+    >>> sample_person_browser.getControl("Import Now")
     <SubmitControl ...>
 
 Anonymous users cannot see this button.
 
     >>> anon_browser.open(import_browser.url)
-    >>> anon_browser.getControl('Import Now')
+    >>> anon_browser.getControl("Import Now")
     Traceback (most recent call last):
       ...
     LookupError: label ...'Import Now'
@@ -141,7 +149,7 @@ If the logged in user clicks this button, the import will be scheduled
 to run ASAP and the fact that the import has been requested is
 displayed.
 
-    >>> sample_person_browser.getControl('Import Now').click()
+    >>> sample_person_browser.getControl("Import Now").click()
     >>> print_feedback_messages(sample_person_browser.contents)
     Import will run as soon as possible.
     >>> print_import_details(sample_person_browser)
@@ -159,7 +167,7 @@ Deleting an import
 
 If you own the branch that has the code import, you can delete the branch.
 
-    >>> import_browser.getLink('Delete branch').click()
-    >>> import_browser.getControl('Delete').click()
+    >>> import_browser.getLink("Delete branch").click()
+    >>> import_browser.getControl("Delete").click()
     >>> print_feedback_messages(import_browser.contents)
     Branch ... deleted.

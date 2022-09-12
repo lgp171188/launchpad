@@ -22,7 +22,7 @@ We can optionally specify the initial content of the sequence. Note that
 only the last N elements of the second parameter are stored, where N is
 the given maximum size of the LimitedList.
 
-    >>> LimitedList(3, (0, 'one', 2, 3))
+    >>> LimitedList(3, (0, "one", 2, 3))
     <LimitedList(3, ['one', 2, 3])>
 
 If the initial content has more elements than the given maximum length,

@@ -4,8 +4,8 @@ DistroSeries view classes
 Let's use ubuntu/hoary for these tests.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> hoary = ubuntu.getSeries('hoary')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+    >>> hoary = ubuntu.getSeries("hoary")
 
 
 Administering distroseries
@@ -14,7 +14,7 @@ Administering distroseries
 The +admin view allows administrators to change a series. It provides a
 label, page_title, and cancel_url
 
-    >>> view = create_initialized_view(hoary, name='+admin')
+    >>> view = create_initialized_view(hoary, name="+admin")
     >>> print(view.label)
     Administer The Hoary Hedgehog Release
 
@@ -28,28 +28,29 @@ We will use a function to print the details related with the
 distroseries being tested.
 
     >>> def administrate_distroseries(distroseries, form):
-    ...     view = create_initialized_view(hoary, name='+admin', form=form)
-    ...     print('%d errors' % len(view.errors))
+    ...     view = create_initialized_view(hoary, name="+admin", form=form)
+    ...     print("%d errors" % len(view.errors))
     ...     for error in view.errors:
     ...         try:
     ...             name, title, message = error.args
     ...         except ValueError:
     ...             title, message = error.args
-    ...         print('%s: %s' % (title, message))
-    ...     print('Name:', distroseries.name)
-    ...     print('Version:', distroseries.version)
-    ...     print('Changeslist:', distroseries.changeslist)
-    ...     print('Status:', distroseries.status.name)
+    ...         print("%s: %s" % (title, message))
+    ...     print("Name:", distroseries.name)
+    ...     print("Version:", distroseries.version)
+    ...     print("Changeslist:", distroseries.changeslist)
+    ...     print("Status:", distroseries.status.name)
+    ...
 
     >>> form = {
-    ...     'field.actions.change': 'Change',
-    ...     'field.name': 'hoary',
-    ...     'field.version': '5.04',
-    ...     'field.changeslist': 'hoary-changes@ubuntu.com',
-    ...     'field.status': 'DEVELOPMENT',
-    ...     }
+    ...     "field.actions.change": "Change",
+    ...     "field.name": "hoary",
+    ...     "field.version": "5.04",
+    ...     "field.changeslist": "hoary-changes@ubuntu.com",
+    ...     "field.status": "DEVELOPMENT",
+    ... }
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
     >>> administrate_distroseries(hoary, form)
     0 errors
@@ -60,7 +61,7 @@ distroseries being tested.
 
 The distroseries 'changeslist' field only accept valid email addresses.
 
-    >>> form['field.changeslist'] = ''
+    >>> form["field.changeslist"] = ""
     >>> administrate_distroseries(hoary, form)
     1 errors
     Email changes to: changeslist
@@ -69,7 +70,7 @@ The distroseries 'changeslist' field only accept valid email addresses.
     Changeslist: hoary-changes@ubuntu.com
     Status: DEVELOPMENT
 
-    >>> form['field.changeslist'] = 'bRoKen_AdDreSs'
+    >>> form["field.changeslist"] = "bRoKen_AdDreSs"
     >>> administrate_distroseries(hoary, form)
     1 errors
     Email changes to: Invalid email &#x27;bRoKen_AdDreSs&#x27;.
@@ -78,7 +79,7 @@ The distroseries 'changeslist' field only accept valid email addresses.
     Changeslist: hoary-changes@ubuntu.com
     Status: DEVELOPMENT
 
-    >>> form['field.changeslist'] = 'foo@bar.com'
+    >>> form["field.changeslist"] = "foo@bar.com"
     >>> administrate_distroseries(hoary, form)
     0 errors
     Name: hoary
@@ -94,7 +95,7 @@ status (FUTURE, EXPERIMENTAL, DEVELOPMENT, FROZEN) to CURRENT, its
     >>> print(hoary.datereleased)
     None
 
-    >>> form['field.status'] = 'CURRENT'
+    >>> form["field.status"] = "CURRENT"
     >>> administrate_distroseries(hoary, form)
     0 errors
     Name: hoary
@@ -114,7 +115,7 @@ will not rollback the changes done until here.
 
 A stable distroseries cannot be made unstable again.
 
-    >>> form['field.status'] = 'EXPERIMENTAL'
+    >>> form["field.status"] = "EXPERIMENTAL"
     >>> administrate_distroseries(hoary, form)
     1 errors
     Invalid value: token ...'EXPERIMENTAL' not found in vocabulary
@@ -127,7 +128,7 @@ The 'datereleased' value is only set once, even if the distroseries is
 modified to SUPPORTED or OBSOLETE and then set back to CURRENT its
 initial value remains.
 
-    >>> form['field.status'] = 'SUPPORTED'
+    >>> form["field.status"] = "SUPPORTED"
     >>> administrate_distroseries(hoary, form)
     0 errors
     Name: hoary
@@ -138,7 +139,7 @@ initial value remains.
     >>> hoary.datereleased == initial_datereleased
     True
 
-    >>> form['field.status'] = 'CURRENT'
+    >>> form["field.status"] = "CURRENT"
     >>> administrate_distroseries(hoary, form)
     0 errors
     Name: hoary
@@ -156,10 +157,10 @@ Editing distro series
 The distroseries edit view allows the editor to change series. The form
 uses the display_name, title, and description fields.
 
-    >>> driver = factory.makePerson(name='ubuntu-driver')
+    >>> driver = factory.makePerson(name="ubuntu-driver")
     >>> hoary.driver = driver
     >>> ignored = login_person(driver)
-    >>> view = create_initialized_view(hoary, '+edit')
+    >>> view = create_initialized_view(hoary, "+edit")
     >>> print(view.label)
     Edit The Hoary Hedgehog Release details
 
@@ -174,30 +175,30 @@ uses the display_name, title, and description fields.
 
 Admins can see the status field for full functionality distributions.
 
-    >>> login('admin@canonical.com')
-    >>> view = create_initialized_view(hoary, '+edit')
+    >>> login("admin@canonical.com")
+    >>> view = create_initialized_view(hoary, "+edit")
     >>> [field.__name__ for field in view.form_fields]
     ['display_name', 'title', 'summary', 'description', 'status']
 
 Series that belong to derivative distributions also contain the status field.
 
-    >>> youbuntu = factory.makeDistribution(name='youbuntu')
-    >>> yo_series = factory.makeDistroSeries(name='melon')
-    >>> yo_series.title = 'Melon'
+    >>> youbuntu = factory.makeDistribution(name="youbuntu")
+    >>> yo_series = factory.makeDistroSeries(name="melon")
+    >>> yo_series.title = "Melon"
     >>> youbuntu.official_packages
     False
 
-    >>> yo_driver = factory.makePerson(name='yo-driver')
+    >>> yo_driver = factory.makePerson(name="yo-driver")
     >>> youbuntu.driver = yo_driver
     >>> ignored = login_person(yo_driver)
-    >>> view = create_initialized_view(yo_series, '+edit')
+    >>> view = create_initialized_view(yo_series, "+edit")
     >>> print(view.label)
     Edit Melon details
 
     >>> [field.__name__ for field in view.form_fields]
     ['display_name', 'title', 'summary', 'description', 'status']
 
-    >>> print(view.widgets.get('status')._getFormValue().title)
+    >>> print(view.widgets.get("status")._getFormValue().title)
     Active Development
 
 
@@ -206,9 +207,9 @@ Creating distro series
 
 A distroseries is created using the distroseries view.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> view = create_view(ubuntu, '+addseries')
+    >>> view = create_view(ubuntu, "+addseries")
     >>> print(view.page_title)
     Add a series
     >>> print(view.label)
@@ -225,16 +226,16 @@ A distroseries is created using the distroseries view.
 A distroseries is created whent the required field are submitted.
 
     >>> form = {
-    ...     'field.name': 'sane',
-    ...     'field.display_name': 'Sane Name',
-    ...     'field.summary': 'A stable series to introduce fnord.',
-    ...     'field.version': '2009.06',
-    ...     'field.actions.create': 'Create Series',
-    ...     }
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    ...     "field.name": "sane",
+    ...     "field.display_name": "Sane Name",
+    ...     "field.summary": "A stable series to introduce fnord.",
+    ...     "field.version": "2009.06",
+    ...     "field.actions.create": "Create Series",
+    ... }
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> view.errors
     []
-    >>> sane_distroseries = ubuntu.getSeries('sane')
+    >>> sane_distroseries = ubuntu.getSeries("sane")
     >>> print(sane_distroseries.name)
     sane
 
@@ -245,11 +246,11 @@ Administrators can create series, but normal users cannot.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> check_permission('launchpad.Driver', view)
+    >>> check_permission("launchpad.Driver", view)
     True
 
-    >>> login('no-priv@canonical.com')
-    >>> check_permission('launchpad.Driver', view)
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Driver", view)
     False
 
 
@@ -260,19 +261,20 @@ Users who are appointed as drivers of a distribution that doesn't use
 Launchpad for package management can create a series.
 
     >>> ignored = login_person(yo_driver)
-    >>> view = create_view(youbuntu, name='+addseries')
-    >>> check_permission('launchpad.Moderate', view)
+    >>> view = create_view(youbuntu, name="+addseries")
+    >>> check_permission("launchpad.Moderate", view)
     True
 
     >>> yo_form = dict(form)
-    >>> yo_form['field.name'] = 'island'
-    >>> yo_form['field.display_name'] = 'Island'
+    >>> yo_form["field.name"] = "island"
+    >>> yo_form["field.display_name"] = "Island"
     >>> view = create_initialized_view(
-    ...     youbuntu, name='+addseries', form=yo_form, principal=yo_driver)
+    ...     youbuntu, name="+addseries", form=yo_form, principal=yo_driver
+    ... )
     >>> view.errors
     []
 
-    >>> yo_series = youbuntu.getSeries('island')
+    >>> yo_series = youbuntu.getSeries("island")
     >>> print(yo_series.display_name)
     Island
 
@@ -286,8 +288,8 @@ primary archive.
     >>> ignored = login_person(ubuntu.owner.teamowner)
     >>> ubuntu.driver = yo_driver
     >>> ignored = login_person(yo_driver)
-    >>> view = create_view(youbuntu, name='+addseries')
-    >>> check_permission('launchpad.Edit', view)
+    >>> view = create_view(youbuntu, name="+addseries")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -301,17 +303,18 @@ doesn't manage its packages in Launchpad.
     yo-driver
 
     >>> ignored = login_person(yo_driver)
-    >>> view = create_view(yo_series, name='+edit')
-    >>> check_permission('launchpad.Edit', view)
+    >>> view = create_view(yo_series, name="+edit")
+    >>> check_permission("launchpad.Edit", view)
     True
 
     >>> yo_form = dict(form)
-    >>> del yo_form['field.actions.create']
-    >>> yo_form['field.display_name'] = 'Mountain'
-    >>> yo_form['field.summary'] = 'Mountain summary'
-    >>> yo_form['field.actions.change'] = 'Change'
+    >>> del yo_form["field.actions.create"]
+    >>> yo_form["field.display_name"] = "Mountain"
+    >>> yo_form["field.summary"] = "Mountain summary"
+    >>> yo_form["field.actions.change"] = "Change"
     >>> view = create_initialized_view(
-    ...     yo_series, name='+edit', form=yo_form, principal=yo_driver)
+    ...     yo_series, name="+edit", form=yo_form, principal=yo_driver
+    ... )
     >>> view.errors
     []
 
@@ -324,8 +327,8 @@ Drivers of packages with packages such as Ubuntu cannot edit a series.
     >>> hoary.driver = yo_driver
     >>> ignored = login_person(yo_driver)
 
-    >>> view = create_view(hoary, name='+edit')
-    >>> check_permission('launchpad.Edit', view)
+    >>> view = create_view(hoary, name="+edit")
+    >>> check_permission("launchpad.Edit", view)
     False
 
 
@@ -334,21 +337,23 @@ Distroseries name
 
 The distroseries name is unique.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> form['field.name'] = 'sane'
-    >>> form['field.version'] = '2009.07'
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    >>> form["field.name"] = "sane"
+    >>> form["field.version"] = "2009.07"
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> for error in view.errors:
     ...     print(error.args[2])
+    ...
     sane is already in use by another series.
 
 The distroseries name cannot contain spaces.
 
-    >>> form['field.name'] = 'insane name'
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    >>> form["field.name"] = "insane name"
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> for error in view.errors:
     ...     print(error.args[2])
+    ...
     Invalid name 'insane name'...
 
 
@@ -357,19 +362,21 @@ Distroseries version
 
 Versions cannot contain spaces.
 
-    >>> form['field.name'] = '6-06-series'
-    >>> form['field.version'] = '6.06 LTS'
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    >>> form["field.name"] = "6-06-series"
+    >>> form["field.version"] = "6.06 LTS"
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> for error in view.errors:
     ...     print(error.args[2])
+    ...
     6.06 LTS is not a valid version
 
 The distroseries version must be a valid debversion.
 
-    >>> form['field.version'] = 'Hardy-6.06-LTS'
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    >>> form["field.version"] = "Hardy-6.06-LTS"
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> for error in view.errors:
     ...     print(error.args[2])
+    ...
     &#x27;Hardy-6.06-LTS&#x27;: Could not parse version...
 
 The distroseries version is unique to a distribution. Version '2009.06'
@@ -378,20 +385,21 @@ cannot be reused by another Ubuntu series.
     >>> print(sane_distroseries.version)
     2009.06
 
-    >>> form['field.name'] = 'experimental'
-    >>> form['field.version'] = '2009.06'
-    >>> view = create_initialized_view(ubuntu, '+addseries', form=form)
+    >>> form["field.name"] = "experimental"
+    >>> form["field.version"] = "2009.06"
+    >>> view = create_initialized_view(ubuntu, "+addseries", form=form)
     >>> for error in view.errors:
     ...     print(error.args[2])
+    ...
     2009.06 is already in use by another version in this distribution.
 
 But version '2009.06' can be used by another distribution.
 
-    >>> other_distro = factory.makeDistribution(name='other-distro')
-    >>> view = create_initialized_view(other_distro, '+addseries', form=form)
+    >>> other_distro = factory.makeDistribution(name="other-distro")
+    >>> view = create_initialized_view(other_distro, "+addseries", form=form)
     >>> view.errors
     []
 
-    >>> experimental_distroseries = other_distro.getSeries('experimental')
+    >>> experimental_distroseries = other_distro.getSeries("experimental")
     >>> print(experimental_distroseries.version)
     2009.06

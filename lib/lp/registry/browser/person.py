@@ -4820,7 +4820,6 @@ classImplements(PersonIndexView, IPersonIndexMenu)
 
 
 @adapter(IPerson, IWebServiceClientRequest)
-@implementer(Interface)
 class PersonXHTMLRepresentation:
     def __init__(self, person, request):
         self.person = person

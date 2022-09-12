@@ -1,6 +1,8 @@
 Foo Bar changes the productseries named 'failedbranch' from the product a52dec
 to bazaar. Also changes the name of the productseries to 'newname'.
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... POST /a52dec/failedbranch/+review HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
     ... Referer: https://launchpad.test/
@@ -19,14 +21,20 @@ to bazaar. Also changes the name of the productseries to 'newname'.
     ...
     ... Change
     ... -----------------------------10572808480422220968425074--
-    ... """))  # noqa
+    ... """
+    ...     )
+    ... )  # noqa
     HTTP/1.1 303 See Other
     ...
     Location: http://localhost/bazaar/newname...
 
-    >>> print(http(r"""
+    >>> print(
+    ...     http(
+    ...         r"""
     ... GET /bazaar/newname HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...

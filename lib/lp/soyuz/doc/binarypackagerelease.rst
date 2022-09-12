@@ -7,7 +7,7 @@ across build records.
     >>> from lp.testing import verifyObject
     >>> from lp.soyuz.interfaces.binarypackagerelease import (
     ...     IBinaryPackageRelease,
-    ...     )
+    ... )
     >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
     >>> firefox_bin_release = BinaryPackageRelease.get(12)
@@ -39,28 +39,34 @@ be quickly ascertained through a set operation.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.interfaces.binarypackagename import (
-    ...     IBinaryPackageNameSet)
-    >>> foobar_name = getUtility(IBinaryPackageNameSet)['foobar']
+    ...     IBinaryPackageNameSet,
+    ... )
+    >>> foobar_name = getUtility(IBinaryPackageNameSet)["foobar"]
     >>> pmount_bin_release = BinaryPackageRelease.get(20)
     >>> name_ids = (
     ...     foobar_name.id,
     ...     pmount_bin_release.binarypackagename.id,
-    ...     firefox_bin_release.binarypackagename.id)
+    ...     firefox_bin_release.binarypackagename.id,
+    ... )
     >>> archive_ids = removeSecurityProxy(
-    ...     warty.distribution.all_distro_archive_ids)
+    ...     warty.distribution.all_distro_archive_ids
+    ... )
     >>> names = getUtility(IBinaryPackageNameSet).getNotNewByNames(
-    ...     name_ids, warty, archive_ids)
+    ...     name_ids, warty, archive_ids
+    ... )
 
     >>> import operator
-    >>> for name in sorted(names, key=operator.attrgetter('name')):
+    >>> for name in sorted(names, key=operator.attrgetter("name")):
     ...     print(name.name)
+    ...
     mozilla-firefox
     pmount
 
 Passing no name_ids gives the EmptyResultSet.
 
     >>> getUtility(IBinaryPackageNameSet).getNotNewByNames(
-    ...     [], warty, archive_ids).count()
+    ...     [], warty, archive_ids
+    ... ).count()
     0
 
 Check IBinaryPackageRelease.override() behaviour:
@@ -87,14 +93,15 @@ Fetch brand new component, section and priority:
     >>> from lp.soyuz.enums import PackagePublishingPriority
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> from lp.soyuz.interfaces.section import ISectionSet
-    >>> new_comp = getUtility(IComponentSet)['universe']
-    >>> new_sec = getUtility(ISectionSet)['mail']
+    >>> new_comp = getUtility(IComponentSet)["universe"]
+    >>> new_sec = getUtility(ISectionSet)["mail"]
     >>> new_priority = PackagePublishingPriority.IMPORTANT
 
 Override the current firefox with new component/section/priority:
 
-    >>> firefox_bin_release.override(component=new_comp, section=new_sec,
-    ...              priority=new_priority)
+    >>> firefox_bin_release.override(
+    ...     component=new_comp, section=new_sec, priority=new_priority
+    ... )
 
 Check if it got overridden correctly:
 
@@ -107,7 +114,7 @@ Check if it got overridden correctly:
 
 Override again; ensure that only the changed item actually changes:
 
-    >>> new_sec = getUtility(ISectionSet)['net']
+    >>> new_sec = getUtility(ISectionSet)["net"]
     >>> firefox_bin_release.override(section=new_sec)
     >>> print(firefox_bin_release.component.name)
     universe
@@ -132,10 +139,9 @@ the context binarypackage release.
 We will use `SoyuzTestPublisher` for creating a fresh binary package
 release.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
-    >>> from lp.soyuz.tests.test_publishing import (
-    ...      SoyuzTestPublisher)
+    >>> from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
 
@@ -148,15 +154,16 @@ it. We will create a helper function to inspect binary packagefiles.
     >>> def print_files(binary):
     ...     for bin_file in binary.files:
     ...         print(bin_file.libraryfile.filename, bin_file.filetype.name)
+    ...
 
     >>> print_files(a_binary)
     foo-bin_666_all.deb DEB
 
 Additionally to DEB files, UDEB and DDEB extensions are also supported.
 
-    >>> deb = test_publisher.addMockFile('foo-extra_666_all.deb')
-    >>> udeb = test_publisher.addMockFile('foo-inst_666_all.udeb')
-    >>> ddeb = test_publisher.addMockFile('foo-dbg_666_all.ddeb')
+    >>> deb = test_publisher.addMockFile("foo-extra_666_all.deb")
+    >>> udeb = test_publisher.addMockFile("foo-inst_666_all.udeb")
+    >>> ddeb = test_publisher.addMockFile("foo-dbg_666_all.ddeb")
 
     >>> unused = a_binary.addFile(deb)
     >>> unused = a_binary.addFile(udeb)
@@ -170,7 +177,7 @@ Additionally to DEB files, UDEB and DDEB extensions are also supported.
 
 An error is raised if a file with an unsupported extension is given.
 
-    >>> boing = test_publisher.addMockFile('foo-dbg_666_all.boing')
+    >>> boing = test_publisher.addMockFile("foo-dbg_666_all.boing")
     >>> unused = a_binary.addFile(boing)
     Traceback (most recent call last):
     ...

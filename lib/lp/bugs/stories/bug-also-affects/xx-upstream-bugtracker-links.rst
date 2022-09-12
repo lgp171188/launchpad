@@ -10,15 +10,15 @@ of the remote product it uses on that bug tracker, links will be shown
 on the +choose-affected-product form to that bug tracker's bug filing
 and search forms.
 
-    >>> user_browser.open('http://launchpad.test/bugs/13/')
-    >>> user_browser.getLink(url='+choose-affected-product').click()
-    >>> user_browser.getControl('Project').value = 'thunderbird'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/13/")
+    >>> user_browser.getLink(url="+choose-affected-product").click()
+    >>> user_browser.getControl("Project").value = "thunderbird"
+    >>> user_browser.getControl("Continue").click()
 
 Thunderbird isn't linked to an upstream tracker, so the text is more
 general.
 
-    >>> text = find_tag_by_id(user_browser.contents, 'upstream-text')
+    >>> text = find_tag_by_id(user_browser.contents, "upstream-text")
     >>> print(extract_text(text))
     Mozilla Thunderbird
     doesn't use Launchpad to track its bugs. If you know this bug
@@ -30,19 +30,20 @@ If we link Thunderbird to an upstream bug tracker, the text will change
 to reflect this.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/thunderbird/+configure-bugtracker')
+    ...     "http://launchpad.test/thunderbird/+configure-bugtracker"
+    ... )
+    >>> admin_browser.getControl(name="field.bugtracker").value = ["external"]
     >>> admin_browser.getControl(
-    ...     name='field.bugtracker').value = ['external']
-    >>> admin_browser.getControl(
-    ...     name='field.bugtracker.bugtracker').value = 'mozilla.org'
-    >>> admin_browser.getControl('Change').click()
+    ...     name="field.bugtracker.bugtracker"
+    ... ).value = "mozilla.org"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> user_browser.open('http://launchpad.test/bugs/13/')
-    >>> user_browser.getLink(url='+choose-affected-product').click()
-    >>> user_browser.getControl('Project').value = 'thunderbird'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/13/")
+    >>> user_browser.getLink(url="+choose-affected-product").click()
+    >>> user_browser.getControl("Project").value = "thunderbird"
+    >>> user_browser.getControl("Continue").click()
 
-    >>> text = find_tag_by_id(user_browser.contents, 'upstream-text')
+    >>> text = find_tag_by_id(user_browser.contents, "upstream-text")
     >>> print(extract_text(text))
     Mozilla Thunderbird
     uses The Mozilla.org Bug Tracker to
@@ -55,12 +56,12 @@ If the project that the user links to is one that has its remote_product
 set, links to the upstream bug tracker's bug filing and search forms
 will be displayed.
 
-    >>> user_browser.open('http://launchpad.test/bugs/13/')
-    >>> user_browser.getLink(url='+choose-affected-product').click()
-    >>> user_browser.getControl('Project').value = 'gnome-terminal'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/13/")
+    >>> user_browser.getLink(url="+choose-affected-product").click()
+    >>> user_browser.getControl("Project").value = "gnome-terminal"
+    >>> user_browser.getControl("Continue").click()
 
-    >>> text = find_tag_by_id(user_browser.contents, 'upstream-text')
+    >>> text = find_tag_by_id(user_browser.contents, "upstream-text")
     >>> print(extract_text(text))
     GNOME Terminal uses GnomeGBug GTracker to track its bugs.
     If you know this bug has been reported there, you can link to it;
@@ -77,11 +78,11 @@ link back to bug 13, the place where it was originally filed.
     >>> from urllib.parse import (
     ...     parse_qs,
     ...     urlparse,
-    ...     )
+    ... )
 
-    >>> url = user_browser.getLink(text=u'bug filing form').url
+    >>> url = user_browser.getLink(text="bug filing form").url
     >>> scheme, netloc, path, params, query, fragment = urlparse(url)
-    >>> [long_desc] = parse_qs(query)['long_desc']
+    >>> [long_desc] = parse_qs(query)["long_desc"]
 
     >>> print(long_desc)
     Originally reported at:
@@ -94,19 +95,22 @@ If the remote bug tracker is one for which Launchpad doesn't offer a bug
 filing link, such as Debbugs, only a search link will be displayed.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/gnome-terminal/+configure-bugtracker')
+    ...     "http://launchpad.test/gnome-terminal/+configure-bugtracker"
+    ... )
     >>> admin_browser.getControl(
-    ...     'In a registered bug tracker:').selected = True
+    ...     "In a registered bug tracker:"
+    ... ).selected = True
     >>> admin_browser.getControl(
-    ...     name='field.bugtracker.bugtracker').value = 'debbugs'
-    >>> admin_browser.getControl('Change').click()
+    ...     name="field.bugtracker.bugtracker"
+    ... ).value = "debbugs"
+    >>> admin_browser.getControl("Change").click()
 
-    >>> user_browser.open('http://launchpad.test/bugs/13/')
-    >>> user_browser.getLink(url='+choose-affected-product').click()
-    >>> user_browser.getControl('Project').value = 'gnome-terminal'
-    >>> user_browser.getControl('Continue').click()
+    >>> user_browser.open("http://launchpad.test/bugs/13/")
+    >>> user_browser.getLink(url="+choose-affected-product").click()
+    >>> user_browser.getControl("Project").value = "gnome-terminal"
+    >>> user_browser.getControl("Continue").click()
 
-    >>> text = find_tag_by_id(user_browser.contents, 'upstream-text')
+    >>> text = find_tag_by_id(user_browser.contents, "upstream-text")
     >>> print(extract_text(text))
     GNOME Terminal uses Debian Bug tracker to track its bugs.
     If you know this bug has been reported there, you can link to it;
@@ -123,12 +127,15 @@ The remote_product field, which stores a Product's ID on the remote bug
 tracker, can be set from the +configure-bugtracker page, too.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/thunderbird/+configure-bugtracker')
-    >>> admin_browser.getControl(name='field.remote_product').value = (
-    ...     'Thunderbird')
-    >>> admin_browser.getControl('Change').click()
+    ...     "http://launchpad.test/thunderbird/+configure-bugtracker"
+    ... )
+    >>> admin_browser.getControl(
+    ...     name="field.remote_product"
+    ... ).value = "Thunderbird"
+    >>> admin_browser.getControl("Change").click()
 
     >>> admin_browser.open(
-    ...     'http://launchpad.test/thunderbird/+configure-bugtracker')
-    >>> print(admin_browser.getControl(name='field.remote_product').value)
+    ...     "http://launchpad.test/thunderbird/+configure-bugtracker"
+    ... )
+    >>> print(admin_browser.getControl(name="field.remote_product").value)
     Thunderbird

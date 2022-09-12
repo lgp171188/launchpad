@@ -3,14 +3,17 @@ contact, the maintainer will be subscribed to the bug instead.
 
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     >>> browser.open("http://localhost:9000/firefox/+filebug")
-    >>> browser.getControl('Summary', index=0).value = (
-    ...     "this is a newly created private bug")
+    >>> browser.getControl(
+    ...     "Summary", index=0
+    ... ).value = "this is a newly created private bug"
     >>> browser.getControl("Continue").click()
 
-    >>> browser.getControl(name="field.title").value = (
-    ...     "this is a newly created private bug")
-    >>> browser.getControl(name="field.comment").value = (
-    ...     "very secret info here")
+    >>> browser.getControl(
+    ...     name="field.title"
+    ... ).value = "this is a newly created private bug"
+    >>> browser.getControl(
+    ...     name="field.comment"
+    ... ).value = "very secret info here"
     >>> browser.getControl("Private Security").selected = True
     >>> browser.getControl("Submit Bug Report").click()
 
@@ -33,7 +36,8 @@ Now the reporter is subscribed.
     >>> bug = getUtility(IBugSet).get(bug_id)
 
     >>> for subscriber in sorted(
-    ...         bug.getDirectSubscribers(), key=attrgetter('name')):
+    ...     bug.getDirectSubscribers(), key=attrgetter("name")
+    ... ):
     ...     print(subscriber.name)
     name16
 
@@ -70,7 +74,8 @@ fails, because we pretend that inaccessible private bugs do not exist.
 
     >>> browser = setupBrowser()
     >>> browser.open(
-    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
+    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id
+    ... )
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -80,7 +85,8 @@ on which the no-privs is not an explicit subscriber.
 
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> browser.open(
-    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
+    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id
+    ... )
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound: ...
@@ -97,7 +103,8 @@ They now access the task page of a task on a private bug; also permitted.
 
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     >>> browser.open(
-    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id)
+    ...     "http://launchpad.test/firefox/+bug/%s/+editstatus" % bug_id
+    ... )
     >>> print(browser.headers["Status"])
     200 Ok
 
@@ -106,10 +113,14 @@ They now access the task page of a task on a private bug; also permitted.
 View the bug task listing page as an anonymous user. Note that the
 private bug just filed by Sample Person is not visible.
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bugs HTTP/1.1
     ... Accept-Language: en-ca,en-us;q=0.8,en;q=0.5,fr-ca;q=0.3
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...3 results...
     ...<span class="bugnumber">#5</span>...
@@ -120,15 +131,23 @@ private bug just filed by Sample Person is not visible.
 Trying to access a private upstream bug as an anonymous user results
 in a page not found error.
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bug/6 HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bug/14 HTTP/1.1
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 404 Not Found
     ...
 
@@ -136,10 +155,14 @@ View the upstream Firefox bug listing as user Foo Bar. Note that Foo
 Bar cannot see in this listing the private bug that Sample Person
 submitted earlier.
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bugs HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...Mozilla Firefox...
     ...<span class="bugnumber">#5</span>...
@@ -153,10 +176,14 @@ submitted earlier.
 
 View bugs on Mozilla Firefox as the no-privs user:
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bugs HTTP/1.1
     ... Authorization: Basic bm8tcHJpdkBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 200 Ok
     ...
         Mozilla Firefox
@@ -164,19 +191,27 @@ View bugs on Mozilla Firefox as the no-privs user:
 
 Note that the no-privs user doesn't have the permissions to see bug #13.
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /firefox/+bug/14 HTTP/1.1
     ... Authorization: Basic bm8tcHJpdkBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 404 Not Found
     ...
 
 This is also true if no-privs tries to access the bug from another
 context.
 
-    >>> print(http(br"""
+    >>> print(
+    ...     http(
+    ...         rb"""
     ... GET /tomcat/+bug/14 HTTP/1.1
     ... Authorization: Basic bm8tcHJpdkBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """))
+    ... """
+    ...     )
+    ... )
     HTTP/1.1 404 Not Found
     ...

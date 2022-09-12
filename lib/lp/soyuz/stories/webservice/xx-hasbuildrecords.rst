@@ -20,9 +20,11 @@ We will create a helper function to inspect build collections in
 different contexts.
 
     >>> def print_builds(builds):
-    ...     for entry in sorted(builds['entries'],
-    ...                         key=lambda entry:entry.get('title')):
-    ...         print(entry['title'])
+    ...     for entry in sorted(
+    ...         builds["entries"], key=lambda entry: entry.get("title")
+    ...     ):
+    ...         print(entry["title"])
+    ...
 
 
 Filtering builds
@@ -32,7 +34,8 @@ Celso Providelo PPA builds can be browsed via the API.
 
     >>> ppa = webservice.get("/~cprov/+archive/ubuntu/ppa").jsonBody()
     >>> ppa_builds = webservice.named_get(
-    ...     ppa['self_link'], 'getBuildRecords').jsonBody()
+    ...     ppa["self_link"], "getBuildRecords"
+    ... ).jsonBody()
 
     >>> print_builds(ppa_builds)
     hppa build of mozilla-firefox 0.9 in ubuntu warty RELEASE
@@ -45,7 +48,8 @@ An entry can be selected in the returned collection.
     >>> from operator import itemgetter
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(
-    ...     sorted(ppa_builds['entries'], key=itemgetter('title'))[0])
+    ...     sorted(ppa_builds["entries"], key=itemgetter("title"))[0]
+    ... )
     arch_tag: 'hppa'
     ...
     title: 'hppa build of mozilla-firefox 0.9 in ubuntu warty RELEASE'
@@ -54,8 +58,8 @@ An entry can be selected in the returned collection.
 Builds can be filtered by their 'build_state'.
 
     >>> failed_builds = webservice.named_get(
-    ...     ppa['self_link'], 'getBuildRecords',
-    ...     build_state='Failed to build').jsonBody()
+    ...     ppa["self_link"], "getBuildRecords", build_state="Failed to build"
+    ... ).jsonBody()
 
     >>> print_builds(failed_builds)
     i386 build of cdrkit 1.0 in ubuntu breezy-autotest RELEASE
@@ -63,8 +67,8 @@ Builds can be filtered by their 'build_state'.
 Or filtered by their corresponding source package name.
 
     >>> named_builds = webservice.named_get(
-    ...     ppa['self_link'], 'getBuildRecords',
-    ...     source_name='pmount').jsonBody()
+    ...     ppa["self_link"], "getBuildRecords", source_name="pmount"
+    ... ).jsonBody()
 
     >>> print_builds(named_builds)
     i386 build of pmount 0.1-1 in ubuntu warty RELEASE
@@ -72,8 +76,8 @@ Or filtered by their corresponding source package name.
 Substring matches can be used as well.
 
     >>> substring_builds = webservice.named_get(
-    ...     ppa['self_link'], 'getBuildRecords',
-    ...     source_name='ice').jsonBody()
+    ...     ppa["self_link"], "getBuildRecords", source_name="ice"
+    ... ).jsonBody()
 
     >>> print_builds(substring_builds)
     i386 build of iceweasel 1.0 in ubuntu warty RELEASE
@@ -81,9 +85,9 @@ Substring matches can be used as well.
 Finally, filtering by the target pocket.
 
     >>> updates_builds = webservice.named_get(
-    ...     ppa['self_link'], 'getBuildRecords', pocket='Updates'
+    ...     ppa["self_link"], "getBuildRecords", pocket="Updates"
     ... ).jsonBody()
-    >>> len(updates_builds['entries'])
+    >>> len(updates_builds["entries"])
     0
 
 
@@ -94,7 +98,8 @@ Distributions, like ubuntu, allow users to call browse builds.
 
     >>> ubuntu = webservice.get("/ubuntu").jsonBody()
     >>> ubuntu_builds = webservice.named_get(
-    ...     ubuntu['self_link'], 'getBuildRecords').jsonBody()
+    ...     ubuntu["self_link"], "getBuildRecords"
+    ... ).jsonBody()
 
     >>> print_builds(ubuntu_builds)
     hppa build of mozilla-firefox 0.9 in ubuntu warty RELEASE
@@ -111,7 +116,8 @@ DistroSeries, like ubuntu/hoary, allow users to call browse builds.
 
     >>> hoary = webservice.get("/ubuntu/hoary").jsonBody()
     >>> hoary_builds = webservice.named_get(
-    ...     hoary['self_link'], 'getBuildRecords').jsonBody()
+    ...     hoary["self_link"], "getBuildRecords"
+    ... ).jsonBody()
 
     >>> print_builds(hoary_builds)
     hppa build of pmount 0.1-1 in ubuntu hoary RELEASE

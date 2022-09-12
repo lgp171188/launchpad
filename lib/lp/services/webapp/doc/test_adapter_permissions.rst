@@ -10,7 +10,11 @@ actually be invoked.
 
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, PRIMARY_FLAVOR, STANDBY_FLAVOR)
+    ...     IStoreSelector,
+    ...     MAIN_STORE,
+    ...     PRIMARY_FLAVOR,
+    ...     STANDBY_FLAVOR,
+    ... )
     >>> import transaction
     >>> from zope.component import getUtility
 
@@ -18,9 +22,10 @@ If a STANDBY_FLAVOR store is requested, it should trap all writes.
 
     >>> t = transaction.begin()
     >>> main_standby = getUtility(IStoreSelector).get(
-    ...     MAIN_STORE, STANDBY_FLAVOR)
-    >>> janitor = main_standby.find(Person, name='janitor').one()
-    >>> janitor.display_name = 'Ben Dover'
+    ...     MAIN_STORE, STANDBY_FLAVOR
+    ... )
+    >>> janitor = main_standby.find(Person, name="janitor").one()
+    >>> janitor.display_name = "Ben Dover"
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
@@ -30,7 +35,7 @@ Test this once more to ensure the settings stick across transactions.
 
     >>> transaction.abort()
     >>> t = transaction.begin()
-    >>> main_standby.find(Person, name='janitor').one().display_name = 'BenD'
+    >>> main_standby.find(Person, name="janitor").one().display_name = "BenD"
     >>> transaction.commit()
     Traceback (most recent call last):
     ...
@@ -41,10 +46,11 @@ Store's replication set.
 
     >>> t = transaction.begin()
     >>> main_primary = getUtility(IStoreSelector).get(
-    ...     MAIN_STORE, PRIMARY_FLAVOR)
-    >>> main_primary.find(Person, name='janitor').one().display_name = 'BenD'
+    ...     MAIN_STORE, PRIMARY_FLAVOR
+    ... )
+    >>> main_primary.find(Person, name="janitor").one().display_name = "BenD"
     >>> transaction.commit()
     >>> t = transaction.begin()
-    >>> print(main_primary.find(Person, name='janitor').one().display_name)
+    >>> print(main_primary.find(Person, name="janitor").one().display_name)
     BenD
     >>> transaction.abort()

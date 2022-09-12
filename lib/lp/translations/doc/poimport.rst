@@ -13,10 +13,11 @@ Here are some imports we need to get this test running.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
-    ...     ITranslationImportQueue)
+    ...     ITranslationImportQueue,
+    ... )
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
 We need this for the Librarian to work properly.
@@ -29,7 +30,7 @@ Here's a fake logger to capture any errors that happen.
 
 Login as an admin to be able to do changes to the import queue.
 
-    >>> login('carlos@canonical.com')
+    >>> login("carlos@canonical.com")
 
 
 Importing a Template
@@ -45,18 +46,21 @@ POFile.importFromQueue and POTemplate.importFromQueue methods.
 Here's the person who'll be doing the import.
 
     >>> person_set = getUtility(IPersonSet)
-    >>> person = person_set.getByName('mark')
+    >>> person = person_set.getByName("mark")
 
 And this is the POTemplate where the import will be done.
 
     >>> potemplate = factory.makePOTemplate(
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     owner=person)
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     owner=person,
+    ... )
     >>> potemplate_id = potemplate.id
 
 This is the file that'll get imported.
 
-    >>> potemplate_contents = six.ensure_binary(r'''
+    >>> potemplate_contents = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "POT-Creation-Date: 2004-07-11 16:16+0900\n"
@@ -86,7 +90,9 @@ This is the file that'll get imported.
     ...
     ... msgid "translator-credits"
     ... msgstr ""
-    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )  # noqa
 
 We sometimes saw deadlocks as POFile statistics were updated after
 importing a template.  The operation would read all translation messages
@@ -100,9 +106,14 @@ Attach the import to the translations import queue:
 
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     potemplate.path, potemplate_contents, True, potemplate.owner,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate)
+    ...     potemplate.path,
+    ...     potemplate_contents,
+    ...     True,
+    ...     potemplate.owner,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ... )
 
 The file data is stored in the Librarian, so we have to commit the
 transaction to make sure it's stored properly.
@@ -115,13 +126,14 @@ The entry gets approved, so it can be imported.
 
     >>> import datetime
     >>> import pytz
-    >>> UTC = pytz.timezone('UTC')
+    >>> UTC = pytz.timezone("UTC")
     >>> saved_date = datetime.datetime.now(UTC)
 
 Now, we tell the PO template to import from the file data it has.
 
     >>> (subject, body) = potemplate.importFromQueue(
-    ...     entry, FakeLogger(), txn=FakeTransaction())
+    ...     entry, FakeLogger(), txn=FakeTransaction()
+    ... )
 
 Our request has now been serviced.
 
@@ -148,6 +160,7 @@ The correct message IDs now show up in the template.
     >>> potmsgsets = list(potemplate.getPOTMsgSets())
     >>> for potmsgset in potmsgsets:
     ...     print(potmsgset.msgid_singular.msgid)
+    ...
     foo
     bar
     baz
@@ -196,7 +209,7 @@ Importing a Translation
 
 Now let's get a PO file to import.
 
-    >>> pofile = potemplate.newPOFile('cy')
+    >>> pofile = potemplate.newPOFile("cy")
     >>> pofile_id = pofile.id
 
 By default, we got a safe path to prevent collisions with other IPOFile.
@@ -206,7 +219,7 @@ By default, we got a safe path to prevent collisions with other IPOFile.
 
 Let's override the default good path with one we know is the right one.
 
-    >>> pofile.setPathIfUnique(u'po/cy.po')
+    >>> pofile.setPathIfUnique("po/cy.po")
 
 It's newly created, so it has only one translation which is the
 translation credits.
@@ -226,7 +239,8 @@ Import With Errors
 Here are the contents of the file we'll be importing. It has some
 validation errors.
 
-    >>> pofile_with_errors = six.ensure_binary(r'''
+    >>> pofile_with_errors = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 19:41+0100\n"
@@ -257,21 +271,29 @@ validation errors.
     ... msgstr[1] "Bars %%d"
     ... msgstr[2] "Welsh power! %%d"
     ... msgstr[3] "We have four! %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )  # noqa
 
 This is the dbschema that controls the validation of a translation.
 
     >>> from lp.translations.interfaces.translationmessage import (
-    ...     TranslationValidationStatus)
+    ...     TranslationValidationStatus,
+    ... )
 
 The process of importing a PO file is much like that of importing a PO
 template. Remember, we need to tell the system that this po file is an
 "imported" one.
 
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_with_errors, True, person,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate)
+    ...     pofile.path,
+    ...     pofile_with_errors,
+    ...     True,
+    ...     person,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ... )
     >>> transaction.commit()
 
 The guess IPOFile should be the same we already had.
@@ -304,14 +326,17 @@ not appear in the POTemplate.
     >>> from zope.security.proxy import removeSecurityProxy
 
     >>> def show_translation_details(translationmessage, pofile):
-    ...     print(translationmessage.potmsgset.singular_text, end=' ')
+    ...     print(translationmessage.potmsgset.singular_text, end=" ")
     ...     print(
     ...         pretty(removeSecurityProxy(translationmessage.translations)),
-    ...         end=' ')
+    ...         end=" ",
+    ...     )
     ...     print(translationmessage.potmsgset.getSequence(pofile.potemplate))
+    ...
     >>> for translationmessage in pofile.translation_messages:
     ...     if translationmessage.is_current_ubuntu:
     ...         show_translation_details(translationmessage, pofile)
+    ...
     translator-credits
         ['This is a dummy translation so that the credits
          are counted as translated.'] 6
@@ -337,7 +362,8 @@ set in the PO template.
 And should be accepted by our validator.
 
     >>> upstream_message = message.potmsgset.getOtherTranslation(
-    ...     pofile.language, pofile.potemplate.translation_side)
+    ...     pofile.language, pofile.potemplate.translation_side
+    ... )
     >>> upstream_message.validation_status == TranslationValidationStatus.OK
     True
 
@@ -346,23 +372,29 @@ Fuzzy translations are ignored.
     >>> def get_pofile_translation_message(pofile, msgid):
     ...     potmsgset = pofile.potemplate.getPOTMsgSetByMsgIDText(msgid)
     ...     return potmsgset.getCurrentTranslation(
-    ...         pofile.potemplate, pofile.language,
-    ...         pofile.potemplate.translation_side)
-    >>> message = get_pofile_translation_message(pofile, u'bar')
+    ...         pofile.potemplate,
+    ...         pofile.language,
+    ...         pofile.potemplate.translation_side,
+    ...     )
+    ...
+    >>> message = get_pofile_translation_message(pofile, "bar")
     >>> print(message)
     None
 
 Check that the plural form was imported correctly.
 
     >>> potmsgset = pofile.potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'Singular %d', u'Plural %d')
+    ...     "Singular %d", "Plural %d"
+    ... )
     >>> imported_translationmessage = potmsgset.getOtherTranslation(
-    ...     pofile.language, pofile.potemplate.translation_side)
+    ...     pofile.language, pofile.potemplate.translation_side
+    ... )
     >>> print(imported_translationmessage.validation_status.name)
     OK
 
     >>> for translation in imported_translationmessage.translations:
     ...     print(translation)
+    ...
     Foos %d
     Bars %d
     Welsh power! %d
@@ -424,7 +456,8 @@ instance) and they don't mean that any messages failed to import.
 
 For example, here's a gettext PO file with two headers.
 
-    >>> pofile_with_warning = six.ensure_binary(r'''
+    >>> pofile_with_warning = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "Content-Type: text/plain; charset=UTF-8\n"
@@ -440,12 +473,20 @@ For example, here's a gettext PO file with two headers.
     ...
     ... msgid "a"
     ... msgstr "b"
-    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
-    >>> eo_pofile = potemplate.newPOFile('eo')
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )  # noqa
+    >>> eo_pofile = potemplate.newPOFile("eo")
     >>> warning_entry = translation_import_queue.addOrUpdateEntry(
-    ...     'eo.po', pofile_with_warning, False, potemplate.owner,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate, pofile=eo_pofile)
+    ...     "eo.po",
+    ...     pofile_with_warning,
+    ...     False,
+    ...     potemplate.owner,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ...     pofile=eo_pofile,
+    ... )
     >>> transaction.commit()
     >>> warning_entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = eo_pofile.importFromQueue(warning_entry)
@@ -485,7 +526,8 @@ Import Without Errors
 Now, let's import one without errors. This file changes one translation
 and adds another one.
 
-    >>> pofile_without_errors = six.ensure_binary(r'''
+    >>> pofile_without_errors = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 20:41+0100\n"
@@ -503,11 +545,18 @@ and adds another one.
     ...
     ... msgid "translator-credits"
     ... msgstr "helpful@example.com"
-    ... ''' % datetime.datetime.now(UTC).isoformat())
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_without_errors, True, rosetta_experts,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate)
+    ...     pofile.path,
+    ...     pofile_without_errors,
+    ...     True,
+    ...     rosetta_experts,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ... )
     >>> transaction.commit()
 
 The new upload clears the entry's error_output.
@@ -540,11 +589,16 @@ The status is now IMPORTED:
 Since the translations from the older imports are still present,
 we now have four current translations.
 
-    >>> for translationmessage in pofile.translation_messages.order_by('id'):
-    ...     if (translationmessage.is_current_ubuntu and
-    ...         translationmessage.potmsgset.getSequence(pofile.potemplate)
-    ...         > 0):
+    >>> for translationmessage in pofile.translation_messages.order_by("id"):
+    ...     if (
+    ...         translationmessage.is_current_ubuntu
+    ...         and translationmessage.potmsgset.getSequence(
+    ...             pofile.potemplate
+    ...         )
+    ...         > 0
+    ...     ):
     ...         show_translation_details(translationmessage, pofile)
+    ...
     Singular %d
         ['Foos %d', 'Bars %d', 'Welsh power! %d', 'We have four! %d'] 5
     foo ['new translation'] 1
@@ -576,11 +630,11 @@ file.  The translation credits are special; upstream uploads can
 credits for translations in Launchpad are generated automatically, non-
 upstream translations for these messages are ignored.
 
-    >>> message = get_pofile_translation_message(pofile, 'foo')
+    >>> message = get_pofile_translation_message(pofile, "foo")
     >>> print(message.msgstr0.translation)
     new translation
 
-    >>> message = get_pofile_translation_message(pofile, 'translator-credits')
+    >>> message = get_pofile_translation_message(pofile, "translator-credits")
     >>> print(message.msgstr0.translation)
     helpful@example.com
 
@@ -607,7 +661,7 @@ The entry indicates what file it is to be imported to; importing it to
 any other file would be an error.
 
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
-    >>> other_pofile = potemplate.newPOFile('de')
+    >>> other_pofile = potemplate.newPOFile("de")
     >>> other_pofile.importFromQueue(entry)
     Traceback (most recent call last):
     ...
@@ -639,14 +693,16 @@ plural forms).
     None
 
     >>> potemplate = factory.makePOTemplate(
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename)
+    ...     distroseries=distroseries, sourcepackagename=sourcepackagename
+    ... )
     >>> pofile = potemplate.newPOFile(language.code)
     >>> pofile.plural_forms
     2
 
 We'll import a POFile with 3 plural forms into this POFile:
 
-    >>> pofile_with_plurals = six.ensure_binary(r'''
+    >>> pofile_with_plurals = six.ensure_binary(
+    ...     r"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-06-03 19:41+0100\n"
@@ -661,15 +717,22 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[0] "First form %%d"
     ... msgstr[1] "Second form %%d"
     ... msgstr[2] "Third form %%d"
-    ... ''' % datetime.datetime.now(UTC).isoformat())  # noqa
+    ... """
+    ...     % datetime.datetime.now(UTC).isoformat()
+    ... )  # noqa
 
 We now import this POFile as this language's translation for the source
 package:
 
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_with_plurals, True, person,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate)
+    ...     pofile.path,
+    ...     pofile_with_plurals,
+    ...     True,
+    ...     person,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ... )
 
 Allow the Librarian to see the change.
 
@@ -686,11 +749,14 @@ translations (which is a default when the language has no plural forms
 specified):
 
     >>> potmsgset_plural = potemplate.getPOTMsgSetByMsgIDText(
-    ...     u'Singular %d', u'Plural %d')
+    ...     "Singular %d", "Plural %d"
+    ... )
     >>> current = potmsgset_plural.getCurrentTranslation(
-    ...     potemplate, language, potemplate.translation_side)
+    ...     potemplate, language, potemplate.translation_side
+    ... )
     >>> for translation in current.translations:
     ...     print(translation)
+    ...
     First form %d
     Second form %d
 
@@ -708,7 +774,7 @@ Upstream import notifications
 Add a maintainer POFile import (i.e. from a package or bzr branch),
 approve and import it.
 
-    >>> pofile_contents = br'''
+    >>> pofile_contents = rb"""
     ... msgid ""
     ... msgstr ""
     ... "PO-Revision-Date: 2005-05-03 20:41+0100\n"
@@ -719,13 +785,19 @@ approve and import it.
     ...
     ... msgid "foo"
     ... msgstr "blah"
-    ... '''
-    >>> pofile = factory.makePOFile('sr', potemplate=potemplate)
+    ... """
+    >>> pofile = factory.makePOFile("sr", potemplate=potemplate)
     >>> by_maintainer = True
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -744,9 +816,15 @@ For syntax errors, failure notification is still sent out.
 
     >>> pofile_contents = pofile_contents[:-2]
     >>> entry = translation_import_queue.addOrUpdateEntry(
-    ...     pofile.path, pofile_contents, by_maintainer, person,
-    ...     distroseries=distroseries, sourcepackagename=sourcepackagename,
-    ...     potemplate=potemplate, pofile=pofile)
+    ...     pofile.path,
+    ...     pofile_contents,
+    ...     by_maintainer,
+    ...     person,
+    ...     distroseries=distroseries,
+    ...     sourcepackagename=sourcepackagename,
+    ...     potemplate=potemplate,
+    ...     pofile=pofile,
+    ... )
     >>> transaction.commit()
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
     >>> (subject, message) = pofile.importFromQueue(entry)

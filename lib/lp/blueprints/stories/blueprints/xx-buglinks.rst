@@ -10,10 +10,10 @@ in Mozilla Firefox. The 'svg-support' specification is exactly about SVG
 support. That is why both were linked together. The linked bug appear in
 the 'Related Bugs' section.
 
-    >>> anon_browser.open(
-    ...     'http://launchpad.test/firefox/+spec/svg-support')
-    >>> print(extract_text(find_tag_by_id(
-    ...     anon_browser.contents, 'bug_links')))
+    >>> anon_browser.open("http://launchpad.test/firefox/+spec/svg-support")
+    >>> print(
+    ...     extract_text(find_tag_by_id(anon_browser.contents, "bug_links"))
+    ... )
     Related bugs
     Bug #1: Firefox does not support SVG   New
 
@@ -27,25 +27,26 @@ Linking a bug report to a specification is done by using the
 This link is only available to registered users:
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.test/firefox/+spec/svg-support/'
-    ...     '+linkbug')
+    ...     "http://blueprints.launchpad.test/firefox/+spec/svg-support/"
+    ...     "+linkbug"
+    ... )
     >>> user_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support/+linkbug'
-    >>> back_link = user_browser.getLink('Support Native SVG Objects')
+    >>> back_link = user_browser.getLink("Support Native SVG Objects")
     >>> back_link.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support'
 
 To link the bug, the user enters the bug ID and clicks the 'Add'
 button.
 
-    >>> user_browser.getControl('Bug ID').value = '4'
-    >>> user_browser.getControl('Link').click()
+    >>> user_browser.getControl("Bug ID").value = "4"
+    >>> user_browser.getControl("Link").click()
 
 A notification message is displayed telling the user about the added
 link.
 
     >>> soup = find_main_content(user_browser.contents)
-    >>> soup.find('div', 'informational message')
+    >>> soup.find("div", "informational message")
     <div class="informational message">Added link to bug #4:
     ...Reflow problems with complex page layouts...</div>
 
@@ -56,18 +57,18 @@ Removing Links
 Oops, that was actually the wrong bug. So lets remove the link. This is
 done by using the 'Remove bug link' link.
 
-    >>> user_browser.getLink('Unlink a bug').click()
+    >>> user_browser.getLink("Unlink a bug").click()
     >>> user_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/svg-support/+unlinkbug'
 
 The list of linked bugs is displayed. The user selects the bug to remove
 and clicks the 'Remove' button.
 
-    >>> user_browser.getControl('#4: Reflow problems').selected = True
-    >>> user_browser.getControl('Remove').click()
+    >>> user_browser.getControl("#4: Reflow problems").selected = True
+    >>> user_browser.getControl("Remove").click()
 
 A confirmation is displayed to the user.
 
     >>> soup = find_main_content(user_browser.contents)
-    >>> soup.find('div', 'informational message')
+    >>> soup.find("div", "informational message")
     <div class="informational message">Removed link to bug #4.</div>

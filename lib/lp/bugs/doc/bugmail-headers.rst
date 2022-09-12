@@ -56,13 +56,15 @@ tasks):
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.services.webapp.interfaces import ILaunchBag
-    >>> debian = getUtility(IDistributionSet)['debian']
-    >>> warty = getUtility(IDistributionSet)['ubuntu'].getSeries('warty')
+    >>> debian = getUtility(IDistributionSet)["debian"]
+    >>> warty = getUtility(IDistributionSet)["ubuntu"].getSeries("warty")
     >>> mozilla_firefox_packagename = debian_firefox_bugtask.sourcepackagename
     >>> debian_firefox_bugtask.transitionToTarget(
-    ...     debian, getUtility(ILaunchBag).user)
+    ...     debian, getUtility(ILaunchBag).user
+    ... )
     >>> warty_firefox_bugtask.transitionToTarget(
-    ...     warty, getUtility(ILaunchBag).user)
+    ...     warty, getUtility(ILaunchBag).user
+    ... )
 
     >>> print(debian_firefox_bugtask.asEmailHeaderValue())
     distribution=debian; sourcepackage=None; component=None;
@@ -82,7 +84,7 @@ Let's use an example where Scott James Remnant is assigned to a task, but
 doesn't have a "preferred email" set in Launchpad.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> scott = getUtility(IPersonSet).getByName('keybuk')
+    >>> scott = getUtility(IPersonSet).getByName("keybuk")
     >>> debian_firefox_bugtask.transitionToAssignee(scott)
     >>> print(debian_firefox_bugtask.asEmailHeaderValue())
     distribution=debian; sourcepackage=None; component=None;

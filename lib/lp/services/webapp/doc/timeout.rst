@@ -11,8 +11,7 @@ functions wrapped with the @with_timeout decorator) that computes the
 time remaining before the request should time out.
 
     >>> from lp.services.timeout import get_default_timeout_function
-    >>> from lp.services.webapp.adapter import (
-    ...     set_launchpad_default_timeout)
+    >>> from lp.services.webapp.adapter import set_launchpad_default_timeout
     >>> old_func = get_default_timeout_function()
 
     >>> from zope.processlifetime import ProcessStarting
@@ -29,9 +28,14 @@ db_statement_timeout is expired.
 
     >>> from lp.services.config import config
     >>> from textwrap import dedent
-    >>> config.push('timeout', dedent('''\
+    >>> config.push(
+    ...     "timeout",
+    ...     dedent(
+    ...         """\
     ... [database]
-    ... db_statement_timeout = 10000'''))
+    ... db_statement_timeout = 10000"""
+    ...     ),
+    ... )
 
     >>> timeout_func = get_default_timeout_function()
 
@@ -39,7 +43,7 @@ db_statement_timeout is expired.
 
     >>> import time
     >>> from lp.services.webapp import adapter
-    >>> adapter.set_request_started(time.time()-5)
+    >>> adapter.set_request_started(time.time() - 5)
 
 So the computed timeout should be more or less 5 seconds (10-5).
 
@@ -50,7 +54,7 @@ If the timeout is already expired, a RequestExpired error is raised:
 
     >>> from lp.services.webapp.adapter import clear_request_started
     >>> clear_request_started()
-    >>> adapter.set_request_started(time.time()-12)
+    >>> adapter.set_request_started(time.time() - 12)
     >>> timeout_func()
     Traceback (most recent call last):
       ...
@@ -79,6 +83,7 @@ successfully.
 
     >>> def _timeout():
     ...     return 2
+    ...
     >>> @with_timeout(timeout=_timeout)
     ... def wait_a_little_again():
     ...     time.sleep(1)
@@ -88,17 +93,24 @@ successfully.
     ...     @property
     ...     def _timeout(self):
     ...         return 2
+    ...
     ...     @with_timeout(timeout=lambda self: self._timeout)
     ...     def wait_a_little(self):
     ...         time.sleep(1)
+    ...
     >>> Foo().wait_a_little()
 
 If there is no db_statement_timeout, then the default timeout is None
 and a TimeoutError is never raised.
 
-    >>> config.push('no-timeout', dedent('''\
+    >>> config.push(
+    ...     "no-timeout",
+    ...     dedent(
+    ...         """\
     ... [database]
-    ... db_statement_timeout = None'''))
+    ... db_statement_timeout = None"""
+    ...     ),
+    ... )
 
     >>> print(timeout_func())
     None
@@ -123,29 +135,40 @@ lp.services.features.
 
 Install the feature flag to increase the timeout value.
 
-    >>> config.push('flagstimeout', dedent('''\
+    >>> config.push(
+    ...     "flagstimeout",
+    ...     dedent(
+    ...         """\
     ... [database]
-    ... db_statement_timeout = 10000'''))
+    ... db_statement_timeout = 10000"""
+    ...     ),
+    ... )
 
     >>> empty_request = LaunchpadTestRequest()
-    >>> install_feature_controller(FeatureController(
-    ...     ScopesFromRequest(empty_request).lookup))
-    >>> ignore = getFeatureStore().add(FeatureFlag(
-    ...     scope=u'default', flag=u'hard_timeout', value=u'20000',
-    ...     priority=1))
+    >>> install_feature_controller(
+    ...     FeatureController(ScopesFromRequest(empty_request).lookup)
+    ... )
+    >>> ignore = getFeatureStore().add(
+    ...     FeatureFlag(
+    ...         scope="default",
+    ...         flag="hard_timeout",
+    ...         value="20000",
+    ...         priority=1,
+    ...     )
+    ... )
 
 Now the request can take 20 seconds to complete.
 
     >>> clear_request_started()
     >>> adapter.set_request_started(time.time())
     >>> adapter.set_permit_timeout_from_features(True)
-    >>> abs(adapter._get_request_timeout()-20000) < 0.001
+    >>> abs(adapter._get_request_timeout() - 20000) < 0.001
     True
 
 Clean up
 ========
 
-    >>> ignored = config.pop('timeout')
+    >>> ignored = config.pop("timeout")
 
     >>> from lp.services.timeout import set_default_timeout_function
     >>> set_default_timeout_function(old_func)

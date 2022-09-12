@@ -24,7 +24,8 @@ target (such as in filterable email messages).
     >>> firefox_1_0 = firefox.getSeries("1.0")
     >>> debian_woody = debian.getSeries("woody")
     >>> debian_woody_firefox = debian_woody.getSourcePackage(
-    ...     "mozilla-firefox")
+    ...     "mozilla-firefox"
+    ... )
 
     >>> IBugTarget.providedBy(firefox)
     True

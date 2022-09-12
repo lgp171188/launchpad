@@ -12,18 +12,19 @@ Team membership breadcrumbs uses the member's displayname to create
     >>> from lp.testing.menu import make_fake_request
     >>> from lp.registry.interfaces.teammembership import ITeamMembershipSet
 
-    >>> team_owner = factory.makePerson(name='team-owner')
-    >>> super_team = factory.makeTeam(name='us', owner=team_owner)
+    >>> team_owner = factory.makePerson(name="team-owner")
+    >>> super_team = factory.makeTeam(name="us", owner=team_owner)
     >>> membership_set = getUtility(ITeamMembershipSet)
-    >>> membership = membership_set.getByPersonAndTeam(
-    ...     team_owner, super_team)
-    >>> view = create_view(membership, '+index')
+    >>> membership = membership_set.getByPersonAndTeam(team_owner, super_team)
+    >>> view = create_view(membership, "+index")
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.test/~us/+member/team-owner',
-    ...     [super_team, membership, view])
+    ...     "http://launchpad.test/~us/+member/team-owner",
+    ...     [super_team, membership, view],
+    ... )
     >>> hierarchy = create_initialized_view(
-    ...     membership, '+hierarchy', request=request)
+    ...     membership, "+hierarchy", request=request
+    ... )
     >>> hierarchy.items
     [<TeamBreadcrumb ... text='\u201cUs\u201d team'>,
      <TeamMembershipBreadcrumb ... text='Team-owner's membership'>]
@@ -35,7 +36,7 @@ Team membership breadcrumbs uses the member's displayname to create
 The TeamMembershipEditView provides a label that described the membership
 state of the IPerson.
 
-    >>> view = create_view(membership, '+index')
+    >>> view = create_view(membership, "+index")
     >>> print(view.label)
     Active member Team-owner
 
@@ -46,8 +47,8 @@ state of the IPerson.
 When a team is invited to join another team, the TeamInvitationsView controls
 the ~team/+invitations page.
 
-    >>> team = factory.makeTeam(displayname='Bassists', name='bassists')
-    >>> view = create_initialized_view(team, '+invitations')
+    >>> team = factory.makeTeam(displayname="Bassists", name="bassists")
+    >>> view = create_initialized_view(team, "+invitations")
     >>> print(view.label)
     Invitations for Bassists
 

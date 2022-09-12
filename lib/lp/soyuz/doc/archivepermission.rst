@@ -11,7 +11,9 @@ Two main operations are supported: upload and queue administration.
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.enums import ArchivePermissionType
     >>> from lp.soyuz.interfaces.archivepermission import (
-    ...     IArchivePermission, IArchivePermissionSet)
+    ...     IArchivePermission,
+    ...     IArchivePermissionSet,
+    ... )
     >>> from lp.soyuz.model.archivepermission import ArchivePermission
 
     >>> permission_set = getUtility(IArchivePermissionSet)
@@ -20,7 +22,8 @@ The ArchivePermission context class implements the IArchivePermission
 interface.
 
     >>> random_permission = IStore(ArchivePermission).get(
-    ...     ArchivePermission, 1)
+    ...     ArchivePermission, 1
+    ... )
     >>> verifyObject(IArchivePermission, random_permission)
     True
 
@@ -32,15 +35,18 @@ the sample data that we can check.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> main_component = getUtility(IComponentSet)['main']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> main_component = getUtility(IComponentSet)["main"]
 
 We can now find out if "Ubuntu Team" has permission to upload to the
 main component.
 
     >>> main_permissions = permission_set.checkAuthenticated(
-    ...     ubuntu_team, ubuntu.main_archive, ArchivePermissionType.UPLOAD,
-    ...     main_component)
+    ...     ubuntu_team,
+    ...     ubuntu.main_archive,
+    ...     ArchivePermissionType.UPLOAD,
+    ...     main_component,
+    ... )
     >>> main_permissions.count()
     1
 
@@ -74,11 +80,15 @@ permission than allowing access to the whole component.  Just pass
 a SourcePackageName as the "item" parameter:
 
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
-    >>> alsa_utils = getUtility(ISourcePackageNameSet)['alsa-utils']
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> alsa_utils = getUtility(ISourcePackageNameSet)["alsa-utils"]
     >>> alsa_permissions = permission_set.checkAuthenticated(
-    ...     ubuntu_team, ubuntu.main_archive, ArchivePermissionType.UPLOAD,
-    ...     alsa_utils)
+    ...     ubuntu_team,
+    ...     ubuntu.main_archive,
+    ...     ArchivePermissionType.UPLOAD,
+    ...     alsa_utils,
+    ... )
 
 Ubuntu Team does not have permission to upload to alsa-utils,
 specifically (which is moot anyway because they have access to the
@@ -96,22 +106,30 @@ team are returned.  This allows team-level permissions to be set.
     True
 
     >>> all_main_permissions = permission_set.uploadersForComponent(
-    ...     ubuntu.main_archive, main_component)
+    ...     ubuntu.main_archive, main_component
+    ... )
     >>> for permission in all_main_permissions:
     ...     print(permission.person.name)
+    ...
     ubuntu-team
 
     >>> permission_set.checkAuthenticated(
-    ...     mark, ubuntu.main_archive, ArchivePermissionType.UPLOAD,
-    ...     main_component).count()
+    ...     mark,
+    ...     ubuntu.main_archive,
+    ...     ArchivePermissionType.UPLOAD,
+    ...     main_component,
+    ... ).count()
     1
 
 checkAuthenticated() does not know about any other item types, and
 passing a type that it does not know about results in an AssertionError:
 
     >>> permission_set.checkAuthenticated(
-    ...     ubuntu_team, ubuntu.main_archive, ArchivePermissionType.UPLOAD,
-    ...     ubuntu)
+    ...     ubuntu_team,
+    ...     ubuntu.main_archive,
+    ...     ArchivePermissionType.UPLOAD,
+    ...     ubuntu,
+    ... )
     Traceback (most recent call last):
     ...
     AssertionError: 'item' ... is not an IComponent, IPackageset,
@@ -124,7 +142,8 @@ permissionsForPerson() returns all the permission records for the supplied
 person:
 
     >>> permission_set.permissionsForPerson(
-    ...     ubuntu.main_archive, ubuntu_team).count()
+    ...     ubuntu.main_archive, ubuntu_team
+    ... ).count()
     7
 
 uploadersForComponent() returns ArchivePermission records where a person
@@ -132,21 +151,25 @@ or team has permission to upload to the supplied component:
 
     >>> import operator
     >>> uploaders = permission_set.uploadersForComponent(
-    ...     ubuntu.main_archive, main_component)
+    ...     ubuntu.main_archive, main_component
+    ... )
     >>> for uploader in sorted(uploaders, key=operator.attrgetter("id")):
     ...     print(uploader.person.name)
+    ...
     ubuntu-team
 
 The component argument can also be a string type and it's converted
 internally to a component object:
 
     >>> uploaders = permission_set.uploadersForComponent(
-    ...     ubuntu.main_archive, "main")
+    ...     ubuntu.main_archive, "main"
+    ... )
 
 If the string is not a valid component, a NotFound exception is thrown:
 
     >>> uploaders = permission_set.uploadersForComponent(
-    ...     ubuntu.main_archive, "badcomponent")
+    ...     ubuntu.main_archive, "badcomponent"
+    ... )
     Traceback (most recent call last):
     ...
     lp.soyuz.interfaces.archive.ComponentNotFound:
@@ -158,6 +181,7 @@ ArchivePermission records for all matching components:
     >>> uploaders = permission_set.uploadersForComponent(ubuntu.main_archive)
     >>> for uploader in sorted(uploaders, key=operator.attrgetter("id")):
     ...     print(uploader.person.name, uploader.component.name)
+    ...
     ubuntu-team universe
     ubuntu-team restricted
     ubuntu-team main
@@ -167,10 +191,13 @@ components that the supplied user has permission to upload to.
 
     >>> def showComponentUploaders(archive, person):
     ...     permissions = permission_set.componentsForUploader(
-    ...         archive, person)
+    ...         archive, person
+    ...     )
     ...     for permission in sorted(
-    ...         permissions, key=operator.attrgetter("id")):
+    ...         permissions, key=operator.attrgetter("id")
+    ...     ):
     ...         print(permission.component.name)
+    ...
 
     >>> showComponentUploaders(ubuntu.main_archive, mark)
     universe
@@ -181,20 +208,23 @@ uploadersForPackage() returns the ArchivePermission records where a person
 or team has permission to upload to the supplied source package name:
 
     >>> permission_set.uploadersForPackage(
-    ...     ubuntu.main_archive, alsa_utils).count()
+    ...     ubuntu.main_archive, alsa_utils
+    ... ).count()
     0
 
 You can also pass a string package name instead of an ISourcePackageName:
 
     >>> permission_set.uploadersForPackage(
-    ...     ubuntu.main_archive, "alsa-utils").count()
+    ...     ubuntu.main_archive, "alsa-utils"
+    ... ).count()
     0
 
 Passing a non-existent package name will cause a
 NoSuchSourcePackageName to be thrown.
 
     >>> uploaders = permission_set.uploadersForPackage(
-    ...     ubuntu.main_archive, "fakepackage")
+    ...     ubuntu.main_archive, "fakepackage"
+    ... )
     Traceback (most recent call last):
     ...
     lp.registry.errors.NoSuchSourcePackageName:
@@ -204,12 +234,12 @@ Similarly, packagesForUploader() returns the ArchivePermission records where
 the supplied user has permission to upload to packages.
 
     >>> def showPersonsPackages(archive, person):
-    ...     packages = permission_set.packagesForUploader(
-    ...         archive, person)
+    ...     packages = permission_set.packagesForUploader(archive, person)
     ...     for permission in sorted(packages, key=operator.attrgetter("id")):
     ...         print(permission.sourcepackagename.name)
+    ...
 
-    >>> carlos = getUtility(IPersonSet).getByName('carlos')
+    >>> carlos = getUtility(IPersonSet).getByName("carlos")
     >>> showPersonsPackages(ubuntu.main_archive, carlos)
     mozilla-firefox
 
@@ -217,9 +247,11 @@ If you're a member of a team that has permission, the team permission is
 returned.  Here, cprov is a member of ubuntu-team:
 
     >>> discard = ArchivePermission(
-    ...     archive=ubuntu.main_archive, person=ubuntu_team,
+    ...     archive=ubuntu.main_archive,
+    ...     person=ubuntu_team,
     ...     sourcepackagename=alsa_utils,
-    ...     permission=ArchivePermissionType.UPLOAD)
+    ...     permission=ArchivePermissionType.UPLOAD,
+    ... )
     >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> showPersonsPackages(ubuntu.main_archive, cprov)
     alsa-utils
@@ -230,10 +262,13 @@ queues in that component.
 
     >>> def showQueueAdmins(archive, component):
     ...     archive_admins = permission_set.queueAdminsForComponent(
-    ...         archive, component)
+    ...         archive, component
+    ...     )
     ...     for archive_admin in sorted(
-    ...         archive_admins, key=operator.attrgetter("id")):
+    ...         archive_admins, key=operator.attrgetter("id")
+    ...     ):
     ...         print(archive_admin.person.name)
+    ...
 
     >>> showQueueAdmins(ubuntu.main_archive, main_component)
     ubuntu-team
@@ -246,9 +281,11 @@ enumeration of archives.
 
     >>> name12 = getUtility(IPersonSet).getByName("name12")
     >>> permissions = permission_set.componentsForQueueAdmin(
-    ...     ubuntu.main_archive, name12)
+    ...     ubuntu.main_archive, name12
+    ... )
     >>> for permission in sorted(permissions, key=operator.attrgetter("id")):
     ...     print(permission.component.name)
+    ...
     main
     restricted
     universe
@@ -256,9 +293,11 @@ enumeration of archives.
 
     >>> no_team = getUtility(IPersonSet).getByName("no-team-memberships")
     >>> permissions = permission_set.componentsForQueueAdmin(
-    ...     ubuntu.all_distro_archives, no_team)
+    ...     ubuntu.all_distro_archives, no_team
+    ... )
     >>> for permission in sorted(permissions, key=operator.attrgetter("id")):
     ...     print(permission.component.name)
+    ...
     universe
     multiverse
 
@@ -275,7 +314,8 @@ newPackageUploader() creates a permission for a person to upload to a
 specific package:
 
     >>> new_permission = permission_set.newPackageUploader(
-    ...     ubuntu.main_archive, carlos, "alsa-utils")
+    ...     ubuntu.main_archive, carlos, "alsa-utils"
+    ... )
     >>> showPersonsPackages(ubuntu.main_archive, carlos)
     mozilla-firefox
     alsa-utils
@@ -284,14 +324,16 @@ Calling again with the same parameters simply returns the existing
 permission.
 
     >>> dup_permission = permission_set.newPackageUploader(
-    ...     ubuntu.main_archive, carlos, "alsa-utils")
+    ...     ubuntu.main_archive, carlos, "alsa-utils"
+    ... )
     >>> new_permission.id == dup_permission.id
     True
 
 deletePackageUploader() removes it:
 
     >>> permission_set.deletePackageUploader(
-    ...     ubuntu.main_archive, carlos, "alsa-utils")
+    ...     ubuntu.main_archive, carlos, "alsa-utils"
+    ... )
     >>> showPersonsPackages(ubuntu.main_archive, carlos)
     mozilla-firefox
 
@@ -299,7 +341,8 @@ newComponentUploader() creates a permission for a person to upload to a
 specific component:
 
     >>> new_permission = permission_set.newComponentUploader(
-    ...     ubuntu.main_archive, mark, "multiverse")
+    ...     ubuntu.main_archive, mark, "multiverse"
+    ... )
     >>> showComponentUploaders(ubuntu.main_archive, mark)
     universe
     restricted
@@ -310,14 +353,16 @@ Calling again with the same parameters simply returns the existing
 permission.
 
     >>> dup_permission = permission_set.newComponentUploader(
-    ...     ubuntu.main_archive, mark, "multiverse")
+    ...     ubuntu.main_archive, mark, "multiverse"
+    ... )
     >>> new_permission.id == dup_permission.id
     True
 
 deleteComponentUploader() removes it:
 
     >>> permission_set.deleteComponentUploader(
-    ...     ubuntu.main_archive, mark, "multiverse")
+    ...     ubuntu.main_archive, mark, "multiverse"
+    ... )
     >>> showComponentUploaders(ubuntu.main_archive, mark)
     universe
     restricted
@@ -327,7 +372,8 @@ newQueueAdmin() creates a permission for a person to administer a
 specific component in the distroseries queues:
 
     >>> new_permission = permission_set.newQueueAdmin(
-    ...     ubuntu.main_archive, carlos, "main")
+    ...     ubuntu.main_archive, carlos, "main"
+    ... )
     >>> showQueueAdmins(ubuntu.main_archive, main_component)
     ubuntu-team
     name12
@@ -337,14 +383,14 @@ Calling again with the same parameters simply returns the existing
 permission.
 
     >>> dup_permission = permission_set.newQueueAdmin(
-    ...     ubuntu.main_archive, carlos, "main")
+    ...     ubuntu.main_archive, carlos, "main"
+    ... )
     >>> new_permission.id == dup_permission.id
     True
 
 deleteQueueAdmin() removes it:
 
-    >>> permission_set.deleteQueueAdmin(
-    ...     ubuntu.main_archive, carlos, "main")
+    >>> permission_set.deleteQueueAdmin(ubuntu.main_archive, carlos, "main")
     >>> showQueueAdmins(ubuntu.main_archive, main_component)
     ubuntu-team
     name12
@@ -357,60 +403,86 @@ per-series:
 
     >>> def showPocketQueueAdmins(archive, pocket, distroseries=None):
     ...     archive_admins = permission_set.queueAdminsForPocket(
-    ...         archive, pocket, distroseries=distroseries)
+    ...         archive, pocket, distroseries=distroseries
+    ...     )
     ...     for archive_admin in sorted(
-    ...         archive_admins, key=operator.attrgetter("id")):
+    ...         archive_admins, key=operator.attrgetter("id")
+    ...     ):
     ...         print(archive_admin.person.name)
+    ...
 
     >>> new_permission = permission_set.newPocketQueueAdmin(
-    ...     ubuntu.main_archive, carlos, PackagePublishingPocket.SECURITY)
+    ...     ubuntu.main_archive, carlos, PackagePublishingPocket.SECURITY
+    ... )
     >>> new_permission = permission_set.newPocketQueueAdmin(
-    ...     ubuntu.main_archive, mark, PackagePublishingPocket.PROPOSED,
-    ...     distroseries=ubuntu.series[0])
+    ...     ubuntu.main_archive,
+    ...     mark,
+    ...     PackagePublishingPocket.PROPOSED,
+    ...     distroseries=ubuntu.series[0],
+    ... )
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.SECURITY)
+    ...     ubuntu.main_archive, PackagePublishingPocket.SECURITY
+    ... )
     carlos
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED)
+    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED
+    ... )
     mark
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED,
-    ...     distroseries=ubuntu.series[0])
+    ...     ubuntu.main_archive,
+    ...     PackagePublishingPocket.PROPOSED,
+    ...     distroseries=ubuntu.series[0],
+    ... )
     mark
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED,
-    ...     distroseries=ubuntu.series[1])
+    ...     ubuntu.main_archive,
+    ...     PackagePublishingPocket.PROPOSED,
+    ...     distroseries=ubuntu.series[1],
+    ... )
 
 checkAuthenticated returns sensible results for these permissions:
 
     >>> def countPocketAdminPermissions(person, pocket, distroseries=None):
     ...     return permission_set.checkAuthenticated(
-    ...         person, ubuntu.main_archive,
-    ...         ArchivePermissionType.QUEUE_ADMIN, pocket,
-    ...         distroseries=distroseries).count()
+    ...         person,
+    ...         ubuntu.main_archive,
+    ...         ArchivePermissionType.QUEUE_ADMIN,
+    ...         pocket,
+    ...         distroseries=distroseries,
+    ...     ).count()
+    ...
 
     >>> countPocketAdminPermissions(carlos, PackagePublishingPocket.SECURITY)
     1
     >>> countPocketAdminPermissions(mark, PackagePublishingPocket.PROPOSED)
     1
     >>> countPocketAdminPermissions(
-    ...     mark, PackagePublishingPocket.PROPOSED, ubuntu.series[0])
+    ...     mark, PackagePublishingPocket.PROPOSED, ubuntu.series[0]
+    ... )
     1
     >>> countPocketAdminPermissions(
-    ...     mark, PackagePublishingPocket.PROPOSED, ubuntu.series[1])
+    ...     mark, PackagePublishingPocket.PROPOSED, ubuntu.series[1]
+    ... )
     0
     >>> countPocketAdminPermissions(
-    ...     mark, PackagePublishingPocket.SECURITY, ubuntu.series[0])
+    ...     mark, PackagePublishingPocket.SECURITY, ubuntu.series[0]
+    ... )
     0
 
 deletePocketQueueAdmin removes them:
 
     >>> permission_set.deletePocketQueueAdmin(
-    ...     ubuntu.main_archive, carlos, PackagePublishingPocket.SECURITY)
+    ...     ubuntu.main_archive, carlos, PackagePublishingPocket.SECURITY
+    ... )
     >>> permission_set.deletePocketQueueAdmin(
-    ...     ubuntu.main_archive, mark, PackagePublishingPocket.PROPOSED,
-    ...     distroseries=ubuntu.series[0])
+    ...     ubuntu.main_archive,
+    ...     mark,
+    ...     PackagePublishingPocket.PROPOSED,
+    ...     distroseries=ubuntu.series[0],
+    ... )
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.SECURITY)
+    ...     ubuntu.main_archive, PackagePublishingPocket.SECURITY
+    ... )
     >>> showPocketQueueAdmins(
-    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED)
+    ...     ubuntu.main_archive, PackagePublishingPocket.PROPOSED
+    ... )

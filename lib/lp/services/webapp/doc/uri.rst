@@ -7,9 +7,9 @@ security proxies.
     >>> from zope.security.proxy import ProxyFactory
     >>> from lazr.uri import URI
 
-    >>> uri1 = URI('http://a/b/c/d;p?q')
-    >>> uri2 = URI('http://a/b/c/d;p?q')
-    >>> uri3 = URI('https://launchpad.net')
+    >>> uri1 = URI("http://a/b/c/d;p?q")
+    >>> uri2 = URI("http://a/b/c/d;p?q")
+    >>> uri3 = URI("https://launchpad.net")
     >>> proxied_uri1 = ProxyFactory(uri1)
     >>> proxied_uri2 = ProxyFactory(uri2)
     >>> proxied_uri3 = ProxyFactory(uri3)
@@ -63,12 +63,12 @@ We can get the string value and representation of a URI:
 
 We can replace components:
 
-    >>> print(proxied_uri1.replace(scheme='https'))
+    >>> print(proxied_uri1.replace(scheme="https"))
     https://a/b/c/d;p?q
 
 We can append a component:
 
-    >>> print(proxied_uri1.append('e/f'))
+    >>> print(proxied_uri1.append("e/f"))
     http://a/b/c/d;p/e/f
 
 We can check for containment:

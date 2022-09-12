@@ -23,13 +23,15 @@ specifically referenced in Launchpad tests.
 * No Team Memberships
   This user is not supposed to be a member of any teams.
 
-    >>> no_team_memberships = personset.getByName('no-team-memberships')
+    >>> no_team_memberships = personset.getByName("no-team-memberships")
     >>> no_team_memberships.team_memberships.count()
     0
 
 * One Team Membership
   This user is supposed to be a member of only one team, the "Simple Team".
 
-    >>> one_membership = personset.getByName('one-membership')
-    >>> for t in one_membership.team_memberships: print(t.team.displayname)
+    >>> one_membership = personset.getByName("one-membership")
+    >>> for t in one_membership.team_memberships:
+    ...     print(t.team.displayname)
+    ...
     Simple Team

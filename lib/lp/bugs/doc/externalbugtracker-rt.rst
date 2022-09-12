@@ -11,16 +11,14 @@ Basics
 When importing bugs from remote RT instances, we use an RT-specific
 implementation of ExternalBugTracker, RequestTracker.
 
-    >>> from lp.bugs.externalbugtracker import (
-    ...     RequestTracker)
+    >>> from lp.bugs.externalbugtracker import RequestTracker
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.bugs.interfaces.externalbugtracker import IExternalBugTracker
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     new_bugtracker)
+    >>> from lp.bugs.tests.externalbugtracker import new_bugtracker
     >>> from lp.testing import verifyObject
     >>> verifyObject(
-    ...     IExternalBugTracker,
-    ...     RequestTracker('http://example.com/'))
+    ...     IExternalBugTracker, RequestTracker("http://example.com/")
+    ... )
     True
 
 
@@ -36,7 +34,7 @@ The default username and password for RT instances are 'guest' and
 'guest'. The credentials property for an RT instance that we don't have
 specific credentials for will return the default credentials.
 
-    >>> rt_one = RequestTracker('http://foobar.com')
+    >>> rt_one = RequestTracker("http://foobar.com")
     >>> print(pretty(rt_one.credentials))
     {'pass': 'guest', 'user': 'guest'}
 
@@ -44,7 +42,7 @@ However, if the RT instance is one for which we have a username and
 password, those credentials will be retrieved from the Launchpad
 configuration files. rt.example.com is known to Launchpad.
 
-    >>> rt_two = RequestTracker('http://rt.example.com')
+    >>> rt_two = RequestTracker("http://rt.example.com")
     >>> print(pretty(rt_two.credentials))
     {'pass': 'pangalacticgargleblaster', 'user': 'zaphod'}
 
@@ -54,22 +52,22 @@ Status Conversion
 The RequestTracker class can convert the default RT ticket statuses into
 Launchpad statuses:
 
-    >>> rt = RequestTracker('http://example.com/')
-    >>> rt.convertRemoteStatus('new').title
+    >>> rt = RequestTracker("http://example.com/")
+    >>> rt.convertRemoteStatus("new").title
     'New'
-    >>> rt.convertRemoteStatus('open').title
+    >>> rt.convertRemoteStatus("open").title
     'Confirmed'
-    >>> rt.convertRemoteStatus('stalled').title
+    >>> rt.convertRemoteStatus("stalled").title
     'Confirmed'
-    >>> rt.convertRemoteStatus('rejected').title
+    >>> rt.convertRemoteStatus("rejected").title
     'Invalid'
-    >>> rt.convertRemoteStatus('resolved').title
+    >>> rt.convertRemoteStatus("resolved").title
     'Fix Released'
 
 Passing a status which the RequestTracker instance can't understand will
 result in an UnknownRemoteStatusError being raised.
 
-    >>> rt.convertRemoteStatus('spam').title
+    >>> rt.convertRemoteStatus("spam").title
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.UnknownRemoteStatusError: spam
@@ -82,7 +80,7 @@ There is no obvious mapping from ticket priorities to importances. They
 are all imported as Unknown. No exception is raised, because they are
 all unknown.
 
-    >>> rt.convertRemoteImportance('foo').title
+    >>> rt.convertRemoteImportance("foo").title
     'Unknown'
 
 
@@ -98,9 +96,10 @@ of these tests, which allows us to not rely on a working network
 connection.
 
     >>> from lp.bugs.tests.externalbugtracker import TestRequestTracker
-    >>> rt = TestRequestTracker('http://example.com/')
+    >>> rt = TestRequestTracker("http://example.com/")
     >>> with rt.responses(trace_calls=True):
     ...     rt.initializeRemoteBugDB([1585, 1586, 1587, 1588, 1589])
+    ...
     GET http://example.com/?...
     GET http://example.com/REST/1.0/search/ticket/?...
     >>> sorted(rt.bugs.keys())
@@ -110,7 +109,8 @@ The first request logs into RT and saves the resulting cookie.
 
     >>> def print_cookie_jar(jar):
     ...     for name, value in sorted(jar.items()):
-    ...         print('%s=%s' % (name, value))
+    ...         print("%s=%s" % (name, value))
+    ...
 
     >>> print_cookie_jar(rt._cookie_jar)
     rt_credentials=guest:guest
@@ -119,7 +119,8 @@ Subsequent requests use this.
 
     >>> with rt.responses(trace_calls=True) as requests_mock:
     ...     rt.initializeRemoteBugDB([1585, 1586, 1587, 1588, 1589])
-    ...     print(requests_mock.calls[0].request.headers['Cookie'])
+    ...     print(requests_mock.calls[0].request.headers["Cookie"])
+    ...
     rt_credentials=guest:guest
     GET http://example.com/REST/1.0/search/ticket/?...
 
@@ -137,6 +138,7 @@ the bugs will be fetched one-at-a-time:
 
     >>> with rt.responses(trace_calls=True):
     ...     rt.initializeRemoteBugDB([1585])
+    ...
     GET http://example.com/REST/1.0/ticket/1585/show
 
     >>> list(rt.bugs)
@@ -147,6 +149,7 @@ fetched as a batch:
 
     >>> with rt.responses(trace_calls=True):
     ...     rt.initializeRemoteBugDB([1585, 1586, 1587, 1588, 1589])
+    ...
     GET http://example.com/REST/1.0/search/ticket/?...
 
     >>> sorted(rt.bugs.keys())
@@ -158,6 +161,7 @@ our test RT instance simulate such a situation.
 
     >>> with rt.responses(bad=True):
     ...     rt.initializeRemoteBugDB([1585])
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerConnectError: ...
@@ -166,6 +170,7 @@ This can also be demonstrated for importing bugs as a batch:
 
     >>> with rt.responses(bad=True):
     ...     rt.initializeRemoteBugDB([1585, 1586, 1587, 1588, 1589])
+    ...
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugTrackerConnectError: ...
@@ -179,8 +184,7 @@ instance which has several bugs that we wish to watch:
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.bugwatch import IBugWatchSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.bugs.tests.externalbugtracker import (
-    ...     print_bugwatches)
+    >>> from lp.bugs.tests.externalbugtracker import print_bugwatches
 
 Launchpad.dev bug #10 is the same bug as reported in example.com bug
 #1585, so we add a watch against the remote bug.
@@ -189,10 +193,13 @@ Launchpad.dev bug #10 is the same bug as reported in example.com bug
     >>> example_bug_tracker = new_bugtracker(BugTrackerType.RT)
     >>> example_bug = getUtility(IBugSet).get(10)
     >>> sample_person = getUtility(IPersonSet).getByEmail(
-    ...     'test@canonical.com')
+    ...     "test@canonical.com"
+    ... )
     >>> example_bugwatch = example_bug.addWatch(
-    ...     example_bug_tracker, '1585',
-    ...     getUtility(ILaunchpadCelebrities).janitor)
+    ...     example_bug_tracker,
+    ...     "1585",
+    ...     getUtility(ILaunchpadCelebrities).janitor,
+    ... )
 
     >>> print_bugwatches(example_bug_tracker.watches)
     Remote bug 1585: None
@@ -206,12 +213,13 @@ remote status for, the bug watch that we have created.
     >>> from lp.testing.layers import LaunchpadZopelessLayer
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
     >>> txn = LaunchpadZopelessLayer.txn
-    >>> bug_watch_updater = CheckwatchesMaster(
-    ...     txn, logger=FakeLogger())
+    >>> bug_watch_updater = CheckwatchesMaster(txn, logger=FakeLogger())
     >>> rt = TestRequestTracker(example_bug_tracker.baseurl)
     >>> with rt.responses():
     ...     bug_watch_updater.updateBugWatches(
-    ...         rt, example_bug_tracker.watches)
+    ...         rt, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 1 watches for 1 bugs on http://bugs.some.where
 
     >>> print_bugwatches(example_bug_tracker.watches)
@@ -220,8 +228,7 @@ remote status for, the bug watch that we have created.
 We now add some more watches against remote bugs in the example.com bug
 tracker with a variety of statuses.
 
-    >>> print_bugwatches(example_bug_tracker.watches,
-    ...     rt.convertRemoteStatus)
+    >>> print_bugwatches(example_bug_tracker.watches, rt.convertRemoteStatus)
     Remote bug 1585: New
 
     >>> remote_bugs = [
@@ -234,13 +241,18 @@ tracker with a variety of statuses.
     >>> bug_watch_set = getUtility(IBugWatchSet)
     >>> for remote_bug_id in remote_bugs:
     ...     bug_watch = bug_watch_set.createBugWatch(
-    ...         bug=example_bug, owner=sample_person,
+    ...         bug=example_bug,
+    ...         owner=sample_person,
     ...         bugtracker=example_bug_tracker,
-    ...         remotebug=str(remote_bug_id))
+    ...         remotebug=str(remote_bug_id),
+    ...     )
+    ...
 
     >>> with rt.responses(trace_calls=True):
     ...     bug_watch_updater.updateBugWatches(
-    ...         rt, example_bug_tracker.watches)
+    ...         rt, example_bug_tracker.watches
+    ...     )
+    ...
     INFO Updating 5 watches for 5 bugs on http://bugs.some.where
     GET http://bugs.some.where/REST/1.0/search/ticket/?...
 
@@ -248,8 +260,7 @@ The bug statuses have now been imported from the Example.com bug
 tracker, so the bug watches should now have valid Launchpad bug
 statuses:
 
-    >>> print_bugwatches(example_bug_tracker.watches,
-    ...     rt.convertRemoteStatus)
+    >>> print_bugwatches(example_bug_tracker.watches, rt.convertRemoteStatus)
     Remote bug 1585: New
     Remote bug 1586: Confirmed
     Remote bug 1587: Confirmed
@@ -272,7 +283,7 @@ mismatch the meaning is essentially the same.
 If you try to get the remote product of a bug that doesn't exist you'll
 get a BugNotFound error.
 
-    >>> print(rt.getRemoteProduct('this-doesnt-exist'))
+    >>> print(rt.getRemoteProduct("this-doesnt-exist"))
     Traceback (most recent call last):
       ...
     lp.bugs.externalbugtracker.base.BugNotFound: this-doesnt-exist
@@ -280,6 +291,6 @@ get a BugNotFound error.
 If for some reason the RT instance doesn't return a Queue name for a
 bug, getRemoteProduct() will return None.
 
-    >>> del rt.bugs[1589]['queue']
+    >>> del rt.bugs[1589]["queue"]
     >>> print(rt.getRemoteProduct(1589))
     None

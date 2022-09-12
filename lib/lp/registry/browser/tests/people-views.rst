@@ -6,10 +6,10 @@ The view behind the /people page provides searching for people and teams.  The
 view knows how many people and teams are currently registered in Launchpad.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> login('admin@canonical.com')
+    >>> login("admin@canonical.com")
     >>> person_set = getUtility(IPersonSet)
 
-    >>> view = create_initialized_view(person_set, '+index')
+    >>> view = create_initialized_view(person_set, "+index")
     >>> view.number_of_people
     48
     >>> view.number_of_teams
@@ -29,8 +29,8 @@ The view can state if the view is a teams only or people only search.
 
 The property is_teams_only is true when the searchfor field is teamsonly.
 
-    >>> form = dict(searchfor='teamsonly')
-    >>> view = create_initialized_view(person_set, '+index', form=form)
+    >>> form = dict(searchfor="teamsonly")
+    >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> view.is_teams_only
     True
 
@@ -39,8 +39,8 @@ The property is_teams_only is true when the searchfor field is teamsonly.
 
 The property is_people_only is true when the searchfor field is peopleonly.
 
-    >>> form = dict(searchfor='peopleonly')
-    >>> view = create_initialized_view(person_set, '+index', form=form)
+    >>> form = dict(searchfor="peopleonly")
+    >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> view.is_teams_only
     False
 
@@ -60,23 +60,24 @@ one person and one team matching the 'test' string.
     ...     for thing in batch.currentBatch():
     ...         naked_thing = removeSecurityProxy(thing)
     ...         print(naked_thing)
+    ...
 
-    >>> form = dict(name='test')
-    >>> view = create_initialized_view(person_set, '+index', form=form)
+    >>> form = dict(name="test")
+    >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
     <Person at ... name12 (Sample Person)>
     <Person at ... testing-spanish-team (testing Spanish team)>
 
 Searching for just people returns Sample Person.
 
-    >>> form['searchfor'] = 'peopleonly'
-    >>> view = create_initialized_view(person_set, '+index', form=form)
+    >>> form["searchfor"] = "peopleonly"
+    >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
     <Person at ... name12 (Sample Person)>
 
 Searching for just teams returns the testing Spanish team.
 
-    >>> form['searchfor'] = 'teamsonly'
-    >>> view = create_initialized_view(person_set, '+index', form=form)
+    >>> form["searchfor"] = "teamsonly"
+    >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
     <Person at ... testing-spanish-team (testing Spanish team)>

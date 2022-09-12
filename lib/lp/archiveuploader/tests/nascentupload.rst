@@ -8,15 +8,15 @@ Import the test keys so we have them ready for verification
 
 We need to be logged into the security model in order to get any further
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
 
 For the purpose of this test, hoary needs to be an open (development)
 distroseries so that we can upload to it.
 
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.series import SeriesStatus
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> hoary = ubuntu['hoary']
+    >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
+    >>> hoary = ubuntu["hoary"]
     >>> hoary.status = SeriesStatus.DEVELOPMENT
 
 A NascentUpload is a collection of files in a directory. They
@@ -27,16 +27,20 @@ managed archive.
     >>> from lp.archiveuploader.tests import datadir, getPolicy
 
     >>> buildd_policy = getPolicy(
-    ...     name='buildd', distro='ubuntu', distroseries='hoary')
+    ...     name="buildd", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> insecure_policy = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> anything_policy = getPolicy(
-    ...     name='anything', distro='ubuntu', distroseries='hoary')
+    ...     name="anything", distro="ubuntu", distroseries="hoary"
+    ... )
 
 
 NascentUpload Processing
@@ -53,7 +57,8 @@ on that.
     >>> from lp.services.log.logger import DevNullLogger, FakeLogger
 
     >>> nonexistent = NascentUpload.from_changesfile_path(
-    ...     datadir("DOES-NOT-EXIST"), buildd_policy, FakeLogger())
+    ...     datadir("DOES-NOT-EXIST"), buildd_policy, FakeLogger()
+    ... )
     >>> nonexistent.process()
     Traceback (most recent call last):
     ...
@@ -66,10 +71,13 @@ on that.
 
     >>> quodlibet = NascentUpload.from_changesfile_path(
     ...     datadir("quodlibet_0.13.1-1_i386.changes"),
-    ...     anything_policy, DevNullLogger())
+    ...     anything_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> quodlibet.process()
     >>> for f in quodlibet.changes.files:
     ...     print(f.filename, f)
+    ...
     quodlibet_0.13.1-1_all.deb <...DebBinaryUploadFile...>
     quodlibet-ext_0.13.1-1_i386.deb <...DebBinaryUploadFile...>
 
@@ -84,7 +92,7 @@ exists for it:
 
     >>> quodlibet.changes.signer is not None
     True
-    >>> p = quodlibet.changes.maintainer['person']
+    >>> p = quodlibet.changes.maintainer["person"]
     >>> print(p.name)
     buildd
     >>> print(p.displayname)
@@ -116,11 +124,14 @@ is 'native' (only a TARBALL, no diff + orig) or 'has_orig' (uses ORIG
 
     >>> ed_source_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed_0.2-20_i386.changes.source-only-unsigned"),
-    ...     sync_policy, DevNullLogger())
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_source_upload.process()
     >>> for f in ed_source_upload.changes.files:
     ...     print(f.filename, f)
+    ...
     ed_0.2-20.dsc <...DSCFile...>
     ed_0.2-20.diff.gz <...SourceUploadFile...>
     ed_0.2.orig.tar.gz <...SourceUploadFile...>
@@ -145,14 +156,22 @@ ed_source is uses ORIG + DIFF form:
     >>> from lp.archiveuploader.utils import determine_source_file_type
     >>> from lp.registry.interfaces.sourcepackage import SourcePackageFileType
     >>> def determine_file_types(upload):
-    ...     return [determine_source_file_type(uf.filename)
-    ...             for uf in upload.changes.files]
+    ...     return [
+    ...         determine_source_file_type(uf.filename)
+    ...         for uf in upload.changes.files
+    ...     ]
+    ...
     >>> def has_orig(upload):
-    ...     return (SourcePackageFileType.ORIG_TARBALL
-    ...             in determine_file_types(upload))
+    ...     return SourcePackageFileType.ORIG_TARBALL in determine_file_types(
+    ...         upload
+    ...     )
+    ...
     >>> def has_native(upload):
-    ...     return (SourcePackageFileType.NATIVE_TARBALL
-    ...             in determine_file_types(upload))
+    ...     return (
+    ...         SourcePackageFileType.NATIVE_TARBALL
+    ...         in determine_file_types(upload)
+    ...     )
+    ...
 
     >>> has_native(ed_source_upload)
     False
@@ -174,11 +193,14 @@ Let's try a simple binary upload:
 
     >>> ed_binary_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed_0.2-20_i386.changes.binary-only-unsigned"),
-    ...     buildd_policy, DevNullLogger())
+    ...     buildd_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_binary_upload.process()
     >>> for f in ed_binary_upload.changes.files:
     ...     print(f.filename, f)
+    ...
     ed_0.2-20_i386.deb <...DebBinaryUploadFile...>
 
 ed_binary is *binaryful*:
@@ -220,20 +242,25 @@ should match the files target architectures:
 # Use the buildd policy as it accepts unsigned changes files and binary
 # uploads.
     >>> modified_buildd_policy = getPolicy(
-    ...     name='buildd', distro='ubuntu', distroseries='hoary')
+    ...     name="buildd", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> ed_mismatched_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed_0.2-20_i386.changes.mismatched-arch-unsigned"),
-    ...     modified_buildd_policy, DevNullLogger())
+    ...     modified_buildd_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_mismatched_upload.process()
 
     >>> for f in ed_mismatched_upload.changes.files:
     ...     print(f.filename, f)
+    ...
     ed_0.2-20_i386.deb <...DebBinaryUploadFile...>
 
     >>> for a in ed_mismatched_upload.changes.architectures:
     ...     print(a)
+    ...
     amd64
 
 Since the changesfile specify that only 'amd64' will be used and
@@ -251,7 +278,8 @@ Uploads don't need to include the ORIG files when they're known to be in the
 archive already.
 
     >>> insecure_policy_changed = getPolicy(
-    ...     name='insecure', distro='ubuntu', distroseries='hoary')
+    ...     name="insecure", distro="ubuntu", distroseries="hoary"
+    ... )
 
 # Copy the .orig so that NascentUpload has access to it, although it
 # wouldn't have been uploaded in practice because (as you can see below) the
@@ -261,7 +289,9 @@ archive already.
 
     >>> ed_upload = NascentUpload.from_changesfile_path(
     ...     datadir("ed-0.2-21/ed_0.2-21_source.changes"),
-    ...     insecure_policy_changed, DevNullLogger())
+    ...     insecure_policy_changed,
+    ...     DevNullLogger(),
+    ... )
 
     >>> ed_upload.process()
     >>> ed_upload.is_rejected
@@ -284,6 +314,7 @@ known ORIG file:
 
     >>> for f in ed_upload.changes.dsc.files:
     ...     print(f.filename)
+    ...
     ed_0.2.orig.tar.gz
     ed_0.2-21.diff.gz
 
@@ -312,8 +343,10 @@ after calling this method.
 First up, construct an upload of just the ed source...
 
     >>> ed_src = NascentUpload.from_changesfile_path(
-    ...     datadir('split-upload-test/ed_0.2-20_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("split-upload-test/ed_0.2-20_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> ed_src.process()
     >>> ed_src.is_rejected
     False
@@ -332,7 +365,7 @@ Retrieve the just-inserted SourcePackageRelease correspondent to 'ed'
 Check if we have rebuid the change's author line properly (as
 mentioned in bug # 30621)
 
-    >>> print(ed_spr.changelog_entry) #doctest: -NORMALIZE_WHITESPACE
+    >>> print(ed_spr.changelog_entry)  # doctest: -NORMALIZE_WHITESPACE
     ed (0.2-20) unstable; urgency=low
     <BLANKLINE>
       * Move to dpatch; existing non-debian/ changes split into
@@ -407,8 +440,11 @@ SourcePackageRelease.copyright content. See bug #134567.
 
     >>> nocopyright_src = NascentUpload.from_changesfile_path(
     ...     datadir(
-    ...         'suite/nocopyright_1.0-1/nocopyright_1.0-1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...         "suite/nocopyright_1.0-1/nocopyright_1.0-1_source.changes"
+    ...     ),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> nocopyright_src.process()
 
     >>> nocopyright_src.is_rejected
@@ -454,8 +490,10 @@ and source package version for the distroseries in question.
     >>> logger = FakeLogger()
     >>> logger.setLevel(logging.INFO)
     >>> ed_src_dup = NascentUpload.from_changesfile_path(
-    ...     datadir('split-upload-test/ed_0.2-20_source.changes'),
-    ...     sync_policy, logger)
+    ...     datadir("split-upload-test/ed_0.2-20_source.changes"),
+    ...     sync_policy,
+    ...     logger,
+    ... )
     >>> ed_src_dup.process()
     >>> ed_src_dup.is_rejected
     False
@@ -466,6 +504,7 @@ automatically promote the queue entry to ACCEPTED.
 
     >>> for upload_file in ed_src_dup.changes.files:
     ...     upload_file.new = False
+    ...
 
 The we invoke do_accept() normally, since the upload is consistent.
 but since the uniqueness check in IUpload.setAccepted() has detected
@@ -515,13 +554,16 @@ We will try to simulate this procedure for a source upload that
 produces multiple binaries using sync policy:
 
     >>> sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu', distroseries='hoary')
+    ...     name="sync", distro="ubuntu", distroseries="hoary"
+    ... )
 
 Upload new source 'multibar', step 1:
 
     >>> multibar_src_upload = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/multibar_1.0-1/multibar_1.0-1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("suite/multibar_1.0-1/multibar_1.0-1_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> multibar_src_upload.process()
     >>> success = multibar_src_upload.do_accept()
     >>> multibar_src_queue = multibar_src_upload.queue_root
@@ -545,18 +587,26 @@ Then the source gets accepted and published, step 3 and 4:
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.soyuz.interfaces.publishing import IPublishingSet
     >>> getUtility(IPublishingSet).newSourcePublication(
-    ...     multibar_src_queue.archive, multibar_spr,
-    ...     sync_policy.distroseries, PackagePublishingPocket.RELEASE,
-    ...     component=multibar_spr.component, section=multibar_spr.section)
+    ...     multibar_src_queue.archive,
+    ...     multibar_spr,
+    ...     sync_policy.distroseries,
+    ...     PackagePublishingPocket.RELEASE,
+    ...     component=multibar_spr.component,
+    ...     section=multibar_spr.section,
+    ... )
     <SourcePackagePublishingHistory at ...>
 
 Build creation is done based on the SourcePackageRelease object, step 5:
 
     >>> from lp.soyuz.interfaces.binarypackagebuild import (
-    ...     IBinaryPackageBuildSet)
+    ...     IBinaryPackageBuildSet,
+    ... )
     >>> multibar_build = getUtility(IBinaryPackageBuildSet).new(
-    ...     multibar_spr, multibar_src_queue.archive, hoary['i386'],
-    ...     PackagePublishingPocket.RELEASE)
+    ...     multibar_spr,
+    ...     multibar_src_queue.archive,
+    ...     hoary["i386"],
+    ...     PackagePublishingPocket.RELEASE,
+    ... )
 
     >>> multibar_build.status.name
     'NEEDSBUILD'
@@ -575,11 +625,14 @@ At this point worker-scanner moves the upload to the appropriate path
 with the 'buildd' upload policy and processes all files in that directory.
 
     >>> buildd_policy = getPolicy(
-    ...     name='buildd', distro='ubuntu', distroseries='hoary')
+    ...     name="buildd", distro="ubuntu", distroseries="hoary"
+    ... )
 
     >>> multibar_bin_upload = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/multibar_1.0-1/multibar_1.0-1_i386.changes'),
-    ...     buildd_policy, DevNullLogger())
+    ...     datadir("suite/multibar_1.0-1/multibar_1.0-1_i386.changes"),
+    ...     buildd_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> multibar_bin_upload.process(build=multibar_build)
     >>> success = multibar_bin_upload.do_accept()
 
@@ -637,16 +690,18 @@ to upload to -UPDATES in a DEVELOPMENT series.
     >>> from lp.testing.dbuser import lp_dbuser
     >>> with lp_dbuser():
     ...     hoary.status = SeriesStatus.CURRENT
+    ...
 
 Note that the policy do not have fixed distroseries, it will be
 overridden by the changesfile:
 
-    >>> norelease_sync_policy = getPolicy(
-    ...     name='sync', distro='ubuntu')
+    >>> norelease_sync_policy = getPolicy(name="sync", distro="ubuntu")
 
     >>> ed_src = NascentUpload.from_changesfile_path(
-    ...     datadir('updates-upload-test/ed_0.2-20_source.changes'),
-    ...     norelease_sync_policy, DevNullLogger())
+    ...     datadir("updates-upload-test/ed_0.2-20_source.changes"),
+    ...     norelease_sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> ed_src.process()
     >>> ed_src.is_rejected
     False
@@ -667,17 +722,20 @@ And pop it back to development now that we're done
 
     >>> with lp_dbuser():
     ...     hoary.status = SeriesStatus.DEVELOPMENT
+    ...
 
 Check the uploader behaviour against a missing orig.tar.gz file,
       bug # 30741.
 
     >>> ed21_src = NascentUpload.from_changesfile_path(
-    ...     datadir('ed-0.2-21/ed_0.2-21_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("ed-0.2-21/ed_0.2-21_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> ed21_src.process()
     >>> ed21_src.is_rejected
     True
-    >>> print(ed21_src.rejection_message+"\nEND")
+    >>> print(ed21_src.rejection_message + "\nEND")
     Unable to find ed_0.2.orig.tar.gz in upload or distribution.
     Files specified in DSC are broken or missing, skipping package unpack
     verification.
@@ -692,8 +750,10 @@ Check if we can accept a installer-source upload which doesn't have
 information.
 
     >>> inst_src = NascentUpload.from_changesfile_path(
-    ...     datadir('test75874_0.1_source.changes'),
-    ...     sync_policy, DevNullLogger())
+    ...     datadir("test75874_0.1_source.changes"),
+    ...     sync_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> inst_src.process()
 
     >>> inst_src.is_rejected
@@ -709,7 +769,8 @@ content, it should have all the required fields except the
 
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> inst_queue = hoary.getPackageUploads(
-    ...     PackageUploadStatus.NEW, name=u'test75874', exact_match=True)[0]
+    ...     PackageUploadStatus.NEW, name="test75874", exact_match=True
+    ... )[0]
     >>> inst_spr = inst_queue.sources[0].sourcepackagerelease
 
     >>> print(inst_spr.dsc_maintainer_rfc822)
@@ -742,8 +803,10 @@ When using 'insecure' policy, NascentUpload instance stores the DSC
 signing key reference as an IGPGKey:
 
     >>> bar_ok = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar_ok.process()
     >>> bar_ok.is_rejected
     False
@@ -761,7 +824,7 @@ signing key reference as an IGPGKey:
 The second key of name16 person is used to sign uploads (the first gpgkey
 record is a placeholder one, we used the second key):
 
-    >>> name16 = getUtility(IPersonSet).getByName('name16')
+    >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> uploader_key = name16.gpg_keys[1]
     >>> print(uploader_key.fingerprint)
     340CA3BB270E2716C9EE0B768E7EB7086C64A8C5
@@ -780,18 +843,21 @@ rights to all components from 'ubuntu-team' to 'mark':
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.archivepermission import ArchivePermission
     >>> with lp_dbuser():
-    ...     new_uploader = getUtility(IPersonSet).getByName('mark')
+    ...     new_uploader = getUtility(IPersonSet).getByName("mark")
     ...     store = IStore(ArchivePermission)
     ...     for permission in store.find(ArchivePermission):
     ...         permission.person = new_uploader
     ...     store.flush()
+    ...
 
 This time the upload will fail because the ACLs don't let
 "name16", the key owner, upload a package.
 
     >>> bar_failed = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
 
     >>> bar_failed.process()
     >>> bar_failed.is_rejected
@@ -822,21 +888,29 @@ they currently have no upload rights at all to Ubuntu.  However, we can add
 an ArchivePermission record to permit them to upload "bar" specifically.
 
     >>> from lp.registry.interfaces.sourcepackagename import (
-    ...     ISourcePackageNameSet)
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.soyuz.enums import ArchivePermissionType
     >>> with lp_dbuser():
     ...     bar_name = getUtility(ISourcePackageNameSet).getOrCreateByName(
-    ...         "bar")
+    ...         "bar"
+    ...     )
     ...     discard = ArchivePermission(
-    ...         archive=ubuntu.main_archive, person=name16,
+    ...         archive=ubuntu.main_archive,
+    ...         person=name16,
     ...         permission=ArchivePermissionType.UPLOAD,
-    ...         sourcepackagename=bar_name, component=None)
+    ...         sourcepackagename=bar_name,
+    ...         component=None,
+    ...     )
+    ...
 
 Now try the "bar" upload:
 
     >>> bar2 = NascentUpload.from_changesfile_path(
-    ...     datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
-    ...     insecure_policy, DevNullLogger())
+    ...     datadir("suite/bar_1.0-1/bar_1.0-1_source.changes"),
+    ...     insecure_policy,
+    ...     DevNullLogger(),
+    ... )
     >>> bar2.process()
     >>> bar2.is_rejected
     False
@@ -851,19 +925,25 @@ Uploads to copy archives are not allowed.
 
     >>> from lp.soyuz.enums import ArchivePurpose
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
+    >>> cprov = getUtility(IPersonSet).getByName("cprov")
     >>> copy_archive = getUtility(IArchiveSet).new(
-    ...     owner=cprov, purpose=ArchivePurpose.COPY,
-    ...     distribution=ubuntu, name='no-uploads-allowed')
+    ...     owner=cprov,
+    ...     purpose=ArchivePurpose.COPY,
+    ...     distribution=ubuntu,
+    ...     name="no-uploads-allowed",
+    ... )
     >>> copy_archive_policy = getPolicy(
-    ...     name='anything', distro='ubuntu', distroseries='hoary')
+    ...     name="anything", distro="ubuntu", distroseries="hoary"
+    ... )
 
 Make this upload policy pertain to the copy archive.
 
     >>> copy_archive_policy.archive = copy_archive
     >>> quodlibet = NascentUpload.from_changesfile_path(
     ...     datadir("quodlibet_0.13.1-1_i386.changes"),
-    ...     copy_archive_policy, DevNullLogger())
+    ...     copy_archive_policy,
+    ...     DevNullLogger(),
+    ... )
 
 Now process the upload.
 

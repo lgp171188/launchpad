@@ -15,7 +15,7 @@ shouldn't have any bugs linked to it at the start of the test.)
 
     # Some parts of the IBugLinkTarget interface are only accessible
     # to a registered user.
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> from zope.interface.verify import verifyObject
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.buglink import IBugLinkTarget
@@ -47,12 +47,15 @@ fired.
 
     >>> from zope.interface import Interface
     >>> from lp.bugs.interfaces.buglink import (
-    ...     IObjectLinkedEvent, IObjectUnlinkedEvent)
+    ...     IObjectLinkedEvent,
+    ...     IObjectUnlinkedEvent,
+    ... )
     >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> linked_events = []
     >>> linked_event_listener = ZopeEventHandlerFixture(
     ...     lambda object, event: linked_events.append(event),
-    ...     (Interface, IObjectLinkedEvent))
+    ...     (Interface, IObjectLinkedEvent),
+    ... )
     >>> linked_event_listener.setUp()
 
     >>> bug2 = bugset.get(2)
@@ -86,7 +89,7 @@ Anonymous users cannot use linkBug():
 A user can only link to a private bug if they are subscribed to the bug or
 if they are an administrator:
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> private_bug = bugset.get(6)
     >>> private_bug.setPrivate(True, factory.makePerson())
     True
@@ -96,8 +99,8 @@ if they are an administrator:
     zope.security.interfaces.Unauthorized: ...
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> admin = getUtility(IPersonSet).getByEmail('admin@canonical.com')
-    >>> login('foo.bar@canonical.com')
+    >>> admin = getUtility(IPersonSet).getByEmail("admin@canonical.com")
+    >>> login("foo.bar@canonical.com")
     >>> target.linkBug(private_bug, admin)
     True
 
@@ -124,7 +127,7 @@ This method is only available to registered users:
       ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
 
 The method returns whether the link existed. It should also send an
 IObjectUnlinkedEvent for each of the removed link:
@@ -132,7 +135,8 @@ IObjectUnlinkedEvent for each of the removed link:
     >>> unlinked_events = []
     >>> unlinked_event_listener = ZopeEventHandlerFixture(
     ...     lambda object, event: unlinked_events.append(event),
-    ...     (Interface, IObjectUnlinkedEvent))
+    ...     (Interface, IObjectUnlinkedEvent),
+    ... )
     >>> unlinked_event_listener.setUp()
 
     >>> target.unlinkBug(bug1, factory.makePerson())
@@ -166,7 +170,7 @@ the bug or if they are an administrator.
       ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> target.unlinkBug(private_bug, admin)
     True
 

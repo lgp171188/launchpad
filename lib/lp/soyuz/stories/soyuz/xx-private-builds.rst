@@ -30,16 +30,19 @@ We'll make a private archive and add a new build to it to demonstrate this.
 
     >>> login("foo.bar@canonical.com")
     >>> cprov = getUtility(IPersonSet).getByName("cprov")
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> cprov_private_ppa = factory.makeArchive(
-    ...     private=True, owner=cprov, name="p3a", distribution=ubuntu)
+    ...     private=True, owner=cprov, name="p3a", distribution=ubuntu
+    ... )
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
     >>> private_source_pub = test_publisher.getPubSource(
     ...     status=PackagePublishingStatus.PUBLISHED,
-    ...     sourcename='privacy-test', archive=cprov_private_ppa)
+    ...     sourcename="privacy-test",
+    ...     archive=cprov_private_ppa,
+    ... )
     >>> [private_build] = private_source_pub.createMissingBuilds()
-    >>> frog = getUtility(IBuilderSet)['frog']
+    >>> frog = getUtility(IBuilderSet)["frog"]
     >>> frog.builderok = True
     >>> private_build.updateStatus(BuildStatus.BUILDING, builder=frog)
     >>> private_build.buildqueue_record.builder = frog
@@ -49,11 +52,13 @@ We'll also make name12 a member of the launchpad-buildd-admins team, so we
 can use them to see builds from a buildd-admin perspective.
 
     >>> name12 = getUtility(IPersonSet).getByName("name12")
-    >>> buildd_admins = getUtility(
-    ...     IPersonSet).getByName("launchpad-buildd-admins")
+    >>> buildd_admins = getUtility(IPersonSet).getByName(
+    ...     "launchpad-buildd-admins"
+    ... )
     >>> from lp.registry.interfaces.person import TeamMembershipStatus
     >>> ignored = buildd_admins.addMember(
-    ...     name12, reviewer=name12, status=TeamMembershipStatus.APPROVED)
+    ...     name12, reviewer=name12, status=TeamMembershipStatus.APPROVED
+    ... )
 
     >>> flush_database_updates()
     >>> logout()
@@ -92,7 +97,8 @@ Buildd Administrators are not allowed to see the build in the portlet:
 cprov is also allowed to see his own build:
 
     >>> cprov_browser = setupBrowser(
-    ...     auth="Basic celso.providelo@canonical.com:test")
+    ...     auth="Basic celso.providelo@canonical.com:test"
+    ... )
     >>> cprov_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(cprov_browser.contents)))
     The frog builder...
@@ -106,8 +112,9 @@ access.  This prevents direct access to the build URL by unauthorised
 users:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...     private_build_id)
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...     % private_build_id
+    ... )
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...
@@ -115,8 +122,9 @@ users:
 But it is fine for authorised users:
 
     >>> cprov_browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...     private_build_id)
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...     % private_build_id
+    ... )
     >>> print(cprov_browser.url)
     http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/...
 
@@ -137,7 +145,8 @@ what it shows a non-privileged user:
 
     >>> anon_browser.open("http://launchpad.test/+builds/bob/+history")
     >>> [builds_list] = find_tags_by_class(
-    ...     anon_browser.contents, 'builds_list')
+    ...     anon_browser.contents, "builds_list"
+    ... )
     >>> print(extract_text(builds_list))
     Package:
     ...
@@ -160,7 +169,8 @@ history as an unauthorised user shows an empty history.
 
     >>> anon_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
-    ...     anon_browser.contents, 'builds_list')
+    ...     anon_browser.contents, "builds_list"
+    ... )
     >>> print(extract_text(builds_list))
     Package:
     ...
@@ -171,7 +181,8 @@ Both admin and the owner of the build, cprov, can see the build in
 
     >>> admin_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
-    ...     admin_browser.contents, 'builds_list')
+    ...     admin_browser.contents, "builds_list"
+    ... )
     >>> print(extract_text(builds_list))
     Package:
     ...
@@ -180,7 +191,8 @@ Both admin and the owner of the build, cprov, can see the build in
 
     >>> cprov_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
-    ...     cprov_browser.contents, 'builds_list')
+    ...     cprov_browser.contents, "builds_list"
+    ... )
     >>> print(extract_text(builds_list))
     Package:
     ...
@@ -253,23 +265,27 @@ users:
     >>> from zope.security.interfaces import Unauthorized
     >>> try:
     ...     anon_browser.open(
-    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...         private_build_id)
+    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...         % private_build_id
+    ...     )
     ... except Unauthorized:
     ...     print("Got expected exception")
     ... else:
     ...     print("Did not get expected exception")
+    ...
     Got expected exception
 
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> try:
     ...     browser.open(
-    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...         private_build_id)
+    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...         % private_build_id
+    ...     )
     ... except Unauthorized:
     ...     print("Got expected exception")
     ... else:
     ...     print("Did not get expected exception")
+    ...
     Got expected exception
 
 Let's make the iceweasel package available in breezy-autotest.
@@ -279,15 +295,19 @@ First log in as an admin to be able to manipulate the source publishing.
     >>> from lp.services.database.policy import PrimaryDatabasePolicy
     >>> from lp.services.database.interfaces import IStoreSelector
     >>> getUtility(IStoreSelector).push(PrimaryDatabasePolicy())
-    >>> ubuntutest = getUtility(IDistributionSet)['ubuntutest']
-    >>> breezy_autotest = ubuntutest['breezy-autotest']
+    >>> ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+    >>> breezy_autotest = ubuntutest["breezy-autotest"]
     >>> new_pub = private_source_pub.copyTo(
-    ...     breezy_autotest, private_source_pub.pocket,
-    ...     ubuntutest.main_archive)
+    ...     breezy_autotest,
+    ...     private_source_pub.pocket,
+    ...     ubuntutest.main_archive,
+    ... )
     >>> binary_pkg_release = test_publisher.uploadBinaryForBuild(
-    ...     private_build, 'privacy-test-bin')
+    ...     private_build, "privacy-test-bin"
+    ... )
     >>> binary_pkg_pub_history = test_publisher.publishBinaryInArchive(
-    ...     binary_pkg_release, ubuntutest.main_archive)
+    ...     binary_pkg_release, ubuntutest.main_archive
+    ... )
     >>> flush_database_updates()
     >>> policy = getUtility(IStoreSelector).pop()
     >>> logout()
@@ -317,15 +337,17 @@ Any other logged-in user will also see the build:
 Accessing the build page will now also work:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...     private_build_id)
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...     % private_build_id
+    ... )
     >>> print(anon_browser.title)
     i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso
     Providelo
 
     >>> browser.open(
-    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
-    ...     private_build_id)
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s"
+    ...     % private_build_id
+    ... )
     >>> print(browser.title)
     i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso
     Providelo
@@ -334,11 +356,12 @@ Similarly, when accessing the distribution source package release page,
 the main content will display a link to the newly unembargoed build:
 
     >>> browser.open(
-    ...     "http://launchpad.test/ubuntutest/+source/privacy-test/666")
-    >>> portlet = find_portlet(browser.contents, 'Builds')
+    ...     "http://launchpad.test/ubuntutest/+source/privacy-test/666"
+    ... )
+    >>> portlet = find_portlet(browser.contents, "Builds")
     >>> print(extract_text(portlet))
     Builds
     Breezy Badger Autotest: i386
 
-    >>> print(browser.getLink('i386').url)
+    >>> print(browser.getLink("i386").url)
     http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/...

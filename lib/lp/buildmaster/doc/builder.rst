@@ -44,6 +44,7 @@ Iterating over a BuilderSet yields all registered builders.
 
     >>> for b in builderset:
     ...     print(b.name)
+    ...
     bob
     frog
 
@@ -54,9 +55,9 @@ count() return the number of builders registered:
 
 Builders can be retrieved by name.
 
-    >>> print(builderset['bob'].name)
+    >>> print(builderset["bob"].name)
     bob
-    >>> print(builderset['bad'])
+    >>> print(builderset["bad"])
     None
 
 And also by ID.
@@ -73,7 +74,9 @@ The 'new' method will create a new builder in the database.
     >>> from lp.testing import admin_logged_in
     >>> with admin_logged_in():
     ...     bnew = builderset.new(
-    ...         [1], 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
+    ...         [1], "http://dummy.com:8221/", "dummy", "Dummy Title", 1
+    ...     )
+    ...
     >>> print(bnew.name)
     dummy
 
@@ -82,14 +85,16 @@ virtualization status, architecture, then name.
 
     >>> for b in builderset.getBuilders():
     ...     print(b.name)
+    ...
     bob
     dummy
     frog
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> bnew.active = False
     >>> login(ANONYMOUS)
     >>> for b in builderset.getBuilders():
     ...     print(b.name)
+    ...
     bob
     frog
 
@@ -97,7 +102,7 @@ virtualization status, architecture, then name.
 Processor/virtualization.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> size, duration = queue_sizes["nonvirt"]["386"]
     >>> print(size)
     1
     >>> print(duration)
@@ -105,13 +110,14 @@ Processor/virtualization.
 
 There are no 'amd64' build queue entries.
 
-    >>> for arch_tag in queue_sizes['nonvirt']:
+    >>> for arch_tag in queue_sizes["nonvirt"]:
     ...     print(arch_tag)
+    ...
     386
 
 The virtualized build queue for 386 is also empty.
 
-    >>> list(queue_sizes['virt'])
+    >>> list(queue_sizes["virt"])
     []
 
 The queue size is not affect by builds target to disabled
@@ -120,9 +126,9 @@ is an effective manner to hold activity in a specific archive.
 
 We will temporarily disable the ubuntu primary archive.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> ubuntu.main_archive.disable()
     >>> import transaction
     >>> transaction.commit()
@@ -131,12 +137,12 @@ We will temporarily disable the ubuntu primary archive.
 That done, the non-virtualized queue for i386 becomes empty.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> list(queue_sizes['nonvirt'])
+    >>> list(queue_sizes["nonvirt"])
     []
 
 Let's re-enable the ubuntu primary archive.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> ubuntu.main_archive.enable()
     >>> transaction.commit()
     >>> login(ANONYMOUS)
@@ -144,7 +150,7 @@ Let's re-enable the ubuntu primary archive.
 The build for the ubuntu primary archive shows up again.
 
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> size, duration = queue_sizes['nonvirt']['386']
+    >>> size, duration = queue_sizes["nonvirt"]["386"]
     >>> print(size)
     1
     >>> print(duration)
@@ -154,10 +160,11 @@ All job types are included. If we create a recipe build job, it will
 show up in the calculated queue size.
 
     >>> recipe_bq = factory.makeSourcePackageRecipeBuild(
-    ...     distroseries=ubuntu.currentseries).queueBuild()
+    ...     distroseries=ubuntu.currentseries
+    ... ).queueBuild()
     >>> transaction.commit()
     >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> size, duration = queue_sizes['virt']['386']
+    >>> size, duration = queue_sizes["virt"]["386"]
     >>> print(size)
     1
     >>> print(duration)

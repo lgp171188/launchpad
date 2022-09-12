@@ -2,15 +2,18 @@ Launchpad has a copyright notice in different templates in the code base.
 
 The tour pages.
 
-    >>> browser.open('http://launchpad.test/')
-    >>> browser.getLink('Take the tour').click()
-    >>> print(extract_text(find_tag_by_id(
-    ...     browser.contents, 'footer-navigation')))
+    >>> browser.open("http://launchpad.test/")
+    >>> browser.getLink("Take the tour").click()
+    >>> print(
+    ...     extract_text(
+    ...         find_tag_by_id(browser.contents, "footer-navigation")
+    ...     )
+    ... )
     Next...© 2004-2022 Canonical Ltd...
 
 The main template.
 
-    >>> browser.open('http://launchpad.test')
-    >>> print(extract_text(find_tag_by_id(browser.contents, 'footer')))
+    >>> browser.open("http://launchpad.test")
+    >>> print(extract_text(find_tag_by_id(browser.contents, "footer")))
     © 2004-2022 Canonical Ltd.
     ...

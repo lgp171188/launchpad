@@ -18,24 +18,29 @@ will put in a temporary module.
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
     >>> from zope.interface import Interface, Attribute, implementer
 
-    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
+    >>> module = types.ModuleType(factory.getUniqueString().replace("-", "_"))
     >>> sys.modules[module.__name__] = module
 
     >>> class ICountrySet(Interface):
     ...     __module__ = module.__name__
+    ...
 
     >>> class ICountry(Interface):
     ...     __module__ = module.__name__
-    ...     name = Attribute('the name of this country')
+    ...     name = Attribute("the name of this country")
+    ...
 
     >>> class ITown(Interface):
     ...     """Dummy interface for use in browser:url tests."""
+    ...
     ...     __module__ = module.__name__
-    ...     country = Attribute('the country the town is in')
-    ...     name = Attribute('the name of this town')
+    ...     country = Attribute("the country the town is in")
+    ...     name = Attribute("the name of this town")
+    ...
 
     >>> for interface in ICountrySet, ICountry, ITown:
     ...     setattr(module, interface.getName(), interface)
+    ...
 
 Add a view for Country/+map.
 
@@ -44,34 +49,46 @@ Add a view for Country/+map.
     >>> class CountryMapView:
     ...     def __init__(self, country, request):
     ...         pass
-    >>> provideAdapter(CountryMapView, (ICountry, IDefaultBrowserLayer),
-    ...                name='+map', provides=Interface)
+    ...
+    >>> provideAdapter(
+    ...     CountryMapView,
+    ...     (ICountry, IDefaultBrowserLayer),
+    ...     name="+map",
+    ...     provides=Interface,
+    ... )
 
 Define a navigation for the Country URL.
 
     >>> from lp.services.webapp.publisher import (
-    ...     Navigation, redirection, stepto, stepthrough)
+    ...     Navigation,
+    ...     redirection,
+    ...     stepto,
+    ...     stepthrough,
+    ... )
     >>> from zope.publisher.interfaces.browser import IBrowserPublisher
     >>> class CountryNavigation(Navigation):
-    ...     @redirection('+capital')
+    ...     @redirection("+capital")
     ...     def redirect_capital(self):
-    ...         return '+towns/London'
+    ...         return "+towns/London"
     ...
-    ...     @stepthrough('+towns')
+    ...     @stepthrough("+towns")
     ...     def stepthrough_town(self, name):
-    ...         if name == 'London':
+    ...         if name == "London":
     ...             return town_instance
     ...         else:
     ...             return None
     ...
-    ...     @stepto('+greenwich')
+    ...     @stepto("+greenwich")
     ...     def stepto_greenwich(self):
     ...         town = Town()
-    ...         town.name = 'Greenwich'
+    ...         town.name = "Greenwich"
     ...         return town
+    ...
     >>> provideAdapter(
-    ...     CountryNavigation, [ICountry, IDefaultBrowserLayer],
-    ...     IBrowserPublisher)
+    ...     CountryNavigation,
+    ...     [ICountry, IDefaultBrowserLayer],
+    ...     IBrowserPublisher,
+    ... )
 
 We don't have ICanonicalUrlData adapters for objects that provide any of these
 interfaces.  First, we create some countryset, country and town objects.
@@ -83,25 +100,27 @@ interfaces.  First, we create some countryset, country and town objects.
 
     >>> @implementer(ICountry)
     ... class Country:
-    ...    name = 'England'
+    ...     name = "England"
     >>> country_instance = Country()
 
     >>> @implementer(ITown)
     ... class Town:
     ...     country = country_instance
-    ...     name = 'London'
+    ...     name = "London"
     >>> town_instance = Town()
 
 Next, we check there are no ICanonicalUrlData adapters for these objects.
 
     >>> for obj in countryset_instance, country_instance, town_instance:
     ...     assert ICanonicalUrlData(obj, None) is None
+    ...
 
 Configure a browser:url for ITown.  Our first attempt fails because we
 mistyped 'countryOopsTypo', and there is no such name in ITown.
 
     >>> from zope.configuration import xmlconfig
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
@@ -111,13 +130,17 @@ mistyped 'countryOopsTypo', and there is no such name in ITown.
     ...       attribute_to_parent="countryOopsTypo"
     ...       />
     ... </configure>
-    ... """.format(module_name=module.__name__))
+    ... """.format(
+    ...         module_name=module.__name__
+    ...     )
+    ... )
     Traceback (most recent call last):
     ...
     zope.configuration.xmlconfig.ZopeXMLConfigurationError: File "<string>",
     line ... AttributeError: The name "countryOopsTypo" is not in ....ITown
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
@@ -126,7 +149,10 @@ mistyped 'countryOopsTypo', and there is no such name in ITown.
     ...       attribute_to_parent="country"
     ...       />
     ... </configure>
-    ... """.format(module_name=module.__name__))
+    ... """.format(
+    ...         module_name=module.__name__
+    ...     )
+    ... )
 
 Now, there is an ICanonicalUrlData registered for ITown.
 
@@ -146,7 +172,8 @@ at it from zcml.  I'll put it in our temporary module.
 
     >>> module.countryset_instance = countryset_instance
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
     ...     xmlns:browser="http://namespaces.zope.org/browser">
@@ -165,7 +192,10 @@ at it from zcml.  I'll put it in our temporary module.
     ...       parent_utility="{module_name}.ICountrySet"
     ...       />
     ... </configure>
-    ... """.format(module_name=module.__name__))
+    ... """.format(
+    ...         module_name=module.__name__
+    ...     )
+    ... )
 
 Now, there is an ICanonicalUrlData registered for ICountry.
 
@@ -191,11 +221,10 @@ an adapter.
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> @implementer(ICanonicalUrlData)
     ... class CountrySetUrl:
-    ...
     ...     def __init__(self, context):
     ...         self.context = context
     ...
-    ...     path = 'countries'
+    ...     path = "countries"
     ...
     ...     rootsite = None
     ...
@@ -208,7 +237,8 @@ in our temporary module.
 
     >>> module.CountrySetUrl = CountrySetUrl
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
@@ -216,7 +246,10 @@ in our temporary module.
     ...       urldata="{module_name}.CountrySetUrl"
     ...       />
     ... </configure>
-    ... """.format(module_name=module.__name__))
+    ... """.format(
+    ...         module_name=module.__name__
+    ...     )
+    ... )
 
 Now, there is an ICanonicalUrlData registered for ICountrySet.
 
@@ -265,7 +298,7 @@ We can see that this is the mainsite rooturl as configured in
 launchpad-lazr.conf.
 
     >>> from lp.services.webapp.vhosts import allvhosts
-    >>> print(allvhosts.configs['mainsite'].rooturl)
+    >>> print(allvhosts.configs["mainsite"].rooturl)
     http://launchpad.test/
 
 If anywhere in the chain we have an object that cannot be adapted to
@@ -289,7 +322,7 @@ ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
     ...     def __init__(self, name, parent):
     ...         self.path = name
     ...         self.inside = parent
-    >>> unrooted_object = ObjectThatHasUrl('unrooted', object_that_has_no_url)
+    >>> unrooted_object = ObjectThatHasUrl("unrooted", object_that_has_no_url)
     >>> canonical_url(unrooted_object)
     Traceback (most recent call last):
     ...
@@ -319,6 +352,7 @@ First, let's define a helper function to help us test canonical_url_iterator.
     >>> def print_url_iterator(obj):
     ...     for obj in canonical_url_iterator(obj):
     ...         print(obj.__class__.__name__)
+    ...
 
     >>> print_url_iterator(getUtility(ILaunchpadRoot))
     RootObject
@@ -368,7 +402,6 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
     >>> from zope.publisher.interfaces.http import IHTTPApplicationRequest
     >>> @implementer(IHTTPApplicationRequest)
     ... class FakeRequest:
-    ...
     ...     def __init__(self, applicationurl):
     ...         self.applicationurl = applicationurl
     ...         self.interaction = None
@@ -377,15 +410,16 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
     ...         if rootsite is not None:
     ...             return allvhosts.configs[rootsite].rooturl
     ...         else:
-    ...             return self.getApplicationURL() + '/'
+    ...             return self.getApplicationURL() + "/"
     ...
     ...     def getApplicationURL(self, depth=0, path_only=False):
-    ...         assert depth == 0, (
-    ...             'this is not a real IHTTPApplicationRequest')
-    ...         assert not path_only, 'not a real IHTTPApplicationRequest'
+    ...         assert (
+    ...             depth == 0
+    ...         ), "this is not a real IHTTPApplicationRequest"
+    ...         assert not path_only, "not a real IHTTPApplicationRequest"
     ...         return self.applicationurl
 
-    >>> mandrill_request = FakeRequest('https://mandrill.example.org:23')
+    >>> mandrill_request = FakeRequest("https://mandrill.example.org:23")
     >>> print(canonical_url(country_instance))
     http://launchpad.test/countries/England
     >>> print(canonical_url(country_instance, mandrill_request))
@@ -394,7 +428,7 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
 However, if we log in, then that request should be used when none is
 explicitly given otherwise.
 
-    >>> sesame_request = FakeRequest('http://muppet.example.com')
+    >>> sesame_request = FakeRequest("http://muppet.example.com")
     >>> login(ANONYMOUS, sesame_request)
     >>> print(canonical_url(country_instance))
     http://muppet.example.com/countries/England
@@ -416,7 +450,7 @@ Overriding the rootsite from the default request:
 
     >>> print(canonical_url(country_instance))
     http://muppet.example.com/countries/England
-    >>> print(canonical_url(country_instance, rootsite='code'))
+    >>> print(canonical_url(country_instance, rootsite="code"))
     http://code.launchpad.test/countries/England
 
 Webapp vhost overrides can be ignored by setting the
@@ -424,9 +458,9 @@ app.mainsite_only.canonical_url feature flag, so all links end up on
 mainsite. Non-webapp vhosts (eg. api and feeds) are unaffected.
 
     >>> from lp.services.features.testing import MemoryFeatureFixture
-    >>> with MemoryFeatureFixture({'app.mainsite_only.canonical_url': 'on'}):
-    ...     print(canonical_url(country_instance, rootsite='code'))
-    ...     print(canonical_url(country_instance, rootsite='api'))
+    >>> with MemoryFeatureFixture({"app.mainsite_only.canonical_url": "on"}):
+    ...     print(canonical_url(country_instance, rootsite="code"))
+    ...     print(canonical_url(country_instance, rootsite="api"))
     http://launchpad.test/countries/England
     http://api.launchpad.test/countries/England
 
@@ -434,13 +468,15 @@ Overriding the rootsite from the specified request:
 
     >>> print(canonical_url(country_instance, mandrill_request))
     https://mandrill.example.org:23/countries/England
-    >>> print(canonical_url(
-    ...     country_instance, mandrill_request, rootsite='code'))
+    >>> print(
+    ...     canonical_url(country_instance, mandrill_request, rootsite="code")
+    ... )
     http://code.launchpad.test/countries/England
 
 And if the configuration does provide a rootsite:
 
-    >>> zcmlcontext = xmlconfig.string("""
+    >>> zcmlcontext = xmlconfig.string(
+    ...     """
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
     ...     xmlns:browser="http://namespaces.zope.org/browser">
@@ -457,16 +493,20 @@ And if the configuration does provide a rootsite:
     ...       rootsite="bugs"
     ...       />
     ... </configure>
-    ... """.format(module_name=module.__name__))
+    ... """.format(
+    ...         module_name=module.__name__
+    ...     )
+    ... )
 
     >>> print(canonical_url(country_instance))
     http://bugs.launchpad.test/countries/England
-    >>> print(canonical_url(country_instance, rootsite='code'))
+    >>> print(canonical_url(country_instance, rootsite="code"))
     http://code.launchpad.test/countries/England
-    >>> print(canonical_url(
-    ...     country_instance, mandrill_request, rootsite='code'))
+    >>> print(
+    ...     canonical_url(country_instance, mandrill_request, rootsite="code")
+    ... )
     http://code.launchpad.test/countries/England
-    >>> with MemoryFeatureFixture({'app.mainsite_only.canonical_url': 'on'}):
+    >>> with MemoryFeatureFixture({"app.mainsite_only.canonical_url": "on"}):
     ...     print(canonical_url(country_instance))
     http://launchpad.test/countries/England
 
@@ -532,7 +572,8 @@ canonical_url() returns the browser URL, even if the current request is
 a web service request
 
     >>> from zope.principalregistry.principalregistry import (
-    ...     UnauthenticatedPrincipal)
+    ...     UnauthenticatedPrincipal,
+    ... )
     >>> from lp.services.webapp.interaction import setupInteraction
     >>> from lp.services.webapp.servers import WebServiceTestRequest
     >>> from lazr.restful.utils import get_current_browser_request

@@ -4,8 +4,9 @@ Countries
 At the top level we provide the collection of all countries.
 
     >>> countries = webservice.get("/+countries").jsonBody()
-    >>> for entry in countries['entries']:
-    ...     print(entry['self_link'])
+    >>> for entry in countries["entries"]:
+    ...     print(entry["self_link"])
+    ...
     http://.../+countries/AD
     http://.../+countries/AE
     http://.../+countries/AF
@@ -15,8 +16,8 @@ At the top level we provide the collection of all countries.
 And for every country we publish most of its attributes.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
-    >>> country = countries['entries'][0]
-    >>> andorra = webservice.get(country['self_link']).jsonBody()
+    >>> country = countries["entries"][0]
+    >>> andorra = webservice.get(country["self_link"]).jsonBody()
     >>> pprint_entry(andorra)
     description: None
     iso3166code2: 'AD'
@@ -40,16 +41,16 @@ Country Custom Operations
 "getByName" returns a country for the given name.
 
     >>> uk = webservice.named_get(
-    ...     '/+countries', 'getByName',
-    ...     name='United Kingdom').jsonBody()
-    >>> print(uk['self_link'])
+    ...     "/+countries", "getByName", name="United Kingdom"
+    ... ).jsonBody()
+    >>> print(uk["self_link"])
     http://.../+countries/GB
 
 Ensure that unknown/non-existent countries return a None and not an OOPS:
 
     >>> bogus_country_by_name = webservice.named_get(
-    ...     '/+countries', 'getByName',
-    ...     name='Klingon Land').jsonBody()
+    ...     "/+countries", "getByName", name="Klingon Land"
+    ... ).jsonBody()
     >>> print(bogus_country_by_name)
     None
 
@@ -57,15 +58,15 @@ Ensure that unknown/non-existent countries return a None and not an OOPS:
 "getByCode" returns a country for the given code.
 
     >>> au = webservice.named_get(
-    ...     '/+countries', 'getByCode',
-    ...     code='AU').jsonBody()
-    >>> print(au['self_link'])
+    ...     "/+countries", "getByCode", code="AU"
+    ... ).jsonBody()
+    >>> print(au["self_link"])
     http://.../+countries/AU
 
 Ensure that unknown/non-existent country codes return a None and not an OOPS:
 
     >>> bogus_country_by_code = webservice.named_get(
-    ...     '/+countries', 'getByCode',
-    ...     code='TEST').jsonBody()
+    ...     "/+countries", "getByCode", code="TEST"
+    ... ).jsonBody()
     >>> print(bogus_country_by_code)
     None

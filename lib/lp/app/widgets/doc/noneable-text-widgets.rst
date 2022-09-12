@@ -19,9 +19,8 @@ composed of whitespace; the value is considered to be None.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.milestone import IMilestone
 
-    >>> field = IMilestone['code_name']
-    >>> request = LaunchpadTestRequest(
-    ...     form={'field.code_name' : ' '})
+    >>> field = IMilestone["code_name"]
+    >>> request = LaunchpadTestRequest(form={"field.code_name": " "})
     >>> widget = NoneableTextWidget(field, request)
 
 The widget converted the meaningless value to None.
@@ -31,8 +30,7 @@ The widget converted the meaningless value to None.
 
 Excess whitespace and newlines are stripped.
 
-    >>> request = LaunchpadTestRequest(
-    ...     form={'field.code_name' : ' flower \n'})
+    >>> request = LaunchpadTestRequest(form={"field.code_name": " flower \n"})
     >>> widget = NoneableTextWidget(field, request)
     >>> print(widget.getInputValue())
     flower
@@ -44,15 +42,13 @@ Noneable Description widget
 This custom widget is used to normalise the value of meaning less
 text value to None.
 
-    >>> from lp.app.widgets.textwidgets import (
-    ...     NoneableDescriptionWidget)
+    >>> from lp.app.widgets.textwidgets import NoneableDescriptionWidget
 
 The IMilestone description field cannot be an empty string or a string
 composed of whitespace; the value is considered to be None.
 
-    >>> field = IMilestone['summary']
-    >>> request = LaunchpadTestRequest(
-    ...     form={'field.summary' : ' '})
+    >>> field = IMilestone["summary"]
+    >>> request = LaunchpadTestRequest(form={"field.summary": " "})
     >>> widget = NoneableDescriptionWidget(field, request)
 
 The widget converted the meaningless value to None.
@@ -63,7 +59,8 @@ The widget converted the meaningless value to None.
 Excess whitespace is stripped, but newlines are preserved.
 
     >>> request = LaunchpadTestRequest(
-    ...     form={'field.summary' : ' flower \n grass '})
+    ...     form={"field.summary": " flower \n grass "}
+    ... )
     >>> widget = NoneableDescriptionWidget(field, request)
     >>> widget.getInputValue()
     'flower \n grass'

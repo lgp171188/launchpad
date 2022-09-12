@@ -17,7 +17,7 @@ provided by objects that can host FAQs.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.product import IProductSet
 
-    >>> firefox = getUtility(IProductSet).getByName('firefox')
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
 
     # removeSecurityProxy() is needed because not all interface
     # attributes are available to everybody.
@@ -25,7 +25,7 @@ provided by objects that can host FAQs.
     >>> verifyObject(IFAQTarget, removeSecurityProxy(firefox))
     True
 
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
+    >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> verifyObject(IFAQTarget, removeSecurityProxy(ubuntu))
     True
 
@@ -33,7 +33,7 @@ Any user who has 'launchpad.Append' on the project can create a new
 FAQ. (That permission is granted to project's registrant and answer
 contacts.)
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
 
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> sample_person = getUtility(ILaunchBag).user
@@ -41,8 +41,10 @@ contacts.)
     Sample Person
 
     >>> firefox_faq = firefox.newFAQ(
-    ...     sample_person, 'How can I see the Fnords?',
-    ...     "Install the Fnords highlighter extension and see the Fnords!")
+    ...     sample_person,
+    ...     "How can I see the Fnords?",
+    ...     "Install the Fnords highlighter extension and see the Fnords!",
+    ... )
 
 (The complete description of IFAQTarget is available in faqtarget.rst)
 
@@ -56,25 +58,27 @@ a suitable IFAQTarget from objects that do not provide it directly.
 It is possible to adapt an IDistributionSourcePackage to IFAQTarget,
 (the distribution is really the appropriate IFAQTarget in this case):
 
-    >>> mozilla_firefox = ubuntu.getSourcePackage('mozilla-firefox')
+    >>> mozilla_firefox = ubuntu.getSourcePackage("mozilla-firefox")
     >>> IFAQTarget.providedBy(mozilla_firefox)
     False
 
     >>> mozilla_firefox_faq_target = IFAQTarget(mozilla_firefox)
     >>> verifyObject(
-    ...     IFAQTarget, removeSecurityProxy(mozilla_firefox_faq_target))
+    ...     IFAQTarget, removeSecurityProxy(mozilla_firefox_faq_target)
+    ... )
     True
 
 Likewise, it is possible to adapt an ISourcePackage to IFAQTarget.
 
-    >>> hoary = ubuntu.getSeries('hoary')
-    >>> hoary_mozilla_firefox = hoary.getSourcePackage('mozilla-firefox')
+    >>> hoary = ubuntu.getSeries("hoary")
+    >>> hoary_mozilla_firefox = hoary.getSourcePackage("mozilla-firefox")
     >>> IFAQTarget.providedBy(hoary_mozilla_firefox)
     False
 
     >>> hoary_firefox_faq_target = IFAQTarget(hoary_mozilla_firefox)
     >>> verifyObject(
-    ...     IFAQTarget, removeSecurityProxy(hoary_firefox_faq_target))
+    ...     IFAQTarget, removeSecurityProxy(hoary_firefox_faq_target)
+    ... )
     True
 
 It is also possible to adapt an IQuestion into an IFAQTarget. This
@@ -104,7 +108,7 @@ for FAQs. It is provided by product, distribution, and projects.
 
     >>> from lp.answers.interfaces.faqcollection import IFAQCollection
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
-    >>> gnome = getUtility(IProjectGroupSet).getByName('gnome')
+    >>> gnome = getUtility(IProjectGroupSet).getByName("gnome")
     >>> verifyObject(IFAQCollection, gnome)
     True
 
@@ -155,8 +159,9 @@ Initially, the last_updated_by and date_last_updated are not set.
 When the FAQ is modified, the attributes are automatically updated.
 
     >>> from lp.services.webapp.snapshot import notify_modified
-    >>> with notify_modified(firefox_faq, ['keywords'], user=sample_person):
-    ...     firefox_faq.keywords = 'extension'
+    >>> with notify_modified(firefox_faq, ["keywords"], user=sample_person):
+    ...     firefox_faq.keywords = "extension"
+    ...
 
     >>> print(firefox_faq.last_updated_by.displayname)
     Sample Person
@@ -173,16 +178,16 @@ Only the project owners or answer contacts can edit an IFAQ.
     >>> from lp.services.webapp.authorization import check_permission
 
     >>> login(ANONYMOUS)
-    >>> check_permission('launchpad.Edit', firefox_faq)
+    >>> check_permission("launchpad.Edit", firefox_faq)
     False
 
 So Sample Person (the project owner) has edit permission:
 
-    >>> login('test@canonical.com')
+    >>> login("test@canonical.com")
     >>> print(firefox.owner.displayname)
     Sample Person
 
-    >>> check_permission('launchpad.Edit', firefox_faq)
+    >>> check_permission("launchpad.Edit", firefox_faq)
     True
 
 Answer contacts can also edit FAQs:
@@ -191,13 +196,13 @@ Answer contacts can also edit FAQs:
 
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
     >>> no_priv = getUtility(ILaunchBag).user
-    >>> no_priv.addLanguage(getUtility(ILanguageSet)['en'])
+    >>> no_priv.addLanguage(getUtility(ILanguageSet)["en"])
     >>> firefox.addAnswerContact(no_priv, no_priv)
     True
 
     >>> from lp.services.webapp.authorization import clear_cache
     >>> clear_cache()
-    >>> check_permission('launchpad.Edit', firefox_faq)
+    >>> check_permission("launchpad.Edit", firefox_faq)
     True
 
 
@@ -225,10 +230,11 @@ It can retrieve any FAQ by id using the getFAQ() method.
 The searchFAQs() method can be used to find FAQs by keywords or owner.
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> foo_bar = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
     >>> for faq in faqset.searchFAQs(
-    ...     search_text=u'java OR flash', owner=foo_bar):
-    ...     print('%s (%s)' % (faq.title, faq.target.displayname))
+    ...     search_text="java OR flash", owner=foo_bar
+    ... ):
+    ...     print("%s (%s)" % (faq.title, faq.target.displayname))
     How do I install plugins (Shockwave, QuickTime, etc.)? (Mozilla Firefox)
     How can I play MP3/Divx/DVDs/Quicktime/Realmedia files
         or view Flash/Java web pages (Ubuntu)
@@ -245,15 +251,16 @@ posting the answer, the FAQ containing the answer and a comment that
 will be added to the question explaining the FAQ link.
 
     >>> fnord_question = firefox.newQuestion(
-    ...     sample_person, 'Are there Fnords on the web?',
-    ...     'Do Fnords also exists on the web?')
+    ...     sample_person,
+    ...     "Are there Fnords on the web?",
+    ...     "Do Fnords also exists on the web?",
+    ... )
 
 Any user can link an existing FAQ to a question.
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> no_priv = getUtility(ILaunchBag).user
-    >>> message = fnord_question.linkFAQ(
-    ...     no_priv, firefox_faq, 'See the FAQ.')
+    >>> message = fnord_question.linkFAQ(no_priv, firefox_faq, "See the FAQ.")
 
 Once the FAQ is linked, the question is considered 'answered':
 
@@ -275,14 +282,17 @@ answered by the FAQ:
 
     >>> for question in firefox_faq.related_questions:
     ...     print(question.title)
+    ...
     Are there Fnords on the web?
 
 A FAQ can be linked to multiple question:
 
     >>> other_question = firefox.getQuestion(4)
     >>> message = other_question.linkFAQ(
-    ...     no_priv, firefox_faq,
-    ...     'If you lose focus and gets stuck it must be the fnords!')
+    ...     no_priv,
+    ...     firefox_faq,
+    ...     "If you lose focus and gets stuck it must be the fnords!",
+    ... )
 
     >>> print(other_question.faq.title)
     How can I see the Fnords?
@@ -292,6 +302,7 @@ A FAQ can be linked to multiple question:
 
     >>> for question in firefox_faq.related_questions:
     ...     print(question.title)
+    ...
     Firefox loses focus and gets stuck
     Are there Fnords on the web?
 
@@ -299,7 +310,8 @@ The FAQ link can be changed or removed by using the linkFAQ() method
 again:
 
     >>> message = other_question.linkFAQ(
-    ...     no_priv, None, "This has nothing to do with Fnords.")
+    ...     no_priv, None, "This has nothing to do with Fnords."
+    ... )
     >>> print(other_question.faq)
     None
 
@@ -307,6 +319,7 @@ After this, only the original question will remain linked to the FAQ.
 
     >>> for question in firefox_faq.related_questions:
     ...     print(question.title)
+    ...
     Are there Fnords on the web?
 
 That change is also considered an answer:
@@ -326,8 +339,7 @@ It is not possible to modify the faq attribute directly:
 
 And it is not allowed to call linkFAQ() when the FAQ is already linked:
 
-    >>> message = fnord_question.linkFAQ(
-    ...     no_priv, firefox_faq, 'See the FAQ.')
+    >>> message = fnord_question.linkFAQ(no_priv, firefox_faq, "See the FAQ.")
     Traceback (most recent call last):
       ...
     lp.answers.errors.FAQTargetError: Cannot call linkFAQ() with already
@@ -336,16 +348,19 @@ And it is not allowed to call linkFAQ() when the FAQ is already linked:
 A FAQ can be linked to a 'solved' question, in which case, the status is
 not changed.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login("foo.bar@canonical.com")
     >>> confirm_message = other_question.confirmAnswer(
-    ...     "That answered my question.", answer=other_question.messages[-1])
+    ...     "That answered my question.", answer=other_question.messages[-1]
+    ... )
     >>> print(other_question.status.title)
     Solved
 
-    >>> login('no-priv@canonical.com')
+    >>> login("no-priv@canonical.com")
     >>> message = other_question.linkFAQ(
-    ...     no_priv, firefox_faq,
-    ...     'If you look carefully, you will find the fnords!')
+    ...     no_priv,
+    ...     firefox_faq,
+    ...     "If you look carefully, you will find the fnords!",
+    ... )
     >>> print(message.action.title)
     Comment
 

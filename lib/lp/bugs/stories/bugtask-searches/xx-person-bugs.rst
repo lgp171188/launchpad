@@ -4,8 +4,8 @@ Bugs a given user is involved with
 When visiting the 'Bugs' facet of a person, the report that is displayed
 lists the bugs related to that person.
 
-    >>> anon_browser.open('http://launchpad.test/~name12')
-    >>> anon_browser.getLink('Bugs').click()
+    >>> anon_browser.open("http://launchpad.test/~name12")
+    >>> anon_browser.getLink("Bugs").click()
     >>> print(anon_browser.title)
     Bugs : Sample Person
 
@@ -57,7 +57,7 @@ against more than one target (https://launchpad.net/bugs/1357).
 This report is also the default page in the person context on the bugs
 virtual host:
 
-    >>> anon_browser.open('http://bugs.launchpad.test/~name12')
+    >>> anon_browser.open("http://bugs.launchpad.test/~name12")
     >>> print(anon_browser.title)
     Bugs : Sample Person
 
@@ -72,7 +72,7 @@ that person.
 Assigned bugs
 .............
 
-    >>> anon_browser.getLink('Assigned bugs').click()
+    >>> anon_browser.getLink("Assigned bugs").click()
     >>> print(anon_browser.title)
     Assigned bugs : Bugs : Sample Person
 
@@ -91,7 +91,7 @@ Assigned bugs
 Commented bugs
 ..............
 
-    >>> anon_browser.getLink('Commented bugs').click()
+    >>> anon_browser.getLink("Commented bugs").click()
     >>> print(anon_browser.title)
     Commented bugs : Bugs : Sample Person
 
@@ -127,7 +127,7 @@ first instances of each here. This is an instance of Bug 1357).
 Reported bugs
 .............
 
-    >>> anon_browser.getLink('Reported bugs').click()
+    >>> anon_browser.getLink("Reported bugs").click()
     >>> print(anon_browser.title)
     Reported bugs : Bugs : Sample Person
 
@@ -158,7 +158,7 @@ Reported bugs
 Subscribed bugs
 ...............
 
-    >>> anon_browser.getLink('Subscribed bugs').click()
+    >>> anon_browser.getLink("Subscribed bugs").click()
     >>> print(anon_browser.title)
     Subscribed bugs : Bugs : Sample Person
 
@@ -186,26 +186,26 @@ Person bugs menu
 The person bugs page can be accessed without being in the bugs site, yet
 all the menu links point to the bugs site.
 
-    >>> anon_browser.open('http://launchpad.test/~name12/+assignedbugs')
-    >>> print(anon_browser.getLink('Commented bugs').url)
+    >>> anon_browser.open("http://launchpad.test/~name12/+assignedbugs")
+    >>> print(anon_browser.getLink("Commented bugs").url)
     http://bugs.launchpad.test/~name12/+commentedbugs
 
-    >>> print(anon_browser.getLink('Reported bugs').url)
+    >>> print(anon_browser.getLink("Reported bugs").url)
     http://bugs.launchpad.test/~name12/+reportedbugs
 
-    >>> print(anon_browser.getLink('Subscribed bugs').url)
+    >>> print(anon_browser.getLink("Subscribed bugs").url)
     http://bugs.launchpad.test/~name12/+subscribedbugs
 
-    >>> print(anon_browser.getLink('All related bugs').url)
+    >>> print(anon_browser.getLink("All related bugs").url)
     http://bugs.launchpad.test/~name12
 
-    >>> print(anon_browser.getLink('Subscribed packages').url)
+    >>> print(anon_browser.getLink("Subscribed packages").url)
     http://bugs.launchpad.test/~name12/+packagebugs
 
-    >>> anon_browser.open('http://launchpad.test/~name12/+commentedbugs')
-    >>> print(anon_browser.getLink('Assigned bugs').url)
+    >>> anon_browser.open("http://launchpad.test/~name12/+commentedbugs")
+    >>> print(anon_browser.getLink("Assigned bugs").url)
     http://bugs.launchpad.test/~name12/+assignedbugs
 
-    >>> print(anon_browser.getLink('Affecting bugs').url)
+    >>> print(anon_browser.getLink("Affecting bugs").url)
     http://bugs.launchpad.test/~name12/+affectingbugs
 

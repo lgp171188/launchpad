@@ -18,13 +18,14 @@ To demonstrate, we'll create a sample interface:
     >>> from lp.services.fields import URIField
     >>> class IURIFieldTest(Interface):
     ...     field = URIField()
-    ...     sftp_only = URIField(allowed_schemes=['sftp'])
+    ...     sftp_only = URIField(allowed_schemes=["sftp"])
     ...     no_userinfo = URIField(allow_userinfo=False)
     ...     no_port = URIField(allow_port=False)
     ...     no_query = URIField(allow_query=False)
     ...     no_fragment = URIField(allow_fragment=False)
     ...     with_slash = URIField(trailing_slash=True)
     ...     without_slash = URIField(trailing_slash=False)
+    ...
 
 
 Validation
@@ -33,9 +34,9 @@ Validation
 In its most basic form, the field validator makes sure the value is a
 valid URI:
 
-    >>> field = IURIFieldTest['field']
-    >>> field.validate(u'http://launchpad.net/')
-    >>> field.validate(u'not-a-uri')
+    >>> field = IURIFieldTest["field"]
+    >>> field.validate("http://launchpad.net/")
+    >>> field.validate("not-a-uri")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: &quot;not-a-uri&quot; is not a
@@ -49,9 +50,9 @@ If the allowed_schemes argument is specified for the field, then only
 URIs matching one of those schemes will be accepted.  Other schemes
 will result in a validation error:
 
-    >>> sftp_only = IURIFieldTest['sftp_only']
-    >>> sftp_only.validate(u'sFtp://launchpad.net/')
-    >>> sftp_only.validate(u'http://launchpad.net/')
+    >>> sftp_only = IURIFieldTest["sftp_only"]
+    >>> sftp_only.validate("sFtp://launchpad.net/")
+    >>> sftp_only.validate("http://launchpad.net/")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: The URI scheme
@@ -66,14 +67,14 @@ The field can be configured to reject URIs with a userinfo portion.
 This can be useful to catch possible phishing attempts for URIs like a
 product home page, where authentication is not generally required:
 
-    >>> no_userinfo = IURIFieldTest['no_userinfo']
-    >>> no_userinfo.validate(u'http://launchpad.net:80@127.0.0.1/ubuntu')
+    >>> no_userinfo = IURIFieldTest["no_userinfo"]
+    >>> no_userinfo.validate("http://launchpad.net:80@127.0.0.1/ubuntu")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: A username may not be
     specified in the URI.
 
-    >>> no_userinfo.validate(u'http://launchpad.net@127.0.0.1/ubuntu')
+    >>> no_userinfo.validate("http://launchpad.net@127.0.0.1/ubuntu")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: A username may not be
@@ -86,8 +87,8 @@ Disallowing Non-default Ports
 For some URIs we will want to disallow using non-default ports in
 URIs.  This can be done with the allow_port option:
 
-    >>> no_port = IURIFieldTest['no_port']
-    >>> no_port.validate(u'http://launchpad.net:21')
+    >>> no_port = IURIFieldTest["no_port"]
+    >>> no_port.validate("http://launchpad.net:21")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: Non-default ports are not
@@ -96,7 +97,7 @@ URIs.  This can be done with the allow_port option:
 Note that an error is not raised if the URI specifies a port but it is
 known to be the default for that scheme:
 
-    >>> no_port.validate(u'http://launchpad.net:80/')
+    >>> no_port.validate("http://launchpad.net:80/")
 
 
 Disallowing the Query Component
@@ -106,8 +107,8 @@ For some URIs (such as Bazaar branch URLs), it doesn't make sense to
 include a query component.  The allow_query argument can be used to
 reject those URIs:
 
-    >>> no_query = IURIFieldTest['no_query']
-    >>> no_query.validate(u'http://launchpad.net/?key=value')
+    >>> no_query = IURIFieldTest["no_query"]
+    >>> no_query.validate("http://launchpad.net/?key=value")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: URIs with query strings are
@@ -119,8 +120,8 @@ Disallowing the Fragment Component
 
 The fragment component can also be disallowed:
 
-    >>> no_fragment = IURIFieldTest['no_fragment']
-    >>> no_fragment.validate(u'http://launchpad.net/#fragment')
+    >>> no_fragment = IURIFieldTest["no_fragment"]
+    >>> no_fragment.validate("http://launchpad.net/#fragment")
     Traceback (most recent call last):
       ...
     lp.app.validators.LaunchpadValidationError: URIs with fragment identifiers
@@ -137,42 +138,47 @@ in a normalised form.
 
 The default behaviour is to allow both cases:
 
-    >>> with_slash = IURIFieldTest['with_slash']
-    >>> print(with_slash.normalize(u'http://launchpad.net/ubuntu/'))
+    >>> with_slash = IURIFieldTest["with_slash"]
+    >>> print(with_slash.normalize("http://launchpad.net/ubuntu/"))
     http://launchpad.net/ubuntu/
-    >>> print(with_slash.normalize(
-    ...     u'http://launchpad.net/ubuntu/?query#fragment'))
+    >>> print(
+    ...     with_slash.normalize(
+    ...         "http://launchpad.net/ubuntu/?query#fragment"
+    ...     )
+    ... )
     http://launchpad.net/ubuntu/?query#fragment
-    >>> print(with_slash.normalize(u'http://launchpad.net/ubuntu'))
+    >>> print(with_slash.normalize("http://launchpad.net/ubuntu"))
     http://launchpad.net/ubuntu/
-    >>> print(with_slash.normalize(u'http://launchpad.net'))
+    >>> print(with_slash.normalize("http://launchpad.net"))
     http://launchpad.net/
 
 Similarly, we can require that the URI path does not end in a slash:
 
-    >>> without_slash = IURIFieldTest['without_slash']
-    >>> print(without_slash.normalize(u'http://launchpad.net/ubuntu'))
+    >>> without_slash = IURIFieldTest["without_slash"]
+    >>> print(without_slash.normalize("http://launchpad.net/ubuntu"))
     http://launchpad.net/ubuntu
-    >>> print(without_slash.normalize(
-    ...     u'http://launchpad.net/ubuntu/#fragment'))
+    >>> print(
+    ...     without_slash.normalize("http://launchpad.net/ubuntu/#fragment")
+    ... )
     http://launchpad.net/ubuntu#fragment
-    >>> print(without_slash.normalize(
-    ...     u'http://launchpad.net/ubuntu#fragment/'))
+    >>> print(
+    ...     without_slash.normalize("http://launchpad.net/ubuntu#fragment/")
+    ... )
     http://launchpad.net/ubuntu#fragment/
-    >>> print(without_slash.normalize(u'http://launchpad.net/ubuntu/'))
+    >>> print(without_slash.normalize("http://launchpad.net/ubuntu/"))
     http://launchpad.net/ubuntu
 
 URIs with an authority but a blank path get canonicalised to a path of
 "/", which is not affected by the without_slash setting.
 
-    >>> print(with_slash.normalize(u'http://launchpad.net/'))
+    >>> print(with_slash.normalize("http://launchpad.net/"))
     http://launchpad.net/
-    >>> print(with_slash.normalize(u'http://launchpad.net'))
+    >>> print(with_slash.normalize("http://launchpad.net"))
     http://launchpad.net/
 
-    >>> print(without_slash.normalize(u'http://launchpad.net/'))
+    >>> print(without_slash.normalize("http://launchpad.net/"))
     http://launchpad.net/
-    >>> print(without_slash.normalize(u'http://launchpad.net'))
+    >>> print(without_slash.normalize("http://launchpad.net"))
     http://launchpad.net/
 
 
@@ -181,7 +187,7 @@ Null values
 
 None is an acceptable value for a URI field.
 
-    >>> field = URIField(__name__='foo', title=u'Foo')
+    >>> field = URIField(__name__="foo", title="Foo")
     >>> print(field.normalize(None))
     None
 
@@ -205,7 +211,7 @@ This widget is registered as an input widget:
     ...     field = None
 
     >>> context = URIFieldTest()
-    >>> field = IURIFieldTest['field'].bind(context)
+    >>> field = IURIFieldTest["field"].bind(context)
     >>> request = LaunchpadTestRequest()
     >>> widget = getMultiAdapter((field, request), IInputWidget)
     >>> print(widget)
@@ -213,12 +219,12 @@ This widget is registered as an input widget:
 
 Multiple values will cause an UnexpectedFormData exception:
 
-    >>> widget._toFieldValue(['http://launchpad.net', 'http://ubuntu.com'])
+    >>> widget._toFieldValue(["http://launchpad.net", "http://ubuntu.com"])
     Traceback (most recent call last):
       ...
     lp.app.errors.UnexpectedFormData: Only a single value is expected
 
 Values with leading and trailing whitespace are stripped.
 
-    >>> print(widget._toFieldValue('  http://www.ubuntu.com/   '))
+    >>> print(widget._toFieldValue("  http://www.ubuntu.com/   "))
     http://www.ubuntu.com/

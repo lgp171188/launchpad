@@ -14,7 +14,6 @@ from typing import List
 
 from lazr.restful.interfaces import IWebServiceClientRequest
 from zope.component import adapter, getMultiAdapter
-from zope.interface import Interface, implementer
 
 from lp import _
 from lp.app.browser.launchpadform import (
@@ -141,7 +140,6 @@ class BranchLinkToBugView(LaunchpadFormView):
 
 
 @adapter(IBugBranch, IWebServiceClientRequest)
-@implementer(Interface)
 class BugBranchXHTMLRepresentation:
     def __init__(self, branch, request):
         self.branch = branch

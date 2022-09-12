@@ -65,18 +65,20 @@ subscriptions work.
     name16
 
     >>> params = CreateBugParams(
-    ...     title="a bug to test subscriptions",
-    ...     comment="test", owner=foobar)
+    ...     title="a bug to test subscriptions", comment="test", owner=foobar
+    ... )
     >>> linux_source_bug = linux_source.createBug(params)
 
 The list of direct bug subscribers is accessed via
 IBug.getDirectSubscribers().
 
     >>> def print_displayname(subscribers):
-    ...     subscriber_names = sorted(subscriber.displayname
-    ...                               for subscriber in subscribers)
+    ...     subscriber_names = sorted(
+    ...         subscriber.displayname for subscriber in subscribers
+    ...     )
     ...     for name in subscriber_names:
     ...         print(name)
+    ...
 
     >>> print_displayname(linux_source_bug.getDirectSubscribers())
     Foo Bar
@@ -114,7 +116,7 @@ individual bug task.
 
 These are security proxied.
 
-    >>> from zope.security. proxy import Proxy
+    >>> from zope.security.proxy import Proxy
     >>> isinstance(res, Proxy)
     True
 
@@ -153,11 +155,13 @@ Here are some examples of the three types of indirect subscribers:
     >>> mr_no_privs = personset.getByName("no-priv")
 
     >>> subscription_no_priv = linux_source.addBugSubscription(
-    ...     mr_no_privs, mr_no_privs)
+    ...     mr_no_privs, mr_no_privs
+    ... )
 
     >>> transaction.commit()
     >>> print_displayname(
-    ...     sub.subscriber for sub in linux_source.bug_subscriptions)
+    ...     sub.subscriber for sub in linux_source.bug_subscriptions
+    ... )
     No Privileges Person
 
     >>> print_displayname(linux_source_bug.getIndirectSubscribers())
@@ -250,23 +254,35 @@ With this subscription level, No Privileges Person is returned for all
 parameter values of level.
 
     >>> from lp.bugs.enums import BugNotificationLevel
-    >>> print_displayname(linux_source_bug.getAlsoNotifiedSubscribers(
-    ...     level=BugNotificationLevel.COMMENTS))
+    >>> print_displayname(
+    ...     linux_source_bug.getAlsoNotifiedSubscribers(
+    ...         level=BugNotificationLevel.COMMENTS
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getIndirectSubscribers(
-    ...     level=BugNotificationLevel.COMMENTS))
+    >>> print_displayname(
+    ...     linux_source_bug.getIndirectSubscribers(
+    ...         level=BugNotificationLevel.COMMENTS
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getAlsoNotifiedSubscribers(
-    ...     level=BugNotificationLevel.LIFECYCLE))
+    >>> print_displayname(
+    ...     linux_source_bug.getAlsoNotifiedSubscribers(
+    ...         level=BugNotificationLevel.LIFECYCLE
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getIndirectSubscribers(
-    ...     level=BugNotificationLevel.LIFECYCLE))
+    >>> print_displayname(
+    ...     linux_source_bug.getIndirectSubscribers(
+    ...         level=BugNotificationLevel.LIFECYCLE
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
@@ -278,24 +294,38 @@ level set to LIFECYCLE, they will not be included, if the parameter
     >>> with person_logged_in(mr_no_privs):
     ...     filter_no_priv = subscription_no_priv.bug_filters.one()
     ...     filter_no_priv.bug_notification_level = (
-    ...         BugNotificationLevel.LIFECYCLE)
+    ...         BugNotificationLevel.LIFECYCLE
+    ...     )
+    ...
 
-    >>> print_displayname(linux_source_bug.getAlsoNotifiedSubscribers(
-    ...     level=BugNotificationLevel.LIFECYCLE))
+    >>> print_displayname(
+    ...     linux_source_bug.getAlsoNotifiedSubscribers(
+    ...         level=BugNotificationLevel.LIFECYCLE
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getIndirectSubscribers(
-    ...     level=BugNotificationLevel.LIFECYCLE))
+    >>> print_displayname(
+    ...     linux_source_bug.getIndirectSubscribers(
+    ...         level=BugNotificationLevel.LIFECYCLE
+    ...     )
+    ... )
     No Privileges Person
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getAlsoNotifiedSubscribers(
-    ...     level=BugNotificationLevel.METADATA))
+    >>> print_displayname(
+    ...     linux_source_bug.getAlsoNotifiedSubscribers(
+    ...         level=BugNotificationLevel.METADATA
+    ...     )
+    ... )
     Sample Person
 
-    >>> print_displayname(linux_source_bug.getIndirectSubscribers(
-    ...     level=BugNotificationLevel.METADATA))
+    >>> print_displayname(
+    ...     linux_source_bug.getIndirectSubscribers(
+    ...         level=BugNotificationLevel.METADATA
+    ...     )
+    ... )
     Sample Person
 
 3. Direct subscribers of duplicate bugs.
@@ -303,8 +333,8 @@ level set to LIFECYCLE, they will not be included, if the parameter
     >>> keybuk = personset.getByName("keybuk")
 
     >>> params = CreateBugParams(
-    ...     title="a bug to test subscriptions",
-    ...     comment="test", owner=keybuk)
+    ...     title="a bug to test subscriptions", comment="test", owner=keybuk
+    ... )
     >>> linux_source_bug_dupe = linux_source.createBug(params)
 
     >>> print_displayname(linux_source_bug_dupe.getDirectSubscribers())
@@ -316,7 +346,8 @@ how he, as an indirect subscriber of the dupe, but does not get
 subscribed to the dupe target.
 
     >>> linux_source_bug_dupe.bugtasks[0].transitionToAssignee(
-    ...     personset.getByName("stub"))
+    ...     personset.getByName("stub")
+    ... )
 
     >>> print_displayname(linux_source_bug_dupe.getIndirectSubscribers())
     No Privileges Person
@@ -366,7 +397,8 @@ You can query for the addresses and reasons:
 
     >>> addresses = recipients.getEmails()
     >>> for address in addresses:
-    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    ...     print("%s: %s" % (address, recipients.getReason(address)[1]))
+    ...
     foo.bar@canonical.com: Subscriber
     mark@example.com: Subscriber
     no-priv@canonical.com: Subscriber (linux-source-2.6.15 in Ubuntu)
@@ -377,10 +409,12 @@ in its `level` parameter, only structural subscribers with that
 notification level or higher will be returned.
 
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
-    ...     level=BugNotificationLevel.COMMENTS)
+    ...     level=BugNotificationLevel.COMMENTS
+    ... )
     >>> addresses = recipients.getEmails()
     >>> for address in addresses:
-    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    ...     print("%s: %s" % (address, recipients.getReason(address)[1]))
+    ...
     foo.bar@canonical.com: Subscriber
     mark@example.com: Subscriber
     test@canonical.com: Assignee
@@ -391,10 +425,12 @@ the COMMENTS level...
 
     >>> linux_source_bug.unsubscribe(mr_no_privs, mr_no_privs)
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
-    ...     level=BugNotificationLevel.COMMENTS)
+    ...     level=BugNotificationLevel.COMMENTS
+    ... )
     >>> addresses = recipients.getEmails()
     >>> for address in addresses:
-    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    ...     print("%s: %s" % (address, recipients.getReason(address)[1]))
+    ...
     foo.bar@canonical.com: Subscriber
     mark@example.com: Subscriber
     test@canonical.com: Assignee
@@ -403,10 +439,12 @@ the COMMENTS level...
 
     >>> linux_source_bug.unsubscribe(mr_no_privs, mr_no_privs)
     >>> recipients = linux_source_bug.getBugNotificationRecipients(
-    ...     level=BugNotificationLevel.LIFECYCLE)
+    ...     level=BugNotificationLevel.LIFECYCLE
+    ... )
     >>> addresses = recipients.getEmails()
     >>> for address in addresses:
-    ...     print('%s: %s' % (address, recipients.getReason(address)[1]))
+    ...     print("%s: %s" % (address, recipients.getReason(address)[1]))
+    ...
     foo.bar@canonical.com: Subscriber
     mark@example.com: Subscriber
     no-priv@canonical.com: Subscriber (linux-source-2.6.15 in Ubuntu)
@@ -472,8 +510,10 @@ by passing a `level` parameter to subscribe().
     >>> metadata_subscriber = factory.makePerson()
     >>> metadata_subscribed_bug = factory.makeBug()
     >>> metadata_subscription = metadata_subscribed_bug.subscribe(
-    ...     metadata_subscriber, metadata_subscriber,
-    ...     level=BugNotificationLevel.METADATA)
+    ...     metadata_subscriber,
+    ...     metadata_subscriber,
+    ...     level=BugNotificationLevel.METADATA,
+    ... )
 
     >>> print(metadata_subscription.bug_notification_level.name)
     METADATA
@@ -496,8 +536,12 @@ bug #5.
 The return value of unsubscribeFromDupes() is a list of bugs from which
 the user was unsubscribed.
 
-    >>> [bug.id for bug in bug_five.unsubscribeFromDupes(
-    ...     sample_person, sample_person)]
+    >>> [
+    ...     bug.id
+    ...     for bug in bug_five.unsubscribeFromDupes(
+    ...         sample_person, sample_person
+    ...     )
+    ... ]
     [6]
 
     >>> bug_six.isSubscribed(sample_person)
@@ -576,20 +620,22 @@ Define a function that get subscriber email addresses back conveniently:
     >>> def getSubscribers(bug):
     ...     recipients = bug.getBugNotificationRecipients()
     ...     return recipients.getEmails()
+    ...
 
 Let's have a look at an example for a distribution bug:
 
     >>> ubuntu.bug_supervisor = sample_person
 
     >>> params = CreateBugParams(
-    ...     title="a test bug", comment="a test description",
-    ...     owner=foobar)
+    ...     title="a test bug", comment="a test description", owner=foobar
+    ... )
     >>> new_bug = ubuntu.createBug(params)
 
 Only the bug reporter, Foo Bar, has an explicit subscription.
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
 But because Sample Person is the distribution contact for Ubuntu, they
@@ -602,8 +648,11 @@ will be implicitly added to the notification recipients.
     >>> stub.test_emails = []
 
     >>> params = CreateBugParams(
-    ...     title="a test bug", comment="a test description",
-    ...     owner=foobar, information_type=InformationType.PRIVATESECURITY)
+    ...     title="a test bug",
+    ...     comment="a test description",
+    ...     owner=foobar,
+    ...     information_type=InformationType.PRIVATESECURITY,
+    ... )
     >>> new_bug = ubuntu.createBug(params)
 
     >>> getSubscribers(new_bug)
@@ -622,14 +671,15 @@ Another example, this time for an upstream:
     >>> firefox.bug_supervisor = mark
 
     >>> params = CreateBugParams(
-    ...     title="a test bug", comment="a test description",
-    ...     owner=foobar)
+    ...     title="a test bug", comment="a test description", owner=foobar
+    ... )
     >>> new_bug = firefox.createBug(params)
 
 Again, only Foo Bar is explicitly subscribed:
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
 But the upstream Firefox bug supervisor, mark, is implicitly added to the
@@ -642,15 +692,17 @@ If we create a bug task on Ubuntu in the same bug, the Ubuntu bug
 supervisor will be subscribed:
 
     >>> ubuntu_task = getUtility(IBugTaskSet).createTask(
-    ...     new_bug, mark, ubuntu)
+    ...     new_bug, mark, ubuntu
+    ... )
 
-    >>> print('\n'.join(getSubscribers(new_bug)))
+    >>> print("\n".join(getSubscribers(new_bug)))
     foo.bar@canonical.com
 
 But still, only Foo Bar is explicitly subscribed.
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
 When an upstream does *not* have a specific bug supervisor set, the
@@ -660,27 +712,31 @@ Sample Person, the Firefox "owner" will get subscribed instead:
     >>> firefox.bug_supervisor = None
 
     >>> params = CreateBugParams(
-    ...     title="a test bug", comment="a test description",
-    ...     owner=foobar)
+    ...     title="a test bug", comment="a test description", owner=foobar
+    ... )
     >>> new_bug = firefox.createBug(params)
 
 Foo Bar is the only explicit subscriber:
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
 But the product owner, Sample Person, is implicitly added to the
 recipient list:
 
-    >>> print('\n'.join(getSubscribers(new_bug)))
+    >>> print("\n".join(getSubscribers(new_bug)))
     foo.bar@canonical.com
     >>> params = CreateBugParams(
-    ...     title="a test bug", comment="a test description",
-    ...     owner=foobar, information_type=InformationType.PRIVATESECURITY)
+    ...     title="a test bug",
+    ...     comment="a test description",
+    ...     owner=foobar,
+    ...     information_type=InformationType.PRIVATESECURITY,
+    ... )
     >>> new_bug = firefox.createBug(params)
 
-    >>> print('\n'.join(getSubscribers(new_bug)))
+    >>> print("\n".join(getSubscribers(new_bug)))
     foo.bar@canonical.com
 
 Now let's create a bug on a specific package, which has no package bug
@@ -693,7 +749,8 @@ contacts:
     >>> params = CreateBugParams(
     ...     title="another test bug",
     ...     comment="another test description",
-    ...     owner=foobar)
+    ...     owner=foobar,
+    ... )
     >>> new_bug = evolution.createBug(params)
 
     >>> getSubscribers(new_bug)
@@ -713,6 +770,7 @@ created:
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
     >>> new_bug.clearBugNotificationRecipientsCache()
@@ -724,11 +782,13 @@ And the Ubuntu team will be implicitly subscribed to future bugs:
     >>> params = CreateBugParams(
     ...     title="yet another test bug",
     ...     comment="yet another test description",
-    ...     owner=foobar)
+    ...     owner=foobar,
+    ... )
     >>> new_bug = evolution.createBug(params)
 
     >>> for subscription in new_bug.subscriptions:
     ...     print(subscription.person.displayname)
+    ...
     Foo Bar
 
     >>> getSubscribers(new_bug)
@@ -736,7 +796,9 @@ And the Ubuntu team will be implicitly subscribed to future bugs:
     >>> params = CreateBugParams(
     ...     title="yet another test bug",
     ...     comment="yet another test description",
-    ...     owner=foobar, information_type=InformationType.PRIVATESECURITY)
+    ...     owner=foobar,
+    ...     information_type=InformationType.PRIVATESECURITY,
+    ... )
     >>> new_bug = evolution.createBug(params)
 
     >>> getSubscribers(new_bug)
@@ -755,30 +817,41 @@ subscriptions themselves, rather than the subscribers.
     >>> params = CreateBugParams(
     ...     title="one more test bug",
     ...     comment="one more test description",
-    ...     owner=mark)
+    ...     owner=mark,
+    ... )
     >>> ff_bug = firefox.createBug(params)
     >>> ff_bug.subscribe(lifeless, mark)
     <lp.bugs.model.bugsubscription.BugSubscription ...>
     >>> subscriptions = [
-    ...     "%s: %s" % (
+    ...     "%s: %s"
+    ...     % (
     ...         subscription.person.displayname,
-    ...         subscription.display_subscribed_by)
-    ...     for subscription in ff_bug.getDirectSubscriptions()]
+    ...         subscription.display_subscribed_by,
+    ...     )
+    ...     for subscription in ff_bug.getDirectSubscriptions()
+    ... ]
     >>> for subscription in sorted(subscriptions):
     ...     print(subscription)
+    ...
     Mark Shuttleworth: Self-subscribed
     Robert Collins: Subscribed by Mark Shuttleworth (mark)
     >>> params = CreateBugParams(
     ...     title="one more dupe test bug",
     ...     comment="one more dupe test description",
-    ...     owner=keybuk)
+    ...     owner=keybuk,
+    ... )
     >>> dupe_ff_bug = firefox.createBug(params)
     >>> dupe_ff_bug.markAsDuplicate(ff_bug)
     >>> dupe_ff_bug.subscribe(foobar, lifeless)
     <lp.bugs.model.bugsubscription.BugSubscription ...>
     >>> for subscription in ff_bug.getSubscriptionsFromDuplicates():
-    ...     print('%s: %s' % (
-    ...         subscription.person.displayname,
-    ...         subscription.display_duplicate_subscribed_by))
+    ...     print(
+    ...         "%s: %s"
+    ...         % (
+    ...             subscription.person.displayname,
+    ...             subscription.display_duplicate_subscribed_by,
+    ...         )
+    ...     )
+    ...
     Scott James Remnant: Self-subscribed to bug ...
     Foo Bar: Subscribed to bug ... by Robert Collins (lifeless)

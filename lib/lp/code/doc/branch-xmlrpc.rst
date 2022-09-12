@@ -18,15 +18,17 @@ This API is deprecated, and will eventually be replaced with an
 equivalent method in the new Launchpad API infrastructure.
 
     >>> public_codehosting_api = xmlrpc.client.ServerProxy(
-    ...     'http://xmlrpc.launchpad.test/bazaar/',
-    ...     transport=XMLRPCTestTransport())
+    ...     "http://xmlrpc.launchpad.test/bazaar/",
+    ...     transport=XMLRPCTestTransport(),
+    ... )
 
 
 On success, resolve_lp_path returns a dict containing a single key,
 'urls':
 
     >>> results = public_codehosting_api.resolve_lp_path(
-    ...     '~vcs-imports/evolution/main')
+    ...     "~vcs-imports/evolution/main"
+    ... )
     >>> print(list(results))
     ['urls']
 
@@ -35,9 +37,11 @@ The value of a key is a list of URLs from which the branch can be
 accessed:
 
     >>> results = public_codehosting_api.resolve_lp_path(
-    ...     '~vcs-imports/evolution/main')
-    >>> for url in results['urls']:
+    ...     "~vcs-imports/evolution/main"
+    ... )
+    >>> for url in results["urls"]:
     ...     print(url)
+    ...
     bzr+ssh://bazaar.launchpad.test/~vcs-imports/evolution/main
     http://bazaar.launchpad.test/~vcs-imports/evolution/main
 

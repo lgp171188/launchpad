@@ -15,30 +15,36 @@ Grab the sample user:
 
     >>> personset = getUtility(IPersonSet)
     >>> login("test@canonical.com")
-    >>> sample_user = personset.getByName('name12')
+    >>> sample_user = personset.getByName("name12")
 
 Set up some fingerprints for testing:
 
-    >>> malformed   = "XXXX"
-    >>> bogus       = "1111 1111 1111 1111 1111  1111 1111 1111 1111 1111"
-    >>> gpgv3       = "11 28 37 E2 CB 46 72 67  9E 8E 22 18 DA F9 C0 96"
-    >>> with_crap   = (
+    >>> malformed = "XXXX"
+    >>> bogus = "1111 1111 1111 1111 1111  1111 1111 1111 1111 1111"
+    >>> gpgv3 = "11 28 37 E2 CB 46 72 67  9E 8E 22 18 DA F9 C0 96"
+    >>> with_crap = (
     ...     "CFDD 0231 D4A8 992D C760 F5B3 E0B4 E659 E389 E544 uid "
     ...     "S\xe9bastien Serre (Bienvenue sous Ubuntu) "
-    ...     "<sebastien.serre@gmail.com> sub 1024g/F39C8D42 2006-08-17")
-    >>> revoked     = "84D2 05F0 3E1E 6709 6CB5  4E26 2BE8 3793 AACC D97C"
-    >>> expired     = "0DD6 4D28 E5F4 1138 5334  9520 0E3D B4D4 02F5 3CC6"
+    ...     "<sebastien.serre@gmail.com> sub 1024g/F39C8D42 2006-08-17"
+    ... )
+    >>> revoked = "84D2 05F0 3E1E 6709 6CB5  4E26 2BE8 3793 AACC D97C"
+    >>> expired = "0DD6 4D28 E5F4 1138 5334  9520 0E3D B4D4 02F5 3CC6"
 
-    >>> def post_fingerprint(fingerprint, action='claim_gpg'):
-    ...     request = LaunchpadTestRequest(form={
-    ...         'fingerprint': fingerprint,
-    ...         'action': action,
-    ...         'import': 'Import Key'})
+    >>> def post_fingerprint(fingerprint, action="claim_gpg"):
+    ...     request = LaunchpadTestRequest(
+    ...         form={
+    ...             "fingerprint": fingerprint,
+    ...             "action": action,
+    ...             "import": "Import Key",
+    ...         }
+    ...     )
     ...     request.method = "POST"
     ...     view = getMultiAdapter(
-    ...         (sample_user, request), name="+editpgpkeys")
+    ...         (sample_user, request), name="+editpgpkeys"
+    ...     )
     ...     view.form_action()
     ...     return view
+    ...
 
 
 Importing GPG Keys
@@ -96,6 +102,7 @@ This new key will be pending validation, though.
 
     >>> for fingerprint in view.context.pending_gpg_keys:
     ...     print(fingerprint)
+    ...
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 And while the validation is not finished, it's possible to cancel the
@@ -104,7 +111,7 @@ validation, removing the key from the list of pending validation keys.
 If we do not specify which key we want to cancel the validation, we get
 an error message.
 
-    >>> form = {'action': 'remove_gpgtoken'}
+    >>> form = {"action": "remove_gpgtoken"}
     >>> request = LaunchpadTestRequest(form=form)
     >>> request.method = "POST"
     >>> view = getMultiAdapter((sample_user, request), name="+editpgpkeys")
@@ -114,14 +121,16 @@ an error message.
 
     >>> for fingerprint in view.context.pending_gpg_keys:
     ...     print(fingerprint)
+    ...
     A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 Now we specify the key and it's removed from the list of keys pending
 validation.
 
     >>> form = {
-    ...     'REMOVE_GPGTOKEN': 'A419AE861E88BC9E04B9C26FBA2B9389DFD20543',
-    ...     'action': 'remove_gpgtoken'}
+    ...     "REMOVE_GPGTOKEN": "A419AE861E88BC9E04B9C26FBA2B9389DFD20543",
+    ...     "action": "remove_gpgtoken",
+    ... }
     >>> request = LaunchpadTestRequest(form=form)
     >>> request.method = "POST"
     >>> view = getMultiAdapter((sample_user, request), name="+editpgpkeys")
