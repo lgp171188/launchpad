@@ -226,8 +226,7 @@ that.
     >>> anon_browser.open(
     ...     "http://launchpad.test/firefox/+spec/canvas/+deptree"
     ... )
-    >>> print("----")
-    >>> print(anon_browser.contents)
+    >>> print("----\n%s" % anon_browser.contents)
     ----
     ...Blueprints that must be implemented first...
     ...Support E4X in EcmaScript...
