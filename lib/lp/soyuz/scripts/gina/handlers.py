@@ -1052,6 +1052,7 @@ class BinaryPackagePublisher:
             datemadepending=None,
             dateremoved=None,
             archive=archive,
+            sourcepackagename=binarypackage.build.source_package_name,
         )
 
         log.info(

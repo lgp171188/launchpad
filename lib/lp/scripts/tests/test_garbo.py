@@ -128,6 +128,7 @@ from lp.soyuz.enums import (
 )
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
+from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
 )
@@ -2519,6 +2520,42 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
                 BinaryPackageFormat.RPM,
                 removeSecurityProxy(bpph)._binarypackageformat,
             )
+
+    def test_BinaryPackagePublishingHistorySPNPopulator(self):
+        switch_dbuser("testadmin")
+        bpphs = [
+            self.factory.makeBinaryPackagePublishingHistory() for _ in range(2)
+        ]
+        spns = [bpph.sourcepackagename for bpph in bpphs]
+        for bpph in bpphs:
+            removeSecurityProxy(bpph).sourcepackagename = None
+        ci_build = self.factory.makeCIBuild()
+        wheel_bpr = ci_build.createBinaryPackageRelease(
+            self.factory.makeBinaryPackageName(),
+            "1.0",
+            "test summary",
+            "test description",
+            BinaryPackageFormat.WHL,
+            False,
+        )
+        bpphs.append(
+            getUtility(IPublishingSet).publishBinaries(
+                bpphs[0].archive,
+                bpphs[0].distroseries,
+                bpphs[0].pocket,
+                {wheel_bpr: (None, None, None, None)},
+            )[0]
+        )
+        transaction.commit()
+        self.assertIs(None, bpph.sourcepackagename)
+
+        self.runDaily()
+
+        # Publications with BinaryPackageBuilds are backfilled.
+        for bpph, spn in zip(bpphs, spns):
+            self.assertEqual(spn, bpph.sourcepackagename)
+        # Other publications are left alone.
+        self.assertIsNone(bpphs[2].sourcepackagename)
 
 
 class TestGarboTasks(TestCaseWithFactory):

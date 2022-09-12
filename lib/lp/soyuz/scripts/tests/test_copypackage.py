@@ -1447,6 +1447,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
             priority=bin_i386.priority,
             status=PackagePublishingStatus.PENDING,
             datecreated=UTC_NOW,
+            sourcepackagename=bin_i386.sourcepackagename,
         )
         # Now we can copy the package with binaries.
         copies = self.doCopy(

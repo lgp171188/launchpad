@@ -963,6 +963,9 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         ),
         as_of="devel",
     )
+    sourcepackagename = Attribute(
+        "The source package name that built this binary."
+    )
 
     def getOtherPublications():
         """Return remaining publications with the same overrides.

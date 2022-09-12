@@ -340,6 +340,10 @@ class TestBinaryPackagePublishingHistory(TestCaseWithFactory):
     def test_source_package_name(self):
         bpph = self.factory.makeBinaryPackagePublishingHistory()
         self.assertEqual(
+            bpph.binarypackagerelease.build.source_package_name,
+            bpph.sourcepackagename,
+        )
+        self.assertEqual(
             bpph.binarypackagerelease.sourcepackagename,
             bpph.source_package_name,
         )
@@ -353,9 +357,14 @@ class TestBinaryPackagePublishingHistory(TestCaseWithFactory):
         with person_logged_in(team_owner):
             bpph = self.factory.makeBinaryPackagePublishingHistory(archive=ppa)
             self.assertEqual(
+                bpph.binarypackagerelease.build.source_package_name,
+                bpph.sourcepackagename,
+            )
+            self.assertEqual(
                 bpph.binarypackagerelease.sourcepackagename,
                 bpph.source_package_name,
             )
+        self.assertRaises(Unauthorized, getattr, bpph, "sourcepackagename")
         self.assertRaises(Unauthorized, getattr, bpph, "source_package_name")
 
     def test_source_package_version(self):
