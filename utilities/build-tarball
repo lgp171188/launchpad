@@ -31,6 +31,7 @@ mkdir -p "$output_dir"
     # instead, but JavaScript-enabled builds need yarn.
     find ./download-cache/dist/ -name yarn-\*.tar.gz
     echo ./version-info.py
+    echo ./version-info.txt
     find ./wheels/ -name \*.whl -print
 ) | sort >"$output_dir/.files"
 
