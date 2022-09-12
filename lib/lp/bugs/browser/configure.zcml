@@ -194,6 +194,7 @@
             permission="launchpad.View"/>
     <adapter
          factory="lp.bugs.browser.bugcomment.BugCommentXHTMLRepresentation"
+         provides="zope.interface.Interface"
          name="lazr.restful.EntryResource"
         />
     <adapter
@@ -810,6 +811,7 @@
         template="../templates/bug-branch.pt"/>
     <adapter
          factory="lp.bugs.browser.bugbranch.BugBranchXHTMLRepresentation"
+         provides="zope.interface.Interface"
          name="lazr.restful.EntryResource"
         />
         <browser:menus

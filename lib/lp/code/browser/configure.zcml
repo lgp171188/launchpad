@@ -1263,6 +1263,7 @@
 
     <adapter
          factory="lp.code.browser.branchmergeproposal.PreviewDiffHTMLRepresentation"
+         provides="zope.interface.Interface"
          name="lazr.restful.EntryResource"/>
 
     <adapter
