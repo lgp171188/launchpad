@@ -350,7 +350,7 @@ to somewhere that doesn't exist.
     ...     rw_main_standby: dbname=nonexistent
     ...
     ...     [launchpad_session]
-    ...     dbname: nonexistent
+    ...     database: dbname=nonexistent
     ...     """
     >>> config.push("no_db", no_db_overrides)
 

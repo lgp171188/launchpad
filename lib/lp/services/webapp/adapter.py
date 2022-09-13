@@ -529,21 +529,9 @@ class LaunchpadSessionDatabase(Postgres):
     name = "session"
 
     def raw_connect(self):
-        if config.launchpad_session.database is not None:
-            dsn = ConnectionString(config.launchpad_session.database)
-            dsn.user = config.launchpad_session.dbuser
-            self._dsn = str(dsn)
-        else:
-            # This is fallback code for old config files. It can be
-            # removed when all live configs have been updated to use the
-            # 'database' setting instead of 'dbname' + 'dbhost' settings.
-            self._dsn = "dbname=%s user=%s" % (
-                config.launchpad_session.dbname,
-                config.launchpad_session.dbuser,
-            )
-            if config.launchpad_session.dbhost:
-                self._dsn += " host=%s" % config.launchpad_session.dbhost
-
+        dsn = ConnectionString(config.launchpad_session.database)
+        dsn.user = config.launchpad_session.dbuser
+        self._dsn = str(dsn)
         flags = _get_dirty_commit_flags()
         raw_connection = super().raw_connect()
         if hasattr(raw_connection, "auto_close"):

@@ -259,7 +259,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
             "snappy",
             store_url="http://sca.example/",
             store_upload_url="http://updown.example/",
-            store_search_url="http://search.example/",
         )
         self.pushConfig(
             "launchpad", openid_provider_root="http://sso.example/"
