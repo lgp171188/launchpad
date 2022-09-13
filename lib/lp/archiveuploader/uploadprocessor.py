@@ -96,7 +96,8 @@ __all__ = [
     "parse_upload_path",
 ]
 
-UPLOAD_PATH_ERROR_TEMPLATE = """Launchpad failed to process the upload path '%(upload_path)s':
+UPLOAD_PATH_ERROR_TEMPLATE = """\
+Launchpad failed to process the upload path '%(upload_path)s':
 
 %(path_error)s
 
