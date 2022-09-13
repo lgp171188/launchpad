@@ -648,7 +648,7 @@ class FileBugViewBase(LaunchpadFormView):
         attachment = self.request.form.get(self.widgets["filecontent"].name)
         if attachment or extra_data.attachments:
             # Attach all the comments to a single empty comment.
-            attachment_comment = bug.newMessage(
+            attachment_comment = bug.newMessage_internal(
                 owner=self.user,
                 subject=bug.followup_subject(),
                 content=None,

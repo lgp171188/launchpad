@@ -1045,6 +1045,11 @@ class IBugAppend(Interface):
     def newMessage(owner, subject, content, send_notifications=True):
         """Create a new message, and link it to this object."""
 
+    def newMessage_internal(owner, subject, content, send_notifications=True):
+        """Create a new message, and link it to this object.
+        This method is used internally mostly by the UI.
+        """
+
     @operation_parameters(
         person=Reference(IPerson, title=_("Person"), required=True),
         level=Choice(
