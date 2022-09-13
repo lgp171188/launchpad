@@ -1,6 +1,7 @@
 pipeline:
   - docs
   - lint
+  - mypy
 
 jobs:
   docs:
@@ -16,4 +17,10 @@ jobs:
       - git
     snaps: [go]
     run: tox -e lint
+    series: focal
+  mypy:
+    architectures: amd64
+    packages:
+      - tox
+    run: tox -e mypy
     series: focal
