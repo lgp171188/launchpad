@@ -50,7 +50,7 @@ from storm.info import ClassAlias
 from storm.locals import Bool, DateTime, Int, Reference, ReferenceSet
 from storm.properties import Unicode
 from storm.store import EmptyResultSet, Store
-from zope.component import getUtility
+from zope.component import getAdapter, getUtility
 from zope.contenttype import guess_content_type
 from zope.event import notify
 from zope.interface import implementer
@@ -73,6 +73,7 @@ from lp.app.errors import (
 )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
 from lp.app.validators import LaunchpadValidationError
@@ -212,6 +213,13 @@ from lp.services.xref.interfaces import IXRefSet
 @error_status(http.client.BAD_REQUEST)
 class CannotSetLockReason(Exception):
     """Raised when someone tries to set lock_reason for an unlocked bug."""
+
+
+@error_status(http.client.BAD_REQUEST)
+class CannotDisableNotifications(Exception):
+    """Raised when someone tries to disable notifications for adding comments
+    on a bug and the person calling the API is not the bugsupervisor.
+    """
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -1495,6 +1503,18 @@ class Bug(SQLBase, InformationTypeMixin):
         )
         if not bugmsg:
             return
+
+        # Admins, commercial admins, registry experts, pillar owners,
+        # pillar drivers, and pillar bug supervisors should be able
+        # to disable email notifications
+        authz = getAdapter(self, IAuthorization, "launchpad.Moderate")
+        if not authz.checkAuthenticated(IPersonRoles(owner)):
+            raise CannotDisableNotifications(
+                "Email notifications can only "
+                "be disabled by admins, commercial admins, "
+                "registry experts, pillar owners, pillar drivers "
+                "or pillar bug supervisors."
+            )
 
         if send_notifications:
             notify(ObjectCreatedEvent(bugmsg, user=owner))
