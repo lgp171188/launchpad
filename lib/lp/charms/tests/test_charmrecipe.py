@@ -357,11 +357,18 @@ class TestCharmRecipe(TestCaseWithFactory):
     def test_requestBuild_rejects_repeats(self):
         # requestBuild refuses if there is already a pending build.
         recipe = self.factory.makeCharmRecipe()
-        distro_series = self.factory.makeDistroSeries()
+        distro_serieses = [self.factory.makeDistroSeries() for _ in range(2)]
         arches = [
-            self.makeBuildableDistroArchSeries(distroseries=distro_series)
+            self.makeBuildableDistroArchSeries(distroseries=distro_serieses[0])
             for _ in range(2)
         ]
+        arches.append(
+            self.makeBuildableDistroArchSeries(
+                distroseries=distro_serieses[1],
+                architecturetag=arches[0].architecturetag,
+                processor=arches[0].processor,
+            )
+        )
         build_request = self.factory.makeCharmRecipeBuildRequest(recipe=recipe)
         old_build = recipe.requestBuild(build_request, arches[0])
         self.assertRaises(
@@ -372,6 +379,9 @@ class TestCharmRecipe(TestCaseWithFactory):
         )
         # We can build for a different distroarchseries.
         recipe.requestBuild(build_request, arches[1])
+        # We can build for a distroarchseries in a different distroseries
+        # for the same processor.
+        recipe.requestBuild(build_request, arches[2])
         # channels=None and channels={} are treated as equivalent, but
         # anything else allows a new build.
         self.assertRaises(

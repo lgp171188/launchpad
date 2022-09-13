@@ -551,7 +551,7 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
         pending = IStore(self).find(
             CharmRecipeBuild,
             CharmRecipeBuild.recipe == self,
-            CharmRecipeBuild.processor == distro_arch_series.processor,
+            CharmRecipeBuild.distro_arch_series == distro_arch_series,
             channels_clause,
             CharmRecipeBuild.status == BuildStatus.NEEDSBUILD,
         )
