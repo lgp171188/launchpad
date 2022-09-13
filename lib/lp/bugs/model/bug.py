@@ -50,7 +50,7 @@ from storm.info import ClassAlias
 from storm.locals import Bool, DateTime, Int, Reference, ReferenceSet
 from storm.properties import Unicode
 from storm.store import EmptyResultSet, Store
-from zope.component import getUtility
+from zope.component import getAdapter, getUtility
 from zope.contenttype import guess_content_type
 from zope.event import notify
 from zope.interface import implementer
@@ -73,6 +73,7 @@ from lp.app.errors import (
 )
 from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.security import IAuthorization
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
 from lp.app.validators import LaunchpadValidationError
@@ -1503,20 +1504,17 @@ class Bug(SQLBase, InformationTypeMixin):
         if not bugmsg:
             return
 
-        # If the user posting the new message is the bug supervisor for any of
-        # the affected pillars they should be able
+        # Admins, commercial admins, registry experts, pillar owners,
+        # pillar drivers, and pillar bug supervisors should be able
         # to disable email notifications
-        can_disable = False
-        roles = IPersonRoles(owner)
-        if send_notifications is False:
-            for pillar in self.affected_pillars:
-                if roles.isBugSupervisor(pillar):
-                    can_disable = True
-            if not can_disable:
-                raise CannotDisableNotifications(
-                    "Email notifications for this bug can only "
-                    "be disabled by the bug supervisor."
-                )
+        authz = getAdapter(self, IAuthorization, "launchpad.Moderate")
+        if not authz.checkAuthenticated(IPersonRoles(owner)):
+            raise CannotDisableNotifications(
+                "Email notifications can only "
+                "be disabled by admins, commercial admins, "
+                "registry experts, pillar owners, pillar drivers "
+                "or pillar bug supervisors."
+            )
 
         if send_notifications:
             notify(ObjectCreatedEvent(bugmsg, user=owner))

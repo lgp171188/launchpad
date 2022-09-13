@@ -120,9 +120,44 @@ class TestBugMessage(TestCaseWithFactory):
         }
         self.assertContentEqual(bug_attachment_ids, message_attachment_ids)
 
+    def _email_sent(self):
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
+        return (
+            "Test comment on bug" == latest_notification.message.text_contents
+        )
+
+    def test_disable_email_on_bug_comment_with_ordinary_user(self):
+        person = self.factory.makePerson()
+        bug = self.factory.makeBug()
+        bug_url = api_url(bug)
+
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
+        )
+
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"Email notifications can only be disabled by admins, "
+            b"commercial admins, registry experts, pillar owners, "
+            b"pillar drivers or pillar bug supervisors.",
+            response.body,
+        )
+        self.assertFalse(self._email_sent())
+
     def test_disable_email_on_bug_comment_with_admin(self):
-        # Although admin has Append privileges, it is not
-        # a bug supervisor and should not be able to disable notifs
+        # Admins will be able to disable notifs
         self.person_set = getUtility(IPersonSet)
         admins = self.person_set.getByName("admins")
         self.admin = admins.teamowner
@@ -140,21 +175,37 @@ class TestBugMessage(TestCaseWithFactory):
             send_notifications=False,
         )
 
-        self.assertEqual(400, response.status)
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
         self.assertEqual(
-            b"Email notifications for this bug can only "
-            b"be disabled by the bug supervisor.",
-            response.body,
+            "Test comment on bug", added_message.jsonBody()["content"]
         )
-        latest_notification = (
-            IStore(BugNotification)
-            .find(BugNotification)
-            .order_by(BugNotification.id)
-            .last()
+        self.assertFalse(self._email_sent())
+
+    def test_disable_email_on_bug_comment_with_commercial_admin(self):
+        # Commercial admins will be able to disable notifs
+        bug = self.factory.makeBug()
+        bug_url = api_url(bug)
+        commercial_admin = self.factory.makeCommercialAdmin()
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
         )
-        self.assertNotIn(
-            "Test comment on bug", latest_notification.message.text_contents
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
         )
+
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
+        self.assertEqual(
+            "Test comment on bug", added_message.jsonBody()["content"]
+        )
+        self.assertFalse(self._email_sent())
 
     def test_disable_email_on_bug_comment_with_supervisor(self):
         # A bug supervisor on at least one affected_pillar of the bug should
@@ -189,20 +240,11 @@ class TestBugMessage(TestCaseWithFactory):
         self.assertEqual(
             "Test comment on bug", added_message.jsonBody()["content"]
         )
+        self.assertFalse(self._email_sent())
 
-        latest_notification = (
-            IStore(BugNotification)
-            .find(BugNotification)
-            .order_by(BugNotification.id)
-            .last()
-        )
-        self.assertNotIn(
-            "Test comment on bug", latest_notification.message.text_contents
-        )
-
-    def test_disable_email_on_bug_comment_regression(self):
+    def test_disable_email_on_bug_comment_default(self):
         # When send_notifications is not passed in it defaults to True
-        # and doesn't require bug supervisor privliges to create the comment
+        # and doesn't require bug supervisor privileges to create the comment
         self.person_set = getUtility(IPersonSet)
         admins = self.person_set.getByName("admins")
         self.admin = admins.teamowner
@@ -229,16 +271,7 @@ class TestBugMessage(TestCaseWithFactory):
         self.assertEqual(
             "Test comment on bug", added_message.jsonBody()["content"]
         )
-
-        latest_notification = (
-            IStore(BugNotification)
-            .find(BugNotification)
-            .order_by(BugNotification.id)
-            .last()
-        )
-        self.assertIn(
-            "Test comment on bug", latest_notification.message.text_contents
-        )
+        self.assertTrue(self._email_sent())
 
 
 class TestSetCommentVisibility(TestCaseWithFactory):
