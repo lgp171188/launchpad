@@ -80,7 +80,7 @@
                     <span class="download sprite"></span>
                   </td>
                   <td class="import_source">
-                    <a tal:attributes="href entry/content/http_url"
+                    <a tal:attributes="href entry/content/getURL"
                        tal:content="entry/path">po/foo.pot</a> in
                     <a tal:condition="entry/sourcepackage"
                        tal:replace="structure entry/sourcepackage/fmt:link">
