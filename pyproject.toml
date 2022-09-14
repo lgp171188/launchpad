@@ -62,6 +62,10 @@ module = "lazr.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "packaging"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "pymacaroons"
 ignore_missing_imports = true
 
