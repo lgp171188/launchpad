@@ -3,10 +3,10 @@
 # Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import imp
 import os.path
 import sys
 from distutils.sysconfig import get_python_lib
+from importlib.machinery import PathFinder
 from string import Template
 from textwrap import dedent
 
@@ -70,14 +70,10 @@ class lp_develop(develop):
             for path in sys.path
             if not path.startswith(env_top) and "pip-build-env-" not in path
         ]
-        try:
-            fp, orig_sitecustomize_path, _ = imp.find_module(
-                "sitecustomize", system_paths
-            )
-            if fp:
-                fp.close()
-        except ImportError:
+        spec = PathFinder.find_spec("sitecustomize", path=system_paths)
+        if spec is None:
             return ""
+        orig_sitecustomize_path = spec.origin
         if orig_sitecustomize_path.endswith(".py"):
             with open(orig_sitecustomize_path) as orig_sitecustomize_file:
                 orig_sitecustomize = orig_sitecustomize_file.read()

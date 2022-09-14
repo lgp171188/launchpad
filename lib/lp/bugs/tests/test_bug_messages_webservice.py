@@ -2,15 +2,17 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Bug messages."""
-
+import transaction
 from testtools.matchers import HasLength
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugmessage import IBugMessageSet
+from lp.bugs.model.bugnotification import BugNotification
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.interfaces import IStore
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     TestCaseWithFactory,
@@ -117,6 +119,158 @@ class TestBugMessage(TestCaseWithFactory):
             for att in message_attachments
         }
         self.assertContentEqual(bug_attachment_ids, message_attachment_ids)
+
+    def _email_sent(self):
+        latest_notification = (
+            IStore(BugNotification)
+            .find(BugNotification)
+            .order_by(BugNotification.id)
+            .last()
+        )
+        return (
+            "Test comment on bug" == latest_notification.message.text_contents
+        )
+
+    def test_disable_email_on_bug_comment_with_ordinary_user(self):
+        person = self.factory.makePerson()
+        bug = self.factory.makeBug()
+        bug_url = api_url(bug)
+
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
+        )
+
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"Email notifications can only be disabled by admins, "
+            b"commercial admins, registry experts, or bug supervisors.",
+            response.body,
+        )
+        self.assertFalse(self._email_sent())
+
+    def test_disable_email_on_bug_comment_with_admin(self):
+        # Admins will be able to disable notifs
+        self.person_set = getUtility(IPersonSet)
+        admins = self.person_set.getByName("admins")
+        self.admin = admins.teamowner
+        with admin_logged_in():
+            bug = self.factory.makeBug()
+            bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
+        )
+
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
+        self.assertEqual(
+            "Test comment on bug", added_message.jsonBody()["content"]
+        )
+        self.assertFalse(self._email_sent())
+
+    def test_disable_email_on_bug_comment_with_commercial_admin(self):
+        # Commercial admins will be able to disable notifs
+        bug = self.factory.makeBug()
+        bug_url = api_url(bug)
+        commercial_admin = self.factory.makeCommercialAdmin()
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
+        )
+
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
+        self.assertEqual(
+            "Test comment on bug", added_message.jsonBody()["content"]
+        )
+        self.assertFalse(self._email_sent())
+
+    def test_disable_email_on_bug_comment_with_supervisor(self):
+        # A bug supervisor on at least one affected_pillar of the bug should
+        # be able to disable email notifications
+        self.person_set = getUtility(IPersonSet)
+        admins = self.person_set.getByName("admins")
+        self.admin = admins.teamowner
+
+        with admin_logged_in():
+            product = self.factory.makeProduct(
+                owner=self.admin,
+                official_malone=True,
+                bug_supervisor=self.admin,
+            )
+            bug = self.factory.makeBug(target=product, owner=self.admin)
+            transaction.commit()
+            bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+            send_notifications=False,
+        )
+
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
+        self.assertEqual(
+            "Test comment on bug", added_message.jsonBody()["content"]
+        )
+        self.assertFalse(self._email_sent())
+
+    def test_disable_email_on_bug_comment_default(self):
+        # When send_notifications is not passed in it defaults to True
+        # and doesn't require bug supervisor privileges to create the comment
+        self.person_set = getUtility(IPersonSet)
+        admins = self.person_set.getByName("admins")
+        self.admin = admins.teamowner
+        with admin_logged_in():
+            bug = self.factory.makeBug()
+            bug_url = api_url(bug)
+        webservice = webservice_for_person(
+            self.admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+
+        response = webservice.named_post(
+            bug_url,
+            "newMessage",
+            content="Test comment on bug",
+        )
+
+        # the endpoint is still callable and if send_notifications is not
+        # passed in. The comment will be created and a notification will be
+        # created as it did before introducing the silencing of emails through
+        # exposure of send_notifications on the API
+        self.assertEqual(201, response.status)
+        message_url = response.getHeader("Location")
+        added_message = webservice.get(message_url)
+        self.assertEqual(
+            "Test comment on bug", added_message.jsonBody()["content"]
+        )
+        self.assertTrue(self._email_sent())
 
 
 class TestSetCommentVisibility(TestCaseWithFactory):

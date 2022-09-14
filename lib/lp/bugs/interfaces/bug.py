@@ -1033,12 +1033,22 @@ class IBugAppend(Interface):
     @operation_parameters(
         subject=optional_message_subject_field(),
         content=copy_field(IMessage["content"]),
+        send_notifications=Bool(
+            title=_("Enable email notifications for adding this comment."),
+            required=False,
+            default=True,
+        ),
     )
     @call_with(owner=REQUEST_USER)
     @export_factory_operation(IMessage, [])
     @operation_for_version("beta")
-    def newMessage(owner, subject, content):
+    def newMessage(owner, subject, content, send_notifications=True):
         """Create a new message, and link it to this object."""
+
+    def newMessage_internal(owner, subject, content, send_notifications=True):
+        """Create a new message, and link it to this object.
+        This method is used internally mostly by the UI.
+        """
 
     @operation_parameters(
         person=Reference(IPerson, title=_("Person"), required=True),

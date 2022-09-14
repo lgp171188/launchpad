@@ -52,8 +52,14 @@ class OAuthConsumerTestCase(BaseOAuthTestCase):
 def test_suite():
     return unittest.TestSuite(
         (
-            unittest.makeSuite(OAuthAccessTokenTestCase),
-            unittest.makeSuite(OAuthRequestTokenTestCase),
-            unittest.makeSuite(OAuthConsumerTestCase),
+            unittest.defaultTestLoader.loadTestsFromTestCase(
+                OAuthAccessTokenTestCase
+            ),
+            unittest.defaultTestLoader.loadTestsFromTestCase(
+                OAuthRequestTokenTestCase
+            ),
+            unittest.defaultTestLoader.loadTestsFromTestCase(
+                OAuthConsumerTestCase
+            ),
         )
     )

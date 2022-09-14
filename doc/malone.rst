@@ -73,7 +73,7 @@ It's important that Malone be usable entirely in email. Many open source
 developers use their email to track work that needs to be done. So all of
 Malone's features should be accessible via email, including changing the
 status of a bug, adding and updating watches, and possibly also requesting
-reports of bugs on a product or distrbution.
+reports of bugs on a product or distribution.
 
 Distribution Bugs
 =================

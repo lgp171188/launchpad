@@ -645,7 +645,7 @@ class TestBug(TestCaseWithFactory):
         bug = self.factory.makeBug()
         login_person(bug.owner)
         with EventRecorder() as recorder:
-            bug.newMessage(owner=bug.owner, send_notifications=False)
+            bug.newMessage_internal(owner=bug.owner, send_notifications=False)
             self.assertEqual(0, len(recorder.events))
 
     def test_vulnerabilities_property(self):

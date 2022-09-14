@@ -27,7 +27,8 @@ from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import PackageUploadStatus
 from lp.testing.gpgkeys import import_secret_test_key
 
-changelog_entry_template = """%(source_name)s (%(version)s) %(suite)s; urgency=low
+changelog_entry_template = """\
+%(source_name)s (%(version)s) %(suite)s; urgency=low
 
   * %(changelog_text)s
 
