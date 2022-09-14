@@ -1487,6 +1487,37 @@ class Bug(SQLBase, InformationTypeMixin):
         remote_comment_id=None,
         send_notifications=True,
     ):
+        # Admins, commercial admins, registry experts, pillar owners,
+        # pillar drivers, and pillar bug supervisors should be able
+        # to disable email notifications
+        if not send_notifications:
+            authz = getAdapter(self, IAuthorization, "launchpad.Moderate")
+            if not authz.checkAuthenticated(IPersonRoles(owner)):
+                raise CannotDisableNotifications(
+                    "Email notifications can only "
+                    "be disabled by admins, commercial admins, "
+                    "registry experts, or bug supervisors."
+                )
+        return self.newMessage_internal(
+            owner=owner,
+            subject=subject,
+            content=content,
+            parent=parent,
+            bugwatch=bugwatch,
+            remote_comment_id=remote_comment_id,
+            send_notifications=send_notifications,
+        )
+
+    def newMessage_internal(
+        self,
+        owner=None,
+        subject=None,
+        content=None,
+        parent=None,
+        bugwatch=None,
+        remote_comment_id=None,
+        send_notifications=True,
+    ):
         """Create a new Message and link it to this bug."""
         if subject is None:
             subject = self.followup_subject()
@@ -1503,18 +1534,6 @@ class Bug(SQLBase, InformationTypeMixin):
         )
         if not bugmsg:
             return
-
-        # Admins, commercial admins, registry experts, pillar owners,
-        # pillar drivers, and pillar bug supervisors should be able
-        # to disable email notifications
-        authz = getAdapter(self, IAuthorization, "launchpad.Moderate")
-        if not authz.checkAuthenticated(IPersonRoles(owner)):
-            raise CannotDisableNotifications(
-                "Email notifications can only "
-                "be disabled by admins, commercial admins, "
-                "registry experts, pillar owners, pillar drivers "
-                "or pillar bug supervisors."
-            )
 
         if send_notifications:
             notify(ObjectCreatedEvent(bugmsg, user=owner))
