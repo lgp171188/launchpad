@@ -8,10 +8,13 @@ __all__ = [
     "ISnapBase",
     "ISnapBaseSet",
     "NoSuchSnapBase",
+    "SnapBaseFeature",
 ]
+
 
 import http.client
 
+from lazr.enum import EnumeratedType, Item
 from lazr.restful.declarations import (
     REQUEST_USER,
     call_with,
@@ -33,7 +36,7 @@ from lazr.restful.fields import CollectionField, Reference
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.schema import Bool, Datetime, Dict, Int, List, TextLine
+from zope.schema import Bool, Choice, Datetime, Dict, Int, List, TextLine
 
 from lp import _
 from lp.app.errors import NameLookupFailed
@@ -72,6 +75,14 @@ class SnapBaseNameField(ContentNameField):
             return getUtility(ISnapBaseSet).getByName(name)
         except NoSuchSnapBase:
             return None
+
+
+class SnapBaseFeature(EnumeratedType):
+    ALLOW_DUPLICATE_BUILD_ON = Item(
+        "allow_duplicate_build_on",
+        description="Allow items with duplicate build-on attribute in the "
+        "list of architectures",
+    )
 
 
 class ISnapBaseView(Interface):
@@ -181,6 +192,21 @@ class ISnapBaseEditableAttributes(Interface):
         )
     )
 
+    features = exported(
+        Dict(
+            title=_("Features supported by this base"),
+            key_type=Choice(vocabulary=SnapBaseFeature),
+            value_type=Bool(),
+            required=False,
+            readonly=False,
+            description=_(
+                "A dictionary designating the features supported by the base. "
+                "Key is the name of a feature, value is a boolean indicating "
+                "whether the feature is supported or not."
+            ),
+        )
+    )
+
 
 class ISnapBaseEdit(Interface):
     """`ISnapBase` methods that require launchpad.Edit permission."""
@@ -263,7 +289,14 @@ class ISnapBaseSetEdit(Interface):
         )
     )
     @export_factory_operation(
-        ISnapBase, ["name", "display_name", "distro_series", "build_channels"]
+        ISnapBase,
+        [
+            "name",
+            "display_name",
+            "distro_series",
+            "build_channels",
+            "features",
+        ],
     )
     @operation_for_version("devel")
     def new(
@@ -272,6 +305,7 @@ class ISnapBaseSetEdit(Interface):
         display_name,
         distro_series,
         build_channels,
+        features,
         processors=None,
         date_created=None,
     ):

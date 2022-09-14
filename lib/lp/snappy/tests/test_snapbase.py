@@ -12,6 +12,7 @@ from testtools.matchers import (
     MatchesStructure,
 )
 from zope.component import getAdapter, getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.security import IAuthorization
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -21,6 +22,7 @@ from lp.snappy.interfaces.snapbase import (
     ISnapBase,
     ISnapBaseSet,
     NoSuchSnapBase,
+    SnapBaseFeature,
 )
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import (
@@ -69,6 +71,28 @@ class TestSnapBase(TestCaseWithFactory):
         getUtility(ISnapBaseSet).setDefault(snap_base)
         self.assertRaises(CannotDeleteSnapBase, snap_base.destroySelf)
 
+    def test_features(self):
+        snap_base = self.factory.makeSnapBase(
+            features={SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True}
+        )
+
+        # feature are saved to the database by their title
+        self.assertEqual(
+            {
+                "allow_duplicate_build_on": True,
+            },
+            removeSecurityProxy(snap_base)._features,
+        )
+
+        # pretend that the database contains an invalid value
+        removeSecurityProxy(snap_base)._features["unknown_feature"] = True
+        self.assertEqual(
+            {
+                SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True,
+            },
+            snap_base.features,
+        )
+
 
 class TestSnapBaseProcessors(TestCaseWithFactory):
 
@@ -102,6 +126,7 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
             display_name=self.factory.getUniqueUnicode(),
             distro_series=self.distroseries,
             build_channels={},
+            features={},
         )
         self.assertContentEqual(self.procs, snap_base.processors)
 
@@ -113,6 +138,7 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
             display_name=self.factory.getUniqueUnicode(),
             distro_series=self.distroseries,
             build_channels={},
+            features={},
             processors=self.procs[:2],
         )
         self.assertContentEqual(self.procs[:2], snap_base.processors)
@@ -211,6 +237,7 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
             display_name="Dummy",
             distro_series=distroseries_url,
             build_channels={"snapcraft": "stable"},
+            features={"allow_duplicate_build_on": True},
         )
         self.assertEqual(201, response.status)
         snap_base = webservice.get(response.getHeader("Location")).jsonBody()
@@ -228,6 +255,7 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
                             webservice.getAbsoluteUrl(distroseries_url)
                         ),
                         "build_channels": Equals({"snapcraft": "stable"}),
+                        "features": Equals({"allow_duplicate_build_on": True}),
                         "is_default": Is(False),
                     }
                 ),
@@ -263,6 +291,32 @@ class TestSnapBaseWebservice(TestCaseWithFactory):
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"name: dummy is already in use by another base.", response.body
+        )
+
+    def test_new_invalid_features(self):
+        person = self.factory.makeRegistryExpert()
+        distroseries = self.factory.makeDistroSeries()
+        distroseries_url = api_url(distroseries)
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        logout()
+        response = webservice.named_post(
+            "/+snap-bases",
+            "new",
+            name="dummy",
+            display_name="Dummy",
+            distro_series=distroseries_url,
+            build_channels={"snapcraft": "stable"},
+            features={
+                "allow_duplicate_build_on": True,
+                "invalid_feature": True,
+            },
+        )
+        self.assertEqual(400, response.status)
+        self.assertStartsWith(
+            response.body, b'features: Invalid value "invalid_feature".'
         )
 
     def test_getByName(self):

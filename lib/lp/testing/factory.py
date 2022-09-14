@@ -6392,6 +6392,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         display_name=None,
         distro_series=None,
         build_channels=None,
+        features=None,
         processors=None,
         date_created=DEFAULT,
     ):
@@ -6414,6 +6415,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             display_name,
             distro_series,
             build_channels,
+            features=features,
             processors=processors,
             date_created=date_created,
         )
