@@ -1496,17 +1496,16 @@ class Bug(SQLBase, InformationTypeMixin):
                 raise CannotDisableNotifications(
                     "Email notifications can only "
                     "be disabled by admins, commercial admins, "
-                    "registry experts, pillar owners, pillar drivers "
-                    "or pillar bug supervisors."
+                    "registry experts, or bug supervisors."
                 )
         return self.newMessage_internal(
-            owner,
-            subject,
-            content,
-            parent,
-            bugwatch,
-            remote_comment_id,
-            send_notifications,
+            owner=owner,
+            subject=subject,
+            content=content,
+            parent=parent,
+            bugwatch=bugwatch,
+            remote_comment_id=remote_comment_id,
+            send_notifications=send_notifications,
         )
 
     def newMessage_internal(

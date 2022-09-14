@@ -150,8 +150,7 @@ class TestBugMessage(TestCaseWithFactory):
         self.assertEqual(400, response.status)
         self.assertEqual(
             b"Email notifications can only be disabled by admins, "
-            b"commercial admins, registry experts, pillar owners, "
-            b"pillar drivers or pillar bug supervisors.",
+            b"commercial admins, registry experts, or bug supervisors.",
             response.body,
         )
         self.assertFalse(self._email_sent())

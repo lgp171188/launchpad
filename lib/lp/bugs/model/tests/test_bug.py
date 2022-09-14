@@ -25,7 +25,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
 )
-from lp.registry.interfaces.person import IPersonSet, PersonVisibility
+from lp.registry.interfaces.person import PersonVisibility
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.testing import (
     EventRecorder,
@@ -641,17 +641,11 @@ class TestBug(TestCaseWithFactory):
             self.assertIsInstance(recorder.events[0], ObjectCreatedEvent)
 
     def test_newMessage_send_notification_false(self):
-        # After exposing this over the API extra permissions are required.
-        # Notifications about new messages can be suppressed
-        # by admins, commercial admins, registry experts,
-        # pillar owners, pillar drivers or pillar bug supervisors.
-        person_set = getUtility(IPersonSet)
-        admins = person_set.getByName("admins")
-        admin = admins.teamowner
+        # Notifications about new messages can be suppressed.
         bug = self.factory.makeBug()
-        login_person(admins.teamowner)
+        login_person(bug.owner)
         with EventRecorder() as recorder:
-            bug.newMessage(owner=admin, send_notifications=False)
+            bug.newMessage_internal(owner=bug.owner, send_notifications=False)
             self.assertEqual(0, len(recorder.events))
 
     def test_vulnerabilities_property(self):
