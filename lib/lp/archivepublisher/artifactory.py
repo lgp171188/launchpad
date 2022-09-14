@@ -18,6 +18,7 @@ from urllib.parse import quote_plus
 import requests
 from artifactory import ArtifactoryPath
 from dohq_artifactory.auth import XJFrogArtApiAuth
+from packaging import utils as packaging_utils
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
@@ -58,7 +59,11 @@ def _path_for(
         package_name = release.getUserDefinedField("package-name")
         if package_name is None:
             package_name = source_name
-        path = rootpath / package_name / source_version
+        path = (
+            rootpath
+            / packaging_utils.canonicalize_name(package_name)
+            / source_version
+        )
     elif repository_format == ArchiveRepositoryFormat.CONDA:
         subdir = release.getUserDefinedField("subdir")
         if subdir is None:
