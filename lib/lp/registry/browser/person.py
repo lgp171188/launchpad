@@ -1391,6 +1391,23 @@ class PersonAccountAdministerView(LaunchpadFormView):
         """See `LaunchpadEditFormView`."""
         return canonical_url(self.person)
 
+    def validate(self, data):
+        """See `LaunchpadFormView`."""
+        new_status = data.get("status")
+        if (
+            new_status != self.context.status
+            and new_status == AccountStatus.ACTIVE
+        ):
+            # This typically breaks, as it bypasses the code in
+            # `PersonSet.getOrCreateByOpenIDIdentifier` that sets the user's
+            # preferred email address.  Activating an account should only be
+            # done by the user themselves logging in from a Deactivated,
+            # Unactivated, or Placeholder account status.
+            self.setFieldError(
+                "status",
+                "Only the user themselves can activate their account.",
+            )
+
     @action("Change", name="change")
     def change_action(self, action, data):
         """Update the IAccount."""

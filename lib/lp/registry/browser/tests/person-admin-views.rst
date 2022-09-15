@@ -160,6 +160,7 @@ user must log in to restore the email addresses using the reactivate step.
     >>> view = create_initialized_view(user, "+reviewaccount", form=form)
     >>> print(view.errors)
     []
+    >>> transaction.commit()
     >>> user.account_status
     <DBItem AccountStatus.DEACTIVATED, ...>
     >>> user.account_status_history
@@ -167,6 +168,19 @@ user must log in to restore the email addresses using the reactivate step.
     name16: Suspended -> Deactivated: Zaphod's a hoopy frood.\n"
     >>> print(user.preferredemail)
     None
+
+
+An admin cannot manually activate an account.  The user must do that
+themselves by logging in.
+
+    >>> form = {
+    ...     "field.status": "ACTIVE",
+    ...     "field.comment": "Manually reactivating.",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(user, "+reviewaccount", form=form)
+    >>> print(view.errors)
+    ['Only the user themselves can activate their account.']
 
 
 An admin can mark an account as belonging to a user who has died.
