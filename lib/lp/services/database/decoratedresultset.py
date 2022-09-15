@@ -176,8 +176,7 @@ class DecoratedResultSet:
                 results = self.bulk_decorator(pre_iter_rows, result_slice)
             else:
                 results = self.bulk_decorator(pre_iter_rows)
-            for value in results:
-                yield value
+            yield from results
         else:
             if self.pre_iter_hook is not None:
                 pre_iter_rows = self._extract_plain_and_result(results)[1]

@@ -73,8 +73,7 @@ def gen_test_lines(lines):
     lines = iter(lines)
     for line in lines:
         if p_start(line):
-            for line in takewhile(p_take, lines):
-                yield line
+            yield from takewhile(p_take, lines)
 
 
 def gen_tests(test_lines):
