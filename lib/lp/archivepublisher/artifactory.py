@@ -75,6 +75,11 @@ def _path_for(
             raise ValueError("Cannot publish a Go module with no module-path")
         # Base path required by https://go.dev/ref/mod#module-proxy.
         path = rootpath / module_path / "@v"
+    elif repository_format == ArchiveRepositoryFormat.GENERIC:
+        package_name = release.getUserDefinedField("name")
+        if package_name is None:
+            package_name = source_name
+        path = rootpath / package_name / source_version
     else:
         raise AssertionError(
             "Unsupported repository format: %r" % repository_format
@@ -550,6 +555,8 @@ class ArtifactoryPool:
                 "*.mod",
                 "*.zip",
             ]
+        elif repository_format == ArchiveRepositoryFormat.GENERIC:
+            return ["*"]
         else:
             raise AssertionError(
                 "Unknown repository format %r" % repository_format

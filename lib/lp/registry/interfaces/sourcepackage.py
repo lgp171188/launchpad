@@ -531,6 +531,16 @@ class SourcePackageFileType(DBEnumeratedType):
         """,
     )
 
+    GENERIC = DBItem(
+        15,
+        """
+        Generic source file
+
+        This file is a generic source file without any particular known
+        metadata of its own, produced by a CI build.
+        """,
+    )
+
 
 class SourcePackageType(DBEnumeratedType):
     """Source Package Format
