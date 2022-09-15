@@ -16,7 +16,6 @@ __all__ = [
     "SignableTagFile",
 ]
 
-import errno
 import glob
 import io
 import os
@@ -95,17 +94,15 @@ def cleanup_unpacked_dir(unpacked_dir):
     """
     try:
         shutil.rmtree(unpacked_dir)
+    except PermissionError:
+        result = os.system("chmod -R u+rwx " + unpacked_dir)
+        if result != 0:
+            raise UploadError("chmod failed with %s" % result)
+        shutil.rmtree(unpacked_dir)
     except OSError as error:
-        if errno.errorcode[error.errno] != "EACCES":
-            raise UploadError(
-                "couldn't remove tmp dir %s: code %s"
-                % (unpacked_dir, error.errno)
-            )
-        else:
-            result = os.system("chmod -R u+rwx " + unpacked_dir)
-            if result != 0:
-                raise UploadError("chmod failed with %s" % result)
-            shutil.rmtree(unpacked_dir)
+        raise UploadError(
+            "couldn't remove tmp dir %s: code %s" % (unpacked_dir, error.errno)
+        )
 
 
 class SignableTagFile:

@@ -3,7 +3,6 @@
 
 """Test source package diffs."""
 
-import errno
 import os.path
 from datetime import datetime
 from textwrap import dedent
@@ -202,8 +201,7 @@ class TestPackageDiffs(TestCaseWithFactory):
         with open(marker_path) as marker:
             debdiff_pid = int(marker.readline())
             debdiff_tmpdir = marker.readline().rstrip("\n")
-            err = self.assertRaises(OSError, os.kill, debdiff_pid, 0)
-            self.assertEqual(errno.ESRCH, err.errno)
+            self.assertRaises(ProcessLookupError, os.kill, debdiff_pid, 0)
             self.assertFalse(os.path.exists(debdiff_tmpdir))
 
     def test_packagediff_max_size(self):
@@ -235,8 +233,7 @@ class TestPackageDiffs(TestCaseWithFactory):
         with open(marker_path) as marker:
             debdiff_pid = int(marker.readline())
             debdiff_tmpdir = marker.readline().rstrip("\n")
-            err = self.assertRaises(OSError, os.kill, debdiff_pid, 0)
-            self.assertEqual(errno.ESRCH, err.errno)
+            self.assertRaises(ProcessLookupError, os.kill, debdiff_pid, 0)
             self.assertFalse(os.path.exists(debdiff_tmpdir))
 
     def test_packagediff_blacklist(self):

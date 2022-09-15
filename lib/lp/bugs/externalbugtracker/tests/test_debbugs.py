@@ -4,7 +4,6 @@
 """Tests for the Debian bugtracker"""
 
 import email.message
-import errno
 import os
 
 from testtools.matchers import Equals, IsInstance, raises
@@ -30,9 +29,8 @@ class TestDebBugs(TestCase):
         bucket = os.path.join(self.tempdir, "db-h", bucket_name)
         try:
             os.makedirs(bucket)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
         m = email.message.Message()
         # For whatever reason Date is a unix timestamp not an email datestamp
         m["Date"] = "1000000000"

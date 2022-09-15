@@ -6,7 +6,6 @@ __all__ = [
     "ExportedImageFolder",
 ]
 
-import errno
 import os
 import re
 import time
@@ -86,14 +85,8 @@ class ExportedFolder:
         name = os.path.basename(filename)
         try:
             fileobj = File(filename, name)
-        except OSError as ioerror:
-            expected = (errno.ENOENT, errno.EISDIR, errno.ENOTDIR)
-            if ioerror.errno in expected:
-                # No such file or is a directory.
-                raise NotFound(self, name)
-            else:
-                # Some other IOError that we're not expecting.
-                raise
+        except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
+            raise NotFound(self, name)
 
         # TODO: Set an appropriate charset too.  There may be zope code we
         #       can reuse for this.
