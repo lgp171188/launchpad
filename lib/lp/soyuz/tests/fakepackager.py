@@ -386,24 +386,24 @@ class FakePackager:
             os.path.basename(self.upstream_directory)
         )
 
-        debuild_options = ["--no-conf", "-S"]
+        dpkg_buildpackage_options = ["-S"]
 
         if not signed:
-            debuild_options.extend(["-uc", "-us"])
+            dpkg_buildpackage_options.extend(["-uc", "-us"])
         else:
             assert (
                 self.gpg_key_fingerprint is not None
             ), "Cannot build signed packages because the key is not set."
-            debuild_options.append("-k%s" % self.gpg_key_fingerprint)
-            debuild_options.append("-p%s" % get_gpg_path())
+            dpkg_buildpackage_options.append("-k%s" % self.gpg_key_fingerprint)
+            dpkg_buildpackage_options.append("-p%s" % get_gpg_path())
 
         if include_orig:
-            debuild_options.append("-sa")
+            dpkg_buildpackage_options.append("-sa")
 
         current_path = os.getcwd()
         os.chdir(self.upstream_directory)
 
-        self._runSubProcess("debuild", debuild_options)
+        self._runSubProcess("dpkg-buildpackage", dpkg_buildpackage_options)
 
         os.chdir(current_path)
 

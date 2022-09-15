@@ -168,7 +168,7 @@ changelog matters in the test context.
     >>> packager.buildSource(include_orig=False)
 
 The generated changesfile contains a valid signature done by the
-preset GPG key. All the job is done by `debuild` here, we are
+preset GPG key. All the job is done by `dpkg-buildpackage` here; we are
 basically checking we pass the right arguments to it.
 
     >>> changesfile_path = packager.listAvailableUploads()[1]
