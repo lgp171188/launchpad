@@ -91,6 +91,7 @@ needs to be removed.
     ...     datemadepending=None,
     ...     dateremoved=None,
     ...     archive=hoary_i386.main_archive,
+    ...     sourcepackagename=bpr.build.source_package_name,
     ... )
 
 XXX: noodles 2008-11-06 bug=294585: The dependency on a database id
@@ -139,6 +140,7 @@ needs to be removed.
     ...     datemadepending=None,
     ...     dateremoved=None,
     ...     archive=hoary_i386.main_archive,
+    ...     sourcepackagename=bpr.build.source_package_name,
     ... )
 
 Then, we ensure that grabbing the current release of pmount and the old

@@ -791,6 +791,11 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         default=None,
     )
     removal_comment = StringCol(dbName="removal_comment", default=None)
+    sourcepackagename = ForeignKey(
+        foreignKey="SourcePackageName",
+        dbName="sourcepackagename",
+        notNull=False,
+    )
 
     @property
     def binarypackageformat(self):
@@ -845,6 +850,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     @property
     def source_package_name(self):
         """See `ISourcePackagePublishingHistory`"""
+        # XXX cjwatson 2022-09-12: Simplify this once self.sourcepackagename
+        # is populated.
         return self.binarypackagerelease.sourcepackagename
 
     @property
@@ -1122,6 +1129,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 archive=debug.archive,
                 phased_update_percentage=new_phased_update_percentage,
                 _channel=removeSecurityProxy(debug)._channel,
+                sourcepackagename=debug.sourcepackagename,
             )
 
         # Append the modified package publishing entry
@@ -1140,6 +1148,11 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             creator=creator,
             phased_update_percentage=new_phased_update_percentage,
             _channel=self._channel,
+            sourcepackagename=(
+                bpr.build.source_package_name
+                if bpr.build is not None
+                else None
+            ),
         )
 
     def copyTo(self, distroseries, pocket, archive):
@@ -1388,6 +1401,7 @@ class PublishingSet:
                 BPPH.phased_update_percentage,
                 BPPH.status,
                 BPPH.datecreated,
+                BPPH.sourcepackagename,
             ),
             [
                 (
@@ -1405,6 +1419,11 @@ class PublishingSet:
                     phased_update_percentage,
                     PackagePublishingStatus.PENDING,
                     UTC_NOW,
+                    (
+                        bpr.build.source_package_name
+                        if bpr.build is not None
+                        else None
+                    ),
                 )
                 for (
                     das,

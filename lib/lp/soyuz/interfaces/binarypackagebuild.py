@@ -37,6 +37,7 @@ from lp.buildmaster.interfaces.packagebuild import (
     IPackageBuildView,
 )
 from lp.buildmaster.interfaces.processor import IProcessor
+from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
@@ -83,6 +84,13 @@ class IBinaryPackageBuildView(IPackageBuildView):
     arch_indep = Bool(
         title=_("Build architecture independent packages"),
         required=False,
+        readonly=True,
+    )
+
+    source_package_name = Reference(
+        title=_("Source package name"),
+        schema=ISourcePackageName,
+        required=True,
         readonly=True,
     )
 

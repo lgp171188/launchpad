@@ -653,6 +653,9 @@ class SoyuzTestPublisher:
                 archive=archive,
                 phased_update_percentage=phased_update_percentage,
                 _channel=channel,
+                sourcepackagename=(
+                    binarypackagerelease.build.source_package_name
+                ),
             )
             if status == PackagePublishingStatus.PUBLISHED:
                 pub.datepublished = UTC_NOW
