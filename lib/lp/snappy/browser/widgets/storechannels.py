@@ -15,12 +15,11 @@ from zope.formlib.widget import (
     InputWidget,
 )
 from zope.interface import implementer
-from zope.schema import Bool, Choice, List, TextLine
+from zope.schema import Bool, Choice, TextLine
 
-from lp import _
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
-from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.services.channels import (
     CHANNEL_COMPONENTS_DELIMITER,
     channel_list_to_string,
@@ -53,28 +52,17 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 __name__="track",
                 title="Track",
                 required=False,
-                description=_(
-                    "Track defines a series for your software. "
-                    "If not specified, the default track ('latest') is "
-                    "assumed."
-                ),
             ),
-            List(
-                __name__="risks",
+            Choice(
+                __name__="risk",
                 title="Risk",
                 required=False,
-                value_type=Choice(vocabulary="SnapStoreChannel"),
-                description=_("Risks denote the stability of your software."),
+                vocabulary="SnapStoreChannel",
             ),
             TextLine(
                 __name__="branch",
                 title="Branch",
                 required=False,
-                description=_(
-                    "Branches provide users with an easy way to test bug "
-                    "fixes.  They are temporary and created on demand.  If "
-                    "not specified, no branch is used."
-                ),
             ),
             Bool(
                 __name__="delete",
@@ -84,50 +72,49 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             ),
         ]
 
-        self.risks_widget = CustomWidgetFactory(LabeledMultiCheckBoxWidget)
+        self.risk_widget = CustomWidgetFactory(
+            LaunchpadRadioWidget, orientation="horizontal"
+        )
+
         for field in fields:
             setUpWidget(
                 self, field.__name__, field, IInputWidget, prefix=self.name
             )
-        self.risks_widget.orientation = "horizontal"
         self._widgets_set_up = True
 
     @property
     def has_risks_vocabulary(self):
-        risks_widget = getattr(self, "risks_widget", None)
-        return risks_widget and bool(risks_widget.vocabulary)
+        risk_widget = getattr(self, "risk_widget", None)
+        return risk_widget and bool(risk_widget.vocabulary)
 
     def setRenderedValue(self, value):
         """See `IWidget`."""
         self.setUpSubWidgets()
         if value:
-            # NOTE: atm target channels must belong to the same track and
-            # branch
             tracks = set()
             branches = set()
-            risks = []
+            risks = set()
             for channel in value:
                 track, risk, branch = channel_string_to_list(channel)
                 tracks.add(track)
                 risks.append(risk)
+                risks.append(risk)
                 branches.add(branch)
-            if len(branches) != 1:
-                raise ValueError(
-                    "Channels belong to different branches: %r" % value
-                )
             track = tracks.pop()
             self.track_widget.setRenderedValue(track)
-            self.risks_widget.setRenderedValue(risks)
+            risk = risks.pop()
+            self.risks_widget.setRenderedValue(risk)
             branch = branches.pop()
             self.branch_widget.setRenderedValue(branch)
         else:
             self.track_widget.setRenderedValue(None)
-            self.risks_widget.setRenderedValue(None)
+            self.risk_widget.setRenderedValue(None)
             self.branch_widget.setRenderedValue(None)
+            self.delete_widget.setRenderedValue(None)
 
     def hasInput(self):
         """See `IInputWidget`."""
-        return ("%s.risks" % self.name) in self.request.form
+        return ("%s.risk" % self.name) in self.request.form
 
     def hasValidInput(self):
         """See `IInputWidget`."""
@@ -143,7 +130,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         """See `IInputWidget`."""
         self.setUpSubWidgets()
         track = self.track_widget.getInputValue()
-        risks = self.risks_widget.getInputValue()
+        risk = self.risk_widget.getInputValue()
         branch = self.branch_widget.getInputValue()
         if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
@@ -159,9 +146,8 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg)
             )
-        channels = [
-            channel_list_to_string(track, risk, branch) for risk in risks
-        ]
+        channels = channel_list_to_string(track, risk, branch)
+
         return channels
 
     def error(self):

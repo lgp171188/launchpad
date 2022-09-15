@@ -22,8 +22,7 @@
       <table class="subordinate">
         <tr>
           <td>
-            <tal:widget define="widget nocall:view/risks_widget"
-                        condition="widget/context/value_type/vocabulary">
+            <tal:widget define="widget nocall:view/risk_widget">
               <metal:block
                 use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
             </tal:widget>
