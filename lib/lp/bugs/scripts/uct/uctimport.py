@@ -32,6 +32,7 @@ from typing import Dict, List, Optional
 
 import transaction
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -102,7 +103,9 @@ class UCTImporter:
                 cve.series_packages,
             )
             return
-        lp_cve = getUtility(ICveSet)[cve.sequence]  # type: CveModel
+        lp_cve = removeSecurityProxy(
+            getUtility(ICveSet)[cve.sequence]
+        )  # type: CveModel
         if lp_cve is None:
             logger.warning(
                 "%s: could not find the CVE in LP. Aborting.", cve.sequence
@@ -452,3 +455,4 @@ class UCTImporter:
             lp_cve.setCVSSVectorForAuthority(
                 cvss.authority, cvss.vector_string
             )
+        lp_cve.discovered_by = cve.discovered_by

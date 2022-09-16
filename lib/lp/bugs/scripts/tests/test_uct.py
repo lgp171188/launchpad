@@ -594,7 +594,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             importance=BugTaskImportance.MEDIUM,
             status=VulnerabilityStatus.ACTIVE,
             assignee=self.factory.makePerson(),
-            discovered_by="",
+            discovered_by="tr3e wang",
             description="description",
             ubuntu_description="ubuntu-description",
             bug_urls=["https://github.com/mm2/Little-CMS/issues/29"],
@@ -729,6 +729,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             {cvss.authority: cvss.vector_string for cvss in cve.cvss},
             lp_cve.cvss,
         )
+        self.assertEqual(cve.discovered_by, lp_cve.discovered_by)
 
     def checkCVE(self, expected: CVE, actual: CVE):
         self.assertEqual(expected.sequence, actual.sequence)

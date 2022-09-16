@@ -203,7 +203,7 @@ class UCTExporter:
             importance=cve_importance,
             status=vulnerability.status,
             assignee=bug_tasks[0].assignee,
-            discovered_by="",  # TODO: fix this
+            discovered_by=lp_cve.discovered_by or "",
             description=parsed_description.description,
             ubuntu_description=vulnerability.description,
             bug_urls=bug_urls,
