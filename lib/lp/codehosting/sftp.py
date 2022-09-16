@@ -18,7 +18,6 @@ __all__ = [
 ]
 
 
-import errno
 import os
 import stat
 from copy import copy
@@ -58,9 +57,7 @@ class FatLocalTransport(LocalTransport):
         osutils.check_legal_path(abspath)
         try:
             chunk_file = os.open(abspath, os.O_CREAT | os.O_WRONLY)
-        except OSError as e:
-            if e.errno != errno.EISDIR:
-                raise
+        except IsADirectoryError:
             raise FileIsADirectory(name)
         os.lseek(chunk_file, offset, 0)
         os.write(chunk_file, data)

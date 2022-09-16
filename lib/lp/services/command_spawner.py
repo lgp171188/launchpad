@@ -9,7 +9,6 @@ __all__ = [
     "ReturnCodeReceiver",
 ]
 
-import errno
 import select
 import subprocess
 from fcntl import F_GETFL, F_SETFL, fcntl
@@ -175,11 +174,9 @@ class CommandSpawner:
         """Read output from `pipe_file`."""
         try:
             output = pipe_file.read()
-        except OSError as e:
-            # "Resource temporarily unavailable"--not an error really,
-            # just means there's nothing to read.
-            if e.errno != errno.EAGAIN:
-                raise
+        except BlockingIOError:
+            # This just means there's nothing to read.
+            pass
         else:
             if len(output) > 0:
                 self._handle(process, event, output)

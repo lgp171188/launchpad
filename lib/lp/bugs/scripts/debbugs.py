@@ -177,10 +177,8 @@ class Database:
 
         try:
             fd = open(summary)
-        except OSError as e:
-            if e.errno == 2:
-                raise SummaryMissing(summary)
-            raise
+        except FileNotFoundError:
+            raise SummaryMissing(summary)
 
         try:
             message = email.message_from_file(fd)
@@ -222,10 +220,8 @@ class Database:
 
         try:
             fd = open(report, "rb")
-        except OSError as e:
-            if e.errno == 2:
-                raise ReportMissing(report)
-            raise
+        except FileNotFoundError:
+            raise ReportMissing(report)
 
         bug.report = fd.read()
         fd.close()
@@ -278,10 +274,8 @@ class Database:
             if process.returncode != 0:
                 raise LogParseFailed(errors)
 
-        except OSError as e:
-            if e.errno == 2:
-                raise LogMissing(log)
-            raise
+        except FileNotFoundError:
+            raise LogMissing(log)
 
         bug.comments = comments
 

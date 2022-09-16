@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 import bz2
-import errno
 import gzip
 import hashlib
 import lzma
@@ -1377,9 +1376,8 @@ class Publisher:
                         )
                         extra_files.add(remove_suffix(dep11_path))
                         extra_files.add(dep11_path)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
             cnf_dir = os.path.join(suite_dir, component, "cnf")
             try:
                 for cnf_file in os.listdir(cnf_dir):
@@ -1387,9 +1385,8 @@ class Publisher:
                         cnf_path = os.path.join(component, "cnf", cnf_file)
                         extra_files.add(remove_suffix(cnf_path))
                         extra_files.add(cnf_path)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
+            except FileNotFoundError:
+                pass
         for architecture in all_architectures:
             for contents_path in get_suffixed_indices(
                 "Contents-" + architecture
@@ -1577,9 +1574,8 @@ class Publisher:
                     continue
                 i18n_files.add(remove_suffix(entry.name))
                 i18n_files.add(entry.name)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
         if not i18n_files:
             # If the i18n directory doesn't exist or is empty, we don't need
             # to index it.

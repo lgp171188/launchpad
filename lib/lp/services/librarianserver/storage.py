@@ -1,7 +1,6 @@
 # Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import errno
 import hashlib
 import os
 import shutil
@@ -56,9 +55,8 @@ def makedirs_fsync(name, mode=0o777):
     if head and tail and not os.path.exists(head):
         try:
             makedirs_fsync(head, mode)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
         if tail == os.curdir:
             return
     os.mkdir(name, mode)
@@ -100,9 +98,8 @@ class LibrarianStorage:
         self.incoming = os.path.join(self.directory, "incoming")
         try:
             os.mkdir(self.incoming)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        except FileExistsError:
+            pass
 
     def hasFile(self, fileid):
         return os.access(self._fileLocation(fileid), os.F_OK)
@@ -321,10 +318,9 @@ class LibraryFileUpload:
             raise DuplicateFileIDError(fileID)
         try:
             makedirs_fsync(os.path.dirname(location))
-        except OSError as e:
+        except FileExistsError:
             # If the directory already exists, that's ok.
-            if e.errno != errno.EEXIST:
-                raise
+            pass
         shutil.move(self.tmpfilepath, location)
         fsync_path(location)
         fsync_path(os.path.dirname(location), dir=True)

@@ -7,7 +7,6 @@
 
 import _pythonpath  # noqa: F401
 
-import errno
 import os
 import select
 import sys
@@ -241,12 +240,9 @@ def nice_killpg(pgid):
             # Give the processes some time to shut down.
             time.sleep(3)
 
-    except OSError as exc:
-        if exc.errno == errno.ESRCH:
-            # We tried to call os.killpg() and found the group to be empty.
-            pass
-        else:
-            raise
+    except ProcessLookupError:
+        # We tried to call os.killpg() and found the group to be empty.
+        pass
     print("Process group %d is now empty." % pgid)
 
 

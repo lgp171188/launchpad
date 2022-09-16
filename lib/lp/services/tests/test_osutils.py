@@ -118,9 +118,7 @@ class TestProcessExists(TestCase):
         self.assertTrue(process_exists(pid))
 
     def test_with_process_not_running(self):
-        exception = OSError()
-        exception.errno = errno.ESRCH
-        self.useFixture(MockPatch("os.kill", side_effect=exception))
+        self.useFixture(MockPatch("os.kill", side_effect=ProcessLookupError))
         self.assertFalse(process_exists(123))
 
     def test_with_unknown_error(self):

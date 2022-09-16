@@ -3,7 +3,6 @@
 
 """Librarian garbage collection routines"""
 
-import errno
 import hashlib
 import multiprocessing.pool
 import os
@@ -589,9 +588,8 @@ class UnreferencedContentPruner:
         try:
             os.unlink(path)
             removed.append("filesystem")
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
         # Remove the file from Swift, if it hasn't already been.
         if self.swift_enabled:
