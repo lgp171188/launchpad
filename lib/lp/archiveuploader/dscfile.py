@@ -638,15 +638,14 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 "No file checker for source format %s." % self.format
             )
 
-        for error in file_checker(
+        yield from file_checker(
             self.filename,
             file_type_counts,
             component_orig_tar_counts,
             component_orig_tar_signature_counts,
             bzip2_count,
             xz_count,
-        ):
-            yield error
+        )
 
         if files_missing:
             yield UploadError(
@@ -654,9 +653,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 "skipping package unpack verification."
             )
         else:
-            for error in self.unpackAndCheckSource():
-                # Pass on errors found when unpacking the source.
-                yield error
+            # Pass on errors found when unpacking the source.
+            yield from self.unpackAndCheckSource()
 
     def unpackAndCheckSource(self):
         """Verify uploaded source using dpkg-source."""
