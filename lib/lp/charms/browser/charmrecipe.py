@@ -326,7 +326,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     custom_widget_git_ref = GitRefWidget
     custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
-    store_channels_data = []
+    # store_channels_data = []
 
     @property
     def field_names(self):
@@ -416,21 +416,21 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
                     "this name." % (owner.display_name, project.display_name),
                 )
 
-    def _getFieldName(self, name, store_channel_index):
-        suffix = ".%s" % store_channel_index
-        return name + suffix
+    # def _getFieldName(self, name, store_channel_index):
+    #     suffix = ".%s" % store_channel_index
+    #     return name + suffix
+    #
+    # def parseData(self, data):
+    #     track, risk, branch = data[0].split("/")
+    #     self.store_channels_data.append(data[0])
+    #     return self.store_channels_data
 
-    def parseData(self, data):
-        track, risk, branch = data[0].split("/")
-        self.store_channels_data.append(data[0])
-        return self.store_channels_data
-
-    @action("Save store channel data", name="add")
-    def add_action(self, action, data):
-        self.parseData(data["store_channels"])
-        self.next_url = canonical_url(
-            self.context, view_name="+new-charm-recipe"
-        )
+    # @action("Save store channel data", name="add")
+    # def add_action(self, action, data):
+    #     self.parseData(data["store_channels"])
+    #     self.next_url = canonical_url(
+    #         self.context, view_name="+new-charm-recipe"
+    #     )
 
 
 class BaseCharmRecipeEditView(

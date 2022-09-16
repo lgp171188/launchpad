@@ -64,12 +64,12 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 title="Branch",
                 required=False,
             ),
-            Bool(
-                __name__="delete",
-                title="Delete",
-                readonly=False,
-                default=False,
-            ),
+            # Bool(
+            #     __name__="delete",
+            #     title="Delete",
+            #     readonly=False,
+            #     default=False,
+            # ),
         ]
 
         self.risk_widget = CustomWidgetFactory(
@@ -110,7 +110,8 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             self.track_widget.setRenderedValue(None)
             self.risk_widget.setRenderedValue(None)
             self.branch_widget.setRenderedValue(None)
-            self.delete_widget.setRenderedValue(None)
+
+    #            self.delete_widget.setRenderedValue(None)
 
     def hasInput(self):
         """See `IInputWidget`."""

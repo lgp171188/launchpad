@@ -469,7 +469,8 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         )
 
     @responses.activate
-    def test_create_new_recipe_multiple_tracks(self):
+    def test_create_new_recipe_multiple_tracks_missing_recipe_name(self):
+        # Missing charm recipe will result in error in browser
         self.factory.makeProduct(
             name="test-project", displayname="Test Project"
         )
@@ -483,9 +484,8 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl(name="field.store_channels.track").value = "track"
         browser.getControl("Edge").selected = True
         browser.getControl(name="field.store_channels.branch").value = "branch"
-        browser.getControl("Delete").selected = False
 
-        browser.getControl("Save store channel data").click()
+        browser.getControl("Create charm recipe").click()
 
         self.assertIn("Required input is missing.", browser.contents)
 

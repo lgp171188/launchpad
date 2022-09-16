@@ -20,8 +20,8 @@
     </p>
   </div>
 
-  <metal:charmrecipe-form use-macro="context/@@launchpad_form/form">
-    <div class="form" metal:fill-slot="widgets">
+  <div metal:use-macro="context/@@launchpad_form/form">
+    <metal:formbody fill-slot="widgets">
       <table class="form">
         <tal:widget define="widget nocall:view/widgets/name">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
@@ -72,19 +72,8 @@
           </td>
         </tr>
       </table>
-      <div class="subordinate"  >
-        <p class="actions">
-          <input tal:replace="structure view/add_action/render" />
-          or <a tal:attributes="href view/cancel_url">Cancel</a>
-        </p>
-      </div>
-      <p class="actions">
-        <input tal:replace="structure view/create_action/render" />
-      </p>
-    </div>
-  <metal:buttons fill-slot="buttons" />
-
-  </metal:charmrecipe-form>
+    </metal:formbody>
+  </div>
 
   <script type="text/javascript">
     LPJS.use('lp.charms.charmrecipe.edit', function(Y) {
