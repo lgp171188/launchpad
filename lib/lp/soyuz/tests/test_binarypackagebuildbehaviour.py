@@ -147,7 +147,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
                 )
             else:
                 password = ""
-            uploads.append((sprf.libraryfile.https_url, "", password))
+            uploads.append((sprf.libraryfile.getURL(), "", password))
         upload_logs = [
             MatchesListwise(
                 [Equals("ensurepresent")]
