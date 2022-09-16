@@ -1581,7 +1581,6 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
         # Circular imports.
         from lp.soyuz.model.archive import Archive
         from lp.soyuz.model.archivedependency import ArchiveDependency
-        from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
         # Binary package builds only support free-floating macaroons for
         # librarian or archive authentication, not ones bound to a user.
@@ -1601,9 +1600,7 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
             clauses.extend(
                 [
                     BinaryPackageBuild.source_package_release_id
-                    == SourcePackageRelease.id,
-                    SourcePackageReleaseFile.sourcepackagereleaseID
-                    == SourcePackageRelease.id,
+                    == SourcePackageReleaseFile.sourcepackagereleaseID,
                     SourcePackageReleaseFile.libraryfile == context,
                 ]
             )

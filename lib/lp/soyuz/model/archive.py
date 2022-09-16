@@ -2776,10 +2776,8 @@ class Archive(SQLBase):
             .find(
                 (LibraryFileAlias.filename, LibraryFileContent.sha1),
                 SourcePackagePublishingHistory.archive == self,
-                SourcePackageRelease.id
-                == SourcePackagePublishingHistory.sourcepackagereleaseID,
-                SourcePackageReleaseFile.sourcepackagerelease
-                == SourcePackageRelease.id,
+                SourcePackagePublishingHistory.sourcepackagerelease
+                == SourcePackageReleaseFile.sourcepackagerelease,
                 LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
                 LibraryFileAlias.filename.is_in(source_files),
                 LibraryFileContent.id == LibraryFileAlias.contentID,
