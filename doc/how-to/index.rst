@@ -17,6 +17,7 @@ Common development tasks
 .. toctree::
    :maxdepth: 1
 
+   contributing-changes
    exceptions
    security
    avoid-debugging-issues
