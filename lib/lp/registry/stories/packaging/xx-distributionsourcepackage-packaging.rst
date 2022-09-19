@@ -18,7 +18,7 @@ source package in each series of this distribution.
     >>> anon_browser.open("http://launchpad.test/ubuntu/+source/alsa-utils")
     >>> content = anon_browser.contents
     >>> print(extract_text(find_tag_by_id(content, "packages_list")))
-    The Hoary Hedgehog Release (active development)     Set upstream link
+    The Hoary Hedgehog Release (active development)
       1.0.9a-4ubuntu1 release (main) 2005-09-15
     The Warty Warthog Release (current stable release) alsa-utils trunk series
       1.0.9a-4        release (main) 2005-09-16
@@ -28,12 +28,12 @@ source package in each series of this distribution.
 Delete Link Button
 ------------------
 
-A button is displayed to authenticated users to delete existing
+A button is displayed to project owners to delete existing
 packaging links.
 
-    >>> user_browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> user_browser.open("http://launchpad.test/ubuntu/+source/alsa-utils")
-    >>> link = user_browser.getLink(
+    >>> owner_browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> owner_browser.open("http://launchpad.test/ubuntu/+source/alsa-utils")
+    >>> link = owner_browser.getLink(
     ...     url="/ubuntu/warty/+source/alsa-utils/+remove-packaging"
     ... )
     >>> print(link)
@@ -49,12 +49,12 @@ This button is not displayed to anonymous users.
 
 Clicking this button deletes the corresponding packaging association.
 
-    >>> link = user_browser.getLink(
+    >>> link = owner_browser.getLink(
     ...     url="/ubuntu/warty/+source/alsa-utils/+remove-packaging"
     ... )
     >>> link.click()
-    >>> user_browser.getControl("Unlink").click()
-    >>> content = user_browser.contents
+    >>> owner_browser.getControl("Unlink").click()
+    >>> content = owner_browser.contents
     >>> for tag in find_tags_by_class(content, "error"):
     ...     print(extract_text(tag))
     ...

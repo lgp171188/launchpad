@@ -12,7 +12,7 @@ from lp.registry.interfaces.packaging import IPackagingUtil, PackagingType
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.features.testing import FeatureFixture
-from lp.testing import TestCaseWithFactory, login, logout
+from lp.testing import TestCaseWithFactory, login, logout, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import setupBrowser
 from lp.testing.views import create_initialized_view
@@ -49,7 +49,7 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
         )
         self.packaging_util = getUtility(IPackagingUtil)
 
-    def test_no_error_when_trying_to_readd_same_package(self):
+    def test_no_error_when_trying_to_re_add_same_package(self):
         # There is no reason to display an error when the user's action
         # wouldn't cause a state change.
         self.packaging_util.createPackaging(
@@ -65,9 +65,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": self.sourcepackagename.name,
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            self.productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                self.productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         self.assertEqual([], view.errors)
 
     def test_cannot_link_to_linked_package(self):
@@ -78,9 +82,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": "hot",
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            self.productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                self.productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         self.assertEqual([], view.errors)
         other_productseries = self.factory.makeProductSeries(
             product=self.product, name="hottest"
@@ -90,9 +98,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": "hot",
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            other_productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                other_productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         view_errors = [
             'The <a href="http://launchpad.test/ubuntu/hoary/+source/hot">'
             "hot</a> package in Hoary is already linked to another series."
@@ -106,9 +118,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": "",
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            self.productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                self.productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         self.assertEqual(1, len(view.errors))
         self.assertEqual("sourcepackagename", view.errors[0].field_name)
         self.assertEqual("Required input is missing.", view.errors[0].doc())
@@ -125,9 +141,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": "vapor",
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            self.productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                self.productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         view_errors = ["The source package is not published in Hoary."]
         self.assertEqual(view_errors, view.errors)
 
@@ -142,9 +162,13 @@ class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
             "field.sourcepackagename": "hot",
             "field.actions.continue": "Continue",
         }
-        view = create_initialized_view(
-            self.productseries, "+ubuntupkg", form=form
-        )
+        with person_logged_in(self.product.owner):
+            view = create_initialized_view(
+                self.productseries,
+                "+ubuntupkg",
+                form=form,
+                principal=self.product.owner,
+            )
         self.assertEqual([], view.errors)
         has_packaging = self.packaging_util.packagingEntryExists(
             self.sourcepackagename, warty, self.productseries

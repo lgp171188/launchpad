@@ -707,7 +707,9 @@ class SoyuzTestPublisher:
         """
         if source_pub is None:
             distribution = self.factory.makeDistribution(
-                name="youbuntu", displayname="Youbuntu"
+                name="youbuntu",
+                displayname="Youbuntu",
+                owner=self.factory.makePerson(email="owner@youbuntu.com"),
             )
             distroseries = self.factory.makeDistroSeries(
                 name="busy", distribution=distribution

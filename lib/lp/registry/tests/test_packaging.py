@@ -19,6 +19,8 @@ from lp.registry.model.packaging import Packaging
 from lp.testing import (
     EventRecorder,
     TestCaseWithFactory,
+    admin_logged_in,
+    anonymous_logged_in,
     login,
     person_logged_in,
 )
@@ -61,7 +63,7 @@ class TestPackaging(TestCaseWithFactory):
             packaging.distroseries,
         )
 
-    def test_destroySelf__not_allowed_for_probationary_user(self):
+    def test_destroySelf__not_allowed_for_random_user(self):
         """Arbitrary users cannot delete a packaging."""
         packaging = self.factory.makePackagingLink()
         packaging_util = getUtility(IPackagingUtil)
@@ -73,26 +75,6 @@ class TestPackaging(TestCaseWithFactory):
                 packaging.sourcepackagename,
                 packaging.distroseries,
             )
-
-    def test_destroySelf__allowed_for_non_probationary_user(self):
-        """An experienced user can delete a packaging."""
-        packaging = self.factory.makePackagingLink()
-        sourcepackagename = packaging.sourcepackagename
-        distroseries = packaging.distroseries
-        productseries = packaging.productseries
-        packaging_util = getUtility(IPackagingUtil)
-        user = self.factory.makePerson(karma=200)
-        with person_logged_in(user):
-            packaging_util.deletePackaging(
-                packaging.productseries,
-                packaging.sourcepackagename,
-                packaging.distroseries,
-            )
-        self.assertFalse(
-            packaging_util.packagingEntryExists(
-                sourcepackagename, distroseries, productseries
-            )
-        )
 
     def test_destroySelf__allowed_for_uploader(self):
         """A person with upload rights for the sourcepackage can
@@ -335,8 +317,7 @@ class TestDeletePackaging(TestCaseWithFactory):
         """Deleting a Packaging creates a notification."""
         packaging_util = getUtility(IPackagingUtil)
         packaging = self.factory.makePackagingLink()
-        user = self.factory.makePerson(karma=200)
-        with person_logged_in(user):
+        with person_logged_in(packaging.productseries.product.owner):
             with EventRecorder() as recorder:
                 packaging_util.deletePackaging(
                     packaging.productseries,
@@ -346,3 +327,61 @@ class TestDeletePackaging(TestCaseWithFactory):
         (event,) = recorder.events
         self.assertIsInstance(event, ObjectDeletedEvent)
         self.assertIs(removeSecurityProxy(packaging), event.object)
+
+
+class TestPackagingSecurity(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        self.packaging = self.factory.makePackagingLink()
+
+    def viewPackaging(self):
+        _ = self.packaging.packaging
+
+    def editPackaging(self):
+        self.packaging.packaging = PackagingType.PRIME
+
+    def test_anyone_can_view(self):
+        with anonymous_logged_in():
+            try:
+                self.viewPackaging()
+            except Unauthorized:
+                self.fail("Unauthorized exception raised")
+
+    def test_anonymous_person_cannot_edit(self):
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, self.editPackaging)
+
+    def test_random_person_cannot_edit(self):
+        with person_logged_in(self.factory.makePerson()):
+            self.assertRaises(Unauthorized, self.editPackaging)
+
+    def test_admin_can_edit(self):
+        with admin_logged_in():
+            try:
+                self.editPackaging()
+            except Unauthorized:
+                self.fail("Unauthorized exception raised")
+
+    def test_product_owner_can_edit(self):
+        with person_logged_in(self.packaging.productseries.product.owner):
+            try:
+                self.editPackaging()
+            except Unauthorized:
+                self.fail("Unauthorized exception raised")
+
+    def test_productseries_owner_can_edit(self):
+        with person_logged_in(self.packaging.productseries.owner):
+            try:
+                self.editPackaging()
+            except Unauthorized:
+                self.fail("Unauthorized exception raised")
+
+    def test_distribution_owner_can_edit(self):
+        with person_logged_in(self.packaging.distroseries.distribution.owner):
+            try:
+                self.editPackaging()
+            except Unauthorized:
+                self.fail("Unauthorized exception raised")

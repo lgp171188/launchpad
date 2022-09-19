@@ -2022,7 +2022,7 @@
         name="+ubuntupkg"
         for="lp.registry.interfaces.productseries.IProductSeries"
         class="lp.registry.browser.productseries.ProductSeriesUbuntuPackagingView"
-        permission="launchpad.AnyPerson"
+        permission="launchpad.Edit"
         template="../templates/productseries-ubuntupkg.pt"
         />
     <browser:pages
@@ -2621,7 +2621,7 @@
         name="+edit-packaging"
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         class="lp.registry.browser.sourcepackage.SourcePackageChangeUpstreamView"
-        permission="launchpad.AnyPerson"
+        permission="launchpad.Edit"
         template="../templates/sourcepackage-edit-packaging.pt"
         />
     <browser:page

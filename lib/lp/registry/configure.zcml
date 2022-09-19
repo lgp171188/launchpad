@@ -2188,8 +2188,10 @@
         <allow
             interface="lp.registry.interfaces.packaging.IPackaging"/>
         <require
-            permission="zope.Public"
-            set_schema="lp.registry.interfaces.packaging.IPackaging"/>
+            permission="launchpad.Edit"
+            set_schema="lp.registry.interfaces.packaging.IPackaging"
+            attributes="
+                destroySelf" />
     </class>
 
     <!-- PackagingUtil -->
