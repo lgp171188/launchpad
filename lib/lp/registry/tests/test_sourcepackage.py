@@ -361,41 +361,6 @@ class TestSourcePackage(TestCaseWithFactory):
             ):
                 sp.setPackaging(series, product.owner)
 
-    def test_setPackagingReturnSharingDetailPermissions__ordinary_user(self):
-        """An ordinary user can own a packaging link, but they cannot
-        set the series' branch or translation synchronization settings,
-        or the translation usage settings of the product.
-        """
-        sourcepackage = self.factory.makeSourcePackage()
-        productseries = self.factory.makeProductSeries()
-        packaging_owner = self.factory.makePerson()
-        with person_logged_in(sourcepackage.distribution.owner):
-            permissions = (
-                sourcepackage.setPackagingReturnSharingDetailPermissions(
-                    productseries, packaging_owner
-                )
-            )
-        expected = {
-            "user_can_change_product_series": True,
-            "user_can_change_branch": False,
-            "user_can_change_translation_usage": False,
-            "user_can_change_translations_autoimport_mode": False,
-        }
-        self.assertEqual(expected, permissions)
-        self.assertEqual(productseries, sourcepackage.productseries)
-        with person_logged_in(packaging_owner):
-            self.assertFalse(packaging_owner.canWrite(productseries, "branch"))
-            self.assertFalse(
-                packaging_owner.canWrite(
-                    productseries, "translations_autoimport_mode"
-                )
-            )
-            self.assertFalse(
-                packaging_owner.canWrite(
-                    productseries.product, "translations_usage"
-                )
-            )
-
     def test_getSharingDetailPermissions__ordinary_user(self):
         """An ordinary user cannot set the series' branch or translation
         synchronisation settings, or the translation usage settings of the

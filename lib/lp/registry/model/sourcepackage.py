@@ -572,11 +572,6 @@ class SourcePackage(
         # and make sure this change is immediately available
         flush_database_updates()
 
-    def setPackagingReturnSharingDetailPermissions(self, productseries, owner):
-        """See `ISourcePackage`."""
-        self.setPackaging(productseries, owner)
-        return self.getSharingDetailPermissions()
-
     def getSharingDetailPermissions(self):
         user = getUtility(ILaunchBag).user
         productseries = self.productseries

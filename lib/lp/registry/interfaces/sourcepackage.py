@@ -348,17 +348,6 @@ class ISourcePackageEdit(Interface):
         and record that it was done by the owner.
         """
 
-    @operation_parameters(productseries=Reference(schema=IProductSeries))
-    @call_with(owner=REQUEST_USER)
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setPackagingReturnSharingDetailPermissions(productseries, owner):
-        """Like setPackaging(), but returns getSharingDetailPermissions().
-
-        This method is intended for AJAX usage on the +sharing-details
-        page.
-        """
-
     @export_write_operation()
     @operation_for_version("devel")
     def deletePackaging():
