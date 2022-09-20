@@ -47,7 +47,6 @@ __all__ = [
 
 import base64
 import datetime
-import errno
 import gc
 import os
 import select
@@ -1687,15 +1686,11 @@ class LayerProcessController:
         """
         try:
             os.kill(cls.appserver.pid, sig)
-        except OSError as error:
-            if error.errno == errno.ESRCH:
-                # The child process doesn't exist.  Maybe it went away by the
-                # time we got here.
-                cls.appserver = None
-                return False
-            else:
-                # Something else went wrong.
-                raise
+        except ProcessLookupError:
+            # The child process doesn't exist.  Maybe it went away by the
+            # time we got here.
+            cls.appserver = None
+            return False
         else:
             return True
 
@@ -1759,9 +1754,8 @@ class LayerProcessController:
             # Don't worry if the process no longer exists.
             try:
                 os.kill(pid, signal.SIGTERM)
-            except OSError as error:
-                if error.errno != errno.ESRCH:
-                    raise
+            except ProcessLookupError:
+                pass
             pidfile.remove_pidfile("launchpad", cls.appserver_config)
 
     @classmethod
@@ -1801,10 +1795,8 @@ class LayerProcessController:
                         % error.code
                     )
             except URLError as error:
-                # We are interested in a wrapped socket.error.
-                if not isinstance(error.reason, socket.error):
-                    raise
-                if error.reason.args[0] != errno.ECONNREFUSED:
+                # We are interested in a wrapped ConnectionRefusedError.
+                if not isinstance(error.reason, ConnectionRefusedError):
                     raise
                 returncode = cls.appserver.poll()
                 if returncode is not None:

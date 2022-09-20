@@ -104,14 +104,6 @@ class IPackaging(IHasOwner):
         )
     )
 
-    def userCanDelete():
-        """True, if the current user is allowed to delete this packaging,
-        else False.
-
-        Non-probationary users can delete packaging links that they believe
-        connect Ubuntu to bogus data.
-        """
-
 
 class IPackagingUtil(Interface):
     """Utilities to handle Packaging."""
@@ -120,6 +112,9 @@ class IPackagingUtil(Interface):
         productseries, sourcepackagename, distroseries, packaging, owner
     ):
         """Create Packaging entry."""
+
+    def get(productseries, sourcepackagename, distroseries):
+        """Get Packaging entry."""
 
     def deletePackaging(productseries, sourcepackagename, distroseries):
         """Delete a packaging entry."""

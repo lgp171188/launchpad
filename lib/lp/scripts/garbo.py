@@ -25,6 +25,7 @@ import six
 import transaction
 from contrib.glock import GlobalLock, LockAlreadyAcquired
 from psycopg2 import IntegrityError
+from storm.databases.postgres import Returning
 from storm.expr import (
     SQL,
     And,
@@ -127,6 +128,7 @@ from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
+from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
@@ -2179,6 +2181,68 @@ class BinaryPackagePublishingHistoryFormatPopulator(TunableLoop):
         transaction.commit()
 
 
+# XXX cjwatson 2022-09-12: Remove this when it is complete.
+class BinaryPackagePublishingHistorySPNPopulator(BulkPruner):
+    """Populate the new BPPH.sourcepackagename column."""
+
+    target_table_class = BinaryPackagePublishingHistory
+
+    ids_to_prune_query = convert_storm_clause_to_string(
+        Select(
+            BinaryPackagePublishingHistory.id,
+            where=And(
+                BinaryPackagePublishingHistory.sourcepackagename == None,
+                BinaryPackagePublishingHistory.binarypackagerelease
+                == BinaryPackageRelease.id,
+                BinaryPackageRelease.build != None,
+            ),
+        )
+    )
+
+    def __call__(self, chunk_size):
+        """See `TunableLoop`."""
+        chunk_size = int(chunk_size + 0.5)
+        ids = [
+            row[0]
+            for row in self.store.execute(
+                SQL(
+                    "SELECT * FROM cursor_fetch(%s, %s) AS f(id integer)",
+                    params=(self.cursor_name, chunk_size),
+                )
+            )
+        ]
+        BPPH = BinaryPackagePublishingHistory
+        update = Returning(
+            BulkUpdate(
+                {
+                    BPPH.sourcepackagenameID: (
+                        SourcePackageRelease.sourcepackagenameID
+                    )
+                },
+                table=BPPH,
+                values=(
+                    BinaryPackageRelease,
+                    BinaryPackageBuild,
+                    SourcePackageRelease,
+                ),
+                where=And(
+                    BPPH.binarypackagerelease == BinaryPackageRelease.id,
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_release
+                    == SourcePackageRelease.id,
+                    BPPH.id.is_in(ids),
+                ),
+            ),
+            columns=(BPPH.id,),
+        )
+        if ids:
+            updated_ids = list(self.store.execute(update))
+            self._num_removed = len(updated_ids)
+        else:
+            self._num_removed = 0
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
 
@@ -2493,6 +2557,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         AnswerContactPruner,
         ArchiveArtifactoryColumnsPopulator,
         BinaryPackagePublishingHistoryFormatPopulator,
+        BinaryPackagePublishingHistorySPNPopulator,
         BranchJobPruner,
         BugNotificationPruner,
         BugWatchActivityPruner,

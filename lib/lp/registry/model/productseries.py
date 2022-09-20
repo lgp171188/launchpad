@@ -17,6 +17,7 @@ from storm.locals import And, Desc
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
@@ -35,7 +36,7 @@ from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
 )
 from lp.registry.errors import ProprietaryPillar
-from lp.registry.interfaces.packaging import PackagingType
+from lp.registry.interfaces.packaging import IPackagingUtil, PackagingType
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.productrelease import IProductReleaseSet
 from lp.registry.interfaces.productseries import (
@@ -45,7 +46,6 @@ from lp.registry.interfaces.productseries import (
 )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.milestone import HasMilestonesMixin, Milestone
-from lp.registry.model.packaging import PackagingUtil
 from lp.registry.model.productrelease import ProductRelease
 from lp.registry.model.series import SeriesMixin
 from lp.services.database.constants import UTC_NOW
@@ -445,14 +445,14 @@ class ProductSeries(
 
         # ok, we didn't find a packaging record that matches, let's go ahead
         # and create one
-        pkg = PackagingUtil.createPackaging(
+        pkg = getUtility(IPackagingUtil).createPackaging(
             distroseries=distroseries,
             sourcepackagename=sourcepackagename,
             productseries=self,
             packaging=PackagingType.PRIME,
             owner=owner,
         )
-        pkg.sync()  # convert UTC_NOW to actual datetime
+        removeSecurityProxy(pkg).sync()  # convert UTC_NOW to actual datetime
         return pkg
 
     def getPackagingInDistribution(self, distribution):

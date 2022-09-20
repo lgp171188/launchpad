@@ -8,8 +8,6 @@ This script runs a simple HTTP server. The server returns files
 when given certain user-configurable URLs.
 """
 
-
-import errno
 import os
 import signal
 import socket
@@ -111,13 +109,10 @@ def wait_for_service(host, port, timeout=15.0):
         while True:
             try:
                 sock.connect((host, port))
-            except OSError as err:
-                if err.args[0] in [errno.ECONNREFUSED, errno.ECONNABORTED]:
-                    elapsed = time.time() - start
-                    if elapsed > timeout:
-                        raise RuntimeError("Socket poll time exceeded.")
-                else:
-                    raise
+            except (ConnectionRefusedError, ConnectionAbortedError):
+                elapsed = time.time() - start
+                if elapsed > timeout:
+                    raise RuntimeError("Socket poll time exceeded.")
             else:
                 break
             time.sleep(0.1)
@@ -143,12 +138,9 @@ def wait_for_service_shutdown(host, port, seconds_to_wait=10.0):
             try:
                 sock.connect((host, port))
                 sock.close()
-            except OSError as err:
-                if err.args[0] == errno.ECONNREFUSED:
-                    # Success!  The socket is closed.
-                    return
-                else:
-                    raise
+            except ConnectionRefusedError:
+                # Success!  The socket is closed.
+                return
             else:
                 elapsed = time.time() - start
                 if elapsed > seconds_to_wait:
@@ -215,12 +207,8 @@ def kill_running_process(service_name, host, port):
                 # between freeing the socket in the killed process, and
                 # opening it in the current one.
                 wait_for_service_shutdown(host, port)
-            except os.error as err:
-                if err.errno == errno.ESRCH:
-                    # Whoops, we got a 'No such process' error. The PID file
-                    # is probably stale, so we'll remove it to prevent trash
-                    # from lying around in the test environment.
-                    # See bug #237086.
-                    remove_if_exists(pidfile_path(service_name))
-                else:
-                    raise
+            except ProcessLookupError:
+                # The PID file is probably stale, so we'll remove it to
+                # prevent trash from lying around in the test environment.
+                # See bug #237086.
+                remove_if_exists(pidfile_path(service_name))

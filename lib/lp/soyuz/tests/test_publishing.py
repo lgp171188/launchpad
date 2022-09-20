@@ -653,6 +653,9 @@ class SoyuzTestPublisher:
                 archive=archive,
                 phased_update_percentage=phased_update_percentage,
                 _channel=channel,
+                sourcepackagename=(
+                    binarypackagerelease.build.source_package_name
+                ),
             )
             if status == PackagePublishingStatus.PUBLISHED:
                 pub.datepublished = UTC_NOW
@@ -704,7 +707,9 @@ class SoyuzTestPublisher:
         """
         if source_pub is None:
             distribution = self.factory.makeDistribution(
-                name="youbuntu", displayname="Youbuntu"
+                name="youbuntu",
+                displayname="Youbuntu",
+                owner=self.factory.makePerson(email="owner@youbuntu.com"),
             )
             distroseries = self.factory.makeDistroSeries(
                 name="busy", distribution=distribution

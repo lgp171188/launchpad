@@ -16,7 +16,6 @@ __all__ = [
     "write_file",
 ]
 
-import errno
 import os.path
 import shutil
 import time
@@ -67,10 +66,8 @@ def ensure_directory_exists(directory, mode=0o777):
     """
     try:
         os.makedirs(directory, mode=mode)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            return False
-        raise
+    except FileExistsError:
+        return False
     return True
 
 
@@ -87,23 +84,18 @@ def open_for_writing(filename, mode, dirmode=0o777):
     """
     try:
         return open(filename, mode)
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            os.makedirs(os.path.dirname(filename), mode=dirmode)
-            return open(filename, mode)
-        raise
+    except FileNotFoundError:
+        os.makedirs(os.path.dirname(filename), mode=dirmode)
+        return open(filename, mode)
 
 
 def _kill_may_race(pid, signal_number):
     """Kill a pid accepting that it may not exist."""
     try:
         os.kill(pid, signal_number)
-    except OSError as e:
-        if e.errno in (errno.ESRCH, errno.ECHILD):
-            # Process has already been killed.
-            return
-        # Some other issue (e.g. different user owns it)
-        raise
+    except (ProcessLookupError, ChildProcessError):
+        # Process has already been killed.
+        return
 
 
 def two_stage_kill(pid, poll_interval=0.1, num_polls=50, get_status=True):
@@ -133,11 +125,10 @@ def two_stage_kill(pid, poll_interval=0.1, num_polls=50, get_status=True):
                 if not process_exists(pid):
                     return
             time.sleep(poll_interval)
-        except OSError as e:
-            if e.errno in (errno.ESRCH, errno.ECHILD):
-                # Raised if the process is gone by the time we try to get the
-                # return value.
-                return
+        except (ProcessLookupError, ChildProcessError):
+            # Raised if the process is gone by the time we try to get the
+            # return value.
+            return
 
     # The process is still around, so terminate it violently.
     _kill_may_race(pid, SIGKILL)
@@ -176,9 +167,8 @@ def remove_if_exists(path):
     """Remove the given file if it exists."""
     try:
         os.remove(path)
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
+    except FileNotFoundError:
+        pass
 
 
 def write_file(path, content):
@@ -190,11 +180,7 @@ def process_exists(pid):
     """Return True if the specified process already exists."""
     try:
         os.kill(pid, 0)
-    except os.error as err:
-        if err.errno == errno.ESRCH:
-            # All is well - the process doesn't exist.
-            return False
-        else:
-            # We got a strange OSError, which we'll pass upwards.
-            raise
+    except ProcessLookupError:
+        # All is well - the process doesn't exist.
+        return False
     return True

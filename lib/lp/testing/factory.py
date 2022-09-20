@@ -208,6 +208,7 @@ from lp.registry.interfaces.ssh import ISSHKeySet
 from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.karma import KarmaTotalCache
 from lp.registry.model.milestone import Milestone
+from lp.registry.model.packaging import Packaging
 from lp.registry.model.suitesourcepackage import SuiteSourcePackage
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.utils import create_access_token_secret
@@ -1346,7 +1347,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         owner=None,
         sourcepackage=None,
         in_ubuntu=False,
-    ):
+    ) -> Packaging:
         assert sourcepackage is None or (
             distroseries is None and sourcepackagename is None
         ), (
@@ -1388,6 +1389,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         sourcepackage=None,
         distroseries=None,
         sourcepackagename=None,
+        owner=None,
         **kwargs
     ):
         """Make a package branch on an arbitrary package.
@@ -1406,9 +1408,13 @@ class LaunchpadObjectFactory(ObjectFactory):
         ), "Don't pass in both sourcepackage and sourcepackagename"
         if sourcepackage is None:
             sourcepackage = self.makeSourcePackage(
-                sourcepackagename=sourcepackagename, distroseries=distroseries
+                sourcepackagename=sourcepackagename,
+                distroseries=distroseries,
+                owner=owner,
             )
-        return self.makeBranch(sourcepackage=sourcepackage, **kwargs)
+        return self.makeBranch(
+            sourcepackage=sourcepackage, owner=owner, **kwargs
+        )
 
     def makePersonalBranch(self, owner=None, **kwargs):
         """Make a personal branch on an arbitrary person.
@@ -3373,10 +3379,11 @@ class LaunchpadObjectFactory(ObjectFactory):
         name=None,
         displayname=None,
         registrant=None,
+        owner=None,
     ):
         """Make a new `DistroSeries`."""
         if distribution is None:
-            distribution = self.makeDistribution()
+            distribution = self.makeDistribution(owner=owner)
         if name is None:
             name = self.getUniqueString(prefix="distroseries")
         if displayname is None:
@@ -4537,7 +4544,11 @@ class LaunchpadObjectFactory(ObjectFactory):
         return getUtility(ISourcePackageNameSet).getOrCreateByName(name)
 
     def makeSourcePackage(
-        self, sourcepackagename=None, distroseries=None, publish=False
+        self,
+        sourcepackagename=None,
+        distroseries=None,
+        publish=False,
+        owner=None,
     ):
         """Make an `ISourcePackage`.
 
@@ -4550,7 +4561,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 sourcepackagename
             )
         if distroseries is None:
-            distroseries = self.makeDistroSeries()
+            distroseries = self.makeDistroSeries(owner=owner)
         if publish:
             self.makeSourcePackagePublishingHistory(
                 distroseries=distroseries, sourcepackagename=sourcepackagename

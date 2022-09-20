@@ -16,7 +16,6 @@ __all__ = [
     "SignableTagFile",
 ]
 
-import errno
 import glob
 import io
 import os
@@ -95,17 +94,15 @@ def cleanup_unpacked_dir(unpacked_dir):
     """
     try:
         shutil.rmtree(unpacked_dir)
+    except PermissionError:
+        result = os.system("chmod -R u+rwx " + unpacked_dir)
+        if result != 0:
+            raise UploadError("chmod failed with %s" % result)
+        shutil.rmtree(unpacked_dir)
     except OSError as error:
-        if errno.errorcode[error.errno] != "EACCES":
-            raise UploadError(
-                "couldn't remove tmp dir %s: code %s"
-                % (unpacked_dir, error.errno)
-            )
-        else:
-            result = os.system("chmod -R u+rwx " + unpacked_dir)
-            if result != 0:
-                raise UploadError("chmod failed with %s" % result)
-            shutil.rmtree(unpacked_dir)
+        raise UploadError(
+            "couldn't remove tmp dir %s: code %s" % (unpacked_dir, error.errno)
+        )
 
 
 class SignableTagFile:
@@ -638,15 +635,14 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 "No file checker for source format %s." % self.format
             )
 
-        for error in file_checker(
+        yield from file_checker(
             self.filename,
             file_type_counts,
             component_orig_tar_counts,
             component_orig_tar_signature_counts,
             bzip2_count,
             xz_count,
-        ):
-            yield error
+        )
 
         if files_missing:
             yield UploadError(
@@ -654,9 +650,8 @@ class DSCFile(SourceUploadFile, SignableTagFile):
                 "skipping package unpack verification."
             )
         else:
-            for error in self.unpackAndCheckSource():
-                # Pass on errors found when unpacking the source.
-                yield error
+            # Pass on errors found when unpacking the source.
+            yield from self.unpackAndCheckSource()
 
     def unpackAndCheckSource(self):
         """Verify uploaded source using dpkg-source."""

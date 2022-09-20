@@ -1,7 +1,6 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import errno
 import os
 import tarfile
 from textwrap import dedent
@@ -48,10 +47,9 @@ class SetupTestPackageMixin:
             if directory != "":
                 try:
                     os.makedirs(directory)
-                except OSError as e:
+                except FileExistsError:
                     # Doesn't matter if it already exists.
-                    if e.errno != errno.EEXIST:
-                        raise
+                    pass
             with open(path, "w") as the_file:
                 the_file.write(content)
 

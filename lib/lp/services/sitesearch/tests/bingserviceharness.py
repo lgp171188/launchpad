@@ -7,8 +7,6 @@ Fixtures for running the Bing test webservice.
 
 __all__ = ["BingServiceTestSetup"]
 
-
-import errno
 import os
 import signal
 
@@ -95,11 +93,10 @@ class BingServiceTestSetup:
         if cls.service:
             try:
                 os.kill(cls.service.pid, signal.SIGTERM)
-            except OSError as error:
-                if error.errno != errno.ESRCH:
-                    raise
+            except ProcessLookupError:
                 # The process with the given pid doesn't exist, so there's
                 # nothing to kill or wait for.
+                pass
             else:
                 cls.service.wait()
         cls.service = None

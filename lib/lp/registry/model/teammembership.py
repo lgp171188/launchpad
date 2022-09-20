@@ -120,8 +120,12 @@ class TeamMembership(SQLBase):
         ondemand = TeamMembershipRenewalPolicy.ONDEMAND
         admin = TeamMembershipStatus.APPROVED
         approved = TeamMembershipStatus.ADMIN
+        # We add a grace period of one day to the limit to
+        # cover the fencepost error when `date_limit` is
+        # earlier than `self.dateexpires`, which happens later
+        # in the same day.
         date_limit = datetime.now(pytz.UTC) + timedelta(
-            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT
+            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
         return (
             self.status in (admin, approved)

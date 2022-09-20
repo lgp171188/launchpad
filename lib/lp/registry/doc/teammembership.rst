@@ -12,7 +12,7 @@ represents all the people who are /effective members/ of the team.
 First of all, create some teams:
 
     >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.registry.interfaces.person import (
     ...     TeamMembershipRenewalPolicy,
     ...     TeamMembershipPolicy,
@@ -802,6 +802,37 @@ expire soon.
     False
     >>> print(karl_on_mirroradmins.status.title)
     Approved
+
+The membership can be renewed by the member within
+DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1 days, but
+not outside that.
+    >>> from lp.registry.interfaces.teammembership import (
+    ...     DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT,
+    ... )
+
+    >>> membership = removeSecurityProxy(karl_on_mirroradmins)
+
+    >>> membership.dateexpires = (
+    ...     datetime.now(timezone.utc)
+    ...     + timedelta(days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT)
+    ...     + timedelta(hours=5)
+    ... )
+    >>> membership.canBeRenewedByMember()
+    True
+    >>> membership.dateexpires = (
+    ...     datetime.now(timezone.utc)
+    ...     + timedelta(days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT)
+    ...     + timedelta(days=1)
+    ... )
+    >>> membership.canBeRenewedByMember()
+    True
+    >>> membership.dateexpires = (
+    ...     datetime.now(timezone.utc)
+    ...     + timedelta(days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT)
+    ...     + timedelta(days=1, minutes=1)
+    ... )
+    >>> membership.canBeRenewedByMember()
+    False
 
 
 Querying team memberships

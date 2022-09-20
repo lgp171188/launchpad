@@ -30,6 +30,7 @@ The view has a label and requires a distro series and a source package name.
 The distroseries field's vocabulary is the same as the ubuntu.series
 attribute.
 
+    >>> _ = login_person(product.owner)
     >>> view = create_view(productseries, "+ubuntupkg")
     >>> print(view.label)
     Ubuntu source packaging
@@ -200,8 +201,7 @@ and a new entry can be added to the packaging history.
     ... )
     >>> grumpy_series.status = SeriesStatus.FROZEN
 
-    >>> a_user = factory.makePerson(name="hedgehog")
-    >>> ignored = login_person(a_user)
+    >>> _ = login_person(product.owner)
     >>> form = {
     ...     "field.sourcepackagename": "hot",
     ...     "field.actions.continue": "Update",

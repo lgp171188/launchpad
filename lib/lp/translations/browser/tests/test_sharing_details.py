@@ -5,6 +5,7 @@ import re
 
 from lazr.restful.interfaces import IJSONRequestCache
 from soupmatchers import HTMLContains, Tag
+from testscenarios import WithScenarios
 
 from lp.app.enums import ServiceUsage
 from lp.services.webapp import canonical_url
@@ -103,8 +104,7 @@ class TestSourcePackageTranslationSharingDetailsView(
         self.shared_template_ubuntu_side = self.factory.makePOTemplate(
             sourcepackage=self.sourcepackage, name="shared-template"
         )
-        self.privileged_user = self.factory.makePerson(karma=200)
-        product = self.factory.makeProduct(owner=self.privileged_user)
+        product = self.factory.makeProduct()
         self.productseries = self.factory.makeProductSeries(product=product)
         self.shared_template_upstream_side = self.factory.makePOTemplate(
             productseries=self.productseries, name="shared-template"
@@ -126,7 +126,7 @@ class TestSourcePackageTranslationSharingDetailsView(
         done only if explicitly specified.
         """
         # Suppress merge job creation.
-        with EventRecorder():
+        with EventRecorder(), person_logged_in(self.sourcepackage.owner):
             self.sourcepackage.setPackaging(
                 self.productseries, self.productseries.owner
             )
@@ -585,6 +585,73 @@ class TestSourcePackageTranslationSharingDetailsView(
                 expected, view.translation_sync_link_configured.escapedtext
             )
 
+
+class TestSourcePackageTranslationSharingDetailsViewPackagingLinks(
+    WithScenarios, TestCaseWithFactory
+):
+
+    layer = DatabaseFunctionalLayer
+    scenarios = [
+        (
+            "has packaging, any user",
+            {
+                "has_packaging": True,
+                "user_type": "any_user",
+                "set_link_visible": False,
+                "change_link_visible": False,
+                "remove_link_visible": False,
+            },
+        ),
+        (
+            "has packaging, package owner",
+            {
+                "has_packaging": True,
+                "user_type": "package_owner",
+                "set_link_visible": True,
+                "change_link_visible": True,
+                "remove_link_visible": True,
+            },
+        ),
+        (
+            "no packaging, any user",
+            {
+                "has_packaging": False,
+                "user_type": "any_user",
+                "set_link_visible": False,
+                "change_link_visible": False,
+                "remove_link_visible": False,
+            },
+        ),
+        (
+            "no packaging, package owner",
+            {
+                "has_packaging": False,
+                "user_type": "package_owner",
+                "set_link_visible": True,
+                "change_link_visible": True,
+                "remove_link_visible": False,
+            },
+        ),
+    ]
+
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        self.productseries = self.factory.makeProductSeries()
+        self.sourcepackage = self.factory.makeSourcePackage()
+        if self.has_packaging:
+            with person_logged_in(self.sourcepackage.owner):
+                self.sourcepackage.setPackaging(
+                    self.productseries, self.productseries.owner
+                )
+        if self.user_type == "any_user":
+            self.user = self.factory.makePerson()
+        elif self.user_type == "package_owner":
+            self.user = self.sourcepackage.owner
+        else:
+            raise AssertionError(
+                "Unknown user type: {}".format(self.user_type)
+            )
+
     def _getExpectedPackagingLink(self, id, url, icon, text, visible):
         url = "%s/%s" % (canonical_url(self.sourcepackage), url)
         return (
@@ -598,220 +665,48 @@ class TestSourcePackageTranslationSharingDetailsView(
             "text": text,
         }
 
-    def test_set_packaging_link__anonymous(self):
-        # The "set packaging" link is hidden for anonymous users.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
+    def test_packaging_links(self):
+
+        expected_set_upstream = self._getExpectedPackagingLink(
             id="set-packaging",
             url="+edit-packaging",
             icon="add",
             text="Set upstream link",
-            visible=False,
+            visible=self.set_link_visible,
         )
-        self.assertEqual(expected, self.view.set_packaging_link.escapedtext)
 
-    def test_set_packaging_link__no_packaging_any_user(self):
-        # If packaging is not configured, any user sees the "set packaging"
-        # link.
-        expected = self._getExpectedPackagingLink(
-            id="set-packaging",
-            url="+edit-packaging",
-            icon="add",
-            text="Set upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.factory.makePerson()):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.set_packaging_link.escapedtext
-            )
-
-    def test_set_packaging_link__with_packaging_probationary_user(self):
-        # If packaging is configured, probationary users do no see
-        # the "set packaging" link.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="set-packaging",
-            url="+edit-packaging",
-            icon="add",
-            text="Set upstream link",
-            visible=False,
-        )
-        with person_logged_in(self.factory.makePerson()):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.set_packaging_link.escapedtext
-            )
-
-    def test_set_packaging_link__with_packaging_privileged_user(self):
-        # If packaging is configured, privileged users see the
-        # "set packaging" link. (See Packaging.userCanDelete() for more
-        # details about which people are "privileged".)
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="set-packaging",
-            url="+edit-packaging",
-            icon="add",
-            text="Set upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.privileged_user):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.set_packaging_link.escapedtext
-            )
-
-    def test_change_packaging_link__anonymous(self):
-        # The "change packaging" link is hidden for anonymous users.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
+        expected_change_upstream = self._getExpectedPackagingLink(
             id="change-packaging",
             url="+edit-packaging",
             icon="edit",
             text="Change upstream link",
-            visible=False,
+            visible=self.change_link_visible,
         )
-        self.assertEqual(expected, self.view.change_packaging_link.escapedtext)
 
-    def test_change_packaging_link__no_packaging_any_user(self):
-        # If packaging is not configured, any user sees the "change packaging"
-        # link.
-        expected = self._getExpectedPackagingLink(
-            id="change-packaging",
-            url="+edit-packaging",
-            icon="edit",
-            text="Change upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.factory.makePerson()):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.change_packaging_link.escapedtext
-            )
-
-    def test_change_packaging_link__with_packaging_probationary_user(self):
-        # If packaging is configured, probationary users do no see
-        # the "change packaging" link.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="change-packaging",
-            url="+edit-packaging",
-            icon="edit",
-            text="Change upstream link",
-            visible=False,
-        )
-        with person_logged_in(self.factory.makePerson()):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.change_packaging_link.escapedtext
-            )
-
-    def test_change_packaging_link__with_packaging_privileged_user(self):
-        # If packaging is configured, privileged users see the
-        # "change packaging" link. (See Packaging.userCanDelete() for more
-        # details about which people are "privileged".)
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="change-packaging",
-            url="+edit-packaging",
-            icon="edit",
-            text="Change upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.privileged_user):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
-            self.assertEqual(
-                expected, self.view.change_packaging_link.escapedtext
-            )
-
-    def test_remove_packaging_link__anonymous(self):
-        # The "remove packaging" link is hidden for anonymous users.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
+        expected_remove_upstream = self._getExpectedPackagingLink(
             id="remove-packaging",
             url="+remove-packaging",
             icon="remove",
             text="Remove upstream link",
-            visible=False,
+            visible=self.remove_link_visible,
         )
-        self.assertEqual(expected, self.view.remove_packaging_link.escapedtext)
 
-    def test_remove_packaging_link__no_packaging_any_user(self):
-        # If packaging is not configured, any user sees the "remove packaging"
-        # link.
-        expected = self._getExpectedPackagingLink(
-            id="remove-packaging",
-            url="+remove-packaging",
-            icon="remove",
-            text="Remove upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.factory.makePerson()):
+        with person_logged_in(self.user):
             view = SourcePackageTranslationSharingDetailsView(
                 self.sourcepackage, LaunchpadTestRequest()
             )
             view.initialize()
-            self.assertEqual(
-                expected, self.view.remove_packaging_link.escapedtext
-            )
 
-    def test_remove_packaging_link__with_packaging_probationary_user(self):
-        # If packaging is configured, probationary users do no see
-        # the "remove packaging" link.
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="remove-packaging",
-            url="+remove-packaging",
-            icon="remove",
-            text="Remove upstream link",
-            visible=False,
-        )
-        with person_logged_in(self.factory.makePerson()):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
             self.assertEqual(
-                expected, self.view.remove_packaging_link.escapedtext
+                expected_set_upstream, view.set_packaging_link.escapedtext
             )
-
-    def test_remove_packaging_link__with_packaging_privileged_user(self):
-        # If packaging is configured, privileged users see the
-        # "remove packaging" link. (See Packaging.userCanDelete() for more
-        # details about which people are "privileged".)
-        self.configureSharing()
-        expected = self._getExpectedPackagingLink(
-            id="remove-packaging",
-            url="+remove-packaging",
-            icon="remove",
-            text="Remove upstream link",
-            visible=True,
-        )
-        with person_logged_in(self.privileged_user):
-            view = SourcePackageTranslationSharingDetailsView(
-                self.sourcepackage, LaunchpadTestRequest()
-            )
-            view.initialize()
             self.assertEqual(
-                expected, self.view.remove_packaging_link.escapedtext
+                expected_change_upstream,
+                view.change_packaging_link.escapedtext,
+            )
+            self.assertEqual(
+                expected_remove_upstream,
+                view.remove_packaging_link.escapedtext,
             )
 
 

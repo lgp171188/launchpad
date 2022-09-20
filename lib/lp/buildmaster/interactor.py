@@ -326,7 +326,12 @@ class BuilderWorker:
         if logger is not None:
             logger.info(
                 "Asking %s to ensure it has %s (%s%s)"
-                % (self.url, sha1, url, " with auth" if username else "")
+                % (
+                    self.url,
+                    sha1,
+                    url,
+                    " with auth" if username or password else "",
+                )
             )
         present, info = yield self.ensurepresent(sha1, url, username, password)
         if not present:

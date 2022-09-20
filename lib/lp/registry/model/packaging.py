@@ -7,10 +7,8 @@ from lazr.lifecycle.event import ObjectCreatedEvent, ObjectDeletedEvent
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
-from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import CannotPackageProprietaryProduct
 from lp.registry.interfaces.packaging import (
     IPackaging,
@@ -23,7 +21,6 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey
-from lp.services.webapp.interfaces import ILaunchBag
 
 
 @implementer(IPackaging)
@@ -66,29 +63,7 @@ class Packaging(SQLBase):
         super().__init__(**kwargs)
         notify(ObjectCreatedEvent(self))
 
-    def userCanDelete(self):
-        """See `IPackaging`."""
-        user = getUtility(ILaunchBag).user
-        if user is None:
-            return False
-        admin = getUtility(ILaunchpadCelebrities).admin
-        registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
-        if (
-            not user.is_probationary
-            or user.inTeam(self.productseries.product.owner)
-            or user.canAccess(self.sourcepackage, "setBranch")
-            or user.inTeam(registry_experts)
-            or user.inTeam(admin)
-        ):
-            return True
-        return False
-
     def destroySelf(self):
-        if not self.userCanDelete():
-            raise Unauthorized(
-                "Only the person who created the packaging and package "
-                "maintainers can delete it."
-            )
         notify(ObjectDeletedEvent(self))
         super().destroySelf()
 
@@ -97,16 +72,15 @@ class Packaging(SQLBase):
 class PackagingUtil:
     """Utilities for Packaging."""
 
-    @classmethod
     def createPackaging(
-        cls, productseries, sourcepackagename, distroseries, packaging, owner
+        self, productseries, sourcepackagename, distroseries, packaging, owner
     ):
         """See `IPackaging`.
 
         Raises an assertion error if there is already packaging for
         the sourcepackagename in the distroseries.
         """
-        if cls.packagingEntryExists(sourcepackagename, distroseries):
+        if self.packagingEntryExists(sourcepackagename, distroseries):
             raise AssertionError(
                 "A packaging entry for %s in %s already exists."
                 % (sourcepackagename.name, distroseries.name)
@@ -132,9 +106,18 @@ class PackagingUtil:
             owner=owner,
         )
 
+    def get(self, productseries, sourcepackagename, distroseries):
+        criteria = {
+            "sourcepackagename": sourcepackagename,
+            "distroseries": distroseries,
+        }
+        if productseries is not None:
+            criteria["productseries"] = productseries
+        return Packaging.selectOneBy(**criteria)
+
     def deletePackaging(self, productseries, sourcepackagename, distroseries):
         """See `IPackaging`."""
-        packaging = Packaging.selectOneBy(
+        packaging = getUtility(IPackagingUtil).get(
             productseries=productseries,
             sourcepackagename=sourcepackagename,
             distroseries=distroseries,
@@ -152,17 +135,13 @@ class PackagingUtil:
         )
         packaging.destroySelf()
 
-    @staticmethod
     def packagingEntryExists(
-        sourcepackagename, distroseries, productseries=None
+        self, sourcepackagename, distroseries, productseries=None
     ):
         """See `IPackaging`."""
-        criteria = dict(
-            sourcepackagename=sourcepackagename, distroseries=distroseries
+        packaging = self.get(
+            productseries=productseries,
+            sourcepackagename=sourcepackagename,
+            distroseries=distroseries,
         )
-        if productseries is not None:
-            criteria["productseries"] = productseries
-        result = Packaging.selectOneBy(**criteria)
-        if result is None:
-            return False
-        return True
+        return packaging is not None

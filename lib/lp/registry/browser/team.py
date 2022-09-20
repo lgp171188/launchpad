@@ -1414,8 +1414,12 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
         ondemand = TeamMembershipRenewalPolicy.ONDEMAND
         admin = TeamMembershipStatus.ADMIN
         approved = TeamMembershipStatus.APPROVED
-        date_limit = datetime.now(pytz.UTC) - timedelta(
-            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT
+        # We add a grace period of one day to the limit to
+        # cover the fencepost error when `date_limit` is
+        # earlier than `self.dateexpires`, which happens later
+        # in the same day.
+        date_limit = datetime.now(pytz.UTC) + timedelta(
+            days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
         if context.status not in (admin, approved):
             text = "it is not active."

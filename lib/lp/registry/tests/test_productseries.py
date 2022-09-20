@@ -665,7 +665,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             "addSubscription",
             "removeBugSubscription",
         },
-        "launchpad.Edit": {"newMilestone"},
+        "launchpad.Edit": {"newMilestone", "setPackaging"},
         "launchpad.LimitedView": {
             "bugtargetdisplayname",
             "bugtarget_parent",
@@ -746,7 +746,6 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             "releases",
             "releaseverstyle",
             "searchTasks",
-            "setPackaging",
             "sourcepackages",
             "specifications",
             "status",

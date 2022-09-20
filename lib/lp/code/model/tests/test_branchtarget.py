@@ -180,9 +180,10 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         # Products that are linked to the packages are mergeable.
         branch = self.factory.makeProductBranch()
         # Link it up.
-        self.original.setPackaging(
-            branch.product.development_focus, branch.owner
-        )
+        with person_logged_in(self.original.owner):
+            self.original.setPackaging(
+                branch.product.development_focus, branch.owner
+            )
         self.assertTrue(self.target.areBranchesMergeable(branch.target))
 
     def test_default_merge_target(self):
@@ -433,9 +434,10 @@ class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
         # Packages that are linked to the products are mergeable.
         branch = self.factory.makePackageBranch()
         # Link it up.
-        branch.sourcepackage.setPackaging(
-            self.original.development_focus, branch.owner
-        )
+        with person_logged_in(branch.sourcepackage.owner):
+            branch.sourcepackage.setPackaging(
+                self.original.development_focus, branch.owner
+            )
         self.assertTrue(self.target.areBranchesMergeable(branch.target))
 
     def test_default_merge_target(self):

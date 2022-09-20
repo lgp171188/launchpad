@@ -3,7 +3,6 @@
 
 """Test mailing list stuff."""
 
-import errno
 import os
 import tempfile
 import unittest
@@ -58,9 +57,8 @@ class BaseMailingListImportTest(unittest.TestCase):
     def tearDown(self):
         try:
             os.remove(self.filename)
-        except OSError as error:
-            if error.errno != errno.ENOENT:
-                raise
+        except FileNotFoundError:
+            pass
 
     def _makeList(self, name, owner):
         self.team, self.mailing_list = factory.makeTeamAndMailingList(

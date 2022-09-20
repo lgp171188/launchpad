@@ -244,7 +244,7 @@ class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
             distroseries=distroseries,
             version="1.5-0ubuntu1",
         )
-        self.source_package.setPackaging(
+        removeSecurityProxy(self.source_package).setPackaging(
             productseries, productseries.product.owner
         )
 
@@ -301,80 +301,119 @@ class TestSourcePackagePackagingLinks(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def makeSourcePackageOverviewMenu(self, with_packaging, karma=None):
-        sourcepackage = self.factory.makeSourcePackage()
-        registrant = self.factory.makePerson()
-        if with_packaging:
-            self.factory.makePackagingLink(
-                sourcepackagename=sourcepackage.sourcepackagename,
-                distroseries=sourcepackage.distroseries,
-                owner=registrant,
-            )
-        user = self.factory.makePerson(karma=karma)
-        with person_logged_in(user):
-            menu = SourcePackageOverviewMenu(sourcepackage)
-        return menu, user
+    def setUp(self, *args, **kwargs):
+        super().setUp(*args, **kwargs)
+        self.sourcepackage = self.factory.makeSourcePackage()
+        self.maintainer = self.sourcepackage.distribution.owner
+        self.product_owner = self.factory.makePerson()
+        self.product = self.factory.makeProduct(owner=self.product_owner)
+        self.productseries = self.factory.makeProductSeries(self.product)
 
-    def test_edit_packaging_link__enabled_without_packaging(self):
-        # If no packging exists, the edit_packaging link is always
-        # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, None)
+    def makePackaging(self):
+        self.factory.makePackagingLink(
+            sourcepackagename=self.sourcepackage.sourcepackagename,
+            distroseries=self.sourcepackage.distroseries,
+            productseries=self.productseries,
+        )
+
+    def makeSourcePackageOverviewMenu(self, user):
         with person_logged_in(user):
+            menu = SourcePackageOverviewMenu(self.sourcepackage)
+        return menu
+
+    def test_edit_packaging_link__enabled_without_packaging_maintainer(self):
+        # If no packaging exists, the edit_packaging link is always
+        # enabled.
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
             self.assertTrue(menu.edit_packaging().enabled)
 
-    def test_set_upstrem_link__enabled_without_packaging(self):
-        # If no packging exists, the set_upstream link is always
+    def test_set_upstream_link__enabled_without_packaging_maintainer(self):
+        # If no packaging exists, the set_upstream link is always
         # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, None)
-        with person_logged_in(user):
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
             self.assertTrue(menu.set_upstream().enabled)
 
-    def test_remove_packaging_link__enabled_without_packaging(self):
-        # If no packging exists, the remove_packaging link is always
-        # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, None)
-        with person_logged_in(user):
-            self.assertTrue(menu.remove_packaging().enabled)
+    def test_remove_packaging_link__enabled_without_packaging_maintainer(self):
+        # If no packaging exists, the remove_packaging link is always
+        # disabled.
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
+            self.assertFalse(menu.remove_packaging().enabled)
 
-    def test_edit_packaging_link__enabled_with_packaging_non_probation(self):
-        # If a packging exists, the edit_packaging link is enabled
-        # for the non-probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
-        with person_logged_in(user):
+    def test_edit_packaging_link__enabled_with_packaging_maintainer(self):
+        # If a packaging exists, the edit_packaging link is enabled
+        # for the package maintainer.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
             self.assertTrue(menu.edit_packaging().enabled)
 
-    def test_set_upstrem_link__enabled_with_packaging_non_probation(self):
-        # If a packging exists, the set_upstream link is enabled
-        # for the non-probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
-        with person_logged_in(user):
+    def test_set_upstream_link__enabled_with_packaging_maintainer(self):
+        # If a packaging exists, the set_upstream link is enabled
+        # for the package maintainer.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
             self.assertTrue(menu.set_upstream().enabled)
 
-    def test_remove_packaging_link__enabled_with_packaging_non_probation(self):
-        # If a packging exists, the remove_packaging link is enabled
-        # for the non-probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
-        with person_logged_in(user):
+    def test_remove_packaging_link__enabled_with_packaging_maintainer(self):
+        # If a packaging exists, the remove_packaging link is enabled
+        # for the package maintainer.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.maintainer)
+        with person_logged_in(self.maintainer):
             self.assertTrue(menu.remove_packaging().enabled)
 
-    def test_edit_packaging_link__enabled_with_packaging_probation(self):
-        # If a packging exists, the edit_packaging link is not enabled
-        # for probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, None)
+    def test_edit_packaging_link__disabled_for_product_owner(self):
+        # If a packaging exists, the edit_packaging link is disabled
+        # for the product owner.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.product_owner)
+        with person_logged_in(self.product_owner):
+            self.assertFalse(menu.edit_packaging().enabled)
+
+    def test_set_upstream_link__disabled_for_product_owner(self):
+        # If a packaging exists, the set_upstream link is disabled
+        # for the product owner.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.product_owner)
+        with person_logged_in(self.product_owner):
+            self.assertFalse(menu.set_upstream().enabled)
+
+    def test_remove_packaging_link__enabled_for_product_owner(self):
+        # If a packaging exists, the remove_packaging link is enabled
+        # for product owner.
+        self.makePackaging()
+        menu = self.makeSourcePackageOverviewMenu(self.product_owner)
+        with person_logged_in(self.product_owner):
+            self.assertTrue(menu.remove_packaging().enabled)
+
+    def test_edit_packaging_link__enabled_with_packaging_arbitrary(self):
+        # If a packaging exists, the edit_packaging link is not enabled
+        # for arbitrary users.
+        self.makePackaging()
+        user = self.factory.makePerson()
+        menu = self.makeSourcePackageOverviewMenu(user)
         with person_logged_in(user):
             self.assertFalse(menu.edit_packaging().enabled)
 
-    def test_set_upstrem_link__enabled_with_packaging_probation(self):
-        # If a packging exists, the set_upstream link is not enabled
-        # for probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, None)
+    def test_set_upstream_link__enabled_with_packaging_arbitrary(self):
+        # If a packaging exists, the set_upstream link is not enabled
+        # for arbitrary users.
+        self.makePackaging()
+        user = self.factory.makePerson()
+        menu = self.makeSourcePackageOverviewMenu(user)
         with person_logged_in(user):
             self.assertFalse(menu.set_upstream().enabled)
 
-    def test_remove_packaging_link__enabled_with_packaging_probation(self):
-        # If a packging exists, the remove_packaging link is not enabled
-        # for probationary users.
-        menu, user = self.makeSourcePackageOverviewMenu(True, None)
+    def test_remove_packaging_link__enabled_with_packaging_arbitrary(self):
+        # If a packaging exists, the remove_packaging link is not enabled
+        # for arbitrary users.
+        self.makePackaging()
+        user = self.factory.makePerson()
+        menu = self.makeSourcePackageOverviewMenu(user)
         with person_logged_in(user):
             self.assertFalse(menu.remove_packaging().enabled)
 
@@ -392,10 +431,9 @@ class TestSourcePackageChangeUpstreamView(BrowserTestCase):
             owner=product_owner,
             information_type=InformationType.PROPRIETARY,
         )
-        ubuntu_series = self.factory.makeUbuntuDistroSeries()
-        sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
+        sp = self.factory.makeSourcePackage()
         browser = self.getViewBrowser(
-            sp, "+edit-packaging", user=product_owner
+            sp, "+edit-packaging", user=self.factory.makeAdministrator()
         )
         browser.getControl("Project").value = product_name
         browser.getControl("Continue").click()
@@ -413,10 +451,9 @@ class TestSourcePackageChangeUpstreamView(BrowserTestCase):
         )
         series = self.factory.makeProductSeries(product=product)
         series_displayname = series.displayname
-        ubuntu_series = self.factory.makeUbuntuDistroSeries()
-        sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
+        sp = self.factory.makeSourcePackage()
         browser = self.getViewBrowser(
-            sp, "+edit-packaging", user=product_owner
+            sp, "+edit-packaging", user=self.factory.makeAdministrator()
         )
         browser.getControl("Project").value = product_name
         browser.getControl("Continue").click()
