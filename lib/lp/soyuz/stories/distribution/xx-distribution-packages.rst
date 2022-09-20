@@ -172,6 +172,7 @@ It will thus not be listed in the "...other untrusted versions of..." portlet.
 A /$DISTRO/+source/$PACKAGE page shows an overview of a source package in
 a distribution.  There are several sections of information.
 
+    >>> user_browser = setupBrowser(auth="Basic limi@plone.org:test")
     >>> user_browser.open("http://launchpad.test/ubuntu/+source/iceweasel/")
 
 The page has an appropriate title and main heading.
@@ -331,6 +332,7 @@ menu, and a "Subscribers" portlet.
     View full change log
     Subscribe to bug mail
     Edit bug mail
+    Configure bug tracker
 
     >>> print(
     ...     extract_text(find_tag_by_id(user_browser.contents, "involvement"))
@@ -361,9 +363,9 @@ distroseries.  The distroseries are presented in order, most recent first.
 
     >>> browser.open("http://launchpad.test/ubuntutest/+source/netapplet/")
     >>> print(extract_text(find_tag_by_id(browser.contents, "packages_list")))
-    Mock Hoary (active development)                   Set upstream link
+    Mock Hoary (active development)
       1.0.1a  release  (main)  ...
-    Breezy Badger Autotest  (active development)      Set upstream link
+    Breezy Badger Autotest  (active development)
       1.3.1   release  (main)  ...
 
 (See more about packaging in:
