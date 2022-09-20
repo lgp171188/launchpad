@@ -5,11 +5,14 @@
 
 import datetime
 import os
+import threading
 
 import pytz
 import six
+import transaction
 from breezy import controldir
 from breezy.urlutils import escape
+from psycopg2.extensions import TransactionRollbackError
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -19,7 +22,10 @@ from lp.app.errors import NotFoundError
 from lp.code.bzr import BranchFormat, ControlFormat, RepositoryFormat
 from lp.code.enums import BranchType
 from lp.code.errors import UnknownBranchTypeError
-from lp.code.interfaces.branch import BRANCH_NAME_VALIDATION_ERROR_MESSAGE
+from lp.code.interfaces.branch import (
+    BRANCH_NAME_VALIDATION_ERROR_MESSAGE,
+    IBranchSet,
+)
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.interfaces.codehosting import (
@@ -39,6 +45,7 @@ from lp.code.xmlrpc.codehosting import (
 )
 from lp.codehosting.inmemory import InMemoryFrontend
 from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import MemoryFeatureFixture
 from lp.services.scripts.interfaces.scriptactivity import IScriptActivitySet
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
@@ -826,6 +833,45 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
                 branch.repository_format,
             ),
         )
+
+    def test_branchChanged_race_with_scan_job(self):
+        # The branchChanged XML-RPC request may race with something else
+        # that's updating the branch at the same time.
+        if self.layer == FunctionalLayer:
+            self.skipTest("Only implemented for DB testing.")
+
+        self.useFixture(
+            MemoryFeatureFixture(
+                {"jobs.celery.enabled_classes": "BranchScanJob"}
+            )
+        )
+        branch = self.factory.makeAnyBranch()
+        transaction.commit()
+
+        def update_branch(unique_name):
+            login(ANONYMOUS)
+            branch = getUtility(IBranchSet).getByUniqueName(unique_name)
+            removeSecurityProxy(branch).last_mirrored_id = "something"
+            transaction.commit()
+
+        unique_name = branch.unique_name  # begins transaction
+        # Force a race by updating the same branch from another thread.
+        update_thread = threading.Thread(
+            target=update_branch, args=(unique_name,)
+        )
+        update_thread.start()
+        update_thread.join()
+
+        self.codehosting_api.branchChanged(
+            branch.owner.id,
+            branch.id,
+            "",
+            "rev1",
+            *self.arbitrary_format_strings,
+        )
+        # We get this exception from the failed UPDATE, not
+        # InFailedSqlTransaction from a subsequent statement.
+        self.assertRaises(TransactionRollbackError, transaction.commit)
 
     def assertNotFound(self, requester, path):
         """Assert that the given path cannot be found."""
