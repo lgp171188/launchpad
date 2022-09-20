@@ -180,9 +180,10 @@ class TestSearchQuestionsViewUnknown(TestCaseWithFactory):
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=sourcepackagename, distroseries=hoary
         )
-        product.development_focus.setPackaging(
-            hoary, sourcepackagename, product.owner
-        )
+        with person_logged_in(product.development_focus.owner):
+            product.development_focus.setPackaging(
+                hoary, sourcepackagename, product.owner
+            )
 
     def setUp(self):
         super().setUp()
