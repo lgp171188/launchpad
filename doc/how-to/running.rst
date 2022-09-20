@@ -76,7 +76,9 @@ installed and configured on your network.
 1. If you haven't done so already, run this script to set up LXD to let you
    use your home directory inside the container.  Some developers prefer to
    only mount a subdirectory of their home directory in the container: to do
-   that, replace ``$HOME`` with ``$HOME/src`` or similar.
+   that, replace ``$HOME`` with ``$HOME/src`` or similar.  Although it may
+   be tempting, make sure not to call your local user "launchpad", as that
+   will break; see :ref:`database-permissions`.
 
 .. code-block:: sh
 
@@ -349,6 +351,9 @@ Or you can be at a prompt in the same directory and run this:
 Troubleshooting
 ===============
 
+Network connectivity
+--------------------
+
 "The LXC container is not getting an IPv4 address assigned and the network
 connectivity inside the container doesn't work."
 
@@ -365,3 +370,25 @@ the bridge interface on your computer):
 
     sudo ufw allow in on lxdbr0
     sudo ufw route allow in on lxdbr0
+
+Email
+-----
+
+"I have Launchpad running but emails are not sent."
+
+Development Launchpads don't send email to the outside world, for obvious
+reasons.  They connect to the local SMTP server and send to root.  To create
+new users, create a new account and check the local mailbox, or see
+:doc:`new-user`.
+
+.. _database-permissions:
+
+Database permissions
+--------------------
+
+"My database permissions keep getting deleted!"
+
+If your local account is called "launchpad" it conflicts with a role called
+"launchpad" which is defined in ``database/schema/security.cfg``.  You need
+to rename your local account and re-assign it superuser permissions as the
+``utilities/launchpad-database-setup`` script does.
