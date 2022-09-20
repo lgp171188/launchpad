@@ -74,7 +74,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
             lfa = source_file.libraryfile
             filemap[lfa.filename] = {
                 "sha1": lfa.content.sha1,
-                "url": lfa.https_url,
+                "url": lfa.getURL(),
             }
             if self.build.archive.private:
                 if macaroon_raw is None:
