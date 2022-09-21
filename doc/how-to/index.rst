@@ -34,6 +34,7 @@ Operating development instances
    new-user
    apply-schema-changes
    use-updated-dependency
+   importing-an-ubuntu-package
 
 Operating Canonical's instances
 -------------------------------

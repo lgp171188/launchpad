@@ -60,3 +60,11 @@ of the ones that come up from time to time.
 
 ``zcml/``
     Various configuration files for the Zope services.
+
+Can I look at the code without downloading it all?
+==================================================
+
+Yes, you can browse the `source code
+<https://git.launchpad.net/launchpad/tree>`_ on Launchpad.  You can also use
+``git clone https://git.launchpad.net/launchpad`` to download the code
+without setting up a development environment.

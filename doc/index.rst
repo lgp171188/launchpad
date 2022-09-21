@@ -41,8 +41,6 @@ Overview
      - How do Launchpad's features fit together?
    * - :doc:`values`
      - Guidelines for designing Launchpad
-   * - :doc:`faq`
-     -
    * - :doc:`historical`
      -
 
