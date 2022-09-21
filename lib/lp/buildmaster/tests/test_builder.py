@@ -382,13 +382,13 @@ class TestFindBuildCandidatesPrivatePPA(TestFindBuildCandidatesPPABase):
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
         self.assertEqual("joesppa", build.archive.name)
 
-        # If the source for the build is still pending, it won't be
-        # dispatched because the builder has to fetch the source files
-        # from the (password protected) repo area, not the librarian.
+        # If the source for the build is still pending, it will still be
+        # dispatched: the builder will use macaroon authentication to fetch
+        # the source files from the librarian.
         pub = build.current_source_publication
         pub.status = PackagePublishingStatus.PENDING
         [candidate] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
-        self.assertNotEqual(next_job.id, candidate.id)
+        self.assertEqual(next_job.id, candidate.id)
 
 
 class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):

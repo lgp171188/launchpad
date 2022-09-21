@@ -60,11 +60,7 @@ from lp.services.macaroons.interfaces import (
 )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.soyuz.adapters.buildarch import determine_architectures_to_build
-from lp.soyuz.enums import (
-    ArchivePurpose,
-    BinarySourceReferenceType,
-    PackagePublishingStatus,
-)
+from lp.soyuz.enums import ArchivePurpose, BinarySourceReferenceType
 from lp.soyuz.interfaces.archive import (
     IArchive,
     InvalidExternalDependencies,
@@ -1332,34 +1328,13 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
     @staticmethod
     def addCandidateSelectionCriteria():
         """See `ISpecificBuildFarmJobSource`."""
-        private_statuses = (
-            PackagePublishingStatus.PUBLISHED,
-            PackagePublishingStatus.SUPERSEDED,
-            PackagePublishingStatus.DELETED,
-        )
         return """
-            SELECT TRUE FROM Archive, BinaryPackageBuild, DistroArchSeries
+            SELECT TRUE FROM BinaryPackageBuild
             WHERE
             BinaryPackageBuild.build_farm_job = BuildQueue.build_farm_job AND
-            BinaryPackageBuild.distro_arch_series =
-                DistroArchSeries.id AND
-            BinaryPackageBuild.archive = Archive.id AND
-            ((Archive.private IS TRUE AND
-              EXISTS (
-                  SELECT SourcePackagePublishingHistory.id
-                  FROM SourcePackagePublishingHistory
-                  WHERE
-                      SourcePackagePublishingHistory.distroseries =
-                         DistroArchSeries.distroseries AND
-                      SourcePackagePublishingHistory.sourcepackagerelease =
-                         BinaryPackageBuild.source_package_release AND
-                      SourcePackagePublishingHistory.archive = Archive.id AND
-                      SourcePackagePublishingHistory.status IN %s))
-              OR
-              archive.private IS FALSE) AND
             BinaryPackageBuild.status = %s
         """ % sqlvalues(
-            private_statuses, BuildStatus.NEEDSBUILD
+            BuildStatus.NEEDSBUILD
         )
 
     @staticmethod
