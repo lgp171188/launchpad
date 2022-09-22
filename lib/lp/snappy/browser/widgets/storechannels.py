@@ -8,18 +8,12 @@ __all__ = [
 from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import IInputWidget, WidgetInputError
 from zope.formlib.utility import setUpWidget
-from zope.formlib.widget import (
-    BrowserWidget,
-    CustomWidgetFactory,
-    InputErrors,
-    InputWidget,
-)
+from zope.formlib.widget import BrowserWidget, InputErrors, InputWidget
 from zope.interface import implementer
 from zope.schema import Bool, Choice, TextLine
 
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
-from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.services.channels import (
     CHANNEL_COMPONENTS_DELIMITER,
     channel_list_to_string,
@@ -44,74 +38,104 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         # disable help_text for the global widget
         self.hint = None
 
+    def _getFieldName(self, name, channel_index):
+        return "%s_%d" % (name, channel_index)
+
+    def is_edit(self):
+        if "+edit" in self.request["PATH_INFO"]:
+            return True
+
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
-        fields = [
-            TextLine(
-                __name__="track",
-                title="Track",
-                required=False,
-            ),
-            Choice(
-                __name__="risk",
-                title="Risk",
-                required=False,
-                vocabulary="SnapStoreChannel",
-            ),
-            TextLine(
-                __name__="branch",
-                title="Branch",
-                required=False,
-            ),
-            # Bool(
-            #     __name__="delete",
-            #     title="Delete",
-            #     readonly=False,
-            #     default=False,
-            # ),
-        ]
-
-        self.risk_widget = CustomWidgetFactory(
-            LaunchpadRadioWidget, orientation="horizontal"
+        fields = []
+        fields.append(
+            [
+                TextLine(
+                    __name__="add_track",
+                    title="Track",
+                    required=False,
+                ),
+                Choice(
+                    __name__="add_risk",
+                    title="Risk",
+                    required=False,
+                    vocabulary="SnapStoreChannel",
+                ),
+                TextLine(
+                    __name__="add_branch",
+                    title="Branch",
+                    required=False,
+                ),
+            ]
         )
+        if self.is_edit():
+            for index in range(len(self.context.context.store_channels)):
+                fields.append(
+                    [
+                        TextLine(
+                            __name__=self._getFieldName("track", index),
+                            required=False,
+                        ),
+                        Choice(
+                            __name__=self._getFieldName("risk", index),
+                            required=False,
+                            vocabulary="SnapStoreChannel",
+                        ),
+                        TextLine(
+                            __name__=self._getFieldName("branch", index),
+                            required=False,
+                        ),
+                        Bool(
+                            __name__=self._getFieldName("delete", index),
+                            required=False,
+                            default=False,
+                        ),
+                    ]
+                )
 
-        for field in fields:
-            setUpWidget(
-                self, field.__name__, field, IInputWidget, prefix=self.name
-            )
+        for i in range(0, len(fields)):
+            for j in range(0, len(fields[i])):
+                setUpWidget(
+                    self,
+                    fields[i][j].__name__,
+                    fields[i][j],
+                    IInputWidget,
+                    prefix=self.name,
+                )
+
+        # self.add_risk_widget = CustomWidgetFactory(
+        #     LaunchpadRadioWidget, orientation="horizontal"
+        # )
         self._widgets_set_up = True
 
-    @property
-    def has_risks_vocabulary(self):
-        risk_widget = getattr(self, "risk_widget", None)
-        return risk_widget and bool(risk_widget.vocabulary)
+    # @property
+    # def has_risks_vocabulary(self):
+    #     add_risk_widget = getattr(self, "risk_widget", None)
+    #     return add_risk_widget and bool(add_risk_widget.vocabulary)
 
     def setRenderedValue(self, value):
         """See `IWidget`."""
         self.setUpSubWidgets()
         if value:
-            tracks = set()
-            branches = set()
-            risks = set()
-            for channel in value:
-                track, risk, branch = channel_string_to_list(channel)
-                tracks.add(track)
-                risks.append(risk)
-                risks.append(risk)
-                branches.add(branch)
-            track = tracks.pop()
-            self.track_widget.setRenderedValue(track)
-            risk = risks.pop()
-            self.risks_widget.setRenderedValue(risk)
-            branch = branches.pop()
-            self.branch_widget.setRenderedValue(branch)
+            for i in range(0, len(value)):
+                track, risk, branch = channel_string_to_list(value[i])
+                track_widget = getattr(self, "track_%s_widget" % i)
+                track_widget.setRenderedValue(track)
+                track_widget.display_label = False
+                risk_widget = getattr(self, "risk_%s_widget" % i)
+                risk_widget.setRenderedValue(risk)
+                risk_widget.display_label = False
+                branch_widget = getattr(self, "branch_%s_widget" % i)
+                branch_widget.setRenderedValue(branch)
+                branch_widget.display_label = False
+                delete_widget = getattr(self, "delete_%s_widget" % i)
+                delete_widget.setRenderedValue(False)
+                delete_widget.display_label = False
         else:
-            self.track_widget.setRenderedValue(None)
-            self.risk_widget.setRenderedValue(None)
-            self.branch_widget.setRenderedValue(None)
-
-    #            self.delete_widget.setRenderedValue(None)
+            self.add_track_widget.setRenderedValue(None)
+            self.add_risk_widget.setRenderedValue(None)
+            self.add_branch_widget.setRenderedValue(None)
 
     def hasInput(self):
         """See `IInputWidget`."""

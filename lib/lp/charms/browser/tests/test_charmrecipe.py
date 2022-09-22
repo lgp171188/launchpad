@@ -325,7 +325,9 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl("Registered store name").value = "charmhub-name"
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(name="field.store_channels.track").value = "track"
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "track"
         browser.getControl("Edge").selected = True
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
@@ -689,9 +691,15 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="field.auto_build_channels.charmcraft"
         ).value = "edge"
         browser.getControl(name="field.store_name").value = "new-store-name"
-        browser.getControl(name="field.track.0").value = "new-track"
-        browser.getControl(name="field.branch.0").value = "new-branch"
-        browser.getControl(name="field.risks.0").value = ["candidate"]
+        browser.getControl(
+            name="field.store_channels.track_0"
+        ).value = "new-track"
+        browser.getControl(
+            name="field.store_channels.branch_0"
+        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.risk_0").value = [
+            "candidate"
+        ]
 
         browser.getControl("Update charm recipe").click()
 

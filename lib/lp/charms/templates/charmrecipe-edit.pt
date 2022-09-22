@@ -58,68 +58,18 @@
         <tal:widget define="widget nocall:view/widgets/store_upload">
           <metal:block use-macro="context/@@launchpad_form/widget_row" />
         </tal:widget>
-        <tal:widget define="widget nocall:view/widgets/store_name">
-          <metal:block use-macro="context/@@launchpad_form/widget_row" />
-        </tal:widget>
-      </table>
-      <table class="subordinate">
-        <thead>
-          <tr>
-            <th class="channel-row-risks">Risks</th>
-            <th class="channel-row-branch">Branch</th>
-            <th class="channel-row-track">Track</th>
-            <th class="channel-row-delete">Delete?</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tal:add_store_widgets
-            define="add_store_widgets python:view.getAddStoreWidgets()">
-            <tr>
-              <td>
-                <tal:widget define="widget nocall:add_store_widgets/add_risks"
-                            condition="widget/context/value_type/vocabulary">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </tal:widget>
-              </td>
-              <td>
-                <tal:widget define="widget nocall:add_store_widgets/add_branch">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </tal:widget>
-              </td>
-              <td>
-                <tal:widget define="widget nocall:add_store_widgets/add_track">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </tal:widget>
-              </td>
-            </tr>
-          </tal:add_store_widgets>
-
-          <div tal:repeat="channel_index python:range(len(view.context.store_channels))">
-            <tal:store_widgets
-                define="store_widgets python:view.getStoreWidgets(channel_index);
-                        parity python:'even' if repeat['channel_index'].even() else 'odd'">
-              <tr tal:attributes="class string:channel-row ${parity}">
-                <td class="channel-row-risks"
-                    tal:define="widget nocall:store_widgets/risks"
-                        condition="widget/context/value_type/vocabulary">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </td>
-                <td class="channel-row-branch"
-                    tal:define="widget nocall:store_widgets/branch">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </td>
-                <td class="channel-row-track"
-                    tal:define="widget nocall:store_widgets/track">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </td>
-                <td class="channel-row-delete"
-                    tal:define="widget nocall:store_widgets/delete">
-                  <metal:widget use-macro="context/@@launchpad_form/widget_div" />
-                </td>
-              </tr>
-            </tal:store_widgets>
-          </div>
-        </tbody>
+        <tr>
+          <td>
+            <table class="subordinate">
+              <tal:widget define="widget nocall:view/widgets/store_name">
+                <metal:block use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+              <tal:widget define="widget nocall:view/widgets/store_channels">
+                <metal:block use-macro="context/@@launchpad_form/widget_row" />
+              </tal:widget>
+            </table>
+          </td>
+        </tr>
       </table>
     </metal:formbody>
   </div>
