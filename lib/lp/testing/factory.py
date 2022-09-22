@@ -3255,7 +3255,11 @@ class LaunchpadObjectFactory(ObjectFactory):
                 md5=hashlib.md5(content).hexdigest(),
             )
             lfa = LibraryFileAlias(
-                content=lfc, filename=filename, mimetype=content_type
+                content=lfc,
+                filename=filename,
+                mimetype=content_type,
+                expires=expires,
+                restricted=restricted,
             )
         else:
             lfa = getUtility(ILibraryFileAliasSet).create(
