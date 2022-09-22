@@ -6,13 +6,14 @@ __all__ = [
     "DiskPoolEntry",
     "FileAddActionEnum",
     "poolify",
+    "unpoolify",
 ]
 
 import logging
 import os
 import tempfile
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from lp.archivepublisher import HARDCODED_COMPONENT_ORDER
 from lp.services.librarian.utils import copy_and_close, sha1_from_path
@@ -26,15 +27,55 @@ from lp.soyuz.interfaces.publishing import (
 )
 
 
+def get_source_prefix(source: str) -> str:
+    """Get the prefix for a pooled source package name.
+
+    In the Debian repository format, packages are published to directories
+    of the form `pool/<component>/<source prefix>/<source name>/`, perhaps
+    best described here::
+
+        https://lists.debian.org/debian-devel/2000/10/msg01340.html
+
+    The directory here called `<source prefix>` (there doesn't seem to be a
+    canonical term for this) is formed by taking the first character of the
+    source name, except when the source name starts with "lib" in which case
+    it's formed by taking the first four characters of the source name.
+    This was originally in order to behave reasonably on file systems such
+    as ext2, but is now entrenched and expected.
+    """
+    if source.startswith("lib"):
+        return source[:4]
+    else:
+        return source[:1]
+
+
 def poolify(source: str, component: Optional[str] = None) -> Path:
     """Poolify a given source and component name."""
-    if source.startswith("lib"):
-        path = Path(source[:4]) / source
-    else:
-        path = Path(source[:1]) / source
+    path = Path(get_source_prefix(source)) / source
     if component is not None:
         path = Path(component) / path
     return path
+
+
+def unpoolify(path: PurePath) -> Tuple[str, str, Optional[str]]:
+    """Take a path and unpoolify it.
+
+    Return a tuple of component, source, filename.
+    """
+    p = path.parts
+    if len(p) < 3 or len(p) > 4:
+        raise ValueError(
+            "Path '%s' is not in a valid pool form" % path.as_posix()
+        )
+    component, source_prefix, source = p[:3]
+    if source_prefix != get_source_prefix(source):
+        raise ValueError(
+            "Source prefix '%s' does not match source '%s'"
+            % (source_prefix, source)
+        )
+    if len(p) == 4:
+        return component, source, p[3]
+    return component, source, None
 
 
 def relative_symlink(src_path: Path, dst_path: Path) -> None:
