@@ -139,7 +139,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
 
     def hasInput(self):
         """See `IInputWidget`."""
-        return ("%s.risk" % self.name) in self.request.form
+        return ("%s.add_risk" % self.name) in self.request.form
 
     def hasValidInput(self):
         """See `IInputWidget`."""
@@ -154,9 +154,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
     def getInputValue(self):
         """See `IInputWidget`."""
         self.setUpSubWidgets()
-        track = self.track_widget.getInputValue()
-        risk = self.risk_widget.getInputValue()
-        branch = self.branch_widget.getInputValue()
+        track = self.add_track_widget.getInputValue()
+        risk = self.add_risk_widget.getInputValue()
+        branch = self.add_branch_widget.getInputValue()
         if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
                 CHANNEL_COMPONENTS_DELIMITER

@@ -483,9 +483,13 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl("Registered store name").value = "charmhub-name"
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(name="field.store_channels.track").value = "track"
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "track"
         browser.getControl("Edge").selected = True
-        browser.getControl(name="field.store_channels.branch").value = "branch"
+        browser.getControl(
+            name="field.store_channels.add_branch"
+        ).value = "branch"
 
         browser.getControl("Create charm recipe").click()
 
