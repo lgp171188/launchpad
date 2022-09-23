@@ -70,6 +70,8 @@ class NumberCruncher(service.Service):
         return loop, stopping_deferred
 
     def _sendGauge(self, gauge_name, value, labels=None):
+        if value is None:
+            return
         self.logger.debug(
             "{}: {}".format(
                 self.statsd_client.composeMetric(gauge_name, labels), value

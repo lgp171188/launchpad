@@ -418,6 +418,12 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         for gauge in gauges:
             self.assertIn(gauge, keys)
 
+    def test_updatePPABuildLatencyStats_no_data(self):
+        clock = task.Clock()
+        cruncher = NumberCruncher(clock=clock)
+        cruncher.updatePPABuildLatencyStats()
+        self.assertEqual(0, self.stats_client.gauge.call_count)
+
     def test_updatePPABuildLatencyStats_error(self):
         clock = task.Clock()
         cruncher = NumberCruncher(clock=clock)
