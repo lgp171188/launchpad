@@ -41,6 +41,9 @@ from lp.blueprints.model.specification import (
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtarget import BUG_POLICY_ALLOWED_TYPES
 from lp.bugs.interfaces.bugtask import BugTaskImportance
+from lp.bugs.model.tests.test_vulnerability import (
+    grant_access_to_non_public_vulnerability,
+)
 from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
@@ -2184,6 +2187,38 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
             {first_vulnerability, second_vulnerability},
             set(distribution.vulnerabilities),
         )
+
+    def test_vulnerabilities_some_vulnerabilities_private(self):
+        distribution = self.factory.makeDistribution(
+            bug_sharing_policy=BugSharingPolicy.PROPRIETARY
+        )
+        public_vulnerabilities = set()
+        for _ in range(5):
+            public_vulnerabilities.add(
+                self.factory.makeVulnerability(distribution=distribution)
+            )
+
+        private_vulnerability = self.factory.makeVulnerability(
+            distribution=distribution,
+            information_type=InformationType.PROPRIETARY,
+        )
+        person = self.factory.makePerson()
+        person_with_access = self.factory.makePerson()
+        grant_access_to_non_public_vulnerability(
+            private_vulnerability,
+            person_with_access,
+        )
+        with person_logged_in(person):
+            self.assertCountEqual(
+                public_vulnerabilities,
+                distribution.vulnerabilities,
+            )
+
+        with person_logged_in(person_with_access):
+            self.assertCountEqual(
+                public_vulnerabilities.union([private_vulnerability]),
+                distribution.vulnerabilities,
+            )
 
     def test_set_security_admin_permissions(self):
         distribution = self.factory.makeDistribution()
