@@ -13,3 +13,6 @@ tags:
 series:
   - focal
 subordinate: false
+requires:
+  session-db:
+    interface: pgsql

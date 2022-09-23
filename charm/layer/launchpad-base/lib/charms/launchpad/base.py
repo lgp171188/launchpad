@@ -1,10 +1,15 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import grp
 import os.path
+import pwd
+import re
+from dataclasses import dataclass
 
 from charmhelpers.core import hookenv, host, templating
 from ols import base
+from psycopg2.extensions import make_dsn, parse_dsn
 
 
 def home_dir():
@@ -80,3 +85,108 @@ def configure_rsync(config, template, name):
         templating.render(template, rsync_path, config, perms=0o644)
     elif os.path.exists(rsync_path):
         os.unlink(rsync_path)
+
+
+@dataclass
+class PgPassLine:
+    hostname: str
+    port: str
+    database: str
+    username: str
+    password: str
+
+
+def update_pgpass(dsn):
+    # See https://www.postgresql.org/docs/current/libpq-pgpass.html.
+
+    def unescape(entry):
+        return re.sub(r"\\(.)", r"\1", entry)
+
+    def escape(entry):
+        return re.sub(r"([:\\])", r"\\\1", entry)
+
+    parsed_dsn = parse_dsn(dsn)
+    pgpass_path = os.path.join(home_dir(), ".pgpass")
+    pgpass = []
+    try:
+        with open(pgpass_path) as f:
+            for line in f:
+                if line.startswith("#"):
+                    continue
+                match = re.match(
+                    r"""
+                        ^
+                        (?P<hostname>(?:[^:\\]|\\.)*):
+                        (?P<port>(?:[^:\\]|\\.)*):
+                        (?P<database>(?:[^:\\]|\\.)*):
+                        (?P<username>(?:[^:\\]|\\.)*):
+                        (?P<password>(?:[^:\\]|\\.)*)
+                        $
+                    """,
+                    line.rstrip("\n"),
+                    flags=re.X,
+                )
+                if match is None:
+                    continue
+                pgpass.append(
+                    PgPassLine(
+                        hostname=unescape(match.group("hostname")),
+                        port=unescape(match.group("port")),
+                        database=unescape(match.group("database")),
+                        username=unescape(match.group("username")),
+                        password=unescape(match.group("password")),
+                    )
+                )
+    except OSError:
+        pass
+
+    modified = False
+    for line in pgpass:
+        if (
+            line.hostname in ("*", parsed_dsn["host"])
+            and line.port in ("*", parsed_dsn["port"])
+            and line.database in ("*", parsed_dsn["dbname"])
+            and line.username in ("*", parsed_dsn["user"])
+        ):
+            if line.password != parsed_dsn["password"]:
+                line.password = parsed_dsn["password"]
+                modified = True
+            break
+    else:
+        pgpass.append(
+            PgPassLine(
+                hostname=parsed_dsn["host"],
+                port=parsed_dsn["port"],
+                database=parsed_dsn["dbname"],
+                username=parsed_dsn["user"],
+                password=parsed_dsn["password"],
+            )
+        )
+        modified = True
+
+    if modified:
+        uid = pwd.getpwnam(base.user()).pw_uid
+        gid = grp.getgrnam(base.user()).gr_gid
+        with open(pgpass_path, "w") as f:
+            for line in pgpass:
+                print(
+                    ":".join(
+                        [
+                            escape(line.hostname),
+                            escape(line.port),
+                            escape(line.database),
+                            escape(line.username),
+                            escape(line.password),
+                        ]
+                    ),
+                    file=f,
+                )
+            os.fchown(f.fileno(), uid, gid)
+            os.fchmod(f.fileno(), 0o600)
+
+
+def strip_dsn_authentication(dsn):
+    parsed_dsn = parse_dsn(dsn)
+    parsed_dsn.pop("user", None)
+    parsed_dsn.pop("password", None)
+    return make_dsn(**parsed_dsn)

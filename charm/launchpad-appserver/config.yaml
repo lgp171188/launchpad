@@ -1,12 +1,4 @@
 options:
-  dbuser:
-    type: string
-    description: The database user used with the main database.
-    default: ""
-  dbuser_session:
-    type: string
-    description: The database user used with the session database.
-    default: ""
   devmode:
     type: boolean
     description: Is this server running in dev mode?
