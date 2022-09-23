@@ -530,7 +530,8 @@ class LaunchpadSessionDatabase(Postgres):
 
     def raw_connect(self):
         dsn = ConnectionString(config.launchpad_session.database)
-        dsn.user = config.launchpad_session.dbuser
+        if config.launchpad_session.dbuser is not None:
+            dsn.user = config.launchpad_session.dbuser
         self._dsn = str(dsn)
         flags = _get_dirty_commit_flags()
         raw_connection = super().raw_connect()
