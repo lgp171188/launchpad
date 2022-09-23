@@ -141,7 +141,7 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
 
         uploads = [(chroot.http_url, "", "")]
         for sprf in files:
-            if build.archive.private:
+            if sprf.libraryfile.restricted:
                 password = MacaroonVerifies(
                     "binary-package-build", build.archive
                 )
@@ -323,7 +323,48 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         )
 
     @defer.inlineCallbacks
-    def test_private_source_dispatch(self):
+    def test_private_source_file_dispatch(self):
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
+        archive = self.factory.makeArchive(private=True)
+        worker = OkWorker()
+        builder = self.factory.makeBuilder()
+        builder.setCleanStatus(BuilderCleanStatus.CLEAN)
+        vitals = extract_vitals_from_db(builder)
+        build = self.factory.makeBinaryPackageBuild(
+            builder=builder, archive=archive
+        )
+        build.source_package_release.addFile(
+            self.factory.makeLibraryFileAlias(restricted=True, db_only=True),
+            filetype=SourcePackageFileType.ORIG_TARBALL,
+        )
+        lf = self.factory.makeLibraryFileAlias(db_only=True)
+        build.distro_arch_series.addOrUpdateChroot(lf)
+        bq = build.queueBuild()
+        bq.markAsBuilding(builder)
+        interactor = BuilderInteractor()
+        behaviour = interactor.getBuildBehaviour(bq, builder, worker)
+        yield interactor._startBuild(
+            bq, vitals, builder, worker, behaviour, BufferLogger()
+        )
+        yield self.assertExpectedInteraction(
+            worker.call_log,
+            builder,
+            build,
+            behaviour,
+            lf,
+            archive,
+            ArchivePurpose.PPA,
+        )
+
+    @defer.inlineCallbacks
+    def test_public_source_file_in_private_archive_dispatch(self):
+        # A source file in a private archive might be unrestricted if the
+        # same source package is also published in a public archive.  The
+        # librarian will only serve restricted files if given a token, so
+        # make sure that we don't send a token for unrestricted files.
         self.useFixture(InProcessAuthServerFixture())
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
