@@ -297,6 +297,16 @@ class BinaryPackageFileType(DBEnumeratedType):
         """,
     )
 
+    GENERIC = DBItem(
+        9,
+        """
+        Generic binary file
+
+        This file is a generic binary file without any particular known
+        metadata of its own, produced by a CI build.
+        """,
+    )
+
 
 class BinaryPackageFormat(DBEnumeratedType):
     """Binary Package Format
@@ -381,6 +391,16 @@ class BinaryPackageFormat(DBEnumeratedType):
 
         Version 2 of the Conda package format, with the ".conda" extension;
         introduced in Conda 4.7.
+        """,
+    )
+
+    GENERIC = DBItem(
+        9,
+        """
+        Generic binary
+
+        This is a generic binary format without any particular known
+        metadata of its own, produced by a CI build.
         """,
     )
 
@@ -945,5 +965,14 @@ class ArchiveRepositoryFormat(DBEnumeratedType):
 
         A Go registry, laid out as a module proxy
         (https://go.dev/ref/mod#module-proxy).
+        """,
+    )
+
+    GENERIC = DBItem(
+        4,
+        """
+        Generic
+
+        A generic repository with a basic name/version layout and no indexing.
         """,
     )

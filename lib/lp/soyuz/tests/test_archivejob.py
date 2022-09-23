@@ -273,6 +273,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -284,7 +285,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -308,6 +309,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -321,7 +323,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         )
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -345,6 +347,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -356,7 +359,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("wheel-arch/dist/wheel-arch-0.0.1.tar.gz")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -377,6 +380,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -388,7 +392,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("conda-indep/dist/noarch/conda-indep-0.1-0.tar.bz2")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -413,6 +417,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -424,7 +429,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("conda-arch/dist/linux-64/conda-arch-0.1-0.tar.bz2")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -449,6 +454,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -460,7 +466,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("conda-v2-indep/dist/noarch/conda-v2-indep-0.1-0.conda")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -485,6 +491,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -496,7 +503,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         path = Path("conda-v2-arch/dist/linux-64/conda-v2-arch-0.1-0.conda")
         tmpdir = Path(self.useFixture(TempDir()).path)
         shutil.copy2(datadir(str(path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -522,6 +529,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             distribution=archive.distribution
         )
         build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
         job = CIBuildUploadJob.create(
             build,
             build.git_repository.owner,
@@ -537,7 +545,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         shutil.copy2(datadir(str(info_path)), str(tmpdir))
         shutil.copy2(datadir(str(mod_path)), str(tmpdir))
         shutil.copy2(datadir(str(zip_path)), str(tmpdir))
-        all_metadata = job._scanFiles(tmpdir)
+        all_metadata = job._scanFiles(report, tmpdir)
         self.assertThat(
             all_metadata,
             MatchesDict(
@@ -560,6 +568,85 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
                         version="v0.0.1",
                         user_defined_fields=[("module-path", "example.com/t")],
                     ),
+                }
+            ),
+        )
+
+    def test__scanFiles_generic_source(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution
+        )
+        build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(
+            title="build-source", ci_build=build
+        )
+        report.update(
+            properties={
+                "name": "foo",
+                "version": "1.0",
+                "source": True,
+            }
+        )
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        (tmpdir / "foo-1.0.tar.gz").write_bytes(b"source artifact")
+        all_metadata = job._scanFiles(report, tmpdir)
+        self.assertThat(
+            all_metadata,
+            MatchesDict(
+                {
+                    "foo-1.0.tar.gz": MatchesStructure.byEquality(
+                        format=SourcePackageFileType.GENERIC,
+                        name="foo",
+                        version="1.0",
+                    )
+                }
+            ),
+        )
+
+    def test__scanFiles_generic_binary(self):
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution
+        )
+        build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(
+            title="build-binary", ci_build=build
+        )
+        report.update(properties={"name": "foo", "version": "1.0"})
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        (tmpdir / "test-binary").write_bytes(b"binary artifact")
+        all_metadata = job._scanFiles(report, tmpdir)
+        self.assertThat(
+            all_metadata,
+            MatchesDict(
+                {
+                    "test-binary": MatchesStructure.byEquality(
+                        format=BinaryPackageFormat.GENERIC,
+                        name="foo",
+                        version="1.0",
+                        summary="",
+                        description="",
+                        architecturespecific=True,
+                        homepage="",
+                    )
                 }
             ),
         )
@@ -1045,6 +1132,126 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             ),
         )
         self.assertContentEqual([], archive.getAllPublishedBinaries())
+
+    def test_run_generic(self):
+        self.useFixture(FakeLogger())
+        archive = self.factory.makeArchive(
+            repository_format=ArchiveRepositoryFormat.GENERIC
+        )
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution
+        )
+        dases = [
+            self.factory.makeDistroArchSeries(distroseries=distroseries)
+            for _ in range(2)
+        ]
+        build = self.makeCIBuild(
+            archive.distribution, distro_arch_series=dases[0]
+        )
+        source_report = build.getOrCreateRevisionStatusReport("build-source:0")
+        source_report.setLog(b"log data")
+        source_report.update(
+            properties={
+                "name": "foo",
+                "version": "1.0",
+                "source": True,
+            }
+        )
+        source_report.attach(name="foo-1.0.tar.gz", data=b"source artifact")
+        binary_report = build.getOrCreateRevisionStatusReport("build-binary:0")
+        binary_report.setLog(b"log data")
+        binary_report.update(properties={"name": "foo", "version": "1.0"})
+        binary_report.attach(name="test-binary", data=b"binary artifact")
+        artifacts = (
+            IStore(RevisionStatusArtifact)
+            .find(
+                RevisionStatusArtifact,
+                RevisionStatusArtifact.report_id.is_in(
+                    {source_report.id, binary_report.id}
+                ),
+                RevisionStatusArtifact.artifact_type
+                == RevisionStatusArtifactType.BINARY,
+            )
+            .order_by("id")
+        )
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(
+            archive.getPublishedSources(),
+            MatchesSetwise(
+                MatchesStructure(
+                    sourcepackagename=MatchesStructure.byEquality(
+                        name=build.git_repository.target.name
+                    ),
+                    sourcepackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        sourcepackagename=MatchesStructure.byEquality(
+                            name=build.git_repository.target.name
+                        ),
+                        version=Equals("1.0"),
+                        format=Equals(SourcePackageType.CI_BUILD),
+                        architecturehintlist=Equals(""),
+                        creator=Equals(build.git_repository.owner),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[0].library_file,
+                                filetype=SourcePackageFileType.GENERIC,
+                            )
+                        ),
+                        user_defined_fields=MatchesSetwise(
+                            Equals(["name", "foo"]),
+                            Equals(["version", "1.0"]),
+                            Equals(["source", True]),
+                        ),
+                    ),
+                    format=Equals(SourcePackageType.CI_BUILD),
+                    distroseries=Equals(distroseries),
+                )
+            ),
+        )
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
+                    binarypackagename=MatchesStructure.byEquality(name="foo"),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="foo"
+                        ),
+                        version=Equals("1.0"),
+                        summary=Equals(""),
+                        description=Equals(""),
+                        binpackageformat=Equals(BinaryPackageFormat.GENERIC),
+                        architecturespecific=Is(True),
+                        homepage=Equals(""),
+                        files=MatchesSetwise(
+                            MatchesStructure.byEquality(
+                                libraryfile=artifacts[1].library_file,
+                                filetype=BinaryPackageFileType.GENERIC,
+                            )
+                        ),
+                        user_defined_fields=MatchesSetwise(
+                            Equals(["name", "foo"]),
+                            Equals(["version", "1.0"]),
+                        ),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.GENERIC),
+                    distroarchseries=Equals(dases[0]),
+                )
+            ),
+        )
 
     def test_run_attaches_properties(self):
         # The upload process attaches properties from the report as

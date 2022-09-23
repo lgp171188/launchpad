@@ -142,6 +142,26 @@ class TestArtifactoryPool(TestCase):
             pool.pathFor(None, "go-module", "v1.0", pub_file),
         )
 
+    def test_pathFor_generic_with_file(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GENERIC)
+        pub_file = FakePackageReleaseFile(
+            b"source artifact",
+            "foo-1.0.tar.gz",
+            release_type=FakeReleaseType.SOURCE,
+            user_defined_fields=[
+                ("name", "foo"),
+                ("version", "1.0"),
+                ("source", True),
+            ],
+        )
+        self.assertEqual(
+            ArtifactoryPath(
+                "https://foo.example.com/artifactory/repository/"
+                "foo/1.0/foo-1.0.tar.gz"
+            ),
+            pool.pathFor(None, "foo-generic", "1.0", pub_file),
+        )
+
     def test_addFile(self):
         pool = self.makePool()
         foo = ArtifactoryPoolTestingFile(
@@ -249,6 +269,12 @@ class TestArtifactoryPool(TestCase):
                 "*.zip",
             ],
             pool.getArtifactPatterns(ArchiveRepositoryFormat.GO_PROXY),
+        )
+
+    def test_getArtifactPatterns_generic(self):
+        pool = self.makePool()
+        self.assertEqual(
+            ["*"], pool.getArtifactPatterns(ArchiveRepositoryFormat.GENERIC)
         )
 
     def test_getAllArtifacts_debian(self):
@@ -360,6 +386,34 @@ class TestArtifactoryPool(TestCase):
             },
             pool.getAllArtifacts(
                 self.repository_name, ArchiveRepositoryFormat.GO_PROXY
+            ),
+        )
+
+    def test_getAllArtifacts_generic(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GENERIC)
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="bar",
+            source_version="1.0",
+            filename="bar-1.0.tar.gz",
+            release_type=FakeReleaseType.SOURCE,
+            release_id=1,
+            user_defined_fields=[
+                ("name", "bar"),
+                ("version", "1.0"),
+                ("source", True),
+            ],
+        ).addToPool()
+        self.assertEqual(
+            {
+                PurePath("bar/1.0/bar-1.0.tar.gz"): {
+                    "launchpad.release-id": ["source:1"],
+                    "launchpad.source-name": ["bar"],
+                    "launchpad.source-version": ["1.0"],
+                },
+            },
+            pool.getAllArtifacts(
+                self.repository_name, ArchiveRepositoryFormat.GENERIC
             ),
         )
 
@@ -1071,6 +1125,168 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         transaction.commit()
         pool.addFile(None, bpph.pool_name, bpph.pool_version, bpf)
         path = pool.rootpath / "noarch" / "foo-1.0.conda"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["binary:%d" % bpr.id],
+                "launchpad.source-name": ["foo"],
+                "launchpad.source-version": ["1.0"],
+                "launchpad.channel": list(
+                    sorted("%s:edge" % ds.name for ds in dses)
+                ),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+
+    def test_updateProperties_generic_source(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GENERIC)
+        dses = [
+            self.factory.makeDistroSeries(
+                distribution=pool.archive.distribution
+            )
+            for _ in range(2)
+        ]
+        das = self.factory.makeDistroArchSeries(distroseries=dses[0])
+        ci_build = self.factory.makeCIBuild(distro_arch_series=das)
+        spr = self.factory.makeSourcePackageRelease(
+            archive=pool.archive,
+            sourcepackagename="foo-package",
+            version="1.0",
+            format=SourcePackageType.CI_BUILD,
+            ci_build=ci_build,
+            user_defined_fields=[
+                ("name", "foo"),
+                ("version", "1.0"),
+                ("source", True),
+            ],
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=pool.archive,
+            sourcepackagerelease=spr,
+            distroseries=dses[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            component="main",
+            sourcepackagename="foo-package",
+            version="1.0",
+            channel="edge",
+            format=SourcePackageType.CI_BUILD,
+        )
+        spr = spph.sourcepackagerelease
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="foo-1.0.tar.gz"
+            ),
+            filetype=SourcePackageFileType.GENERIC,
+        )
+        spphs = [spph]
+        spphs.append(
+            spph.copyTo(dses[1], PackagePublishingPocket.RELEASE, pool.archive)
+        )
+        transaction.commit()
+        pool.addFile(None, spr.name, spr.version, sprf)
+        path = pool.rootpath / "foo" / "1.0" / "foo-1.0.tar.gz"
+        self.assertTrue(path.exists())
+        self.assertFalse(path.is_symlink())
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["foo-package"],
+                "launchpad.source-version": ["1.0"],
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        self.assertEqual(
+            {
+                "launchpad.release-id": ["source:%d" % spr.id],
+                "launchpad.source-name": ["foo-package"],
+                "launchpad.source-version": ["1.0"],
+                "launchpad.channel": list(
+                    sorted("%s:edge" % ds.name for ds in dses)
+                ),
+                "soss.source_url": [
+                    ci_build.git_repository.getCodebrowseUrl()
+                ],
+                "soss.commit_id": [ci_build.commit_sha1],
+            },
+            path.properties,
+        )
+
+    def test_updateProperties_generic_binary(self):
+        pool = self.makePool(ArchiveRepositoryFormat.GENERIC)
+        dses = [
+            self.factory.makeDistroSeries(
+                distribution=pool.archive.distribution
+            )
+            for _ in range(2)
+        ]
+        processor = self.factory.makeProcessor()
+        dases = [
+            self.factory.makeDistroArchSeries(
+                distroseries=ds, architecturetag=processor.name
+            )
+            for ds in dses
+        ]
+        ci_build = self.factory.makeCIBuild(distro_arch_series=dases[0])
+        bpn = self.factory.makeBinaryPackageName(name="foo")
+        bpr = self.factory.makeBinaryPackageRelease(
+            binarypackagename=bpn,
+            version="1.0",
+            ci_build=ci_build,
+            binpackageformat=BinaryPackageFormat.GENERIC,
+            user_defined_fields=[("name", "foo"), ("version", "1.0")],
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpr,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-binary"
+            ),
+            filetype=BinaryPackageFileType.GENERIC,
+        )
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            binarypackagerelease=bpr,
+            archive=pool.archive,
+            distroarchseries=dases[0],
+            pocket=PackagePublishingPocket.RELEASE,
+            architecturespecific=True,
+            channel="edge",
+        )
+        bpphs = [bpph]
+        bpphs.append(
+            getUtility(IPublishingSet).copyBinaries(
+                pool.archive,
+                dses[1],
+                PackagePublishingPocket.RELEASE,
+                [bpph],
+                channel="edge",
+            )[0]
+        )
+        transaction.commit()
+        pool.addFile(None, bpph.pool_name, bpph.pool_version, bpf)
+        path = pool.rootpath / "foo" / "1.0" / "test-binary"
         self.assertTrue(path.exists())
         self.assertFalse(path.is_symlink())
         self.assertEqual(
