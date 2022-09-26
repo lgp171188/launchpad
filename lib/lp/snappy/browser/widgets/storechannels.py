@@ -14,6 +14,8 @@ from zope.schema import Bool, Choice, TextLine
 
 from lp.app.errors import UnexpectedFormData
 from lp.app.validators import LaunchpadValidationError
+from lp.charms.interfaces.charmrecipe import ICharmRecipe
+from lp.registry.enums import StoreRisk
 from lp.services.channels import (
     CHANNEL_COMPONENTS_DELIMITER,
     channel_list_to_string,
@@ -42,8 +44,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         return "%s_%d" % (name, channel_index)
 
     def is_edit(self):
-        if "+edit" in self.request["PATH_INFO"]:
-            return True
+        if ICharmRecipe.providedBy(self.context.context):
+            if len(self.context.context.store_channels) >= 1:
+                return True
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
@@ -60,6 +63,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                     __name__="add_risk",
                     title="Risk",
                     required=False,
+                    default=StoreRisk.EDGE,
                     vocabulary="SnapStoreChannel",
                 ),
                 TextLine(
@@ -80,6 +84,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                         Choice(
                             __name__=self._getFieldName("risk", index),
                             required=False,
+                            default=StoreRisk.EDGE,
                             vocabulary="SnapStoreChannel",
                         ),
                         TextLine(
@@ -104,15 +109,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                     prefix=self.name,
                 )
 
-        # self.add_risk_widget = CustomWidgetFactory(
-        #     LaunchpadRadioWidget, orientation="horizontal"
-        # )
         self._widgets_set_up = True
-
-    # @property
-    # def has_risks_vocabulary(self):
-    #     add_risk_widget = getattr(self, "risk_widget", None)
-    #     return add_risk_widget and bool(add_risk_widget.vocabulary)
 
     def setRenderedValue(self, value):
         """See `IWidget`."""
@@ -134,7 +131,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 delete_widget.display_label = False
         else:
             self.add_track_widget.setRenderedValue(None)
-            self.add_risk_widget.setRenderedValue(None)
+            self.add_risk_widget.setRenderedValue(2)
             self.add_branch_widget.setRenderedValue(None)
 
     def hasInput(self):
@@ -151,12 +148,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         except UnexpectedFormData:
             return False
 
-    def getInputValue(self):
-        """See `IInputWidget`."""
-        self.setUpSubWidgets()
-        track = self.add_track_widget.getInputValue()
-        risk = self.add_risk_widget.getInputValue()
-        branch = self.add_branch_widget.getInputValue()
+    def get_list(self, track, risk, branch):
         if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
                 CHANNEL_COMPONENTS_DELIMITER
@@ -171,9 +163,35 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg)
             )
-        channels = channel_list_to_string(track, risk, branch)
+        return channel_list_to_string(track, risk, branch)
 
-        return channels
+    def getInputValue(self):
+        """See `IInputWidget`."""
+        self.setUpSubWidgets()
+        store_channels = []
+        track = self.add_track_widget.getInputValue()
+        risk = self.add_risk_widget.getInputValue()
+        branch = self.add_branch_widget.getInputValue()
+        add_row = self.get_list(track, risk, branch)
+        if add_row:
+            store_channels.append(add_row)
+
+        if self.is_edit():
+            for index in range(len(self.context.context.store_channels)):
+                track = getattr(
+                    self, "track_%s_widget" % index
+                ).getInputValue()
+                risk = getattr(self, "risk_%s_widget" % index).getInputValue()
+                branch = getattr(
+                    self, "branch_%s_widget" % index
+                ).getInputValue()
+                delete = getattr(
+                    self, "delete_%s_widget" % index
+                ).getInputValue()
+                if not delete:
+                    store_channels.append(self.get_list(track, risk, branch))
+
+        return store_channels
 
     def error(self):
         """See `IBrowserWidget`."""

@@ -56,13 +56,13 @@
                         edit_risk string:risk_${channel_index}_widget;
                         delete string:delete_${channel_index}_widget">
               <tr tal:attributes="class string:channel-row ${parity}">
-                <td class="channel-row-branch"
-                    tal:define="widget nocall:view/?edit_risk">
-                  <metal:block
-                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-                </td>
                 <td class="channel-row-track"
                     tal:define="widget nocall:view/?edit_track">
+                  <metal:block
+                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+                </td>              
+                <td class="channel-row-branch"
+                    tal:define="widget nocall:view/?edit_risk">
                   <metal:block
                       use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
                 </td>

@@ -322,7 +322,6 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     custom_widget_git_ref = GitRefWidget
     custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
-    # store_channels_data = []
 
     @property
     def field_names(self):
@@ -389,7 +388,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
             auto_build_channels=data["auto_build_channels"],
             store_upload=data["store_upload"],
             store_name=data["store_name"],
-            store_channels=[data.get("store_channels")],
+            store_channels=data.get("store_channels"),
         )
         if data["store_upload"]:
             self.requestAuthorization(recipe)
@@ -411,22 +410,6 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
                     "There is already a charm recipe owned by %s in %s with "
                     "this name." % (owner.display_name, project.display_name),
                 )
-
-    # def _getFieldName(self, name, store_channel_index):
-    #     suffix = ".%s" % store_channel_index
-    #     return name + suffix
-    #
-    # def parseData(self, data):
-    #     track, risk, branch = data[0].split("/")
-    #     self.store_channels_data.append(data[0])
-    #     return self.store_channels_data
-
-    # @action("Save store channel data", name="add")
-    # def add_action(self, action, data):
-    #     self.parseData(data["store_channels"])
-    #     self.next_url = canonical_url(
-    #         self.context, view_name="+new-charm-recipe"
-    #     )
 
 
 class BaseCharmRecipeEditView(
@@ -490,12 +473,12 @@ class BaseCharmRecipeEditView(
                 del data["store_name"]
             if "store_channels" in data:
                 del data["store_channels"]
-        # need_charmhub_reauth = self._needCharmhubReauth(data)
+        need_charmhub_reauth = self._needCharmhubReauth(data)
         self.updateContextFromData(data)
-        # if need_charmhub_reauth:
-        #     self.requestAuthorization(self.context)
-        # else:
-        #     self.next_url = canonical_url(self.context)
+        if need_charmhub_reauth:
+            self.requestAuthorization(self.context)
+        else:
+            self.next_url = canonical_url(self.context)
 
     @property
     def adapters(self):

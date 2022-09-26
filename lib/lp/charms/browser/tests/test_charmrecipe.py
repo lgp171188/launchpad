@@ -633,17 +633,23 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="field.auto_build_channels.charmcraft"
         ).value = "edge"
         browser.getControl(name="field.store_name").value = "new-store-name"
-        browser.getControl(name="field.add_track").value = "new-track"
-        browser.getControl(name="field.add_branch").value = "new-branch"
-        browser.getControl(name="field.add_risks").value = ["edge"]
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "new-track"
+        browser.getControl(
+            name="field.store_channels.add_branch"
+        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.add_risk").value = [
+            "edge"
+        ]
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
         self.assertThat(
             "Store channels:\n"
-            "track1/stable/branch1, track2/edge/branch1, "
-            "new-track/edge/new-branch"
+            "new-track/edge/new-branch, track1/stable/branch1, "
+            "track2/edge/branch1"
             "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),
         )
@@ -732,9 +738,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             MatchesTagText(content, "auto_build_channels"),
         )
 
-    def test_edit_recipe_delete_store_channel(self):
-        # Verify we can delete a row in the store channels list:
-        # specifically the second one: "track2/edge/branch1"
+    def test_edit_recipe_delete_store_channel_list(self):
+        # Verify we can edit the first store channel defined for this recipe
+        # from "track1/stable/branch1" to "new-track/candidate/new-branch"
         [old_git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person,
@@ -760,34 +766,15 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl(
             "Automatically build when branch changes"
         ).selected = True
-        browser.getControl(
-            name="field.auto_build_channels.charmcraft"
-        ).value = "edge"
-        browser.getControl(name="field.delete.1").value = 1
+        browser.getControl(name="field.store_channels.delete_0").value = 1
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
 
         self.assertThat(
-            "Store channels:\n" "track1/stable/branch1" "\nEdit charm recipe",
+            "Store channels:\n" "track2/edge/branch1" "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),
-        )
-
-        self.assertEqual("new-name", extract_text(content.h1))
-        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
-        self.assertThat(
-            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
-            MatchesTagText(content, "source"),
-        )
-        self.assertThat(
-            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"),
-        )
-        self.assertThat(
-            "Source snap channels for automatic builds:\nEdit charm recipe\n"
-            "charmcraft\nedge",
-            MatchesTagText(content, "auto_build_channels"),
         )
 
     def test_edit_recipe_sets_date_last_modified(self):
