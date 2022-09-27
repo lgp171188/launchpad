@@ -629,7 +629,9 @@ class TestSnapAddView(BaseTestSnapView):
             "Registered store package name"
         ).value = "store-name"
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(name="field.store_channels.track").value = "track"
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "track"
         browser.getControl("Edge").selected = True
         root_macaroon = Macaroon()
         root_macaroon.add_third_party_caveat(
@@ -1678,10 +1680,18 @@ class TestSnapEditView(BaseTestSnapView):
         view_url = canonical_url(snap, view_name="+edit")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl("Registered store package name").value = "two"
-        self.assertEqual("track", browser.getControl("Track").value)
-        self.assertTrue(browser.getControl("Edge").selected)
-        browser.getControl("Track").value = ""
-        browser.getControl("Stable").selected = True
+        self.assertEqual(
+            "track",
+            browser.getControl(name="field.store_channels.track_0").value,
+        )
+        self.assertEqual(
+            ["edge"],
+            browser.getControl(name="field.store_channels.risk_0").value,
+        )
+        browser.getControl(name="field.store_channels.track_0").value = ""
+        browser.getControl(name="field.store_channels.risk_0").value = [
+            "stable"
+        ]
         root_macaroon = Macaroon()
         root_macaroon.add_third_party_caveat(
             urlsplit(config.launchpad.openid_provider_root).netloc, "", "dummy"
@@ -1700,7 +1710,7 @@ class TestSnapEditView(BaseTestSnapView):
             MatchesStructure.byEquality(
                 store_name="two",
                 store_secrets={"root": root_macaroon_raw},
-                store_channels=["stable", "edge"],
+                store_channels=["stable"],
             ),
         )
         [call] = responses.calls

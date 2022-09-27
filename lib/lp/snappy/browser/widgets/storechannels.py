@@ -25,6 +25,7 @@ from lp.services.webapp.interfaces import (
     IAlwaysSubmittedWidget,
     ISingleLineWidgetLayout,
 )
+from lp.snappy.interfaces.snap import ISnap
 
 
 @implementer(ISingleLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
@@ -44,7 +45,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         return "%s_%d" % (name, channel_index)
 
     def is_edit(self):
-        if ICharmRecipe.providedBy(self.context.context):
+        if ICharmRecipe.providedBy(self.context.context) or ISnap.providedBy(
+            self.context.context
+        ):
             if len(self.context.context.store_channels) >= 1:
                 return True
 
