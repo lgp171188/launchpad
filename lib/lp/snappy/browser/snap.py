@@ -742,12 +742,10 @@ class SnapAddView(
             store_channels=data.get("store_channels"),
             **kwargs,
         )
-        # if data["store_upload"]:
-        #     self.requestAuthorization(snap)
-        # else:
-        #     self.next_url = canonical_url(snap)
-
-        self.next_url = canonical_url(snap)
+        if data["store_upload"]:
+            self.requestAuthorization(snap)
+        else:
+            self.next_url = canonical_url(snap)
 
     def validate(self, data):
         super().validate(data)
