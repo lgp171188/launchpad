@@ -70,12 +70,6 @@ has to be refreshed.
 XXX: statik 2007-10-18 bug=154114: We don't yet normalize case in
 query strings.
 
-    >>> from lp.services.config import config
-    >>> bug_search_feed_data = """
-    ...     [launchpad]
-    ...     is_bug_search_feed_active: True
-    ...     """
-    >>> config.push("bug_search_feed_data", bug_search_feed_data)
     >>> browser.open(
     ...     "http://feeds.launchpad.test/bugs/+bugs.atom?"
     ...     "field.scope=all&search=Search+Bug+Reports&aaa=foo"
@@ -148,10 +142,6 @@ These html feeds should only exist on feeds.launchpad.test:
     ...     "field.searchtext=&search=Search+Bug+Reports&"
     ...     "field.scope=all&field.scope.target="
     ... )
-
-Revert configuration change after tests are finished.
-
-    >>> config_data = config.pop("bug_search_feed_data")
 
 
 Favicon

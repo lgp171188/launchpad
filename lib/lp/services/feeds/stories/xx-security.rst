@@ -33,12 +33,6 @@ There should be zero entries in these feeds, since all the bugs are private.
     >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
 
-    >>> from lp.services.config import config
-    >>> bug_search_feed_data = """
-    ...     [launchpad]
-    ...     is_bug_search_feed_active: True
-    ...     """
-    >>> config.push("bug_search_feed_data", bug_search_feed_data)
     >>> browser.open(
     ...     "http://feeds.launchpad.test/bugs/+bugs.atom?"
     ...     "field.searchtext=&search=Search+Bug+Reports&"
@@ -95,7 +89,3 @@ these HTML feeds, since all the bugs are private.
     ...
     >>> BeautifulSoup(browser.contents, "xml")("entry")
     []
-
-Revert configuration change after tests are finished.
-
-    >>> config_data = config.pop("bug_search_feed_data")
