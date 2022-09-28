@@ -186,14 +186,17 @@ class TestCVE(TestCaseWithFactory):
             status=SeriesStatus.DEVELOPMENT,
             name="kinetic",
         )
-        product_1 = self.factory.makeProduct()
-        product_2 = self.factory.makeProduct()
-        dsp1 = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=product_1.name, distribution=ubuntu
-        )
-        dsp2 = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=product_2.name, distribution=ubuntu
-        )
+        dsp1 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        dsp2 = self.factory.makeDistributionSourcePackage(distribution=ubuntu)
+        product_1 = self.factory.makePackagingLink(
+            sourcepackagename=dsp1.sourcepackagename,
+            distroseries=current_series,
+        ).productseries.product
+        product_2 = self.factory.makePackagingLink(
+            sourcepackagename=dsp2.sourcepackagename,
+            distroseries=current_series,
+        ).productseries.product
+
         assignee = self.factory.makePerson()
 
         self.uct_record = UCTRecord(
@@ -307,65 +310,73 @@ class TestCVE(TestCaseWithFactory):
             ),
             distro_packages=[
                 CVE.DistroPackage(
-                    package=dsp1,
+                    target=dsp1,
                     importance=None,
+                    package_name=dsp1.sourcepackagename,
                 ),
                 CVE.DistroPackage(
-                    package=dsp2,
+                    target=dsp2,
                     importance=BugTaskImportance.HIGH,
+                    package_name=dsp2.sourcepackagename,
                 ),
             ],
             series_packages=[
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp1.sourcepackagename,
                         distroseries=supported_series,
                     ),
+                    package_name=dsp1.sourcepackagename,
                     importance=BugTaskImportance.MEDIUM,
                     status=BugTaskStatus.INVALID,
                     status_explanation="reason 1",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp1.sourcepackagename,
                         distroseries=current_series,
                     ),
+                    package_name=dsp1.sourcepackagename,
                     importance=BugTaskImportance.MEDIUM,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="reason 2",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp1.sourcepackagename,
                         distroseries=devel_series,
                     ),
+                    package_name=dsp1.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="reason 3",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp2.sourcepackagename,
                         distroseries=supported_series,
                     ),
+                    package_name=dsp2.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.DOESNOTEXIST,
                     status_explanation="",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp2.sourcepackagename,
                         distroseries=current_series,
                     ),
+                    package_name=dsp2.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.DOESNOTEXIST,
                     status_explanation="",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=dsp2.sourcepackagename,
                         distroseries=devel_series,
                     ),
+                    package_name=dsp2.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="",
@@ -373,13 +384,15 @@ class TestCVE(TestCaseWithFactory):
             ],
             upstream_packages=[
                 CVE.UpstreamPackage(
-                    package=product_1,
+                    target=product_1,
+                    package_name=dsp1.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="reason 4",
                 ),
-                CVE.SeriesPackage(
-                    package=product_2,
+                CVE.UpstreamPackage(
+                    target=product_2,
+                    package_name=dsp2.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="",
@@ -450,14 +463,21 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             status=SeriesStatus.CURRENT,
             name="trusty",
         )
-        self.product_1 = self.factory.makeProduct()
-        self.product_2 = self.factory.makeProduct()
         self.ubuntu_package = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=self.product_1.name, distribution=self.ubuntu
+            distribution=self.ubuntu
         )
         self.esm_package = self.factory.makeDistributionSourcePackage(
-            sourcepackagename=self.product_2.name, distribution=self.esm
+            distribution=self.esm
         )
+        self.product_1 = self.factory.makePackagingLink(
+            sourcepackagename=self.ubuntu_package.sourcepackagename,
+            distroseries=self.ubuntu_current_series,
+        ).productseries.product
+        self.product_2 = self.factory.makePackagingLink(
+            sourcepackagename=self.esm_package.sourcepackagename,
+            distroseries=self.esm_current_series,
+        ).productseries.product
+
         for series in (
             self.ubuntu_supported_series,
             self.ubuntu_current_series,
@@ -493,56 +513,63 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             ),
             distro_packages=[
                 CVE.DistroPackage(
-                    package=self.ubuntu_package,
+                    target=self.ubuntu_package,
                     importance=BugTaskImportance.LOW,
+                    package_name=self.ubuntu_package.sourcepackagename,
                 ),
                 CVE.DistroPackage(
-                    package=self.esm_package,
+                    target=self.esm_package,
                     importance=None,
+                    package_name=self.esm_package.sourcepackagename,
                 ),
             ],
             series_packages=[
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
                         distroseries=self.ubuntu_supported_series,
                     ),
+                    package_name=self.ubuntu_package.sourcepackagename,
                     importance=BugTaskImportance.HIGH,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="released",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
                         distroseries=self.ubuntu_current_series,
                     ),
+                    package_name=self.ubuntu_package.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.DOESNOTEXIST,
                     status_explanation="does not exist",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=self.ubuntu_package.sourcepackagename,  # noqa: E501
                         distroseries=self.ubuntu_devel_series,
                     ),
+                    package_name=self.ubuntu_package.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.INVALID,
                     status_explanation="not affected",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=self.esm_package.sourcepackagename,
                         distroseries=self.esm_supported_series,
                     ),
+                    package_name=self.esm_package.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.WONTFIX,
                     status_explanation="ignored",
                 ),
                 CVE.SeriesPackage(
-                    package=SourcePackage(
+                    target=SourcePackage(
                         sourcepackagename=self.esm_package.sourcepackagename,
                         distroseries=self.esm_current_series,
                     ),
+                    package_name=self.esm_package.sourcepackagename,
                     importance=None,
                     status=BugTaskStatus.UNKNOWN,
                     status_explanation="needs triage",
@@ -550,13 +577,15 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             ],
             upstream_packages=[
                 CVE.UpstreamPackage(
-                    package=self.product_1,
+                    target=self.product_1,
+                    package_name=self.ubuntu_package.sourcepackagename,
                     importance=BugTaskImportance.HIGH,
                     status=BugTaskStatus.FIXRELEASED,
                     status_explanation="fix released",
                 ),
                 CVE.UpstreamPackage(
-                    package=self.product_2,
+                    target=self.product_2,
+                    package_name=self.esm_package.sourcepackagename,
                     importance=BugTaskImportance.LOW,
                     status=BugTaskStatus.WONTFIX,
                     status_explanation="ignored",
@@ -615,11 +644,11 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         package_importances = {}
 
         for distro_package in cve.distro_packages:
-            self.assertIn(distro_package.package, bug_tasks_by_target)
-            t = bug_tasks_by_target[distro_package.package]
+            self.assertIn(distro_package.target, bug_tasks_by_target)
+            t = bug_tasks_by_target[distro_package.target]
             package_importance = distro_package.importance or cve.importance
             package_importances[
-                distro_package.package.sourcepackagename.name
+                distro_package.target.sourcepackagename.name
             ] = package_importance
             conjoined_primary = t.conjoined_primary
             if conjoined_primary:
@@ -633,10 +662,10 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             self.assertIsNone(t.status_explanation)
 
         for series_package in cve.series_packages:
-            self.assertIn(series_package.package, bug_tasks_by_target)
-            t = bug_tasks_by_target[series_package.package]
+            self.assertIn(series_package.target, bug_tasks_by_target)
+            t = bug_tasks_by_target[series_package.target]
             package_importance = package_importances[
-                series_package.package.sourcepackagename.name
+                series_package.target.sourcepackagename.name
             ]
             sp_importance = series_package.importance or package_importance
             self.assertEqual(sp_importance, t.importance)
@@ -646,10 +675,10 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             )
 
         for upstream_package in cve.upstream_packages:
-            self.assertIn(upstream_package.package, bug_tasks_by_target)
-            t = bug_tasks_by_target[upstream_package.package]
+            self.assertIn(upstream_package.target, bug_tasks_by_target)
+            t = bug_tasks_by_target[upstream_package.target]
             package_importance = package_importances[
-                upstream_package.package.name
+                upstream_package.package_name.name
             ]
             sp_importance = upstream_package.importance or package_importance
             self.assertEqual(sp_importance, t.importance)
@@ -787,16 +816,18 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         cve.distro_packages.append(
             CVE.DistroPackage(
-                package=package,
+                target=package,
+                package_name=package.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
             )
         )
         cve.series_packages.append(
             CVE.SeriesPackage(
-                package=SourcePackage(
+                target=SourcePackage(
                     sourcepackagename=package.sourcepackagename,
                     distroseries=self.ubuntu_current_series,
                 ),
+                package_name=package.sourcepackagename,
                 importance=BugTaskImportance.CRITICAL,
                 status=BugTaskStatus.FIXRELEASED,
                 status_explanation="fix released",
@@ -823,10 +854,11 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         cve.series_packages.append(
             CVE.SeriesPackage(
-                package=SourcePackage(
+                target=SourcePackage(
                     sourcepackagename=self.ubuntu_package.sourcepackagename,
                     distroseries=new_series,
                 ),
+                package_name=self.ubuntu_package.sourcepackagename,
                 importance=BugTaskImportance.CRITICAL,
                 status=BugTaskStatus.FIXRELEASED,
                 status_explanation="fix released",
@@ -856,16 +888,18 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         cve.distro_packages.append(
             CVE.DistroPackage(
-                package=new_dsp,
+                target=new_dsp,
+                package_name=new_dsp.sourcepackagename,
                 importance=BugTaskImportance.HIGH,
             )
         )
         cve.series_packages.append(
             CVE.SeriesPackage(
-                package=SourcePackage(
+                target=SourcePackage(
                     sourcepackagename=new_dsp.sourcepackagename,
                     distroseries=new_series,
                 ),
+                package_name=new_dsp.sourcepackagename,
                 importance=BugTaskImportance.CRITICAL,
                 status=BugTaskStatus.FIXRELEASED,
                 status_explanation="fix released",
