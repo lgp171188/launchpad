@@ -5804,7 +5804,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         description=None,
         cvestate=CveStatus.CANDIDATE,
         date_made_public=None,
-        discoverer=None,
+        discovered_by=None,
         cvss=None,
     ):
         """Create a new CVE record."""
@@ -5812,7 +5812,12 @@ class LaunchpadObjectFactory(ObjectFactory):
             description = self.getUniqueUnicode()
 
         return getUtility(ICveSet).new(
-            sequence, description, cvestate, date_made_public, discoverer, cvss
+            sequence,
+            description,
+            cvestate,
+            date_made_public,
+            discovered_by,
+            cvss,
         )
 
     def makePublisherConfig(

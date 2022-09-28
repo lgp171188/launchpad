@@ -165,13 +165,12 @@ class TestCve(TestCaseWithFactory):
                 status=CveStatus.CANDIDATE,
                 description="A critical vulnerability",
                 date_made_public=None,
-                discoverer=None,
+                discovered_by=None,
                 cvss={},
             ),
         )
 
     def test_cveset_new_method_parameters(self):
-        person = self.factory.makePerson()
         today = datetime.now(tz=pytz.UTC)
         cvss = {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
         cve = getUtility(ICveSet).new(
@@ -179,7 +178,7 @@ class TestCve(TestCaseWithFactory):
             description="A critical vulnerability",
             status=CveStatus.CANDIDATE,
             date_made_public=today,
-            discoverer=person,
+            discovered_by="A person",
             cvss=cvss,
         )
         self.assertThat(
@@ -189,7 +188,7 @@ class TestCve(TestCaseWithFactory):
                 status=CveStatus.CANDIDATE,
                 description="A critical vulnerability",
                 date_made_public=today,
-                discoverer=person,
+                discovered_by="A person",
                 cvss=cvss,
             ),
         )
@@ -210,18 +209,6 @@ class TestCve(TestCaseWithFactory):
         for invalid_value in invalid_values:
             with ExpectedException(TypeError, "Expected datetime,.*"):
                 removeSecurityProxy(cve).date_made_public = invalid_value
-
-    def test_cve_discoverer_id_invalid_values(self):
-        invalid_values = ["", "abcd", "2022-01-01", datetime.now()]
-
-        cve = self.factory.makeCVE(
-            sequence="2099-1234",
-            description="A critical vulnerability",
-            cvestate=CveStatus.CANDIDATE,
-        )
-        for invalid_value in invalid_values:
-            with ExpectedException(TypeError, "Expected int,.*"):
-                removeSecurityProxy(cve).discoverer_id = invalid_value
 
     def test_cve_cvss_invalid_values(self):
         invalid_values = ["", "abcd", "2022-01-01", datetime.now()]
