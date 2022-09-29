@@ -41,3 +41,17 @@ class IArchiveAPI(Interface):
             is not equal to the selected token for this archive; otherwise
             None.
         """
+
+    def translatePath(archive_reference, path):
+        """Find the librarian URL for a relative path within an archive.
+
+        :param archive_reference: The reference form of the archive to check.
+        :param path: The relative path within the archive.  This should not
+            begin with a "/" character.
+
+        :return: A `NotFound` fault if `archive_reference` does not identify
+            an archive, or the archive's repository format is something
+            other than `ArchiveRepositoryFormat.DEBIAN`, or the path does
+            not identify a file that exists in this archive; otherwise a
+            librarian URL.
+        """

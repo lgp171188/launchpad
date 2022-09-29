@@ -88,6 +88,7 @@ class IArchiveFileSet(Interface):
         archive,
         container=None,
         path=None,
+        sha256=None,
         only_condemned=False,
         eager_load=False,
     ):
@@ -96,6 +97,10 @@ class IArchiveFileSet(Interface):
         :param archive: Return files in this `IArchive`.
         :param container: Return only files with this container.
         :param path: Return only files with this path.
+        :param path_parent: Return only files whose immediate parent
+            directory is this path.
+        :param sha256: If not None, return only files with this SHA-256
+            checksum.
         :param only_condemned: If True, return only files with a
             scheduled_deletion_date set.
         :param eager_load: If True, preload related `LibraryFileAlias` and

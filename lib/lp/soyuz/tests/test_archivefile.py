@@ -117,6 +117,42 @@ class TestArchiveFile(TestCaseWithFactory):
             [archive_files[2]],
             archive_file_set.getByArchive(archives[1], only_condemned=True),
         )
+        self.assertContentEqual(
+            [archive_files[0]],
+            archive_file_set.getByArchive(
+                archives[0],
+                sha256=archive_files[0].library_file.content.sha256,
+            ),
+        )
+        self.assertContentEqual(
+            [], archive_file_set.getByArchive(archives[0], sha256="nonsense")
+        )
+
+    def test_getByArchive_path_parent(self):
+        archive = self.factory.makeArchive()
+        archive_files = [
+            self.factory.makeArchiveFile(archive=archive, path=path)
+            for path in (
+                "dists/jammy/InRelease",
+                "dists/jammy/Release",
+                "dists/jammy/main/binary-amd64/Release",
+            )
+        ]
+        archive_file_set = getUtility(IArchiveFileSet)
+        self.assertContentEqual(
+            archive_files[:2],
+            archive_file_set.getByArchive(archive, path_parent="dists/jammy"),
+        )
+        self.assertContentEqual(
+            [archive_files[2]],
+            archive_file_set.getByArchive(
+                archive, path_parent="dists/jammy/main/binary-amd64"
+            ),
+        )
+        self.assertContentEqual(
+            [],
+            archive_file_set.getByArchive(archive, path_parent="dists/xenial"),
+        )
 
     def test_scheduleDeletion(self):
         archive_files = [self.factory.makeArchiveFile() for _ in range(3)]
