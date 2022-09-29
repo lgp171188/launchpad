@@ -225,7 +225,7 @@ def LaunchpadDatabasePolicyFactory(request):
     # to sniff the request this way.  Even though PATH_INFO is always
     # present in real requests, we need to tread carefully (``get``) because
     # of test requests in our automated tests.
-    if request.get("PATH_INFO") in ["/+opstats", "/+haproxy"]:
+    if request.get("PATH_INFO") == "/+opstats":
         return DatabaseBlockedPolicy(request)
     else:
         return LaunchpadDatabasePolicy(request)
