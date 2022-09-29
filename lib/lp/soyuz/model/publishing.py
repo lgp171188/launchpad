@@ -648,8 +648,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
             SourcePackageReleaseFile.sourcepackagerelease
-            == SourcePackageRelease.id,
-            SourcePackageRelease.id == self.sourcepackagereleaseID,
+            == self.sourcepackagereleaseID,
         )
         source_urls = proxied_source_urls(
             [source for source, _ in sources], self
@@ -1243,8 +1242,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             (LibraryFileAlias, LibraryFileContent),
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
-            BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
-            BinaryPackageRelease.id == self.binarypackagereleaseID,
+            BinaryPackageFile.binarypackagerelease
+            == self.binarypackagereleaseID,
         )
         binary_urls = proxied_urls(
             [binary for binary, _ in binaries], self.archive
