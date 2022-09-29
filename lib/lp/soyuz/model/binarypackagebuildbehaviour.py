@@ -76,7 +76,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
                 "sha1": lfa.content.sha1,
                 "url": lfa.getURL(),
             }
-            if self.build.archive.private:
+            if lfa.restricted:
                 if macaroon_raw is None:
                     macaroon_raw = yield self.issueMacaroon()
                 filemap[lfa.filename].update(

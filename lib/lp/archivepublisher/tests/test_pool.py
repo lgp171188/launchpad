@@ -4,15 +4,12 @@
 """Tests for pool.py."""
 
 import hashlib
-import shutil
-import unittest
-from pathlib import Path
-from tempfile import mkdtemp
+from pathlib import Path, PurePath
 
 from lazr.enum import EnumeratedType, Item
 from zope.interface import alsoProvides, implementer
 
-from lp.archivepublisher.diskpool import DiskPool, poolify
+from lp.archivepublisher.diskpool import DiskPool, poolify, unpoolify
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import ArchiveRepositoryFormat
 from lp.soyuz.interfaces.files import (
@@ -20,6 +17,7 @@ from lp.soyuz.interfaces.files import (
     IPackageReleaseFile,
     ISourcePackageReleaseFile,
 )
+from lp.testing import TestCase
 
 
 class FakeArchive:
@@ -148,8 +146,8 @@ class PoolTestingFile:
         return self.checkExists(component) and not self.checkIsLink(component)
 
 
-class TestPoolification(unittest.TestCase):
-    def testPoolificationOkay(self):
+class TestPoolification(TestCase):
+    def test_poolify_ok(self):
         """poolify should poolify properly"""
         cases = (
             ("foo", "main", Path("main/f/foo")),
@@ -159,18 +157,49 @@ class TestPoolification(unittest.TestCase):
         for case in cases:
             self.assertEqual(case[2], poolify(case[0], case[1]))
 
+    def test_unpoolify_ok(self):
+        cases = (
+            (PurePath("main/f/foo"), "main", "foo", None),
+            (PurePath("main/f/foo/foo_1.0.dsc"), "main", "foo", "foo_1.0.dsc"),
+            (PurePath("universe/f/foo"), "universe", "foo", None),
+            (PurePath("main/libf/libfoo"), "main", "libfoo", None),
+        )
+        for path, component, source, filename in cases:
+            self.assertEqual((component, source, filename), unpoolify(path))
 
-class TestPool(unittest.TestCase):
+    def test_unpoolify_too_short(self):
+        self.assertRaisesWithContent(
+            ValueError,
+            "Path 'main' is not in a valid pool form",
+            unpoolify,
+            PurePath("main"),
+        )
+
+    def test_unpoolify_too_long(self):
+        self.assertRaisesWithContent(
+            ValueError,
+            "Path 'main/f/foo/bar/baz' is not in a valid pool form",
+            unpoolify,
+            PurePath("main/f/foo/bar/baz"),
+        )
+
+    def test_unpoolify_prefix_mismatch(self):
+        self.assertRaisesWithContent(
+            ValueError,
+            "Source prefix 'a' does not match source 'foo'",
+            unpoolify,
+            PurePath("main/a/foo"),
+        )
+
+
+class TestPool(TestCase):
     def setUp(self):
-        self.pool_path = mkdtemp()
-        self.temp_path = mkdtemp()
+        super().setUp()
+        self.pool_path = self.makeTemporaryDirectory()
+        self.temp_path = self.makeTemporaryDirectory()
         self.pool = DiskPool(
             FakeArchive(), self.pool_path, self.temp_path, BufferLogger()
         )
-
-    def tearDown(self):
-        shutil.rmtree(self.pool_path)
-        shutil.rmtree(self.temp_path)
 
     def testSimpleAdd(self):
         """Adding a new file should work."""

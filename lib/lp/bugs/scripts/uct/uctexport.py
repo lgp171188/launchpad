@@ -4,7 +4,7 @@
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -20,6 +20,7 @@ from lp.registry.model.distributionsourcepackage import (
 )
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackage import SourcePackage
+from lp.registry.model.sourcepackagename import SourcePackageName
 
 __all__ = [
     "UCTExporter",
@@ -112,6 +113,7 @@ class UCTExporter:
         #  DistroPackage importance
         package_importances = {}
 
+        package_name_by_product = {}  # type: Dict[Product, SourcePackageName]
         # We need to process all distribution package tasks before processing
         # the distro-series tasks to collect importance value for each package.
         distro_packages = []
@@ -119,11 +121,20 @@ class UCTExporter:
             target = removeSecurityProxy(bug_task.target)
             if not isinstance(target, DistributionSourcePackage):
                 continue
+            # This is the `Product` corresponding to the package of this
+            # name with the highest version across any of this
+            # distribution's series that has a packaging link
+            # (it can make a difference if a package name switches to a
+            # different upstream project between series)
+            product = target.upstream_product
+            if product:
+                package_name_by_product[product] = target.sourcepackagename
             dp_importance = bug_task.importance
             package_importances[target.sourcepackagename] = dp_importance
             distro_packages.append(
                 CVE.DistroPackage(
-                    package=target,
+                    target=target,
+                    package_name=target.sourcepackagename,
                     importance=(
                         dp_importance
                         if dp_importance != cve_importance
@@ -141,7 +152,8 @@ class UCTExporter:
             package_importance = package_importances[target.sourcepackagename]
             series_packages.append(
                 CVE.SeriesPackage(
-                    package=target,
+                    target=target,
+                    package_name=target.sourcepackagename,
                     importance=(
                         sp_importance
                         if sp_importance != package_importance
@@ -157,11 +169,19 @@ class UCTExporter:
             target = removeSecurityProxy(bug_task.target)
             if not isinstance(target, Product):
                 continue
+            if target not in package_name_by_product:
+                logger.warning(
+                    "Could not find a source package for product %s",
+                    target.name,
+                )
+                continue
+            package_name = package_name_by_product[target]
             up_importance = bug_task.importance
             package_importance = package_importances.get(target.name)
             upstream_packages.append(
                 CVE.UpstreamPackage(
-                    package=target,
+                    target=target,
+                    package_name=package_name,
                     importance=(
                         up_importance
                         if up_importance != package_importance
@@ -183,7 +203,7 @@ class UCTExporter:
             importance=cve_importance,
             status=vulnerability.status,
             assignee=bug_tasks[0].assignee,
-            discovered_by="",  # TODO: fix this
+            discovered_by=lp_cve.discovered_by or "",
             description=parsed_description.description,
             ubuntu_description=vulnerability.description,
             bug_urls=bug_urls,

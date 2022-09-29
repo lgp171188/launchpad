@@ -22,7 +22,6 @@ from zope.schema import Choice, Datetime, Dict, Int, Text, TextLine
 
 from lp import _
 from lp.app.validators.validation import valid_cve_sequence
-from lp.services.fields import PersonChoice
 
 
 class CveStatus(DBEnumeratedType):
@@ -154,12 +153,14 @@ class ICve(Interface):
         as_of="devel",
     )
 
-    discoverer = exported(
-        PersonChoice(
-            title=_("Discoverer"),
+    discovered_by = exported(
+        TextLine(
+            title=_("Discovered by"),
+            description=_(
+                "The name of person(s) or organization that discovered the CVE"
+            ),
             required=False,
             readonly=True,
-            vocabulary="ValidPerson",
         ),
         as_of="devel",
     )
@@ -206,7 +207,7 @@ class ICveSet(Interface):
         description,
         cvestate=CveStatus.CANDIDATE,
         date_made_public=None,
-        discoverer=None,
+        discovered_by=None,
         cvss=None,
     ):
         """Create a new ICve."""

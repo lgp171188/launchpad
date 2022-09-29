@@ -26,6 +26,7 @@ from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.revisionstatus import (
     IRevisionStatusArtifact,
     IRevisionStatusArtifactSet,
+    IRevisionStatusReport,
 )
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
@@ -305,6 +306,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
         BinaryPackageFormat.WHL: BinaryPackageFileType.WHL,
         BinaryPackageFormat.CONDA_V1: BinaryPackageFileType.CONDA_V1,
         BinaryPackageFormat.CONDA_V2: BinaryPackageFileType.CONDA_V2,
+        BinaryPackageFormat.GENERIC: BinaryPackageFileType.GENERIC,
     }
 
     # We're only interested in uploading certain kinds of packages to
@@ -327,6 +329,10 @@ class CIBuildUploadJob(ArchiveJobDerived):
             SourcePackageFileType.GO_MODULE_INFO,
             SourcePackageFileType.GO_MODULE_MOD,
             SourcePackageFileType.GO_MODULE_ZIP,
+        },
+        ArchiveRepositoryFormat.GENERIC: {
+            SourcePackageFileType.GENERIC,
+            BinaryPackageFormat.GENERIC,
         },
     }
 
@@ -411,7 +417,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
-    def _scanWheel(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+    def _scanWheel(
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
             if not path.name.endswith(".whl"):
@@ -436,7 +444,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
             )
         return all_metadata
 
-    def _scanSDist(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+    def _scanSDist(
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
             if not path.name.endswith((".tar.gz", ".zip")):
@@ -484,7 +494,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
         )
 
     def _scanCondaV1(
-        self, paths: Iterable[Path]
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
     ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
@@ -510,7 +520,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
         return all_metadata
 
     def _scanCondaV2(
-        self, paths: Iterable[Path]
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
     ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
@@ -542,7 +552,9 @@ class CIBuildUploadJob(ArchiveJobDerived):
             )
         return all_metadata
 
-    def _scanGoMod(self, paths: Iterable[Path]) -> Dict[str, ArtifactMetadata]:
+    def _scanGoMod(
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
         all_metadata = {}
         for path in paths:
             if not path.name.endswith(".mod"):
@@ -601,18 +613,54 @@ class CIBuildUploadJob(ArchiveJobDerived):
             )
         return all_metadata
 
-    def _scanFiles(self, directory: Path) -> Dict[str, ArtifactMetadata]:
+    def _scanGeneric(
+        self, report: IRevisionStatusReport, paths: Iterable[Path]
+    ) -> Dict[str, ArtifactMetadata]:
+        properties = report.properties
+        if (
+            properties is None
+            or "name" not in properties
+            or "version" not in properties
+        ):
+            return {}
+
+        all_metadata = {}
+        for path in paths:
+            if properties.get("source", False):
+                logger.info("%s is a generic source artifact", path.name)
+                all_metadata[path.name] = SourceArtifactMetadata(
+                    format=SourcePackageFileType.GENERIC,
+                    name=properties["name"],
+                    version=properties["version"],
+                )
+            else:
+                logger.info("%s is a generic binary artifact", path.name)
+                all_metadata[path.name] = BinaryArtifactMetadata(
+                    format=BinaryPackageFormat.GENERIC,
+                    name=properties["name"],
+                    version=properties["version"],
+                    summary="",
+                    description="",
+                    architecturespecific=True,
+                    homepage="",
+                )
+        return all_metadata
+
+    def _scanFiles(
+        self, report: IRevisionStatusReport, directory: Path
+    ) -> Dict[str, ArtifactMetadata]:
         scanners = (
             self._scanWheel,
             self._scanSDist,
             self._scanCondaV1,
             self._scanCondaV2,
             self._scanGoMod,
+            self._scanGeneric,
         )
         paths = [directory / child for child in directory.iterdir()]
         all_metadata = OrderedDict()
         for scanner in scanners:
-            for name, metadata in scanner(paths).items():
+            for name, metadata in scanner(report, paths).items():
                 all_metadata[name] = metadata
             paths = [path for path in paths if path.name not in all_metadata]
         return all_metadata
@@ -635,15 +683,24 @@ class CIBuildUploadJob(ArchiveJobDerived):
         with tempfile.TemporaryDirectory(prefix="ci-build-copy-job") as tmpdir:
             tmpdirpath = Path(tmpdir)
             artifact_by_name = {}
+            report_by_id = {}
             for artifact in artifacts:
                 if artifact.artifact_type == RevisionStatusArtifactType.LOG:
                     continue
                 name = artifact.library_file.filename
-                contents = str(tmpdirpath / name)
+                contents = tmpdirpath / str(artifact.report.id) / name
+                if not contents.parent.exists():
+                    contents.parent.mkdir()
                 artifact.library_file.open()
-                copy_and_close(artifact.library_file, open(contents, "wb"))
+                copy_and_close(
+                    artifact.library_file, open(str(contents), "wb")
+                )
                 artifact_by_name[name] = artifact
-            all_metadata = self._scanFiles(tmpdirpath)
+                report_by_id[str(artifact.report.id)] = artifact.report
+            all_metadata = {}
+            for report_path in sorted(tmpdirpath.iterdir()):
+                report = report_by_id[report_path.name]
+                all_metadata.update(self._scanFiles(report, report_path))
             for name, metadata in all_metadata.items():
                 if metadata.format not in allowed_formats:
                     logger.info(

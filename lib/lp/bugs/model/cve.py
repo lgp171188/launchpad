@@ -10,15 +10,7 @@ import operator
 
 import pytz
 from storm.databases.postgres import JSON
-from storm.locals import (
-    DateTime,
-    Desc,
-    Int,
-    Reference,
-    ReferenceSet,
-    Store,
-    Unicode,
-)
+from storm.locals import DateTime, Desc, Int, ReferenceSet, Store, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -60,8 +52,7 @@ class Cve(StormBase, BugLinkTargetMixin):
     )
 
     date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
-    discoverer_id = Int(name="discoverer", allow_none=True)
-    discoverer = Reference(discoverer_id, "Person.id")
+    discovered_by = Unicode(allow_none=True)
     _cvss = JSON(name="cvss", allow_none=True)
 
     @property
@@ -79,7 +70,7 @@ class Cve(StormBase, BugLinkTargetMixin):
         status,
         description,
         date_made_public=None,
-        discoverer=None,
+        discovered_by=None,
         cvss=None,
     ):
         super().__init__()
@@ -87,7 +78,7 @@ class Cve(StormBase, BugLinkTargetMixin):
         self.status = status
         self.description = description
         self.date_made_public = date_made_public
-        self.discoverer = discoverer
+        self.discovered_by = discovered_by
         self._cvss = cvss
 
     @property
@@ -178,7 +169,7 @@ class CveSet:
         description,
         status=CveStatus.CANDIDATE,
         date_made_public=None,
-        discoverer=None,
+        discovered_by=None,
         cvss=None,
     ):
         """See ICveSet."""
@@ -187,7 +178,7 @@ class CveSet:
             status=status,
             description=description,
             date_made_public=date_made_public,
-            discoverer=discoverer,
+            discovered_by=discovered_by,
             cvss=cvss,
         )
 
