@@ -7,6 +7,7 @@ import doctest
 import http.client
 import os.path
 from datetime import date, datetime, timedelta
+from pathlib import PurePath
 from urllib.parse import urlsplit
 
 import responses
@@ -3200,6 +3201,219 @@ class TestGetSourceFileByName(TestCaseWithFactory):
             orig2,
             self.archive.getSourceFileByName(
                 pub.sourcepackagename.name, "0.7-04", orig2.filename
+            ),
+        )
+
+
+class TestGetPoolFileByPath(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_file_name_too_short(self):
+        archive = self.factory.makeArchive()
+        self.assertIsNone(
+            archive.getPoolFileByPath(PurePath("pool/nonexistent"))
+        )
+
+    def test_file_name_too_long(self):
+        archive = self.factory.makeArchive()
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/main/p/package/nonexistent/path")
+            )
+        )
+
+    def test_mismatched_source_prefix(self):
+        archive = self.factory.makeArchive()
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/main/q/test-package/test-package_1.dsc")
+            )
+        )
+
+    def test_source_not_found(self):
+        archive = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/main/t/test-package/test-package_1.dsc")
+            )
+        )
+
+    def test_source_wrong_component(self):
+        archive = self.factory.makeArchive()
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/universe/t/test-package/test-package_1.dsc")
+            )
+        )
+
+    def test_source_wrong_source_package_name(self):
+        archive = self.factory.makeArchive()
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/main/o/other-package/test-package_1.dsc")
+            )
+        )
+
+    def test_source_found(self):
+        archive = self.factory.makeArchive()
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.tar.xz", db_only=True
+            ),
+        )
+        IStore(sprf).flush()
+        self.assertEqual(
+            sprf.libraryfile,
+            archive.getPoolFileByPath(
+                PurePath("pool/main/t/test-package/test-package_1.dsc")
+            ),
+        )
+
+    def test_binary_not_found(self):
+        archive = self.factory.makeArchive()
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath("pool/main/t/test-package/test-package_1_amd64.deb")
+            )
+        )
+
+    def test_binary_wrong_component(self):
+        archive = self.factory.makeArchive()
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath(
+                    "pool/universe/t/test-package/test-package_1_amd64.deb"
+                )
+            )
+        )
+
+    def test_binary_wrong_source_package_name(self):
+        archive = self.factory.makeArchive()
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        self.assertIsNone(
+            archive.getPoolFileByPath(
+                PurePath(
+                    "pool/universe/o/other-package/test-package_1_amd64.deb"
+                )
+            )
+        )
+
+    def test_binary_found(self):
+        archive = self.factory.makeArchive()
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        bpph2 = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph2.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_i386.deb", db_only=True
+            ),
+        )
+        IStore(bpf).flush()
+        self.assertEqual(
+            bpf.libraryfile,
+            archive.getPoolFileByPath(
+                PurePath("pool/main/t/test-package/test-package_1_amd64.deb")
             ),
         )
 

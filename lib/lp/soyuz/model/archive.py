@@ -14,6 +14,7 @@ __all__ = [
 import re
 import typing
 from operator import attrgetter
+from pathlib import PurePath
 
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
@@ -49,8 +50,13 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.validators.name import valid_name
 from lp.archivepublisher.debversion import Version
+from lp.archivepublisher.diskpool import unpoolify
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.archiveuploader.utils import re_isadeb, re_issource
+from lp.archiveuploader.utils import (
+    determine_binary_file_type,
+    re_isadeb,
+    re_issource,
+)
 from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -2012,6 +2018,68 @@ class Archive(SQLBase):
         if archive_file is None:
             raise NotFoundError(filename)
         return archive_file
+
+    def getPoolFileByPath(
+        self, path: PurePath
+    ) -> typing.Optional[LibraryFileAlias]:
+        """See `IArchive`."""
+        try:
+            component, source, filename = unpoolify(PurePath(*path.parts[1:]))
+        except ValueError:
+            return None
+        if filename is None:
+            return None
+
+        store = IStore(LibraryFileAlias)
+        clauses = [
+            Component.name == component,
+            SourcePackageName.name == source,
+            LibraryFileAlias.filename == filename,
+        ]
+        # Decide whether to look for source or binary publications.  We
+        # could just try both and UNION them, but this query is likely to be
+        # hot and is complex enough as it is, so don't push our luck.
+        binary = determine_binary_file_type(filename) is not None
+        if binary:
+            xPPH = BinaryPackagePublishingHistory
+            xPF = BinaryPackageFile
+            # XXX cjwatson 20220922: Simplify this once
+            # BinaryPackagePublishingHistory.sourcepackagename has finished
+            # populating.
+            clauses.extend(
+                [
+                    BinaryPackagePublishingHistory.binarypackagerelease
+                    == BinaryPackageRelease.id,
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_name
+                    == SourcePackageName.id,
+                    BinaryPackagePublishingHistory.binarypackagerelease
+                    == BinaryPackageFile.binarypackagereleaseID,
+                ]
+            )
+        else:
+            xPPH = SourcePackagePublishingHistory
+            xPF = SourcePackageReleaseFile
+            clauses.extend(
+                [
+                    SourcePackagePublishingHistory.sourcepackagename
+                    == SourcePackageName.id,
+                    SourcePackagePublishingHistory.sourcepackagerelease
+                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                ]
+            )
+        clauses.extend(
+            [
+                xPPH.archive == self,
+                xPPH.component == Component.id,
+                xPPH.datepublished != None,
+                xPPH.dateremoved == None,
+                xPF.libraryfile == LibraryFileAlias.id,
+            ]
+        )
+        return (
+            store.find(LibraryFileAlias, *clauses).config(distinct=True).one()
+        )
 
     def getBinaryPackageRelease(self, name, version, archtag):
         """See `IArchive`."""

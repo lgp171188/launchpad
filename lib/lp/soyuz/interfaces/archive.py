@@ -792,6 +792,15 @@ class IArchiveSubscriberView(Interface):
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
 
+    def getPoolFileByPath(path):
+        """Return the `ILibraryFileAlias` for a path in this archive's pool.
+
+        :param path: A `PurePath` for where a source or binary package file
+            is published in this archive's pool, e.g.
+            "pool/main/p/package/package_1.dsc".
+        :return: An `ILibraryFileAlias`, or None.
+        """
+
 
 class IArchiveView(IHasBuildRecords):
     """Archive interface for operations restricted by view privilege."""
