@@ -90,9 +90,13 @@ def config_files():
     return files
 
 
-@when("launchpad.base.configured", "session-db.master.available")
+@when(
+    "launchpad.base.configured",
+    "session-db.master.available",
+    "memcache.available",
+)
 @when_not("service.configured")
-def configure(session_db):
+def configure(session_db, memcache):
     config = get_service_config()
     session_db_primary, _ = postgres.get_db_uris(session_db)
     # XXX cjwatson 2022-09-23: Mangle the connection string into a form
@@ -101,6 +105,12 @@ def configure(session_db):
     update_pgpass(session_db_primary)
     config["db_session"] = strip_dsn_authentication(session_db_primary)
     config["db_session_user"] = parse_dsn(session_db_primary)["user"]
+    config["memcache_servers"] = ",".join(
+        sorted(
+            f"({host}:{port},1)"
+            for host, port in memcache.memcache_hosts_ports()
+        )
+    )
     configure_lazr(
         config,
         "launchpad-appserver-lazr.conf",
