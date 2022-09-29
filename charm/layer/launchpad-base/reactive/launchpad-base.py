@@ -47,8 +47,6 @@ def configure(db):
     # specific to the appserver.  We need to teach Launchpad to be able to
     # log in as one role and then switch to another.
     config["db_user"] = parse_dsn(db_primary)["user"]
-    # XXX cjwatson 2022-09-07: Some config items have no reasonable default.
-    # We should set the workload status to blocked in that case.
     configure_lazr(
         config,
         "launchpad-base-lazr.conf",
