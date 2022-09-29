@@ -3,17 +3,12 @@ options:
     type: string
     description: URL of file used to control whether cron scripts run.
     default: "file:cronscripts.ini"
-  db_primary:
+  databases:
     type: string
-    description: Connection string for primary database.
-    default: ""
-  db_session:
-    type: string
-    description: Connection string for session database.
-    default: ""
-  db_standby:
-    type: string
-    description: Connection string for standby database, if any.
+    description: >
+      YAML-encoded information about database relations, overriding the
+      defaults.  For example, setting this to "db: {name: launchpad_prod}"
+      changes the name of the database used by the "db" relation.
     default: ""
   domain:
     type: string
