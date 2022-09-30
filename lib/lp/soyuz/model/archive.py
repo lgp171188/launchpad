@@ -2845,7 +2845,7 @@ class Archive(SQLBase):
                 (LibraryFileAlias.filename, LibraryFileContent.sha1),
                 SourcePackagePublishingHistory.archive == self,
                 SourcePackagePublishingHistory.sourcepackagerelease
-                == SourcePackageReleaseFile.sourcepackagerelease,
+                == SourcePackageReleaseFile.sourcepackagereleaseID,
                 LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
                 LibraryFileAlias.filename.is_in(source_files),
                 LibraryFileContent.id == LibraryFileAlias.contentID,
