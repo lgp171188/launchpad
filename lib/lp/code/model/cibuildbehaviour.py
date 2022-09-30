@@ -100,6 +100,13 @@ def build_secrets(distribution_name: str) -> dict:
     return rv
 
 
+def should_scan_malware(distribution_name: str) -> bool:
+    try:
+        return config["cibuild." + distribution_name]["scan_malware"]
+    except NoSectionError:
+        return False
+
+
 @adapter(ICIBuild)
 @implementer(IBuildFarmJobBehaviour)
 class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
@@ -195,6 +202,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             )
             args["plugin_settings"] = build_plugin_settings(distribution_name)
             args["secrets"] = build_secrets(distribution_name)
+            args["scan_malware"] = should_scan_malware(distribution_name)
         return args
 
     def verifySuccessfulBuild(self):
