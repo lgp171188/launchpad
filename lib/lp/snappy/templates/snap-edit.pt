@@ -11,6 +11,15 @@
   <style type="text/css">
     .subordinate {
       margin: 0.5em 0 0.5em 4em;
+      max-width: 80%;
+      margin-bottom: 1em;
+    }
+    table.subordinate tr.even {
+      background-color: #eee;
+    }
+    /* These add up to 100%. */
+    tr .channel-row-risks {
+      width: 40%;
     }
   </style>
 </metal:block>
