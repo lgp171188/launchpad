@@ -84,6 +84,9 @@ def config_files():
     files = []
     files.extend(lazr_config_files())
     files.append(config_file_path("launchpad-appserver/launchpad-lazr.conf"))
+    files.append(
+        config_file_path("launchpad-appserver-secrets-lazr.conf", secret=True)
+    )
     return files
 
 
@@ -98,12 +101,16 @@ def configure(session_db):
     update_pgpass(session_db_primary)
     config["db_session"] = strip_dsn_authentication(session_db_primary)
     config["db_session_user"] = parse_dsn(session_db_primary)["user"]
-    # XXX cjwatson 2022-09-07: Some config items have no reasonable default.
-    # We should set the workload status to blocked in that case.
     configure_lazr(
         config,
         "launchpad-appserver-lazr.conf",
         "launchpad-appserver/launchpad-lazr.conf",
+    )
+    configure_lazr(
+        config,
+        "launchpad-appserver-secrets-lazr.conf",
+        "launchpad-appserver-secrets-lazr.conf",
+        secret=True,
     )
     configure_gunicorn(config)
     configure_logrotate(config)

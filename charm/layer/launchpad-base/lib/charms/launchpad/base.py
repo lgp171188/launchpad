@@ -6,6 +6,7 @@ import os.path
 import pwd
 import re
 from dataclasses import dataclass
+from email.utils import parseaddr
 
 from charmhelpers.core import hookenv, host, templating
 from ols import base
@@ -43,6 +44,8 @@ def get_service_config():
             "code_dir": base.code_dir(),
             "logs_dir": base.logs_dir(),
             "oopses_dir": oopses_dir(),
+            # Used by some templates.
+            "parseaddr": parseaddr,
             "secrets_dir": secrets_dir(),
             "user": base.user(),
             "var_dir": var_dir(),
