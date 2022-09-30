@@ -907,6 +907,17 @@
         class="lp.bugs.browser.vulnerability.VulnerabilityIndexView"
         permission="zope.Public"
         template="../templates/vulnerability-index.pt" />
+    <browser:page
+        name="+listing-detailed"
+        for="lp.bugs.interfaces.vulnerability.IVulnerability"
+        permission="zope.Public"
+        template="../templates/vulnerability-listing-detailed.pt"/>
+    <browser:page
+        name="+vulnerabilities"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.bugs.browser.vulnerability.VulnerabilitySetIndexView"
+        permission="zope.Public"
+        template="../templates/vulnerabilityset-index.pt" />
     <browser:url
         for="lp.bugs.interfaces.bugsubscription.IBugSubscription"
         path_expression="string:+subscription/${person/name}"
