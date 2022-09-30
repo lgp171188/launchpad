@@ -470,7 +470,6 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             ),
         )
 
-    @responses.activate
     def test_create_new_recipe_multiple_tracks_missing_recipe_name(self):
         # Missing charm recipe will result in error in browser
         self.factory.makeProduct(
@@ -603,12 +602,19 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             MatchesTagText(content, "store_upload"),
         )
 
+    @responses.activate
     def test_edit_recipe_add_store_channel(self):
-        [old_git_ref] = self.factory.makeGitRefs()
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad",
+            candid_service_root="https://candid.test/",
+            csrf_secret="test secret",
+        )
+        [git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person,
             owner=self.person,
-            git_ref=old_git_ref,
+            git_ref=git_ref,
             store_channels=["track1/stable/branch1", "track2/edge/branch1"],
             store_name="Store name",
             store_upload=True,
@@ -616,23 +622,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person]
         )
-        [new_git_ref] = self.factory.makeGitRefs()
-
-        browser = self.getViewBrowser(recipe, user=self.person)
-        browser.getLink("Edit charm recipe").click()
-        browser.getControl("Owner").value = ["new-team"]
-        browser.getControl(name="field.name").value = "new-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref.repository.identity
-        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
-        browser.getControl(
-            "Automatically build when branch changes"
-        ).selected = True
-        browser.getControl(
-            name="field.auto_build_channels.charmcraft"
-        ).value = "edge"
-        browser.getControl(name="field.store_name").value = "new-store-name"
+        view_url = canonical_url(recipe, view_name="+edit")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl(
             name="field.store_channels.add_track"
         ).value = "new-track"
@@ -642,9 +633,40 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl(name="field.store_channels.add_risk").value = [
             "edge"
         ]
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity"
+        )
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
+        responses.add(
+            "POST",
+            "https://candid.test/discharge",
+            status=401,
+            json={
+                "Code": "interaction required",
+                "Message": (
+                    "macaroon discharge required: authentication required"
+                ),
+                "Info": {
+                    "InteractionMethods": {
+                        "browser-redirect": {
+                            "LoginURL": "https://candid.test/login-redirect",
+                        },
+                    },
+                },
+            },
+        )
 
         browser.getControl("Update charm recipe").click()
 
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+
+        browser = self.getViewBrowser(recipe, user=self.person)
         content = find_main_content(browser.contents)
         self.assertThat(
             "Store channels:\n"
@@ -653,30 +675,22 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),
         )
-        self.assertEqual("new-name", extract_text(content.h1))
-        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
-        self.assertThat(
-            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
-            MatchesTagText(content, "source"),
-        )
-        self.assertThat(
-            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"),
-        )
-        self.assertThat(
-            "Source snap channels for automatic builds:\nEdit charm recipe\n"
-            "charmcraft\nedge",
-            MatchesTagText(content, "auto_build_channels"),
-        )
 
+    @responses.activate
     def test_edit_recipe_edit_store_channel_list(self):
         # Verify we can edit the first store channel defined for this recipe
         # from "track1/stable/branch1" to "new-track/candidate/new-branch"
-        [old_git_ref] = self.factory.makeGitRefs()
+        self.pushConfig("charms", charmhub_url="http://charmhub.example/")
+        self.pushConfig(
+            "launchpad",
+            candid_service_root="https://candid.test/",
+            csrf_secret="test secret",
+        )
+        [git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person,
             owner=self.person,
-            git_ref=old_git_ref,
+            git_ref=git_ref,
             store_channels=["track1/stable/branch1", "track2/edge/branch1"],
             store_name="Store name",
             store_upload=True,
@@ -684,23 +698,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person]
         )
-        [new_git_ref] = self.factory.makeGitRefs()
-
-        browser = self.getViewBrowser(recipe, user=self.person)
-        browser.getLink("Edit charm recipe").click()
-        browser.getControl("Owner").value = ["new-team"]
-        browser.getControl(name="field.name").value = "new-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref.repository.identity
-        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
-        browser.getControl(
-            "Automatically build when branch changes"
-        ).selected = True
-        browser.getControl(
-            name="field.auto_build_channels.charmcraft"
-        ).value = "edge"
-        browser.getControl(name="field.store_name").value = "new-store-name"
+        view_url = canonical_url(recipe, view_name="+edit")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl(
             name="field.store_channels.track_0"
         ).value = "new-track"
@@ -710,11 +709,41 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl(name="field.store_channels.risk_0").value = [
             "candidate"
         ]
+        root_macaroon = Macaroon(version=2)
+        root_macaroon.add_third_party_caveat(
+            "https://candid.test/", "", "identity"
+        )
+        root_macaroon_raw = root_macaroon.serialize(JsonSerializer())
+        responses.add(
+            "POST",
+            "http://charmhub.example/v1/tokens",
+            json={"macaroon": root_macaroon_raw},
+        )
+        responses.add(
+            "POST",
+            "https://candid.test/discharge",
+            status=401,
+            json={
+                "Code": "interaction required",
+                "Message": (
+                    "macaroon discharge required: authentication required"
+                ),
+                "Info": {
+                    "InteractionMethods": {
+                        "browser-redirect": {
+                            "LoginURL": "https://candid.test/login-redirect",
+                        },
+                    },
+                },
+            },
+        )
 
         browser.getControl("Update charm recipe").click()
 
-        content = find_main_content(browser.contents)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
 
+        browser = self.getViewBrowser(recipe, user=self.person)
+        content = find_main_content(browser.contents)
         self.assertThat(
             "Store channels:\n"
             "new-track/candidate/new-branch, track2/edge/branch1"
@@ -722,30 +751,14 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             MatchesTagText(content, "store_channels"),
         )
 
-        self.assertEqual("new-name", extract_text(content.h1))
-        self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
-        self.assertThat(
-            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
-            MatchesTagText(content, "source"),
-        )
-        self.assertThat(
-            "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
-            MatchesTagText(content, "auto_build"),
-        )
-        self.assertThat(
-            "Source snap channels for automatic builds:\nEdit charm recipe\n"
-            "charmcraft\nedge",
-            MatchesTagText(content, "auto_build_channels"),
-        )
-
     def test_edit_recipe_delete_store_channel_list(self):
         # Verify we can edit the first store channel defined for this recipe
         # from "track1/stable/branch1" to "new-track/candidate/new-branch"
-        [old_git_ref] = self.factory.makeGitRefs()
+        [git_ref] = self.factory.makeGitRefs()
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person,
             owner=self.person,
-            git_ref=old_git_ref,
+            git_ref=git_ref,
             store_channels=["track1/stable/branch1", "track2/edge/branch1"],
             store_name="Store name",
             store_upload=True,
@@ -753,25 +766,13 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person]
         )
-        [new_git_ref] = self.factory.makeGitRefs()
-
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
-        browser.getControl("Owner").value = ["new-team"]
-        browser.getControl(name="field.name").value = "new-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref.repository.identity
-        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
-        browser.getControl(
-            "Automatically build when branch changes"
-        ).selected = True
         browser.getControl(name="field.store_channels.delete_0").value = 1
 
         browser.getControl("Update charm recipe").click()
 
         content = find_main_content(browser.contents)
-
         self.assertThat(
             "Store channels:\n" "track2/edge/branch1" "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),

@@ -134,7 +134,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 delete_widget.display_label = False
         else:
             self.add_track_widget.setRenderedValue(None)
-            self.add_risk_widget.setRenderedValue(2)
+            self.add_risk_widget.setRenderedValue(None)
             self.add_branch_widget.setRenderedValue(None)
 
     def hasInput(self):

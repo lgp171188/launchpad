@@ -29,11 +29,4 @@ def channels_validator(channels):
         tracks.add(track)
         branches.add(branch)
 
-    # XXX cjwatson 2018-05-08: These are slightly arbitrary restrictions,
-    # but they make the UI much simpler.
-
-    if len(branches) != 1:
-        message = _("Channels must belong to the same branch.")
-        raise LaunchpadValidationError(structured(message))
-
     return True

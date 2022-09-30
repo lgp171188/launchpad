@@ -17,35 +17,6 @@
       </p>
     </td>
   </tr>
-  <tr>
-    <td>
-      <table class="subordinate">
-        <tr>
-          <td>
-            <tal:widget define="widget nocall:view/add_risk_widget">
-              <metal:block
-                use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-          </td>
-          <td>
-            <tal:widget define="widget nocall:view/add_track_widget">
-              <metal:block
-                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-            <p class="formHelp">
-                To open a new track, <a href="https://snapcraft.io/community">ask the store admins</a>.
-            </p>
-          </td>
-          <td>
-            <tal:widget define="widget nocall:view/add_branch_widget">
-              <metal:block
-                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
   <tr tal:condition="view/is_edit">
       <table class="subordinate"
         tal:repeat="channel_index python:range(len(view.context.context.store_channels))">
@@ -79,6 +50,35 @@
               </tr>
             </tal:edit_store_widgets>
       </table>
+  </tr>
+  <tr>
+    <td>
+      <table class="subordinate">
+        <tr>
+          <td>
+            <tal:widget define="widget nocall:view/add_track_widget">
+              <metal:block
+                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+            </tal:widget>
+            <p class="formHelp">
+                To open a new track, <a href="https://snapcraft.io/community">ask the store admins</a>.
+            </p>
+          </td>
+          <td>
+            <tal:widget define="widget nocall:view/add_risk_widget">
+              <metal:block
+                use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+            </tal:widget>
+          </td>
+          <td>
+            <tal:widget define="widget nocall:view/add_branch_widget">
+              <metal:block
+                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+            </tal:widget>
+          </td>
+        </tr>
+      </table>
+    </td>
   </tr>
 </table>
 
