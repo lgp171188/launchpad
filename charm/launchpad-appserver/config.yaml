@@ -1,32 +1,33 @@
 options:
-  dbuser:
+  bing_custom_config_id:
     type: string
-    description: The database user used with the main database.
-    default: ""
-  dbuser_session:
+    description: Identifier for the Bing Custom Search instance.
+    default:
+  bing_subscription_key:
     type: string
-    description: The database user used with the session database.
-    default: ""
+    description: >
+      Cognitive Services subscription key for the Bing Custom Search API.
+    default:
   devmode:
     type: boolean
     description: Is this server running in dev mode?
     default: true
+  mailman_archive_url_template:
+    type: string
+    description: Template expanded to form URLs for Launchpad list archives.
+    default: "http://lists.launchpad.test/$team_name"
   min_legitimate_account_age:
     type: int
     description: Minimum account age in days that indicates a legitimate user.
-    default: 0
+    default:
   min_legitimate_karma:
     type: int
     description: Minimum karma value that indicates a legitimate user.
-    default: 0
+    default:
   port_main:
     type: int
     description: Port for the main application server.
     default: 8085
-  port_xmlrpc:
-    type: int
-    description: Port for the XML-RPC application server.
-    default: 8087
   wsgi_workers:
     type: int
     default: 0

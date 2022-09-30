@@ -10,6 +10,8 @@ from charms.launchpad.base import (
     configure_lazr,
     get_service_config,
     lazr_config_files,
+    strip_dsn_authentication,
+    update_pgpass,
 )
 from charms.reactive import (
     clear_flag,
@@ -19,7 +21,8 @@ from charms.reactive import (
     when,
     when_not,
 )
-from ols import base
+from ols import base, postgres
+from psycopg2.extensions import parse_dsn
 
 
 def reload_or_restart(service):
@@ -81,19 +84,43 @@ def config_files():
     files = []
     files.extend(lazr_config_files())
     files.append(config_file_path("launchpad-appserver/launchpad-lazr.conf"))
+    files.append(
+        config_file_path("launchpad-appserver-secrets-lazr.conf", secret=True)
+    )
     return files
 
 
-@when("launchpad.base.configured")
+@when(
+    "launchpad.base.configured",
+    "session-db.master.available",
+    "memcache.available",
+)
 @when_not("service.configured")
-def configure():
+def configure(session_db, memcache):
     config = get_service_config()
-    # XXX cjwatson 2022-09-07: Some config items have no reasonable default.
-    # We should set the workload status to blocked in that case.
+    session_db_primary, _ = postgres.get_db_uris(session_db)
+    # XXX cjwatson 2022-09-23: Mangle the connection string into a form
+    # Launchpad understands.  In the long term it would be better to have
+    # Launchpad be able to consume unmodified connection strings.
+    update_pgpass(session_db_primary)
+    config["db_session"] = strip_dsn_authentication(session_db_primary)
+    config["db_session_user"] = parse_dsn(session_db_primary)["user"]
+    config["memcache_servers"] = ",".join(
+        sorted(
+            f"({host}:{port},1)"
+            for host, port in memcache.memcache_hosts_ports()
+        )
+    )
     configure_lazr(
         config,
         "launchpad-appserver-lazr.conf",
         "launchpad-appserver/launchpad-lazr.conf",
+    )
+    configure_lazr(
+        config,
+        "launchpad-appserver-secrets-lazr.conf",
+        "launchpad-appserver-secrets-lazr.conf",
+        secret=True,
     )
     configure_gunicorn(config)
     configure_logrotate(config)

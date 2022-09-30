@@ -1,0 +1,3 @@
+requires:
+  db:
+    interface: pgsql

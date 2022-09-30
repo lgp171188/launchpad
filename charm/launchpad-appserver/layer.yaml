@@ -1,3 +1,13 @@
 includes:
   - layer:launchpad-base
+  - interface:memcache
 repo: https://git.launchpad.net/launchpad
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles: launchpad_main
+      session-db:
+        name: session_dev
+        roles: session

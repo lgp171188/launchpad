@@ -9,6 +9,7 @@ __all__ = [
 ]
 
 import os.path
+import re
 
 import pytz
 from storm.databases.postgres import Returning
@@ -21,7 +22,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IMasterStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
-from lp.services.database.stormexpr import BulkUpdate
+from lp.services.database.stormexpr import BulkUpdate, RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.soyuz.interfaces.archivefile import IArchiveFile, IArchiveFileSet
@@ -98,6 +99,8 @@ class ArchiveFileSet:
         archive,
         container=None,
         path=None,
+        path_parent=None,
+        sha256=None,
         only_condemned=False,
         eager_load=False,
     ):
@@ -109,6 +112,20 @@ class ArchiveFileSet:
             clauses.append(ArchiveFile.container == container)
         if path is not None:
             clauses.append(ArchiveFile.path == path)
+        if path_parent is not None:
+            clauses.append(
+                RegexpMatch(
+                    ArchiveFile.path, "^%s/[^/]+$" % re.escape(path_parent)
+                )
+            )
+        if sha256 is not None:
+            clauses.extend(
+                [
+                    ArchiveFile.library_file == LibraryFileAlias.id,
+                    LibraryFileAlias.contentID == LibraryFileContent.id,
+                    LibraryFileContent.sha256 == sha256,
+                ]
+            )
         if only_condemned:
             clauses.append(ArchiveFile.scheduled_deletion_date != None)
         archive_files = IStore(ArchiveFile).find(ArchiveFile, *clauses)

@@ -75,10 +75,14 @@ from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
 from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
 from lp.bugs.model.bugtarget import BugTargetBase, OfficialBugTagTargetMixin
 from lp.bugs.model.bugtaskflat import BugTaskFlat
+from lp.bugs.model.cve import Cve
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
 )
-from lp.bugs.model.vulnerability import Vulnerability
+from lp.bugs.model.vulnerability import (
+    Vulnerability,
+    get_vulnerability_privacy_filter,
+)
 from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
 )
@@ -146,7 +150,7 @@ from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.sharingpolicy import SharingPolicyMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.database.bulk import load_referencing
+from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -168,6 +172,7 @@ from lp.services.database.stormexpr import (
 from lp.services.features import getFeatureFlag
 from lp.services.helpers import backslashreplace, shortlist
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.url import urlparse
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.enums import (
@@ -2257,12 +2262,25 @@ class Distribution(
             .is_empty()
         )
 
+    def getVulnerabilitiesVisibleToUser(self, user):
+        """See `IDistribution`."""
+        vulnerabilities = Store.of(self).find(
+            Vulnerability,
+            Vulnerability.distribution == self,
+            get_vulnerability_privacy_filter(user),
+        )
+        vulnerabilities.order_by(Desc(Vulnerability.date_created))
+
+        def preload_cves(rows):
+            load_related(Cve, rows, ["cve_id"])
+
+        return DecoratedResultSet(vulnerabilities, pre_iter_hook=preload_cves)
+
     @property
     def vulnerabilities(self):
         """See `IDistribution`."""
-        return Store.of(self).find(
-            Vulnerability,
-            Vulnerability.distribution == self,
+        return self.getVulnerabilitiesVisibleToUser(
+            getUtility(ILaunchBag).user
         )
 
     def getVulnerability(self, vulnerability_id):

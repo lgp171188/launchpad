@@ -1,6 +1,6 @@
 includes:
   - layer:basic
-  - layer:ols
+  - layer:ols-pg
 options:
   apt:
     packages:

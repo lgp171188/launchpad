@@ -131,12 +131,6 @@ def to_swift(
             if fs_path > end_fs_path:
                 break
 
-            # Skip files which have been modified recently, as they
-            # may be uploads still in progress.
-            if os.path.getmtime(fs_path) > time.time() - ONE_DAY:
-                log.debug("Skipping recent upload %s" % fs_path)
-                continue
-
             # Reverse engineer the LibraryFileContent.id from the
             # file's path. Warn about and skip bad filenames.
             rel_fs_path = fs_path[len(fs_root) + 1 :]
@@ -154,6 +148,12 @@ def to_swift(
             if instance_id is not None and num_instances is not None:
                 if (lfc % num_instances) != instance_id:
                     continue
+
+            # Skip files which have been modified recently, as they
+            # may be uploads still in progress.
+            if os.path.getmtime(fs_path) > time.time() - ONE_DAY:
+                log.debug("Skipping recent upload %s" % fs_path)
+                continue
 
             log.debug("Found {} ({})".format(lfc, filename))
 
