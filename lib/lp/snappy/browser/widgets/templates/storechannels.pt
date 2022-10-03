@@ -17,68 +17,77 @@
       </p>
     </td>
   </tr>
-  <tr tal:condition="view/is_edit">
-      <table class="subordinate"
-        tal:repeat="channel_index python:range(len(view.context.context.store_channels))">
-            <tal:edit_store_widgets
-                define="parity python:'even' if repeat['channel_index'].even() else 'odd';
-                        edit_track string:track_${channel_index}_widget;
-                        edit_branch string:branch_${channel_index}_widget;
-                        edit_risk string:risk_${channel_index}_widget;
-                        delete string:delete_${channel_index}_widget">
-              <tr tal:attributes="class string:channel-row ${parity}">
-                <td class="channel-row-track"
-                    tal:define="widget nocall:view/?edit_track">
-                  <metal:block
-                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-                </td>              
-                <td class="channel-row-branch"
-                    tal:define="widget nocall:view/?edit_risk">
-                  <metal:block
-                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-                </td>
-                <td class="channel-row-branch"
-                    tal:define="widget nocall:view/?edit_branch">
-                  <metal:block
-                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-                </td>
-                <td class="channel-row-delete"
-                    tal:define="widget nocall:view/?delete">
-                  <metal:block
-                      use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-                </td>
-              </tr>
-            </tal:edit_store_widgets>
-      </table>
-  </tr>
   <tr>
-    <td>
-      <table class="subordinate">
+    <table class="listing subordinate">
+      <thead>
         <tr>
-          <td>
-            <tal:widget define="widget nocall:view/add_track_widget">
-              <metal:block
-                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-            <p class="formHelp">
-                To open a new track, <a href="https://snapcraft.io/community">ask the store admins</a>.
-            </p>
-          </td>
-          <td>
-            <tal:widget define="widget nocall:view/add_risk_widget">
-              <metal:block
-                use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-          </td>
-          <td>
-            <tal:widget define="widget nocall:view/add_branch_widget">
-              <metal:block
-                  use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
-            </tal:widget>
-          </td>
+          <th class="channel-row-track">Track</th>
+          <th class="channel-row-risk">Risk</th>
+          <th class="channel-row-branch">Branch</th>
+          <th class="channel-row-delete">Delete?</th>
         </tr>
-      </table>
-    </td>
+      </thead>
+      <tbody>
+        <tal:channel repeat="channel view/context/context/store_channels">
+          <tal:channel_widgets
+              define="parity python:'even' if repeat['channel'].even() else 'odd';
+                      edit_track string:track_${repeat/channel/index}_widget;
+                      edit_branch string:branch_${repeat/channel/index}_widget;
+                      edit_risk string:risk_${repeat/channel/index}_widget;
+                      delete string:delete_${repeat/channel/index}_widget">
+            <tr tal:attributes="class string:channel-row ${parity}">
+              <td class="channel-row-track"
+                  tal:define="widget nocall:view/?edit_track">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </td>
+              <td class="channel-row-risk"
+                  tal:define="widget nocall:view/?edit_risk">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </td>
+              <td class="channel-row-branch"
+                  tal:define="widget nocall:view/?edit_branch">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </td>
+              <td class="channel-row-delete"
+                  tal:define="widget nocall:view/?delete">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </td>
+            </tr>
+          </tal:channel_widgets>
+        </tal:channel>
+        <tal:new-channel
+            define="parity python:'odd' if len(view.context.context.store_channels) % 2 else 'even'">
+          <tr tal:attributes="class string:channel-row ${parity}">
+            <td class="channel-row-track">
+              <tal:widget define="widget nocall:view/add_track_widget">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </tal:widget>
+              <p class="formHelp">
+                To open a new track, <a href="https://snapcraft.io/community">ask the store admins</a>.
+              </p>
+            </td>
+            <td class="channel-row-risk">
+              <tal:widget define="widget nocall:view/add_risk_widget">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </tal:widget>
+            </td>
+            <td class="channel-row-branch">
+              <tal:widget define="widget nocall:view/add_branch_widget">
+                <metal:block
+                    use-macro="context/@@launchpad_widget_macros/launchpad_widget_row" />
+              </tal:widget>
+            </td>
+            <td class="channel-row-delete" />
+          </tr>
+        </tal:new-channel>
+      </tbody>
+    </table>
   </tr>
 </table>
 

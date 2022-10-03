@@ -55,30 +55,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         if self._widgets_set_up:
             return
         fields = []
-        fields.append(
-            [
-                TextLine(
-                    __name__="add_track",
-                    title="Track",
-                    required=False,
-                ),
-                Choice(
-                    __name__="add_risk",
-                    title="Risk",
-                    required=False,
-                    default=StoreRisk.EDGE,
-                    vocabulary="SnapStoreChannel",
-                ),
-                TextLine(
-                    __name__="add_branch",
-                    title="Branch",
-                    required=False,
-                ),
-            ]
-        )
         if self.is_edit():
             for index in range(len(self.context.context.store_channels)):
-                fields.append(
+                fields.extend(
                     [
                         TextLine(
                             __name__=self._getFieldName("track", index),
@@ -101,16 +80,35 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                         ),
                     ]
                 )
+        fields.extend(
+            [
+                TextLine(
+                    __name__="add_track",
+                    title="Track",
+                    required=False,
+                ),
+                Choice(
+                    __name__="add_risk",
+                    title="Risk",
+                    required=False,
+                    default=StoreRisk.EDGE,
+                    vocabulary="SnapStoreChannel",
+                ),
+                TextLine(
+                    __name__="add_branch",
+                    title="Branch",
+                    required=False,
+                ),
+            ]
+        )
 
-        for i in range(0, len(fields)):
-            for j in range(0, len(fields[i])):
-                setUpWidget(
-                    self,
-                    fields[i][j].__name__,
-                    fields[i][j],
-                    IInputWidget,
-                    prefix=self.name,
-                )
+        for field in fields:
+            setUpWidget(
+                self, field.__name__, field, IInputWidget, prefix=self.name
+            )
+            widget = getattr(self, "%s_widget" % field.__name__)
+            widget.display_label = False
+            widget.hint = None
 
         self._widgets_set_up = True
 
@@ -122,16 +120,12 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 track, risk, branch = channel_string_to_list(value[i])
                 track_widget = getattr(self, "track_%s_widget" % i)
                 track_widget.setRenderedValue(track)
-                track_widget.display_label = False
                 risk_widget = getattr(self, "risk_%s_widget" % i)
                 risk_widget.setRenderedValue(risk)
-                risk_widget.display_label = False
                 branch_widget = getattr(self, "branch_%s_widget" % i)
                 branch_widget.setRenderedValue(branch)
-                branch_widget.display_label = False
                 delete_widget = getattr(self, "delete_%s_widget" % i)
                 delete_widget.setRenderedValue(False)
-                delete_widget.display_label = False
         else:
             self.add_track_widget.setRenderedValue(None)
             self.add_risk_widget.setRenderedValue(None)
