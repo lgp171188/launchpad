@@ -24,6 +24,7 @@ from lp.bugs.model.vulnerability import (
     Vulnerability,
     get_vulnerability_privacy_filter,
 )
+from lp.registry.model.distribution import Distribution
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -121,8 +122,6 @@ class Cve(StormBase, BugLinkTargetMixin):
         vulnerabilities.order_by(Desc(Vulnerability.date_created))
 
         def preload_distributions(rows):
-            from lp.registry.model.distribution import Distribution
-
             bulk.load_related(Distribution, rows, ["distribution_id"])
 
         return DecoratedResultSet(
