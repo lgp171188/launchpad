@@ -14,6 +14,7 @@ from lp.bugs.browser.buglisting import BugTaskListingItem
 from lp.bugs.interfaces.bugtask import RESOLVED_BUGTASK_STATUSES, IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.bugs.interfaces.cve import ICveSet
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.helpers import shortlist
 from lp.services.webapp import LaunchpadView
@@ -65,14 +66,22 @@ class CVEReportView(LaunchpadView):
     def initialize(self):
         """See `LaunchpadView`."""
         super().initialize()
+        self.open_cve_bugtasks = []
+        self.resolved_cve_bugtasks = []
+
+        # If we are dealing with a distribution with one or more series,
+        # there is no need to deal with the open and resolved CVE bugtasks.
+        # This is because the template only renders links to the CVE report
+        # page of each available series.
+        if IDistribution.providedBy(self.context) and self.context.series:
+            return
+
         search_params = BugTaskSearchParams(self.user, has_cve=True)
         bugtasks = shortlist(
             self.context.searchTasks(search_params), longest_expected=600
         )
 
         if not bugtasks:
-            self.open_cve_bugtasks = []
-            self.resolved_cve_bugtasks = []
             return
 
         bugtask_set = getUtility(IBugTaskSet)
