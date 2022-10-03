@@ -206,6 +206,10 @@ options:
     type: string
     description: External base URL for private PPAs.
     default: http://private-ppa.launchpad.test/
+  rabbitmq_user:
+    type: string
+    description: Username to use with RabbitMQ.
+    default: test
   session_cookie_name:
     type: string
     description: The ID of the cookie used to store the session token.
