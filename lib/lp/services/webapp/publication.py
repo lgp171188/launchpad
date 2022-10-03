@@ -54,7 +54,6 @@ from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.interfaces import (
-    FinishReadOnlyRequestEvent,
     ILaunchpadRoot,
     IOpenLaunchBag,
     IPlacelessAuthUtility,
@@ -506,7 +505,7 @@ class LaunchpadBrowserPublication(
         # Abort the transaction on a read-only request.
         # NOTHING AFTER THIS SHOULD CAUSE A RETRY.
         if request.method in ["GET", "HEAD"]:
-            self.finishReadOnlyRequest(request, ob, txn)
+            self.finishReadOnlyRequest(txn)
         elif txn.isDoomed():
             # The following sends an abort to the database, even though the
             # transaction is still doomed.
@@ -528,13 +527,12 @@ class LaunchpadBrowserPublication(
             # calling beforeTraversal or doing proper cleanup.
             pass
 
-    def finishReadOnlyRequest(self, request, ob, txn):
+    def finishReadOnlyRequest(self, txn):
         """Hook called at the end of a read-only request.
 
         By default it abort()s the transaction, but subclasses may need to
         commit it instead, so they must overwrite this.
         """
-        notify(FinishReadOnlyRequestEvent(ob, request))
         txn.abort()
 
     def callTraversalHooks(self, request, ob):
