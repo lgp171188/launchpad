@@ -44,18 +44,28 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
     def _getFieldName(self, name, channel_index):
         return "%s_%d" % (name, channel_index)
 
+    @property
     def is_edit(self):
         if ICharmRecipe.providedBy(self.context.context) or ISnap.providedBy(
             self.context.context
         ):
             if len(self.context.context.store_channels) >= 1:
                 return True
+        return False
+
+    @property
+    def number_of_channels(self):
+        if ICharmRecipe.providedBy(self.context.context) or ISnap.providedBy(
+            self.context.context
+        ):
+            return len(self.context.context.store_channels)
+        return 0
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
             return
         fields = []
-        if self.is_edit():
+        if self.is_edit:
             for index in range(len(self.context.context.store_channels)):
                 fields.extend(
                     [
@@ -173,7 +183,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         if add_row:
             store_channels.append(add_row)
 
-        if self.is_edit():
+        if self.is_edit:
             for index in range(len(self.context.context.store_channels)):
                 track = getattr(
                     self, "track_%s_widget" % index
