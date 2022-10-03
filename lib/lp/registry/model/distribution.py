@@ -75,7 +75,6 @@ from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
 from lp.bugs.interfaces.vulnerability import IVulnerabilitySet
 from lp.bugs.model.bugtarget import BugTargetBase, OfficialBugTagTargetMixin
 from lp.bugs.model.bugtaskflat import BugTaskFlat
-from lp.bugs.model.cve import Cve
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
 )
@@ -2272,6 +2271,9 @@ class Distribution(
         vulnerabilities.order_by(Desc(Vulnerability.date_created))
 
         def preload_cves(rows):
+            # Avoid circular import
+            from lp.bugs.model.cve import Cve
+
             load_related(Cve, rows, ["cve_id"])
 
         return DecoratedResultSet(vulnerabilities, pre_iter_hook=preload_cves)
