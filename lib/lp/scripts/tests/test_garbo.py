@@ -1209,13 +1209,15 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         bug = self.factory.makeBug()
         attachment = self.factory.makeBugAttachment(bug=bug)
+        # Attachments with URLs are never deleted.
+        self.factory.makeBugAttachment(bug=bug, url="https://launchpad.net")
         transaction.commit()
 
         # Bug attachments that have a LibraryFileContent record are
         # not deleted.
         self.assertIsNot(attachment.libraryfile.content, None)
         self.runDaily()
-        self.assertEqual(bug.attachments.count(), 1)
+        self.assertEqual(bug.attachments.count(), 2)
 
         # But once we delete the LfC record, the attachment is deleted
         # in the next daily garbo run.
@@ -1224,7 +1226,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         transaction.commit()
         self.runDaily()
         switch_dbuser("testadmin")
-        self.assertEqual(bug.attachments.count(), 0)
+        self.assertEqual(bug.attachments.count(), 1)
 
     def test_TimeLimitedTokenPruner(self):
         # Ensure there are no tokens

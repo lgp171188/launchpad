@@ -25,10 +25,7 @@ from lp.bugs.interfaces.bugattachment import (
     IBugAttachmentIsPatchConfirmationForm,
     IBugAttachmentSet,
 )
-from lp.services.librarian.browser import (
-    FileNavigationMixin,
-    ProxiedLibraryFileAlias,
-)
+from lp.services.librarian.browser import FileNavigationMixin
 from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
 from lp.services.webapp import GetitemNavigation, Navigation, canonical_url
 from lp.services.webapp.authorization import check_permission
@@ -115,15 +112,19 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
         self.next_url = self.cancel_url = canonical_url(
             ICanonicalUrlData(context).inside
         )
+        if not context.libraryfile:
+            self.field_names = ["title", "patch"]
 
     @property
     def initial_values(self):
         attachment = self.context
-        return dict(
+        values = dict(
             title=attachment.title,
             patch=attachment.type == BugAttachmentType.PATCH,
-            contenttype=attachment.libraryfile.mimetype,
         )
+        if attachment.libraryfile:
+            values["contenttype"] = attachment.libraryfile.mimetype
+        return values
 
     def canEditAttachment(self, action):
         return check_permission("launchpad.Edit", self.context)
@@ -135,30 +136,38 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
         else:
             new_type = BugAttachmentType.UNSPECIFIED
         if new_type != self.context.type:
-            filename = self.context.libraryfile.filename
-            file_content = self.context.libraryfile.read()
-            # We expect that users set data['patch'] to True only for
-            # real patch data, indicated by guessed_content_type ==
-            # 'text/x-diff'. If there are inconsistencies, we don't
-            # set the value automatically. Instead, we lead the user to
-            # another form where we ask them if they are sure about their
-            # choice of the patch flag.
-            new_type_consistent_with_guessed_type = (
-                self.attachmentTypeConsistentWithContentType(
-                    new_type == BugAttachmentType.PATCH, filename, file_content
+            if self.context.libraryfile:
+                filename = self.context.libraryfile.filename
+                file_content = self.context.libraryfile.read()
+                # We expect that users set data['patch'] to True only for
+                # real patch data, indicated by guessed_content_type ==
+                # 'text/x-diff'. If there are inconsistencies, we don't
+                # set the value automatically. Instead, we lead the user to
+                # another form where we ask them if they are sure about their
+                # choice of the patch flag.
+                new_type_consistent_with_guessed_type = (
+                    self.attachmentTypeConsistentWithContentType(
+                        new_type == BugAttachmentType.PATCH,
+                        filename,
+                        file_content,
+                    )
                 )
-            )
-            if new_type_consistent_with_guessed_type:
-                self.context.type = new_type
+                if new_type_consistent_with_guessed_type:
+                    self.context.type = new_type
+                else:
+                    self.next_url = self.nextUrlForInconsistentPatchFlags(
+                        self.context
+                    )
             else:
-                self.next_url = self.nextUrlForInconsistentPatchFlags(
-                    self.context
-                )
+                self.context.type = new_type
 
         if data["title"] != self.context.title:
             self.context.title = data["title"]
 
-        if self.context.libraryfile.mimetype != data["contenttype"]:
+        if (
+            self.context.libraryfile
+            and self.context.libraryfile.mimetype != data["contenttype"]
+        ):
             lfa_with_parent = getMultiAdapter(
                 (self.context.libraryfile, self.context),
                 ILibraryFileAliasWithParent,
@@ -167,14 +176,11 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
 
     @action("Delete Attachment", name="delete", condition=canEditAttachment)
     def delete_action(self, action, data):
-        libraryfile_url = ProxiedLibraryFileAlias(
-            self.context.libraryfile, self.context
-        ).http_url
         self.request.response.addInfoNotification(
             structured(
                 'Attachment "<a href="%(url)s">%(name)s</a>" has been '
                 "deleted.",
-                url=libraryfile_url,
+                url=self.context.displayed_url,
                 name=self.context.title,
             )
         )

@@ -35,10 +35,7 @@ class TestBugView(TestCaseWithFactory):
         removeSecurityProxy(attachment.libraryfile).content = None
         self.assertEqual(
             ["regular attachment"],
-            [
-                attachment["attachment"].title
-                for attachment in self.view.regular_attachments
-            ],
+            [attachment.title for attachment in self.view.regular_attachments],
         )
 
     def test_patches_dont_include_invalid_records(self):
@@ -55,10 +52,7 @@ class TestBugView(TestCaseWithFactory):
         removeSecurityProxy(patch.libraryfile).content = None
         self.assertEqual(
             ["patch"],
-            [
-                attachment["attachment"].title
-                for attachment in self.view.patches
-            ],
+            [attachment.title for attachment in self.view.patches],
         )
 
 

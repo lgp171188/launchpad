@@ -334,22 +334,22 @@ librarian file of the attachment.
     ... )
     >>> view = BugView(bug_seven, request)
     >>> for attachment in view.regular_attachments:
-    ...     print(attachment["attachment"].title)
+    ...     print(attachment.title)
     ...
     attachment 1
     attachment 2
     >>> for patch in view.patches:
-    ...     print(patch["attachment"].title)
+    ...     print(patch.title)
     ...
     patch 1
     patch 2
     >>> for attachment in view.regular_attachments:
-    ...     print(attachment["file"].http_url)
+    ...     print(attachment.displayed_url)
     ...
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a1
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a2
     >>> for patch in view.patches:
-    ...     print(patch["file"].http_url)
+    ...     print(patch.displayed_url)
     ...
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p1
     http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p2

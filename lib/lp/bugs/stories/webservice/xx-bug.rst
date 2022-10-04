@@ -1531,6 +1531,7 @@ An attachment can be added to the bug:
     ...     "addAttachment",
     ...     data=io.BytesIO(b"12345"),
     ...     filename="numbers.txt",
+    ...     url=None,
     ...     content_type="foo/bar",
     ...     comment="The numbers you asked for.",
     ... )
@@ -1558,6 +1559,7 @@ Now, bug 1 has one attachment:
     self_link: 'http://.../bugs/1/+attachment/...'
     title: 'numbers.txt'
     type: 'Unspecified'
+    url: None
     web_link: 'http://bugs.../bugs/1/+attachment/...'
     ---
 
@@ -1572,6 +1574,7 @@ The attachment can be fetched directly:
     self_link: 'http://.../bugs/1/+attachment/...'
     title: 'numbers.txt'
     type: 'Unspecified'
+    url: None
     web_link: 'http://bugs.../bugs/1/+attachment/...'
 
 Fetching the data actually yields a redirect to the Librarian, which

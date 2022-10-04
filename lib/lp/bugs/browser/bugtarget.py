@@ -117,7 +117,6 @@ from lp.registry.vocabularies import ValidPersonOrTeamVocabulary
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import LaunchpadView, canonical_url, urlappend
 from lp.services.webapp.authorization import check_permission
@@ -673,6 +672,7 @@ class FileBugViewBase(LaunchpadFormView):
                     owner=self.user,
                     data=BytesIO(data["filecontent"]),
                     filename=filename,
+                    url=None,
                     description=file_description,
                     comment=attachment_comment,
                     is_patch=data["patch"],
@@ -686,6 +686,7 @@ class FileBugViewBase(LaunchpadFormView):
                 bug.linkAttachment(
                     owner=self.user,
                     file_alias=attachment["file_alias"],
+                    url=None,
                     description=attachment["description"],
                     comment=attachment_comment,
                     send_notifications=False,
@@ -1471,10 +1472,6 @@ class BugsPatchesView(LaunchpadView):
         """Return a timedelta object for the age of a patch attachment."""
         now = datetime.now(timezone("UTC"))
         return now - patch.message.datecreated
-
-    def proxiedUrlForLibraryFile(self, patch):
-        """Return the proxied download URL for a Librarian file."""
-        return ProxiedLibraryFileAlias(patch.libraryfile, patch).http_url
 
 
 class TargetSubscriptionView(LaunchpadView):

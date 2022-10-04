@@ -146,6 +146,7 @@ the file when we later serialise the bug:
     ...     io.BytesIO(b"Hello World"),
     ...     "Added attachment",
     ...     "hello.txt",
+    ...     url=None,
     ...     description='"Hello World" attachment',
     ... )
     <lp.bugs.model.bugattachment.BugAttachment ...>
@@ -166,8 +167,8 @@ attachment contents encoded using base-64:
     <text>Added attachment</text>
     <attachment href="http://bugs.launchpad.test/bugs/4/.../+files/hello.txt">
     <type>UNSPECIFIED</type>
-    <filename>hello.txt</filename>
     <title>"Hello World" attachment</title>
+    <filename>hello.txt</filename>
     <mimetype>text/plain</mimetype>
     <contents>SGVsbG8gV29ybGQ=
     </contents>

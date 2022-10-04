@@ -63,7 +63,6 @@ from lp.bugs.interfaces.bugtask import (
     IBugTask,
 )
 from lp.registry.interfaces.product import IProduct
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
 
 # These are used lp.bugs.model.bugactivity.BugActivity.attribute to normalize
@@ -698,11 +697,6 @@ class BugTagsChange(AttributeChange):
         return {"text": "\n".join(messages)}
 
 
-def download_url_of_bugattachment(attachment):
-    """Return the URL of the ProxiedLibraryFileAlias for the attachment."""
-    return ProxiedLibraryFileAlias(attachment.libraryfile, attachment).http_url
-
-
 class BugAttachmentChange(AttributeChange):
     """Used to represent a change to an `IBug`'s attachments."""
 
@@ -712,13 +706,13 @@ class BugAttachmentChange(AttributeChange):
             old_value = None
             new_value = "%s %s" % (
                 self.new_value.title,
-                download_url_of_bugattachment(self.new_value),
+                self.new_value.displayed_url,
             )
         else:
             what_changed = ATTACHMENT_REMOVED
             old_value = "%s %s" % (
                 self.old_value.title,
-                download_url_of_bugattachment(self.old_value),
+                self.old_value.displayed_url,
             )
             new_value = None
 
@@ -737,7 +731,7 @@ class BugAttachmentChange(AttributeChange):
             message = '** %s added: "%s"\n   %s' % (
                 attachment_str,
                 self.new_value.title,
-                download_url_of_bugattachment(self.new_value),
+                self.new_value.displayed_url,
             )
         else:
             if self.old_value.is_patch:
@@ -747,7 +741,7 @@ class BugAttachmentChange(AttributeChange):
             message = '** %s removed: "%s"\n   %s' % (
                 attachment_str,
                 self.old_value.title,
-                download_url_of_bugattachment(self.old_value),
+                self.old_value.displayed_url,
             )
 
         return {"text": message}

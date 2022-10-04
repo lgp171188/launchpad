@@ -2565,6 +2565,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         filename=None,
         content_type=None,
         description=None,
+        url=None,
         is_patch=_DEFAULT,
     ):
         """Create and return a new bug attachment.
@@ -2581,23 +2582,31 @@ class LaunchpadObjectFactory(ObjectFactory):
             string will be used.
         :param content_type: The MIME-type of this file.
         :param description: The description of the attachment.
+        :param url: External URL of the attachment (a string or None)
         :param is_patch: If true, this attachment is a patch.
         :return: An `IBugAttachment`.
         """
+        if url:
+            if data or filename:
+                raise ValueError(
+                    "Either `url` or `data` / `filename` " "can be provided."
+                )
+        else:
+            if data is None:
+                data = self.getUniqueBytes()
+            if filename is None:
+                filename = self.getUniqueString()
+
         if bug is None:
             bug = self.makeBug()
         elif isinstance(bug, (int, str)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
-        if data is None:
-            data = self.getUniqueBytes()
         if description is None:
             description = self.getUniqueString()
         if comment is None:
             comment = self.getUniqueString()
-        if filename is None:
-            filename = self.getUniqueString()
         # If the default value of is_patch when creating a new
         # BugAttachment should ever change, we don't want to interfere
         # with that.  So, we only override it if our caller explicitly
@@ -2610,6 +2619,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             data,
             comment,
             filename,
+            url,
             content_type=content_type,
             description=description,
             **other_params,

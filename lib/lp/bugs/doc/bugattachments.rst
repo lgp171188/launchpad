@@ -53,6 +53,7 @@ ObjectCreatedEvent in order to trigger email notifications:
     ...     owner=foobar,
     ...     data=data,
     ...     filename="foo.bar",
+    ...     url=None,
     ...     description="this fixes the bug",
     ...     comment=message,
     ...     is_patch=False,
@@ -77,6 +78,7 @@ passed in is often a file-like object, but can be bytes too.
     ...     owner=foobar,
     ...     data=data,
     ...     filename="foo.baz",
+    ...     url=None,
     ...     description="this fixes the bug",
     ...     comment="a string comment",
     ...     is_patch=False,
@@ -92,6 +94,7 @@ If no description is given, the title is set to the filename.
     >>> screenshot = bug_four.addAttachment(
     ...     owner=foobar,
     ...     data=data,
+    ...     url=None,
     ...     filename="screenshot.jpg",
     ...     comment="a string comment",
     ...     is_patch=False,
@@ -110,6 +113,7 @@ The content type is guessed based on the information provided.
     ...     owner=foobar,
     ...     data=data,
     ...     filename="something.debdiff",
+    ...     url=None,
     ...     comment="something debdiffish",
     ...     is_patch=False,
     ... )
@@ -503,6 +507,7 @@ It's also possible to delete attachments.
     ...     owner=foobar,
     ...     data=data,
     ...     filename="foo.baz",
+    ...     url=None,
     ...     description="Attachment to be deleted",
     ...     comment="a string comment",
     ...     is_patch=False,
@@ -552,6 +557,7 @@ property returning True.
     ...     owner=foobar,
     ...     data=BytesIO(filecontent.getvalue()),
     ...     filename="foo.baz",
+    ...     url=None,
     ...     description="A non-patch attachment",
     ...     comment="a string comment",
     ...     is_patch=False,
@@ -564,6 +570,7 @@ property returning True.
     ...     owner=foobar,
     ...     data=BytesIO(filecontent.getvalue()),
     ...     filename="foo.baz",
+    ...     url=None,
     ...     description="A patch attachment",
     ...     comment="a string comment",
     ...     is_patch=True,
@@ -601,7 +608,10 @@ LibraryFileAlias.restricted and Bug.private. See also the section
 
     >>> bug = factory.makeBug()
     >>> bug.linkAttachment(
-    ...     owner=bug.owner, file_alias=file_alias, comment="Some attachment"
+    ...     owner=bug.owner,
+    ...     file_alias=file_alias,
+    ...     url=None,
+    ...     comment="Some attachment",
     ... )
     <lp.bugs.model.bugattachment.BugAttachment ...>
 
@@ -631,6 +641,7 @@ meaningful description.
     >>> bug.linkAttachment(
     ...     owner=bug.owner,
     ...     file_alias=file_alias,
+    ...     url=None,
     ...     comment="Some attachment",
     ...     is_patch=True,
     ...     description="An attachment of some sort",
@@ -688,6 +699,7 @@ its Librarian file is set.
     ...     owner=private_bug_owner,
     ...     data=b"secret",
     ...     filename="baz.txt",
+    ...     url=None,
     ...     comment="Some attachment",
     ... )
     >>> private_attachment.libraryfile.restricted

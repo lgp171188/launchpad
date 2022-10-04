@@ -16,7 +16,6 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.browser.bugtask import get_comments_for_bugtask
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 
 BUGS_XMLNS = "https://launchpad.net/xmlns/2006/bugs"
 
@@ -85,27 +84,30 @@ def serialise_bugtask(bugtask):
             attachment_node = ET.SubElement(
                 comment_node,
                 "attachment",
-                href=ProxiedLibraryFileAlias(
-                    attachment.libraryfile, attachment
-                ).http_url,
+                href=attachment.displayed_url,
             )
             attachment_node.text = attachment_node.tail = "\n"
             addnode(attachment_node, "type", attachment.type.name)
-            addnode(
-                attachment_node, "filename", attachment.libraryfile.filename
-            )
             addnode(attachment_node, "title", attachment.title)
-            addnode(
-                attachment_node, "mimetype", attachment.libraryfile.mimetype
-            )
-            # Attach the attachment file contents, base 64 encoded.
-            addnode(
-                attachment_node,
-                "contents",
-                base64.encodebytes(attachment.libraryfile.read()).decode(
-                    "ASCII"
-                ),
-            )
+            if attachment.libraryfile:
+                addnode(
+                    attachment_node,
+                    "filename",
+                    attachment.libraryfile.filename,
+                )
+                addnode(
+                    attachment_node,
+                    "mimetype",
+                    attachment.libraryfile.mimetype,
+                )
+                # Attach the attachment file contents, base 64 encoded.
+                addnode(
+                    attachment_node,
+                    "contents",
+                    base64.encodebytes(attachment.libraryfile.read()).decode(
+                        "ASCII"
+                    ),
+                )
 
     return bug_node
 

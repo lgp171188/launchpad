@@ -29,7 +29,6 @@ from lp.bugs.interfaces.bugmessage import IBugComment
 from lp.services.comments.browser.comment import download_body
 from lp.services.comments.browser.messagecomment import MessageComment
 from lp.services.config import config
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.messages.interfaces.message import IMessage
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp import (
@@ -377,12 +376,6 @@ class BugCommentBoxViewMixin:
             return self.comment.show_spam_controls
         else:
             return False
-
-    def proxiedUrlOfLibraryFileAlias(self, attachment):
-        """Return the proxied URL for the Librarian file of the attachment."""
-        return ProxiedLibraryFileAlias(
-            attachment.libraryfile, attachment
-        ).http_url
 
 
 class BugCommentBoxView(LaunchpadView, BugCommentBoxViewMixin):

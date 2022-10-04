@@ -779,6 +779,25 @@ class TestBugMessageAddFormView(TestCaseWithFactory):
         )
         self.assertEqual(0, len(view.errors))
 
+    def test_add_attachment_with_url(self):
+        bug = self.factory.makeBug()
+        form = {
+            "field.comment": " ",
+            "field.actions.save": "Post Comment",
+            "field.attachment_url": "https://launchpad.net",
+            "field.attachment_description": "description",
+            "field.patch.used": "",
+        }
+        login_person(self.factory.makePerson())
+        view = create_initialized_view(
+            bug.default_bugtask, "+addcomment", form=form
+        )
+        self.assertEqual([], view.errors)
+        attachments = list(bug.attachments)
+        self.assertEqual(1, len(attachments))
+        self.assertEqual("description", attachments[0].title)
+        self.assertEqual("https://launchpad.net", attachments[0].url)
+
 
 class TestBugMarkAsDuplicateView(TestCaseWithFactory):
     """Tests for marking a bug as a duplicate."""
