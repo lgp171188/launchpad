@@ -2078,7 +2078,10 @@ class Archive(SQLBase):
             ]
         )
         return (
-            store.find(LibraryFileAlias, *clauses).config(distinct=True).one()
+            store.find(LibraryFileAlias, *clauses)
+            .config(distinct=True)
+            .order_by("id")
+            .last()
         )
 
     def getBinaryPackageRelease(self, name, version, archtag):
