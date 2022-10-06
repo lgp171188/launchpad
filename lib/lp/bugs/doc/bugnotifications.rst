@@ -155,7 +155,7 @@ bug. Let's take a look at each type.
     Similar to a distro task, except that a task filed on a specific
     distro series is meant to be used for backport fixes (critical data
     loss or security bugs), or tasks targeted to current and future
-    series. Tasks filed on specific distro seriess are not listed in
+    series. Tasks filed on specific distro series are not listed in
     the more generic, distro-wide bug task listings.
 
     >>> sid = getUtility(IDistroSeriesSet).get(8)

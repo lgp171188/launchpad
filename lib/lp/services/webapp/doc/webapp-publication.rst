@@ -1001,7 +1001,7 @@ afterCall().  For example, this publication subclass will simply print
 some string in its finishReadOnlyRequest().
 
     >>> class MyPublication(LaunchpadBrowserPublication):
-    ...     def finishReadOnlyRequest(self, request, ob, txn):
+    ...     def finishReadOnlyRequest(self, txn):
     ...         print("booo!")
     ...
 

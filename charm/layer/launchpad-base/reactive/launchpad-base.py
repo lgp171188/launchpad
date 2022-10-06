@@ -3,6 +3,7 @@
 
 import subprocess
 
+from charmhelpers.core import hookenv
 from charms.launchpad.base import (
     configure_lazr,
     configure_rsync,
@@ -28,9 +29,15 @@ def create_virtualenv(wheels_dir, codedir, python_exe):
 base.create_virtualenv = create_virtualenv
 
 
-@when("ols.configured", "db.master.available")
+@when("rabbitmq.connected")
+def prepare_rabbitmq(rabbitmq):
+    config = hookenv.config()
+    rabbitmq.request_access(config["rabbitmq_user"], config["domain"])
+
+
+@when("ols.configured", "db.master.available", "rabbitmq.available")
 @when_not("launchpad.base.configured")
-def configure(db):
+def configure(db, rabbitmq):
     ensure_lp_directories()
     config = get_service_config()
     db_primary, db_standby = postgres.get_db_uris(db)
@@ -47,6 +54,14 @@ def configure(db):
     # specific to the appserver.  We need to teach Launchpad to be able to
     # log in as one role and then switch to another.
     config["db_user"] = parse_dsn(db_primary)["user"]
+    # XXX cjwatson 2022-09-29: How do we implement HA?  Looks like we'd need
+    # code changes to let us configure multiple broker URLs.  (At the moment
+    # we rely on round-robin DNS on production, but that probably doesn't
+    # provide very good HA either.)
+    config["rabbitmq_host"] = rabbitmq.private_address()
+    config["rabbitmq_username"] = rabbitmq.username()
+    config["rabbitmq_password"] = rabbitmq.password()
+    config["rabbitmq_vhost"] = rabbitmq.vhost()
     configure_lazr(
         config,
         "launchpad-base-lazr.conf",
