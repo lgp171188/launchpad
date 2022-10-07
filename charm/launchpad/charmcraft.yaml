@@ -10,7 +10,7 @@ parts:
   launchpad:
     source: .
     plugin: reactive
-    build-snaps: [charm]
+    build-snaps: [charm/2.x/stable]
     build-environment:
       - CHARM_LAYERS_DIR: tmp/deps/ols-layers/layer
       - CHARM_INTERFACES_DIR: tmp/deps/ols-layers/interface
