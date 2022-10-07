@@ -28,7 +28,7 @@
         </tr>
       </thead>
       <tbody>
-        <tal:channel tal:condition="view/is_edit" repeat="channel view/context/context/store_channels">
+        <tal:channel tal:condition="view/show_edit" repeat="channel view/context/context/store_channels">
           <tal:channel_widgets
               define="parity python:'even' if repeat['channel'].even() else 'odd';
                       edit_track string:track_${repeat/channel/index}_widget;

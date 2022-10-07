@@ -328,7 +328,9 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl(
             name="field.store_channels.add_track"
         ).value = "track"
-        browser.getControl("Edge").selected = True
+        browser.getControl(name="field.store_channels.add_risk").value = [
+            "edge"
+        ]
         root_macaroon = Macaroon(version=2)
         root_macaroon.add_third_party_caveat(
             "https://candid.test/", "", "identity"
@@ -493,6 +495,56 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Create charm recipe").click()
 
         self.assertIn("Required input is missing.", browser.contents)
+
+    def test_create_new_recipe_missing_channel_risk(self):
+        # No track or branch selected
+        self.factory.makeProduct(
+            name="test-project", displayname="Test Project"
+        )
+        [git_ref] = self.factory.makeGitRefs()
+        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Automatically upload to store").selected = True
+        browser.getControl(name="field.name").value = "test-recipe-name"
+        browser.getControl("Registered store name").value = "charmhub-name"
+
+        browser.getControl("Create charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
+
+        # Entering only the track is not enough
+        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Automatically upload to store").selected = True
+        browser.getControl(name="field.name").value = "test-recipe-name"
+        browser.getControl("Registered store name").value = "charmhub-name"
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "new-track"
+
+        browser.getControl("Create charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
+
+        # Entering only the track and branch will error
+        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
+        browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Automatically upload to store").selected = True
+        browser.getControl(name="field.name").value = "test-recipe-name"
+        browser.getControl("Registered store name").value = "charmhub-name"
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "new-track"
+        browser.getControl(
+            name="field.store_channels.add_branch"
+        ).value = "new-branch"
+
+        browser.getControl("Create charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
 
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
@@ -670,8 +722,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         content = find_main_content(browser.contents)
         self.assertThat(
             "Store channels:\n"
-            "new-track/edge/new-branch, track1/stable/branch1, "
-            "track2/edge/branch1"
+            "track1/stable/branch1, "
+            "track2/edge/branch1, new-track/edge/new-branch"
             "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),
         )
@@ -777,6 +829,65 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             "Store channels:\n" "track2/edge/branch1" "\nEdit charm recipe",
             MatchesTagText(content, "store_channels"),
         )
+
+    def test_edit_recipe_missing_channel_risk(self):
+        # On the edit form we can also add a new channel.
+        # The only valid combination for the
+        # new channel entry on this form are:
+        # 1: nothing selected - allows the user to edit existent channels,
+        # without adding a new empty channel row when pressing Update Recipe.
+        # 2: Risk selected and any combination of track / branch entered
+        [git_ref] = self.factory.makeGitRefs()
+        recipe = self.factory.makeCharmRecipe(
+            registrant=self.person,
+            owner=self.person,
+            git_ref=git_ref,
+            store_channels=["track1/stable/branch1", "track2/edge/branch1"],
+            store_name="Store name",
+            store_upload=True,
+        )
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person]
+        )
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+
+        # If the user entered only Track for the new channel entry,
+        # ensure we error with missing Risk message.
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "new-track"
+
+        browser.getControl("Update charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
+
+        # If the user entered only Branch for the new channel entry,
+        # ensure we error with missing Risk message.
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+        browser.getControl(
+            name="field.store_channels.add_branch"
+        ).value = "new-branch"
+
+        browser.getControl("Update charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
+
+        # For Track and Branch entered but no Risk selected,
+        # ensure we error with missing Risk message.
+        browser = self.getViewBrowser(recipe, user=self.person)
+        browser.getLink("Edit charm recipe").click()
+        browser.getControl(
+            name="field.store_channels.add_track"
+        ).value = "new-track"
+        browser.getControl(
+            name="field.store_channels.add_branch"
+        ).value = "new-branch"
+
+        browser.getControl("Update charm recipe").click()
+
+        self.assertIn("You must select a Risk.", browser.contents)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing a charm recipe sets the date_last_modified property.

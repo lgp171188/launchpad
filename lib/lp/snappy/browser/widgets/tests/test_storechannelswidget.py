@@ -21,7 +21,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestStoreChannelsWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -199,7 +198,11 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         self.assertTrue(self.new_widget.hasValidInput())
 
     def assertGetInputValueError(self, form, message):
-        self.new_widget.request = LaunchpadTestRequest(form=form)
+        extra = {
+            "field.actions.create": "Create snap package",
+            "field.store_upload": "on",
+        }
+        self.new_widget.request = LaunchpadTestRequest(form=form, **extra)
         e = self.assertRaises(WidgetInputError, self.new_widget.getInputValue)
         self.assertEqual(LaunchpadValidationError(message), e.errors)
         self.assertEqual(html_escape(message), self.new_widget.error())
@@ -223,46 +226,58 @@ class TestStoreChannelsWidget(TestCaseWithFactory):
         self.assertGetInputValueError(form, "Branch name cannot include '/'.")
 
     def test_getInputValue_no_track_or_branch(self):
-        self.new_widget.request = LaunchpadTestRequest(
-            form={
-                "field.channels.add_track": "",
-                "field.channels.add_risk": "edge",
-                "field.channels.add_branch": "",
-            }
-        )
+        form = {
+            "field.channels.add_track": "",
+            "field.channels.add_risk": "edge",
+            "field.channels.add_branch": "",
+        }
+        extra = {
+            "field.actions.create": "Create snap package",
+            "field.store_upload": "on",
+        }
+        self.new_widget.request = LaunchpadTestRequest(form=form, **extra)
         expected = ["edge"]
         self.assertEqual(expected, self.new_widget.getInputValue())
 
     def test_getInputValue_with_track(self):
-        self.new_widget.request = LaunchpadTestRequest(
-            form={
-                "field.channels.add_track": "track",
-                "field.channels.add_risk": "beta",
-                "field.channels.add_branch": "",
-            }
-        )
+        form = {
+            "field.channels.add_track": "track",
+            "field.channels.add_risk": "beta",
+            "field.channels.add_branch": "",
+        }
+        extra = {
+            "field.actions.create": "Create snap package",
+            "field.store_upload": "on",
+        }
+        self.new_widget.request = LaunchpadTestRequest(form=form, **extra)
         expected = ["track/beta"]
         self.assertEqual(expected, self.new_widget.getInputValue())
 
     def test_getInputValue_with_branch(self):
-        self.new_widget.request = LaunchpadTestRequest(
-            form={
-                "field.channels.add_track": "",
-                "field.channels.add_risk": "beta",
-                "field.channels.add_branch": "fix-123",
-            }
-        )
+        form = {
+            "field.channels.add_track": "",
+            "field.channels.add_risk": "beta",
+            "field.channels.add_branch": "fix-123",
+        }
+        extra = {
+            "field.actions.create": "Create snap package",
+            "field.store_upload": "on",
+        }
+        self.new_widget.request = LaunchpadTestRequest(form=form, **extra)
         expected = ["beta/fix-123"]
         self.assertEqual(expected, self.new_widget.getInputValue())
 
     def test_getInputValue_with_track_and_branch(self):
-        self.new_widget.request = LaunchpadTestRequest(
-            form={
-                "field.channels.add_track": "track",
-                "field.channels.add_risk": "beta",
-                "field.channels.add_branch": "fix-123",
-            }
-        )
+        form = {
+            "field.channels.add_track": "track",
+            "field.channels.add_risk": "beta",
+            "field.channels.add_branch": "fix-123",
+        }
+        extra = {
+            "field.actions.create": "Create snap package",
+            "field.store_upload": "on",
+        }
+        self.new_widget.request = LaunchpadTestRequest(form=form, **extra)
         expected = ["track/beta/fix-123"]
         self.assertEqual(expected, self.new_widget.getInputValue())
 

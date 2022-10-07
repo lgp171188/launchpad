@@ -632,7 +632,9 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(
             name="field.store_channels.add_track"
         ).value = "track"
-        browser.getControl("Edge").selected = True
+        browser.getControl(name="field.store_channels.add_risk").value = [
+            "edge"
+        ]
         root_macaroon = Macaroon()
         root_macaroon.add_third_party_caveat(
             urlsplit(config.launchpad.openid_provider_root).netloc, "", "dummy"

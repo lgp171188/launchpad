@@ -18,8 +18,17 @@
       background-color: #eee;
     }
     /* These add up to 100%. */
-    tr .channel-row-risks {
-      width: 40%;
+    tr .channel-row-track {
+      width: 35%;
+    }
+    tr .channel-row-risk {
+      width: 25%;
+    }
+    tr .channel-row-branch {
+      width: 35%;
+    }
+    tr .channel-row-delete {
+      width: 5%;
     }
   </style>
 </metal:block>

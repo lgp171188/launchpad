@@ -45,11 +45,25 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         return "%s_%d" % (name, channel_index)
 
     @property
+    def show_edit(self):
+        channels = getattr(self.context.context, "store_channels", None)
+        if channels and len(channels) >= 1:
+            return True
+        return False
+
+    @property
     def is_edit(self):
-        if ICharmRecipe.providedBy(self.context.context) or ISnap.providedBy(
-            self.context.context
-        ):
-            if len(self.context.context.store_channels) >= 1:
+        edit_operation = self.request.get("field.actions.update")
+        if edit_operation:
+            return True
+        return False
+
+    @property
+    def is_add(self):
+        add_operation = self.request.get("field.actions.create")
+        with_upload = self.request.get("field.store_upload")
+        if add_operation and with_upload:
+            if with_upload == "on":
                 return True
         return False
 
@@ -65,8 +79,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         if self._widgets_set_up:
             return
         fields = []
-        if self.is_edit:
-            for index in range(len(self.context.context.store_channels)):
+        channels = getattr(self.context.context, "store_channels", None)
+        if channels:
+            for index in range(len(channels)):
                 fields.extend(
                     [
                         TextLine(
@@ -155,7 +170,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         except UnexpectedFormData:
             return False
 
-    def get_list(self, track, risk, branch):
+    def get_list(self, track, risk, branch, operation):
         if track and CHANNEL_COMPONENTS_DELIMITER in track:
             error_msg = "Track name cannot include '%s'." % (
                 CHANNEL_COMPONENTS_DELIMITER
@@ -170,6 +185,22 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             raise WidgetInputError(
                 self.name, self.label, LaunchpadValidationError(error_msg)
             )
+        if not risk:
+            error_msg = "You must select a Risk."
+            if operation == "add":
+                raise WidgetInputError(
+                    "add_risk_widget",
+                    self.label,
+                    LaunchpadValidationError(error_msg),
+                )
+            if operation == "edit":
+                if track or branch:
+                    if not risk:
+                        raise WidgetInputError(
+                            "add_risk_widget",
+                            self.label,
+                            LaunchpadValidationError(error_msg),
+                        )
         return channel_list_to_string(track, risk, branch)
 
     def getInputValue(self):
@@ -179,11 +210,9 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
         track = self.add_track_widget.getInputValue()
         risk = self.add_risk_widget.getInputValue()
         branch = self.add_branch_widget.getInputValue()
-        add_row = self.get_list(track, risk, branch)
-        if add_row:
-            store_channels.append(add_row)
-
+        add_row = None
         if self.is_edit:
+            add_row = self.get_list(track, risk, branch, "edit")
             for index in range(len(self.context.context.store_channels)):
                 track = getattr(
                     self, "track_%s_widget" % index
@@ -196,8 +225,13 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                     self, "delete_%s_widget" % index
                 ).getInputValue()
                 if not delete:
-                    store_channels.append(self.get_list(track, risk, branch))
-
+                    store_channels.append(
+                        self.get_list(track, risk, branch, "edit")
+                    )
+        if self.is_add:
+            add_row = self.get_list(track, risk, branch, "add")
+        if add_row:
+            store_channels.append(add_row)
         return store_channels
 
     def error(self):
