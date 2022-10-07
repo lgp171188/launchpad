@@ -74,7 +74,7 @@ class SnapBase(Storm):
 
     is_default = Bool(name="is_default", allow_none=False)
 
-    _features = PgJSON(name="features", allow_none=False)
+    _features = PgJSON(name="features", allow_none=True)
 
     def __init__(
         self,
@@ -98,6 +98,8 @@ class SnapBase(Storm):
 
     @property
     def features(self) -> Dict[Item, bool]:
+        if self._features is None:
+            return {}
         features = {}
         for token, is_enabled in self._features.items():
             try:
