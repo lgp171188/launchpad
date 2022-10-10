@@ -2,6 +2,7 @@
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
@@ -10,6 +11,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.interfaces.bug import IBugSet
+from lp.bugs.interfaces.bugattachment import BugAttachmentType
 from lp.bugs.model.bug import Bug as BugModel
 from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.cve import Cve as CveModel
@@ -42,6 +44,13 @@ class UCTExporter:
             ("description", str),
             ("references", List[str]),
         ),
+    )
+
+    # Example:
+    # linux/upstream
+    # linux/upstream/5.19.1
+    BUG_ATTACHMENT_TITLE_RE = re.compile(
+        "^(?P<package_name>.+?)/(?P<patch_type>.+?)(/(?P<notes>.+?))?$"
     )
 
     def export_bug_to_uct_file(
@@ -192,6 +201,31 @@ class UCTExporter:
                 )
             )
 
+        packages_by_name = {
+            p.name: p for p in package_name_by_product.values()
+        }
+        patch_urls = []
+        for attachment in bug.attachments:
+            if (
+                not attachment.url
+                or not attachment.type == BugAttachmentType.PATCH
+            ):
+                continue
+            title_match = self.BUG_ATTACHMENT_TITLE_RE.match(attachment.title)
+            if not title_match:
+                continue
+            spn = packages_by_name.get(title_match.groupdict()["package_name"])
+            if not spn:
+                continue
+            patch_urls.append(
+                CVE.PatchURL(
+                    package_name=spn,
+                    type=title_match.groupdict()["patch_type"],
+                    url=attachment.url,
+                    notes=title_match.groupdict().get("notes"),
+                )
+            )
+
         return CVE(
             sequence="CVE-{}".format(lp_cve.sequence),
             date_made_public=vulnerability.date_made_public,
@@ -217,6 +251,7 @@ class UCTExporter:
                 )
                 for authority, vector_string in lp_cve.cvss.items()
             ],
+            patch_urls=patch_urls,
         )
 
     def _parse_bug_description(
