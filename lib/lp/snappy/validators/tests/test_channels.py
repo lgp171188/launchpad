@@ -20,18 +20,10 @@ class TestChannelsValidator(TestCaseWithFactory):
         self.assertTrue(channels_validator(["beta", "edge"]))
 
     def test_channels_validator_multiple_tracks(self):
-        self.assertRaises(
-            LaunchpadValidationError,
-            channels_validator,
-            ["1.1/stable", "2.1/edge"],
-        )
+        self.assertTrue(channels_validator(["1.1/stable", "2.1/edge"]))
 
     def test_channels_validator_multiple_branches(self):
-        self.assertRaises(
-            LaunchpadValidationError,
-            channels_validator,
-            ["stable/fix-123", "edge/fix-124"],
-        )
+        self.assertTrue(channels_validator(["stable/fix-123", "edge/fix-124"]))
 
     def test_channels_validator_invalid_channel(self):
         self.assertRaises(

@@ -28,12 +28,14 @@
             <div tal:attributes="class python:error and 'error' or None"
                  tal:define="error widget/error">
 
-              <label tal:attributes="for widget/name"
-                     tal:content="string:${widget/label}:">Label</label>
+              <tal:label condition="display_label|widget/display_label|python:True">
+                <label tal:attributes="for widget/name"
+                       tal:content="string:${widget/label}:">Label</label>
 
-              <span tal:condition="widget/required"
-                    class="fieldRequired"
-                    title="Required">(Required)</span>
+                <span tal:condition="widget/required"
+                      class="fieldRequired"
+                      title="Required">(Required)</span>
+              </tal:label>
 
               <div tal:content="structure widget">
                   <input type="text" style="width:100%"/>
