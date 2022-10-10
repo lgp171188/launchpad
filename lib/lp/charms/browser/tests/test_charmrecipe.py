@@ -511,7 +511,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
 
         browser.getControl("Create charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
         # Entering only the track is not enough
         view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
@@ -526,7 +526,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
 
         browser.getControl("Create charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
         # Entering only the track and branch will error
         view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
@@ -544,7 +544,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
 
         browser.getControl("Create charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
 
 class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
@@ -860,7 +860,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         browser.getControl("Update charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
         # If the user entered only Branch for the new channel entry,
         # ensure we error with missing Risk message.
@@ -872,7 +872,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         browser.getControl("Update charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
         # For Track and Branch entered but no Risk selected,
         # ensure we error with missing Risk message.
@@ -887,7 +887,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         browser.getControl("Update charm recipe").click()
 
-        self.assertIn("You must select a Risk.", browser.contents)
+        self.assertIn("You must select a risk.", browser.contents)
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing a charm recipe sets the date_last_modified property.

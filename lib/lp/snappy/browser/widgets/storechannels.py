@@ -53,10 +53,11 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
 
     @property
     def is_edit(self):
-        edit_operation = self.request.get("field.actions.update")
-        if edit_operation:
-            return True
-        return False
+        # XXX ilasc 2022-10-10: Both this and is_add are layering violations
+        # that could make it difficult to reuse this widget in other contexts.
+        # These two checks will disappear when we move to the Javascript
+        # approach for adding a new row.
+        return bool(self.request.get("field.actions.update"))
 
     @property
     def is_add(self):
@@ -186,7 +187,7 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 self.name, self.label, LaunchpadValidationError(error_msg)
             )
         if not risk:
-            error_msg = "You must select a Risk."
+            error_msg = "You must select a risk."
             if operation == "add":
                 raise WidgetInputError(
                     "add_risk_widget",
@@ -195,12 +196,11 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
                 )
             if operation == "edit":
                 if track or branch:
-                    if not risk:
-                        raise WidgetInputError(
-                            "add_risk_widget",
-                            self.label,
-                            LaunchpadValidationError(error_msg),
-                        )
+                    raise WidgetInputError(
+                        "add_risk_widget",
+                        self.label,
+                        LaunchpadValidationError(error_msg),
+                    )
         return channel_list_to_string(track, risk, branch)
 
     def getInputValue(self):

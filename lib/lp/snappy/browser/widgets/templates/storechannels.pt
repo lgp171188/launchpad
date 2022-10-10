@@ -60,7 +60,7 @@
           </tal:channel_widgets>
         </tal:channel>
         <tal:new-channel
-            define="parity python:'even' if view.number_of_channels==0 else ('odd' if view.number_of_channels % 2 else 'even')">
+            define="parity python:'odd' if view.number_of_channels % 2 else 'even'">
           <tr tal:attributes="class string:channel-row ${parity}">
             <td class="channel-row-track">
               <tal:widget define="widget nocall:view/add_track_widget">
