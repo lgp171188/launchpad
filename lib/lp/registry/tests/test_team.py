@@ -357,7 +357,7 @@ class TestTeamMembershipPolicyChoiceModerated(TeamMembershipPolicyBase):
         self.assertEqual(None, self.field.validate(TeamMembershipPolicy.OPEN))
 
     def test_closed_team_can_change_to_another_closed_policy(self):
-        # A exclusive team can change between the two exclusive polcies.
+        # A exclusive team can change between the two exclusive policies.
         self.setUpTeams()
         self.team.addMember(self.other_team, self.team.teamowner)
         super_team = self.factory.makeTeam(
