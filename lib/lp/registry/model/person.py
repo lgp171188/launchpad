@@ -2716,6 +2716,7 @@ class Person(
             ("karma", "person"),
             ("karmacache", "person"),
             ("karmatotalcache", "person"),
+            ("livefs", "owner"),
             ("logintoken", "requester"),
             ("personlanguage", "person"),
             ("personlocation", "person"),
