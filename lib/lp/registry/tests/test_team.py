@@ -26,11 +26,13 @@ from lp.registry.interfaces.person import IPersonSet, ITeamPublic
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.model.persontransferjob import PersonTransferJob
 from lp.services.database.interfaces import IMasterStore
+from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.messages.interfaces.message import IDirectEmailAuthorization
 from lp.soyuz.enums import ArchiveStatus
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     TestCaseWithFactory,
     login_celebrity,
@@ -603,6 +605,22 @@ class TestVisibilityConsistencyWarning(TestCaseWithFactory):
         self.assertIsNone(
             self.team.visibilityConsistencyWarning(PersonVisibility.PRIVATE)
         )
+
+    def test_no_warning_for_livefs(self):
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+            member = self.factory.makePerson()
+            self.team.addMember(
+                member, member, status=TeamMembershipStatus.APPROVED
+            )
+            self.factory.makeLiveFS(
+                registrant=member,
+                owner=self.team,
+            )
+            self.assertIsNone(
+                self.team.visibilityConsistencyWarning(
+                    PersonVisibility.PRIVATE
+                )
+            )
 
 
 class TestPersonJoinTeam(TestCaseWithFactory):
