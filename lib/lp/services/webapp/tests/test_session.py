@@ -24,42 +24,44 @@ class GetCookieDomainTestCase(TestCase):
     def test_base_domain(self):
         # Test that the base Launchpad domain gives a domain parameter
         # that is visible to the virtual hosts.
-        self.assertEqual(get_cookie_domain("launchpad.net"), ".launchpad.net")
+        self.pushConfig("vhost.mainsite", hostname="launchpad.net")
+        self.assertEqual(".launchpad.net", get_cookie_domain("launchpad.net"))
 
     def test_vhost_domain(self):
         # Test Launchpad subdomains give the same domain parameter
+        self.pushConfig("vhost.mainsite", hostname="launchpad.net")
         self.assertEqual(
-            get_cookie_domain("bugs.launchpad.net"), ".launchpad.net"
+            ".launchpad.net", get_cookie_domain("bugs.launchpad.net")
         )
 
     def test_other_domain(self):
         # Other domains do not return a cookie domain.
-        self.assertEqual(get_cookie_domain("example.com"), None)
+        self.pushConfig("vhost.mainsite", hostname="launchpad.net")
+        self.assertIsNone(get_cookie_domain("example.com"))
 
-    def test_other_instances(self):
-        # Test that requests to other launchpad instances are scoped right
+    def test_staging(self):
+        # Requests to Launchpad staging are scoped correctly.
+        self.pushConfig("vhost.mainsite", hostname="staging.launchpad.net")
         self.assertEqual(
-            get_cookie_domain("demo.launchpad.net"), ".demo.launchpad.net"
-        )
-        self.assertEqual(
-            get_cookie_domain("bugs.demo.launchpad.net"), ".demo.launchpad.net"
-        )
-
-        self.assertEqual(
+            ".staging.launchpad.net",
             get_cookie_domain("staging.launchpad.net"),
-            ".staging.launchpad.net",
         )
         self.assertEqual(
+            ".staging.launchpad.net",
             get_cookie_domain("bugs.staging.launchpad.net"),
-            ".staging.launchpad.net",
         )
+        self.assertIsNone(get_cookie_domain("launchpad.net"))
 
+    def test_development(self):
+        # Requests to a development server are scoped correctly.
+        self.pushConfig("vhost.mainsite", hostname="launchpad.test")
         self.assertEqual(
-            get_cookie_domain("launchpad.test"), ".launchpad.test"
+            ".launchpad.test", get_cookie_domain("launchpad.test")
         )
         self.assertEqual(
-            get_cookie_domain("bugs.launchpad.test"), ".launchpad.test"
+            ".launchpad.test", get_cookie_domain("bugs.launchpad.test")
         )
+        self.assertIsNone(get_cookie_domain("launchpad.net"))
 
 
 class TestLaunchpadCookieClientIdManager(TestCase):
