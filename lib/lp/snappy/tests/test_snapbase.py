@@ -93,6 +93,11 @@ class TestSnapBase(TestCaseWithFactory):
             snap_base.features,
         )
 
+    def test_blank_features(self):
+        snap_base = self.factory.makeSnapBase(name="foo")
+        removeSecurityProxy(snap_base)._features = None
+        self.assertEqual({}, snap_base.features)
+
 
 class TestSnapBaseProcessors(TestCaseWithFactory):
 

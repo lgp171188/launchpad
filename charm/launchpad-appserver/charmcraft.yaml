@@ -10,7 +10,7 @@ parts:
   launchpad-appserver:
     source: .
     plugin: reactive
-    build-snaps: [charm]
+    build-snaps: [charm/2.x/stable]
     build-packages: [libpq-dev]
     build-environment:
       - CHARM_LAYERS_DIR: tmp/deps/ols-layers/layer

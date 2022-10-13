@@ -11,6 +11,24 @@
   <style type="text/css">
     .subordinate {
       margin: 0.5em 0 0.5em 4em;
+      max-width: 80%;
+      margin-bottom: 1em;
+    }
+    table.subordinate tr.even {
+      background-color: #eee;
+    }
+    /* These add up to 100%. */
+    tr .channel-row-track {
+      width: 35%;
+    }
+    tr .channel-row-risk {
+      width: 25%;
+    }
+    tr .channel-row-branch {
+      width: 35%;
+    }
+    tr .channel-row-delete {
+      width: 5%;
     }
   </style>
 </metal:block>
@@ -55,8 +73,7 @@
               <tal:widget define="widget nocall:view/widgets/store_name">
                 <metal:block use-macro="context/@@launchpad_form/widget_row" />
               </tal:widget>
-              <tal:widget define="widget nocall:view/widgets/store_channels"
-                          condition="widget/has_risks_vocabulary">
+              <tal:widget define="widget nocall:view/widgets/store_channels">
                 <metal:block use-macro="context/@@launchpad_form/widget_row" />
               </tal:widget>
             </table>
