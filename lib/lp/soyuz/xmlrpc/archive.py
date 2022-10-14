@@ -65,7 +65,17 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 message="No archive found for '%s'." % archive_reference
             )
         archive = removeSecurityProxy(archive)
-        token_set = getUtility(IArchiveAuthTokenSet)
+
+        # Public archives do not require authorization.
+        if not archive.private:
+            log.info("%s: Authorized (public)", archive_reference)
+            return
+        elif username is None:
+            log.info(
+                "<anonymous>@%s: Private archive requires authorization",
+                archive_reference,
+            )
+            raise faults.Unauthorized()
 
         # If the password is a serialized macaroon for the buildd user, then
         # try macaroon authentication.
@@ -83,6 +93,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 raise faults.Unauthorized()
 
         # Fall back to checking archive auth tokens.
+        token_set = getUtility(IArchiveAuthTokenSet)
         if username.startswith("+"):
             token = token_set.getActiveNamedTokenForArchive(
                 archive, username[1:]

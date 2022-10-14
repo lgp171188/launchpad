@@ -57,6 +57,26 @@ class TestArchiveAPI(TestCaseWithFactory):
             "",
         )
 
+    def test_checkArchiveAuthToken_anonymous_private(self):
+        archive = self.factory.makeArchive(private=True)
+        self.assertUnauthorized(
+            "checkArchiveAuthToken",
+            "<anonymous>@%s: Private archive requires authorization"
+            % archive.reference,
+            archive.reference,
+            None,
+            None,
+        )
+
+    def test_checkArchiveAuthToken_anonymous_public(self):
+        archive = self.factory.makeArchive()
+        self.assertIsNone(
+            self.archive_api.checkArchiveAuthToken(
+                archive.reference, None, None
+            )
+        )
+        self.assertLogs("%s: Authorized (public)" % archive.reference)
+
     def test_checkArchiveAuthToken_no_tokens(self):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
         self.assertNotFound(
