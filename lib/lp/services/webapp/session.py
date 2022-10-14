@@ -92,16 +92,13 @@ def get_cookie_domain(request_domain):
     all virtual hosts of the Launchpad instance.  If no matching
     domain is known, None is returned.
     """
-    cookie_domains = [
-        v.strip() for v in config.launchpad.cookie_domains.split(",")
-    ]
-    for domain in cookie_domains:
-        assert not domain.startswith("."), "domain should not start with '.'"
-        dotted_domain = "." + domain
-        if domain_match(request_domain, domain) or domain_match(
-            request_domain, dotted_domain
-        ):
-            return dotted_domain
+    domain = config.vhost.mainsite.hostname
+    assert not domain.startswith("."), "domain should not start with '.'"
+    dotted_domain = "." + domain
+    if domain_match(request_domain, domain) or domain_match(
+        request_domain, dotted_domain
+    ):
+        return dotted_domain
     return None
 
 
