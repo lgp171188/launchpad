@@ -11,7 +11,9 @@ from lp.snappy.adapters.buildarch import (
     UnsupportedBuildOnError,
     determine_architectures_to_build,
 )
-from lp.testing import TestCase
+from lp.snappy.interfaces.snapbase import SnapBaseFeature
+from lp.testing import TestCase, TestCaseWithFactory
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSnapArchitecture(WithScenarios, TestCase):
@@ -174,10 +176,11 @@ class TestSnapBuildInstanceError(TestCase):
         self.assertEqual(["amd64"], raised.build_on)
 
 
-class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
-
+class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
     # Scenarios taken from the architectures document:
     # https://forum.snapcraft.io/t/architectures/4972
+
+    layer = ZopelessDatabaseLayer
 
     scenarios = [
         (
@@ -396,6 +399,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
         (
             "multiple build-for for the same build-on",
             {
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True
+                },
                 "architectures": [
                     {"build-on": "amd64", "build-for": ["amd64"]},
                     {"build-on": "amd64", "build-for": ["i386"]},
@@ -418,7 +424,9 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
         (
             "multiple build-for for the same build-on: old base",
             {
-                "snap_base": "core20",
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: False
+                },
                 "architectures": [
                     {"build-on": "amd64", "build-for": ["amd64"]},
                     {"build-on": "amd64", "build-for": ["i386"]},
@@ -431,7 +439,8 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCase):
 
     def test_parser(self):
         snapcraft_data = {"architectures": self.architectures}
-        snap_base = getattr(self, "snap_base", "core22")
+        snap_base_features = getattr(self, "snap_base_features", {})
+        snap_base = self.factory.makeSnapBase(features=snap_base_features)
         if hasattr(self, "expected_exception"):
             self.assertRaises(
                 self.expected_exception,

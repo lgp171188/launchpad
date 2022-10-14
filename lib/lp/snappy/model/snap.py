@@ -1009,7 +1009,7 @@ class Snap(Storm, WebhookTargetMixin):
                 )
             )
             architectures_to_build = determine_architectures_to_build(
-                snap_base.name if snap_base is not None else None,
+                snap_base,
                 snapcraft_data,
                 list(supported_arches.keys()),
             )
