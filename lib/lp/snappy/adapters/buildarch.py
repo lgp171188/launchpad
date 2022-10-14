@@ -9,6 +9,8 @@ from collections import Counter
 from typing import Any, Dict, List, Optional, Union
 
 from lp.services.helpers import english_list
+from lp.snappy.interfaces.snapbase import SnapBaseFeature
+from lp.snappy.model.snapbase import SnapBase
 
 
 class SnapArchitecturesParserError(Exception):
@@ -146,7 +148,7 @@ class SnapBuildInstance:
 
 
 def determine_architectures_to_build(
-    snap_base: Optional[str],
+    snap_base: Optional[SnapBase],
     snapcraft_data: Dict[str, Any],
     supported_arches: List[str],
 ) -> List[SnapBuildInstance]:
@@ -184,7 +186,11 @@ def determine_architectures_to_build(
             SnapArchitecture(build_on=a) for a in supported_arches
         ]
 
-    if snap_base not in {"core22"}:
+    allow_duplicate_build_on = (
+        snap_base
+        and snap_base.features.get(SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON)
+    ) or False
+    if not allow_duplicate_build_on:
         # Ensure that multiple `build-on` items don't include the same
         # architecture; this is ambiguous and forbidden by snapcraft prior
         # to core22. Checking this here means that we don't get duplicate
