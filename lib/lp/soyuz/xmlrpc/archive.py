@@ -155,7 +155,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             path.as_posix(),
             archive_file.library_file.id,
         )
-        return archive_file.library_file.getURL()
+        return archive_file.library_file.getURL(include_token=True)
 
     def _translatePathNonPool(
         self, archive_reference: str, archive, path: PurePath
@@ -174,7 +174,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             path.as_posix(),
             archive_file.library_file.id,
         )
-        return archive_file.library_file.getURL()
+        return archive_file.library_file.getURL(include_token=True)
 
     def _translatePathPool(
         self, archive_reference: str, archive, path: PurePath
@@ -189,7 +189,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             path.as_posix(),
             lfa.id,
         )
-        return lfa.getURL()
+        return lfa.getURL(include_token=True)
 
     @return_fault
     def _translatePath(self, archive_reference: str, path: PurePath) -> str:
