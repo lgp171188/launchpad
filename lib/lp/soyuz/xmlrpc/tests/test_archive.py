@@ -14,7 +14,7 @@ from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
 from lp.soyuz.xmlrpc.archive import ArchiveAPI
-from lp.testing import TestCaseWithFactory
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.xmlrpc import faults
 
@@ -324,6 +324,31 @@ class TestArchiveAPI(TestCaseWithFactory):
             % (archive.reference, path, archive_file.library_file.id)
         )
 
+    def test_translatePath_by_hash_checksum_found_private(self):
+        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        self.factory.makeArchiveFile(
+            archive=archive,
+            container="release:jammy",
+            path="dists/jammy/InRelease",
+        )
+        archive_file = self.factory.makeArchiveFile(
+            archive=archive,
+            container="release:jammy",
+            path="dists/jammy/InRelease",
+        )
+        path = (
+            "dists/jammy/by-hash/SHA256/%s"
+            % archive_file.library_file.content.sha256
+        )
+        self.assertStartsWith(
+            archive_file.library_file.getURL() + "?token=",
+            self.archive_api.translatePath(archive.reference, path),
+        )
+        self.assertLogs(
+            "%s: %s (by-hash) -> LFA %d"
+            % (archive.reference, path, archive_file.library_file.id)
+        )
+
     def test_translatePath_non_pool_not_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         self.factory.makeArchiveFile(archive=archive)
@@ -341,6 +366,25 @@ class TestArchiveAPI(TestCaseWithFactory):
         archive_file = self.factory.makeArchiveFile(archive=archive)
         self.assertEqual(
             archive_file.library_file.getURL(),
+            self.archive_api.translatePath(
+                archive.reference, archive_file.path
+            ),
+        )
+        self.assertLogs(
+            "%s: %s (non-pool) -> LFA %d"
+            % (
+                archive.reference,
+                archive_file.path,
+                archive_file.library_file.id,
+            )
+        )
+
+    def test_translatePath_non_pool_found_private(self):
+        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        self.factory.makeArchiveFile(archive=archive)
+        archive_file = self.factory.makeArchiveFile(archive=archive)
+        self.assertStartsWith(
+            archive_file.library_file.getURL() + "?token=",
             self.archive_api.translatePath(
                 archive.reference, archive_file.path
             ),
@@ -413,6 +457,38 @@ class TestArchiveAPI(TestCaseWithFactory):
             % (archive.reference, path, sprf.libraryfile.id)
         )
 
+    def test_translatePath_pool_source_found_private(self):
+        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        with person_logged_in(archive.owner):
+            spph = self.factory.makeSourcePackagePublishingHistory(
+                archive=archive,
+                status=PackagePublishingStatus.PUBLISHED,
+                sourcepackagename="test-package",
+                component="main",
+            )
+            sprf = self.factory.makeSourcePackageReleaseFile(
+                sourcepackagerelease=spph.sourcepackagerelease,
+                library_file=self.factory.makeLibraryFileAlias(
+                    filename="test-package_1.dsc", db_only=True
+                ),
+            )
+            self.factory.makeSourcePackageReleaseFile(
+                sourcepackagerelease=spph.sourcepackagerelease,
+                library_file=self.factory.makeLibraryFileAlias(
+                    filename="test-package_1.tar.xz", db_only=True
+                ),
+            )
+            IStore(sprf).flush()
+        path = "pool/main/t/test-package/test-package_1.dsc"
+        self.assertStartsWith(
+            sprf.libraryfile.getURL() + "?token=",
+            self.archive_api.translatePath(archive.reference, path),
+        )
+        self.assertLogs(
+            "%s: %s (pool) -> LFA %d"
+            % (archive.reference, path, sprf.libraryfile.id)
+        )
+
     def test_translatePath_pool_binary_not_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         self.factory.makeBinaryPackagePublishingHistory(
@@ -460,6 +536,44 @@ class TestArchiveAPI(TestCaseWithFactory):
         path = "pool/main/t/test-package/test-package_1_amd64.deb"
         self.assertEqual(
             bpf.libraryfile.getURL(),
+            self.archive_api.translatePath(archive.reference, path),
+        )
+        self.assertLogs(
+            "%s: %s (pool) -> LFA %d"
+            % (archive.reference, path, bpf.libraryfile.id)
+        )
+
+    def test_translatePath_pool_binary_found_private(self):
+        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        with person_logged_in(archive.owner):
+            bpph = self.factory.makeBinaryPackagePublishingHistory(
+                archive=archive,
+                status=PackagePublishingStatus.PUBLISHED,
+                sourcepackagename="test-package",
+                component="main",
+            )
+            bpf = self.factory.makeBinaryPackageFile(
+                binarypackagerelease=bpph.binarypackagerelease,
+                library_file=self.factory.makeLibraryFileAlias(
+                    filename="test-package_1_amd64.deb", db_only=True
+                ),
+            )
+            bpph2 = self.factory.makeBinaryPackagePublishingHistory(
+                archive=archive,
+                status=PackagePublishingStatus.PUBLISHED,
+                sourcepackagename="test-package",
+                component="main",
+            )
+            self.factory.makeBinaryPackageFile(
+                binarypackagerelease=bpph2.binarypackagerelease,
+                library_file=self.factory.makeLibraryFileAlias(
+                    filename="test-package_1_i386.deb", db_only=True
+                ),
+            )
+            IStore(bpf).flush()
+        path = "pool/main/t/test-package/test-package_1_amd64.deb"
+        self.assertStartsWith(
+            bpf.libraryfile.getURL() + "?token=",
             self.archive_api.translatePath(archive.reference, path),
         )
         self.assertLogs(
