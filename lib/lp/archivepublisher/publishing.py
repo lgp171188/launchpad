@@ -1221,10 +1221,7 @@ class Publisher:
             )
         uncondemned_files = set()
         for db_file in archive_file_set.getByArchive(
-            self.archive,
-            container=container,
-            only_condemned=True,
-            eager_load=True,
+            self.archive, container=container, condemned=True, eager_load=True
         ):
             stripped_path = strip_dists(db_file.path)
             if stripped_path in current_files:

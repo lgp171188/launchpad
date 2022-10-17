@@ -101,7 +101,7 @@ class ArchiveFileSet:
         path=None,
         path_parent=None,
         sha256=None,
-        only_condemned=False,
+        condemned=None,
         eager_load=False,
     ):
         """See `IArchiveFileSet`."""
@@ -126,8 +126,11 @@ class ArchiveFileSet:
                     LibraryFileContent.sha256 == sha256,
                 ]
             )
-        if only_condemned:
-            clauses.append(ArchiveFile.scheduled_deletion_date != None)
+        if condemned is not None:
+            if condemned:
+                clauses.append(ArchiveFile.scheduled_deletion_date != None)
+            else:
+                clauses.append(ArchiveFile.scheduled_deletion_date == None)
         archive_files = IStore(ArchiveFile).find(ArchiveFile, *clauses)
 
         def eager_load(rows):
