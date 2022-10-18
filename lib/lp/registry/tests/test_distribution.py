@@ -74,11 +74,12 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
 from lp.services.librarianserver.testing.fake import FakeLibrarian
-from lp.services.propertycache import get_property_cache
+from lp.services.propertycache import clear_property_cache, get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
+from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
 )
@@ -99,7 +100,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
 )
-from lp.testing.matchers import Provides
+from lp.testing.matchers import HasQueryCount, Provides
 from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
@@ -2709,3 +2710,44 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
                 }
             ),
         )
+
+
+class TestDistributionPublishedSources(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_has_published_sources_no_sources(self):
+        distribution = self.factory.makeDistribution()
+        self.assertFalse(distribution.has_published_sources)
+
+    def test_has_published_sources(self):
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        self.assertTrue(ubuntu.all_distro_archives.count() > 0)
+        self.assertTrue(ubuntu.has_published_sources)
+
+    def test_has_published_sources_query_count(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=distribution.main_archive,
+        )
+        self.assertEqual(1, distribution.all_distro_archives.count())
+        with StormStatementRecorder() as recorder1:
+            self.assertTrue(distribution.has_published_sources)
+        clear_property_cache(distribution)
+        partner_archive = self.factory.makeArchive(
+            distribution=distribution,
+            purpose=ArchivePurpose.PARTNER,
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=getUtility(IArchiveSet).getByDistroAndName(
+                distribution, partner_archive.name
+            )
+        )
+        self.assertEqual(2, distribution.all_distro_archives.count())
+        with StormStatementRecorder() as recorder2:
+            self.assertTrue(distribution.has_published_sources)
+
+        # Adding one or more archives to the distribution and publishing
+        # source packages to them should not affect the number of queries
+        # executed here.
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
