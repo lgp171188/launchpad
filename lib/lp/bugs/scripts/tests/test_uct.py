@@ -428,6 +428,17 @@ class TestCVE(TestCaseWithFactory):
         self.assertListEqual(self.uct_record.packages, uct_record.packages)
         self.assertDictEqual(self.uct_record.__dict__, uct_record.__dict__)
 
+    def test_get_distro_series_esm_patterns(self):
+        ubuntu_esm = self.factory.makeDistribution(name="ubuntu-esm")
+        xenial = self.factory.makeDistroSeries(
+            distribution=ubuntu_esm, name="xenial"
+        )
+        precise = self.factory.makeDistroSeries(
+            distribution=ubuntu_esm, name="precise"
+        )
+        self.assertEqual(xenial, CVE.get_distro_series("esm-infra/xenial"))
+        self.assertEqual(precise, CVE.get_distro_series("precise/esm"))
+
 
 class TestUCTImporterExporter(TestCaseWithFactory):
 
