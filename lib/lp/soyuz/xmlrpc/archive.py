@@ -162,7 +162,9 @@ class ArchiveAPI(LaunchpadXMLRPCView):
     ) -> Optional[str]:
         archive_file = (
             getUtility(IArchiveFileSet)
-            .getByArchive(archive=archive, path=path.as_posix())
+            .getByArchive(
+                archive=archive, path=path.as_posix(), condemned=False
+            )
             .one()
         )
         if archive_file is None:
