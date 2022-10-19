@@ -3,9 +3,6 @@
 
 """Tests for webapp glue."""
 
-from textwrap import dedent
-
-from lp.services.config import config
 from lp.services.features import getFeatureFlag, webapp
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.errorlog import globalErrorUtility
@@ -54,30 +51,6 @@ class TestScopesFromRequest(TestCase):
         request = LaunchpadTestRequest()
         scopes = webapp.ScopesFromRequest(request)
         self.assertTrue(scopes.lookup("default"))
-
-    def test_server(self):
-        request = LaunchpadTestRequest()
-        scopes = webapp.ScopesFromRequest(request)
-        self.assertFalse(scopes.lookup("server.lpnet"))
-        config.push(
-            "ensure_lpnet",
-            dedent(
-                """\
-            [launchpad]
-            is_lpnet: True
-            """
-            ),
-        )
-        try:
-            self.assertTrue(scopes.lookup("server.lpnet"))
-        finally:
-            config.pop("ensure_lpnet")
-
-    def test_server_missing_key(self):
-        request = LaunchpadTestRequest()
-        scopes = webapp.ScopesFromRequest(request)
-        # There is no such key in the config, so this returns False.
-        self.assertFalse(scopes.lookup("server.pink"))
 
     def test_unknown_scope(self):
         # Asking about an unknown scope is not an error.
