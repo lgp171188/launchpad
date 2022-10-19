@@ -963,15 +963,6 @@ class ISpecificationSet(IHasSpecifications):
     ):
         """Create a new specification."""
 
-    def getDependencyDict(specifications):
-        """Return a dictionary mapping specifications to their dependencies.
-
-        The results are ordered by descending priority, ascending dependency
-        name, and id.
-
-        :param specifications: a sequence of the `ISpecification` to look up.
-        """
-
     def get(spec_id):
         """Return the ISpecification with the given spec_id."""
 
