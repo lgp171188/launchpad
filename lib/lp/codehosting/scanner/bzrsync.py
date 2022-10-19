@@ -14,7 +14,6 @@ __all__ = [
 
 import logging
 
-import pytz
 import transaction
 from breezy.graph import DictParentsProvider
 from breezy.revision import NULL_REVISION
@@ -34,8 +33,6 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuildSource,
 )
-
-UTC = pytz.timezone("UTC")
 
 
 class BzrSync:

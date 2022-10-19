@@ -27,8 +27,6 @@ Here are some imports we need to get this test running.
     ...     ITranslationImportQueue,
     ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
