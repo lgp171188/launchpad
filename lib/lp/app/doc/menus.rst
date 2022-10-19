@@ -1173,8 +1173,7 @@ NavigationMenus used in the previous TALES section.
     ...    </ul>
     ...  </div>"""
     >>> template_file = tempfile.NamedTemporaryFile(mode="w")
-    >>> _ = template_file.write(menu_fragment)
-    >>> template_file.flush()
+    >>> print(menu_fragment, file=template_file, flush=True)
 
     >>> class FacetMenuView(LaunchpadView):
     ...     template = ViewPageTemplateFile(template_file.name)

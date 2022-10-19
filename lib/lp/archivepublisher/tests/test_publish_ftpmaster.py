@@ -88,8 +88,7 @@ def write_marker_file(path, contents, mode=None):
     :param mode: If given, explicitly set the file to this permission mode.
     """
     with open(os.path.join(*path), "w") as marker:
-        marker.write(contents)
-        marker.flush()
+        print(contents, end="", file=marker, flush=True)
         if mode is not None:
             os.fchmod(marker.fileno(), mode)
 
