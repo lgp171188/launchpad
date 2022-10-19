@@ -20,9 +20,8 @@ class TestCronscriptEnabled(TestCase):
         self.log = BufferLogger()
 
     def makeConfig(self, body):
-        tempfile = NamedTemporaryFile(suffix=".ini")
-        tempfile.write(body.encode("UTF-8"))
-        tempfile.flush()
+        tempfile = NamedTemporaryFile(mode="w+", suffix=".ini")
+        print(body, end="", file=tempfile, flush=True)
         # Ensure a reference is kept until the test is over.
         # tempfile will then clean itself up.
         self.addCleanup(lambda x: None, tempfile)

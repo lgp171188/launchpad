@@ -214,8 +214,7 @@ def logInThread(n=30):
 def _logRefsEverySecond(log, n):
     while True:
         printCounts(mostRefs(n=n), file=log)
-        log.write("\n")
-        log.flush()
+        print(file=log, flush=True)
         time.sleep(1)
 
 

@@ -25,12 +25,6 @@ def make_pipe():
     return fdopen(r, "r"), fdopen(w, "w")
 
 
-def write_and_flush(pipe, text):
-    """Write `text` into `pipe`, and flush."""
-    pipe.write(text)
-    pipe.flush()
-
-
 class FakeProcess:
     """Fake `subprocess.Popen` result."""
 
@@ -124,7 +118,7 @@ class TestCommandSpawner(TestCase):
         spawner, process = self._makeSpawnerAndProcess()
         stdout_handler = FakeMethod()
         spawner.start("ls", stdout_handler=stdout_handler)
-        write_and_flush(process.stdout_sink, "readme.txt\n")
+        print("readme.txt", file=process.stdout_sink, flush=True)
         spawner.communicate()
         self.assertEqual([("readme.txt\n",)], stdout_handler.extract_args())
 
@@ -132,7 +126,7 @@ class TestCommandSpawner(TestCase):
         spawner, process = self._makeSpawnerAndProcess()
         stderr_handler = FakeMethod()
         spawner.start("ls", stderr_handler=stderr_handler)
-        write_and_flush(process.stderr_sink, "File not found.\n")
+        print("File not found.", file=process.stderr_sink, flush=True)
         spawner.communicate()
         self.assertEqual(
             [("File not found.\n",)], stderr_handler.extract_args()
@@ -180,7 +174,7 @@ class TestCommandSpawner(TestCase):
         spawner.start(
             "hello", stdout_handler=handler, completion_handler=handler
         )
-        write_and_flush(process.stdout_sink, "Hello\n")
+        print("Hello", file=process.stdout_sink, flush=True)
         spawner.complete()
         self.assertEqual([("Hello\n",), (0,)], handler.extract_args())
 
