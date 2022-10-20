@@ -5,13 +5,10 @@
 
 import os
 
-import pytz
 from fixtures import TempDir
 
 from lp.services.twistedsupport.loggingsupport import LaunchpadLogFile
 from lp.testing import TestCase
-
-UTC = pytz.utc
 
 
 class TestLaunchpadLogFile(TestCase):

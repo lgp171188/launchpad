@@ -12,7 +12,6 @@ from functools import partial
 from textwrap import dedent
 from time import time
 
-import pytz
 import transaction
 from lazr.restful.utils import get_current_browser_request
 from psycopg2.extensions import (
@@ -74,8 +73,6 @@ __all__ = [
     "StoreSelector",
 ]
 
-
-UTC = pytz.utc
 
 classImplements(TimeoutError, IRequestExpired)
 

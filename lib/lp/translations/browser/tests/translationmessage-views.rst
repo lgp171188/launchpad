@@ -370,7 +370,6 @@ TranslationMessageSuggestions
 This class keeps all suggestions available for a concrete
 ITranslationMessage.
 
-    >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.translations.browser.translationmessage import (
     ...     TranslationMessageSuggestions,
@@ -414,7 +413,6 @@ We are going to work with a plural form message.
 Also, we are going to create a new translation for the Japanese
 language that will be used as the suggestion.
 
-    >>> UTC = pytz.timezone("UTC")
     >>> carlos = getUtility(IPersonSet).getByName("carlos")
     >>> login("carlos@canonical.com")
     >>> translation_message_ja = factory.makeCurrentTranslationMessage(
