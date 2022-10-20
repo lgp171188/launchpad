@@ -2144,12 +2144,23 @@ class Distribution(
 
         return weight_function
 
-    @property
+    @cachedproperty
     def has_published_sources(self):
-        for archive in self.all_distro_archives:
-            if not archive.getPublishedSources().order_by().is_empty():
-                return True
-        return False
+        if not self.all_distro_archives:
+            return False
+
+        if (
+            Store.of(self)
+            .find(
+                SourcePackagePublishingHistory,
+                SourcePackagePublishingHistory.archiveID.is_in(
+                    self.all_distro_archive_ids
+                ),
+            )
+            .is_empty()
+        ):
+            return False
+        return True
 
     def newOCIProject(self, registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""

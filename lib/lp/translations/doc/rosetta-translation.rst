@@ -48,8 +48,6 @@ Get a person to create a translation with.
 
 Add a translation.
 
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
     >>> message = factory.makeCurrentTranslationMessage(
     ...     pofile, potmsgset, translations=translations, current_other=True
     ... )

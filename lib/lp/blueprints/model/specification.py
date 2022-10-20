@@ -86,10 +86,7 @@ from lp.services.database import bulk
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    convert_storm_clause_to_string,
-    sqlvalues,
-)
+from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
 from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.propertycache import cachedproperty, get_property_cache
@@ -1374,39 +1371,6 @@ class SpecificationSet(HasSpecificationsMixin):
         spec.setTarget(target)
         spec.transitionToInformationType(information_type, None)
         return spec
-
-    def getDependencyDict(self, specifications):
-        """See `ISpecificationSet`."""
-        specification_ids = [spec.id for spec in specifications]
-
-        if len(specification_ids) == 0:
-            return {}
-
-        results = (
-            Store.of(specifications[0])
-            .execute(
-                """
-            SELECT SpecificationDependency.specification,
-                   SpecificationDependency.dependency
-            FROM SpecificationDependency, Specification
-            WHERE SpecificationDependency.specification IN %s
-            AND SpecificationDependency.dependency = Specification.id
-            ORDER BY Specification.priority DESC, Specification.name,
-                     Specification.id
-        """
-                % sqlvalues(specification_ids)
-            )
-            .get_all()
-        )
-
-        dependencies = {}
-        for spec_id, dep_id in results:
-            if spec_id not in dependencies:
-                dependencies[spec_id] = []
-            dependency = IStore(Specification).get(Specification, dep_id)
-            dependencies[spec_id].append(dependency)
-
-        return dependencies
 
     def get(self, spec_id):
         """See lp.blueprints.interfaces.specification.ISpecificationSet."""

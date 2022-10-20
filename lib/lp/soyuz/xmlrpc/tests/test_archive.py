@@ -3,6 +3,8 @@
 
 """Tests for the internal Soyuz archive API."""
 
+from datetime import timedelta
+
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -13,6 +15,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
+from lp.soyuz.interfaces.archivefile import IArchiveFileSet
 from lp.soyuz.xmlrpc.archive import ArchiveAPI
 from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
@@ -383,38 +386,48 @@ class TestArchiveAPI(TestCaseWithFactory):
     def test_translatePath_non_pool_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         self.factory.makeArchiveFile(archive=archive)
-        archive_file = self.factory.makeArchiveFile(archive=archive)
+        path = "dists/focal/InRelease"
+        archive_files = [
+            self.factory.makeArchiveFile(archive=archive, path=path)
+            for _ in range(2)
+        ]
+        getUtility(IArchiveFileSet).scheduleDeletion(
+            [archive_files[0]], timedelta(days=1)
+        )
         self.assertEqual(
-            archive_file.library_file.getURL(),
-            self.archive_api.translatePath(
-                archive.reference, archive_file.path
-            ),
+            archive_files[1].library_file.getURL(),
+            self.archive_api.translatePath(archive.reference, path),
         )
         self.assertLogs(
             "%s: %s (non-pool) -> LFA %d"
             % (
                 archive.reference,
-                archive_file.path,
-                archive_file.library_file.id,
+                path,
+                archive_files[1].library_file.id,
             )
         )
 
     def test_translatePath_non_pool_found_private(self):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
         self.factory.makeArchiveFile(archive=archive)
-        archive_file = self.factory.makeArchiveFile(archive=archive)
+        path = "dists/focal/InRelease"
+        archive_files = [
+            self.factory.makeArchiveFile(archive=archive, path=path)
+            for _ in range(2)
+        ]
+        getUtility(IArchiveFileSet).scheduleDeletion(
+            [archive_files[0]], timedelta(days=1)
+        )
         self.assertStartsWith(
-            archive_file.library_file.getURL() + "?token=",
-            self.archive_api.translatePath(
-                archive.reference, archive_file.path
-            ),
+            archive_files[1].library_file.getURL() + "?token=",
+            self.archive_api.translatePath(archive.reference, path),
         )
         self.assertLogs(
             "%s: %s (non-pool) -> LFA %d"
             % (
                 archive.reference,
-                archive_file.path,
-                archive_file.library_file.id,
+                path,
+                archive_files[1].library_file.id,
             )
         )
 

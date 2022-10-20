@@ -2349,7 +2349,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if bug is not None and target is not None:
             existing_bugtask = removeSecurityProxy(bug).getBugTask(target)
             if existing_bugtask is not None:
-                return existing_bugtask
+                return ProxyFactory(existing_bugtask)
 
         # If we are adding a task to an existing bug, and no target is
         # is specified, we use the same pillar as already exists to ensure
@@ -2632,8 +2632,10 @@ class LaunchpadObjectFactory(ObjectFactory):
             subscriber = self.makePerson()
         if subscribed_by is None:
             subscribed_by = subscriber
-        return removeSecurityProxy(target).addBugSubscriptionFilter(
-            subscriber, subscribed_by
+        return ProxyFactory(
+            removeSecurityProxy(target).addBugSubscriptionFilter(
+                subscriber, subscribed_by
+            )
         )
 
     def makeSignedMessage(

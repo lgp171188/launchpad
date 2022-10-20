@@ -89,7 +89,7 @@ class IArchiveFileSet(Interface):
         container=None,
         path=None,
         sha256=None,
-        only_condemned=False,
+        condemned=None,
         eager_load=False,
     ):
         """Get files in an archive.
@@ -101,8 +101,10 @@ class IArchiveFileSet(Interface):
             directory is this path.
         :param sha256: If not None, return only files with this SHA-256
             checksum.
-        :param only_condemned: If True, return only files with a
-            scheduled_deletion_date set.
+        :param condemned: If True, return only files with a
+            scheduled_deletion_date set; if False, return only files without
+            a scheduled_deletion_date set; if None (the default), return
+            both.
         :param eager_load: If True, preload related `LibraryFileAlias` and
             `LibraryFileContent` rows.
         :return: An iterable of matched files.

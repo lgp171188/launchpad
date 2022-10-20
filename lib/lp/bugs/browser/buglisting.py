@@ -19,15 +19,15 @@ __all__ = [
     "TextualBugTaskSearchListingView",
 ]
 
+import json
 import os.path
 from urllib.parse import parse_qs, parse_qsl, quote, urlencode
 
 import pystache
 from lazr.delegates import delegate_to
+from lazr.restful import ResourceJSONEncoder
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.uri import URI
-from simplejson import dumps
-from simplejson.encoder import JSONEncoderForHTML
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getAdapter, getUtility, queryMultiAdapter
@@ -842,8 +842,8 @@ class BugListingBatchNavigator(TableBatchNavigator):
 
     @property
     def mustache_listings(self):
-        return "LP.mustache_listings = %s;" % dumps(
-            self.mustache_template, cls=JSONEncoderForHTML
+        return "LP.mustache_listings = %s;" % json.dumps(
+            self.mustache_template, cls=ResourceJSONEncoder
         )
 
     @property

@@ -12,7 +12,6 @@ from urllib.parse import urlparse
 import oops.createhooks
 import oops_amqp
 import oops_timeline
-import pytz
 import six
 from lazr.restful.utils import get_current_browser_request
 from oops_datedir_repo import DateDirRepo
@@ -44,8 +43,6 @@ from lp.services.webapp.interfaces import (
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.pgsession import PGSessionBase
 from lp.services.webapp.vhosts import allvhosts
-
-UTC = pytz.utc
 
 LAZR_OOPS_USER_REQUESTED_KEY = "lazr.oops.user_requested"
 

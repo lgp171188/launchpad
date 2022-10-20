@@ -349,7 +349,7 @@ Performing the diff.
 
     >>> diff.performDiff()
 
-The record is immediatelly updated, now the record contains a
+The record is immediately updated, now the record contains a
 'date_fulfilled', its status is COMPLETED and 'diff_content' points
 to a LibraryFileAlias with a proper mimetype.
 

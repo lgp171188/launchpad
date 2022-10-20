@@ -227,8 +227,7 @@ def execute_slonik(script, sync=None, exit_on_fail=True, auto_preamble=True):
     # to slonik via stdin. This way it can be examined if slonik appears
     # to hang.
     script_on_disk = NamedTemporaryFile(prefix="slonik", suffix=".sk")
-    print(script, file=script_on_disk)
-    script_on_disk.flush()
+    print(script, file=script_on_disk, flush=True)
 
     # Run slonik
     log.debug("Executing slonik script %s" % script_on_disk.name)

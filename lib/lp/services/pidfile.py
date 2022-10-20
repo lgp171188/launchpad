@@ -45,8 +45,7 @@ def make_pidfile(service_name):
 
     fd, tempname = tempfile.mkstemp(dir=os.path.dirname(pidfile))
     outf = os.fdopen(fd, "w")
-    outf.write(str(os.getpid()) + "\n")
-    outf.flush()
+    print(os.getpid(), file=outf, flush=True)
     outf.close()
     os.rename(tempname, pidfile)
 

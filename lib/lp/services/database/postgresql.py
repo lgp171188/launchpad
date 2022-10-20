@@ -353,36 +353,6 @@ def resetSequences(cur):
         cur.execute(sql)
 
 
-# Regular expression used to parse row count estimate from EXPLAIN output
-_rows_re = re.compile(r"rows=(\d+)\swidth=")
-
-
-def estimateRowCount(cur, query):
-    """Ask the PostgreSQL query optimizer for an estimated rowcount.
-
-    Stats will only be acurate if the table has been ANALYZEd recently.
-    With standard Ubuntu installs, the autovacuum daemon does this.
-
-    >>> cur.execute("INSERT INTO A (selfref) VALUES (NULL)")
-    >>> cur.execute("ANALYZE A")
-    >>> estimateRowCount(cur, "SELECT * FROM A")
-    1
-    >>> cur.executemany(
-    ...     "INSERT INTO A (selfref) VALUES (NULL)",
-    ...     [(i,) for i in range(100)],
-    ... )
-    >>> cur.execute("ANALYZE A")
-    >>> estimateRowCount(cur, "SELECT * FROM A")
-    101
-    """
-    cur.execute("EXPLAIN " + query)
-    first_line = cur.fetchone()[0]
-    match = _rows_re.search(first_line)
-    if match is None:
-        raise RuntimeError("Unexpected EXPLAIN output %s" % repr(first_line))
-    return int(match.group(1))
-
-
 def have_table(cur, table):
     """Is there a table of the given name?
 
@@ -633,46 +603,6 @@ class ConnectionString:
         return hash(
             tuple(getattr(self, key, None) for key in self.CONNECTION_KEYS)
         )
-
-    def asPGCommandLineArgs(self):
-        """Return a string suitable for the PostgreSQL standard tools
-        command line arguments.
-
-        >>> cs = ConnectionString("host=localhost user=slony dbname=test")
-        >>> cs.asPGCommandLineArgs()
-        '--host=localhost --username=slony test'
-
-        >>> cs = ConnectionString("port=5433 dbname=test")
-        >>> cs.asPGCommandLineArgs()
-        '--port=5433 test'
-        """
-        params = []
-        if self.host is not None:
-            params.append("--host=%s" % self.host)
-        if self.port is not None:
-            params.append("--port=%s" % self.port)
-        if self.user is not None:
-            params.append("--username=%s" % self.user)
-        if self.dbname is not None:
-            params.append(self.dbname)
-        return " ".join(params)
-
-    def asLPCommandLineArgs(self):
-        """Return a string suitable for use by the LP tools using
-        db_options() to parse the command line.
-
-        >>> cs = ConnectionString("host=localhost user=slony dbname=test")
-        >>> cs.asLPCommandLineArgs()
-        '--host=localhost --user=slony --dbname=test'
-        """
-        params = []
-        if self.host is not None:
-            params.append("--host=%s" % self.host)
-        if self.user is not None:
-            params.append("--user=%s" % self.user)
-        if self.dbname is not None:
-            params.append("--dbname=%s" % self.dbname)
-        return " ".join(params)
 
 
 if __name__ == "__main__":

@@ -79,7 +79,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_description(self):
         """Test the description property."""
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.description = "foo"
         self.assertEqual("foo", bug_subscription_filter.description)
@@ -170,14 +170,14 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # The statuses property is a frozenset of the statuses that are
         # filtered upon.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(frozenset(), bug_subscription_filter.statuses)
 
     def test_statuses_set(self):
         # Assigning any iterable to statuses updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.statuses = [
             BugTaskStatus.NEW,
@@ -196,7 +196,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_statuses_set_all(self):
         # Setting all statuses is normalized into setting no statuses.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.statuses = list(BugTaskStatus.items)
         self.assertEqual(frozenset(), bug_subscription_filter.statuses)
@@ -204,7 +204,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_statuses_set_empty(self):
         # Assigning an empty iterable to statuses updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.statuses = []
         self.assertEqual(frozenset(), bug_subscription_filter.statuses)
@@ -213,14 +213,14 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # The importances property is a frozenset of the importances that are
         # filtered upon.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(frozenset(), bug_subscription_filter.importances)
 
     def test_importances_set(self):
         # Assigning any iterable to importances updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.importances = [
             BugTaskImportance.HIGH,
@@ -241,7 +241,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_importances_set_all(self):
         # Setting all importances is normalized into setting no importances.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.importances = list(BugTaskImportance.items)
         self.assertEqual(frozenset(), bug_subscription_filter.importances)
@@ -249,7 +249,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_importances_set_empty(self):
         # Assigning an empty iterable to importances updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.importances = []
         self.assertEqual(frozenset(), bug_subscription_filter.importances)
@@ -258,7 +258,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # The information_types property is a frozenset of the
         # information_types that are filtered upon.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(
             frozenset(), bug_subscription_filter.information_types
@@ -267,7 +267,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_information_types_set(self):
         # Assigning any iterable to information_types updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.information_types = [
             InformationType.PRIVATESECURITY,
@@ -290,7 +290,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # Setting all information_types is normalized into setting no
         # information_types.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.information_types = list(InformationType.items)
         self.assertEqual(
@@ -301,7 +301,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # Assigning an empty iterable to information_types updates the
         # database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.information_types = []
         self.assertEqual(
@@ -311,14 +311,14 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_tags(self):
         # The tags property is a frozenset of the tags that are filtered upon.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(frozenset(), bug_subscription_filter.tags)
 
     def test_tags_set(self):
         # Assigning any iterable to tags updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.tags = ["foo", "-bar"]
         self.assertEqual(
@@ -331,7 +331,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
     def test_tags_set_empty(self):
         # Assigning an empty iterable to tags updates the database.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         bug_subscription_filter.tags = []
         self.assertEqual(frozenset(), bug_subscription_filter.tags)
@@ -340,7 +340,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # Setting one or more wildcard tags may update include_any_tags or
         # exclude_any_tags.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(frozenset(), bug_subscription_filter.tags)
         self.assertFalse(bug_subscription_filter.include_any_tags)
@@ -370,7 +370,7 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
         # If the tags are bundled in a c.l.searchbuilder.any or .all, the
         # find_any_tags attribute will also be updated.
         bug_subscription_filter = self.factory.makeBugSubscriptionFilter(
-            target=self.target
+            target=self.target, subscriber=self.subscriber
         )
         self.assertEqual(frozenset(), bug_subscription_filter.tags)
         self.assertFalse(bug_subscription_filter.find_all_tags)

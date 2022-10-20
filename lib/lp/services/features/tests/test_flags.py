@@ -186,7 +186,7 @@ class TestFeatureFlags(TestCase):
         self.assertEqual(dict(), f.usedScopes())
 
     def testScopeDict(self):
-        # can get scopes as a dict, for use by "feature_scopes/server.demo"
+        # can get scopes as a dict, for use by "feature_scopes/..."
         f, call_log = self.makeControllerInScopes(["beta_user"])
         self.assertEqual(True, f.scopes["beta_user"])
         self.assertEqual(False, f.scopes["alpha_user"])

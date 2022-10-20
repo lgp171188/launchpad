@@ -12,7 +12,6 @@ from functools import partial
 from textwrap import dedent
 from time import time
 
-import pytz
 import transaction
 from lazr.restful.utils import get_current_browser_request
 from psycopg2.extensions import (
@@ -21,6 +20,8 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_REPEATABLE_READ,
     ISOLATION_LEVEL_SERIALIZABLE,
     QueryCanceledError,
+    make_dsn,
+    parse_dsn,
 )
 from storm.database import register_scheme
 from storm.databases.postgres import Postgres, PostgresTimeoutTracer
@@ -72,8 +73,6 @@ __all__ = [
     "StoreSelector",
 ]
 
-
-UTC = pytz.utc
 
 classImplements(TimeoutError, IRequestExpired)
 
@@ -443,21 +442,10 @@ isolation_level_map = {
 
 
 class LaunchpadDatabase(Postgres):
-
-    _dsn_user_re = re.compile("user=[^ ]*")
-
     def __init__(self, uri):
         super().__init__(uri)
         # A unique name for this database connection.
         self.name = uri.database
-
-    @property
-    def dsn_without_user(self):
-        """This database's dsn without the 'user=...' bit."""
-        assert (
-            self._dsn is not None
-        ), "Must not be called before self._dsn has been set."
-        return self._dsn_user_re.sub("", self._dsn)
 
     def raw_connect(self):
         try:
@@ -475,7 +463,7 @@ class LaunchpadDatabase(Postgres):
         # is reconnected it pays attention to any config changes.
         config_entry = "%s_%s" % (realm, flavor)
         connection_string = getattr(dbconfig, config_entry)
-        assert "user=" not in connection_string, (
+        assert "user" not in parse_dsn(connection_string), (
             "Database username should not be specified in "
             "connection string (%s)." % connection_string
         )
@@ -484,7 +472,7 @@ class LaunchpadDatabase(Postgres):
         # fallback to the dbuser key.
         dbuser = getattr(dbconfig, "%s_dbuser" % realm, dbconfig.dbuser)
 
-        self._dsn = "%s user=%s" % (connection_string, dbuser)
+        self._dsn = make_dsn(connection_string, user=dbuser)
 
         flags = _get_dirty_commit_flags()
 

@@ -92,7 +92,11 @@ class TestArchiveFile(TestCaseWithFactory):
         )
         self.assertContentEqual(
             [archive_files[0]],
-            archive_file_set.getByArchive(archives[0], only_condemned=True),
+            archive_file_set.getByArchive(archives[0], condemned=True),
+        )
+        self.assertContentEqual(
+            [archive_files[1]],
+            archive_file_set.getByArchive(archives[0], condemned=False),
         )
         self.assertContentEqual(
             archive_files[2:], archive_file_set.getByArchive(archives[1])
@@ -115,7 +119,11 @@ class TestArchiveFile(TestCaseWithFactory):
         )
         self.assertContentEqual(
             [archive_files[2]],
-            archive_file_set.getByArchive(archives[1], only_condemned=True),
+            archive_file_set.getByArchive(archives[1], condemned=True),
+        )
+        self.assertContentEqual(
+            [archive_files[3]],
+            archive_file_set.getByArchive(archives[1], condemned=False),
         )
         self.assertContentEqual(
             [archive_files[0]],
