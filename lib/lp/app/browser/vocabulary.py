@@ -10,10 +10,11 @@ __all__ = [
     "vocabulary_filters",
 ]
 
+import json
+
 # This registers the registry.
 import zope.vocabularyregistry.registry  # noqa: F401  # isort: split
 
-import simplejson
 from lazr.restful.interfaces import IWebServiceClientRequest
 from zope.component import adapter, getUtility
 from zope.formlib.interfaces import MissingInputError
@@ -533,7 +534,7 @@ class HugeVocabularyJSONView:
             result.append(entry)
 
         self.request.response.setHeader("Content-type", "application/json")
-        return simplejson.dumps(dict(total_size=total_size, entries=result))
+        return json.dumps(dict(total_size=total_size, entries=result))
 
 
 def vocabulary_filters(vocabulary):

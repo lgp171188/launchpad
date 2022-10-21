@@ -8,9 +8,9 @@ __all__ = [
 ]
 
 import datetime
+import json
 
 import pytz
-import simplejson
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
@@ -379,7 +379,7 @@ class HasTranslationImportsView(LaunchpadFormView):
         for entry in self.batchnav.batch:
             if check_permission("launchpad.Edit", entry):
                 confs.append(self.generateChoiceConfForEntry(entry))
-        return "var choice_confs = %s;" % simplejson.dumps(confs)
+        return "var choice_confs = %s;" % json.dumps(confs)
 
     def generateChoiceConfForEntry(self, entry):
         disabled_items = [

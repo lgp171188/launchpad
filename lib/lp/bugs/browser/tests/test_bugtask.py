@@ -1,11 +1,11 @@
 # Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import json
 import re
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
-import simplejson
 import soupmatchers
 import transaction
 from lazr.restful.interfaces import IJSONRequestCache
@@ -1166,9 +1166,9 @@ class TestBugTaskDeleteView(TestCaseWithFactory):
             principal=bugtask.owner,
             **extra,
         )
-        result_data = simplejson.loads(view.render())
+        result_data = json.loads(view.render())
         self.assertEqual([bug.default_bugtask], bug.bugtasks)
-        notifications = simplejson.loads(
+        notifications = json.loads(
             view.request.response.getHeader("X-Lazr-Notifications")
         )
         self.assertEqual(1, len(notifications))
@@ -1198,9 +1198,9 @@ class TestBugTaskDeleteView(TestCaseWithFactory):
             principal=bug.owner,
             **extra,
         )
-        result_data = simplejson.loads(view.render())
+        result_data = json.loads(view.render())
         self.assertEqual([bug.default_bugtask], bug.bugtasks)
-        notifications = simplejson.loads(
+        notifications = json.loads(
             view.request.response.getHeader("X-Lazr-Notifications")
         )
         self.assertEqual(1, len(notifications))

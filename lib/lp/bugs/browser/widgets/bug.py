@@ -8,9 +8,9 @@ __all__ = [
     "LargeBugTagsWidget",
 ]
 
+import json
 import re
 
-from simplejson import dumps
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError, WidgetInputError
 from zope.formlib.textwidgets import IntWidget, TextAreaWidget, TextWidget
@@ -168,7 +168,7 @@ class BugTagsWidget(BugTagsWidgetBase, TextWidget):
             official_tags = list(pillar_target.official_bug_tags)
         else:
             official_tags = []
-        return "var official_tags = %s;" % dumps(official_tags)
+        return "var official_tags = %s;" % json.dumps(official_tags)
 
 
 class BugTagsFrozenSetWidget(BugTagsWidget):

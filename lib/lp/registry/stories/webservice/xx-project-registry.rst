@@ -371,7 +371,7 @@ development_focus_link.
 
 Attributes can be edited via the webservice.patch() method.
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> patch = {
     ...     "driver_link": webservice.getAbsoluteUrl("/~mark"),
     ...     "homepage_url": "http://sf.net/firefox",
@@ -380,7 +380,11 @@ Attributes can be edited via the webservice.patch() method.
     ...         "/bugs/bugtrackers/mozilla.org"
     ...     ),
     ... }
-    >>> print(webservice.patch("/firefox", "application/json", dumps(patch)))
+    >>> print(
+    ...     webservice.patch(
+    ...         "/firefox", "application/json", json.dumps(patch)
+    ...     )
+    ... )
     HTTP/1.1 209 Content Returned
     ...
 
@@ -434,7 +438,7 @@ changed as well.
     ... }
     >>> print(
     ...     webservice.patch(
-    ...         "/test-project", "application/json", dumps(patch)
+    ...         "/test-project", "application/json", json.dumps(patch)
     ...     )
     ... )
     HTTP/1.1 209 Content Returned
@@ -450,7 +454,11 @@ webservice.patch() method.
     >>> patch = {
     ...     "registrant_link": webservice.getAbsoluteUrl("/~mark"),
     ... }
-    >>> print(webservice.patch("/firefox", "application/json", dumps(patch)))
+    >>> print(
+    ...     webservice.patch(
+    ...         "/firefox", "application/json", json.dumps(patch)
+    ...     )
+    ... )
     HTTP/1.1 400 Bad Request
     ...
     registrant_link: You tried to modify a read-only attribute.
@@ -463,7 +471,11 @@ Similarly the date_created attribute cannot be modified.
 
     >>> original_date_created = firefox["date_created"]
     >>> patch = {"date_created": "2000-01-01T01:01:01+00:00Z"}
-    >>> print(webservice.patch("/firefox", "application/json", dumps(patch)))
+    >>> print(
+    ...     webservice.patch(
+    ...         "/firefox", "application/json", json.dumps(patch)
+    ...     )
+    ... )
     HTTP/1.1 400 Bad Request
     ...
     date_created: You tried to modify a read-only attribute.
@@ -478,7 +490,7 @@ hierarchy of series, milestones, and releases.
     >>> patch = {"status": "Obsolete"}
     >>> print(
     ...     webservice.patch(
-    ...         "/firefox/trunk", "application/json", dumps(patch)
+    ...         "/firefox/trunk", "application/json", json.dumps(patch)
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...

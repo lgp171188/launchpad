@@ -1,7 +1,8 @@
 # Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import simplejson
+import json
+
 from zope.interface import Interface
 from zope.interface.interface import InterfaceClass
 from zope.schema import Choice
@@ -65,7 +66,7 @@ class TestVocabularyPickerWidget(TestCaseWithFactory):
             bound_field, self.vocabulary, self.request
         )
 
-        widget_config = simplejson.loads(picker_widget.json_config)
+        widget_config = json.loads(picker_widget.json_config)
         self.assertEqual("ValidTeamOwner", picker_widget.vocabulary_name)
         self.assertEqual(
             [
@@ -112,7 +113,7 @@ class TestVocabularyPickerWidget(TestCaseWithFactory):
             bound_field, vocabulary, self.request
         )
 
-        widget_config = simplejson.loads(picker_widget.json_config)
+        widget_config = json.loads(picker_widget.json_config)
         self.assertEqual(
             [
                 {

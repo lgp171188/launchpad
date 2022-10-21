@@ -5,12 +5,12 @@
 
 import doctest
 import hashlib
+import json
 import re
 from datetime import datetime, timedelta
 from difflib import diff_bytes, unified_diff
 
 import pytz
-import simplejson
 import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -877,7 +877,7 @@ class TestRegisterBranchMergeProposalViewBzr(
         self.assertEqual(
             "400 Branch Visibility", view.request.response.getStatusString()
         )
-        self.assertEqual(expected_data, simplejson.loads(result_data))
+        self.assertEqual(expected_data, json.loads(result_data))
 
     def test_register_ajax_request_with_validation_errors(self):
         # Ajax submits where there is a validation error in the submitted data
@@ -917,7 +917,7 @@ class TestRegisterBranchMergeProposalViewBzr(
                 },
                 "form_wide_errors": [],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
 
@@ -1013,7 +1013,7 @@ class TestRegisterBranchMergeProposalViewGit(
             "400 Repository Visibility",
             view.request.response.getStatusString(),
         )
-        self.assertEqual(expected_data, simplejson.loads(result_data))
+        self.assertEqual(expected_data, json.loads(result_data))
 
     def test_register_ajax_request_with_validation_errors(self):
         # Ajax submits where there is a validation error in the submitted data
@@ -1053,7 +1053,7 @@ class TestRegisterBranchMergeProposalViewGit(
                 },
                 "form_wide_errors": [],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
     def test_register_ajax_request_with_missing_target_git_repository(self):
@@ -1086,7 +1086,7 @@ class TestRegisterBranchMergeProposalViewGit(
                 },
                 "form_wide_errors": [],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
     def test_register_ajax_request_with_missing_target_git_path(self):
@@ -1123,7 +1123,7 @@ class TestRegisterBranchMergeProposalViewGit(
                 },
                 "form_wide_errors": [],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
     def test_register_ajax_request_with_missing_prerequisite_git_path(self):
@@ -1170,7 +1170,7 @@ class TestRegisterBranchMergeProposalViewGit(
                 },
                 "form_wide_errors": [],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
 

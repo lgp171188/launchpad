@@ -130,13 +130,11 @@ Create a webservice object for commercial-admins.
 A commercial admin may change the visibility.  There is no helper
 method to do it, but it can be changed via a patch.
 
-    >>> import simplejson
+    >>> import json
     >>> def modify_team(team, representation, method, service):
     ...     "A helper function to send a PUT or PATCH request to a team."
     ...     headers = {"Content-type": "application/json"}
-    ...     return service(
-    ...         team, method, simplejson.dumps(representation), headers
-    ...     )
+    ...     return service(team, method, json.dumps(representation), headers)
     ...
 
     >>> print(

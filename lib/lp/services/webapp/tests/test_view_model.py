@@ -3,9 +3,10 @@
 
 """Tests for the user requested oops using ++oops++ traversal."""
 
+import json
+
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_browser_request
-from simplejson import loads
 from testtools.matchers import KeysEqual
 from zope.configuration import xmlconfig
 
@@ -123,7 +124,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = loads(browser.contents)
+        cache = json.loads(browser.contents.decode())
         self.assertThat(cache, KeysEqual("related_features", "context"))
 
     def test_JsonModel_custom_cache(self):
@@ -140,7 +141,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = loads(browser.contents)
+        cache = json.loads(browser.contents.decode())
         self.assertThat(
             cache, KeysEqual("related_features", "context", "target_info")
         )
@@ -165,7 +166,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = loads(browser.contents)
+        cache = json.loads(browser.contents.decode())
         self.assertThat(
             cache, KeysEqual("related_features", "context", "target_info")
         )

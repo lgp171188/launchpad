@@ -14,9 +14,9 @@ __all__ = [
     "safe_action",
 ]
 
+import json
 from typing import List, Optional, Type
 
-import simplejson
 import transaction
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -140,7 +140,7 @@ class LaunchpadFormView(LaunchpadView):
         ]
         if notifications:
             request.response.setHeader(
-                "X-Lazr-Notifications", simplejson.dumps(notifications)
+                "X-Lazr-Notifications", json.dumps(notifications)
             )
 
     def render(self):
@@ -387,7 +387,7 @@ class LaunchpadFormView(LaunchpadView):
             errors=errors,
             error_summary=self.error_count,
         )
-        return simplejson.dumps(return_data)
+        return json.dumps(return_data)
 
     def validate(self, data):
         """Validate the form.

@@ -22,7 +22,7 @@ The consumer can ask for a JSON representation of the request token,
 which will also include information about the available permission
 levels.
 
-    >>> import simplejson
+    >>> import json
     >>> from lp.testing.pages import setupBrowser
 
     >>> json_browser = setupBrowser()
@@ -30,7 +30,7 @@ levels.
     >>> json_browser.open(
     ...     "http://launchpad.test/+request-token", data=urlencode(data)
     ... )
-    >>> token = simplejson.loads(json_browser.contents)
+    >>> token = json.loads(json_browser.contents.decode())
     >>> sorted(token.keys())
     ['access_levels', 'oauth_token', 'oauth_token_consumer',
      'oauth_token_secret']

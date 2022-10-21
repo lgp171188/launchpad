@@ -1391,14 +1391,11 @@ Non-virtualized archives
 Modifying the require_virtualized flag through the API is not allowed except
 for admins, commercial admins, and PPA admins.
 
-    >>> import simplejson
+    >>> import json
     >>> def modify_archive(service, archive):
     ...     headers = {"Content-type": "application/json"}
     ...     return service(
-    ...         archive["self_link"],
-    ...         "PUT",
-    ...         simplejson.dumps(archive),
-    ...         headers,
+    ...         archive["self_link"], "PUT", json.dumps(archive), headers
     ...     )
     ...
 

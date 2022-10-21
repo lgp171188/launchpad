@@ -7,9 +7,9 @@ __all__ = [
     "RemoveArtifactSubscriptionsJob",
 ]
 
+import json
 import logging
 
-import simplejson
 import six
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
@@ -124,7 +124,7 @@ class SharingJob(StormBase):
 
     @property
     def metadata(self):
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     def __init__(self, job_type, pillar, grantee, metadata):
         """Constructor.
@@ -134,7 +134,7 @@ class SharingJob(StormBase):
             dict.
         """
         super().__init__()
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         self.job = Job()
         self.job_type = job_type
         self.grantee = grantee

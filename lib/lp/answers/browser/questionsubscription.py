@@ -7,9 +7,10 @@ __all__ = [
     "QuestionPortletSubscribersWithDetails",
 ]
 
+import json
+
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebServiceClientRequest
-from simplejson import dumps
 from zope.traversing.browser import absoluteURL
 
 from lp.answers.interfaces.question import IQuestion
@@ -78,7 +79,7 @@ class QuestionPortletSubscribersWithDetails(LaunchpadView):
                 "subscription_level": "Indirect",
             }
             data.append(record)
-        return dumps(data)
+        return json.dumps(data)
 
     def render(self):
         """Override the default render() to return only JSON."""

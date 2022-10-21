@@ -11,6 +11,7 @@ __all__ = [
     "save_garbo_job_state",
 ]
 
+import json
 import logging
 import multiprocessing
 import os
@@ -20,7 +21,6 @@ from datetime import datetime, timedelta
 
 import iso8601
 import pytz
-import simplejson
 import six
 import transaction
 from contrib.glock import GlobalLock, LockAlreadyAcquired
@@ -168,14 +168,14 @@ def load_garbo_job_state(job_name):
         .get_one()
     )
     if job_data:
-        return simplejson.loads(job_data[0])
+        return json.loads(job_data[0])
     return None
 
 
 def save_garbo_job_state(job_name, job_data):
     # Save the json state data for the given job name.
     store = IMasterStore(Person)
-    json_data = simplejson.dumps(job_data, ensure_ascii=False)
+    json_data = json.dumps(job_data, ensure_ascii=False)
     result = store.execute(
         "UPDATE GarboJobState SET json_data = ? WHERE name = ?",
         params=(json_data, six.ensure_text(job_name)),
