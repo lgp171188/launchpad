@@ -24,11 +24,11 @@ __all__ = [
     "latest_proposals_for_each_branch",
 ]
 
+import json
 import operator
 from functools import wraps
 from urllib.parse import urlsplit, urlunsplit
 
-import simplejson
 from lazr.delegates import delegate_to
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache, IWebServiceClientRequest
@@ -851,7 +851,7 @@ class BranchMergeProposalView(
     @property
     def status_config(self):
         """The config to configure the ChoiceSource JS widget."""
-        return simplejson.dumps(
+        return json.dumps(
             {
                 "status_widget_items": vocabulary_to_choice_edit_items(
                     self._createStatusVocabulary(),

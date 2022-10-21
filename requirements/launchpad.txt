@@ -156,7 +156,6 @@ service-identity==18.1.0
 setproctitle==1.1.7
 setuptools-git==1.2
 setuptools-scm==3.4.3
-simplejson==3.8.2
 soupmatchers==0.4
 soupsieve==1.9
 statsd==3.3.0

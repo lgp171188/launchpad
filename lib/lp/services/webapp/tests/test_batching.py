@@ -1,10 +1,10 @@
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import json
 from datetime import datetime
 
 import pytz
-import simplejson
 from lazr.batchnavigator.interfaces import IRangeFactory
 from storm.expr import Desc, compile
 from storm.store import EmptyResultSet
@@ -177,12 +177,12 @@ class TestStormRangeFactory(TestCaseWithFactory):
         # where the value is represented in the ISO time format.
         self.assertEqual(
             '"2011-07-25T00:00:00"',
-            simplejson.dumps(datetime(2011, 7, 25), cls=DateTimeJSONEncoder),
+            json.dumps(datetime(2011, 7, 25), cls=DateTimeJSONEncoder),
         )
 
         # DateTimeJSONEncoder works for the regular Python types that can
         # represented as JSON strings.
-        encoded = simplejson.dumps(
+        encoded = json.dumps(
             ("foo", 1, 2.0, [3, 4], {5: "bar"}, datetime(2011, 7, 24)),
             cls=DateTimeJSONEncoder,
         )
@@ -199,16 +199,16 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset)
         memo_value = range_factory.getOrderValuesFor(resultset[0])
         request = LaunchpadTestRequest(
-            QUERY_STRING="memo=%s" % simplejson.dumps(memo_value)
+            QUERY_STRING="memo=%s" % json.dumps(memo_value)
         )
         batchnav = BatchNavigator(
             resultset, request, size=3, range_factory=range_factory
         )
         first, last = range_factory.getEndpointMemos(batchnav.batch)
-        expected_first = simplejson.dumps(
+        expected_first = json.dumps(
             [resultset[1].name], cls=DateTimeJSONEncoder
         )
-        expected_last = simplejson.dumps(
+        expected_last = json.dumps(
             [resultset[3].name], cls=DateTimeJSONEncoder
         )
         self.assertEqual(expected_first, first)
@@ -225,11 +225,11 @@ class TestStormRangeFactory(TestCaseWithFactory):
             resultset, request, size=3, range_factory=range_factory
         )
         first, last = range_factory.getEndpointMemos(batchnav.batch)
-        expected_first = simplejson.dumps(
+        expected_first = json.dumps(
             [resultset.get_plain_result_set()[0][1].id],
             cls=DateTimeJSONEncoder,
         )
-        expected_last = simplejson.dumps(
+        expected_last = json.dumps(
             [resultset.get_plain_result_set()[2][1].id],
             cls=DateTimeJSONEncoder,
         )
@@ -260,7 +260,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         # parseMemo() accepts only JSON representations of lists.
         resultset = self.makeStormResultSet()
         range_factory = StormRangeFactory(resultset, self.logError)
-        self.assertIs(None, range_factory.parseMemo(simplejson.dumps(1)))
+        self.assertIs(None, range_factory.parseMemo(json.dumps(1)))
         self.assertEqual(
             ["memo must be the JSON representation of a list."],
             self.error_messages,
@@ -273,7 +273,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         resultset.order_by(Person.name, Person.id)
         range_factory = StormRangeFactory(resultset, self.logError)
-        self.assertIs(None, range_factory.parseMemo(simplejson.dumps([1])))
+        self.assertIs(None, range_factory.parseMemo(json.dumps([1])))
         expected_message = (
             "Invalid number of elements in memo string. Expected: 2, got: 1"
         )
@@ -286,7 +286,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset.order_by(Person.datecreated, Person.name, Person.id)
         range_factory = StormRangeFactory(resultset, self.logError)
         invalid_memo = [datetime(2011, 7, 25, 11, 30, 30, 45), "foo", "bar"]
-        json_data = simplejson.dumps(invalid_memo, cls=DateTimeJSONEncoder)
+        json_data = json.dumps(invalid_memo, cls=DateTimeJSONEncoder)
         self.assertIs(None, range_factory.parseMemo(json_data))
         self.assertEqual(["Invalid parameter: 'bar'"], self.error_messages)
 
@@ -300,7 +300,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
             "foo",
             1,
         ]
-        json_data = simplejson.dumps(valid_memo, cls=DateTimeJSONEncoder)
+        json_data = json.dumps(valid_memo, cls=DateTimeJSONEncoder)
         self.assertEqual(valid_memo, range_factory.parseMemo(json_data))
         self.assertEqual(0, len(self.error_messages))
 
@@ -392,7 +392,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         resultset.order_by(Desc(Person.id))
         range_factory = StormRangeFactory(resultset, self.logError)
-        self.assertEqual([1], range_factory.parseMemo(simplejson.dumps([1])))
+        self.assertEqual([1], range_factory.parseMemo(json.dumps([1])))
 
     def test_reverseSortOrder(self):
         # reverseSortOrder() wraps a plain PropertyColumn instance into
@@ -584,7 +584,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         resultset.order_by(Person.name, Person.id)
         all_results = list(resultset)
-        memo = simplejson.dumps([all_results[0].name, all_results[0].id])
+        memo = json.dumps([all_results[0].name, all_results[0].id])
         range_factory = StormRangeFactory(resultset)
         sliced_result = range_factory.getSlice(3, memo)
         self.assertEqual(all_results[1:4], list(sliced_result))
@@ -605,7 +605,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         all_results = list(resultset)
         expected = all_results[1:4]
         expected.reverse()
-        memo = simplejson.dumps([all_results[4].name, all_results[4].id])
+        memo = json.dumps([all_results[4].name, all_results[4].id])
         range_factory = StormRangeFactory(resultset)
         sliced_result = range_factory.getSlice(3, memo, forwards=False)
         self.assertEqual(expected, list(sliced_result))
@@ -646,9 +646,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         # for a forward batch, the slice of this btach starts with
         # the fourth row of the entire result set.
         memo_lfa = all_results[2].libraryfile
-        memo = simplejson.dumps(
-            [memo_lfa.mimetype, memo_lfa.filename, memo_lfa.id]
-        )
+        memo = json.dumps([memo_lfa.mimetype, memo_lfa.filename, memo_lfa.id])
         range_factory = StormRangeFactory(resultset)
         sliced_result = range_factory.getSlice(3, memo)
         self.assertEqual(all_results[3:6], list(sliced_result))
@@ -658,7 +656,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset.order_by(LibraryFileAlias.id)
         all_results = list(resultset)
         plain_results = list(resultset.get_plain_result_set())
-        memo = simplejson.dumps([resultset.get_plain_result_set()[0][1].id])
+        memo = json.dumps([resultset.get_plain_result_set()[0][1].id])
         range_factory = StormRangeFactory(resultset)
         sliced_result = range_factory.getSlice(3, memo)
         self.assertEqual(all_results[1:4], list(sliced_result))
@@ -677,7 +675,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         resultset.order_by(Person.id)
         all_results = list(resultset)
-        memo = simplejson.dumps([all_results[2].id])
+        memo = json.dumps([all_results[2].id])
         range_factory = StormRangeFactory(resultset)
         backward_slice = range_factory.getSlice(
             size=2, endpoint_memo=memo, forwards=False

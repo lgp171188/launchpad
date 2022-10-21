@@ -16,12 +16,12 @@ All bug targets have a read/write bug_reporting_guidelines property.
     >>> print(product["bug_reporting_guidelines"])
     None
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> patch = {
     ...     "bug_reporting_guidelines": "Please run `ubuntu-bug -p firefox`."
     ... }
     >>> response = webservice.patch(
-    ...     product["self_link"], "application/json", dumps(patch)
+    ...     product["self_link"], "application/json", json.dumps(patch)
     ... )
 
     >>> product = webservice.get(product_url).jsonBody()
@@ -36,7 +36,7 @@ Not everyone can modify it however:
     ...     )
     ... }
     >>> response = user_webservice.patch(
-    ...     product["self_link"], "application/json", dumps(patch)
+    ...     product["self_link"], "application/json", json.dumps(patch)
     ... )
     >>> print(response)
     HTTP/1.1 401 Unauthorized...
@@ -109,7 +109,7 @@ The bug supervisor of a product can also add tags.
     ...     webservice.patch(
     ...         "/tags-test-product2",
     ...         "application/json",
-    ...         dumps({"bug_supervisor_link": ws_salgado["self_link"]}),
+    ...         json.dumps({"bug_supervisor_link": ws_salgado["self_link"]}),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -144,7 +144,6 @@ Official tags must conform to the same format as ordinary tags.
 
 We can also access official tags as a list.
 
-    >>> from simplejson import dumps
     >>> tags_test_product = webservice.get("/tags-test-product").jsonBody()
     >>> tags_test_product["official_bug_tags"]
     []
@@ -152,7 +151,7 @@ We can also access official tags as a list.
     ...     webservice.patch(
     ...         "/tags-test-product",
     ...         "application/json",
-    ...         dumps({"official_bug_tags": ["foo", "bar"]}),
+    ...         json.dumps({"official_bug_tags": ["foo", "bar"]}),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -171,7 +170,7 @@ We can also access official tags as a list.
     ...     webservice.patch(
     ...         "/testix",
     ...         "application/json",
-    ...         dumps({"official_bug_tags": ["foo", "bar"]}),
+    ...         json.dumps({"official_bug_tags": ["foo", "bar"]}),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -189,7 +188,9 @@ We can retrieve or set a person or team as the bug supervisor for projects.
     ...     webservice.patch(
     ...         "/firefox",
     ...         "application/json",
-    ...         dumps({"bug_supervisor_link": firefox_project["owner_link"]}),
+    ...         json.dumps(
+    ...             {"bug_supervisor_link": firefox_project["owner_link"]}
+    ...         ),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -208,7 +209,9 @@ We can also do this for distributions.
     ...     webservice.patch(
     ...         "/ubuntutest",
     ...         "application/json",
-    ...         dumps({"bug_supervisor_link": ubuntutest_dist["owner_link"]}),
+    ...         json.dumps(
+    ...             {"bug_supervisor_link": ubuntutest_dist["owner_link"]}
+    ...         ),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -223,7 +226,7 @@ Setting the bug supervisor is restricted to owners and launchpad admins.
     ...     user_webservice.patch(
     ...         "/ubuntutest",
     ...         "application/json",
-    ...         dumps({"bug_supervisor_link": None}),
+    ...         json.dumps({"bug_supervisor_link": None}),
     ...     )
     ... )
     HTTP/1.1 401 Unauthorized

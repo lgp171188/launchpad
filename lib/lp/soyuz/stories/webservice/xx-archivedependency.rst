@@ -12,7 +12,7 @@ We'll use Celso's PPA, and give it a custom dependency on the primary
 archive, and then create a private PPA for Celso with a similar custom
 dependency.
 
-    >>> import simplejson
+    >>> import json
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -95,7 +95,7 @@ But even he can't write to a dependency.
     ...     cprov_webservice.patch(
     ...         "/~cprov/+archive/ubuntu/ppa/+dependency/1",
     ...         "application/json",
-    ...         simplejson.dumps({"archive_link": mark_ppa["self_link"]}),
+    ...         json.dumps({"archive_link": mark_ppa["self_link"]}),
     ...     )
     ... )
     HTTP/1.1 400 Bad Request
@@ -107,7 +107,7 @@ But even he can't write to a dependency.
     ...     cprov_webservice.patch(
     ...         "/~cprov/+archive/ubuntu/ppa/+dependency/1",
     ...         "application/json",
-    ...         simplejson.dumps({"dependency_link": mark_ppa["self_link"]}),
+    ...         json.dumps({"dependency_link": mark_ppa["self_link"]}),
     ...     )
     ... )
     HTTP/1.1 400 Bad Request
@@ -119,7 +119,7 @@ But even he can't write to a dependency.
     ...     cprov_webservice.patch(
     ...         "/~cprov/+archive/ubuntu/ppa/+dependency/1",
     ...         "application/json",
-    ...         simplejson.dumps({"pocket": "Security"}),
+    ...         json.dumps({"pocket": "Security"}),
     ...     )
     ... )
     HTTP/1.1 400 Bad Request

@@ -15,12 +15,12 @@ outside the scope of this test.
 It's possible to set the translation focus through the API
 if you're an admin. The translation focus should be a project series.
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> print(
     ...     webservice.patch(
     ...         evolution["self_link"],
     ...         "application/json",
-    ...         dumps(
+    ...         json.dumps(
     ...             {
     ...                 "translation_focus_link": evolution[
     ...                     "development_focus_link"
@@ -43,7 +43,7 @@ Unprivileged users cannot set the translation focus.
     ...     user_webservice.patch(
     ...         evolution["self_link"],
     ...         "application/json",
-    ...         dumps({"translation_focus_link": None}),
+    ...         json.dumps({"translation_focus_link": None}),
     ...     )
     ... )
     HTTP... 401 Unauthorized

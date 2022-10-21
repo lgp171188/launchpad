@@ -2,8 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import contextlib
+import json
 
-import simplejson
 import soupmatchers
 import transaction
 from lazr.restful.interfaces import IJSONRequestCache
@@ -740,7 +740,7 @@ class TestMailingListArchiveView(TestCaseWithFactory):
     @contextlib.contextmanager
     def _override_messages(self, view_class, messages):
         def _message_shim(self):
-            return simplejson.loads(messages)
+            return json.loads(messages)
 
         tmp = TeamMailingListArchiveView._get_messages
         TeamMailingListArchiveView._get_messages = _message_shim

@@ -9,10 +9,10 @@ __all__ = [
     "PersonTransferJob",
 ]
 
+import json
 from datetime import datetime
 
 import pytz
-import simplejson
 import six
 import transaction
 from lazr.delegates import delegate_to
@@ -84,7 +84,7 @@ class PersonTransferJob(StormBase):
 
     @property
     def metadata(self):
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     def __init__(
         self, minor_person, major_person, job_type, metadata, requester=None
@@ -105,7 +105,7 @@ class PersonTransferJob(StormBase):
         self.major_person = major_person
         self.minor_person = minor_person
 
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         # XXX AaronBentley 2009-01-29 bug=322819: This should be a bytestring,
         # but the DB representation is unicode.
         self._json_data = six.ensure_text(json_data)

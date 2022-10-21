@@ -3,9 +3,9 @@
 
 """Tests for the lp.app.browser.launchpadform module."""
 
+import json
 from os.path import dirname, join
 
-import simplejson
 from lxml import html
 from testtools.content import text_content
 from zope.browserpage import ViewPageTemplateFile
@@ -246,7 +246,7 @@ class TestAjaxValidator(TestCase):
                 "errors": {"field.single_line": "An error occurred"},
                 "form_wide_errors": ["A form error"],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )
 
     def test_non_ajax_failure_handler(self):
@@ -293,5 +293,5 @@ class TestAjaxValidator(TestCase):
                 "errors": {},
                 "form_wide_errors": ["An action error"],
             },
-            simplejson.loads(view.form_result),
+            json.loads(view.form_result),
         )

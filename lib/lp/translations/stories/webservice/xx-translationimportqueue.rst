@@ -85,7 +85,7 @@ Entry fields
 Most of the fields in a translation import queue entry are immutable
 from the web service's point of view.
 
-    >>> from simplejson import dumps
+    >>> import json
 
 
 Path
@@ -96,7 +96,9 @@ An entry's file path can be changed by the entry's owner or an admin.
     >>> first_entry = queue["entries"][0]["self_link"]
     >>> print(
     ...     webservice.patch(
-    ...         first_entry, "application/json", dumps({"path": "foo.pot"})
+    ...         first_entry,
+    ...         "application/json",
+    ...         json.dumps({"path": "foo.pot"}),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned
@@ -110,7 +112,9 @@ A regular user is not allowed to make this change.
     >>> first_entry = queue["entries"][0]["self_link"]
     >>> print(
     ...     user_webservice.patch(
-    ...         first_entry, "application/json", dumps({"path": "bar.pot"})
+    ...         first_entry,
+    ...         "application/json",
+    ...         json.dumps({"path": "bar.pot"}),
     ...     )
     ... )
     HTTP... Unauthorized
@@ -125,7 +129,9 @@ For now, it is not possible to set an entry's status through the API.
     >>> first_entry = queue["entries"][0]["self_link"]
     >>> print(
     ...     webservice.patch(
-    ...         first_entry, "application/json", dumps({"status": "Approved"})
+    ...         first_entry,
+    ...         "application/json",
+    ...         json.dumps({"status": "Approved"}),
     ...     )
     ... )
     HTTP... Bad Request

@@ -9,10 +9,10 @@ __all__ = [
     "SpecificationSubscriptionEditView",
 ]
 
+import json
 from typing import List
 
 from lazr.delegates import delegate_to
-from simplejson import dumps
 from zope.component import getUtility
 
 from lp import _
@@ -211,7 +211,7 @@ class SpecificationPortletSubcribersIds(LaunchpadView):
     @property
     def subscriber_ids_js(self):
         """Return subscriber_ids in a form suitable for JavaScript use."""
-        return dumps(self.subscriber_ids)
+        return json.dumps(self.subscriber_ids)
 
     def render(self):
         """Override the default render() to return only JSON."""

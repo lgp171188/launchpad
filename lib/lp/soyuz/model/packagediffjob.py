@@ -5,7 +5,8 @@ __all__ = [
     "PackageDiffJob",
 ]
 
-import simplejson
+import json
+
 from lazr.delegates import delegate_to
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -38,7 +39,7 @@ class PackageDiffJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         job = Job(
             base_job_type=JobType.GENERATE_PACKAGE_DIFF,
             requester=packagediff.requester,
-            base_json_data=simplejson.dumps({"packagediff": packagediff.id}),
+            base_json_data=json.dumps({"packagediff": packagediff.id}),
         )
         derived = cls(job)
         derived.celeryRunOnCommit()
@@ -75,7 +76,7 @@ class PackageDiffJob(PackageDiffJobDerived):
 
     @property
     def packagediff_id(self):
-        return simplejson.loads(self.base_json_data)["packagediff"]
+        return json.loads(self.base_json_data)["packagediff"]
 
     @property
     def packagediff(self):

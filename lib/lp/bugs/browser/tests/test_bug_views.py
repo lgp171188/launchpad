@@ -3,11 +3,11 @@
 
 """Tests for Bug Views."""
 
+import json
 import re
 from datetime import datetime, timedelta
 
 import pytz
-import simplejson
 from soupmatchers import HTMLContains, Tag, Within
 from storm.store import Store
 from testtools.matchers import Contains, Equals, MatchesAll, Not
@@ -484,7 +484,7 @@ class TestBugSecrecyViews(TestCaseWithFactory):
             **extra,
         )
         view = self.createInitializedSecrecyView(person, bug, request)
-        result_data = simplejson.loads(view.render())
+        result_data = json.loads(view.render())
 
         cache_data = result_data["cache_data"]
         self.assertFalse(cache_data["other_subscription_notifications"])
