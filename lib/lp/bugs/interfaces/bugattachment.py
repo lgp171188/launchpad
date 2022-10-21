@@ -194,7 +194,8 @@ class IBugAttachmentSet(Interface):
         """Create a new attachment and return it.
 
         :param bug: The `IBug` to which the new attachment belongs.
-        :param filealias: The `IFilealias` containing the data (optional).
+        :param filealias: The `ILibraryFileAlias` containing
+            the data (optional).
         :param url: External URL of the attachment (optional).
         :param message: The `IMessage` to which this attachment belongs.
         :param type: The type of attachment. See `BugAttachmentType`.

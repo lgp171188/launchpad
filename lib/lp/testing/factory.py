@@ -2589,7 +2589,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if url:
             if data or filename:
                 raise ValueError(
-                    "Either `url` or `data` / `filename` " "can be provided."
+                    "Either `url` or `data` / `filename` can be provided."
                 )
         else:
             if data is None:
