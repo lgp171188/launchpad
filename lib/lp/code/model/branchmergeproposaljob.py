@@ -19,11 +19,11 @@ __all__ = [
     "UpdatePreviewDiffJob",
 ]
 
+import json
 from contextlib import ExitStack
 from datetime import datetime, timedelta
 
 import pytz
-import simplejson
 import six
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
@@ -155,7 +155,7 @@ class BranchMergeProposalJob(StormBase):
 
     @property
     def metadata(self):
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     def __init__(self, branch_merge_proposal, job_type, metadata):
         """Constructor.
@@ -166,7 +166,7 @@ class BranchMergeProposalJob(StormBase):
             dict.
         """
         super().__init__()
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         self.job = Job()
         self.branch_merge_proposal = branch_merge_proposal
         self.job_type = job_type

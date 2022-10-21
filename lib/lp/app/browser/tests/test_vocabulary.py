@@ -3,12 +3,12 @@
 
 """Test vocabulary adapters."""
 
+import json
 from datetime import datetime
 from typing import List
 from urllib.parse import urlencode
 
 import pytz
-import simplejson
 from zope.component import getSiteManager, getUtility
 from zope.formlib.interfaces import MissingInputError
 from zope.interface import implementer
@@ -609,7 +609,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
         bugtask = self.factory.makeBugTask(target=product)
         form = dict(name="TestPerson", search_text="xpting")
         view = self.create_vocabulary_view(form, context=bugtask)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         expected = [
             {
                 "alt_title": team.name,
@@ -669,7 +669,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
             name="TestPerson", search_text="xpting", search_filter=vocab_filter
         )
         view = self.create_vocabulary_view(form, context=product)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         entries = result["entries"]
         self.assertEqual(1, len(entries))
         self.assertEqual("xpting-person", entries[0]["value"])
@@ -684,7 +684,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
         login_person(person)
         form = dict(name="TestPerson", search_text="pting-n")
         view = self.create_vocabulary_view(form)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         expected = email[: MAX_DESCRIPTION_LENGTH - 3] + "..."
         self.assertEqual("pting-n", result["entries"][0]["value"])
         self.assertEqual(expected, result["entries"][0]["description"])
@@ -693,7 +693,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
         # The results are batched.
         form = dict(name="TestPerson", search_text="pting")
         view = self.create_vocabulary_view(form)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         total_size = result["total_size"]
         entries = len(result["entries"])
         self.assertTrue(
@@ -707,7 +707,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
             name="TestPerson", search_text="pting", start="0", batch="1"
         )
         view = self.create_vocabulary_view(form)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         self.assertEqual(6, result["total_size"])
         self.assertEqual(1, len(result["entries"]))
 
@@ -717,7 +717,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
             name="TestPerson", search_text="pting", start="1", batch="1"
         )
         view = self.create_vocabulary_view(form)
-        result = simplejson.loads(view())
+        result = json.loads(view())
         self.assertEqual(6, result["total_size"])
         self.assertEqual(1, len(result["entries"]))
         self.assertEqual("pting-2", result["entries"][0]["value"])

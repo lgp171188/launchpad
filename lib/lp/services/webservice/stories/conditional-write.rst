@@ -70,8 +70,8 @@ modify directly.
 So long as the second part of the submitted ETag matches, a
 conditional write will succeed.
 
-    >>> import simplejson
-    >>> data = simplejson.dumps({"title": "New title"})
+    >>> import json
+    >>> data = json.dumps({"title": "New title"})
     >>> headers = {"If-Match": old_etag}
     >>> print(
     ...     webservice.patch(url, "application/json", data, headers=headers)

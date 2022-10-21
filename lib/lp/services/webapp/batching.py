@@ -1,13 +1,13 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import json
 import re
 from collections.abc import Sequence
 from datetime import datetime
 from functools import reduce
 
 import lazr.batchnavigator
-import simplejson
 from iso8601 import ParseError, parse_date
 from lazr.batchnavigator.interfaces import IRangeFactory
 from storm import Undef
@@ -194,7 +194,7 @@ class TableBatchNavigator(BatchNavigator):
                 self.show_column[column_to_show] = True
 
 
-class DateTimeJSONEncoder(simplejson.JSONEncoder):
+class DateTimeJSONEncoder(json.JSONEncoder):
     """A JSON encoder that understands datetime objects.
 
     Datetime objects are formatted according to ISO 1601.
@@ -203,7 +203,7 @@ class DateTimeJSONEncoder(simplejson.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
-        return simplejson.JSONEncoder.default(self, obj)
+        return super().default(self, obj)
 
 
 class ShadowedList:
@@ -381,8 +381,8 @@ class StormRangeFactory:
         lower = self.getOrderValuesFor(plain_slice[0])
         upper = self.getOrderValuesFor(plain_slice[batch.trueSize - 1])
         return (
-            simplejson.dumps(lower, cls=DateTimeJSONEncoder),
-            simplejson.dumps(upper, cls=DateTimeJSONEncoder),
+            json.dumps(lower, cls=DateTimeJSONEncoder),
+            json.dumps(upper, cls=DateTimeJSONEncoder),
         )
 
     def reportError(self, message):
@@ -404,8 +404,8 @@ class StormRangeFactory:
         if memo == "":
             return None
         try:
-            parsed_memo = simplejson.loads(memo)
-        except simplejson.JSONDecodeError:
+            parsed_memo = json.loads(memo)
+        except json.JSONDecodeError:
             self.reportError("memo is not a valid JSON string.")
             return None
         if not isinstance(parsed_memo, list):
@@ -429,7 +429,7 @@ class StormRangeFactory:
             except TypeError as error:
                 # A TypeError is raised when the type of value cannot
                 # be used for expression. All expected types are
-                # properly created by simplejson.loads() above, except
+                # properly created by json.loads() above, except
                 # time stamps which are represented as strings in
                 # ISO format. If value is a string and if it can be
                 # converted into a datetime object, we have a valid

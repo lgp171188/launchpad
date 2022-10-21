@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 import pytz
 import six
 from lazr.lifecycle.interfaces import IDoNotSnapshot
-from simplejson import dumps
 from storm.store import Store
 from testtools.matchers import Equals, LessThan
 from zope.component import getMultiAdapter
@@ -121,7 +120,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
         response = self.webservice.patch(
             bug_two_json["self_link"],
             "application/json",
-            dumps(dict(description=new_description)),
+            json.dumps(dict(description=new_description)),
             headers=dict(accept="application/xhtml+xml"),
         )
 
@@ -517,7 +516,7 @@ class TestBugDateLastUpdated(TestCaseWithFactory):
         date_last_updated = bug.date_last_updated
         logout()
         response = webservice.patch(
-            task_url, "application/json", dumps(dict(status="Invalid"))
+            task_url, "application/json", json.dumps(dict(status="Invalid"))
         )
         self.assertEqual(209, response.status)
         with person_logged_in(owner):

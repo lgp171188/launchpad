@@ -8,10 +8,10 @@ __all__ = [
     "lookup_oauth_context",
 ]
 
+import json
 from datetime import datetime, timedelta
 
 import pytz
-import simplejson
 from lazr.restful import HTTPResource
 from zope.component import getUtility
 from zope.formlib.form import Action, Actions, expandPrefix
@@ -58,7 +58,7 @@ class JSONTokenMixin:
         ]
         structure["access_levels"] = access_levels
         self.request.response.setHeader("Content-Type", HTTPResource.JSON_TYPE)
-        return simplejson.dumps(structure)
+        return json.dumps(structure)
 
 
 class OAuthRequestTokenView(LaunchpadFormView, JSONTokenMixin):

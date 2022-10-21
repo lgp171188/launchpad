@@ -13,7 +13,8 @@ __all__ = [
     "VocabularyPickerWidget",
 ]
 
-import simplejson
+import json
+
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import ConversionError
@@ -160,7 +161,7 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
 
     @property
     def json_config(self):
-        return simplejson.dumps(self.config)
+        return json.dumps(self.config)
 
     @property
     def extra_no_results_message(self):

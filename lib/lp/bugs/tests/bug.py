@@ -3,6 +3,7 @@
 
 """Helper functions for bug-related doctests and pagetests."""
 
+import json
 import re
 import textwrap
 from datetime import datetime, timedelta
@@ -40,9 +41,7 @@ def print_also_notified(bug_page):
 
 def print_subscribers(bug_page, subscription_level=None, reverse=False):
     """Print the subscribers listed in the subscribers JSON portlet."""
-    from simplejson import loads
-
-    details = loads(bug_page)
+    details = json.loads(bug_page.decode())
 
     if details is None:
         # No subscribers at all.

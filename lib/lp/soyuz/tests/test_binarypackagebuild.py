@@ -3,11 +3,11 @@
 
 """Test Build features."""
 
+import json
 from datetime import datetime, timedelta
 
 import pytz
 from pymacaroons import Macaroon
-from simplejson import dumps
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
@@ -647,7 +647,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         response = webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps({"external_dependencies": "random"}),
+            json.dumps({"external_dependencies": "random"}),
         )
         self.assertEqual(401, response.status)
 
@@ -660,7 +660,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         response = self.webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps({"external_dependencies": "random"}),
+            json.dumps({"external_dependencies": "random"}),
         )
         self.assertEqual(401, response.status)
 
@@ -678,7 +678,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         response = webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps({"external_dependencies": "random"}),
+            json.dumps({"external_dependencies": "random"}),
         )
         self.assertEqual(400, response.status)
         self.assertIn(b"Invalid external dependencies", response.body)
@@ -698,7 +698,7 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         response = webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps({"external_dependencies": dependencies}),
+            json.dumps({"external_dependencies": dependencies}),
         )
         self.assertEqual(209, response.status)
         self.assertEqual(
@@ -958,7 +958,7 @@ class TestCalculateScore(TestCaseWithFactory):
         response = webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps(dict(relative_build_score=100)),
+            json.dumps(dict(relative_build_score=100)),
         )
         self.assertEqual(401, response.status)
         new_entry = webservice.get(obj_url, api_version="devel").jsonBody()
@@ -976,7 +976,7 @@ class TestCalculateScore(TestCaseWithFactory):
         response = webservice.patch(
             entry["self_link"],
             "application/json",
-            dumps(dict(relative_build_score=100)),
+            json.dumps(dict(relative_build_score=100)),
         )
         self.assertEqual(209, response.status)
         self.assertEqual(100, response.jsonBody()["relative_build_score"])

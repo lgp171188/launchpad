@@ -3,7 +3,8 @@
 
 """Test views that manage sharing."""
 
-import simplejson
+import json
+
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_web_service_request
@@ -307,7 +308,7 @@ class PillarSharingViewTestMixin:
     def test_picker_config(self):
         # Test the config passed to the disclosure sharing picker.
         view = create_view(self.pillar, name="+sharing")
-        picker_config = simplejson.loads(view.json_sharing_picker_config)
+        picker_config = json.loads(view.json_sharing_picker_config)
         self.assertTrue("vocabulary_filters" in picker_config)
         self.assertEqual("Share project information", picker_config["header"])
         self.assertEqual(

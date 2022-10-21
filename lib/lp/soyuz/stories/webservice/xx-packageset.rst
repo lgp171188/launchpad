@@ -113,7 +113,7 @@ Let's create another set.
 
 We can modify it, and even give it away.
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> name16 = webservice.get("/~name16").jsonBody()
     >>> patch = {
     ...     "name": "renamed",
@@ -123,7 +123,7 @@ We can modify it, and even give it away.
     >>> response = webservice.patch(
     ...     "/package-sets/ubuntu/hoary/shortlived",
     ...     "application/json",
-    ...     dumps(patch),
+    ...     json.dumps(patch),
     ... )
     >>> print(response)
     HTTP/1.1 301 Moved Permanently

@@ -5,7 +5,8 @@ __all__ = [
     "LinkCheckerAPI",
 ]
 
-import simplejson
+import json
+
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -56,8 +57,8 @@ class LinkCheckerAPI(LaunchpadView):
         result = {}
         links_to_check_data = self.request.get("link_hrefs")
         if links_to_check_data is None:
-            return simplejson.dumps(result)
-        links_to_check = simplejson.loads(links_to_check_data)
+            return json.dumps(result)
+        links_to_check = json.loads(links_to_check_data)
 
         for link_type in links_to_check:
             links = links_to_check[link_type]
@@ -65,7 +66,7 @@ class LinkCheckerAPI(LaunchpadView):
             result[link_type] = link_info
 
         self.request.response.setHeader("Content-type", "application/json")
-        return simplejson.dumps(result)
+        return json.dumps(result)
 
     def check_branch_links(self, links):
         """Check links of the form /+code/foo/bar"""

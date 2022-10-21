@@ -576,10 +576,10 @@ to, obviously.
 
 Wiki names can be modified.
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> patch = {"wiki": "http://www.example.com/", "wikiname": "MrExample"}
     >>> response = webservice.patch(
-    ...     wiki_name["self_link"], "application/json", dumps(patch)
+    ...     wiki_name["self_link"], "application/json", json.dumps(patch)
     ... )
     >>> wiki_name = sorted(webservice.get(wikis_link).jsonBody()["entries"])[
     ...     0
@@ -592,7 +592,7 @@ escaped as if it was HTML.
 
     >>> patch = {"wiki": "javascript:void/**/", "wikiname": "MrExample"}
     >>> response = webservice.patch(
-    ...     wiki_name["self_link"], "application/json", dumps(patch)
+    ...     wiki_name["self_link"], "application/json", json.dumps(patch)
     ... )
     >>> print(response)
     HTTP/1.1 400 Bad Request
@@ -969,12 +969,9 @@ Restrictions
 
 A team can't be its own owner.
 
-    >>> import simplejson
     >>> doc = {"team_owner_link": webservice.getAbsoluteUrl("/~admins")}
     >>> print(
-    ...     webservice.patch(
-    ...         "/~admins", "application/json", simplejson.dumps(doc)
-    ...     )
+    ...     webservice.patch("/~admins", "application/json", json.dumps(doc))
     ... )
     HTTP/1.1 400 Bad Request
     ...

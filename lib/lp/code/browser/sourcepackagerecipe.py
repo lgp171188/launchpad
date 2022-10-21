@@ -14,8 +14,8 @@ __all__ = [
 ]
 
 import itertools
+import json
 
-import simplejson
 from brzbuildrecipe.recipe import ForbiddenInstructionError, RecipeParseError
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -485,7 +485,7 @@ class SourcePackageRecipeRequestBuildsAjaxView(
         return_data = dict(builds=builds, errors=errors)
         if informational:
             return_data.update(informational)
-        return simplejson.dumps(return_data)
+        return json.dumps(return_data)
 
     def failure(self, action, data, errors):
         """Called by the form if validate() finds any errors.
