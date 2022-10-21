@@ -203,7 +203,7 @@ class DateTimeJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
+        return super().default(self, obj)
 
 
 class ShadowedList:
