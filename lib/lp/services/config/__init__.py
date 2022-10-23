@@ -289,6 +289,7 @@ class DatabaseConfig:
             "db_statement_timeout",
             "db_statement_timeout_precision",
             "isolation_level",
+            "set_role_after_connecting",
             "soft_request_timeout",
             "storm_cache",
             "storm_cache_size",
