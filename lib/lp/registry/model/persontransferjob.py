@@ -53,7 +53,7 @@ from lp.registry.scripts.closeaccount import close_account
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -154,7 +154,7 @@ class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def iterReady(cls):
         """Iterate through all ready PersonTransferJobs."""
-        store = IMasterStore(PersonTransferJob)
+        store = IPrimaryStore(PersonTransferJob)
         jobs = store.find(
             PersonTransferJob,
             And(

@@ -111,7 +111,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Greatest,
@@ -944,7 +944,7 @@ class CharmRecipeSet:
         if not self.isValidInformationType(information_type, owner, git_ref):
             raise CharmRecipePrivacyMismatch
 
-        store = IMasterStore(CharmRecipe)
+        store = IPrimaryStore(CharmRecipe)
         recipe = CharmRecipe(
             registrant,
             owner,

@@ -54,8 +54,8 @@ from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
     MAIN_STORE,
     DisallowedStore,
-    IMasterObject,
-    IMasterStore,
+    IPrimaryObject,
+    IPrimaryStore,
     ISQLBase,
     IStore,
     IStoreSelector,
@@ -164,20 +164,20 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
     def __init__(self, *args, **kwargs):
         """Extended version of the SQLObjectBase constructor.
 
-        We force use of the master Store.
+        We force use of the primary Store.
 
         We refetch any parameters from different stores from the
-        correct master Store.
+        correct primary Store.
         """
         # Make it simple to write dumb-invalidators - initialized
         # _cached_properties to a valid list rather than just-in-time
         # creation.
         self._cached_properties = []
-        store = IMasterStore(self.__class__)
+        store = IPrimaryStore(self.__class__)
 
         # The constructor will fail if objects from a different Store
         # are passed in. We need to refetch these objects from the correct
-        # master Store if necessary so the foreign key references can be
+        # primary Store if necessary so the foreign key references can be
         # constructed.
         # XXX StuartBishop 2009-03-02 bug=336867: We probably want to remove
         # this code - there are enough other places developers have to be
@@ -216,11 +216,11 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
 
     def destroySelf(self):
-        my_master = IMasterObject(self)
-        if self is my_master:
+        my_primary = IPrimaryObject(self)
+        if self is my_primary:
             super().destroySelf()
         else:
-            my_master.destroySelf()
+            my_primary.destroySelf()
 
     def __eq__(self, other):
         """Equality operator.
@@ -569,7 +569,7 @@ def reset_store(func):
 
 
 def connect(user=None, dbname=None, isolation=ISOLATION_LEVEL_DEFAULT):
-    """Return a fresh DB-API connection to the MAIN MASTER database.
+    """Return a fresh DB-API connection to the MAIN PRIMARY database.
 
     Can be used without first setting up the Component Architecture,
     unlike the usual stores.

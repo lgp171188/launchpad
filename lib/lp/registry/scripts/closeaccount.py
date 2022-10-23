@@ -31,7 +31,7 @@ from lp.registry.model.productrelease import ProductRelease, ProductReleaseFile
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database import postgresql
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import cursor
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
@@ -51,7 +51,7 @@ def close_account(username, log):
 
     Return True on success, or log an error message and return False
     """
-    store = IMasterStore(Person)
+    store = IPrimaryStore(Person)
     janitor = getUtility(ILaunchpadCelebrities).janitor
 
     cur = cursor()

@@ -25,7 +25,7 @@ from lp.registry.interfaces.mailinglist import MailingListStatus
 from lp.registry.interfaces.person import IPersonSet, ITeamPublic
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.model.persontransferjob import PersonTransferJob
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.identity.model.emailaddress import EmailAddress
@@ -64,7 +64,7 @@ class TestTeamContactAddress(TestCaseWithFactory):
 
         self.team = self.factory.makeTeam(name="alpha")
         self.address = self.factory.makeEmail("team@noplace.org", self.team)
-        self.store = IMasterStore(self.address)
+        self.store = IPrimaryStore(self.address)
 
     def test_setContactAddress_from_none(self):
         self.team.setContactAddress(self.address)

@@ -15,7 +15,7 @@ from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageNameSet,
 )
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackageset,
@@ -81,7 +81,7 @@ class Packageset(Storm):
             interface a datum should implement and the second is the handler
             to invoke in that case respectively.
         """
-        store = IMasterStore(Packageset)
+        store = IPrimaryStore(Packageset)
         if not isinstance(data, (list, tuple)):
             data = list(data)
         count = len(data)
@@ -299,7 +299,7 @@ class Packageset(Storm):
 
     def _api_add_or_remove(self, clauses, handler):
         """Look up the data to be added/removed and call the handler."""
-        store = IMasterStore(Packageset)
+        store = IPrimaryStore(Packageset)
         data = list(store.find(*clauses))
         if len(data) > 0:
             handler(data, store)
@@ -361,7 +361,7 @@ class PackagesetSet:
 
     def new(self, name, description, owner, distroseries, related_set=None):
         """See `IPackagesetSet`."""
-        store = IMasterStore(Packageset)
+        store = IPrimaryStore(Packageset)
 
         try:
             self.getByName(distroseries, name)

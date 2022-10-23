@@ -47,7 +47,7 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import Message, MessageChunk
@@ -403,7 +403,7 @@ class DistroSeriesDifference(StormBase):
         if dsp is None:
             raise NotADerivedSeriesError()
 
-        store = IMasterStore(DistroSeriesDifference)
+        store = IPrimaryStore(DistroSeriesDifference)
         diff = DistroSeriesDifference()
         diff.derived_series = derived_series
         diff.parent_series = parent_series

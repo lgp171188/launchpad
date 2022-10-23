@@ -16,7 +16,7 @@ from zope.interface import implementer, provider
 
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.signing.enums import SigningKeyType, SigningMode
 from lp.services.signing.interfaces.signingkey import (
@@ -96,7 +96,7 @@ class SigningKey(StormBase):
             public_key=generated_key["public-key"],
             description=description,
         )
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         store.add(signing_key)
         return signing_key
 
@@ -110,7 +110,7 @@ class SigningKey(StormBase):
         )
         fingerprint = generated_key["fingerprint"]
 
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         # Check if the key is already saved in the database.
         db_key = store.find(
             SigningKey,
@@ -188,7 +188,7 @@ class ArchiveSigningKey(StormBase):
 class ArchiveSigningKeySet:
     @classmethod
     def create(cls, archive, earliest_distro_series, signing_key):
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         obj = ArchiveSigningKey(archive, earliest_distro_series, signing_key)
         store.add(obj)
         return obj

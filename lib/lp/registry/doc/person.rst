@@ -146,8 +146,8 @@ using the createPersonAndEmail() method.
     <DBItem AccountStatus.NOACCOUNT...
 
     >>> from lp.services.identity.model.account import Account
-    >>> from lp.services.database.interfaces import IMasterStore
-    >>> account = IMasterStore(Account).get(Account, p.accountID)
+    >>> from lp.services.database.interfaces import IPrimaryStore
+    >>> account = IPrimaryStore(Account).get(Account, p.accountID)
     >>> account.reactivate("Activated by doc test.")
     >>> p.account_status
     <DBItem AccountStatus.ACTIVE...

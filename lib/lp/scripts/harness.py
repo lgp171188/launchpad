@@ -38,7 +38,7 @@ from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.projectgroup import ProjectGroup
 from lp.services.config import dbconfig
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp import canonical_url
 from lp.testing.factory import LaunchpadObjectFactory
@@ -69,7 +69,7 @@ def _get_locals():
     if startup:
         with open(startup) as f:
             exec(f.read(), globals())
-    store = IMasterStore(Person)
+    store = IPrimaryStore(Person)
 
     if dbuser == "launchpad":
         # Create a few variables "in case they come in handy."

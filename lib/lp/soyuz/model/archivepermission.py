@@ -38,7 +38,7 @@ from lp.registry.interfaces.sourcepackagename import (
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import ArchivePermissionType
@@ -611,7 +611,7 @@ class ArchivePermissionSet:
         self, archive, person, packageset, explicit=False
     ):
         """See `IArchivePermissionSet`."""
-        store = IMasterStore(ArchivePermission)
+        store = IPrimaryStore(ArchivePermission)
 
         # First see whether we have a matching permission in the database
         # already.
@@ -681,7 +681,7 @@ class ArchivePermissionSet:
         self, archive, person, packageset, explicit=False
     ):
         """See `IArchivePermissionSet`."""
-        store = IMasterStore(ArchivePermission)
+        store = IPrimaryStore(ArchivePermission)
 
         # Do we have the permission the user wants removed in the database?
         permission = store.find(

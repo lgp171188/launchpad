@@ -63,7 +63,7 @@ from lp.codehosting.vfs import get_ro_server
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
@@ -261,7 +261,7 @@ class BranchMergeProposalJobDerived(
         """Iterate through all ready BranchMergeProposalJobs."""
         from lp.code.model.branch import Branch
 
-        jobs = IMasterStore(Branch).find(
+        jobs = IPrimaryStore(Branch).find(
             (BranchMergeProposalJob),
             And(
                 BranchMergeProposalJob.job_type == klass.class_job_type,
@@ -676,7 +676,7 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
         ]
         if job_type is not None:
             clauses.append(BranchMergeProposalJob.job_type == job_type)
-        jobs = IMasterStore(BranchMergeProposalJob).find(
+        jobs = IPrimaryStore(BranchMergeProposalJob).find(
             (BranchMergeProposalJob, Job, BranchMergeProposal), And(*clauses)
         )
         # Order by the job status first (to get running before waiting), then

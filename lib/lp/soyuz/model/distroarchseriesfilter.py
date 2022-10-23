@@ -14,7 +14,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.distroarchseriesfilter import (
     IDistroArchSeriesFilter,
@@ -105,7 +105,7 @@ class DistroArchSeriesFilterSet:
         The caller must check that the creator has suitable permissions on
         `distroarchseries`.
         """
-        store = IMasterStore(DistroArchSeriesFilter)
+        store = IPrimaryStore(DistroArchSeriesFilter)
         dasf = DistroArchSeriesFilter(
             distroarchseries,
             packageset,

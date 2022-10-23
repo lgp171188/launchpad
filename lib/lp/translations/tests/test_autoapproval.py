@@ -25,7 +25,7 @@ from lp.registry.model.sourcepackagename import (
     SourcePackageName,
     SourcePackageNameSet,
 )
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.fakemethod import FakeMethod
@@ -840,7 +840,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertEqual(RosettaImportStatus.NEEDS_REVIEW, old_entry.status)
         self.assertIs(None, old_entry.potemplate)
         self.assertEqual(template, new_entry.potemplate)
-        IMasterStore(old_entry).flush()
+        IPrimaryStore(old_entry).flush()
 
         # The approver deals with the problem by skipping the entry.
         queue._attemptToApprove(old_entry)
@@ -1014,7 +1014,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
     def setUp(self):
         super().setUp()
         self.queue = TranslationImportQueue()
-        self.store = IMasterStore(TranslationImportQueueEntry)
+        self.store = IPrimaryStore(TranslationImportQueueEntry)
 
     def _makeProductEntry(self, path="foo.pot", status=None):
         """Simulate upload for a product."""
@@ -1301,10 +1301,10 @@ class TestAutoBlocking(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.queue = TranslationImportQueue()
-        # Our test queue operates on the master store instead of the
+        # Our test queue operates on the primary store instead of the
         # standby store so we don't have to synchronize stores.
-        master_store = IMasterStore(TranslationImportQueueEntry)
-        self.queue._getStandbyStore = FakeMethod(result=master_store)
+        primary_store = IPrimaryStore(TranslationImportQueueEntry)
+        self.queue._getStandbyStore = FakeMethod(result=primary_store)
 
     def _copyTargetFromEntry(self, entry):
         """Return a dict representing `entry`'s translation target.

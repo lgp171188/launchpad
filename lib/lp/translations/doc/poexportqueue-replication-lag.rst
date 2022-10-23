@@ -2,20 +2,20 @@ Replication Lag and the Export Queue
 ====================================
 
 Due to replication lag it's possible for the export queue to see a
-request on the standby store that it actually just removed from the master
+request on the standby store that it actually just removed from the primary
 store.
 
 We start our story with an empty export queue.
 
     >>> import transaction
     >>> from zope.component import getUtility
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
     >>> from lp.translations.interfaces.poexportrequest import (
     ...     IPOExportRequestSet,
     ... )
     >>> from lp.translations.interfaces.pofile import IPOFile
     >>> from lp.translations.model.poexportrequest import POExportRequest
-    >>> query = IMasterStore(POExportRequest).execute(
+    >>> query = IPrimaryStore(POExportRequest).execute(
     ...     "DELETE FROM POExportRequest"
     ... )
 
@@ -31,7 +31,7 @@ We have somebody making an export request.
     >>> pofile1_be = factory.makePOFile("be", potemplate=template1)
     >>> pofile1_ja = factory.makePOFile("ja", potemplate=template1)
     >>> queue.addRequest(requester, template1, [pofile1_be, pofile1_ja])
-    >>> query = IMasterStore(POExportRequest).execute(
+    >>> query = IPrimaryStore(POExportRequest).execute(
     ...     "UPDATE POExportRequest SET date_created = '2010-01-10'::date"
     ... )
 
@@ -75,7 +75,7 @@ were to ask again.
     be
     ja
 
-The first request is removed from the master store after processing, but
+The first request is removed from the primary store after processing, but
 not yet from the standby store.  (Since this test is all one session, we
 can reproduce this by not committing the removal).  The second request
 is still technically on the queue, but no longer "live."

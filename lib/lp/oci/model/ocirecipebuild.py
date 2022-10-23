@@ -60,7 +60,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -437,7 +437,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
         oci_file = OCIFile(
             build=self, library_file=lfa, layer_file_digest=layer_file_digest
         )
-        IMasterStore(OCIFile).add(oci_file)
+        IPrimaryStore(OCIFile).add(oci_file)
         return oci_file
 
     @cachedproperty
@@ -572,7 +572,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             or recipe.require_virtualized
         )
 
-        store = IMasterStore(OCIRecipeBuild)
+        store = IPrimaryStore(OCIRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created
         )
@@ -605,7 +605,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
-        store = IMasterStore(OCIRecipeBuild)
+        store = IPrimaryStore(OCIRecipeBuild)
         return store.get(OCIRecipeBuild, build_id)
 
     def getByBuildFarmJob(self, build_farm_job):

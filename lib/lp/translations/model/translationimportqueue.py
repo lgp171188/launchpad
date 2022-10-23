@@ -36,7 +36,11 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.database.interfaces import (
+    IPrimaryStore,
+    IStandbyStore,
+    IStore,
+)
 from lp.services.database.sqlbase import quote
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import IsFalse
@@ -1086,7 +1090,7 @@ class TranslationImportQueue:
                 TranslationImportQueueEntry.productseries_id
                 == productseries.id
             )
-        store = IMasterStore(TranslationImportQueueEntry)
+        store = IPrimaryStore(TranslationImportQueueEntry)
         entries = store.find(TranslationImportQueueEntry, *clauses)
         entries = list(
             entries.order_by(
@@ -1206,7 +1210,7 @@ class TranslationImportQueue:
         except TranslationImportQueueConflictError:
             return None
 
-        store = IMasterStore(TranslationImportQueueEntry)
+        store = IPrimaryStore(TranslationImportQueueEntry)
         if entry is None:
             # It's a new row.
             entry = TranslationImportQueueEntry(
@@ -1755,7 +1759,7 @@ class TranslationImportQueue:
 
     def cleanUpQueue(self):
         """See `ITranslationImportQueue`."""
-        store = IMasterStore(TranslationImportQueueEntry)
+        store = IPrimaryStore(TranslationImportQueueEntry)
 
         return (
             self._cleanUpObsoleteEntries(store)
@@ -1765,4 +1769,4 @@ class TranslationImportQueue:
 
     def remove(self, entry):
         """See ITranslationImportQueue."""
-        IMasterStore(TranslationImportQueueEntry).remove(entry)
+        IPrimaryStore(TranslationImportQueueEntry).remove(entry)

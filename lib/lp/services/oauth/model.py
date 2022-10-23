@@ -26,7 +26,7 @@ from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.stormbase import StormBase
 from lp.services.oauth.interfaces import (
     IOAuthAccessToken,
@@ -53,12 +53,12 @@ class OAuthBase:
     def _getStore(cls):
         """Return the correct store for this class.
 
-        We want all OAuth classes to be retrieved from the master flavour.  If
-        they are retrieved from the standby, there will be problems in the
+        We want all OAuth classes to be retrieved from the primary flavour.
+        If they are retrieved from the standby, there will be problems in the
         authorization exchange, since it will be done across applications that
         won't share the session cookies.
         """
-        return IMasterStore(cls)
+        return IPrimaryStore(cls)
 
 
 def sha256_digest(data: str):

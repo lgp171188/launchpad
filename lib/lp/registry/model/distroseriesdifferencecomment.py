@@ -17,7 +17,7 @@ from lp.registry.interfaces.distroseriesdifferencecomment import (
     IDistroSeriesDifferenceCommentSource,
 )
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.messages.model.message import Message, MessageChunk
 
 
@@ -72,7 +72,7 @@ class DistroSeriesDifferenceComment(Storm):
         )
         MessageChunk(message=message, content=comment, sequence=1)
 
-        store = IMasterStore(DistroSeriesDifferenceComment)
+        store = IPrimaryStore(DistroSeriesDifferenceComment)
         dsd_comment = DistroSeriesDifferenceComment()
         dsd_comment.distro_series_difference = distro_series_difference
         dsd_comment.message = message

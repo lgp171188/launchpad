@@ -27,7 +27,7 @@ from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -132,7 +132,7 @@ class SnapJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        jobs = IMasterStore(SnapJob).find(
+        jobs = IPrimaryStore(SnapJob).find(
             SnapJob,
             SnapJob.job_type == cls.class_job_type,
             SnapJob.job == Job.id,

@@ -64,7 +64,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -580,7 +580,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
         date_created=DEFAULT,
     ):
         """See `ICIBuildSet`."""
-        store = IMasterStore(CIBuild)
+        store = IPrimaryStore(CIBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             CIBuild.job_type, BuildStatus.NEEDSBUILD, date_created
         )
@@ -736,7 +736,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
-        store = IMasterStore(CIBuild)
+        store = IPrimaryStore(CIBuild)
         return store.get(CIBuild, build_id)
 
     def getByBuildFarmJob(self, build_farm_job):

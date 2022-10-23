@@ -26,7 +26,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeries,
@@ -256,7 +256,7 @@ class SnappySeriesSet:
         date_created=DEFAULT,
     ):
         """See `ISnappySeriesSet`."""
-        store = IMasterStore(SnappySeries)
+        store = IPrimaryStore(SnappySeries)
         snappy_series = SnappySeries(
             registrant,
             name,

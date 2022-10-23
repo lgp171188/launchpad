@@ -1013,13 +1013,13 @@ In the default implementation, the following database modification will
 be automatically reverted in a GET request.
 
     >>> from lp.services.identity.model.emailaddress import EmailAddress
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
     >>> from lp.registry.model.person import Person
     >>> login("foo.bar@canonical.com")
     >>> txn = transaction.begin()
     >>> def get_foo_bar_person():
     ...     return (
-    ...         IMasterStore(Person)
+    ...         IPrimaryStore(Person)
     ...         .find(
     ...             Person,
     ...             Person.id == EmailAddress.personID,

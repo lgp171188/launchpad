@@ -25,7 +25,11 @@ from lp.code.model.branchjob import (
 from lp.code.model.branchsubscription import BranchSubscription
 from lp.registry.model.person import Person
 from lp.services.database import bulk
-from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.database.interfaces import (
+    IPrimaryStore,
+    IStandbyStore,
+    IStore,
+)
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     get_transaction_timestamp,
@@ -110,13 +114,13 @@ class TestLoaders(TestCaseWithFactory):
         # store even for the same object type.
         db_object = self.factory.makeComponent()
         db_object_type = bulk.get_type(db_object)
-        # Commit so the database object is available in both master
+        # Commit so the database object is available in both primary
         # and standby stores.
         transaction.commit()
         # Use a list, since objects corresponding to the same DB row from
         # different stores compare equal.
         db_objects = [
-            IMasterStore(db_object).get(db_object_type, db_object.id),
+            IPrimaryStore(db_object).get(db_object_type, db_object.id),
             IStandbyStore(db_object).get(db_object_type, db_object.id),
         ]
         db_object_ids = {id(obj) for obj in db_objects}
@@ -226,15 +230,15 @@ class TestLoaders(TestCaseWithFactory):
     def test_load_with_store(self):
         # load() can use an alternative store.
         db_object = self.factory.makeComponent()
-        # Commit so the database object is available in both master
+        # Commit so the database object is available in both primary
         # and standby stores.
         transaction.commit()
-        # Master store.
-        master_store = IMasterStore(db_object)
-        [db_object_from_master] = bulk.load(
-            Component, [db_object.id], store=master_store
+        # Primary store.
+        primary_store = IPrimaryStore(db_object)
+        [db_object_from_primary] = bulk.load(
+            Component, [db_object.id], store=primary_store
         )
-        self.assertEqual(Store.of(db_object_from_master), master_store)
+        self.assertEqual(Store.of(db_object_from_primary), primary_store)
         # Standby store.
         standby_store = IStandbyStore(db_object)
         [db_object_from_standby] = bulk.load(

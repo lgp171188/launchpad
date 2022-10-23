@@ -221,7 +221,7 @@ class BaseTestCase(TestCase):
             self.assertFalse(
                 want_librarian_working, "Librarian should be fully operational"
             )
-        # Since we use IMasterStore that doesn't throw either AttributeError
+        # Since we use IPrimaryStore that doesn't throw either AttributeError
         # or ComponentLookupError.
         except TypeError:
             self.assertFalse(

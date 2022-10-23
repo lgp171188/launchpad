@@ -48,7 +48,7 @@ from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
@@ -191,7 +191,7 @@ class ProductJobDerived(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """Iterate through all ready ProductJobs."""
-        store = IMasterStore(ProductJob)
+        store = IPrimaryStore(ProductJob)
         jobs = store.find(
             ProductJob,
             And(

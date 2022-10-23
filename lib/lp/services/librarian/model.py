@@ -24,7 +24,7 @@ from lp.registry.errors import InvalidFilename
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, session_store
 from lp.services.database.sqlobject import (
     BoolCol,
@@ -270,7 +270,7 @@ class LibraryFileAliasSet:
             allow_zero_length=allow_zero_length,
         )
         lfa = (
-            IMasterStore(LibraryFileAlias)
+            IPrimaryStore(LibraryFileAlias)
             .find(LibraryFileAlias, LibraryFileAlias.id == fid)
             .one()
         )
