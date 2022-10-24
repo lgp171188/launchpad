@@ -21,13 +21,13 @@ class RabbitServer(rabbitfixture.server.RabbitServer):
 
     def setUp(self):
         super().setUp()
+        # The two trailing slashes here are deliberate: this has the effect
+        # of setting the virtual host to "/" rather than to the empty
+        # string.
         self.config.service_config = dedent(
             """\
             [rabbitmq]
-            host: localhost:%d
-            userid: guest
-            password: guest
-            virtual_host: /
+            broker_urls: amqp://guest:guest@localhost:%d//
             """
             % self.config.port
         )

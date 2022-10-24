@@ -8,7 +8,8 @@ __all__ = [
     "is_configured",
 ]
 
-import amqp
+import kombu
+from lazr.config import as_host_port
 
 from lp.services.config import config
 from lp.services.messaging.interfaces import MessagingUnavailable
@@ -16,6 +17,8 @@ from lp.services.messaging.interfaces import MessagingUnavailable
 
 def is_configured():
     """Return True if rabbit looks to be configured."""
+    if config.rabbitmq.broker_urls is not None:
+        return True
     return not (
         config.rabbitmq.host is None
         or config.rabbitmq.userid is None
@@ -31,11 +34,16 @@ def connect():
     """
     if not is_configured():
         raise MessagingUnavailable("Incomplete configuration")
-    connection = amqp.Connection(
-        host=config.rabbitmq.host,
-        userid=config.rabbitmq.userid,
-        password=config.rabbitmq.password,
-        virtual_host=config.rabbitmq.virtual_host,
-    )
+    if config.rabbitmq.broker_urls is not None:
+        connection = kombu.Connection(config.rabbitmq.broker_urls.split())
+    else:
+        hostname, port = as_host_port(config.rabbitmq.host, default_port=5672)
+        connection = kombu.Connection(
+            hostname=hostname,
+            userid=config.rabbitmq.userid,
+            password=config.rabbitmq.password,
+            virtual_host=config.rabbitmq.virtual_host,
+            port=port,
+        )
     connection.connect()
     return connection
