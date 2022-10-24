@@ -12,12 +12,12 @@ If you know your code needs to change data, or must have the latest possible
 information, you retrieve objects from the primary database that stores
 the data for your database class.
 
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
     >>> from lp.registry.model.person import Person
     >>> import transaction
 
     >>> writable_janitor = (
-    ...     IMasterStore(Person).find(Person, Person.name == "janitor").one()
+    ...     IPrimaryStore(Person).find(Person, Person.name == "janitor").one()
     ... )
 
     >>> writable_janitor.display_name = "Jack the Janitor"
@@ -84,7 +84,7 @@ resources.
     >>> from lp.services.database.policy import StandbyOnlyDatabasePolicy
     >>> with StandbyOnlyDatabasePolicy():
     ...     whoops = (
-    ...         IMasterStore(Person)
+    ...         IPrimaryStore(Person)
     ...         .find(Person, Person.name == "janitor")
     ...         .one()
     ...     )
@@ -132,6 +132,6 @@ unsure if the object is writable or not, you can easily cast it
 to a writable copy. This is a noop if the object is already writable
 so is good defensive programming.
 
-    >>> from lp.services.database.interfaces import IMasterObject
-    >>> IMasterObject(ro_janitor) is writable_janitor
+    >>> from lp.services.database.interfaces import IPrimaryObject
+    >>> IPrimaryObject(ro_janitor) is writable_janitor
     True

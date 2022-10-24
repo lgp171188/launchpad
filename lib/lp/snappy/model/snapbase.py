@@ -31,7 +31,7 @@ from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.snappy.interfaces.snapbase import (
     CannotDeleteSnapBase,
     ISnapBase,
@@ -251,7 +251,7 @@ class SnapBaseSet:
         date_created=DEFAULT,
     ):
         """See `ISnapBaseSet`."""
-        store = IMasterStore(SnapBase)
+        store = IPrimaryStore(SnapBase)
         snap_base = SnapBase(
             registrant,
             name,

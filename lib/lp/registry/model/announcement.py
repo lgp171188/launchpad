@@ -22,7 +22,7 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.utils import utc_now
 
@@ -91,7 +91,7 @@ class Announcement(StormBase):
         self.distribution = distribution
 
     def destroySelf(self):
-        IMasterStore(self).remove(self)
+        IPrimaryStore(self).remove(self)
 
     def modify(self, title, summary, url):
         title = str(title) if title is not None else None
@@ -260,7 +260,7 @@ class MakesAnnouncements(HasAnnouncements):
             projectgroup=projectgroup,
             distribution=distribution,
         )
-        store = IMasterStore(Announcement)
+        store = IPrimaryStore(Announcement)
         store.add(announcement)
         store.flush()
 

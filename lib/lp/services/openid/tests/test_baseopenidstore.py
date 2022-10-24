@@ -13,7 +13,7 @@ import unittest
 from openid.association import Association
 from openid.store import nonce
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.openid.model.baseopenidstore import BaseStormOpenIDStore
 
 
@@ -28,7 +28,7 @@ class BaseStormOpenIDStoreTestsMixin:
             "server-url\xA9",
             Association(b"handle", b"secret", 42, 600, "HMAC-SHA1"),
         )
-        db_assoc = IMasterStore(self.store.Association).get(
+        db_assoc = IPrimaryStore(self.store.Association).get(
             self.store.Association, ("server-url\xA9", "handle")
         )
         self.assertEqual(db_assoc.server_url, "server-url\xA9")
@@ -43,7 +43,7 @@ class BaseStormOpenIDStoreTestsMixin:
             "server-url",
             Association(b"handle", b"secret", 42, 600, "HMAC-SHA1"),
         )
-        db_assoc = IMasterStore(self.store.Association).get(
+        db_assoc = IPrimaryStore(self.store.Association).get(
             self.store.Association, ("server-url", "handle")
         )
         self.assertNotEqual(db_assoc, None)
@@ -91,7 +91,7 @@ class BaseStormOpenIDStoreTestsMixin:
         assoc = self.store.getAssociation("server-url", "handle")
         self.assertEqual(assoc, None)
 
-        store = IMasterStore(self.store.Association)
+        store = IPrimaryStore(self.store.Association)
         db_assoc = store.get(self.store.Association, ("server-url", "handle"))
         self.assertEqual(db_assoc, None)
 
@@ -137,7 +137,7 @@ class BaseStormOpenIDStoreTestsMixin:
         self.assertEqual(
             self.store.useNonce("server-url", timestamp, "salt"), True
         )
-        storm_store = IMasterStore(self.store.Nonce)
+        storm_store = IPrimaryStore(self.store.Nonce)
         new_nonce = storm_store.get(
             self.store.Nonce, ("server-url", timestamp, "salt")
         )

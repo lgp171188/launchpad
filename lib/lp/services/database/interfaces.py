@@ -6,8 +6,8 @@ __all__ = [
     "DisallowedStore",
     "IDatabasePolicy",
     "IDBObject",
-    "IMasterObject",
-    "IMasterStore",
+    "IPrimaryObject",
+    "IPrimaryStore",
     "IRequestExpired",
     "ISQLBase",
     "IStandbyStore",
@@ -153,7 +153,7 @@ class IStore(Interface):
         """See storm.store.Store."""
 
 
-class IMasterStore(IStore):
+class IPrimaryStore(IStore):
     """A writeable Storm Stores."""
 
 
@@ -165,5 +165,5 @@ class IDBObject(Interface):
     """A Storm database object."""
 
 
-class IMasterObject(IDBObject):
-    """A Storm database object associated with its master Store."""
+class IPrimaryObject(IDBObject):
+    """A Storm database object associated with its primary Store."""

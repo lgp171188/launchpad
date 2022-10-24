@@ -73,7 +73,7 @@ class VPOExportSet:
         # Use the standby store.  We may want to write to the distroseries
         # to register a language pack, but not to the translation data
         # we retrieve for it.
-        # XXX wgrant 2017-03-21: Moved to master to avoid termination
+        # XXX wgrant 2017-03-21: Moved to primary to avoid termination
         # due to long transactions.
         query = IStore(POFile).using(*tables).find(POFile, And(*conditions))
 

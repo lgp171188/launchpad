@@ -25,7 +25,7 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -100,7 +100,7 @@ class AccessToken(StormBase):
 
     def updateLastUsed(self):
         """See `IAccessToken`."""
-        store = IMasterStore(AccessToken)
+        store = IPrimaryStore(AccessToken)
         store.execute(
             Update(
                 {AccessToken.date_last_used: UTC_NOW},

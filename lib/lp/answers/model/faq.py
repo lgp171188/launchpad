@@ -25,7 +25,7 @@ from lp.registry.interfaces.person import IPerson, validate_public_person
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search, rank_by_fti
@@ -144,7 +144,7 @@ class FAQ(StormBase):
             product=product,
             distribution=distribution,
         )
-        store = IMasterStore(FAQ)
+        store = IPrimaryStore(FAQ)
         store.add(faq)
         store.flush()
         notify(ObjectCreatedEvent(faq))

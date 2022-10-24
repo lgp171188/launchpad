@@ -11,7 +11,7 @@ import transaction
 from psycopg2.extensions import TRANSACTION_STATUS_IDLE
 
 from lp.registry.model.person import Person
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.isolation import TransactionInProgress
 from lp.services.database.sqlbase import quote
 
@@ -68,13 +68,13 @@ class DatabaseTransactionPolicy:
         Merely creating a policy has no effect.  Use it with "with" to affect
         writability of database transactions.
 
-        :param store: The store to set policy on.  Defaults to the main master
-            store.  You don't want to use this on a standby store!
+        :param store: The store to set policy on.  Defaults to the main
+            primary store.  You don't want to use this on a standby store!
         :param read_only: Is this policy read-only?
         """
         self.read_only = read_only
         if store is None:
-            self.store = IMasterStore(Person)
+            self.store = IPrimaryStore(Person)
         else:
             self.store = store
 

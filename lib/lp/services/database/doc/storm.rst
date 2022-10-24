@@ -4,15 +4,15 @@ back into the main replication set as part of login server separation.
 -- StuartBishop 20100222
 
 In addition to what Storm provides, we also have some Launchpad
-specific Storm tools to cope with our master and standby store arrangement.
+specific Storm tools to cope with our primary and standby store arrangement.
 
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     EmailAddressStatus,
     ...     IEmailAddressSet,
     ... )
     >>> from lp.services.database.interfaces import (
-    ...     IMasterObject,
-    ...     IMasterStore,
+    ...     IPrimaryObject,
+    ...     IPrimaryStore,
     ...     IStandbyStore,
     ...     IStore,
     ... )
@@ -22,30 +22,30 @@ specific Storm tools to cope with our master and standby store arrangement.
     >>> from lp.registry.model.person import Person
 
 
-You need to use the correct master Store to make changes to
+You need to use the correct primary Store to make changes to
 a Launchpad database object. You can use adapters to
 retrieve the correct Store.
 
-    >>> main_master = IMasterStore(Person)
+    >>> main_primary = IPrimaryStore(Person)
 
 You can detect if a store is writable by checking what interfaces it
 provides.
 
-    >>> IMasterStore.providedBy(main_master)
+    >>> IPrimaryStore.providedBy(main_primary)
     True
-    >>> IStandbyStore.providedBy(main_master)
+    >>> IStandbyStore.providedBy(main_primary)
     False
 
 
-Changes to the standby Stores will lag behind the master Stores. If
+Changes to the standby Stores will lag behind the primary Stores. If
 you only need to read an object but require it to be in sync with the
-master, you should use the default Store. Launchpad will give you the
+primary, you should use the default Store. Launchpad will give you the
 standby store if it is sure all your recent changes have been replicated.
-Otherwise, it gives you the master. See IStoreSelector for details.
+Otherwise, it gives you the primary. See IStoreSelector for details.
 
     >>> main_default = IStore(Person)
     >>> main_standby = IStandbyStore(Person)
-    >>> main_default is main_master
+    >>> main_default is main_primary
     True
     >>> main_default is main_standby
     False
@@ -57,16 +57,16 @@ this is less generally useful.
     >>> janitor = IStandbyStore(Person).find(Person, name="janitor").one()
     >>> IStandbyStore(janitor) is IStandbyStore(Person)
     True
-    >>> IMasterStore(janitor) is IMasterStore(Person)
+    >>> IPrimaryStore(janitor) is IPrimaryStore(Person)
     True
-    >>> IMasterStore(janitor) is IStandbyStore(Person)
+    >>> IPrimaryStore(janitor) is IStandbyStore(Person)
     False
 
 
-If we need the master copy of an object, we can adapt it to IMasterObject.
+If we need the primary copy of an object, we can adapt it to IPrimaryObject.
 Good defensive programming is to use this adapter if you want to make
 changes to an object, just in case you have been passed an instance
-from a store other than the correct Master.
+from a store other than the correct Primary.
 
     >>> main_standby = IStandbyStore(Person)
     >>> t = transaction.begin()
@@ -80,11 +80,11 @@ from a store other than the correct Master.
     >>> transaction.abort()
     >>> t = transaction.begin()
     >>> person = main_standby.find(Person, name="mark").one()
-    >>> IMasterObject(person).display_name = "Can change"
+    >>> IPrimaryObject(person).display_name = "Can change"
     >>> transaction.commit()
 
 
-If the adapted object was security proxied, the master copy is
+If the adapted object was security proxied, the primary copy is
 similarly wrapped.
 
     >>> from zope.security.proxy import removeSecurityProxy
@@ -98,7 +98,7 @@ similarly wrapped.
     ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> person = IMasterObject(person)
+    >>> person = IPrimaryObject(person)
     >>> removeSecurityProxy(person) is person
     False
     >>> print(person.displayname)
@@ -108,7 +108,7 @@ similarly wrapped.
     ...
     zope.security.interfaces.Unauthorized: ...
 
-    >>> person = IMasterObject(removeSecurityProxy(person))
+    >>> person = IPrimaryObject(removeSecurityProxy(person))
     >>> removeSecurityProxy(person) is person
     True
     >>> print(person.displayname)
@@ -118,8 +118,8 @@ similarly wrapped.
 Our objects may compare equal even if they have come from different
 stores.
 
-    >>> master_email = (
-    ...     IMasterStore(EmailAddress)
+    >>> primary_email = (
+    ...     IPrimaryStore(EmailAddress)
     ...     .find(
     ...         EmailAddress,
     ...         Person.name == "janitor",
@@ -136,25 +136,25 @@ stores.
     ...     )
     ...     .one()
     ... )
-    >>> master_email is standby_email
+    >>> primary_email is standby_email
     False
-    >>> master_email == standby_email
+    >>> primary_email == standby_email
     True
-    >>> master_email != standby_email
+    >>> primary_email != standby_email
     False
 
 Comparison works for security wrapped objects too.
 
     >>> wrapped_email = getUtility(IEmailAddressSet).getByEmail(
-    ...     master_email.email
+    ...     primary_email.email
     ... )
-    >>> removeSecurityProxy(wrapped_email) is master_email
+    >>> removeSecurityProxy(wrapped_email) is primary_email
     True
-    >>> wrapped_email is master_email
+    >>> wrapped_email is primary_email
     False
-    >>> wrapped_email == master_email
+    >>> wrapped_email == primary_email
     True
-    >>> wrapped_email != master_email
+    >>> wrapped_email != primary_email
     False
 
 Objects not yet flushed to the database also compare equal.
@@ -178,8 +178,8 @@ Objects not yet flushed to the database also compare equal.
 
 Objects differing by class never compare equal.
 
-    >>> email_one = IMasterStore(EmailAddress).get(EmailAddress, 1)
-    >>> person_one = IMasterStore(Person).get(Person, 1)
+    >>> email_one = IPrimaryStore(EmailAddress).get(EmailAddress, 1)
+    >>> person_one = IPrimaryStore(Person).get(Person, 1)
     >>> email_one == person_one
     False
     >>> email_one != person_one

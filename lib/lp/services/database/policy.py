@@ -30,7 +30,7 @@ from lp.services.database.interfaces import (
     STANDBY_FLAVOR,
     DisallowedStore,
     IDatabasePolicy,
-    IMasterStore,
+    IPrimaryStore,
     IStandbyStore,
     IStoreSelector,
 )
@@ -142,7 +142,7 @@ class BaseDatabasePolicy:
 
             # Attach our marker interfaces so our adapters don't lie.
             if flavor == PRIMARY_FLAVOR:
-                alsoProvides(store, IMasterStore)
+                alsoProvides(store, IPrimaryStore)
             else:
                 alsoProvides(store, IStandbyStore)
 

@@ -2,13 +2,13 @@ Application Server Database Policy
 ==================================
 
 The database policy chooses the default Storm store to used. Its goal
-is to distribute load away from the master databases to read only
+is to distribute load away from the primary databases to read only
 stores where possible. It will benefit old code - new code should
-explicitly select objects from the master or standby stores as needed.
+explicitly select objects from the primary or standby stores as needed.
 
 To test this policy, lets point the MAIN STANDBY store to a Launchpad
 database with a different name. This makes it easy to check if a
-request is querying the master or standby database.
+request is querying the primary or standby database.
 
     >>> from lp.services.config import config
     >>> from textwrap import dedent
@@ -22,13 +22,13 @@ request is querying the master or standby database.
 
     >>> from lp.registry.model.person import Person
     >>> from lp.services.database.interfaces import (
-    ...     IMasterStore,
+    ...     IPrimaryStore,
     ...     IStandbyStore,
     ... )
     >>> from lp.testing.layers import DatabaseLayer
-    >>> master = IMasterStore(Person)
+    >>> primary = IPrimaryStore(Person)
     >>> dbname = DatabaseLayer._db_fixture.dbname
-    >>> dbname == master.execute("SELECT current_database()").get_one()[0]
+    >>> dbname == primary.execute("SELECT current_database()").get_one()[0]
     True
     >>> standby = IStandbyStore(Person)
     >>> print(standby.execute("SELECT current_database()").get_one()[0])
@@ -37,10 +37,10 @@ request is querying the master or standby database.
 We should confirm that the empty database is as empty as we hope it is.
 
     >>> standby_store = IStandbyStore(Person)
-    >>> master_store = IMasterStore(Person)
+    >>> primary_store = IPrimaryStore(Person)
     >>> standby_store.find(Person).is_empty()
     True
-    >>> master_store.find(Person).is_empty()
+    >>> primary_store.find(Person).is_empty()
     False
 
 This helper parses the output of the +whichdb view (which unfortunately
@@ -49,7 +49,7 @@ needs to be created externally to this pagetest).
     >>> def whichdb(browser):
     ...     dbname = extract_text(find_tag_by_id(browser.contents, "dbname"))
     ...     if dbname == DatabaseLayer._db_fixture.dbname:
-    ...         return "MASTER"
+    ...         return "PRIMARY"
     ...     elif dbname == "launchpad_empty":
     ...         return "STANDBY"
     ...     else:
@@ -63,12 +63,12 @@ Store by default.
     >>> print(whichdb(browser))
     STANDBY
 
-POST requests might make updates, so they use the MAIN MASTER
+POST requests might make updates, so they use the MAIN PRIMARY
 Store by default.
 
     >>> browser.getControl("Do Post").click()
     >>> print(whichdb(browser))
-    MASTER
+    PRIMARY
 
 This is an unauthenticated browser.  These typically have no session, unless
 special dispensation has been made. Without a session, subsequent requests
@@ -81,17 +81,17 @@ will then immediately return to using the STANDBY.
 However, if the request has a session (that is, is authenticated; or is
 unauthenticated, but under special dispensation to have a session), once a
 POST request has been made, further GET and HEAD requests from the same client
-continue to use the MAIN MASTER Store by default for 5 minutes. This ensures
+continue to use the MAIN PRIMARY Store by default for 5 minutes. This ensures
 that a user will see any changes they have made immediately, even though the
-standby databases may lag some time behind the master database.
+standby databases may lag some time behind the primary database.
 
     >>> browser.addHeader("Authorization", "Basic mark@example.com:test")
     >>> browser.getControl("Do Post").click()  # POST request
     >>> print(whichdb(browser))
-    MASTER
+    PRIMARY
     >>> browser.open("http://launchpad.test/+whichdb")  # GET request
     >>> print(whichdb(browser))
-    MASTER
+    PRIMARY
 
 GET and HEAD requests from other clients are unaffected though
 and use the MAIN STANDBY Store by default.
@@ -105,7 +105,7 @@ and use the MAIN STANDBY Store by default.
 
 If no more POST requests are made for 5 minutes, GET and HEAD
 requests will once again be using the MAIN STANDBY store as we
-can assume that any changes made to the master database have
+can assume that any changes made to the primary database have
 propagated to the standbys.
 
 To test this, first we need to wind forward the database policy's clock.
@@ -120,7 +120,7 @@ To test this, first we need to wind forward the database policy's clock.
 
     >>> browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(browser))
-    MASTER
+    PRIMARY
 
     >>> dbpolicy._now = _future_now  # Install the time machine.
 
@@ -142,14 +142,14 @@ on the standbys allowing them to catch up.
     >>> dbpolicy._test_lag = timedelta(minutes=10)
     >>> anon_browser.open("http://launchpad.test/+whichdb")
     >>> print(whichdb(anon_browser))
-    MASTER
+    PRIMARY
     >>> dbpolicy._test_lag = None
 
 
 A 404 error page is shown when code raises a LookupError. If a standby
 database is being used, this might have been caused by replication lag
 if the missing data was only recently created. To fix this surprising
-error, requests are always retried using the master database before
+error, requests are always retried using the primary database before
 returning a 404 error to the user.
 
     >>> anon_browser.handleErrors = True
@@ -161,13 +161,13 @@ returning a 404 error to the user.
     STANDBY
 
     # The standby database contains no data, but we don't get
-    # a 404 page - the request is retried against the MASTER.
+    # a 404 page - the request is retried against the PRIMARY.
     >>> anon_browser.open("http://launchpad.test/~stub")
     >>> anon_browser.headers["Status"]
     '200 Ok'
 
     # 404s are still returned though if the data doesn't exist in the
-    # MASTER database either.
+    # PRIMARY database either.
     >>> anon_browser.open("http://launchpad.test/~does-not-exist")
     >>> anon_browser.headers["Status"]
     '404 Not Found'

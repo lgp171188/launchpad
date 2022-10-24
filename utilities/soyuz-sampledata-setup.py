@@ -38,7 +38,7 @@ from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
-from lp.services.database.interfaces import IMasterStore, IStandbyStore
+from lp.services.database.interfaces import IPrimaryStore, IStandbyStore
 from lp.services.scripts.base import LaunchpadScript
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.component import IComponentSet
@@ -154,7 +154,7 @@ def add_architecture(distroseries, architecture_name):
         official=True,
         architecturetag=architecture_name,
     )
-    IMasterStore(DistroArchSeries).add(archseries)
+    IPrimaryStore(DistroArchSeries).add(archseries)
 
 
 def create_sections(distroseries):
@@ -334,7 +334,7 @@ def create_sample_series(original_series, log):
 def add_series_component(series):
     """Permit a component in the given series."""
     component = getUtility(IComponentSet)["main"]
-    IMasterStore(ComponentSelection).add(
+    IPrimaryStore(ComponentSelection).add(
         ComponentSelection(distroseries=series, component=component)
     )
 

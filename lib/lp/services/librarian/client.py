@@ -28,7 +28,7 @@ from storm.store import Store
 from zope.interface import implementer
 
 from lp.services.config import config, dbconfig
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.postgresql import ConnectionString
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
@@ -176,7 +176,7 @@ class FileUploadClient:
             # Get the name of the database the client is using, so that
             # the server can check that the client is using the same
             # database as the server.
-            store = IMasterStore(LibraryFileAlias)
+            store = IPrimaryStore(LibraryFileAlias)
             databaseName = self._getDatabaseName(store)
 
             # Generate new content and alias IDs.
@@ -274,7 +274,7 @@ class FileUploadClient:
         name = six.ensure_binary(name)
         self._connect()
         try:
-            database_name = ConnectionString(dbconfig.main_master).dbname
+            database_name = ConnectionString(dbconfig.main_primary).dbname
             self._sendLine(b"STORE %d %s" % (size, name))
             self._sendHeader("Database-Name", database_name)
             self._sendHeader("Content-Type", str(contentType))

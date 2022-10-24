@@ -18,7 +18,7 @@ from openid.store import nonce
 from openid.store.interface import OpenIDStore
 from storm.properties import Bytes, Int, Unicode
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 
 
 class BaseStormOpenIDAssociation:
@@ -86,7 +86,7 @@ class BaseStormOpenIDStore(OpenIDStore):
 
     def storeAssociation(self, server_url, association):
         """See `OpenIDStore`."""
-        store = IMasterStore(self.Association)
+        store = IPrimaryStore(self.Association)
         db_assoc = store.get(
             self.Association,
             (
@@ -102,7 +102,7 @@ class BaseStormOpenIDStore(OpenIDStore):
 
     def getAssociation(self, server_url, handle=None):
         """See `OpenIDStore`."""
-        store = IMasterStore(self.Association)
+        store = IPrimaryStore(self.Association)
         server_url = six.ensure_text(server_url)
         if handle is None:
             result = store.find(self.Association, server_url=server_url)
@@ -128,7 +128,7 @@ class BaseStormOpenIDStore(OpenIDStore):
 
     def removeAssociation(self, server_url, handle):
         """See `OpenIDStore`."""
-        store = IMasterStore(self.Association)
+        store = IPrimaryStore(self.Association)
         assoc = store.get(
             self.Association,
             (six.ensure_text(server_url), six.ensure_text(handle, "ASCII")),
@@ -147,7 +147,7 @@ class BaseStormOpenIDStore(OpenIDStore):
         server_url = six.ensure_text(server_url)
         salt = six.ensure_text(salt, "ASCII")
 
-        store = IMasterStore(self.Nonce)
+        store = IPrimaryStore(self.Nonce)
         old_nonce = store.get(self.Nonce, (server_url, timestamp, salt))
         if old_nonce is not None:
             # The nonce has already been seen, so reject it.
@@ -158,7 +158,7 @@ class BaseStormOpenIDStore(OpenIDStore):
 
     def cleanupAssociations(self):
         """See `OpenIDStore`."""
-        store = IMasterStore(self.Association)
+        store = IPrimaryStore(self.Association)
         now = int(time.time())
         expired = store.find(
             self.Association,

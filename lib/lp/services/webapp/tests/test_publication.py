@@ -18,7 +18,7 @@ from zope.security.management import thread_local as zope_security_thread_local
 
 import lp.services.webapp.adapter as dbadapter
 from lp.services.auth.interfaces import IAccessTokenVerifiedRequest
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.oauth.interfaces import IOAuthConsumerSet, IOAuthSignedRequest
 from lp.services.statsd.tests import StatsMixin
@@ -168,7 +168,7 @@ class TestWebServicePublication(TestCaseWithFactory):
         dbadapter.set_request_started()
 
         # Disconnect a store
-        store = IMasterStore(EmailAddress)
+        store = IPrimaryStore(EmailAddress)
         store._connection._state = STATE_DISCONNECTED
 
         # Invoke the endRequest hook.

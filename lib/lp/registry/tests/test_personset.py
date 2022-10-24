@@ -39,7 +39,7 @@ from lp.registry.interfaces.ssh import SSHKeyAdditionError, SSHKeyType
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
 from lp.registry.model.person import Person
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import cursor, flush_database_caches
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
@@ -333,7 +333,7 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.person_set = getUtility(IPersonSet)
-        self.store = IMasterStore(Account)
+        self.store = IPrimaryStore(Account)
 
         # Generate some valid test data.
         self.account = self.makeAccount()

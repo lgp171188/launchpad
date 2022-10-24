@@ -172,10 +172,10 @@ records.
     >>> from lp.services.log.logger import FakeLogger
     >>> from lp.testing.dbuser import switch_dbuser
     >>> from lp.soyuz.model.archive import Archive
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
 
     >>> def update_cached_records(delete_all=False):
-    ...     store = IMasterStore(Archive)
+    ...     store = IPrimaryStore(Archive)
     ...     if delete_all:
     ...         store.execute(
     ...             "delete from latestpersonsourcepackagereleasecache"

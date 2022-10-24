@@ -94,7 +94,7 @@ from lp.services.database.constants import (
     THIRTY_DAYS_AGO,
     UTC_NOW,
 )
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.features.model import FeatureFlag
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
@@ -198,7 +198,7 @@ class TestBulkPruner(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.store = IMasterStore(CommercialSubscription)
+        self.store = IPrimaryStore(CommercialSubscription)
         self.store.execute("CREATE TABLE BulkFoo (id serial PRIMARY KEY)")
 
         for i in range(10):
@@ -269,7 +269,7 @@ class TestSessionPruner(TestCase):
 
         # Session database isn't reset between tests. We need to do this
         # manually.
-        nuke_all_sessions = IMasterStore(SessionData).find(SessionData).remove
+        nuke_all_sessions = IPrimaryStore(SessionData).find(SessionData).remove
         nuke_all_sessions()
         self.addCleanup(nuke_all_sessions)
 
@@ -290,7 +290,7 @@ class TestSessionPruner(TestCase):
         session_data = SessionData()
         session_data.client_id = client_id
         session_data.last_accessed = accessed
-        IMasterStore(SessionData).add(session_data)
+        IPrimaryStore(SessionData).add(session_data)
 
         if authenticated:
             # Add login time information.
@@ -299,7 +299,7 @@ class TestSessionPruner(TestCase):
             session_pkg_data.product_id = "launchpad.authenticateduser"
             session_pkg_data.key = "logintime"
             session_pkg_data.pickle = b"value is ignored"
-            IMasterStore(SessionPkgData).add(session_pkg_data)
+            IPrimaryStore(SessionPkgData).add(session_pkg_data)
 
             # Add authenticated as information.
             session_pkg_data = SessionPkgData()
@@ -309,10 +309,10 @@ class TestSessionPruner(TestCase):
             # Normally Account.id, but the session pruning works
             # at the SQL level and doesn't unpickle anything.
             session_pkg_data.pickle = authenticated
-            IMasterStore(SessionPkgData).add(session_pkg_data)
+            IPrimaryStore(SessionPkgData).add(session_pkg_data)
 
     def sessionExists(self, client_id):
-        store = IMasterStore(SessionData)
+        store = IPrimaryStore(SessionData)
         return not store.find(
             SessionData, SessionData.client_id == client_id
         ).is_empty()
@@ -336,7 +336,7 @@ class TestSessionPruner(TestCase):
         }
 
         found_sessions = set(
-            IMasterStore(SessionData).find(SessionData.client_id)
+            IPrimaryStore(SessionData).find(SessionData.client_id)
         )
 
         self.assertEqual(expected_sessions, found_sessions)
@@ -360,7 +360,7 @@ class TestSessionPruner(TestCase):
         }
 
         found_sessions = set(
-            IMasterStore(SessionData).find(SessionData.client_id)
+            IPrimaryStore(SessionData).find(SessionData.client_id)
         )
 
         self.assertEqual(expected_sessions, found_sessions)
@@ -406,7 +406,7 @@ class TestSessionPruner(TestCase):
             pruner.cleanUp()
 
         found_sessions = set(
-            IMasterStore(SessionData).find(SessionData.client_id)
+            IPrimaryStore(SessionData).find(SessionData.client_id)
         )
 
         self.assertEqual(expected_sessions, found_sessions)
@@ -482,7 +482,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         ]
         switch_dbuser("testadmin")
 
-        store = IMasterStore(OpenIDConsumerNonce)
+        store = IPrimaryStore(OpenIDConsumerNonce)
 
         # Make sure we start with 0 nonces.
         self.assertEqual(store.find(OpenIDConsumerNonce).count(), 0)
@@ -497,7 +497,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Run the garbage collector.
         self.runFrequently(maximum_chunk_size=60)  # 1 minute maximum chunks.
 
-        store = IMasterStore(OpenIDConsumerNonce)
+        store = IPrimaryStore(OpenIDConsumerNonce)
 
         # We should now have 2 nonces.
         self.assertEqual(store.find(OpenIDConsumerNonce).count(), 2)
@@ -510,7 +510,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_CodeImportResultPruner(self):
         now = datetime.now(UTC)
-        store = IMasterStore(CodeImportResult)
+        store = IPrimaryStore(CodeImportResult)
 
         results_to_keep_count = config.codeimport.consecutive_failure_limit - 1
 
@@ -541,21 +541,21 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         # Nothing is removed, because we always keep the
         # ``results_to_keep_count`` latest.
-        store = IMasterStore(CodeImportResult)
+        store = IPrimaryStore(CodeImportResult)
         self.assertEqual(
             results_to_keep_count, store.find(CodeImportResult).count()
         )
 
         new_code_import_result(now - timedelta(days=31))
         self.runDaily()
-        store = IMasterStore(CodeImportResult)
+        store = IPrimaryStore(CodeImportResult)
         self.assertEqual(
             results_to_keep_count, store.find(CodeImportResult).count()
         )
 
         new_code_import_result(now - timedelta(days=29))
         self.runDaily()
-        store = IMasterStore(CodeImportResult)
+        store = IPrimaryStore(CodeImportResult)
         self.assertEqual(
             results_to_keep_count, store.find(CodeImportResult).count()
         )
@@ -570,7 +570,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_CodeImportEventPruner(self):
         now = datetime.now(UTC)
-        store = IMasterStore(CodeImportResult)
+        store = IPrimaryStore(CodeImportResult)
 
         switch_dbuser("testadmin")
         machine = self.factory.makeCodeImportMachine()
@@ -606,7 +606,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         pruner = OpenIDConsumerAssociationPruner
         table_name = pruner.table_name
         switch_dbuser("testadmin")
-        store = IMasterStore(CommercialSubscription)
+        store = IPrimaryStore(CommercialSubscription)
         now = time.time()
         # Create some associations in the past with lifetimes
         for delta in range(0, 20):
@@ -635,7 +635,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runFrequently()
 
         switch_dbuser("testadmin")
-        store = IMasterStore(CommercialSubscription)
+        store = IPrimaryStore(CommercialSubscription)
         # Confirm all the rows we know should have been expired have
         # been expired. These are the ones that would be expired using
         # the test start time as 'now'.
@@ -710,7 +710,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         diff_id = removeSecurityProxy(self.factory.makeDiff()).id
         self.runDaily()
-        store = IMasterStore(Diff)
+        store = IPrimaryStore(Diff)
         self.assertContentEqual([], store.find(Diff, Diff.id == diff_id))
 
     def test_RevisionAuthorEmailLinker(self):
@@ -825,7 +825,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
                 reason_body="Whatever",
             )
 
-        store = IMasterStore(BugNotification)
+        store = IPrimaryStore(BugNotification)
 
         # Ensure we are at a known starting point.
         num_unsent = store.find(
@@ -869,7 +869,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Garbo should remove answer contacts for accounts with given 'status'
         # which was set more than 'interval' days ago.
         switch_dbuser("testadmin")
-        store = IMasterStore(AnswerContact)
+        store = IPrimaryStore(AnswerContact)
 
         person = self.factory.makePerson()
         person.addLanguage(getUtility(ILanguageSet)["en"])
@@ -933,7 +933,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_BranchJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         db_branch = self.factory.makeAnyBranch()
         db_branch.branch_format = BranchFormat.BZR_BRANCH_5
@@ -959,7 +959,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Check to make sure the garbo doesn't remove jobs that aren't more
         # than thirty days old.
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         db_branch = self.factory.makeAnyBranch(
             branch_format=BranchFormat.BZR_BRANCH_5,
@@ -985,7 +985,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_GitJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         db_repository = self.factory.makeGitRepository()
         Store.of(db_repository).flush()
@@ -1009,7 +1009,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Check to make sure the garbo doesn't remove jobs that aren't more
         # than thirty days old.
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         db_repository = self.factory.makeGitRepository()
 
@@ -1028,7 +1028,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Garbo removes jobs completed over 30 days ago.
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         snapbuild = self.factory.makeSnapBuild()
         snapbuild_job = SnapStoreUploadJob.create(snapbuild)
@@ -1046,7 +1046,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Garbo doesn't remove jobs under thirty days old.
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         snapbuild = self.factory.makeSnapBuild()
         snapbuild_job = SnapStoreUploadJob.create(snapbuild)
@@ -1070,7 +1070,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Garbo doesn't remove the most recent job for a build.
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
 
         snapbuild = self.factory.makeSnapBuild()
         snapbuild_job = SnapStoreUploadJob.create(snapbuild)
@@ -1087,7 +1087,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         # Garbo removes files that haven't been used in 7 days
         switch_dbuser("testadmin")
-        store = IMasterStore(OCIFile)
+        store = IPrimaryStore(OCIFile)
         ocifile = self.factory.makeOCIFile()
         removeSecurityProxy(ocifile).date_last_used = THIRTY_DAYS_AGO
         self.assertEqual(1, store.find(OCIFile).count())
@@ -1101,7 +1101,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         # Garbo removes files that haven't been used in 7 days
         switch_dbuser("testadmin")
-        store = IMasterStore(OCIFile)
+        store = IPrimaryStore(OCIFile)
         self.factory.makeOCIFile()
         self.assertEqual(1, store.find(OCIFile).count())
 
@@ -1114,7 +1114,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         # Garbo removes files that haven't been used in 7 days
         switch_dbuser("testadmin")
-        store = IMasterStore(OCIFile)
+        store = IPrimaryStore(OCIFile)
         ocifile = self.factory.makeOCIFile()
         removeSecurityProxy(ocifile).date_last_used = THIRTY_DAYS_AGO
         self.factory.makeOCIFile()
@@ -1129,7 +1129,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Garbo removes GitRepository with status = CREATING for too long.
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         switch_dbuser("testadmin")
-        store = IMasterStore(GitRepository)
+        store = IPrimaryStore(GitRepository)
         now = datetime.now(UTC)
         recently = now - timedelta(minutes=2)
         long_ago = now - timedelta(minutes=65)
@@ -1279,7 +1279,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.runDaily()
 
         (count,) = (
-            IMasterStore(CommercialSubscription)
+            IPrimaryStore(CommercialSubscription)
             .execute(
                 """
             SELECT count(*)
@@ -1295,7 +1295,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_BugSummaryJournalRollup(self):
         switch_dbuser("testadmin")
-        store = IMasterStore(CommercialSubscription)
+        store = IPrimaryStore(CommercialSubscription)
 
         # Generate a load of entries in BugSummaryJournal.
         store.execute("UPDATE BugTask SET status=42")
@@ -1325,7 +1325,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         )
         translation_message.potmsgset.setSequence(pofile.potemplate, 0)
         transaction.commit()
-        store = IMasterStore(POTMsgSet)
+        store = IPrimaryStore(POTMsgSet)
         obsolete_msgsets = store.find(
             POTMsgSet,
             TranslationTemplateItem.potmsgset == POTMsgSet.id,
@@ -1348,7 +1348,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             translation_message.potmsgset.setSequence(pofile.potemplate, 0)
             potmsgset_pofile[translation_message.potmsgset.id] = pofile.id
         transaction.commit()
-        store = IMasterStore(POTMsgSet)
+        store = IPrimaryStore(POTMsgSet)
         test_ids = list(potmsgset_pofile)
         obsolete_msgsets = store.find(
             POTMsgSet,
@@ -1383,7 +1383,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         potmsgset = self.factory.makePOTMsgSet()
         # Cheekily drop any references to the POTMsgSet we just created.
-        store = IMasterStore(POTMsgSet)
+        store = IPrimaryStore(POTMsgSet)
         store.execute(
             "DELETE FROM TranslationTemplateItem WHERE potmsgset = %s"
             % potmsgset.id
@@ -1413,7 +1413,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         old_update = now - timedelta(days=2)
         naked_bug = removeSecurityProxy(bug)
         naked_bug.heat_last_updated = old_update
-        IMasterStore(FeatureFlag).add(
+        IPrimaryStore(FeatureFlag).add(
             FeatureFlag(
                 "default",
                 0,
@@ -1701,7 +1701,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         transaction.commit()
         self.runFrequently()
 
-        store = IMasterStore(LatestPersonSourcePackageReleaseCache)
+        store = IPrimaryStore(LatestPersonSourcePackageReleaseCache)
         # Check that the garbo state table has data.
         self.assertIsNotNone(
             store.execute(
@@ -1811,7 +1811,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         now = datetime.now(UTC)
         switch_dbuser("testadmin")
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
-        store = IMasterStore(LiveFSFile)
+        store = IPrimaryStore(LiveFSFile)
         initial_count = store.find(LiveFSFile).count()
 
         livefsbuild_kwargs = dict(livefsbuild_kwargs)
@@ -1895,7 +1895,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # exists.
         switch_dbuser("testadmin")
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
-        store = IMasterStore(LiveFSFile)
+        store = IPrimaryStore(LiveFSFile)
         other_build = self.factory.makeLiveFSBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10)
         )
@@ -1925,7 +1925,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # ago.
         now = datetime.now(UTC)
         switch_dbuser("testadmin")
-        store = IMasterStore(SnapFile)
+        store = IPrimaryStore(SnapFile)
 
         db_build = self.factory.makeSnapBuild(
             date_created=now - timedelta(days=interval, minutes=15),
@@ -2562,7 +2562,7 @@ class TestGarboTasks(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def test_LoginTokenPruner(self):
-        store = IMasterStore(LoginToken)
+        store = IPrimaryStore(LoginToken)
         now = datetime.now(UTC)
         switch_dbuser("testadmin")
 

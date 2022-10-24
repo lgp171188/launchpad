@@ -55,7 +55,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
@@ -364,7 +364,7 @@ class SnapBuild(PackageBuildMixin, Storm):
     def addFile(self, lfa):
         """See `ISnapBuild`."""
         snapfile = SnapFile(snapbuild=self, libraryfile=lfa)
-        IMasterStore(SnapFile).add(snapfile)
+        IPrimaryStore(SnapFile).add(snapfile)
         return snapfile
 
     def verifySuccessfulUpload(self) -> bool:
@@ -568,7 +568,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
         target_architectures=None,
     ):
         """See `ISnapBuildSet`."""
-        store = IMasterStore(SnapBuild)
+        store = IPrimaryStore(SnapBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             SnapBuild.job_type,
             BuildStatus.NEEDSBUILD,
@@ -600,7 +600,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
-        store = IMasterStore(SnapBuild)
+        store = IPrimaryStore(SnapBuild)
         return store.get(SnapBuild, build_id)
 
     def getByBuildFarmJob(self, build_farm_job):

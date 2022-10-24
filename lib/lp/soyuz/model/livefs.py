@@ -42,7 +42,7 @@ from lp.registry.interfaces.person import IPersonSet, NoSuchPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.registry.model.person import Person, get_person_visibility_terms
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormexpr import Greatest, IsDistinctFrom, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import ILaunchBag
@@ -343,7 +343,7 @@ class LiveFSSet:
         if self.exists(owner, distro_series, name):
             raise DuplicateLiveFSName
 
-        store = IMasterStore(LiveFS)
+        store = IPrimaryStore(LiveFS)
         livefs = LiveFS(
             registrant,
             owner,

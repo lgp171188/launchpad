@@ -22,7 +22,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
 from lp.services.config.fixture import ConfigUseFixture
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import (
     cursor,
     flush_database_updates,
@@ -79,7 +79,7 @@ class LibrarianWebTestMixin:
         url = client.getURLForAlias(fileAlias)
         # Now that we have a url which talks to the public librarian, make the
         # file restricted.
-        IMasterStore(LibraryFileAlias).find(
+        IPrimaryStore(LibraryFileAlias).find(
             LibraryFileAlias, LibraryFileAlias.id == fileAlias
         ).set(restricted=True)
         self.commit()
@@ -292,7 +292,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
         # Change the date_created to a known value that doesn't match
         # the disk timestamp. The timestamp on disk cannot be trusted.
-        file_alias = IMasterStore(LibraryFileAlias).get(
+        file_alias = IPrimaryStore(LibraryFileAlias).get(
             LibraryFileAlias, file_alias_id
         )
         file_alias.date_created = datetime(
@@ -332,7 +332,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
         # Change the date_created to a known value that doesn't match
         # the disk timestamp. The timestamp on disk cannot be trusted.
-        file_alias = IMasterStore(LibraryFileAlias).get(
+        file_alias = IPrimaryStore(LibraryFileAlias).get(
             LibraryFileAlias, file_alias_id
         )
 
@@ -473,7 +473,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
         fileAlias, url = self.get_restricted_file_and_public_url()
         token = TimeLimitedToken.allocate(url)
         # Change the date_created to a known value for testing.
-        file_alias = IMasterStore(LibraryFileAlias).get(
+        file_alias = IPrimaryStore(LibraryFileAlias).get(
             LibraryFileAlias, fileAlias
         )
         file_alias.date_created = datetime(
@@ -527,7 +527,7 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
     def test_restricted_with_macaroon(self):
         fileAlias, url = self.get_restricted_file_and_public_url()
-        lfa = IMasterStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
+        lfa = IPrimaryStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
         with dbuser("testadmin"):
             build = self.factory.makeBinaryPackageBuild(
                 archive=self.factory.makeArchive(private=True)
@@ -547,7 +547,7 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
     def test_restricted_with_invalid_macaroon(self):
         fileAlias, url = self.get_restricted_file_and_public_url()
-        lfa = IMasterStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
+        lfa = IPrimaryStore(LibraryFileAlias).get(LibraryFileAlias, fileAlias)
         with dbuser("testadmin"):
             build = self.factory.makeBinaryPackageBuild(
                 archive=self.factory.makeArchive(private=True)

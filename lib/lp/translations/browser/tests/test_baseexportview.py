@@ -6,7 +6,7 @@ from datetime import timedelta
 
 import transaction
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -24,7 +24,7 @@ from lp.translations.model.poexportrequest import POExportRequest
 
 def wipe_queue(queue):
     """Erase all export queue entries."""
-    IMasterStore(POExportRequest).execute("DELETE FROM POExportRequest")
+    IPrimaryStore(POExportRequest).execute("DELETE FROM POExportRequest")
 
 
 class BaseExportViewMixin(TestCaseWithFactory):

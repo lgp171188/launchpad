@@ -41,8 +41,8 @@ from lp.services.database.interfaces import (
     MAIN_STORE,
     PRIMARY_FLAVOR,
     STANDBY_FLAVOR,
-    IMasterObject,
-    IMasterStore,
+    IPrimaryObject,
+    IPrimaryStore,
     IRequestExpired,
     IStoreSelector,
 )
@@ -754,7 +754,7 @@ class StoreSelector:
         return db_policy.getStore(name, flavor)
 
 
-# We want to be able to adapt a Storm class to an IStore, IMasterStore or
+# We want to be able to adapt a Storm class to an IStore, IPrimaryStore or
 # IStandbyStore. Unfortunately, the component architecture provides no
 # way for us to declare that a class, and all its subclasses, provides
 # a given interface. This means we need to use an global adapter.
@@ -769,8 +769,8 @@ def get_store(storm_class, flavor=DEFAULT_FLAVOR):
         return None
 
 
-def get_master_store(storm_class):
-    """Return the master Store for the given database class."""
+def get_primary_store(storm_class):
+    """Return the primary Store for the given database class."""
     return get_store(storm_class, PRIMARY_FLAVOR)
 
 
@@ -779,20 +779,20 @@ def get_standby_store(storm_class):
     return get_store(storm_class, STANDBY_FLAVOR)
 
 
-def get_object_from_master_store(obj):
-    """Return a copy of the given object retrieved from its master Store.
+def get_object_from_primary_store(obj):
+    """Return a copy of the given object retrieved from its primary Store.
 
-    Returns the object if it already comes from the relevant master Store.
+    Returns the object if it already comes from the relevant primary Store.
 
     Registered as a trusted adapter, so if the input is security wrapped,
     so is the result. Otherwise an unwrapped object is returned.
     """
-    master_store = IMasterStore(obj)
-    if master_store is not Store.of(obj):
-        obj = master_store.get(obj.__class__, obj.id)
+    primary_store = IPrimaryStore(obj)
+    if primary_store is not Store.of(obj):
+        obj = primary_store.get(obj.__class__, obj.id)
         if obj is None:
             return None
-    alsoProvides(obj, IMasterObject)
+    alsoProvides(obj, IPrimaryObject)
     return obj
 
 

@@ -3,7 +3,11 @@
 
 """Session tests."""
 
-from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.database.interfaces import (
+    IPrimaryStore,
+    IStandbyStore,
+    IStore,
+)
 from lp.services.session.model import SessionData, SessionPkgData
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -13,7 +17,7 @@ class TestSessionModelAdapters(TestCase):
     layer = DatabaseFunctionalLayer
 
     def test_adapters(self):
-        for adapter in [IMasterStore, IStandbyStore, IStore]:
+        for adapter in [IPrimaryStore, IStandbyStore, IStore]:
             for cls in [SessionData, SessionPkgData]:
                 for obj in [cls, cls()]:
                     store = adapter(obj)
