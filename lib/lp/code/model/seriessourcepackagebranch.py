@@ -20,7 +20,7 @@ from lp.code.interfaces.seriessourcepackagebranch import (
 )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 
 
 @implementer(ISeriesSourcePackageBranch)
@@ -101,7 +101,7 @@ class SeriesSourcePackageBranchSet:
             registrant,
             date_created,
         )
-        IMasterStore(SeriesSourcePackageBranch).add(sspb)
+        IPrimaryStore(SeriesSourcePackageBranch).add(sspb)
         DistributionSourcePackageCache.updateOfficialBranches(
             distroseries.distribution, [sourcepackagename]
         )
@@ -155,7 +155,7 @@ class SeriesSourcePackageBranchSet:
         distroseries = sourcepackage.distroseries
         sourcepackagename = sourcepackage.sourcepackagename
         return (
-            IMasterStore(SeriesSourcePackageBranch)
+            IPrimaryStore(SeriesSourcePackageBranch)
             .find(
                 SeriesSourcePackageBranch,
                 SeriesSourcePackageBranch.distroseries == distroseries.id,

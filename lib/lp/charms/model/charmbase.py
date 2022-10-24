@@ -20,7 +20,7 @@ from lp.charms.interfaces.charmbase import (
     NoSuchCharmBase,
 )
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 
 
 @implementer(ICharmBase)
@@ -123,7 +123,7 @@ class CharmBaseSet:
             pass
         else:
             raise DuplicateCharmBase(distro_series)
-        store = IMasterStore(CharmBase)
+        store = IPrimaryStore(CharmBase)
         charm_base = CharmBase(
             registrant,
             distro_series,

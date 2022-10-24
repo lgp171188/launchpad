@@ -29,12 +29,12 @@ sourcepackagename, tag, milestone, status, importance, has_patch,
 viewed_by and the count. viewed_by is a team reference and used to
 query private bug counts.
 
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
     >>> from lp.bugs.interfaces.bugtask import BugTaskStatus
     >>> from lp.bugs.model.bugsummary import BugSummary
     >>> from lp.testing import login_celebrity
     >>> me = login_celebrity("admin")
-    >>> store = IMasterStore(BugSummary)
+    >>> store = IPrimaryStore(BugSummary)
 
     >>> def name(object_or_none):
     ...     if object_or_none is None:

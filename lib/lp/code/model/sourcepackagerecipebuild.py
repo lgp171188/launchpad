@@ -43,7 +43,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.soyuz.interfaces.archive import CannotUploadToArchive
 from lp.soyuz.model.archive import Archive
@@ -217,7 +217,7 @@ class SourcePackageRecipeBuild(
         duration=None,
     ):
         """See `ISourcePackageRecipeBuildSource`."""
-        store = IMasterStore(SourcePackageRecipeBuild)
+        store = IPrimaryStore(SourcePackageRecipeBuild)
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
         if date_created is None:
@@ -307,7 +307,7 @@ class SourcePackageRecipeBuild(
     @classmethod
     def getByID(cls, build_id):
         """See `ISourcePackageRecipeBuildSource`."""
-        store = IMasterStore(SourcePackageRecipeBuild)
+        store = IPrimaryStore(SourcePackageRecipeBuild)
         return store.find(cls, cls.id == build_id).one()
 
     @classmethod

@@ -18,7 +18,7 @@ from lp.registry.interfaces.ociprojectname import (
     IOCIProjectName,
     IOCIProjectNameSet,
 )
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -61,7 +61,7 @@ class OCIProjectNameSet:
 
     def new(self, name):
         """See `IOCIProjectNameSet`."""
-        store = IMasterStore(OCIProjectName)
+        store = IPrimaryStore(OCIProjectName)
         project_name = OCIProjectName(name=name)
         store.add(project_name)
         return project_name

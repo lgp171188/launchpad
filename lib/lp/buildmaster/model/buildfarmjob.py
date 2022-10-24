@@ -28,7 +28,7 @@ from lp.buildmaster.interfaces.buildfarmjob import (
 )
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
@@ -109,7 +109,7 @@ class BuildFarmJob(Storm):
         build_farm_job = BuildFarmJob(
             job_type, status, date_created, builder, archive
         )
-        store = IMasterStore(BuildFarmJob)
+        store = IPrimaryStore(BuildFarmJob)
         store.add(build_farm_job)
         return build_farm_job
 

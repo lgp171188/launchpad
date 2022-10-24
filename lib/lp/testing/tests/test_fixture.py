@@ -16,7 +16,7 @@ from zope.sendmail.interfaces import IMailDelivery
 
 from lp.registry.model.person import Person
 from lp.services.config import config, dbconfig
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.messaging import rabbit
 from lp.services.webapp.errorlog import globalErrorUtility, notify_publisher
 from lp.testing import TestCase
@@ -161,7 +161,7 @@ class TestPGBouncerFixtureWithCA(TestCase):
         transaction.abort()
 
         try:
-            IMasterStore(Person).find(Person).first()
+            IPrimaryStore(Person).find(Person).first()
             return True
         except DisconnectionError:
             return False

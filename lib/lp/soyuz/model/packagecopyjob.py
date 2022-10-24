@@ -37,7 +37,7 @@ from lp.services.config import config
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
@@ -352,7 +352,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             metadata=metadata,
             requester=requester,
         )
-        IMasterStore(PackageCopyJob).add(job)
+        IPrimaryStore(PackageCopyJob).add(job)
         derived = cls(job)
         derived.celeryRunOnCommit()
         return derived
@@ -420,7 +420,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
         move=False,
     ):
         """See `IPlainPackageCopyJobSource`."""
-        store = IMasterStore(Job)
+        store = IPrimaryStore(Job)
         job_ids = Job.createMultiple(store, len(copy_tasks), requester)
         job_contents = [
             cls._composeJobInsertionTuple(

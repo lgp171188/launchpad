@@ -47,7 +47,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormexpr import Greatest, NullsLast
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.model.archive import Archive
@@ -213,7 +213,7 @@ class SourcePackageRecipe(Storm):
         date_created=DEFAULT,
     ):
         """See `ISourcePackageRecipeSource.new`."""
-        store = IMasterStore(SourcePackageRecipe)
+        store = IPrimaryStore(SourcePackageRecipe)
         sprecipe = SourcePackageRecipe()
         builder_recipe, recipe_branch_type = getUtility(
             IRecipeBranchSource
@@ -264,7 +264,7 @@ class SourcePackageRecipe(Storm):
     @staticmethod
     def exists(owner, name):
         """See `ISourcePackageRecipeSource.new`."""
-        store = IMasterStore(SourcePackageRecipe)
+        store = IPrimaryStore(SourcePackageRecipe)
         recipe = store.find(
             SourcePackageRecipe,
             SourcePackageRecipe.owner == owner,

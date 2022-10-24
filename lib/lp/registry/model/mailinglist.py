@@ -59,7 +59,7 @@ from lp.services.config import config
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Concatenate
 from lp.services.identity.interfaces.account import AccountStatus
@@ -808,7 +808,7 @@ class MailingListSet:
             Person.id == MailingList.team_id,
             EmailAddress.email.endswith(old_suffix),
         ]
-        addresses = IMasterStore(EmailAddress).find(
+        addresses = IPrimaryStore(EmailAddress).find(
             EmailAddress,
             EmailAddress.id.is_in(Select(EmailAddress.id, And(*clauses))),
         )
@@ -876,10 +876,10 @@ class MessageApprovalSet:
 
     def getHeldMessagesWithStatus(self, status):
         """See `IMessageApprovalSet`."""
-        # Use the master store as the messages will also be acknowledged and
+        # Use the primary store as the messages will also be acknowledged and
         # we want to make sure we are acknowledging the same messages that we
         # iterate over.
-        return IMasterStore(MessageApproval).find(
+        return IPrimaryStore(MessageApproval).find(
             (Message.rfc822msgid, Person.name),
             MessageApproval.status == status,
             MessageApproval.message == Message.id,
@@ -900,7 +900,7 @@ class MessageApprovalSet:
             next_state = transitions[status]
         except KeyError:
             raise AssertionError("Not an acknowledgeable state: %s" % status)
-        approvals = IMasterStore(MessageApproval).find(
+        approvals = IPrimaryStore(MessageApproval).find(
             MessageApproval, MessageApproval.status == status
         )
         approvals.set(status=next_state)

@@ -41,9 +41,9 @@
         factory="lp.services.webapp.adapter.get_store"
         />
     <adapter
-        provides="lp.services.database.interfaces.IMasterStore"
+        provides="lp.services.database.interfaces.IPrimaryStore"
         for="zope.interface.Interface"
-        factory="lp.services.webapp.adapter.get_master_store"
+        factory="lp.services.webapp.adapter.get_primary_store"
         />
     <adapter
         provides="lp.services.database.interfaces.IStandbyStore"
@@ -54,10 +54,10 @@
          We have no way of specifying that all subclasses of
          storm.locals.Storm implement an Interface. -->
     <adapter
-        provides="lp.services.database.interfaces.IMasterObject"
+        provides="lp.services.database.interfaces.IPrimaryObject"
         for="zope.interface.Interface"
         trusted="yes"
-        factory="lp.services.webapp.adapter.get_object_from_master_store"
+        factory="lp.services.webapp.adapter.get_object_from_primary_store"
         />
     <class class="storm.store.Store">
         <implements interface="lp.services.database.interfaces.IStore" />

@@ -7,7 +7,7 @@
 import _pythonpath  # noqa: F401
 
 from lp.registry.model.person import Person
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.scripts import db_options
 from lp.services.scripts.base import LaunchpadCronScript
 
@@ -17,7 +17,7 @@ class UpdateDatabaseStats(LaunchpadCronScript):
 
     def main(self):
         "Run UpdateDatabaseTableStats." ""
-        store = IMasterStore(Person)
+        store = IPrimaryStore(Person)
 
         # The logic is in a stored procedure because we want to run
         # ps(1) on the database server rather than the host this script

@@ -40,7 +40,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -307,7 +307,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
     def addFile(self, lfa):
         """See `ILiveFSBuild`."""
         livefsfile = LiveFSFile(livefsbuild=self, libraryfile=lfa)
-        IMasterStore(LiveFSFile).add(livefsfile)
+        IPrimaryStore(LiveFSFile).add(livefsfile)
         return livefsfile
 
     def verifySuccessfulUpload(self) -> bool:
@@ -382,7 +382,7 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
         date_created=DEFAULT,
     ):
         """See `ILiveFSBuildSet`."""
-        store = IMasterStore(LiveFSBuild)
+        store = IPrimaryStore(LiveFSBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             LiveFSBuild.job_type,
             BuildStatus.NEEDSBUILD,
@@ -411,7 +411,7 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
-        store = IMasterStore(LiveFSBuild)
+        store = IPrimaryStore(LiveFSBuild)
         return store.get(LiveFSBuild, build_id)
 
     def getByBuildFarmJob(self, build_farm_job):

@@ -15,9 +15,9 @@ them.
 
     >>> from storm.locals import Count, Int, Storm
     >>> from lp.registry.model.product import Product
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
 
-    >>> store = IMasterStore(Product)
+    >>> store = IPrimaryStore(Product)
     >>> ok = store.execute("CREATE TEMP TABLE Kumquat(id integer UNIQUE)")
     >>> class Kumquat(Storm):
     ...     __storm_table__ = "Kumquat"

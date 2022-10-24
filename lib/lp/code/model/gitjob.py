@@ -35,7 +35,7 @@ from lp.code.mail.branch import BranchMailer
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
@@ -157,7 +157,7 @@ class GitJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        jobs = IMasterStore(GitJob).find(
+        jobs = IPrimaryStore(GitJob).find(
             GitJob,
             GitJob.job_type == cls.class_job_type,
             GitJob.job == Job.id,

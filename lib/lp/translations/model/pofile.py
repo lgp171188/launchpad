@@ -40,7 +40,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, flush_database_updates, quote
 from lp.services.database.sqlobject import (
     BoolCol,
@@ -260,7 +260,9 @@ class POFileMixIn(RosettaStats):
         be among `origin_tables`.
         """
         results = (
-            IMasterStore(POTMsgSet).using(origin_tables).find(POTMsgSet, query)
+            IPrimaryStore(POTMsgSet)
+            .using(origin_tables)
+            .find(POTMsgSet, query)
         )
         return results.order_by(TranslationTemplateItem.sequence)
 
@@ -1654,7 +1656,7 @@ class POFileSet:
             )
             clauses.append(POTemplate.id == POFile.potemplateID)
             clauses.append(Not(Exists(message_select)))
-        result = IMasterStore(POFile).find((POFile, POTMsgSet), clauses)
+        result = IPrimaryStore(POFile).find((POFile, POTMsgSet), clauses)
         return result.order_by("POFile.id")
 
     def getPOFilesTouchedSince(self, date):
@@ -1664,7 +1666,7 @@ class POFileSet:
         from lp.registry.model.productseries import ProductSeries
         from lp.translations.model.potemplate import POTemplate
 
-        store = IMasterStore(POTemplate)
+        store = IPrimaryStore(POTemplate)
 
         # Find a matching POTemplate and its ProductSeries
         # and DistroSeries, if they are defined.

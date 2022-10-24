@@ -36,7 +36,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -124,7 +124,7 @@ class ArchiveJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def iterReady(cls):
         """Iterate through all ready ArchiveJobs."""
-        store = IMasterStore(ArchiveJob)
+        store = IPrimaryStore(ArchiveJob)
         jobs = store.find(
             ArchiveJob,
             And(

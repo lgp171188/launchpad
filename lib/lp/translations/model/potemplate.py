@@ -37,7 +37,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, flush_database_updates
 from lp.services.database.sqlobject import (
     BoolCol,
@@ -1541,7 +1541,7 @@ class POTemplateSet:
     def wipeSuggestivePOTemplatesCache(self):
         """See `IPOTemplateSet`."""
         return (
-            IMasterStore(POTemplate)
+            IPrimaryStore(POTemplate)
             .execute("DELETE FROM SuggestivePOTemplate")
             .rowcount
         )
@@ -1549,7 +1549,7 @@ class POTemplateSet:
     def removeFromSuggestivePOTemplatesCache(self, potemplate):
         """See `IPOTemplateSet`."""
         rowcount = (
-            IMasterStore(POTemplate)
+            IPrimaryStore(POTemplate)
             .execute(
                 "DELETE FROM SuggestivePOTemplate " "WHERE potemplate = ?",
                 params=(potemplate.id,),
@@ -1561,7 +1561,7 @@ class POTemplateSet:
     def populateSuggestivePOTemplatesCache(self):
         """See `IPOTemplateSet`."""
         return (
-            IMasterStore(POTemplate)
+            IPrimaryStore(POTemplate)
             .execute(
                 """
             INSERT INTO SuggestivePOTemplate (

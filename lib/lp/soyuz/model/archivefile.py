@@ -20,7 +20,7 @@ from zope.interface import implementer
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormexpr import BulkUpdate, RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -77,7 +77,7 @@ class ArchiveFileSet:
     def new(archive, container, path, library_file):
         """See `IArchiveFileSet`."""
         archive_file = ArchiveFile(archive, container, path, library_file)
-        IMasterStore(ArchiveFile).add(archive_file)
+        IPrimaryStore(ArchiveFile).add(archive_file)
         return archive_file
 
     @classmethod
@@ -159,7 +159,7 @@ class ArchiveFileSet:
             LibraryFileContent.sha256,
         ]
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 Returning(
                     BulkUpdate(
                         {ArchiveFile.scheduled_deletion_date: new_date},
@@ -188,7 +188,7 @@ class ArchiveFileSet:
             LibraryFileContent.sha256,
         ]
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 Returning(
                     BulkUpdate(
                         {ArchiveFile.scheduled_deletion_date: None},
@@ -230,7 +230,7 @@ class ArchiveFileSet:
             clauses.append(ArchiveFile.container == container)
         where = convert_storm_clause_to_string(And(*clauses))
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 """
             DELETE FROM ArchiveFile
             USING LibraryFileAlias, LibraryFileContent

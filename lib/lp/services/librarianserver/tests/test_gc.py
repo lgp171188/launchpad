@@ -23,7 +23,7 @@ from swiftclient import client as swiftclient
 from testtools.matchers import AnyMatch, Equals, MatchesListwise, MatchesRegex
 
 from lp.services.config import config
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import (
     ISOLATION_LEVEL_AUTOCOMMIT,
     connect,
@@ -75,7 +75,7 @@ class TestLibrarianGarbageCollectionBase:
         # Make sure that every file the database knows about exists on disk.
         # We manually remove them for tests that need to cope with missing
         # library items.
-        store = IMasterStore(LibraryFileContent)
+        store = IPrimaryStore(LibraryFileContent)
         for content in store.find(LibraryFileContent):
             path = librariangc.get_file_path(content.id)
             if not os.path.exists(path):

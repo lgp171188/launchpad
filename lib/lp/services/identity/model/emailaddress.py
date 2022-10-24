@@ -18,7 +18,7 @@ from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.services.identity.interfaces.emailaddress import (
@@ -83,7 +83,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
         # XXX 2009-05-04 jamesh bug=371567: This function should not
         # be responsible for removing subscriptions, since the SSO
         # server can't write to that table.
-        store = IMasterStore(MailingListSubscription)
+        store = IPrimaryStore(MailingListSubscription)
         for subscription in store.find(
             MailingListSubscription, email_address=self
         ):

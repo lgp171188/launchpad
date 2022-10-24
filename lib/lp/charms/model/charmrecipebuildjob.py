@@ -38,7 +38,7 @@ from lp.charms.interfaces.charmrecipebuildjob import (
 from lp.charms.mail.charmrecipebuild import CharmRecipeBuildMailer
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -136,7 +136,7 @@ class CharmRecipeBuildJobDerived(
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        jobs = IMasterStore(CharmRecipeBuildJob).find(
+        jobs = IPrimaryStore(CharmRecipeBuildJob).find(
             CharmRecipeBuildJob,
             CharmRecipeBuildJob.job_type == cls.class_job_type,
             CharmRecipeBuildJob.job == Job.id,

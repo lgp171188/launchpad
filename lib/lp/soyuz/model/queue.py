@@ -43,7 +43,7 @@ from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Array, ArrayContains
@@ -1635,7 +1635,7 @@ class PackageUploadSet:
         from lp.registry.model.distroseries import DistroSeries
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
-        store = IMasterStore(PackageUpload)
+        store = IPrimaryStore(PackageUpload)
         origin = (
             PackageUpload,
             Join(DistroSeries, PackageUpload.distroseries == DistroSeries.id),

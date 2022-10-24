@@ -18,7 +18,7 @@ import transaction
 
 from lp.registry.interfaces.teammembership import ACTIVE_STATES
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.database.interfaces import IMasterStore, IStandbyStore
+from lp.services.database.interfaces import IPrimaryStore, IStandbyStore
 from lp.services.database.sqlbase import quote, sqlvalues
 from lp.services.scripts.base import LaunchpadScriptFailure
 
@@ -207,7 +207,7 @@ def fix_teamparticipation_consistency(log, errors):
          WHERE team = %(team)s
            AND person IN %(people)s
         """
-    store = IMasterStore(TeamParticipation)
+    store = IPrimaryStore(TeamParticipation)
     for error in errors:
         if error.type == "missing":
             for person in error.people:

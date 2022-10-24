@@ -50,7 +50,7 @@ from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.registry.model.person import Person
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
@@ -418,7 +418,7 @@ class OCIProjectSet:
         """See `IOCIProjectSet`."""
         if isinstance(name, str):
             name = getUtility(IOCIProjectNameSet).getOrCreateByName(name)
-        store = IMasterStore(OCIProject)
+        store = IPrimaryStore(OCIProject)
         target = OCIProject()
         target.date_created = date_created
         target.date_last_modified = date_created

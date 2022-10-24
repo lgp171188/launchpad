@@ -22,7 +22,7 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
     ForeignKey,
@@ -302,7 +302,7 @@ class LoginTokenSet:
 
         # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
-        return IMasterStore(LoginToken).find(LoginToken, conditions)
+        return IPrimaryStore(LoginToken).find(LoginToken, conditions)
 
     def deleteByEmailRequesterAndType(self, email, requester, type):
         """See ILoginTokenSet."""
@@ -333,7 +333,7 @@ class LoginTokenSet:
 
         # It's important to always use the PRIMARY_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
-        return IMasterStore(LoginToken).find(LoginToken, conditions)
+        return IPrimaryStore(LoginToken).find(LoginToken, conditions)
 
     def getPendingGPGKeys(self, requesterid=None):
         """See ILoginTokenSet."""

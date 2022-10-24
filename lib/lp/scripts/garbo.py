@@ -76,7 +76,7 @@ from lp.services.config import config
 from lp.services.database import postgresql
 from lp.services.database.bulk import create, dbify_value, load_related
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import (
     convert_storm_clause_to_string,
     cursor,
@@ -160,7 +160,7 @@ ONE_DAY_IN_SECONDS = 24 * 60 * 60
 def load_garbo_job_state(job_name):
     # Load the json state data for the given job name.
     job_data = (
-        IMasterStore(Person)
+        IPrimaryStore(Person)
         .execute(
             "SELECT json_data FROM GarboJobState WHERE name = ?",
             params=(six.ensure_text(job_name),),
@@ -174,7 +174,7 @@ def load_garbo_job_state(job_name):
 
 def save_garbo_job_state(job_name, job_data):
     # Save the json state data for the given job name.
-    store = IMasterStore(Person)
+    store = IPrimaryStore(Person)
     json_data = json.dumps(job_data, ensure_ascii=False)
     result = store.execute(
         "UPDATE GarboJobState SET json_data = ? WHERE name = ?",
@@ -230,11 +230,11 @@ class BulkPruner(TunableLoop):
     maximum_chunk_size = 10000
 
     def getStore(self):
-        """The master Store for the table we are pruning.
+        """The primary Store for the table we are pruning.
 
         May be overridden.
         """
-        return IMasterStore(self.target_table_class)
+        return IPrimaryStore(self.target_table_class)
 
     _unique_counter = 0
 
@@ -449,7 +449,7 @@ class BugSummaryJournalRollup(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(Bug)
+        self.store = IPrimaryStore(Bug)
 
     def isDone(self):
         has_more = self.store.execute(
@@ -478,7 +478,7 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(DistributionSourcePackageCache)
+        self.store = IPrimaryStore(DistributionSourcePackageCache)
         # Keep a record of the processed source publication ID so we know
         # where the job got up to.
         self.last_spph_id = 0
@@ -603,7 +603,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(LatestPersonSourcePackageReleaseCache)
+        self.store = IPrimaryStore(LatestPersonSourcePackageReleaseCache)
         # Keep a record of the processed source package release id and data
         # type (creator or maintainer) so we know where to job got up to.
         self.last_spph_id = 0
@@ -852,7 +852,7 @@ class OpenIDConsumerNoncePruner(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(OpenIDConsumerNonce)
+        self.store = IPrimaryStore(OpenIDConsumerNonce)
         self.earliest_timestamp = self.store.find(
             Min(OpenIDConsumerNonce.timestamp)
         ).one()
@@ -893,7 +893,7 @@ class OpenIDConsumerAssociationPruner(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(OpenIDConsumerNonce)
+        self.store = IPrimaryStore(OpenIDConsumerNonce)
 
     def __call__(self, chunksize):
         result = self.store.execute(
@@ -923,7 +923,7 @@ class RevisionCachePruner(TunableLoop):
     def isDone(self):
         """We are done when there are no old revisions to delete."""
         epoch = datetime.now(pytz.UTC) - timedelta(days=30)
-        store = IMasterStore(RevisionCache)
+        store = IPrimaryStore(RevisionCache)
         results = store.find(
             RevisionCache, RevisionCache.revision_date < epoch
         )
@@ -987,8 +987,8 @@ class RevisionAuthorEmailLinker(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.author_store = IMasterStore(RevisionAuthor)
-        self.email_store = IMasterStore(EmailAddress)
+        self.author_store = IPrimaryStore(RevisionAuthor)
+        self.email_store = IPrimaryStore(EmailAddress)
 
         (self.min_author_id, self.max_author_id) = self.author_store.find(
             (Min(RevisionAuthor.id), Max(RevisionAuthor.id))
@@ -1052,7 +1052,7 @@ class PersonPruner(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.offset = 1
-        self.store = IMasterStore(Person)
+        self.store = IPrimaryStore(Person)
         self.log.debug("Creating LinkedPeople temporary table.")
         self.store.execute(
             "CREATE TEMPORARY TABLE LinkedPeople(person integer primary key)"
@@ -1348,7 +1348,7 @@ class WebhookJobPruner(TunableLoop):
     @property
     def old_jobs(self):
         return (
-            IMasterStore(WebhookJob)
+            IPrimaryStore(WebhookJob)
             .using(WebhookJob, Job)
             .find(
                 (WebhookJob.job_id,),
@@ -1380,7 +1380,7 @@ class BugHeatUpdater(TunableLoop):
         self.is_done = False
         self.offset = 0
 
-        self.store = IMasterStore(Bug)
+        self.store = IPrimaryStore(Bug)
 
     @property
     def _outdated_bugs(self):
@@ -1415,7 +1415,7 @@ class BugHeatUpdater(TunableLoop):
         # Storm Bug #820290.
         outdated_bug_ids = [bug.id for bug in outdated_bugs]
         self.log.debug("Updating heat for %s bugs", len(outdated_bug_ids))
-        IMasterStore(Bug).find(Bug, Bug.id.is_in(outdated_bug_ids)).set(
+        IPrimaryStore(Bug).find(Bug, Bug.id.is_in(outdated_bug_ids)).set(
             heat=SQL("calculate_bug_heat(Bug.id)"), heat_last_updated=UTC_NOW
         )
         transaction.commit()
@@ -1582,7 +1582,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
             """
             % constraints
         )
-        store = IMasterStore(POTMsgSet)
+        store = IPrimaryStore(POTMsgSet)
         results = store.execute(query)
         ids_to_remove = {id for (id,) in results.get_all()}
         return list(ids_to_remove)
@@ -1595,7 +1595,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
         msgset_ids = self.msgset_ids_to_remove[self.offset :][:chunk_size]
         msgset_ids_to_remove = self._get_msgset_ids_to_remove(msgset_ids)
         # Remove related TranslationTemplateItems.
-        store = IMasterStore(POTMsgSet)
+        store = IPrimaryStore(POTMsgSet)
         related_ttis = store.find(
             TranslationTemplateItem,
             In(TranslationTemplateItem.potmsgsetID, msgset_ids_to_remove),
@@ -1620,7 +1620,7 @@ class UnusedProductAccessPolicyPruner(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(Product)
+        self.store = IPrimaryStore(Product)
 
     def findProducts(self):
         return self.store.find(Product, Product.id >= self.start_at).order_by(
@@ -1646,7 +1646,7 @@ class UnusedDistributionAccessPolicyPruner(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(Distribution)
+        self.store = IPrimaryStore(Distribution)
 
     def findDistributions(self):
         return self.store.find(
@@ -1672,7 +1672,7 @@ class ProductVCSPopulator(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(Product)
+        self.store = IPrimaryStore(Product)
 
     def findProducts(self):
         products = self.store.find(
@@ -1788,7 +1788,7 @@ class GitRepositoryPruner(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
-        self.store = IMasterStore(GitRepository)
+        self.store = IPrimaryStore(GitRepository)
 
     def findRepositories(self):
         min_date = UTC_NOW - Cast(self.repository_creation_timeout, "interval")
@@ -1999,7 +1999,7 @@ class PopulateSnapBuildStoreRevision(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(SnapBuild)
+        self.store = IPrimaryStore(SnapBuild)
 
     def findSnapBuilds(self):
         origin = [
@@ -2057,7 +2057,7 @@ class ArchiveArtifactoryColumnsPopulator(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(Archive)
+        self.store = IPrimaryStore(Archive)
 
     def findArchives(self):
         return self.store.find(
@@ -2103,7 +2103,7 @@ class SourcePackagePublishingHistoryFormatPopulator(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(SourcePackagePublishingHistory)
+        self.store = IPrimaryStore(SourcePackagePublishingHistory)
 
     def findPublications(self):
         return self.store.find(
@@ -2146,7 +2146,7 @@ class BinaryPackagePublishingHistoryFormatPopulator(TunableLoop):
     def __init__(self, log, abort_time=None):
         super().__init__(log, abort_time)
         self.start_at = 1
-        self.store = IMasterStore(BinaryPackagePublishingHistory)
+        self.store = IPrimaryStore(BinaryPackagePublishingHistory)
 
     def findPublications(self):
         return self.store.find(

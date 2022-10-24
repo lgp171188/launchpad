@@ -8,7 +8,7 @@ the stores these caches may end up being carried from one request to
 another.
 
 However, we have many tests that want to use an object after we've
-committed a transaction, so we decided not to reset MASTER stores when
+committed a transaction, so we decided not to reset PRIMARY stores when
 running the test suite.
 
 Since the web app is not run in the main thread (unlike the test suite)

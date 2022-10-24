@@ -19,7 +19,7 @@ from lp.registry.model.distroseriesdifference import DistroSeriesDifference
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database import bulk
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.job.model.job import Job
 from lp.soyuz.interfaces.distributionjob import (
     DistributionJobType,
@@ -60,7 +60,7 @@ def create_job(derived_series, sourcepackagename, parent_series):
         job_type=DistributionJobType.DISTROSERIESDIFFERENCE,
         metadata=make_metadata(sourcepackagename.id, parent_series.id),
     )
-    IMasterStore(DistributionJob).add(db_job)
+    IPrimaryStore(DistributionJob).add(db_job)
     job = DistroSeriesDifferenceJob(db_job)
     job.celeryRunOnCommit()
     return job
@@ -117,9 +117,9 @@ def find_waiting_jobs(derived_series, sourcepackagename, parent_series):
     # redundant jobs occasionally.
     json_metadata = make_metadata(sourcepackagename.id, parent_series.id)
 
-    # Use master store because we don't like outdated information
+    # Use primary store because we don't like outdated information
     # here.
-    store = IMasterStore(DistributionJob)
+    store = IPrimaryStore(DistributionJob)
 
     candidates = store.find(
         DistributionJob,
@@ -315,7 +315,7 @@ class DistroSeriesDifferenceJob(DistributionJobDerived):
         """Find an existing `DistroSeriesDifference` for this difference."""
         spn_id = self.metadata["sourcepackagename"]
         parent_id = self.metadata["parent_series"]
-        store = IMasterStore(DistroSeriesDifference)
+        store = IPrimaryStore(DistroSeriesDifference)
         search = store.find(
             DistroSeriesDifference,
             DistroSeriesDifference.derived_series == self.derived_series,
