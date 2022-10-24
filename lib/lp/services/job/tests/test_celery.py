@@ -212,8 +212,8 @@ class TestJobsViaCelery(TestCaseWithFactory):
         self.assertEqual(JobStatus.COMPLETED, job.status)
 
     def test_without_rabbitmq(self):
-        # If no RabbitMQ host is configured, the job is not run via Celery.
-        self.pushConfig("rabbitmq", host="none")
+        # If no RabbitMQ broker is configured, the job is not run via Celery.
+        self.pushConfig("rabbitmq", broker_urls="none")
         self.useFixture(
             FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
         )

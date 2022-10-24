@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 from contextlib import ExitStack
+from urllib.parse import urlparse
 
 import fixtures
 from lazr.config import as_host_port
@@ -172,7 +173,12 @@ class RabbitService(Service):
         return config.rabbitmq.launch
 
     def launch(self):
-        hostname, port = as_host_port(config.rabbitmq.host, None, None)
+        if config.rabbitmq.broker_urls:
+            parsed_url = urlparse(config.rabbitmq.broker_urls.split()[0])
+            hostname = parsed_url.hostname
+            port = parsed_url.port
+        else:
+            hostname, port = as_host_port(config.rabbitmq.host, None, None)
         self.server = RabbitServer(
             RabbitServerResources(hostname=hostname, port=port)
         )

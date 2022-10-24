@@ -23,7 +23,6 @@ import socket
 import time
 from configparser import ConfigParser
 
-import amqp
 import oops
 import oops_amqp
 import pgbouncer.fixture
@@ -391,24 +390,17 @@ class CaptureOops(Fixture):
             return
         # Send ourselves a message: when we receive this, we've processed all
         # oopses created before sync() was invoked.
-        message = amqp.Message(self.AMQP_SENTINEL)
-        # Match what oops publishing does
-        message.properties["delivery_mode"] = 2
         # Publish the message via a new channel (otherwise rabbit
         # shortcircuits it straight back to us, apparently).
-        connection = connect()
-        try:
-            channel = connection.channel()
-            try:
-                channel.basic_publish(
-                    message,
-                    config.error_reports.error_exchange,
-                    config.error_reports.error_queue_key,
+        with connect() as connection:
+            with connection.channel() as channel:
+                connection.Producer(channel).publish(
+                    body=self.AMQP_SENTINEL,
+                    routing_key=config.error_reports.error_queue_key,
+                    # Match what oops publishing does.
+                    delivery_mode="persistent",
+                    exchange=config.error_reports.error_exchange,
                 )
-            finally:
-                channel.close()
-        finally:
-            connection.close()
         receiver = oops_amqp.Receiver(
             self.oops_config, connect, self.queue_name
         )
