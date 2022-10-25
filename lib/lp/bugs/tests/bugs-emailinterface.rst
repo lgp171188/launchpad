@@ -657,7 +657,7 @@ otherwise permission to complete the operation will be denied.)
 We will also add an attachment to the bug.
 
     >>> bug_attachment = bug_four.addAttachment(
-    ...     bug_four.owner, b"Attachment", "No comment", "test.txt"
+    ...     bug_four.owner, b"Attachment", "No comment", "test.txt", url=None
     ... )
 
     >>> submit_commands(bug_four, "private yes")

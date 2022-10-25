@@ -268,6 +268,7 @@ class OnceTests:
                 data=b"filedata",
                 comment="a comment",
                 filename="file1.txt",
+                url=None,
                 is_patch=False,
             )
             self.bugtasks[1].bug.addAttachment(
@@ -275,6 +276,7 @@ class OnceTests:
                 data=b"filedata",
                 comment="a comment",
                 filename="file1.txt",
+                url=None,
                 is_patch=True,
             )
         # We can search for bugs with non-patch attachments...

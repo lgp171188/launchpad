@@ -132,3 +132,9 @@
     padding-right: 0.25em;
     }
 
+/******************************************************************************
+ Attachments portlet
+*/
+.side .portlet .download-attachment {
+    word-break: break-word;
+    }

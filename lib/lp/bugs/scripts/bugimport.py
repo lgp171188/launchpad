@@ -445,6 +445,7 @@ class BugImporter:
             getUtility(IBugAttachmentSet).create(
                 bug=bug,
                 filealias=filealias,
+                url=None,
                 attach_type=attach_type,
                 title=title,
                 message=message,

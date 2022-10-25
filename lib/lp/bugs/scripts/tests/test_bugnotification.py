@@ -1026,7 +1026,7 @@ class TestEmailNotificationsAttachments(
             # another five minutes.  Therefore, we send out separate
             # change notifications.
             return self.bug.addAttachment(
-                self.person, b"content", "a comment", "stuff.txt"
+                self.person, b"content", "a comment", "stuff.txt", url=None
             )
 
     old = cachedproperty("old")(_attachment)

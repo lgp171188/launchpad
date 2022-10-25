@@ -932,6 +932,12 @@
       name="fmt"
       />
   <adapter
+      for="lp.bugs.interfaces.bugattachment.IBugAttachment"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BugAttachmentFormatterAPI"
+      name="fmt"
+      />
+  <adapter
       for="lp.services.webapp.interfaces.ILink"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.LinkFormatterAPI"

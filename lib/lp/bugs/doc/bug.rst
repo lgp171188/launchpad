@@ -742,6 +742,7 @@ Adding an attachment.
     >>> attachment = attachmentset.create(
     ...     bug=firefox_bug,
     ...     filealias=filealias,
+    ...     url=None,
     ...     title="Some info.",
     ...     message=message,
     ... )

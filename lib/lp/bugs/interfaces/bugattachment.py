@@ -22,7 +22,7 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import Bool, Bytes, Choice, Int, TextLine
+from zope.schema import URI, Bool, Bytes, Choice, Int, TextLine
 
 from lp import _
 from lp.bugs.interfaces.hasbug import IHasBug
@@ -90,9 +90,12 @@ class IBugAttachmentView(IHasBug):
     )
     libraryfile = exported(
         Bytes(
-            title=_("The attachment content."), required=True, readonly=True
+            title=_("The attachment content."), required=False, readonly=True
         ),
         exported_as="data",
+    )
+    url = exported(
+        URI(title=_("Attachment URL"), required=False, readonly=True)
     )
     _message_id = Int(title=_("Message ID"))
     message = exported(
@@ -107,6 +110,12 @@ class IBugAttachmentView(IHasBug):
     is_patch = Bool(
         title=_("Patch?"),
         description=_("Is this attachment a patch?"),
+        readonly=True,
+    )
+    displayed_url = URI(
+        title=_(
+            "Download URL of the files or the external URL of the attachment"
+        ),
         readonly=True,
     )
 
@@ -176,6 +185,7 @@ class IBugAttachmentSet(Interface):
     def create(
         bug,
         filealias,
+        url,
         title,
         message,
         type=IBugAttachment["type"].default,
@@ -184,7 +194,9 @@ class IBugAttachmentSet(Interface):
         """Create a new attachment and return it.
 
         :param bug: The `IBug` to which the new attachment belongs.
-        :param filealias: The `IFilealias` containing the data.
+        :param filealias: The `ILibraryFileAlias` containing
+            the data (optional).
+        :param url: External URL of the attachment (optional).
         :param message: The `IMessage` to which this attachment belongs.
         :param type: The type of attachment. See `BugAttachmentType`.
         :param send_notifications: If True, a notification is sent to
