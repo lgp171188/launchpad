@@ -54,7 +54,6 @@ from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.interfaces import (
-    FinishReadOnlyRequestEvent,
     ILaunchpadRoot,
     IOpenLaunchBag,
     IPlacelessAuthUtility,
@@ -272,14 +271,14 @@ class LaunchpadBrowserPublication(
         """
         auth_utility = getUtility(IPlacelessAuthUtility)
         principal = None
-        # +opstats and +haproxy are status URLs that must not query the DB at
-        # all.  This is enforced by webapp/dbpolicy.py. If the request is for
-        # one of those two pages, don't even try to authenticate, because it
-        # may fail.  We haven't traversed yet, so we have to sniff the request
-        # this way.  Even though PATH_INFO is always present in real requests,
-        # we need to tread carefully (``get``) because of test requests in our
+        # +opstats is a status URL that must not query the DB at all.  This
+        # is enforced by lp.services.database.policy.  If the request is for
+        # this page, don't even try to authenticate, because it may fail.
+        # We haven't traversed yet, so we have to sniff the request this
+        # way.  Even though PATH_INFO is always present in real requests, we
+        # need to tread carefully (``get``) because of test requests in our
         # automated tests.
-        if request.get("PATH_INFO") not in ["/+opstats", "/+haproxy"]:
+        if request.get("PATH_INFO") != "/+opstats":
             principal = auth_utility.authenticate(request)
         if principal is not None:
             assert principal.person is not None
@@ -421,7 +420,6 @@ class LaunchpadBrowserPublication(
         if pageid in (
             "RootObject:OpStats",
             "RootObject:+opstats",
-            "RootObject:+haproxy",
         ):
             request.features = NullFeatureController()
             features.install_feature_controller(request.features)
@@ -507,7 +505,7 @@ class LaunchpadBrowserPublication(
         # Abort the transaction on a read-only request.
         # NOTHING AFTER THIS SHOULD CAUSE A RETRY.
         if request.method in ["GET", "HEAD"]:
-            self.finishReadOnlyRequest(request, ob, txn)
+            self.finishReadOnlyRequest(txn)
         elif txn.isDoomed():
             # The following sends an abort to the database, even though the
             # transaction is still doomed.
@@ -529,13 +527,12 @@ class LaunchpadBrowserPublication(
             # calling beforeTraversal or doing proper cleanup.
             pass
 
-    def finishReadOnlyRequest(self, request, ob, txn):
+    def finishReadOnlyRequest(self, txn):
         """Hook called at the end of a read-only request.
 
         By default it abort()s the transaction, but subclasses may need to
         commit it instead, so they must overwrite this.
         """
-        notify(FinishReadOnlyRequestEvent(ob, request))
         txn.abort()
 
     def callTraversalHooks(self, request, ob):

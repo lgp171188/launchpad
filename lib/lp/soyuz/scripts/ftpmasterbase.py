@@ -195,7 +195,7 @@ class SoyuzScript(LaunchpadScript):
         """Script finalization procedure.
 
         'dry-run' command-line option will case the transaction to be
-        immediatelly aborted.
+        immediately aborted.
 
         In normal mode it will ask for user confirmation (see
         `waitForUserConfirmation`) and will commit the transaction or abort

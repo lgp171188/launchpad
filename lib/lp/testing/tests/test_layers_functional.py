@@ -13,7 +13,6 @@ import signal
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
-import amqp
 import six
 from fixtures import EnvironmentVariableFixture, Fixture, TestWithFixtures
 from zope.component import getUtility
@@ -23,6 +22,7 @@ from lp.services.config import config
 from lp.services.librarian.client import LibrarianClient, UploadFailed
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.memcache.client import memcache_client_factory
+from lp.services.messaging import rabbit
 from lp.services.pidfile import pidfile_path
 from lp.testing import TestCase
 from lp.testing.layers import (
@@ -221,7 +221,7 @@ class BaseTestCase(TestCase):
             self.assertFalse(
                 want_librarian_working, "Librarian should be fully operational"
             )
-        # Since we use IMasterStore that doesn't throw either AttributeError
+        # Since we use IPrimaryStore that doesn't throw either AttributeError
         # or ComponentLookupError.
         except TypeError:
             self.assertFalse(
@@ -259,19 +259,10 @@ class BaseTestCase(TestCase):
             )
 
     def testRabbitWorking(self):
-        rabbitmq = config.rabbitmq
         if not self.want_rabbitmq:
-            self.assertEqual(None, rabbitmq.host)
+            self.assertFalse(rabbit.is_configured())
         else:
-            self.assertNotEqual(None, rabbitmq.host)
-            conn = amqp.Connection(
-                host=rabbitmq.host,
-                userid=rabbitmq.userid,
-                password=rabbitmq.password,
-                virtual_host=rabbitmq.virtual_host,
-            )
-            conn.connect()
-            conn.close()
+            rabbit.connect().close()
 
 
 class MemcachedTestCase(BaseTestCase):

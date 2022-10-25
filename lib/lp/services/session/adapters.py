@@ -9,15 +9,19 @@ __all__ = []
 from zope.component import adapter
 from zope.interface import implementer
 
-from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.database.interfaces import (
+    IPrimaryStore,
+    IStandbyStore,
+    IStore,
+)
 from lp.services.database.sqlbase import session_store
 from lp.services.session.interfaces import IUseSessionStore
 
 
 @adapter(IUseSessionStore)
-@implementer(IMasterStore)
-def session_master_store(cls):
-    """Adapt a Session database object to an `IMasterStore`."""
+@implementer(IPrimaryStore)
+def session_primary_store(cls):
+    """Adapt a Session database object to an `IPrimaryStore`."""
     return session_store()
 
 

@@ -13,7 +13,11 @@ from zope.interface import implementer
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStandbyStore, IStore
+from lp.services.database.interfaces import (
+    IPrimaryStore,
+    IStandbyStore,
+    IStore,
+)
 from lp.services.database.sqlbase import quote
 from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.poexportrequest import (
@@ -79,7 +83,7 @@ class POExportRequestSet:
             "pofiles": pofile_ids,
         }
 
-        store = IMasterStore(POExportRequest)
+        store = IPrimaryStore(POExportRequest)
 
         if potemplates:
             # Create requests for all these templates, insofar as the same
@@ -124,13 +128,13 @@ class POExportRequestSet:
             )
 
     def _getOldestLiveRequest(self):
-        """Return the oldest live request on the master store.
+        """Return the oldest live request on the primary store.
 
-        Due to replication lag, the master store is always a little
+        Due to replication lag, the primary store is always a little
         ahead of the standby store that exports come from.
         """
-        master_store = IMasterStore(POExportRequest)
-        sorted_by_id = master_store.find(POExportRequest).order_by(
+        primary_store = IPrimaryStore(POExportRequest)
+        sorted_by_id = primary_store.find(POExportRequest).order_by(
             POExportRequest.id
         )
         return sorted_by_id.first()
@@ -139,8 +143,8 @@ class POExportRequestSet:
         """Return oldest request on the queue."""
         # Due to replication lag, it's possible that the standby store
         # still has copies of requests that have already been completed
-        # and deleted from the master store.  So first get the oldest
-        # request that is "live," i.e. still present on the master
+        # and deleted from the primary store.  So first get the oldest
+        # request that is "live," i.e. still present on the primary
         # store.
         oldest_live = self._getOldestLiveRequest()
         if oldest_live is None:
@@ -157,7 +161,7 @@ class POExportRequestSet:
         # Exports happen off the standby store.  To ensure that export
         # does not happen until requests have been replicated to the
         # standby, they are read primarily from the standby even though they
-        # are deleted on the master afterwards.
+        # are deleted on the primary afterwards.
         head = self._getHeadRequest()
         if head is None:
             return None, None, None, None
@@ -186,7 +190,7 @@ class POExportRequestSet:
     def removeRequest(self, request_ids):
         """See `IPOExportRequestSet`."""
         if request_ids:
-            IMasterStore(POExportRequest).find(
+            IPrimaryStore(POExportRequest).find(
                 POExportRequest, POExportRequest.id.is_in(request_ids)
             ).remove()
 

@@ -43,7 +43,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.database.stormexpr import IsDistinctFrom
@@ -648,8 +648,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
             SourcePackageReleaseFile.sourcepackagerelease
-            == SourcePackageRelease.id,
-            SourcePackageRelease.id == self.sourcepackagereleaseID,
+            == self.sourcepackagereleaseID,
         )
         source_urls = proxied_source_urls(
             [source for source, _ in sources], self
@@ -943,7 +942,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         available_architectures = [
             das.id for das in self.distroarchseries.distroseries.architectures
         ]
-        return IMasterStore(BinaryPackagePublishingHistory).find(
+        return IPrimaryStore(BinaryPackagePublishingHistory).find(
             BinaryPackagePublishingHistory,
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status
@@ -1243,8 +1242,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             (LibraryFileAlias, LibraryFileContent),
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
-            BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
-            BinaryPackageRelease.id == self.binarypackagereleaseID,
+            BinaryPackageFile.binarypackagerelease
+            == self.binarypackagereleaseID,
         )
         binary_urls = proxied_urls(
             [binary for binary, _ in binaries], self.archive
@@ -1350,7 +1349,7 @@ class PublishingSet:
             for das, bpr, overrides in expanded
         )
         already_published = (
-            IMasterStore(BinaryPackagePublishingHistory)
+            IPrimaryStore(BinaryPackagePublishingHistory)
             .find(
                 (
                     BinaryPackagePublishingHistory.distroarchseriesID,
@@ -2238,7 +2237,7 @@ class PublishingSet:
         else:
             removed_by_id = removed_by.id
 
-        affected_pubs = IMasterStore(publication_class).find(
+        affected_pubs = IPrimaryStore(publication_class).find(
             publication_class, publication_class.id.is_in(ids)
         )
         affected_pubs.set(
@@ -2256,7 +2255,7 @@ class PublishingSet:
                     affected_pubs
                 )
             ]
-            IMasterStore(publication_class).find(
+            IPrimaryStore(publication_class).find(
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.id.is_in(debug_ids),
             ).set(
@@ -2284,7 +2283,7 @@ class PublishingSet:
             ),
         ]
         return (
-            IMasterStore(debug_bpph)
+            IPrimaryStore(debug_bpph)
             .using(*origin)
             .find(
                 debug_bpph,

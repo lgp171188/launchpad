@@ -16,7 +16,7 @@ from lp.registry.model.ociproject import OCIProject
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.interfaces import IMasterStore, IStandbyStore
+from lp.services.database.interfaces import IPrimaryStore, IStandbyStore
 from lp.services.looptuner import ITunableLoop, LoopTuner
 
 # These two tuples must be in the same order. They specify the ID
@@ -91,7 +91,7 @@ class BugTaskTargetNameCachesTunableLoop:
         chunk = self.candidates[start:end]
 
         self.transaction.begin()
-        store = IMasterStore(BugTask)
+        store = IPrimaryStore(BugTask)
 
         # Transpose the target rows into lists of object IDs to retrieve.
         ids_to_cache = list(zip(*(target for (target, names) in chunk)))

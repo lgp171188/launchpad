@@ -22,7 +22,7 @@ from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.config import config
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
@@ -259,7 +259,7 @@ class ProcessAcceptedBugsJob(StormBase, BaseRunnableJob):
         job = ProcessAcceptedBugsJob(
             distroseries, sourcepackagerelease, bug_ids
         )
-        IMasterStore(ProcessAcceptedBugsJob).add(job)
+        IPrimaryStore(ProcessAcceptedBugsJob).add(job)
         job.celeryRunOnCommit()
         return job
 

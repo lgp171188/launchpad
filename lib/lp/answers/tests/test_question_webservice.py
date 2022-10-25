@@ -3,10 +3,10 @@
 
 """Webservice unit tests related to Launchpad Questions."""
 
+import json
 from datetime import datetime, timedelta
 
 import pytz
-from simplejson import dumps
 from testtools.matchers import EndsWith
 
 from lp.answers.enums import QuestionStatus
@@ -132,7 +132,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
         response = self.webservice.patch(
             question_json["self_link"],
             "application/json",
-            dumps(dict(title=new_title)),
+            json.dumps(dict(title=new_title)),
             headers=dict(accept="application/xhtml+xml"),
         )
 

@@ -13,3 +13,8 @@ tags:
 series:
   - focal
 subordinate: false
+requires:
+  session-db:
+    interface: pgsql
+  memcache:
+    interface: memcache

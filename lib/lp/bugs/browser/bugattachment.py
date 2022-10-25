@@ -113,7 +113,10 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
             ICanonicalUrlData(context).inside
         )
         if not context.libraryfile:
-            self.field_names = ["title", "patch"]
+            # Remove `contenttype` from the form if there's no file attached.
+            self.field_names = [
+                name for name in self.field_names if name != "contenttype"
+            ]
 
     @property
     def initial_values(self):

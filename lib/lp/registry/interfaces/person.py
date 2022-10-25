@@ -470,7 +470,7 @@ class PersonCreationRationale(DBEnumeratedType):
 
 
 class PersonNameField(BlacklistableContentNameField):
-    """A `Person` team name, which is unique and performs psuedo blacklisting.
+    """A `Person` team name, which is unique and performs pseudo blacklisting.
 
     If the team name is not unique, and the clash is with a private team,
     return the blacklist message.  Also return the blacklist message if the

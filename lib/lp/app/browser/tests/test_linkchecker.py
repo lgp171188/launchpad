@@ -3,9 +3,9 @@
 
 """Unit tests for the LinkCheckerAPI."""
 
+import json
 from random import shuffle
 
-import simplejson
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.linkchecker import LinkCheckerAPI
@@ -22,13 +22,13 @@ class TestLinkCheckerAPI(TestCaseWithFactory):
     BRANCH_URL_TEMPLATE = "/+code/%s"
 
     def check_invalid_links(self, result_json, link_type, invalid_links):
-        link_dict = simplejson.loads(result_json)
+        link_dict = json.loads(result_json)
         links_to_check = link_dict[link_type]["invalid"]
         self.assertEqual(len(invalid_links), len(links_to_check))
         self.assertEqual(set(invalid_links), set(links_to_check))
 
     def check_valid_links(self, result_json, link_type, valid_links):
-        link_dict = simplejson.loads(result_json)
+        link_dict = json.loads(result_json)
         links_to_check = link_dict[link_type]["valid"]
         self.assertEqual(len(valid_links), len(links_to_check))
         self.assertEqual(set(valid_links), set(links_to_check))
@@ -109,7 +109,7 @@ class TestLinkCheckerAPI(TestCaseWithFactory):
         shuffle(bug_urls)
 
         links_to_check = dict(branch_links=branch_urls, bug_links=bug_urls)
-        link_json = simplejson.dumps(links_to_check)
+        link_json = json.dumps(links_to_check)
 
         request = LaunchpadTestRequest(link_hrefs=link_json)
         link_checker = LinkCheckerAPI(object(), request)
@@ -124,7 +124,7 @@ class TestLinkCheckerAPI(TestCaseWithFactory):
         request = LaunchpadTestRequest()
         link_checker = LinkCheckerAPI(object(), request)
         result_json = link_checker()
-        link_dict = simplejson.loads(result_json)
+        link_dict = json.loads(result_json)
         self.assertEqual(link_dict, {})
 
     def test_only_valid_links(self):

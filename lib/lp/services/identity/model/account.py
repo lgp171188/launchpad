@@ -16,7 +16,7 @@ from zope.interface import implementer
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
 from lp.services.helpers import backslashreplace
@@ -119,7 +119,7 @@ class AccountSet:
             identifier = OpenIdIdentifier()
             identifier.account = account
             identifier.identifier = openid_identifier
-            IMasterStore(OpenIdIdentifier).add(identifier)
+            IPrimaryStore(OpenIdIdentifier).add(identifier)
 
         return account
 

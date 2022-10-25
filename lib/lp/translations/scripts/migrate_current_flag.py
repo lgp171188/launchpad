@@ -13,7 +13,7 @@ from zope.interface import implementer
 
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.translations.model.potemplate import POTemplate
 from lp.translations.model.translationmessage import TranslationMessage
@@ -36,7 +36,7 @@ class TranslationMessageImportedFlagUpdater:
         self.logger.info(
             "Fixing up a total of %d TranslationMessages." % (self.total)
         )
-        self.store = IMasterStore(Product)
+        self.store = IPrimaryStore(Product)
 
     def isDone(self):
         """See `ITunableLoop`."""
@@ -126,7 +126,7 @@ class MigrateCurrentFlagProcess:
         self.logger = logger
         if logger is None:
             self.logger = logging.getLogger("migrate-current-flag")
-        self.store = IMasterStore(Product)
+        self.store = IPrimaryStore(Product)
 
     def getProductsWithTemplates(self):
         """Get Product.ids for projects with any translations templates."""

@@ -4,7 +4,7 @@
 """Connect feature flags into scopes where they can be used.
 
 The most common is flags scoped by some attribute of a web request, such as
-the page ID or the server name.  But other types of scope can also match code
+the page ID or a team name.  But other types of scope can also match code
 run from cron scripts and potentially also other places.
 """
 
@@ -24,7 +24,6 @@ __all__ = [
 import re
 from itertools import zip_longest
 
-import lp.services.config
 from lp.registry.interfaces.person import IPerson
 from lp.services.propertycache import cachedproperty
 
@@ -182,25 +181,6 @@ class UserSliceScope(ScopeWithPerson):
         return (person_id % divisor) == modulus
 
 
-class ServerScope(BaseScope):
-    """Matches the current server.
-
-    For example, the scope server.lpnet is active when is_lpnet is set to True
-    in the Launchpad configuration.
-    """
-
-    pattern = r"server\."
-
-    def lookup(self, scope_name):
-        """Match the current server as a scope."""
-        server_name = scope_name.split(".", 1)[1]
-        try:
-            return lp.services.config.config["launchpad"]["is_" + server_name]
-        except KeyError:
-            pass
-        return False
-
-
 class ScriptScope(BaseScope):
     """Matches the name of the currently running script.
 
@@ -236,7 +216,7 @@ class FixedScope(BaseScope):
 # we can for example show all of them in an admin page.  Any new scope will
 # need a scope handler and that scope handler has to be added to this list.
 # See BaseScope for hints as to what a scope handler should look like.
-HANDLERS = {DefaultScope, PageScope, TeamScope, ServerScope, ScriptScope}
+HANDLERS = {DefaultScope, PageScope, TeamScope, ScriptScope}
 
 
 class MultiScopeHandler:
@@ -296,7 +276,6 @@ class ScopesFromRequest(MultiScopeHandler):
         scopes.extend(
             [
                 PageScope(request),
-                ServerScope(),
                 TeamScope(person_from_request),
                 UserSliceScope(person_from_request),
             ]

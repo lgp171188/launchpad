@@ -3,6 +3,7 @@
 
 """Tests for the lp.testing.yuixhr."""
 
+import json
 import os
 import re
 import sys
@@ -10,7 +11,6 @@ import tempfile
 import types
 from shutil import rmtree
 
-import simplejson
 import transaction
 from storm.exceptions import DisconnectionError
 from testtools.testcase import ExpectedException
@@ -207,7 +207,7 @@ class TestYUITestFixtureController(TestCase):
             method="POST",
         )
         content = view()
-        self.assertEqual({"hello": "world"}, simplejson.loads(content))
+        self.assertEqual({"hello": "world"}, json.loads(content))
         self.assertEqual(
             "application/json", view.request.response.getHeader("Content-Type")
         )
@@ -218,7 +218,7 @@ class TestYUITestFixtureController(TestCase):
             form={"action": "setup", "fixtures": "make_product"},
             method="POST",
         )
-        data = simplejson.loads(view())
+        data = json.loads(view())
         # The licenses is just an example.
         self.assertEqual(["GNU GPL v2"], data["product"]["licenses"])
 
@@ -228,7 +228,7 @@ class TestYUITestFixtureController(TestCase):
             form={"action": "setup", "fixtures": "make_product"},
             method="POST",
         )
-        data = simplejson.loads(view())
+        data = json.loads(view())
         self.assertEqual(
             "tag:launchpad.net:2008:redacted",
             data["product"]["project_reviewed"],
@@ -240,7 +240,7 @@ class TestYUITestFixtureController(TestCase):
             form={"action": "setup", "fixtures": "naughty_make_product"},
             method="POST",
         )
-        data = simplejson.loads(view())
+        data = json.loads(view())
         self.assertEqual(
             "tag:launchpad.net:2008:redacted",
             data["product"]["project_reviewed"],
@@ -252,7 +252,7 @@ class TestYUITestFixtureController(TestCase):
             form={"action": "setup", "fixtures": "make_product_loggedin"},
             method="POST",
         )
-        data = simplejson.loads(view())
+        data = json.loads(view())
         self.assertEqual(False, data["product"]["project_reviewed"])
 
     def test_add_cleanup_decorator(self):
@@ -288,7 +288,7 @@ class TestYUITestFixtureController(TestCase):
             form={
                 "action": "teardown",
                 "fixtures": "baseline",
-                "data": simplejson.dumps({"bonjour": "monde"}),
+                "data": json.dumps({"bonjour": "monde"}),
             },
             method="POST",
         )
@@ -317,7 +317,7 @@ class TestYUITestFixtureController(TestCase):
         # Committing the transaction makes sure that we are not just seeing
         # the effect of an abort, below.
         transaction.commit()
-        name = simplejson.loads(data)["product"]["name"]
+        name = json.loads(data)["product"]["name"]
         products = getUtility(IProductSet)
         # The new product exists after the setup.
         self.assertFalse(products.getByName(name) is None)
@@ -350,7 +350,7 @@ class TestYUITestFixtureController(TestCase):
             form={
                 "action": "teardown",
                 "fixtures": "baseline,second",
-                "data": simplejson.dumps({"bonjour": "monde"}),
+                "data": json.dumps({"bonjour": "monde"}),
             },
             method="POST",
         )

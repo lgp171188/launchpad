@@ -216,7 +216,7 @@ from lp.services.compat import message_as_bytes
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.interfaces import (
-    IMasterStore,
+    IPrimaryStore,
     IStore,
     IStoreSelector,
 )
@@ -335,18 +335,18 @@ from lp.translations.utilities.sanitize import sanitize_translations_from_webui
 SPACE = " "
 
 
-def default_master_store(func):
-    """Decorator to temporarily set the default Store to the master.
+def default_primary_store(func):
+    """Decorator to temporarily set the default Store to the primary.
 
     In some cases, such as in the middle of a page test story,
     we might be calling factory methods with the default Store set
     to the standby which breaks stuff. For instance, if we set an account's
-    password that needs to happen on the master store and this is forced.
+    password that needs to happen on the primary store and this is forced.
     However, if we then read it back the default Store has to be used.
     """
 
     @wraps(func)
-    def with_default_master_store(*args, **kw):
+    def with_default_primary_store(*args, **kw):
         try:
             store_selector = getUtility(IStoreSelector)
         except ComponentLookupError:
@@ -358,7 +358,7 @@ def default_master_store(func):
         finally:
             store_selector.pop()
 
-    return mergeFunctionMetadata(func, with_default_master_store)
+    return mergeFunctionMetadata(func, with_default_primary_store)
 
 
 # We use this for default parameters where None has a specific meaning. For
@@ -382,7 +382,7 @@ class ObjectFactory(metaclass=AutoDecorateMetaClass):
     # This allocates process-wide unique integers.  We count on Python doing
     # only cooperative threading to make this safe across threads.
 
-    __decorators = (default_master_store,)
+    __decorators = (default_primary_store,)
 
     _unique_int_counter = count(100000)
 
@@ -575,7 +575,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         # Identifier needed to be created, it will not be usable in the
         # production environments so access to execute this stored
         # procedure cannot be used to compromise accounts.
-        IMasterStore(OpenIdIdentifier).execute(
+        IPrimaryStore(OpenIdIdentifier).execute(
             "SELECT add_test_openid_identifier(%s)", (account.id,)
         )
 
@@ -674,7 +674,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         # To make the person someone valid in Launchpad, validate the
         # email.
         if email_address_status == EmailAddressStatus.PREFERRED:
-            account = IMasterStore(Account).get(Account, person.accountID)
+            account = IPrimaryStore(Account).get(Account, person.accountID)
             account.status = AccountStatus.ACTIVE
             person.setPreferredEmail(email)
 
@@ -750,7 +750,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if set_preferred_email:
             # setPreferredEmail no longer activates the account
             # automatically.
-            account = IMasterStore(Account).get(Account, person.accountID)
+            account = IPrimaryStore(Account).get(Account, person.accountID)
             account.reactivate("Activated by factory.makePersonByName")
             person.setPreferredEmail(email)
 
@@ -761,7 +761,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 person.mailing_list_auto_subscribe_policy = (
                     MailingListAutoSubscribePolicy.NEVER
                 )
-        account = IMasterStore(Account).get(Account, person.accountID)
+        account = IPrimaryStore(Account).get(Account, person.accountID)
         getUtility(IEmailAddressSet).new(
             alternative_address, person, EmailAddressStatus.VALIDATED
         )
@@ -2349,7 +2349,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if bug is not None and target is not None:
             existing_bugtask = removeSecurityProxy(bug).getBugTask(target)
             if existing_bugtask is not None:
-                return existing_bugtask
+                return ProxyFactory(existing_bugtask)
 
         # If we are adding a task to an existing bug, and no target is
         # is specified, we use the same pillar as already exists to ensure
@@ -2589,7 +2589,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if url:
             if data or filename:
                 raise ValueError(
-                    "Either `url` or `data` / `filename` " "can be provided."
+                    "Either `url` or `data` / `filename` can be provided."
                 )
         else:
             if data is None:
@@ -2642,8 +2642,10 @@ class LaunchpadObjectFactory(ObjectFactory):
             subscriber = self.makePerson()
         if subscribed_by is None:
             subscribed_by = subscriber
-        return removeSecurityProxy(target).addBugSubscriptionFilter(
-            subscriber, subscribed_by
+        return ProxyFactory(
+            removeSecurityProxy(target).addBugSubscriptionFilter(
+                subscriber, subscribed_by
+            )
         )
 
     def makeSignedMessage(
@@ -5373,7 +5375,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             fingerprint = self.getUniqueUnicode("fingerprint")
         if public_key is None:
             public_key = self.getUniqueHexString(64).encode("ASCII")
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         signing_key = SigningKey(
             key_type=key_type,
             fingerprint=fingerprint,
@@ -6402,6 +6404,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         display_name=None,
         distro_series=None,
         build_channels=None,
+        features=None,
         processors=None,
         date_created=DEFAULT,
     ):
@@ -6424,6 +6427,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             display_name,
             distro_series,
             build_channels,
+            features=features,
             processors=processors,
             date_created=date_created,
         )

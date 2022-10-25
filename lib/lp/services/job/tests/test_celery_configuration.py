@@ -2,8 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from contextlib import contextmanager
+from textwrap import dedent
 
-from testtools.matchers import MatchesRegex
+from kombu.utils.url import parse_url
+from testtools.matchers import MatchesListwise, MatchesRegex
 
 from lp.services.config import config
 from lp.testing import TestCase
@@ -45,7 +47,9 @@ class TestCeleryWorkerConfiguration(TestCase):
         # The port changes between test runs.
         self.assertThat(
             config["broker_url"],
-            MatchesRegex(r"amqp://guest:guest@localhost:\d+//\Z"),
+            MatchesListwise(
+                [MatchesRegex(r"amqp://guest:guest@localhost:\d+//\Z")]
+            ),
         )
         self.assertFalse(config["task_create_missing_queues"])
         self.assertEqual("job", config["task_default_exchange"])
@@ -159,3 +163,25 @@ class TestCeleryWorkerConfiguration(TestCase):
             configure,
             self.command + ["--queue=foo"],
         )
+
+    def test_compat_config(self):
+        # The old-style host/userid/password/virtual_host configuration
+        # format still works.
+        from lp.services.job.celeryconfig import configure
+
+        [broker_url] = config.rabbitmq.broker_urls.split()
+        parsed_url = parse_url(broker_url)
+        service_config = dedent(
+            """\
+            [rabbitmq]
+            broker_urls: none
+            host: {hostname}:{port}
+            userid: {userid}
+            password: {password}
+            virtual_host: {virtual_host}
+            """.format(
+                **parsed_url
+            )
+        )
+        with changed_config(service_config):
+            self.check_default_common_parameters(configure([""]))

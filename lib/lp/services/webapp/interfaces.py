@@ -818,23 +818,6 @@ class ICheckBoxWidgetLayout(IAlwaysSubmittedWidget):
     """A widget that is displayed like a check box with label to the right."""
 
 
-class IFinishReadOnlyRequestEvent(Interface):
-    """An event which gets sent when the publication is ended"""
-
-    object = Attribute("The object to which this request pertains.")
-
-    request = Attribute("The active request.")
-
-
-@implementer(IFinishReadOnlyRequestEvent)
-class FinishReadOnlyRequestEvent:
-    """An event which gets sent when the publication is ended"""
-
-    def __init__(self, ob, request):
-        self.object = ob
-        self.request = request
-
-
 class StormRangeFactoryError(Exception):
     """Raised when a Storm result set cannot be used for slicing by a
     StormRangeFactory.

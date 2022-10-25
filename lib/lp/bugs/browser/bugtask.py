@@ -25,6 +25,7 @@ __all__ = [
     "get_visible_comments",
 ]
 
+import json
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -46,7 +47,6 @@ from lazr.restful.interfaces import (
 )
 from lazr.restful.utils import smartquote
 from pytz import utc
-from simplejson import dumps
 from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import adapter, getAdapter, getMultiAdapter, getUtility
@@ -962,7 +962,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
         # Unwrap the security proxy. - official_tags is a security proxy
         # wrapped list.
         available_tags = list(self.context.bug.official_tags)
-        return "var available_official_tags = %s;" % dumps(available_tags)
+        return "var available_official_tags = %s;" % json.dumps(available_tags)
 
     @property
     def user_is_admin(self):
@@ -1775,7 +1775,7 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
                 self.request.response.setHeader(
                     "Content-type", "application/json"
                 )
-                return dumps(None)
+                return json.dumps(None)
             launchbag = getUtility(ILaunchBag)
             launchbag.add(bug.default_bugtask)
             # If we are deleting the current highlighted bugtask via ajax,
@@ -1788,7 +1788,7 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
                 self.request.response.setHeader(
                     "Content-type", "application/json"
                 )
-                return dumps(dict(bugtask_url=next_url))
+                return json.dumps(dict(bugtask_url=next_url))
             # No redirect required so return the new bugtask table HTML.
             view = getMultiAdapter(
                 (bug, self.request), name="+bugtasks-and-nominations-table"

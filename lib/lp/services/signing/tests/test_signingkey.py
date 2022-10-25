@@ -18,7 +18,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.signing.enums import SigningKeyType, SigningMode
 from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKeySet,
@@ -75,7 +75,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         key = SigningKey.generate(SigningKeyType.UEFI, "this is my key")
         self.assertIsInstance(key, SigningKey)
 
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         store.invalidate()
 
         rs = store.find(SigningKey)
@@ -109,7 +109,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         )
         self.assertIsInstance(key, SigningKey)
 
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         store.invalidate()
 
         rs = store.find(SigningKey)
@@ -141,7 +141,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         )
         self.assertIsInstance(key, SigningKey)
 
-        store = IMasterStore(SigningKey)
+        store = IPrimaryStore(SigningKey)
         store.flush()
 
         # This should give back the same key

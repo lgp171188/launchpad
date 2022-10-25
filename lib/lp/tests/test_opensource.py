@@ -38,9 +38,7 @@ def add_testable_opensource_package(suite, package):
     doctest_files = {}
     for docsdir in packages:
         for filename in os.listdir(os.path.join(topdir, docsdir)):
-            # XXX cjwatson 2022-06-20: This should be '.rst', but
-            # launchpadlib's doctests don't work with Python 3 yet.
-            if os.path.splitext(filename)[1] == ".txt":
+            if os.path.splitext(filename)[1] == ".rst":
                 doctest_files[filename] = os.path.join(docsdir, filename)
     # Sort the tests.
     for filename in sorted(doctest_files):

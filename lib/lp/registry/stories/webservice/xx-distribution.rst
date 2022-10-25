@@ -197,12 +197,12 @@ returning None if there isn't one.
 
 Prepare stuff.
 
+    >>> import json
     >>> from zope.component import getUtility
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from simplejson import dumps
 
     >>> login("admin@canonical.com")
     >>> ubuntu_distro = getUtility(IDistributionSet).getByName("ubuntu")
@@ -235,7 +235,7 @@ Mark new mirror as official and a country mirror.
     >>> response = karl_webservice.patch(
     ...     antarctica_patch_target["self_link"],
     ...     "application/json",
-    ...     dumps(patch),
+    ...     json.dumps(patch),
     ... )
 
     >>> antarctica = webservice.get("/+countries/AQ").jsonBody()

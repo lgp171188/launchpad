@@ -380,6 +380,60 @@ class TestFeedSwift(TestCase):
             finally:
                 swift_client.close()
 
+    def test_multiple_feed_instances_race(self):
+        # The feed process copes with one instance removing its files in
+        # parallel with another instance running.  Simulate this with a
+        # remove_func that removes other instances' files as well.
+        def remove_this_and_others(path):
+            os.unlink(path)
+            for lfc in self.lfcs:
+                if (lfc.id % 3) != 0:
+                    other_path = swift.filesystem_path(lfc.id)
+                    try:
+                        os.unlink(other_path)
+                    except FileNotFoundError:
+                        pass
+
+        log = BufferLogger()
+
+        # Confirm that files exist on disk where we expect to find them.
+        for lfc in self.lfcs:
+            path = swift.filesystem_path(lfc.id)
+            self.assertTrue(os.path.exists(path))
+
+        # Migrate all the files for the first instance into Swift,
+        # pretending that other instances are running in parallel.
+        swift.to_swift(
+            log,
+            instance_id=0,
+            num_instances=3,
+            remove_func=remove_this_and_others,
+        )
+
+        # All the matching files are gone from disk (some removed by the
+        # first instance, others by our remove_func).
+        for lfc in self.lfcs:
+            self.assertFalse(os.path.exists(swift.filesystem_path(lfc.id)))
+
+        # All the files migrated by this instance are in Swift.
+        swift_client = self.swift_fixture.connect()
+        try:
+            for lfc, contents in zip(self.lfcs, self.contents):
+                container, name = swift.swift_location(lfc.id)
+                if (lfc.id % 3) == 0:
+                    headers, obj = swift_client.get_object(container, name)
+                    self.assertEqual(contents, obj, "Did not round trip")
+                else:
+                    self.assertRaises(
+                        swiftclient.ClientException,
+                        swift.quiet_swiftclient,
+                        swift_client.get_object,
+                        container,
+                        name,
+                    )
+        finally:
+            swift_client.close()
+
     def test_swift_timeout(self):
         # The librarian's Swift connections honour the configured timeout.
         self.pushConfig(

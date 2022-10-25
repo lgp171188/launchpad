@@ -74,7 +74,7 @@
                  tal:define="patch patch_task/bug/latest_patch;
                              age python:view.patchAge(patch)"
                  tal:attributes="id string:patch-cell-${repeat/patch_task/index}">
-                   <a tal:attributes="href patch/displayed_url"
+                   <a tal:attributes="href patch/displayed_url; rel python:patch.url and 'nofollow' or None"
                       tal:content="age/fmt:approximateduration"></a>
                <div class="popupTitle"
                     tal:attributes="id string:patch-popup-${repeat/patch_task/index};">
@@ -82,9 +82,8 @@
                     <strong>From:</strong>
                     <a tal:replace="structure submitter/fmt:link"></a><br/>
                     <strong>Link:</strong>
-                    <a tal:attributes="href patch/displayed_url"
-                       tal:content="patch/libraryfile/filename | patch/url"></a></p>
-                 <p tal:content="string:${patch/title}"></p>
+                    <a tal:replace="structure patch/fmt:attachment_link" />
+                 </p>
                </div>
                <script type="text/javascript" tal:content="string:
                  LPJS.use('base', 'node', 'event', function(Y) {

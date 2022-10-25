@@ -30,13 +30,12 @@ __all__ = [
     "TeamReassignmentView",
 ]
 
-
+import json
 import math
 from datetime import datetime, timedelta
 from urllib.parse import unquote
 
 import pytz
-import simplejson
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
@@ -1061,7 +1060,7 @@ class TeamMailingListArchiveView(LaunchpadView):
         # XXX: jcsackett 18-1-2012: This needs to be updated to use the
         # grackle client, once that is available, instead of returning
         # an empty list as it does now.
-        return simplejson.loads("[]")
+        return json.loads("[]")
 
 
 class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):

@@ -11,11 +11,11 @@ __all__ = [
     "BugSubscriptionListView",
 ]
 
+import json
 from typing import List
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache, IWebServiceClientRequest
-from simplejson import dumps
 from zope import formlib
 from zope.formlib.itemswidgets import RadioWidget
 from zope.formlib.widget import CustomWidgetFactory
@@ -663,7 +663,7 @@ class BugPortletSubscribersWithDetails(LaunchpadView):
 
     @property
     def subscriber_data_js(self):
-        return dumps(self.subscriber_data)
+        return json.dumps(self.subscriber_data)
 
     def render(self):
         """Override the default render() to return only JSON."""

@@ -8,9 +8,9 @@ __all__ = [
     "ApportJobDerived",
 ]
 
+import json
 from io import BytesIO
 
-import simplejson
 import six
 from lazr.delegates import delegate_to
 from storm.expr import And
@@ -60,10 +60,10 @@ class ApportJob(StormBase):
     # only delegates to ApportJob we can't simply directly access the
     # _json_data property, so we use a getter and setter here instead.
     def _set_metadata(self, metadata):
-        self._json_data = six.ensure_text(simplejson.dumps(metadata, "utf-8"))
+        self._json_data = six.ensure_text(json.dumps(metadata, "utf-8"))
 
     def _get_metadata(self):
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     metadata = property(_get_metadata, _set_metadata)
 
@@ -76,7 +76,7 @@ class ApportJob(StormBase):
             dict.
         """
         super().__init__()
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         self.job = Job()
         self.blob = blob
         self.job_type = job_type

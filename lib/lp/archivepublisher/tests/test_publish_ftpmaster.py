@@ -34,7 +34,7 @@ from lp.archivepublisher.scripts.publish_ftpmaster import (
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.services.osutils import write_file
 from lp.services.scripts.base import LaunchpadScriptFailure
@@ -88,8 +88,7 @@ def write_marker_file(path, contents, mode=None):
     :param mode: If given, explicitly set the file to this permission mode.
     """
     with open(os.path.join(*path), "w") as marker:
-        marker.write(contents)
-        marker.flush()
+        print(contents, end="", file=marker, flush=True)
         if mode is not None:
             os.fchmod(marker.fileno(), mode)
 
@@ -1157,7 +1156,7 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         # to publish such distributions.
         series = self.makeDistroSeriesNeedingIndexes()
         pub_config = get_pub_config(series.distribution)
-        IMasterStore(pub_config).remove(pub_config)
+        IPrimaryStore(pub_config).remove(pub_config)
         script = self.makeScript(series.distribution)
         self.assertEqual([], script.listSuitesNeedingIndexes(series))
 

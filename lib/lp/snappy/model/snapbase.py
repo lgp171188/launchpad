@@ -7,7 +7,11 @@ __all__ = [
     "SnapBase",
 ]
 
+from typing import Dict, Optional
+
 import pytz
+from lazr.enum import Item
+from storm.databases.postgres import JSON as PgJSON
 from storm.locals import (
     JSON,
     Bool,
@@ -27,12 +31,13 @@ from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.snappy.interfaces.snapbase import (
     CannotDeleteSnapBase,
     ISnapBase,
     ISnapBaseSet,
     NoSuchSnapBase,
+    SnapBaseFeature,
 )
 from lp.soyuz.interfaces.archive import (
     ArchiveDependencyError,
@@ -69,6 +74,8 @@ class SnapBase(Storm):
 
     is_default = Bool(name="is_default", allow_none=False)
 
+    _features = PgJSON(name="features", allow_none=True)
+
     def __init__(
         self,
         registrant,
@@ -76,6 +83,7 @@ class SnapBase(Storm):
         display_name,
         distro_series,
         build_channels,
+        features: Optional[Dict[Item, bool]],
         date_created=DEFAULT,
     ):
         super().__init__()
@@ -85,7 +93,28 @@ class SnapBase(Storm):
         self.distro_series = distro_series
         self.build_channels = build_channels
         self.date_created = date_created
+        self.features = features
         self.is_default = False
+
+    @property
+    def features(self) -> Dict[Item, bool]:
+        if self._features is None:
+            return {}
+        features = {}
+        for token, is_enabled in self._features.items():
+            try:
+                term = SnapBaseFeature.getTermByToken(token)
+            except LookupError:
+                continue
+            features[term.value] = is_enabled
+        return features
+
+    @features.setter
+    def features(self, value: Optional[Dict[Item, bool]]) -> None:
+        features = {}
+        for item, is_enabled in (value or {}).items():
+            features[item.title] = is_enabled
+        self._features = features
 
     def _getProcessors(self):
         return list(
@@ -217,17 +246,19 @@ class SnapBaseSet:
         display_name,
         distro_series,
         build_channels,
+        features,
         processors=None,
         date_created=DEFAULT,
     ):
         """See `ISnapBaseSet`."""
-        store = IMasterStore(SnapBase)
+        store = IPrimaryStore(SnapBase)
         snap_base = SnapBase(
             registrant,
             name,
             display_name,
             distro_series,
             build_channels,
+            features,
             date_created=date_created,
         )
         store.add(snap_base)

@@ -17,7 +17,7 @@ from lp.registry.enums import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distroseriesdifference import DistroSeriesDifference
 from lp.services.database import bulk
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
@@ -51,7 +51,7 @@ def find_dsd_for(dsp, package):
     :param dsp: `DistroSeriesParent`.
     :param package: `SourcePackageName`.
     """
-    store = IMasterStore(DistroSeriesDifference)
+    store = IPrimaryStore(DistroSeriesDifference)
     return store.find(
         DistroSeriesDifference,
         DistroSeriesDifference.derived_series == dsp.derived_series,
@@ -695,7 +695,7 @@ class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.store = IMasterStore(DistroSeriesDifference)
+        self.store = IPrimaryStore(DistroSeriesDifference)
 
     def getJobSource(self):
         return getUtility(IDistroSeriesDifferenceJobSource)

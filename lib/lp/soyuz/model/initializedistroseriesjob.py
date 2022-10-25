@@ -9,7 +9,7 @@ from zope.interface import implementer, provider
 
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.config import config
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.soyuz.interfaces.distributionjob import (
@@ -79,7 +79,7 @@ class InitializeDistroSeriesJob(DistributionJobDerived):
             corresponding exactly to each parent.  The  name *must* be set
             if the corresponding overlays boolean is True.
         """
-        store = IMasterStore(DistributionJob)
+        store = IPrimaryStore(DistributionJob)
         # Only one InitializeDistroSeriesJob can be present at a time.
         distribution_job = store.find(
             DistributionJob,

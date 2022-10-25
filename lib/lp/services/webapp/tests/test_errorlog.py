@@ -9,7 +9,6 @@ import traceback
 from textwrap import dedent
 
 import oops_amqp
-import pytz
 import testtools
 from fixtures import TempDir
 from lazr.batchnavigator.interfaces import InvalidBatchSizeError
@@ -39,8 +38,6 @@ from lp.services.webapp.errorlog import (
 from lp.services.webapp.interfaces import IUnloggedException, NoReferrerError
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
-
-UTC = pytz.utc
 
 
 class ArbitraryException(Exception):

@@ -36,10 +36,10 @@ class BugAttachment(StormBase):
         allow_none=False,
         default=IBugAttachment["type"].default,
     )
-    title = Unicode(allow_none=False)
-    libraryfile_id = Int(name="libraryfile")
+    _title = Unicode(name="title", allow_none=True)
+    libraryfile_id = Int(name="libraryfile", allow_none=True)
     libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
-    url = Unicode()
+    url = Unicode(allow_none=True)
     _message_id = Int(name="message", allow_none=False)
     _message = Reference(_message_id, "Message.id")
 
@@ -59,6 +59,18 @@ class BugAttachment(StormBase):
         self.url = url
         self._message = message
         self.type = type
+
+    @property
+    def title(self) -> str:
+        if self._title:
+            return self._title
+        if self.libraryfile:
+            return self.libraryfile.filename
+        return self.url
+
+    @title.setter
+    def title(self, title) -> None:
+        self._title = title
 
     @cachedproperty
     def message(self):

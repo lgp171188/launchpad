@@ -44,6 +44,7 @@ from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.feeds.interfaces.application import IFeedsApplication
 from lp.services.webapp import (
     Navigation,
@@ -126,7 +127,10 @@ class FeedsNavigation(Navigation):
                 raise NotFound(self, "", self.request)
             bug_id = stack.pop()
             if bug_id.startswith("+"):
-                if config.launchpad.is_bug_search_feed_active:
+                if (
+                    config.launchpad.is_bug_search_feed_active
+                    and not getFeatureFlag("bugs.search_feed.disabled")
+                ):
                     return getUtility(IBugTaskSet)
                 else:
                     raise Unauthorized("Bug search feed deactivated")

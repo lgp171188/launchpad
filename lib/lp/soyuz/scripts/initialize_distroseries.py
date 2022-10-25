@@ -22,7 +22,7 @@ from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database import bulk
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.scripts import log
 from lp.soyuz.adapters.packagelocation import PackageLocation
@@ -135,7 +135,7 @@ class InitializeDistroSeries:
         self.overlays = overlays
         self.overlay_pockets = overlay_pockets
         self.overlay_components = overlay_components
-        self._store = IMasterStore(DistroSeries)
+        self._store = IPrimaryStore(DistroSeries)
 
         self.first_derivation = (
             not self.distroseries.distribution.has_published_sources

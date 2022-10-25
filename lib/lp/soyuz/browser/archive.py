@@ -1137,7 +1137,7 @@ class ArchivePackagesView(ArchiveSourcePackageListViewBase):
     def is_copy(self):
         """Return whether the context of this view is a copy archive."""
         # This property enables menu items to be shared between
-        # context and view menues.
+        # context and view menus.
         return self.context.is_copy
 
     @cachedproperty

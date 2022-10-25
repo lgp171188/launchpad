@@ -47,7 +47,7 @@ from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.bulk import create
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.identity.interfaces.emailaddress import (
@@ -295,7 +295,7 @@ class RevisionSet:
         if "@" not in email_address:
             email_address = None
 
-        store = IMasterStore(RevisionAuthor)
+        store = IPrimaryStore(RevisionAuthor)
         author = RevisionAuthor(name=revision_author, email=email_address)
         store.add(author)
         author.linkToLaunchpadPerson()
@@ -357,7 +357,7 @@ class RevisionSet:
             foo@bar.com (Foo Bar)
         :return: a dict of name -> RevisionAuthor
         """
-        store = IMasterStore(Revision)
+        store = IPrimaryStore(Revision)
         author_names = set(author_names)
         authors = {}
         for author in store.find(
@@ -693,7 +693,7 @@ class RevisionSet:
         """See `IRevisionSet`."""
         # Storm doesn't handle remove a limited result set:
         #    FeatureError: Can't remove a sliced result set
-        store = IMasterStore(RevisionCache)
+        store = IPrimaryStore(RevisionCache)
         epoch = datetime.now(tz=pytz.UTC) - timedelta(days=30)
         subquery = Select(
             [RevisionCache.id],

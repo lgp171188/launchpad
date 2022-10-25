@@ -10,7 +10,7 @@ from zope.interface import implementer
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.model.distroseries import DistroSeries
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.services.scripts.base import LaunchpadScript
 
@@ -115,7 +115,7 @@ class ExecuteLoop:
             self.statement.splitlines()[0],
             chunk_size,
         )
-        store = IMasterStore(DistroSeries)
+        store = IPrimaryStore(DistroSeries)
         result = store.execute(
             self.statement,
             (

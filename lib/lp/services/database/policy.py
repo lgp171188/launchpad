@@ -30,7 +30,7 @@ from lp.services.database.interfaces import (
     STANDBY_FLAVOR,
     DisallowedStore,
     IDatabasePolicy,
-    IMasterStore,
+    IPrimaryStore,
     IStandbyStore,
     IStoreSelector,
 )
@@ -142,7 +142,7 @@ class BaseDatabasePolicy:
 
             # Attach our marker interfaces so our adapters don't lie.
             if flavor == PRIMARY_FLAVOR:
-                alsoProvides(store, IMasterStore)
+                alsoProvides(store, IPrimaryStore)
             else:
                 alsoProvides(store, IStandbyStore)
 
@@ -225,7 +225,7 @@ def LaunchpadDatabasePolicyFactory(request):
     # to sniff the request this way.  Even though PATH_INFO is always
     # present in real requests, we need to tread carefully (``get``) because
     # of test requests in our automated tests.
-    if request.get("PATH_INFO") in ["/+opstats", "/+haproxy"]:
+    if request.get("PATH_INFO") == "/+opstats":
         return DatabaseBlockedPolicy(request)
     else:
         return LaunchpadDatabasePolicy(request)

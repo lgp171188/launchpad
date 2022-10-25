@@ -11,9 +11,9 @@ __all__ = [
     "ThirtyDayCommercialExpirationJob",
 ]
 
+import json
 from datetime import datetime, timedelta
 
-import simplejson
 import six
 from lazr.delegates import delegate_to
 from pytz import utc
@@ -48,7 +48,7 @@ from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
@@ -125,7 +125,7 @@ class ProductJob(StormBase):
 
     @property
     def metadata(self):
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     def __init__(self, product, job_type, metadata):
         """Constructor.
@@ -138,7 +138,7 @@ class ProductJob(StormBase):
         self.job = Job()
         self.product = product
         self.job_type = job_type
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         self._json_data = six.ensure_text(json_data)
 
 
@@ -191,7 +191,7 @@ class ProductJobDerived(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """Iterate through all ready ProductJobs."""
-        store = IMasterStore(ProductJob)
+        store = IPrimaryStore(ProductJob)
         jobs = store.find(
             ProductJob,
             And(

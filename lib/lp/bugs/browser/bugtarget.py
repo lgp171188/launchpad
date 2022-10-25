@@ -18,6 +18,7 @@ __all__ = [
 ]
 
 import http.client
+import json
 from datetime import datetime
 from functools import partial
 from io import BytesIO
@@ -26,7 +27,6 @@ from urllib.parse import quote, urlencode
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
-from simplejson import dumps
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields
@@ -1362,8 +1362,8 @@ class OfficialBugTagsManageView(LaunchpadEditFormView):
     @property
     def tags_js_data(self):
         """Return the JSON representation of the bug tags."""
-        # The model returns dict and list respectively but dumps blows up on
-        # security proxied objects.
+        # The model returns dict and list respectively, but json.dumps blows
+        # up on security proxied objects.
         used_tags = removeSecurityProxy(
             self.context.getUsedBugTagsWithOpenCounts(self.user)
         )
@@ -1374,9 +1374,9 @@ class OfficialBugTagsManageView(LaunchpadEditFormView):
                       var valid_name_pattern = %s;
                   </script>
                """ % (
-            dumps(used_tags),
-            dumps(official_tags),
-            dumps(valid_name_pattern.pattern),
+            json.dumps(used_tags),
+            json.dumps(official_tags),
+            json.dumps(valid_name_pattern.pattern),
         )
 
     @property

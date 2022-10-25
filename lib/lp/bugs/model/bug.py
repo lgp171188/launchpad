@@ -1681,13 +1681,6 @@ class Bug(SQLBase, InformationTypeMixin):
         else:
             attach_type = BugAttachmentType.UNSPECIFIED
 
-        if description:
-            title = description
-        elif file_alias:
-            title = file_alias.filename
-        else:
-            title = url
-
         if IMessage.providedBy(comment):
             message = comment
         else:
@@ -1700,7 +1693,7 @@ class Bug(SQLBase, InformationTypeMixin):
             filealias=file_alias,
             url=url,
             attach_type=attach_type,
-            title=title,
+            title=description,
             message=message,
             send_notifications=send_notifications,
         )

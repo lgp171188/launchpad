@@ -189,6 +189,9 @@ class ICve(Interface):
     def setCVSSVectorForAuthority(authority, vector_string):
         """Set the CVSS vector string from an authority."""
 
+    def getVulnerabilitiesVisibleToUser(user):
+        """Return the linked vulnerabilities visible to the given user."""
+
 
 @exported_as_webservice_collection(ICve)
 class ICveSet(Interface):

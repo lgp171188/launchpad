@@ -17,7 +17,7 @@ from lp.registry.interfaces.distroseriesparent import (
 )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 
 
 @implementer(IDistroSeriesParent)
@@ -67,7 +67,7 @@ class DistroSeriesParentSet:
         ordering=1,
     ):
         """Make and return a new `DistroSeriesParent`."""
-        store = IMasterStore(DistroSeriesParent)
+        store = IPrimaryStore(DistroSeriesParent)
         dsp = DistroSeriesParent()
         dsp.derived_series = derived_series
         dsp.parent_series = parent_series

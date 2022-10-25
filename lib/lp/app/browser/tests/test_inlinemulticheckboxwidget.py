@@ -3,7 +3,8 @@
 
 """Tests for the InlineMultiCheckboxWidget."""
 
-import simplejson
+import json
+
 from lazr.enum import EnumeratedType, Item
 from zope.interface import Interface
 from zope.schema import List
@@ -58,18 +59,18 @@ class TestInlineMultiCheckboxWidget(TestCaseWithFactory):
             item.value, force_local_path=True
         )
         expected_items = self._makeExpectedItems(vocab, value_fn=value_fn)
-        self.assertEqual(simplejson.dumps(expected_items), widget.json_items)
+        self.assertEqual(json.dumps(expected_items), widget.json_items)
 
     def test_items_for_custom_vocabulary(self):
         widget = self._getWidget(vocabulary=Alphabet)
         expected_items = self._makeExpectedItems(Alphabet)
-        self.assertEqual(simplejson.dumps(expected_items), widget.json_items)
+        self.assertEqual(json.dumps(expected_items), widget.json_items)
 
     def test_items_for_custom_vocabulary_name(self):
         widget = self._getWidget(vocabulary="CountryName")
         vocab = getVocabularyRegistry().get(None, "CountryName")
         expected_items = self._makeExpectedItems(vocab)
-        self.assertEqual(simplejson.dumps(expected_items), widget.json_items)
+        self.assertEqual(json.dumps(expected_items), widget.json_items)
 
     def test_selected_items_checked(self):
         widget = self._getWidget(
@@ -78,4 +79,4 @@ class TestInlineMultiCheckboxWidget(TestCaseWithFactory):
         expected_items = self._makeExpectedItems(
             Alphabet, selected=[Alphabet.A]
         )
-        self.assertEqual(simplejson.dumps(expected_items), widget.json_items)
+        self.assertEqual(json.dumps(expected_items), widget.json_items)

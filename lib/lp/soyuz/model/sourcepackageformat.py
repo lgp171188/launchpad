@@ -10,7 +10,7 @@ from storm.locals import Int, Reference, Storm
 from zope.interface import implementer
 
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelection,
@@ -53,4 +53,4 @@ class SourcePackageFormatSelectionSet:
         spfs = SourcePackageFormatSelection()
         spfs.distroseries = distroseries
         spfs.format = format
-        return IMasterStore(SourcePackageFormatSelection).add(spfs)
+        return IPrimaryStore(SourcePackageFormatSelection).add(spfs)

@@ -18,11 +18,11 @@ __all__ = [
     "UserSupportLanguagesMixin",
 ]
 
+import json
 from operator import attrgetter
 from urllib.parse import urlencode
 
 from lazr.restful.interfaces import IJSONRequestCache, IWebServiceClientRequest
-from simplejson import dumps
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getMultiAdapter, getUtility, queryMultiAdapter
 from zope.formlib import form
@@ -965,7 +965,7 @@ class QuestionTargetPortletAnswerContactsWithDetails(LaunchpadView):
         """Return subscriber_ids in a form suitable for JavaScript use."""
         questiontarget = IQuestionTarget(self.context)
         data = self.answercontact_data(questiontarget)
-        return dumps(data)
+        return json.dumps(data)
 
     def render(self):
         """Override the default render() to return only JSON."""

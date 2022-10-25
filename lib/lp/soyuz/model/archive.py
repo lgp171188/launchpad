@@ -14,6 +14,7 @@ __all__ = [
 import re
 import typing
 from operator import attrgetter
+from pathlib import PurePath
 
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
@@ -49,8 +50,13 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.app.validators.name import valid_name
 from lp.archivepublisher.debversion import Version
+from lp.archivepublisher.diskpool import unpoolify
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.archiveuploader.utils import re_isadeb, re_issource
+from lp.archiveuploader.utils import (
+    determine_binary_file_type,
+    re_isadeb,
+    re_issource,
+)
 from lp.buildmaster.enums import BuildQueueStatus, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSet
 from lp.buildmaster.interfaces.processor import IProcessorSet
@@ -612,7 +618,7 @@ class Archive(SQLBase):
         def load_api_extra_objects(rows):
             """Load extra related-objects needed by API calls."""
             # Pre-cache related `PackageUpload`s and `PackageUploadSource`s
-            # which are immediatelly used in the API context for checking
+            # which are immediately used in the API context for checking
             # permissions on the returned entries.
             uploads = load_related(PackageUpload, rows, ["packageupload_id"])
             pu_sources = load_referencing(
@@ -621,7 +627,7 @@ class Archive(SQLBase):
             for pu_source in pu_sources:
                 upload = pu_source.packageupload
                 get_property_cache(upload).sources = [pu_source]
-            # Pre-cache `SourcePackageName`s which are immediatelly used
+            # Pre-cache `SourcePackageName`s which are immediately used
             # in the API context for materializing the returned entries.
             # XXX cprov 2014-04-23: load_related() does not support
             # nested attributes as foreign keys (uses getattr instead of
@@ -1206,7 +1212,7 @@ class Archive(SQLBase):
             DistroSeriesPackageCache,
         )
 
-        # Compiled regexp to remove puntication.
+        # Compiled regexp to remove punctuation.
         clean_text = re.compile(r"(,|;|:|\.|\?|!)")
 
         # XXX cprov 20080402 bug=207969: The set() is only used because we
@@ -2013,6 +2019,71 @@ class Archive(SQLBase):
             raise NotFoundError(filename)
         return archive_file
 
+    def getPoolFileByPath(
+        self, path: PurePath
+    ) -> typing.Optional[LibraryFileAlias]:
+        """See `IArchive`."""
+        try:
+            component, source, filename = unpoolify(PurePath(*path.parts[1:]))
+        except ValueError:
+            return None
+        if filename is None:
+            return None
+
+        store = IStore(LibraryFileAlias)
+        clauses = [
+            Component.name == component,
+            SourcePackageName.name == source,
+            LibraryFileAlias.filename == filename,
+        ]
+        # Decide whether to look for source or binary publications.  We
+        # could just try both and UNION them, but this query is likely to be
+        # hot and is complex enough as it is, so don't push our luck.
+        binary = determine_binary_file_type(filename) is not None
+        if binary:
+            xPPH = BinaryPackagePublishingHistory
+            xPF = BinaryPackageFile
+            # XXX cjwatson 20220922: Simplify this once
+            # BinaryPackagePublishingHistory.sourcepackagename has finished
+            # populating.
+            clauses.extend(
+                [
+                    BinaryPackagePublishingHistory.binarypackagerelease
+                    == BinaryPackageRelease.id,
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_name
+                    == SourcePackageName.id,
+                    BinaryPackagePublishingHistory.binarypackagerelease
+                    == BinaryPackageFile.binarypackagereleaseID,
+                ]
+            )
+        else:
+            xPPH = SourcePackagePublishingHistory
+            xPF = SourcePackageReleaseFile
+            clauses.extend(
+                [
+                    SourcePackagePublishingHistory.sourcepackagename
+                    == SourcePackageName.id,
+                    SourcePackagePublishingHistory.sourcepackagerelease
+                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                ]
+            )
+        clauses.extend(
+            [
+                xPPH.archive == self,
+                xPPH.component == Component.id,
+                xPPH.datepublished != None,
+                xPPH.dateremoved == None,
+                xPF.libraryfile == LibraryFileAlias.id,
+            ]
+        )
+        return (
+            store.find(LibraryFileAlias, *clauses)
+            .config(distinct=True)
+            .order_by("id")
+            .last()
+        )
+
     def getBinaryPackageRelease(self, name, version, archtag):
         """See `IArchive`."""
         from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -2776,10 +2847,8 @@ class Archive(SQLBase):
             .find(
                 (LibraryFileAlias.filename, LibraryFileContent.sha1),
                 SourcePackagePublishingHistory.archive == self,
-                SourcePackageRelease.id
-                == SourcePackagePublishingHistory.sourcepackagereleaseID,
-                SourcePackageReleaseFile.sourcepackagerelease
-                == SourcePackageRelease.id,
+                SourcePackagePublishingHistory.sourcepackagerelease
+                == SourcePackageReleaseFile.sourcepackagereleaseID,
                 LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
                 LibraryFileAlias.filename.is_in(source_files),
                 LibraryFileContent.id == LibraryFileAlias.contentID,
@@ -2881,7 +2950,7 @@ class Archive(SQLBase):
             return [PackagePublishingPocket.RELEASE]
 
         # Cast to a list so we don't trip up with the security proxy not
-        # understandiung EnumItems.
+        # understanding EnumItems.
         return list(PackagePublishingPocket.items)
 
     def _getExistingOverrideSequence(

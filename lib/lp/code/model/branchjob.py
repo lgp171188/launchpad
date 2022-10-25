@@ -74,7 +74,7 @@ from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
@@ -262,7 +262,7 @@ class BranchJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def iterReady(cls):
         """See `IRevisionMailJobSource`."""
-        jobs = IMasterStore(Branch).find(
+        jobs = IPrimaryStore(Branch).find(
             (BranchJob),
             And(
                 BranchJob.job_type == cls.class_job_type,
@@ -1041,7 +1041,7 @@ class RosettaUploadJob(BranchJobDerived):
     def iterReady():
         """See `IRosettaUploadJobSource`."""
         jobs = (
-            IMasterStore(BranchJob)
+            IPrimaryStore(BranchJob)
             .using(BranchJob, Job, Branch)
             .find(
                 (BranchJob),
@@ -1060,7 +1060,7 @@ class RosettaUploadJob(BranchJobDerived):
     @staticmethod
     def findUnfinishedJobs(branch, since=None):
         """See `IRosettaUploadJobSource`."""
-        store = IMasterStore(BranchJob)
+        store = IPrimaryStore(BranchJob)
         match = And(
             Job.id == BranchJob.job_id,
             BranchJob.branch == branch,

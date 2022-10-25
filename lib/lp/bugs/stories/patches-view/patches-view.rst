@@ -101,7 +101,7 @@ patches view.
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
-    Link: patch_a.diff description of patch a
+    Link: description of patch a
 
 The page title and other wording in the page reflects the contents.
 
@@ -205,13 +205,13 @@ attachments, and various statuses...
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
-    Link: patch_f.diff description of patch f
+    Link: description of patch f
     Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
-    Link: patch_c.diff description of patch c
+    Link: description of patch c
     Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
-    Link: patch_a.diff description of patch a
+    Link: description of patch a
 
 The default sort order is by patch age. We can sort patches by
 importance and status.
@@ -224,13 +224,13 @@ importance and status.
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
-    Link: patch_c.diff description of patch c
+    Link: description of patch c
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
-    Link: patch_f.diff description of patch f
+    Link: description of patch f
     Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
-    Link: patch_a.diff description of patch a
+    Link: description of patch a
 
     >>> anon_browser.getControl(name="orderby").value = ["status"]
     >>> anon_browser.getControl("sort").click()
@@ -240,13 +240,13 @@ importance and status.
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
-    Link: patch_a.diff description of patch a
+    Link: description of patch a
     Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
-    Link: patch_c.diff description of patch c
+    Link: description of patch c
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
-    Link: patch_f.diff description of patch f
+    Link: description of patch f
 
 But we can't sort by things that aren't validated by the view.
 
@@ -327,12 +327,10 @@ Bugs in a product series show up in the patches view for that series.
     Bug                       Importance     Status      Patch Age
     Bug #...: bug_c title     Wishlist  Fix Committed   ...second...
     From: Patchy Person
-    Link: patch_f.diff
-    description of patch f
+    Link: description of patch f
     Bug #...: bug_a title     Undecided      New        ...second...
     From: Patchy Person
-    Link: patch_a.diff
-    description of patch a
+    Link: description of patch a
 
 The page title and other wording in the page reflects the contents.
 

@@ -20,12 +20,19 @@ from lp.bugs.interfaces.cve import CveStatus, ICve, ICveSet
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
 from lp.bugs.model.cvereference import CveReference
+from lp.bugs.model.vulnerability import (
+    Vulnerability,
+    get_vulnerability_privacy_filter,
+)
+from lp.registry.model.distribution import Distribution
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
+from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.xref.interfaces import IXRefSet
 from lp.services.xref.model import XRef
 
@@ -46,9 +53,6 @@ class Cve(StormBase, BugLinkTargetMixin):
 
     references = ReferenceSet(
         id, "CveReference.cve_id", order_by="CveReference.id"
-    )
-    vulnerabilities = ReferenceSet(
-        id, "Vulnerability.cve_id", order_by="Vulnerability.id"
     )
 
     date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
@@ -106,6 +110,30 @@ class Cve(StormBase, BugLinkTargetMixin):
         ]
         return list(
             sorted(bulk.load(Bug, bug_ids), key=operator.attrgetter("id"))
+        )
+
+    def getVulnerabilitiesVisibleToUser(self, user):
+        """See `ICve`."""
+        vulnerabilities = Store.of(self).find(
+            Vulnerability,
+            Vulnerability.cve == self,
+            get_vulnerability_privacy_filter(user),
+        )
+        vulnerabilities.order_by(Desc(Vulnerability.date_created))
+
+        def preload_distributions(rows):
+            bulk.load_related(Distribution, rows, ["distribution_id"])
+
+        return DecoratedResultSet(
+            vulnerabilities,
+            pre_iter_hook=preload_distributions,
+        )
+
+    @property
+    def vulnerabilities(self):
+        """See `ICve`."""
+        return self.getVulnerabilitiesVisibleToUser(
+            getUtility(ILaunchBag).user
         )
 
     # CveReference's

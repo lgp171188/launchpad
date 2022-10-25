@@ -195,7 +195,7 @@ distribution in which the bug exists.
 
 To mark a bug as private, we patch the `private` attribute of the bug.
 
-    >>> from simplejson import dumps
+    >>> import json
     >>> bug_twelve = webservice.get("/bugs/12").jsonBody()
     >>> bug_twelve["private"]
     False
@@ -203,7 +203,7 @@ To mark a bug as private, we patch the `private` attribute of the bug.
     ...     webservice.patch(
     ...         bug_twelve["self_link"],
     ...         "application/json",
-    ...         dumps(dict(private=True)),
+    ...         json.dumps(dict(private=True)),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -214,7 +214,7 @@ To mark a bug as private, we patch the `private` attribute of the bug.
     ...     webservice.patch(
     ...         bug_twelve["self_link"],
     ...         "application/json",
-    ...         dumps(dict(private=False)),
+    ...         json.dumps(dict(private=False)),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -228,7 +228,7 @@ attribute of the bug.
     ...     webservice.patch(
     ...         bug_twelve["self_link"],
     ...         "application/json",
-    ...         dumps(dict(duplicate_of_link=bug_one["self_link"])),
+    ...         json.dumps(dict(duplicate_of_link=bug_one["self_link"])),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -242,7 +242,7 @@ Now set it back to none:
     ...     webservice.patch(
     ...         bug_twelve["self_link"],
     ...         "application/json",
-    ...         dumps(dict(duplicate_of_link=None)),
+    ...         json.dumps(dict(duplicate_of_link=None)),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -259,7 +259,7 @@ Due to bug #1088358 the error is escaped as if it was HTML.
     ...     webservice.patch(
     ...         dupe_url,
     ...         "application/json",
-    ...         dumps(
+    ...         json.dumps(
     ...             dict(
     ...                 duplicate_of_link=webservice.getAbsoluteUrl("/bugs/5")
     ...             )
@@ -272,7 +272,7 @@ Due to bug #1088358 the error is escaped as if it was HTML.
     ...     webservice.patch(
     ...         webservice.getAbsoluteUrl("/bugs/5"),
     ...         "application/json",
-    ...         dumps(dict(duplicate_of_link=dupe_url)),
+    ...         json.dumps(dict(duplicate_of_link=dupe_url)),
     ...     )
     ... )
     HTTP/1.1 400 Bad Request
@@ -285,7 +285,7 @@ Due to bug #1088358 the error is escaped as if it was HTML.
     ...     webservice.patch(
     ...         dupe_url,
     ...         "application/json",
-    ...         dumps(dict(duplicate_of_link=None)),
+    ...         json.dumps(dict(duplicate_of_link=None)),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned...
@@ -444,7 +444,9 @@ It's possible to change the task's assignee.
     >>> patch = {"assignee_link": webservice.getAbsoluteUrl("/~cprov")}
     >>> bugtask_path = bug_one_bugtasks[0]["self_link"]
     >>> print(
-    ...     webservice.patch(bugtask_path, "application/json", dumps(patch))
+    ...     webservice.patch(
+    ...         bugtask_path, "application/json", json.dumps(patch)
+    ...     )
     ... )
     HTTP/1.1 209 Content Returned...
 
@@ -460,7 +462,9 @@ The task's importance can be modified directly.
 
     >>> patch = {"importance": "High"}
     >>> print(
-    ...     webservice.patch(bugtask_path, "application/json", dumps(patch))
+    ...     webservice.patch(
+    ...         bugtask_path, "application/json", json.dumps(patch)
+    ...     )
     ... )
     HTTP/1.1 209 Content Returned...
 
@@ -489,7 +493,9 @@ The task's status can also be modified directly.
 
     >>> patch = {"status": "Fix Committed"}
     >>> print(
-    ...     webservice.patch(bugtask_path, "application/json", dumps(patch))
+    ...     webservice.patch(
+    ...         bugtask_path, "application/json", json.dumps(patch)
+    ...     )
     ... )
     HTTP/1.1 209 Content Returned...
 
@@ -507,7 +513,9 @@ If an error occurs during a request that sets both 'status' and
 
     >>> patch = {"importance": "High", "status": "No Such Status"}
     >>> print(
-    ...     webservice.patch(bugtask_path, "application/json", dumps(patch))
+    ...     webservice.patch(
+    ...         bugtask_path, "application/json", json.dumps(patch)
+    ...     )
     ... )
     HTTP/1.1 400 Bad Request...
 
@@ -528,7 +536,9 @@ The milestone can only be set by appropriately privileged users.
     ...     )
     ... }
     >>> print(
-    ...     webservice.patch(bugtask_path, "application/json", dumps(patch))
+    ...     webservice.patch(
+    ...         bugtask_path, "application/json", json.dumps(patch)
+    ...     )
     ... )
     HTTP/1.1 209 Content Returned...
 
@@ -546,7 +556,7 @@ unchanged value.
     ... }
     >>> print(
     ...     user_webservice.patch(
-    ...         bugtask_path, "application/json", dumps(patch)
+    ...         bugtask_path, "application/json", json.dumps(patch)
     ...     )
     ... )
     HTTP/1.1 401 Unauthorized...
@@ -583,7 +593,7 @@ We can also PATCH the target attribute to accomplish the same thing.
     ...     webservice.patch(
     ...         task["self_link"].replace("mozilla-firefox", "evolution"),
     ...         "application/json",
-    ...         dumps(
+    ...         json.dumps(
     ...             {
     ...                 "target_link": webservice.getAbsoluteUrl(
     ...                     "/debian/+source/alsa-utils"
@@ -636,7 +646,9 @@ target, we reset it in order to avoid data inconsistencies.
     ... }
     >>> print(
     ...     webservice.patch(
-    ...         firefox_bugtask["self_link"], "application/json", dumps(patch)
+    ...         firefox_bugtask["self_link"],
+    ...         "application/json",
+    ...         json.dumps(patch),
     ...     )
     ... )
     HTTP/1.1 209 Content Returned
@@ -1104,7 +1116,7 @@ They can also update the subscription's bug_notification_level directly.
     ...     webservice.patch(
     ...         new_subscription["self_link"],
     ...         "application/json",
-    ...         dumps(patch),
+    ...         json.dumps(patch),
     ...         api_version="devel",
     ...     ).jsonBody()
     ... )
@@ -1347,7 +1359,7 @@ We can modify the remote bug.
 
     >>> patch = {"remote_bug": "1234"}
     >>> response = webservice.patch(
-    ...     bug_watch_2000["self_link"], "application/json", dumps(patch)
+    ...     bug_watch_2000["self_link"], "application/json", json.dumps(patch)
     ... )
 
     >>> bug_watch = webservice.get(bug_watch_2000["self_link"]).jsonBody()
@@ -1358,7 +1370,7 @@ But we can't change other things, like the URL.
 
     >>> patch = {"url": "http://www.example.com/"}
     >>> response = webservice.patch(
-    ...     bug_watch_2000["self_link"], "application/json", dumps(patch)
+    ...     bug_watch_2000["self_link"], "application/json", json.dumps(patch)
     ... )
     >>> print(response)
     HTTP/1.1 400 Bad Request...
@@ -1443,7 +1455,7 @@ We can change various aspects of bug trackers.
     ...     "contact_details": "bob@example.com",
     ... }
     >>> response = webservice.patch(
-    ...     bug_tracker["self_link"], "application/json", dumps(patch)
+    ...     bug_tracker["self_link"], "application/json", json.dumps(patch)
     ... )
     >>> print(response)
     HTTP/1.1 301 Moved Permanently...
@@ -1493,7 +1505,7 @@ Non-admins can't disable a bugtracker through the API.
     ...     public_webservice.patch(
     ...         bug_tracker_path,
     ...         "application/json",
-    ...         dumps(dict(active=False)),
+    ...         json.dumps(dict(active=False)),
     ...     )
     ... )
     HTTP/1.1 401 Unauthorized
@@ -1503,7 +1515,9 @@ Non-admins can't disable a bugtracker through the API.
 Admins can, however.
 
     >>> bug_tracker = webservice.patch(
-    ...     bug_tracker_path, "application/json", dumps(dict(active=False))
+    ...     bug_tracker_path,
+    ...     "application/json",
+    ...     json.dumps(dict(active=False)),
     ... ).jsonBody()
     >>> pprint_entry(bug_tracker)
     active: False...

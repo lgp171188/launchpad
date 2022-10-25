@@ -641,12 +641,12 @@ We need some files to test different ways of accessing them.
     # record. Such records are considered as being deleted.
 
     >>> from lp.services.librarian.model import LibraryFileAlias
-    >>> from lp.services.database.interfaces import IMasterStore
+    >>> from lp.services.database.interfaces import IPrimaryStore
 
     >>> deleted_file = LibraryFileAlias(
     ...     content=None, filename="deleted.txt", mimetype="text/plain"
     ... )
-    >>> ignore = IMasterStore(LibraryFileAlias).add(deleted_file)
+    >>> ignore = IPrimaryStore(LibraryFileAlias).add(deleted_file)
 
 Commit the just-created files.
 

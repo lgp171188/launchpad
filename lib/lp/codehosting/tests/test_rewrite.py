@@ -321,8 +321,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
         # For each complete line of input, the script should, without
         # buffering, write a complete line of output.
         for input_line in input_lines:
-            proc.stdin.write(input_line + "\n")
-            proc.stdin.flush()
+            print(input_line, file=proc.stdin, flush=True)
             output_lines.append(
                 nonblocking_readline(proc.stdout, 60).rstrip("\n")
             )
@@ -339,8 +338,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
             % branch_id_to_path(new_branch.id)
         )
-        proc.stdin.write(new_branch_input + "\n")
-        proc.stdin.flush()
+        print(new_branch_input, file=proc.stdin, flush=True)
         output_lines.append(nonblocking_readline(proc.stdout, 60).rstrip("\n"))
 
         edited_branch_input = "/%s/.bzr/README" % edited_branch.unique_name
@@ -348,8 +346,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             "file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README"
             % branch_id_to_path(edited_branch.id)
         )
-        proc.stdin.write(edited_branch_input + "\n")
-        proc.stdin.flush()
+        print(edited_branch_input, file=proc.stdin, flush=True)
         output_lines.append(nonblocking_readline(proc.stdout, 60).rstrip("\n"))
 
         os.kill(proc.pid, signal.SIGINT)
@@ -379,8 +376,7 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         self.addCleanup(self.rewriter_proc.terminate)
 
     def request(self, query):
-        self.rewriter_proc.stdin.write(query + "\n")
-        self.rewriter_proc.stdin.flush()
+        print(query, file=self.rewriter_proc.stdin, flush=True)
 
         # 60 second timeout as we might need to wait for the script to
         # finish starting up.

@@ -25,10 +25,10 @@ that apply to that request, by finding the I{rule} with the highest
 I{priority}.
 
 Flags are defined by a I{name} that typically looks like a Python
-identifier, for example C{notification.global.text}.  A definition is
-given for a particular I{scope}, which also looks like a dotted identifier,
-for example C{user.beta} or C{server.lpnet}.  This is just a naming
-convention, and they do not need to correspond to Python modules.
+identifier, for example C{notification.global.text}.  A definition is given
+for a particular I{scope}, for example C{pageid:Person:+editemails} or
+C{team:admins}.  This is just a naming convention, and they do not need to
+correspond to Python modules.
 
 The value is stored in the database as just a Unicode string, and it might
 be interpreted as a boolean, number, human-readable string or whatever.
@@ -99,8 +99,9 @@ Templates can also check whether the request is in a particular scope, but
 before using this consider whether the code will always be bound to that
 scope or whether it would be more correct to define a new feature::
 
-  <p tal:condition="feature_scopes/server.staging">
-    Staging server: all data will be discarded daily!</p>
+  <p tal:condition="feature_scopes/team:admins">
+    You are a Launchpad administrator.  Be careful!
+  </p>
 
 Checking flags in code
 ======================

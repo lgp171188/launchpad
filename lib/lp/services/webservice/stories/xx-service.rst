@@ -86,8 +86,8 @@ Anonymous requests can't access certain data.
 
 Anonymous requests can't change the dataset.
 
-    >>> import simplejson
-    >>> data = simplejson.dumps({"display_name": "This won't work"})
+    >>> import json
+    >>> data = json.dumps({"display_name": "This won't work"})
     >>> response = anon_webservice.patch(
     ...     root + "/~salgado", "application/json", data
     ... )

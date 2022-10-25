@@ -49,6 +49,7 @@ from lp.services.mail.sendmail import (
     MailController,
     set_immediate_mail_delivery,
 )
+from lp.services.messaging import rabbit
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.timeout import (
     get_default_timeout_function,
@@ -291,7 +292,7 @@ class BaseRunnableJob(BaseRunnableJobSource):
 
     def celeryRunOnCommit(self):
         """Configure transaction so that commit runs this job via Celery."""
-        if config.rabbitmq.host is None or not celery_enabled(
+        if not rabbit.is_configured() or not celery_enabled(
             self.__class__.__name__
         ):
             return

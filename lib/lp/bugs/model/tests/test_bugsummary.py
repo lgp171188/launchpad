@@ -17,7 +17,7 @@ from lp.bugs.model.bug import BugTag
 from lp.bugs.model.bugsummary import BugSummary, get_bugsummary_filter_for_user
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.enums import SharingPermission
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -34,7 +34,7 @@ class TestBugSummary(TestCaseWithFactory):
         # but might happen from the SQL command line.
         switch_dbuser("testadmin")
 
-        self.store = IMasterStore(BugSummary)
+        self.store = IPrimaryStore(BugSummary)
 
     def getCount(self, person, **kw_find_expr):
         self._maybe_rollup()

@@ -92,7 +92,11 @@ class TestArchiveFile(TestCaseWithFactory):
         )
         self.assertContentEqual(
             [archive_files[0]],
-            archive_file_set.getByArchive(archives[0], only_condemned=True),
+            archive_file_set.getByArchive(archives[0], condemned=True),
+        )
+        self.assertContentEqual(
+            [archive_files[1]],
+            archive_file_set.getByArchive(archives[0], condemned=False),
         )
         self.assertContentEqual(
             archive_files[2:], archive_file_set.getByArchive(archives[1])
@@ -115,7 +119,47 @@ class TestArchiveFile(TestCaseWithFactory):
         )
         self.assertContentEqual(
             [archive_files[2]],
-            archive_file_set.getByArchive(archives[1], only_condemned=True),
+            archive_file_set.getByArchive(archives[1], condemned=True),
+        )
+        self.assertContentEqual(
+            [archive_files[3]],
+            archive_file_set.getByArchive(archives[1], condemned=False),
+        )
+        self.assertContentEqual(
+            [archive_files[0]],
+            archive_file_set.getByArchive(
+                archives[0],
+                sha256=archive_files[0].library_file.content.sha256,
+            ),
+        )
+        self.assertContentEqual(
+            [], archive_file_set.getByArchive(archives[0], sha256="nonsense")
+        )
+
+    def test_getByArchive_path_parent(self):
+        archive = self.factory.makeArchive()
+        archive_files = [
+            self.factory.makeArchiveFile(archive=archive, path=path)
+            for path in (
+                "dists/jammy/InRelease",
+                "dists/jammy/Release",
+                "dists/jammy/main/binary-amd64/Release",
+            )
+        ]
+        archive_file_set = getUtility(IArchiveFileSet)
+        self.assertContentEqual(
+            archive_files[:2],
+            archive_file_set.getByArchive(archive, path_parent="dists/jammy"),
+        )
+        self.assertContentEqual(
+            [archive_files[2]],
+            archive_file_set.getByArchive(
+                archive, path_parent="dists/jammy/main/binary-amd64"
+            ),
+        )
+        self.assertContentEqual(
+            [],
+            archive_file_set.getByArchive(archive, path_parent="dists/xenial"),
         )
 
     def test_scheduleDeletion(self):

@@ -8,7 +8,6 @@
     devmode modules/lp.services.config/config/launchpad/devmode;
     rooturl modules/lp.services.webapp.vhosts/allvhosts/configs/mainsite/rooturl;
     is_demo modules/lp.services.config/config/launchpad/is_demo;
-    is_lpnet modules/lp.services.config/config/launchpad/is_lpnet;
     site_message modules/lp.services.config/config/launchpad/site_message;
     icingroot string:${rooturl}+icing/rev${revision};
     features request/features;

@@ -688,6 +688,9 @@ class IDistributionView(
         )
     )
 
+    def getVulnerabilitiesVisibleToUser(user):
+        """Return the vulnerabilities visible to the given user."""
+
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
 

@@ -10,12 +10,12 @@ __all__ = [
 ]
 
 import io
+import json
 import sys
 from contextlib import ExitStack
 from operator import attrgetter
 from uuid import uuid1
 
-import simplejson
 import six
 from breezy import trace
 from breezy.diff import show_diff_trees
@@ -60,7 +60,7 @@ class Diff(SQLBase):
             return None
         return {
             key: tuple(value)
-            for key, value in simplejson.loads(self._diffstat).items()
+            for key, value in json.loads(self._diffstat).items()
         }
 
     def _set_diffstat(self, diffstat):
@@ -69,7 +69,7 @@ class Diff(SQLBase):
             return
         # diffstats should be mappings of path to line counts.
         assert isinstance(diffstat, dict)
-        self._diffstat = simplejson.dumps(diffstat)
+        self._diffstat = json.dumps(diffstat)
 
     diffstat = property(_get_diffstat, _set_diffstat)
 

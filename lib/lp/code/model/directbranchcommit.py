@@ -19,7 +19,7 @@ from breezy.transform import ROOT_PARENT
 from lp.code.errors import StaleLastMirrored
 from lp.codehosting.bzrutils import get_branch_info, get_stacked_on_url
 from lp.services.config import config
-from lp.services.database.interfaces import IMasterObject
+from lp.services.database.interfaces import IPrimaryObject
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.osutils import override_environ
 
@@ -248,7 +248,7 @@ class DirectBranchCommit:
                     self.merge_parents,
                     committer=committer_id,
                 )
-            IMasterObject(self.db_branch).branchChanged(
+            IPrimaryObject(self.db_branch).branchChanged(
                 get_stacked_on_url(self.bzrbranch),
                 None if new_rev_id is None else new_rev_id.decode(),
                 self.db_branch.control_format,

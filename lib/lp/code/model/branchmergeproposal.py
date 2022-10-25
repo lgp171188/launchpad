@@ -84,7 +84,7 @@ from lp.services.database.bulk import load, load_referencing, load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, quote
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.helpers import shortlist
@@ -1365,7 +1365,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         incremental_diff.branch_merge_proposal = self
         incremental_diff.old_revision = old_revision
         incremental_diff.new_revision = new_revision
-        IMasterStore(IncrementalDiff).add(incremental_diff)
+        IPrimaryStore(IncrementalDiff).add(incremental_diff)
         return incremental_diff
 
     def getIncrementalDiffs(self, revision_list):

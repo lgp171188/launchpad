@@ -15,7 +15,8 @@ __all__ = [
     "vocabulary_to_choice_edit_items",
 ]
 
-import simplejson
+import json
+
 from lazr.enum import IEnumeratedType
 from lazr.restful.declarations import LAZR_WEBSERVICE_EXPORTED
 from lazr.restful.utils import get_current_browser_request
@@ -81,7 +82,7 @@ class WidgetBase:
             if mutator_info is not None:
                 mutator_method, mutator_extra = mutator_info
                 self.mutator_method_name = mutator_method.__name__
-        self.json_attribute = simplejson.dumps(self.api_attribute)
+        self.json_attribute = json.dumps(self.api_attribute)
 
     @property
     def resource_uri(self):
@@ -95,7 +96,7 @@ class WidgetBase:
 
     @property
     def json_resource_uri(self):
-        return simplejson.dumps(self.resource_uri)
+        return json.dumps(self.resource_uri)
 
     @property
     def can_write(self):
@@ -132,13 +133,13 @@ class TextWidgetBase(WidgetBase):
             edit_url,
             edit_title,
         )
-        self.accept_empty = simplejson.dumps(self.optional_field)
+        self.accept_empty = json.dumps(self.optional_field)
         self.title = title
-        self.widget_css_selector = simplejson.dumps("#" + self.content_box_id)
+        self.widget_css_selector = json.dumps("#" + self.content_box_id)
 
     @property
     def json_attribute_uri(self):
-        return simplejson.dumps(self.resource_uri + "/" + self.api_attribute)
+        return json.dumps(self.resource_uri + "/" + self.api_attribute)
 
 
 class DefinedTagMixin:
@@ -221,8 +222,8 @@ class TextLineEditorWidget(TextWidgetBase, DefinedTagMixin):
         self.max_width = max_width
         self.truncate_lines = truncate_lines
         self.default_text = default_text
-        self.initial_value_override = simplejson.dumps(initial_value_override)
-        self.width = simplejson.dumps(width)
+        self.initial_value_override = json.dumps(initial_value_override)
+        self.width = json.dumps(width)
 
     @property
     def value(self):
@@ -364,9 +365,9 @@ class InlineEditPickerWidget(WidgetBase):
         self.help_link = help_link
 
         # JSON encoded attributes.
-        self.json_content_box_id = simplejson.dumps(self.content_box_id)
-        self.json_attribute = simplejson.dumps(self.api_attribute + "_link")
-        self.json_vocabulary_name = simplejson.dumps(
+        self.json_content_box_id = json.dumps(self.content_box_id)
+        self.json_attribute = json.dumps(self.api_attribute + "_link")
+        self.json_vocabulary_name = json.dumps(
             self.exported_field.vocabularyName
         )
 
@@ -409,7 +410,7 @@ class InlineEditPickerWidget(WidgetBase):
 
     @property
     def json_config(self):
-        return simplejson.dumps(self.config)
+        return json.dumps(self.config)
 
     @cachedproperty
     def vocabulary(self):
@@ -628,13 +629,11 @@ class InlineMultiCheckboxWidget(WidgetBase):
         self.has_choices = len(items)
 
         # JSON encoded attributes.
-        self.json_content_box_id = simplejson.dumps(self.content_box_id)
-        self.json_attribute = simplejson.dumps(self.api_attribute)
-        self.json_attribute_type = simplejson.dumps(attribute_type)
-        self.json_items = simplejson.dumps(items)
-        self.json_description = simplejson.dumps(
-            self.exported_field.description
-        )
+        self.json_content_box_id = json.dumps(self.content_box_id)
+        self.json_attribute = json.dumps(self.api_attribute)
+        self.json_attribute_type = json.dumps(attribute_type)
+        self.json_items = json.dumps(items)
+        self.json_description = json.dumps(self.exported_field.description)
 
     @property
     def config(self):
@@ -644,7 +643,7 @@ class InlineMultiCheckboxWidget(WidgetBase):
 
     @property
     def json_config(self):
-        return simplejson.dumps(self.config)
+        return json.dumps(self.config)
 
 
 def vocabulary_to_choice_edit_items(
@@ -708,7 +707,7 @@ def vocabulary_to_choice_edit_items(
         items.append(new_item)
 
     if as_json:
-        return simplejson.dumps(items)
+        return json.dumps(items)
     else:
         return items
 
@@ -812,7 +811,7 @@ class BooleanChoiceWidget(WidgetBase, DefinedTagMixin):
 
     @property
     def json_config(self):
-        return simplejson.dumps(self.config)
+        return json.dumps(self.config)
 
 
 class EnumChoiceWidget(WidgetBase):
@@ -883,4 +882,4 @@ class EnumChoiceWidget(WidgetBase):
 
     @property
     def json_config(self):
-        return simplejson.dumps(self.config)
+        return json.dumps(self.config)

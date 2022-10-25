@@ -11,7 +11,7 @@ import transaction
 
 from lp.bugs.interfaces.bugwatch import BUG_WATCH_ACTIVITY_SUCCESS_STATUSES
 from lp.bugs.model.bugwatch import BugWatch
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.looptuner import TunableLoop
 
@@ -36,7 +36,7 @@ class BugWatchScheduler(TunableLoop):
     ):
         super().__init__(log, abort_time)
         self.transaction = transaction
-        self.store = IMasterStore(BugWatch)
+        self.store = IPrimaryStore(BugWatch)
 
         if max_delay_days is None:
             max_delay_days = MAX_DELAY_DAYS

@@ -52,6 +52,7 @@ __all__ = [
 ]
 
 import io
+import json
 import logging
 import os
 import re
@@ -72,7 +73,6 @@ import fixtures
 import lp_sitecustomize
 import oops_datedir_repo.serializer_rfc822
 import pytz
-import simplejson
 import six
 import subunit
 import testtools
@@ -1544,7 +1544,7 @@ def extract_lp_cache(text):
     match = re.search(r"<script[^>]*>LP.cache = (\{.*\});</script>", text)
     if match is None:
         raise ValueError("No JSON cache found.")
-    return simplejson.loads(match.group(1))
+    return json.loads(match.group(1))
 
 
 def nonblocking_readline(instream, timeout):

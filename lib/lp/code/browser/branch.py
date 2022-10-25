@@ -22,10 +22,10 @@ __all__ = [
     "RegisterBranchMergeProposalView",
 ]
 
+import json
 from datetime import datetime
 
 import pytz
-import simplejson
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.fields import Reference
@@ -1354,7 +1354,7 @@ class RegisterBranchMergeProposalView(LaunchpadFormView):
         if self.request.is_ajax and len(visible_branches) < 2:
             self.request.response.setStatus(400, "Branch Visibility")
             self.request.response.setHeader("Content-Type", "application/json")
-            return simplejson.dumps(
+            return json.dumps(
                 {
                     "person_name": visibility_info["person_name"],
                     "branches_to_check": branch_names,

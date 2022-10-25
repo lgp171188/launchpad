@@ -7,7 +7,8 @@ __all__ = [
     "QuestionJob",
 ]
 
-import simplejson
+import json
+
 import six
 from lazr.delegates import delegate_to
 from storm.expr import And
@@ -25,7 +26,7 @@ from lp.answers.model.question import Question
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import IPrimaryStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
@@ -70,7 +71,7 @@ class QuestionJob(StormBase):
         self.job = Job()
         self.job_type = job_type
         self.question = question
-        json_data = simplejson.dumps(metadata)
+        json_data = json.dumps(metadata)
         self._json_data = six.ensure_text(json_data)
 
     def __repr__(self):
@@ -82,7 +83,7 @@ class QuestionJob(StormBase):
     @property
     def metadata(self):
         """See `IQuestionJob`."""
-        return simplejson.loads(self._json_data)
+        return json.loads(self._json_data)
 
     def makeDerived(self):
         if self.job_type != QuestionJobType.EMAIL:
@@ -123,7 +124,7 @@ class QuestionEmailJob(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        store = IMasterStore(QuestionJob)
+        store = IPrimaryStore(QuestionJob)
         jobs = store.find(
             QuestionJob,
             And(

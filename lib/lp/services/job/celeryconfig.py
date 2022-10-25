@@ -86,12 +86,18 @@ def configure(argv):
         "interval_step": 0.1,
         "interval_max": 0.1,
     }
-    result["broker_url"] = "amqp://%s:%s@%s/%s" % (
-        config.rabbitmq.userid,
-        config.rabbitmq.password,
-        config.rabbitmq.host,
-        config.rabbitmq.virtual_host,
-    )
+    if config.rabbitmq.broker_urls:
+        result["broker_url"] = config.rabbitmq.broker_urls.split()
+    else:
+        result["broker_url"] = [
+            "amqp://%s:%s@%s/%s"
+            % (
+                config.rabbitmq.userid,
+                config.rabbitmq.password,
+                config.rabbitmq.host,
+                config.rabbitmq.virtual_host,
+            )
+        ]
     result["beat_schedule"] = {
         "schedule-missing": {
             "task": "lp.services.job.celeryjob.run_missing_ready",

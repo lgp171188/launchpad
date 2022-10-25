@@ -7,6 +7,8 @@ import re
 from functools import partial
 from operator import attrgetter
 
+from soupmatchers import HTMLContains, Tag
+
 from lp.bugs.browser.cvereport import BugTaskCve
 from lp.bugs.interfaces.bugtask import (
     RESOLVED_BUGTASK_STATUSES,
@@ -77,6 +79,44 @@ class TestCVEReportView(TestCaseWithFactory):
         while True:
             yield cves[cve_index]
             cve_index = (cve_index + 1) % NUM_CVES
+
+    def test_distribution_cvereport(self):
+        distribution = self.factory.makeDistribution()
+        distroseries1 = self.factory.makeDistroSeries(
+            distribution=distribution
+        )
+        distroseries2 = self.factory.makeDistroSeries(
+            distribution=distribution
+        )
+        view = create_initialized_view(distribution, "+cve")
+
+        self.assertFalse(view.open_cve_bugtasks)
+        self.assertFalse(view.resolved_cve_bugtasks)
+        self.assertThat(
+            view.render(),
+            HTMLContains(
+                Tag(
+                    "distroseries 1 link",
+                    "a",
+                    attrs={
+                        "href": "{}/+cve".format(
+                            canonical_url(distroseries1, force_local_path=True)
+                        )
+                    },
+                    text=distroseries1.displayname,
+                ),
+                Tag(
+                    "distroseries 2 link",
+                    "a",
+                    attrs={
+                        "href": "{}/+cve".format(
+                            canonical_url(distroseries2, force_local_path=True)
+                        )
+                    },
+                    text=distroseries2.displayname,
+                ),
+            ),
+        )
 
     def test_render(self):
         # The rendered page contains all expected CVE links.

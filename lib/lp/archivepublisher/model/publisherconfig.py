@@ -15,7 +15,7 @@ from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
 )
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 
 
 @implementer(IPublisherConfig)
@@ -44,7 +44,7 @@ class PublisherConfigSet:
 
     def new(self, distribution, root_dir, base_url, copy_base_url):
         """Make and return a new `PublisherConfig`."""
-        store = IMasterStore(PublisherConfig)
+        store = IPrimaryStore(PublisherConfig)
         pubconf = PublisherConfig()
         pubconf.distribution = distribution
         pubconf.root_dir = root_dir

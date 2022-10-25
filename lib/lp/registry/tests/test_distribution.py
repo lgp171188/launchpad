@@ -41,6 +41,9 @@ from lp.blueprints.model.specification import (
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtarget import BUG_POLICY_ALLOWED_TYPES
 from lp.bugs.interfaces.bugtask import BugTaskImportance
+from lp.bugs.model.tests.test_vulnerability import (
+    grant_access_to_non_public_vulnerability,
+)
 from lp.code.model.branchnamespace import BRANCH_POLICY_ALLOWED_TYPES
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.registry.enums import (
@@ -71,11 +74,12 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distribution import Distribution
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
 from lp.services.librarianserver.testing.fake import FakeLibrarian
-from lp.services.propertycache import get_property_cache
+from lp.services.propertycache import clear_property_cache, get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
+from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
 )
@@ -96,7 +100,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
 )
-from lp.testing.matchers import Provides
+from lp.testing.matchers import HasQueryCount, Provides
 from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
@@ -2185,6 +2189,38 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
             set(distribution.vulnerabilities),
         )
 
+    def test_vulnerabilities_some_vulnerabilities_private(self):
+        distribution = self.factory.makeDistribution(
+            bug_sharing_policy=BugSharingPolicy.PROPRIETARY
+        )
+        public_vulnerabilities = set()
+        for _ in range(5):
+            public_vulnerabilities.add(
+                self.factory.makeVulnerability(distribution=distribution)
+            )
+
+        private_vulnerability = self.factory.makeVulnerability(
+            distribution=distribution,
+            information_type=InformationType.PROPRIETARY,
+        )
+        person = self.factory.makePerson()
+        person_with_access = self.factory.makePerson()
+        grant_access_to_non_public_vulnerability(
+            private_vulnerability,
+            person_with_access,
+        )
+        with person_logged_in(person):
+            self.assertCountEqual(
+                public_vulnerabilities,
+                distribution.vulnerabilities,
+            )
+
+        with person_logged_in(person_with_access):
+            self.assertCountEqual(
+                public_vulnerabilities.union([private_vulnerability]),
+                distribution.vulnerabilities,
+            )
+
     def test_set_security_admin_permissions(self):
         distribution = self.factory.makeDistribution()
         person = self.factory.makePerson()
@@ -2674,3 +2710,44 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
                 }
             ),
         )
+
+
+class TestDistributionPublishedSources(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_has_published_sources_no_sources(self):
+        distribution = self.factory.makeDistribution()
+        self.assertFalse(distribution.has_published_sources)
+
+    def test_has_published_sources(self):
+        ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
+        self.assertTrue(ubuntu.all_distro_archives.count() > 0)
+        self.assertTrue(ubuntu.has_published_sources)
+
+    def test_has_published_sources_query_count(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=distribution.main_archive,
+        )
+        self.assertEqual(1, distribution.all_distro_archives.count())
+        with StormStatementRecorder() as recorder1:
+            self.assertTrue(distribution.has_published_sources)
+        clear_property_cache(distribution)
+        partner_archive = self.factory.makeArchive(
+            distribution=distribution,
+            purpose=ArchivePurpose.PARTNER,
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=getUtility(IArchiveSet).getByDistroAndName(
+                distribution, partner_archive.name
+            )
+        )
+        self.assertEqual(2, distribution.all_distro_archives.count())
+        with StormStatementRecorder() as recorder2:
+            self.assertTrue(distribution.has_published_sources)
+
+        # Adding one or more archives to the distribution and publishing
+        # source packages to them should not affect the number of queries
+        # executed here.
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))

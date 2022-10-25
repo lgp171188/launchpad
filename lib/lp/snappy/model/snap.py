@@ -123,7 +123,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormexpr import (
     Array,
     ArrayAgg,
@@ -1009,7 +1009,7 @@ class Snap(Storm, WebhookTargetMixin):
                 )
             )
             architectures_to_build = determine_architectures_to_build(
-                snap_base.name if snap_base is not None else None,
+                snap_base,
                 snapcraft_data,
                 list(supported_arches.keys()),
             )
@@ -1582,7 +1582,7 @@ class SnapSet:
         ):
             raise SnapPrivacyMismatch
 
-        store = IMasterStore(Snap)
+        store = IPrimaryStore(Snap)
         snap = Snap(
             registrant,
             owner,

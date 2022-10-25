@@ -9,6 +9,7 @@ __all__ = [
 ]
 
 import os.path
+import re
 
 import pytz
 from storm.databases.postgres import Returning
@@ -19,9 +20,9 @@ from zope.interface import implementer
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
-from lp.services.database.stormexpr import BulkUpdate
+from lp.services.database.stormexpr import BulkUpdate, RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.soyuz.interfaces.archivefile import IArchiveFile, IArchiveFileSet
@@ -76,7 +77,7 @@ class ArchiveFileSet:
     def new(archive, container, path, library_file):
         """See `IArchiveFileSet`."""
         archive_file = ArchiveFile(archive, container, path, library_file)
-        IMasterStore(ArchiveFile).add(archive_file)
+        IPrimaryStore(ArchiveFile).add(archive_file)
         return archive_file
 
     @classmethod
@@ -98,7 +99,9 @@ class ArchiveFileSet:
         archive,
         container=None,
         path=None,
-        only_condemned=False,
+        path_parent=None,
+        sha256=None,
+        condemned=None,
         eager_load=False,
     ):
         """See `IArchiveFileSet`."""
@@ -109,8 +112,25 @@ class ArchiveFileSet:
             clauses.append(ArchiveFile.container == container)
         if path is not None:
             clauses.append(ArchiveFile.path == path)
-        if only_condemned:
-            clauses.append(ArchiveFile.scheduled_deletion_date != None)
+        if path_parent is not None:
+            clauses.append(
+                RegexpMatch(
+                    ArchiveFile.path, "^%s/[^/]+$" % re.escape(path_parent)
+                )
+            )
+        if sha256 is not None:
+            clauses.extend(
+                [
+                    ArchiveFile.library_file == LibraryFileAlias.id,
+                    LibraryFileAlias.contentID == LibraryFileContent.id,
+                    LibraryFileContent.sha256 == sha256,
+                ]
+            )
+        if condemned is not None:
+            if condemned:
+                clauses.append(ArchiveFile.scheduled_deletion_date != None)
+            else:
+                clauses.append(ArchiveFile.scheduled_deletion_date == None)
         archive_files = IStore(ArchiveFile).find(ArchiveFile, *clauses)
 
         def eager_load(rows):
@@ -139,7 +159,7 @@ class ArchiveFileSet:
             LibraryFileContent.sha256,
         ]
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 Returning(
                     BulkUpdate(
                         {ArchiveFile.scheduled_deletion_date: new_date},
@@ -168,7 +188,7 @@ class ArchiveFileSet:
             LibraryFileContent.sha256,
         ]
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 Returning(
                     BulkUpdate(
                         {ArchiveFile.scheduled_deletion_date: None},
@@ -210,7 +230,7 @@ class ArchiveFileSet:
             clauses.append(ArchiveFile.container == container)
         where = convert_storm_clause_to_string(And(*clauses))
         return list(
-            IMasterStore(ArchiveFile).execute(
+            IPrimaryStore(ArchiveFile).execute(
                 """
             DELETE FROM ArchiveFile
             USING LibraryFileAlias, LibraryFileContent

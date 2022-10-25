@@ -134,7 +134,7 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.database.stormexpr import Array, ArrayAgg, ArrayIntersects
@@ -1253,7 +1253,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         if isinstance(revision_ids, str):
             revision_ids = [revision_ids]
-        IMasterStore(BranchRevision).find(
+        IPrimaryStore(BranchRevision).find(
             BranchRevision,
             BranchRevision.branch == self,
             BranchRevision.revision_id.is_in(

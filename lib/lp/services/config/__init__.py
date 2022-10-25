@@ -289,6 +289,7 @@ class DatabaseConfig:
             "db_statement_timeout",
             "db_statement_timeout_precision",
             "isolation_level",
+            "set_role_after_connecting",
             "soft_request_timeout",
             "storm_cache",
             "storm_cache_size",
@@ -308,16 +309,6 @@ class DatabaseConfig:
     @cachedproperty
     def main_standby(self):
         return random.choice(self.rw_main_standby.split(","))
-
-    # XXX cjwatson 2021-10-01: Remove these once Launchpad's store flavors
-    # have been renamed.
-    @property
-    def main_master(self):
-        return self.main_primary
-
-    @property
-    def main_slave(self):
-        return self.main_standby
 
     def override(self, **kwargs):
         """Override one or more config attributes.

@@ -1,6 +1,7 @@
 includes:
   - layer:basic
-  - layer:ols
+  - layer:ols-pg
+  - interface:rabbitmq
 options:
   apt:
     packages:

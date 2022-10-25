@@ -64,7 +64,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -406,7 +406,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
     def addFile(self, lfa):
         """See `ICharmRecipeBuild`."""
         charm_file = CharmFile(build=self, library_file=lfa)
-        IMasterStore(CharmFile).add(charm_file)
+        IPrimaryStore(CharmFile).add(charm_file)
         return charm_file
 
     def verifySuccessfulUpload(self) -> bool:
@@ -471,7 +471,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         date_created=DEFAULT,
     ):
         """See `ICharmRecipeBuildSet`."""
-        store = IMasterStore(CharmRecipeBuild)
+        store = IPrimaryStore(CharmRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             CharmRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created
         )
@@ -495,7 +495,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getByID(self, build_id):
         """See `ISpecificBuildFarmJobSource`."""
-        store = IMasterStore(CharmRecipeBuild)
+        store = IPrimaryStore(CharmRecipeBuild)
         return store.get(CharmRecipeBuild, build_id)
 
     def getByBuildFarmJob(self, build_farm_job):

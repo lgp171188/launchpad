@@ -381,14 +381,6 @@
           interface="zope.publisher.interfaces.browser.IBrowserPublisher" />
     </class>
 
-    <!-- Registrations to support +haproxy status url. -->
-    <browser:page
-        for="lp.services.webapp.interfaces.ILaunchpadRoot"
-        name="+haproxy"
-        permission="zope.Public"
-        class="lp.services.webapp.haproxy.HAProxyStatusView"
-        />
-
     <!-- Support Talisker's /_status/check URL. -->
     <browser:page
         for="lp.services.webapp.interfaces.ILaunchpadRoot"

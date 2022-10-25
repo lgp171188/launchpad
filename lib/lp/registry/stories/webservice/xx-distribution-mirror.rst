@@ -81,11 +81,11 @@ Security checks
 People who are not mirror listing admins or the mirrors registrar may not
 change the owner's of mirrors:
 
+    >>> import json
     >>> from zope.component import getUtility
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from simplejson import dumps
     >>> login(ANONYMOUS)
     >>> karl_db = getUtility(IPersonSet).getByName("karl")
     >>> test_db = getUtility(IPersonSet).getByName("name12")
@@ -187,7 +187,9 @@ authorized.
     >>> karl = webservice.get("/~karl").jsonBody()
     >>> patch = {"owner_link": karl["self_link"]}
     >>> response = test_webservice.patch(
-    ...     canonical_archive["self_link"], "application/json", dumps(patch)
+    ...     canonical_archive["self_link"],
+    ...     "application/json",
+    ...     json.dumps(patch),
     ... )
     >>> response.status
     401
@@ -196,7 +198,9 @@ But if we use Karl, the mirror listing admin's, webservice, we can update
 the owner.
 
     >>> response = karl_webservice.patch(
-    ...     canonical_archive["self_link"], "application/json", dumps(patch)
+    ...     canonical_archive["self_link"],
+    ...     "application/json",
+    ...     json.dumps(patch),
     ... )
     >>> response.status
     209
@@ -216,7 +220,9 @@ Some attributes are read-only via the API:
     ...     "reviewer_link": karl["self_link"],
     ... }
     >>> response = karl_webservice.patch(
-    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ...     canonical_releases["self_link"],
+    ...     "application/json",
+    ...     json.dumps(patch),
     ... )
     >>> print(response)
     HTTP/1.1 400 Bad Request
@@ -237,13 +243,17 @@ While others can be set with the appropriate authorization:
     ...     "whiteboard": "This mirror is too shiny to be true",
     ... }
     >>> response = test_webservice.patch(
-    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ...     canonical_releases["self_link"],
+    ...     "application/json",
+    ...     json.dumps(patch),
     ... )
     >>> response.status
     401
 
     >>> response = karl_webservice.patch(
-    ...     canonical_releases["self_link"], "application/json", dumps(patch)
+    ...     canonical_releases["self_link"],
+    ...     "application/json",
+    ...     json.dumps(patch),
     ... ).jsonBody()
     >>> pprint_entry(response)
     base_url: 'http://releases.ubuntu.com/'

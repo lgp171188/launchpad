@@ -549,6 +549,13 @@ performance problem in production.
     # Restore the config.
     >>> config_data = config.pop("bug_search_feed_data")
 
+    >>> from lp.services.features.testing import FeatureFixture
+    >>> with FeatureFixture({"bugs.search_feed.disabled": "true"}):
+    ...     browser.open(url)
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: Bug search feed deactivated
+
 The bug search feed can be tested after setting is_bug_search_feed_active
 to True.
 

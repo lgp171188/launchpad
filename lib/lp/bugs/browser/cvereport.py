@@ -8,6 +8,8 @@ __all__ = [
     "CVEReportView",
 ]
 
+from typing import List, NamedTuple
+
 from zope.component import getUtility
 
 from lp.bugs.browser.buglisting import BugTaskListingItem
@@ -16,6 +18,7 @@ from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.bugs.interfaces.cve import ICveSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.helpers import shortlist
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import LaunchpadView
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.publisher import canonical_url
@@ -34,6 +37,15 @@ class BugTaskCve:
         # All the bugtasks we have should represent the same bug.
         assert self.bugtasks, "No bugtasks added before calling bug!"
         return self.bugtasks[0].bug
+
+
+BugTaskCves = NamedTuple(
+    "BugTaskCves",
+    (
+        ("open", List[BugTaskCve]),
+        ("resolved", List[BugTaskCve]),
+    ),
+)
 
 
 def get_cve_display_data(cve):
@@ -62,18 +74,26 @@ class CVEReportView(LaunchpadView):
         """Update the search params for the context for a specific view."""
         raise NotImplementedError
 
-    def initialize(self):
-        """See `LaunchpadView`."""
-        super().initialize()
+    @property
+    def open_cve_bugtasks(self) -> List[BugTaskCve]:
+        return self._bugtaskcves.open
+
+    @property
+    def resolved_cve_bugtasks(self) -> List[BugTaskCve]:
+        return self._bugtaskcves.resolved
+
+    @cachedproperty
+    def _bugtaskcves(self) -> BugTaskCves:
+
+        bugtaskcves = BugTaskCves(open=[], resolved=[])
+
         search_params = BugTaskSearchParams(self.user, has_cve=True)
         bugtasks = shortlist(
             self.context.searchTasks(search_params), longest_expected=600
         )
 
         if not bugtasks:
-            self.open_cve_bugtasks = []
-            self.resolved_cve_bugtasks = []
-            return
+            return bugtaskcves
 
         bugtask_set = getUtility(IBugTaskSet)
         badge_properties = bugtask_set.getBugTaskBadgeProperties(bugtasks)
@@ -112,13 +132,13 @@ class CVEReportView(LaunchpadView):
 
         # Order the dictionary items by bug ID and then store only the
         # bugtaskcve objects.
-        self.open_cve_bugtasks = [
+        bugtaskcves.open.extend(
             bugtaskcve for bug, bugtaskcve in sorted(open_bugtaskcves.items())
-        ]
-        self.resolved_cve_bugtasks = [
+        )
+        bugtaskcves.resolved.extend(
             bugtaskcve
             for bug, bugtaskcve in sorted(resolved_bugtaskcves.items())
-        ]
+        )
 
         # The page contains links to the bug task assignees:
         # Pre-load the related Person and ValidPersonCache records
@@ -128,6 +148,8 @@ class CVEReportView(LaunchpadView):
                 assignee_ids, need_validity=True
             )
         )
+
+        return bugtaskcves
 
     def renderCVELinks(self, cves):
         """Render the CVE links related to the given bug.

@@ -191,18 +191,13 @@ class PackageDiff(StormBase):
     def _countDeletedLFAs(self):
         """How many files associated with either source package have been
         deleted from the librarian?"""
-        # Circular import.
-        from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-
         return (
             IStore(LibraryFileAlias)
             .find(
                 LibraryFileAlias.id,
-                SourcePackageRelease.id.is_in(
+                SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
                     (self.from_source_id, self.to_source_id)
                 ),
-                SourcePackageReleaseFile.sourcepackagereleaseID
-                == SourcePackageRelease.id,
                 SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
                 LibraryFileAlias.content == None,
             )

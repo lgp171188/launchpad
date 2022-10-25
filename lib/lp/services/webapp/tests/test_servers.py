@@ -32,8 +32,6 @@ from lp.services.auth.enums import AccessTokenScope
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.oauth.interfaces import TokenException
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.interfaces import IFinishReadOnlyRequestEvent
-from lp.services.webapp.publication import LaunchpadBrowserPublication
 from lp.services.webapp.servers import (
     ApplicationServerSettingRequestFactory,
     FeedsBrowserRequest,
@@ -49,7 +47,7 @@ from lp.services.webapp.servers import (
     WebServiceTestRequest,
     web_service_request_to_browser_request,
 )
-from lp.testing import EventRecorder, TestCase, TestCaseWithFactory, logout
+from lp.testing import TestCase, TestCaseWithFactory, logout
 from lp.testing.layers import DatabaseFunctionalLayer, FunctionalLayer
 from lp.testing.publication import get_request_and_publication
 
@@ -780,55 +778,6 @@ class LoggingTransaction:
 
     def abort(self):
         self.log.append("ABORT")
-
-
-class TestFinishReadOnlyRequest(TestCase):
-    # Publications that have a finishReadOnlyRequest() method are obliged to
-    # fire an IFinishReadOnlyRequestEvent.
-
-    def _test_publication(self, publication, expected_transaction_log):
-        # publication.finishReadOnlyRequest() issues an
-        # IFinishReadOnlyRequestEvent and alters the transaction.
-        fake_request = object()
-        fake_object = object()
-        fake_transaction = LoggingTransaction()
-
-        with EventRecorder() as event_recorder:
-            publication.finishReadOnlyRequest(
-                fake_request, fake_object, fake_transaction
-            )
-
-        self.assertEqual(expected_transaction_log, fake_transaction.log)
-
-        finish_events = [
-            event
-            for event in event_recorder.events
-            if IFinishReadOnlyRequestEvent.providedBy(event)
-        ]
-        self.assertEqual(
-            1,
-            len(finish_events),
-            (
-                "Expected only one IFinishReadOnlyRequestEvent, but "
-                "got: %r" % finish_events
-            ),
-        )
-
-        [finish_event] = finish_events
-        self.assertIs(fake_request, finish_event.request)
-        self.assertIs(fake_object, finish_event.object)
-
-    def test_WebServicePub_fires_FinishReadOnlyRequestEvent(self):
-        # WebServicePublication.finishReadOnlyRequest() issues an
-        # IFinishReadOnlyRequestEvent and aborts the transaction.
-        publication = WebServicePublication(None)
-        self._test_publication(publication, ["ABORT"])
-
-    def test_LaunchpadBrowserPub_fires_FinishReadOnlyRequestEvent(self):
-        # LaunchpadBrowserPublication.finishReadOnlyRequest() issues an
-        # IFinishReadOnlyRequestEvent and aborts the transaction.
-        publication = LaunchpadBrowserPublication(None)
-        self._test_publication(publication, ["ABORT"])
 
 
 class TestWebServiceAccessTokens(TestCaseWithFactory):

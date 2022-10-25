@@ -362,6 +362,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
         self.assertEqual([], args["package_repositories"])
         self.assertEqual({}, args["plugin_settings"])
         self.assertEqual({}, args["secrets"])
+        self.assertFalse(args["scan_malware"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git_no_artifactory_configuration(self):
@@ -444,6 +445,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "revocation_endpoint": RevocationEndpointMatcher(
                         job, self.now
                     ),
+                    "scan_malware": Is(False),
                     "series": Equals(job.build.distro_series.name),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "environment_variables": Equals(
@@ -514,6 +516,20 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
             {"soss_read_auth": "user:pass", "more_secrets": "confidential"},
             worker.call_log[1][5]["secrets"],
         )
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_scan_malware(self):
+        self.pushConfig("cibuild.soss", scan_malware=True)
+        package = self.factory.makeDistributionSourcePackage(
+            distribution=self.factory.makeDistribution(name="soss")
+        )
+        git_repository = self.factory.makeGitRepository(target=package)
+        job = self.makeJob(
+            stages=[[("test", 0)]], git_repository=git_repository
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertTrue(args["scan_malware"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archive_trusted_keys(self):

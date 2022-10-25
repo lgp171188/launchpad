@@ -853,9 +853,14 @@ class CVE:
         cls, distro_series_name: str
     ) -> Optional[DistroSeries]:
         if "/" in distro_series_name:
-            series_name, distro_name = distro_series_name.split("/", 1)
-            if distro_name == "esm":
+            if distro_series_name.startswith("esm-"):
                 distro_name = "ubuntu-esm"
+                series_name = distro_series_name.split("/", 1)[1]
+            elif distro_series_name.endswith("/esm"):
+                distro_name = "ubuntu-esm"
+                series_name = distro_series_name.split("/", 1)[0]
+            else:
+                series_name, distro_name = distro_series_name.split("/", 1)
         else:
             distro_name = "ubuntu"
             series_name = distro_series_name
