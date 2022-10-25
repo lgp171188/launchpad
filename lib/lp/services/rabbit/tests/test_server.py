@@ -31,10 +31,9 @@ class TestRabbitServer(TestCase):
         service_config.read_file(io.StringIO(fixture.config.service_config))
         self.assertEqual(["rabbitmq"], service_config.sections())
         expected = {
-            "host": "localhost:%d" % fixture.config.port,
-            "userid": "guest",
-            "password": "guest",
-            "virtual_host": "/",
+            "broker_urls": (
+                "amqp://guest:guest@localhost:%d//" % fixture.config.port
+            ),
         }
         observed = dict(service_config.items("rabbitmq"))
         self.assertEqual(expected, observed)

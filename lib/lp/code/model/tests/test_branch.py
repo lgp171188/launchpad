@@ -323,7 +323,7 @@ class TestBranchJobViaCelery(TestCaseWithFactory):
     def test_branchChanged_via_celery(self):
         """Running a job via Celery succeeds and emits expected output."""
         # Delay importing anything that uses Celery until RabbitMQLayer is
-        # running, so that config.rabbitmq.host is defined when
+        # running, so that config.rabbitmq.broker_urls is defined when
         # lp.services.job.celeryconfig is loaded.
         self.useFixture(
             FeatureFixture({"jobs.celery.enabled_classes": "BranchScanJob"})
