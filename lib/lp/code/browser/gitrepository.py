@@ -91,7 +91,6 @@ from lp.code.interfaces.gitref import IGitRefBatchNavigator
 from lp.code.interfaces.gitrepository import (
     ContributorGitIdentity,
     IGitRepository,
-    IGitRepositorySet,
 )
 from lp.code.interfaces.revisionstatus import (
     IRevisionStatusArtifactSet,
@@ -585,9 +584,7 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
     @action("Fork it", name="fork")
     def fork(self, action, data):
-        forked = getUtility(IGitRepositorySet).fork(
-            self.context, self.user, data.get("owner")
-        )
+        forked = self.context.fork(self.user, data.get("owner"))
         self.request.response.addNotification("Repository forked.")
         self.next_url = canonical_url(forked)
 

@@ -914,6 +914,24 @@ class IGitRepositoryView(IHasRecipes):
         :param commit_sha1: The commit sha1 for the report.
         """
 
+    @call_with(requester=REQUEST_USER)
+    @operation_parameters(
+        new_owner=Reference(
+            title=_("The person who will own the forked repository."),
+            schema=IPerson,
+        )
+    )
+    # Really IGitRepository, patched in lp.code.interfaces.webservice.
+    @operation_returns_entry(Interface)
+    @export_write_operation()
+    @operation_for_version("devel")
+    def fork(requester, new_owner):
+        """Fork this repository to the given user's account.
+
+        :param requester: The IPerson performing this fork.
+        :param new_owner: The IPerson that will own the forked repository.
+        :return: The newly created GitRepository."""
+
 
 class IGitRepositoryModerateAttributes(Interface):
     """IGitRepository attributes that can be edited by more than one
@@ -1337,14 +1355,6 @@ class IGitRepositorySet(Interface):
             to the target's code sharing policy.  (optional)
         :param with_hosting: Create the repository on the hosting service.
         """
-
-    def fork(origin, requester, new_owner):
-        """Fork a repository to the given user's account.
-
-        :param origin: The original GitRepository.
-        :param requester: The IPerson performing this fork.
-        :param new_owner: The IPerson that will own the forked repository.
-        :return: The newly created GitRepository."""
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @call_with(user=REQUEST_USER)

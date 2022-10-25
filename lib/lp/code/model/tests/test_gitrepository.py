@@ -3730,9 +3730,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
         another_person = self.factory.makePerson()
         another_team = self.factory.makeTeam(members=[another_person])
 
-        forked_repo = getUtility(IGitRepositorySet).fork(
-            repo, another_person, another_team
-        )
+        forked_repo = repo.fork(another_person, another_team)
         self.assertThat(
             forked_repo,
             MatchesStructure(
@@ -3768,9 +3766,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
         previous_repo = self.factory.makeGitRepository(target=repo.target)
         previous_repo.setOwnerDefault(True)
 
-        forked_repo = getUtility(IGitRepositorySet).fork(
-            repo, previous_repo.owner, previous_repo.owner
-        )
+        forked_repo = repo.fork(previous_repo.owner, previous_repo.owner)
         self.assertThat(
             forked_repo,
             MatchesStructure(
@@ -3807,7 +3803,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
             owner=person, registrant=person, name=repo.name, target=repo.target
         )
 
-        forked_repo = getUtility(IGitRepositorySet).fork(repo, person, person)
+        forked_repo = repo.fork(person, person)
         self.assertThat(
             forked_repo,
             MatchesStructure(
@@ -3842,9 +3838,7 @@ class TestGitRepositoryFork(TestCaseWithFactory):
             )
         person = self.factory.makePerson()
 
-        forked_repo = getUtility(IGitRepositorySet).fork(
-            non_default_repo, person, person
-        )
+        forked_repo = non_default_repo.fork(person, person)
         self.assertThat(
             forked_repo,
             MatchesStructure(
@@ -6668,6 +6662,88 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             b"builder_constraints: 'really-large' isn't a valid token",
             response.body,
         )
+
+    def test_fork_to_self(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        requester = self.factory.makePerson()
+        repository_url = api_url(repository)
+        requester_url = api_url(requester)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            repository_url, "fork", new_owner=requester_url
+        )
+        self.assertEqual(200, response.status)
+        self.assertEndsWith(response.jsonBody()["owner_link"], requester_url)
+        self.assertEqual(1, len(hosting_fixture.create.calls))
+
+    def test_fork_to_team_as_member(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[requester])
+        repository_url = api_url(repository)
+        team_url = api_url(team)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            repository_url, "fork", new_owner=team_url
+        )
+        self.assertEqual(200, response.status)
+        self.assertEndsWith(response.jsonBody()["owner_link"], team_url)
+        self.assertEqual(1, len(hosting_fixture.create.calls))
+
+    def test_fork_to_team_as_non_member(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam()
+        repository_url = api_url(repository)
+        team_url = api_url(team)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            repository_url, "fork", new_owner=team_url
+        )
+        self.assertEqual(401, response.status)
+        self.assertEqual(
+            b"The owner of the new repository must be you or a team of which "
+            b"you are a member.",
+            response.body,
+        )
+        self.assertEqual(0, len(hosting_fixture.create.calls))
+
+    def test_fork_invisible(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=owner, information_type=InformationType.USERDATA
+        )
+        requester = self.factory.makePerson()
+        with person_logged_in(owner):
+            repository_url = api_url(repository)
+            requester_url = api_url(requester)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            repository_url, "fork", new_owner=requester_url
+        )
+        self.assertEqual(401, response.status)
+        self.assertIn(b"launchpad.View", response.body)
+        self.assertEqual(0, len(hosting_fixture.create.calls))
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
