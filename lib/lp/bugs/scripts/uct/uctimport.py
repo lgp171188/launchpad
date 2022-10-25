@@ -38,6 +38,7 @@ from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bug import CreateBugParams, IBugSet
 from lp.bugs.interfaces.bugactivity import IBugActivitySet
+from lp.bugs.interfaces.bugattachment import BugAttachmentType
 from lp.bugs.interfaces.bugtask import BugTaskImportance, IBugTaskSet
 from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.bugs.interfaces.cve import ICveSet
@@ -166,6 +167,7 @@ class UCTImporter:
         )  # type: BugModel
 
         self._update_external_bug_urls(bug, cve.bug_urls)
+        self._update_patches(bug, cve.patch_urls)
 
         self._create_bug_tasks(
             bug,
@@ -222,6 +224,7 @@ class UCTImporter:
         )
         self._assign_bug_tasks(bug, cve.assignee)
         self._update_external_bug_urls(bug, cve.bug_urls)
+        self._update_patches(bug, cve.patch_urls)
 
         # Update or add new Vulnerabilities
         vulnerabilities_by_distro = {
@@ -428,6 +431,29 @@ class UCTImporter:
         bug_watch_set = getUtility(IBugWatchSet)
         for external_bug_url in bug_urls:
             bug_watch_set.fromText(external_bug_url, bug, self.bug_importer)
+
+    def _update_patches(self, bug: BugModel, patch_urls: List[CVE.PatchURL]):
+        attachments_by_url = {a.url: a for a in bug.attachments if a.url}
+        for patch_url in patch_urls:
+            title = "{}/{}".format(patch_url.package_name.name, patch_url.type)
+            if patch_url.notes:
+                title = "{}/{}".format(title, patch_url.notes)
+            if patch_url in attachments_by_url:
+                attachment = removeSecurityProxy(
+                    attachments_by_url[patch_url.url]
+                )
+                attachment.title = title
+                attachment.type = BugAttachmentType.PATCH
+            else:
+                bug.addAttachment(
+                    owner=bug.owner,
+                    data=None,
+                    comment=None,
+                    filename=None,
+                    url=patch_url.url,
+                    is_patch=True,
+                    description=title,
+                )
 
     def _make_bug_description(self, cve: CVE) -> str:
         """
