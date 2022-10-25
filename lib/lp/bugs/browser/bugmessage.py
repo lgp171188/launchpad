@@ -10,6 +10,7 @@ __all__ = [
 from io import BytesIO
 
 from zope.component import getUtility
+from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
 
@@ -28,6 +29,9 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
 
     custom_widget_comment = CustomWidgetFactory(
         TextAreaWidget, cssClass="comment-text"
+    )
+    custom_widget_attachment_url = CustomWidgetFactory(
+        TextWidget, displayWidth=44, displayMaxWidth=250
     )
 
     page_title = "Add a comment or attachment"
@@ -49,14 +53,19 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
 
     def validate(self, data):
 
-        # Ensure either a comment or filecontent was provide, but only
-        # if no errors have already been noted.
+        # Ensure either a comment or filecontent or a URL was provided,
+        # but only if no errors have already been noted.
         if len(self.errors) == 0:
             comment = data.get("comment") or ""
             filecontent = data.get("filecontent", None)
-            if not comment.strip() and not filecontent:
+            attachment_url = data.get("attachment_url") or ""
+            if (
+                not comment.strip()
+                and not filecontent
+                and not attachment_url.strip()
+            ):
                 self.addError(
-                    "Either a comment or attachment " "must be provided."
+                    "Either a comment or attachment must be provided."
                 )
 
     @action("Post Comment", name="save")
@@ -73,8 +82,10 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
         # Write proper FileUpload field and widget instead of this hack.
         file_ = self.request.form.get(self.widgets["filecontent"].name)
 
+        attachment_url = data.get("attachment_url")
+
         message = None
-        if data["comment"] or file_:
+        if data["comment"] or file_ or attachment_url:
             bugwatch_id = data.get("bugwatch_id")
             if bugwatch_id is not None:
                 bugwatch = getUtility(IBugWatchSet).get(bugwatch_id)
@@ -87,7 +98,7 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
                 bugwatch=bugwatch,
             )
 
-            # A blank comment with only a subect line is always added
+            # A blank comment with only a subject line is always added
             # when the user attaches a file, so show the add comment
             # feedback message only when the user actually added a
             # comment.
@@ -97,6 +108,9 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
                 )
 
         self.next_url = canonical_url(self.context)
+
+        attachment_description = data.get("attachment_description")
+
         if file_:
 
             # Slashes in filenames cause problems, convert them to dashes
@@ -104,11 +118,8 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
             filename = file_.filename.replace("/", "-")
 
             # if no description was given use the converted filename
-            file_description = None
-            if "attachment_description" in data:
-                file_description = data["attachment_description"]
-            if not file_description:
-                file_description = filename
+            if not attachment_description:
+                attachment_description = filename
 
             # Process the attachment.
             # If the patch flag is not consistent with the result of
@@ -132,7 +143,8 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
                 owner=self.user,
                 data=BytesIO(data["filecontent"]),
                 filename=filename,
-                description=file_description,
+                url=None,
+                description=attachment_description,
                 comment=message,
                 is_patch=is_patch,
             )
@@ -144,6 +156,21 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
 
             self.request.response.addNotification(
                 "Attachment %s added to bug." % filename
+            )
+
+        elif attachment_url:
+            is_patch = data["patch"]
+            bug.addAttachment(
+                owner=self.user,
+                data=None,
+                filename=None,
+                url=attachment_url,
+                description=attachment_description,
+                comment=message,
+                is_patch=is_patch,
+            )
+            self.request.response.addNotification(
+                "Attachment %s added to bug." % attachment_url
             )
 
     def shouldShowEmailMeWidget(self):

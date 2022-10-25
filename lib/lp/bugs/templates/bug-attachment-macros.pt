@@ -15,6 +15,12 @@
       <metal:widget metal:use-macro="context/@@launchpad_form/widget_row" />
     </tal:filecontent>
 
+    <tal:url
+        tal:define="widget nocall:view/widgets/attachment_url|nothing"
+        tal:condition="widget">
+      <metal:widget metal:use-macro="context/@@launchpad_form/widget_row" />
+    </tal:url>
+
     <tal:patch
         tal:define="widget nocall:view/widgets/patch|nothing"
         tal:condition="widget">

@@ -85,7 +85,6 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.compat import message_as_bytes
 from lp.services.features import getFeatureFlag
 from lp.services.fields import DuplicateBug
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.mail.mailwrapper import MailWrapper
 from lp.services.propertycache import cachedproperty
 from lp.services.searchbuilder import any, not_equals
@@ -534,17 +533,11 @@ class BugViewMixin:
             "other": [],
         }
         for attachment in self.context.attachments_unpopulated:
-            info = {
-                "attachment": attachment,
-                "file": ProxiedLibraryFileAlias(
-                    attachment.libraryfile, attachment
-                ),
-            }
             if attachment.type == BugAttachmentType.PATCH:
                 key = attachment.type
             else:
                 key = "other"
-            result[key].append(info)
+            result[key].append(attachment)
         return result
 
     @property
@@ -635,12 +628,6 @@ class BugView(LaunchpadView, BugViewMixin):
             dupes.append(dupe)
 
         return dupes
-
-    def proxiedUrlForLibraryFile(self, attachment):
-        """Return the proxied download URL for a Librarian file."""
-        return ProxiedLibraryFileAlias(
-            attachment.libraryfile, attachment
-        ).http_url
 
 
 class BugActivity(BugView):
@@ -1304,13 +1291,16 @@ class BugTextView(LaunchpadView):
 
     def attachment_text(self, attachment):
         """Return a text representation of a bug attachment."""
-        mime_type = normalize_mime_type.sub(
-            " ", attachment.libraryfile.mimetype
-        )
-        download_url = ProxiedLibraryFileAlias(
-            attachment.libraryfile, attachment
-        ).http_url
-        return "%s %s" % (download_url, mime_type)
+        if attachment.url:
+            if attachment.title != attachment.url:
+                return "{}: {}".format(attachment.title, attachment.url)
+            return attachment.url
+        elif attachment.libraryfile:
+            mime_type = normalize_mime_type.sub(
+                " ", attachment.libraryfile.mimetype
+            )
+            return "{} {}".format(attachment.displayed_url, mime_type)
+        raise AssertionError()
 
     def comment_text(self):
         """Return a text representation of bug comments."""

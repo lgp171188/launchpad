@@ -120,7 +120,19 @@ class TestUCTRecord(TestCase):
                                     "c25b2ae136039ffa820c26138ed4a5e5f3ab3841|"
                                     "local-CVE-2022-23222-fix"
                                 ),
-                            )
+                            ),
+                            UCTRecord.Patch(
+                                patch_type="upstream",
+                                entry=(
+                                    "https://github.com/389ds/389-ds-base/commit/58dbf084a63e6dbbd999bf6a70475fad8255f26a (1.4.4)"  # noqa: 501
+                                ),
+                            ),
+                            UCTRecord.Patch(
+                                patch_type="upstream",
+                                entry=(
+                                    "https://github.com/389ds/389-ds-base/commit/2e5b526012612d1d6ccace46398bee679a730271"  # noqa: 501
+                                ),
+                            ),
                         ],
                     ),
                     UCTRecord.Package(
@@ -260,7 +272,22 @@ class TestCVE(TestCaseWithFactory):
                     ],
                     priority=None,
                     tags=set(),
-                    patches=[],
+                    patches=[
+                        UCTRecord.Patch(
+                            patch_type="upstream",
+                            entry=(
+                                "https://github.com/389ds/389-ds-base/"
+                                "commit/123 (1.4.4)"
+                            ),
+                        ),
+                        UCTRecord.Patch(
+                            patch_type="upstream",
+                            entry=(
+                                "https://github.com/389ds/389-ds-base/"
+                                "commit/456"
+                            ),
+                        ),
+                    ],
                 ),
                 UCTRecord.Package(
                     name=dsp2.sourcepackagename.name,
@@ -417,6 +444,20 @@ class TestCVE(TestCaseWithFactory):
                     ),
                 ),
             ],
+            patch_urls=[
+                CVE.PatchURL(
+                    package_name=dsp1.sourcepackagename,
+                    type="upstream",
+                    url="https://github.com/389ds/389-ds-base/" "commit/123",
+                    notes="1.4.4",
+                ),
+                CVE.PatchURL(
+                    package_name=dsp1.sourcepackagename,
+                    type="upstream",
+                    url="https://github.com/389ds/389-ds-base/" "commit/456",
+                    notes=None,
+                ),
+            ],
         )
 
     def test_make_from_uct_record(self):
@@ -438,6 +479,40 @@ class TestCVE(TestCaseWithFactory):
         )
         self.assertEqual(xenial, CVE.get_distro_series("esm-infra/xenial"))
         self.assertEqual(precise, CVE.get_distro_series("precise/esm"))
+
+    def test_get_patches(self):
+        spn = self.factory.makeSourcePackageName()
+        self.assertListEqual(
+            [
+                CVE.PatchURL(
+                    package_name=spn,
+                    url="https://github.com/repo/1",
+                    type="upstream",
+                    notes=None,
+                ),
+                CVE.PatchURL(
+                    package_name=spn,
+                    url="https://github.com/repo/2",
+                    type="upstream",
+                    notes="1.2.3",
+                ),
+            ],
+            list(
+                CVE.get_patch_urls(
+                    spn,
+                    [
+                        UCTRecord.Patch("break-fix", "- -"),
+                        UCTRecord.Patch(
+                            "upstream", "https://github.com/repo/1"
+                        ),
+                        UCTRecord.Patch(
+                            "upstream", "https://github.com/repo/2 (1.2.3)"
+                        ),
+                        UCTRecord.Patch("other", "foo"),
+                    ],
+                )
+            ),
+        )
 
 
 class TestUCTImporterExporter(TestCaseWithFactory):
@@ -621,6 +696,20 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     ),
                 ),
             ],
+            patch_urls=[
+                CVE.PatchURL(
+                    package_name=self.ubuntu_package.sourcepackagename,
+                    type="upstream",
+                    url="https://github.com/389ds/389-ds-base/" "commit/123",
+                    notes="1.4.4",
+                ),
+                CVE.PatchURL(
+                    package_name=self.ubuntu_package.sourcepackagename,
+                    type="upstream",
+                    url="https://github.com/389ds/389-ds-base/" "commit/456",
+                    notes=None,
+                ),
+            ],
         )
         self.importer = UCTImporter()
         self.exporter = UCTExporter()
@@ -640,6 +729,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         watches = list(bug.watches)
         self.assertEqual(len(cve.bug_urls), len(watches))
         self.assertEqual(sorted(cve.bug_urls), sorted(w.url for w in watches))
+
+        self.checkBugAttachments(bug, cve)
 
     def checkBugTasks(self, bug: Bug, cve: CVE):
         bug_tasks = bug.bugtasks  # type: List[BugTask]
@@ -700,6 +791,20 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         for t in bug_tasks:
             self.assertEqual(cve.assignee, t.assignee)
+
+    def checkBugAttachments(self, bug: Bug, cve: CVE):
+        attachments_by_url = {a.url: a for a in bug.attachments if a.url}
+        for patch_url in cve.patch_urls:
+            self.assertIn(patch_url.url, attachments_by_url)
+            attachment = attachments_by_url[patch_url.url]
+            expected_title = "{}/{}".format(
+                patch_url.package_name.name, patch_url.type
+            )
+            if patch_url.notes:
+                expected_title = "{}/{}".format(
+                    expected_title, patch_url.notes
+                )
+            self.assertEqual(expected_title, attachment.title)
 
     def checkVulnerabilities(self, bug: Bug, cve: CVE):
         vulnerabilities = bug.vulnerabilities
@@ -769,6 +874,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(expected.notes, actual.notes)
         self.assertEqual(expected.mitigation, actual.mitigation)
         self.assertListEqual(expected.cvss, actual.cvss)
+        self.assertListEqual(expected.patch_urls, actual.patch_urls)
 
     def test_create_bug(self):
         bug = self.importer.create_bug(self.cve, self.lp_cve)
@@ -780,7 +886,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual([self.lp_cve], bug.cves)
 
         activities = list(bug.activity)
-        self.assertEqual(4, len(activities))
+        self.assertEqual(6, len(activities))
         import_bug_activity = activities[-1]
         self.assertEqual(self.bug_importer, import_bug_activity.person)
         self.assertEqual("bug", import_bug_activity.whatchanged)
@@ -1013,6 +1119,22 @@ class TestUCTImporterExporter(TestCaseWithFactory):
 
         # Remove URL
         cve.references.pop(0)
+        self.importer.update_bug(bug, cve, self.lp_cve)
+        self.checkBug(bug, cve)
+
+    def test_update_patch_urls(self):
+        bug = self.importer.create_bug(self.cve, self.lp_cve)
+        cve = self.cve
+
+        # Add new patch URL
+        cve.patch_urls.append(
+            CVE.PatchURL(
+                package_name=cve.distro_packages[0].package_name,
+                type="upstream",
+                url="https://github.com/123",
+                notes=None,
+            )
+        )
         self.importer.update_bug(bug, cve, self.lp_cve)
         self.checkBug(bug, cve)
 

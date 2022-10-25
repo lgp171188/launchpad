@@ -17,6 +17,7 @@ from lp.bugs.interfaces.bugattachment import (
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.propertycache import cachedproperty
 
 
@@ -35,9 +36,10 @@ class BugAttachment(StormBase):
         allow_none=False,
         default=IBugAttachment["type"].default,
     )
-    title = Unicode(allow_none=False)
-    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    _title = Unicode(name="title", allow_none=True)
+    libraryfile_id = Int(name="libraryfile", allow_none=True)
     libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
+    url = Unicode(allow_none=True)
     _message_id = Int(name="message", allow_none=False)
     _message = Reference(_message_id, "Message.id")
 
@@ -46,6 +48,7 @@ class BugAttachment(StormBase):
         bug,
         title,
         libraryfile,
+        url,
         message,
         type=IBugAttachment["type"].default,
     ):
@@ -53,8 +56,21 @@ class BugAttachment(StormBase):
         self.bug = bug
         self.title = title
         self.libraryfile = libraryfile
+        self.url = url
         self._message = message
         self.type = type
+
+    @property
+    def title(self) -> str:
+        if self._title:
+            return self._title
+        if self.libraryfile:
+            return self.libraryfile.filename
+        return self.url
+
+    @title.setter
+    def title(self, title) -> None:
+        self._title = title
 
     @cachedproperty
     def message(self):
@@ -81,14 +97,22 @@ class BugAttachment(StormBase):
         # Delete the reference to the LibraryFileContent record right now,
         # in order to avoid problems with not deleted files as described
         # in bug 387188.
-        self.libraryfile.content = None
+        if self.libraryfile:
+            self.libraryfile.content = None
         Store.of(self).remove(self)
 
     def getFileByName(self, filename):
         """See IBugAttachment."""
-        if filename == self.libraryfile.filename:
+        if self.libraryfile and filename == self.libraryfile.filename:
             return self.libraryfile
         raise NotFoundError(filename)
+
+    @property
+    def displayed_url(self):
+        return (
+            self.url
+            or ProxiedLibraryFileAlias(self.libraryfile, self).http_url
+        )
 
 
 @implementer(IBugAttachmentSet)
@@ -110,18 +134,26 @@ class BugAttachmentSet:
         self,
         bug,
         filealias,
+        url,
         title,
         message,
         attach_type=None,
         send_notifications=False,
     ):
         """See `IBugAttachmentSet`."""
+        if not filealias and not url:
+            raise ValueError("Either filealias or url must be provided")
+
+        if filealias and url:
+            raise ValueError("Only one of filealias or url may be provided")
+
         if attach_type is None:
             # XXX kiko 2005-08-03 bug=1659: this should use DEFAULT.
             attach_type = IBugAttachment["type"].default
         attachment = BugAttachment(
             bug=bug,
             libraryfile=filealias,
+            url=url,
             type=attach_type,
             title=title,
             message=message,

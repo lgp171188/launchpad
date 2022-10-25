@@ -142,11 +142,21 @@ the file when we later serialise the bug:
     >>> bug4 = getUtility(IBugSet).get(4)
     >>> sampleperson = getUtility(IPersonSet).getByEmail("test@canonical.com")
     >>> bug4.addAttachment(
-    ...     sampleperson,
-    ...     io.BytesIO(b"Hello World"),
-    ...     "Added attachment",
-    ...     "hello.txt",
+    ...     owner=sampleperson,
+    ...     data=io.BytesIO(b"Hello World"),
+    ...     comment="Added attachment",
+    ...     filename="hello.txt",
+    ...     url=None,
     ...     description='"Hello World" attachment',
+    ... )
+    <lp.bugs.model.bugattachment.BugAttachment ...>
+    >>> bug4.addAttachment(
+    ...     owner=sampleperson,
+    ...     data=None,
+    ...     comment="Added attachment with URL",
+    ...     filename=None,
+    ...     url="https://launchpad.net/",
+    ...     description=None,
     ... )
     <lp.bugs.model.bugattachment.BugAttachment ...>
 
@@ -166,13 +176,21 @@ attachment contents encoded using base-64:
     <text>Added attachment</text>
     <attachment href="http://bugs.launchpad.test/bugs/4/.../+files/hello.txt">
     <type>UNSPECIFIED</type>
-    <filename>hello.txt</filename>
     <title>"Hello World" attachment</title>
+    <filename>hello.txt</filename>
     <mimetype>text/plain</mimetype>
     <contents>SGVsbG8gV29ybGQ=
     </contents>
     </attachment>
     </comment>
+    <comment>
+    <sender name="name12">Sample Person</sender>
+    <date>...</date>
+    <text>Added attachment with URL</text>
+    <attachment href="https://launchpad.net/">
+    <type>UNSPECIFIED</type>
+    <title>https://launchpad.net/</title>
+    </attachment>
     ...
 
 

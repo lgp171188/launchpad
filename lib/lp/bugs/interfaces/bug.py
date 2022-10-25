@@ -43,6 +43,7 @@ from lazr.restful.interface import copy_field
 from zope.component import getUtility
 from zope.interface import Attribute, Interface
 from zope.schema import (
+    URI,
     Bool,
     Bytes,
     Choice,
@@ -877,11 +878,12 @@ class IBugAppend(Interface):
 
     @call_with(owner=REQUEST_USER, from_api=True)
     @operation_parameters(
-        data=Bytes(constraint=attachment_size_constraint),
+        data=Bytes(constraint=attachment_size_constraint, required=False),
         comment=Text(),
-        filename=TextLine(),
+        filename=TextLine(required=False),
+        url=URI(required=False),
         is_patch=Bool(),
-        content_type=TextLine(),
+        content_type=TextLine(required=False),
         description=Text(),
     )
     @export_factory_operation(IBugAttachment, [])
@@ -891,6 +893,7 @@ class IBugAppend(Interface):
         data,
         comment,
         filename,
+        url,
         is_patch=False,
         content_type=None,
         description=None,
@@ -903,6 +906,7 @@ class IBugAppend(Interface):
         :description: A brief description of the attachment.
         :comment: An IMessage or string.
         :filename: A string.
+        :url: External URL of the attachment
         :is_patch: A boolean.
         """
 
@@ -956,12 +960,13 @@ class IBugAppend(Interface):
         """
 
     def linkAttachment(
-        owner, file_alias, comment, is_patch=False, description=None
+        owner, file_alias, url, comment, is_patch=False, description=None
     ):
         """Link an `ILibraryFileAlias` to this bug.
 
         :owner: An IPerson.
         :file_alias: The `ILibraryFileAlias` to link to this bug.
+        :url: External URL of the attachment.
         :description: A brief description of the attachment.
         :comment: An IMessage or string.
         :is_patch: A boolean.

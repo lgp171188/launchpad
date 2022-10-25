@@ -23,6 +23,7 @@ We'll start by adding some attachments to the bug:
     ...     content,
     ...     "comment for file a",
     ...     "file_a.txt",
+    ...     url=None,
     ...     content_type="text/html",
     ... )
     >>> content = BytesIO(b"do we need to")
@@ -31,6 +32,7 @@ We'll start by adding some attachments to the bug:
     ...     content,
     ...     "comment for file with space",
     ...     "file with space.txt",
+    ...     url=None,
     ...     content_type='text/plain;\n  name="file with space.txt"',
     ... )
     >>> content = BytesIO(b"Yes we can!")
@@ -39,6 +41,7 @@ We'll start by adding some attachments to the bug:
     ...     content,
     ...     "comment for patch",
     ...     "bug-patch.diff",
+    ...     url=None,
     ...     is_patch=True,
     ...     content_type="text/plain",
     ...     description="a patch",

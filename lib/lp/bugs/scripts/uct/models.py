@@ -2,16 +2,29 @@
 #  GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
+import re
 from collections import OrderedDict, defaultdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 from typing.io import TextIO
 
 import dateutil.parser
 from contrib.cve_lib import load_cve
 from zope.component import getUtility
+from zope.schema import URI
+from zope.schema.interfaces import InvalidURI
 
 from lp.bugs.enums import VulnerabilityStatus
 from lp.bugs.interfaces.bugtask import BugTaskImportance, BugTaskStatus
@@ -448,6 +461,21 @@ class CVE:
         ),
     )
 
+    PatchURL = NamedTuple(
+        "PatchURL",
+        (
+            ("package_name", SourcePackageName),
+            ("type", str),
+            ("url", str),
+            ("notes", Optional[str]),
+        ),
+    )
+
+    # Example:
+    # https://github.com/389ds/389-ds-base/commit/123 (1.4.4)
+    # https://github.com/389ds/389-ds-base/commit/345
+    PATCH_URL_RE = re.compile(r"^(?P<url>.+?)(\s+\((?P<notes>.+)\))?$")
+
     PRIORITY_MAP = {
         UCTRecord.Priority.CRITICAL: BugTaskImportance.CRITICAL,
         UCTRecord.Priority.HIGH: BugTaskImportance.HIGH,
@@ -502,6 +530,7 @@ class CVE:
         notes: str,
         mitigation: str,
         cvss: List[CVSS],
+        patch_urls: Optional[List[PatchURL]] = None,
     ):
         self.sequence = sequence
         self.date_made_public = date_made_public
@@ -521,6 +550,7 @@ class CVE:
         self.notes = notes
         self.mitigation = mitigation
         self.cvss = cvss
+        self.patch_urls = patch_urls or []  # type: List[CVE.PatchURL]
 
     @classmethod
     def make_from_uct_record(cls, uct_record: UCTRecord) -> "CVE":
@@ -532,6 +562,7 @@ class CVE:
 
         distro_packages = []
         series_packages = []
+        patch_urls = []
 
         spn_set = getUtility(ISourcePackageNameSet)
 
@@ -541,6 +572,11 @@ class CVE:
 
         for uct_package in uct_record.packages:
             source_package_name = spn_set.getOrCreateByName(uct_package.name)
+
+            patch_urls.extend(
+                cls.get_patch_urls(source_package_name, uct_package.patches)
+            )
+
             package_importance = (
                 cls.PRIORITY_MAP[uct_package.priority]
                 if uct_package.priority
@@ -660,6 +696,7 @@ class CVE:
             notes=uct_record.notes,
             mitigation=uct_record.mitigation,
             cvss=uct_record.cvss,
+            patch_urls=patch_urls,
         )
 
     def to_uct_record(self) -> UCTRecord:
@@ -749,6 +786,17 @@ class CVE:
                     patches=[],
                 )
 
+        for patch_url in self.patch_urls:
+            entry = patch_url.url
+            if patch_url.notes:
+                entry = "{} ({})".format(entry, patch_url.notes)
+            packages_by_name[patch_url.package_name.name].patches.append(
+                UCTRecord.Patch(
+                    patch_type=patch_url.type,
+                    entry=entry,
+                )
+            )
+
         return UCTRecord(
             parent_dir=self.VULNERABILITY_STATUS_MAP_REVERSE.get(
                 self.status, ""
@@ -831,3 +879,33 @@ class CVE:
                 "Could not find the distro series: %s", distro_series_name
             )
         return distro_series
+
+    @classmethod
+    def get_patch_urls(
+        cls,
+        source_package_name: SourcePackageName,
+        patches: List[UCTRecord.Patch],
+    ) -> Iterable[PatchURL]:
+        for patch in patches:
+            if patch.patch_type == "break-fix":
+                continue
+            match = cls.PATCH_URL_RE.match(patch.entry)
+            if not match:
+                logger.warning(
+                    "Could not parse the patch entry: %s", patch.entry
+                )
+                continue
+
+            try:
+                url = URI().fromUnicode(match.groupdict()["url"])
+            except InvalidURI:
+                logger.error("Invalid patch URL: %s", patch.entry)
+                continue
+
+            notes = match.groupdict().get("notes")
+            yield cls.PatchURL(
+                package_name=source_package_name,
+                type=patch.patch_type,
+                url=url,
+                notes=notes,
+            )

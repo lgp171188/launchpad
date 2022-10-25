@@ -44,6 +44,7 @@ from lp.app.interfaces.launchpad import (
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.interfaces.sprint import ISprint
 from lp.bugs.interfaces.bug import IBug
+from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.buildmaster.enums import BuildStatus
 from lp.code.enums import RevisionStatusResult
 from lp.code.interfaces.branch import IBranch
@@ -726,7 +727,6 @@ class ObjectImageDisplayAPI:
     def __init__(self, context):
         self._context = context
 
-    # def default_icon_resource(self, context):
     def sprite_css(self):
         """Return the CSS class for the sprite"""
         # XXX: mars 2008-08-22 bug=260468
@@ -754,6 +754,13 @@ class ObjectImageDisplayAPI:
             sprite_string = "meeting"
         elif IBug.providedBy(context):
             sprite_string = "bug"
+        elif IBugAttachment.providedBy(context):
+            if context.url:
+                sprite_string = "external-link"
+            elif context.is_patch:
+                sprite_string = "haspatch-icon"
+            else:
+                sprite_string = "download-icon"
         elif IPPA.providedBy(context):
             if context.enabled:
                 sprite_string = "ppa-icon"
@@ -1864,6 +1871,36 @@ class BugTaskFormatterAPI(CustomizableFormatter):
 
     def _make_link_summary(self):
         return BugFormatterAPI(self._context.bug)._make_link_summary()
+
+
+class BugAttachmentFormatterAPI(CustomizableFormatter):
+
+    final_traversable_names = dict(
+        **CustomizableFormatter.final_traversable_names,
+        attachment_link="attachment_link",
+    )
+
+    def attachment_link(self):
+        sprite = self.sprite_css()
+        if sprite is None:
+            css = ""
+        else:
+            css = ' class="' + sprite + '"'
+
+        if self._context.url:
+            rel = ' rel="nofollow"'
+        else:
+            rel = ""
+
+        title = structured(self._context.title).escapedtext
+        url = structured(self._context.displayed_url).escapedtext
+
+        return """<a href="{url}"{css}{rel}>{title}</a>""".format(
+            title=title,
+            url=url,
+            css=css,
+            rel=rel,
+        )
 
 
 class CodeImportFormatterAPI(CustomizableFormatter):

@@ -1608,6 +1608,7 @@ class Bug(SQLBase, InformationTypeMixin):
         data,
         comment,
         filename,
+        url,
         is_patch=False,
         content_type=None,
         description=None,
@@ -1619,35 +1620,45 @@ class Bug(SQLBase, InformationTypeMixin):
         # wrongly encoded.
         if from_api:
             data = get_raw_form_value_from_current_request(data, "data")
-        if isinstance(data, bytes):
-            filecontent = data
-        else:
-            filecontent = data.read()
 
-        if is_patch:
-            content_type = "text/plain"
-        else:
-            if content_type is None:
-                content_type, encoding = guess_content_type(
-                    name=filename, body=filecontent
-                )
+        if data:
+            if isinstance(data, bytes):
+                filecontent = data
+            else:
+                filecontent = data.read()
 
-        filealias = getUtility(ILibraryFileAliasSet).create(
-            name=filename,
-            size=len(filecontent),
-            file=BytesIO(filecontent),
-            contentType=content_type,
-            restricted=self.private,
-        )
+            if is_patch:
+                content_type = "text/plain"
+            else:
+                if content_type is None:
+                    content_type, encoding = guess_content_type(
+                        name=filename, body=filecontent
+                    )
+
+            file_alias = getUtility(ILibraryFileAliasSet).create(
+                name=filename,
+                size=len(filecontent),
+                file=BytesIO(filecontent),
+                contentType=content_type,
+                restricted=self.private,
+            )
+        else:
+            file_alias = None
 
         return self.linkAttachment(
-            owner, filealias, comment, is_patch, description
+            owner=owner,
+            file_alias=file_alias,
+            url=url,
+            comment=comment,
+            is_patch=is_patch,
+            description=description,
         )
 
     def linkAttachment(
         self,
         owner,
         file_alias,
+        url,
         comment,
         is_patch=False,
         description=None,
@@ -1670,11 +1681,6 @@ class Bug(SQLBase, InformationTypeMixin):
         else:
             attach_type = BugAttachmentType.UNSPECIFIED
 
-        if description:
-            title = description
-        else:
-            title = file_alias.filename
-
         if IMessage.providedBy(comment):
             message = comment
         else:
@@ -1685,8 +1691,9 @@ class Bug(SQLBase, InformationTypeMixin):
         return getUtility(IBugAttachmentSet).create(
             bug=self,
             filealias=file_alias,
+            url=url,
             attach_type=attach_type,
-            title=title,
+            title=description,
             message=message,
             send_notifications=send_notifications,
         )
@@ -2206,9 +2213,10 @@ class Bug(SQLBase, InformationTypeMixin):
         # XXX: This should be a bulk update. RBC 20100827
         # bug=https://bugs.launchpad.net/storm/+bug/625071
         for attachment in self.attachments_unpopulated:
-            attachment.libraryfile.restricted = (
-                information_type in PRIVATE_INFORMATION_TYPES
-            )
+            if attachment.libraryfile:
+                attachment.libraryfile.restricted = (
+                    information_type in PRIVATE_INFORMATION_TYPES
+                )
 
         self.information_type = information_type
         self._reconcileAccess()
@@ -2558,16 +2566,34 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def _attachments_query(self):
         """Helper for the attachments* properties."""
-        # bug attachments with no LibraryFileContent have been deleted - the
-        # garbo_daily run will remove the LibraryFileAlias asynchronously.
-        # See bug 542274 for more details.
+        # get bug attachments that have either a URL,
+        # or associated LibraryFileContent
+        # bug attachments with LibraryFileAlias and no LibraryFileContent have
+        # been deleted - the garbo_daily run will remove the LibraryFileAlias
+        # asynchronously. See bug 542274 for more details.
         store = Store.of(self)
-        return store.find(
-            (BugAttachment, LibraryFileAlias, LibraryFileContent),
-            BugAttachment.bug == self,
-            BugAttachment.libraryfile == LibraryFileAlias.id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-        ).order_by(BugAttachment.id)
+        return (
+            store.using(
+                BugAttachment,
+                LeftJoin(
+                    LibraryFileAlias,
+                    BugAttachment.libraryfile == LibraryFileAlias.id,
+                ),
+                LeftJoin(
+                    LibraryFileContent,
+                    LibraryFileContent.id == LibraryFileAlias.contentID,
+                ),
+            )
+            .find(
+                (BugAttachment, LibraryFileAlias, LibraryFileContent),
+                BugAttachment.bug == self,
+                Or(
+                    BugAttachment.url != None,
+                    LibraryFileAlias.contentID != None,
+                ),
+            )
+            .order_by(BugAttachment.id)
+        )
 
     @property
     def attachments(self):

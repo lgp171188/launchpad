@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Bytes, Int, Object, Text, TextLine
+from zope.schema import URI, Bool, Bytes, Int, Object, Text, TextLine
 
 from lp.app.validators.attachment import attachment_size_constraint
 from lp.bugs.interfaces.bug import IBug
@@ -103,6 +103,7 @@ class IBugMessageAddForm(Interface):
         required=False,
         constraint=attachment_size_constraint,
     )
+    attachment_url = URI(title="URL", required=False)
     patch = Bool(
         title="This attachment contains a solution (patch) for this bug",
         required=False,

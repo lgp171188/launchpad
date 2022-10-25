@@ -410,6 +410,7 @@ class MaloneHandler:
             getUtility(IBugAttachmentSet).create(
                 bug=bug,
                 filealias=blob,
+                url=None,
                 attach_type=attach_type,
                 title=blob.filename,
                 message=message,

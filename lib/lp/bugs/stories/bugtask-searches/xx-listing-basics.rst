@@ -311,6 +311,7 @@ Patches also appear as badges in bug listings.
     ...     owner=foobar,
     ...     data=BytesIO(b"file data"),
     ...     filename="foo.bar",
+    ...     url=None,
     ...     description="this fixes the bug",
     ...     comment=message,
     ...     is_patch=True,
