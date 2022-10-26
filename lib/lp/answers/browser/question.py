@@ -296,6 +296,13 @@ class QuestionBreadcrumb(Breadcrumb):
     def text(self):
         return "Question #%d" % self.context.id
 
+    @property
+    def detail(self):
+        return smartquote('%s "%s"') % (
+            self.text,
+            self.context.title,
+        )
+
 
 class QuestionSetView(LaunchpadFormView):
     """View for the Answer Tracker index page."""

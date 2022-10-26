@@ -12,9 +12,6 @@ an email post to examine the markup rules. This message contains a
 quoted passage, and a signature with an email address in it.
 
     >>> user_browser.open("http://answers.launchpad.test/ubuntu/+question/11")
-    >>> print(user_browser.title)
-    Question #11 : ...
-
     >>> user_browser.getControl("Message").value = (
     ...     "Top quoting is bad netiquette.\n"
     ...     "The leading text will be displayed\n"
@@ -39,8 +36,6 @@ Email addresses are only shown to authenticated users
 Email addresses are visible to authenticated users. Sample Person is
 authenticated already, so they will see 'human@somewhere.org'.
 
-    >>> print(user_browser.title)
-    Question #11 :  ...
     >>> text = find_tags_by_class(user_browser.contents, "boardCommentBody")[
     ...     -1
     ... ]
@@ -55,9 +50,6 @@ of 'person@domain.dom'. The anonymous user is unauthenticated, so they will
 see the obfuscated email address (<email address hidden>).
 
     >>> anon_browser.open("http://answers.launchpad.test/ubuntu/+question/11")
-    >>> print(anon_browser.title)
-    Question #11 : ...
-
     >>> text = find_tags_by_class(anon_browser.contents, "boardCommentBody")[
     ...     -1
     ... ]
