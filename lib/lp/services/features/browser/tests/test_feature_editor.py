@@ -13,10 +13,10 @@ from zope.security.interfaces import Unauthorized
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.features.browser.edit import FeatureControlView
 from lp.services.features.changelog import ChangeLog
+from lp.services.features.interfaces import IFeatureRules
 from lp.services.features.rulesource import StormFeatureRuleSource
 from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import html_escape
-from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.testing import BrowserTestCase, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import Contains
@@ -30,6 +30,27 @@ class TestFeatureControlPage(BrowserTestCase):
     def setUp(self):
         super().setUp()
         self.useFixture(FakeLogger())
+        self.celebrities = getUtility(ILaunchpadCelebrities)
+
+    @property
+    def admin_browser(self):
+        return self.getUserBrowserAsTeamMember([self.celebrities.admin])
+
+    @property
+    def launchpad_developer_browser(self):
+        return self.getUserBrowserAsTeamMember(
+            [self.celebrities.launchpad_developers]
+        )
+
+    @property
+    def registry_expert_browser(self):
+        return self.getUserBrowserAsTeamMember(
+            [self.celebrities.registry_experts]
+        )
+
+    @property
+    def unprivileged_browser(self):
+        return self.getUserBrowserAsTeamMember([])
 
     def getUserBrowserAsTeamMember(self, teams):
         """Make a TestBrowser authenticated as a team member.
@@ -42,22 +63,15 @@ class TestFeatureControlPage(BrowserTestCase):
                 team.addMember(self.user, reviewer=team.teamowner)
         return self.getUserBrowser(url=None, user=self.user)
 
-    def getUserBrowserAsAdmin(self):
-        """Make a new TestBrowser logged in as an admin user."""
-        admin_team = getUtility(ILaunchpadCelebrities).admin
-        return self.getUserBrowserAsTeamMember([admin_team])
-
     def getFeatureRulesViewURL(self):
-        root = getUtility(ILaunchpadRoot)
-        return canonical_url(root, view_name="+feature-rules")
+        return canonical_url(getUtility(IFeatureRules))
 
     def getFeatureRulesEditURL(self):
-        root = getUtility(ILaunchpadRoot)
-        return canonical_url(root, view_name="+feature-rules")
+        return canonical_url(getUtility(IFeatureRules))
 
     def test_feature_page_default_value(self):
         """No rules in the sampledata gives no content in the page"""
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesViewURL())
         textarea = browser.getControl(name="field.feature_rules")
         # and by default, since there are no rules in the sample data, it's
@@ -71,7 +85,7 @@ class TestFeatureControlPage(BrowserTestCase):
                 ("ui.icing", "beta_user", 300, "4.0"),
             ]
         )
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesViewURL())
         textarea = browser.getControl(name="field.feature_rules")
         self.assertThat(
@@ -87,27 +101,32 @@ class TestFeatureControlPage(BrowserTestCase):
             Unauthorized, browser.open, self.getFeatureRulesViewURL()
         )
 
-    def test_feature_rules_plebian_unauthorized(self):
+    def test_feature_rules_unprivileged_unauthorized(self):
         """Logged in, but not a member of any interesting teams."""
-        browser = self.getUserBrowserAsTeamMember([])
+        browser = self.unprivileged_browser
         self.assertRaises(
             Unauthorized, browser.open, self.getFeatureRulesViewURL()
         )
 
     def test_feature_page_can_view(self):
         """User that can only view the rules do not see the form."""
-        browser = self.getUserBrowserAsTeamMember(
-            [getUtility(ILaunchpadCelebrities).registry_experts]
-        )
+        browser = self.registry_expert_browser
         browser.open(self.getFeatureRulesViewURL())
         content = find_main_content(browser.contents)
         self.assertEqual(None, find_tag_by_id(content, "field.feature_rules"))
         self.assertEqual(None, find_tag_by_id(content, "field.actions.change"))
         self.assertTrue(find_tag_by_id(content, "feature-rules"))
 
-    def test_feature_page_submit_changes(self):
+    def test_feature_page_can_submit_changes_admin(self):
+        browser = self.admin_browser
+        self._test_feature_page_submit_changes(browser)
+
+    def test_feature_page_can_submit_changes_lp_developer(self):
+        browser = self.launchpad_developer_browser
+        self._test_feature_page_submit_changes(browser)
+
+    def _test_feature_page_submit_changes(self, browser):
         """Submitted changes show up in the db."""
-        browser = self.getUserBrowserAsAdmin()
         browser.open(self.getFeatureRulesEditURL())
         new_value = "beta_user some_key 10 some value with spaces"
         textarea = browser.getControl(name="field.feature_rules")
@@ -132,7 +151,7 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def test_change_message(self):
         """Submitting shows a message that the changes have been applied."""
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
         textarea = browser.getControl(name="field.feature_rules")
         textarea.value = "beta_user some_key 10 some value with spaces"
@@ -144,7 +163,7 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def test_change_diff(self):
         """Submitting shows a diff of the changes."""
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
         browser.getControl(
             name="field.feature_rules"
@@ -173,7 +192,7 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def test_change_logging_note(self):
         """When submitting changes the name of the logger is shown."""
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
         browser.getControl(
             name="field.feature_rules"
@@ -189,7 +208,7 @@ class TestFeatureControlPage(BrowserTestCase):
         """Correctly handle submitting an empty value."""
         # Zope has the quirk of conflating empty with absent; make sure we
         # handle it properly.
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
         new_value = ""
         textarea = browser.getControl(name="field.feature_rules")
@@ -208,7 +227,7 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def test_error_for_duplicate_priority(self):
         """Duplicate priority values for a flag result in a nice error."""
-        browser = self.getUserBrowserAsAdmin()
+        browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
         textarea = browser.getControl(name="field.feature_rules")
         textarea.value = dedent(

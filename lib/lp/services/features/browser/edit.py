@@ -69,7 +69,7 @@ class FeatureControlView(LaunchpadFormView):
 
     def canSubmit(self, action):
         """Is the user authorized to change the rules?"""
-        return check_permission("launchpad.Admin", self.context)
+        return check_permission("launchpad.Edit", self.context)
 
     @action("Change", name="change", condition=canSubmit)
     def change_action(self, action, data):

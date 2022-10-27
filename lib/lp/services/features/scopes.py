@@ -33,12 +33,12 @@ undocumented_scopes = set()
 class BaseScope:
     """A base class for scope handlers.
 
-    The docstring of subclasses is used on the +feature-info page as
+    The docstring of subclasses is used on the +feature-rules/info page as
     documentation, so write them accordingly.
     """
 
     # The regex pattern used to decide if a handler can evaluate a particular
-    # scope.  Also used on +feature-info.
+    # scope.  Also used on +feature-rules/info.
     pattern = None
 
     @cachedproperty
@@ -202,7 +202,8 @@ class FixedScope(BaseScope):
     """A scope that matches an exact value.
 
     Functionally `ScriptScope` and `DefaultScope` are equivalent to instances
-    of this class, but their docstings are used on the +feature-info page.
+    of this class, but their docstings are used on the +feature-rules/info
+    page.
     """
 
     def __init__(self, scope):

@@ -16,10 +16,10 @@
 
   <ul class="horizontal" style="margin-bottom:1em;">
     <li>
-      <a class="sprite edit" href="+feature-rules">Feature control</a>
+      <a class="sprite edit" tal:attributes="href context/fmt:url">Feature control</a>
     </li>
     <li>
-      <a class="sprite info" href="+feature-changelog">Feature flag changelog</a>
+      <a class="sprite info" tal:attributes="href context/fmt:url/changelog">Feature flag changelog</a>
     </li>
   </ul>
 
