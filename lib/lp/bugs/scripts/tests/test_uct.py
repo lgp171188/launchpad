@@ -575,15 +575,8 @@ class TestUCTImporterExporter(TestCaseWithFactory):
                     sourcepackagename=self.ubuntu_package.sourcepackagename,
                 ),
             )
-
-        for series in (self.esm_current_series, self.esm_supported_series):
-            self.factory.makeSourcePackagePublishingHistory(
-                distroseries=series,
-                sourcepackagerelease=self.factory.makeSourcePackageRelease(
-                    distroseries=series,
-                    sourcepackagename=self.esm_package.sourcepackagename,
-                ),
-            )
+        # Note: The ubuntu-esm distribution does not have any source packages
+        # published.
 
         self.lp_cve = self.factory.makeCVE("2022-23222")
         self.cve = CVE(
@@ -893,6 +886,92 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.assertEqual(
             "UCT CVE entry CVE-2022-23222", import_bug_activity.message
         )
+
+    def test_create_bug_distribution_has_published_sources_false(self):
+        distribution = self.factory.makeDistribution(
+            name="no-published-sources"
+        )
+        self.assertFalse(distribution.has_published_sources)
+        supported_series = self.factory.makeDistroSeries(
+            distribution=distribution,
+            status=SeriesStatus.SUPPORTED,
+            name="supported-series",
+        )
+        current_series = self.factory.makeDistroSeries(
+            distribution=distribution,
+            status=SeriesStatus.CURRENT,
+            name="current-series",
+        )
+        affected_package = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        cve = CVE(
+            sequence="CVE-2022-1234",
+            date_made_public=datetime.datetime(
+                2022, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            date_notice_issued=datetime.datetime(
+                2021, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            date_coordinated_release=datetime.datetime(
+                2020, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
+            ),
+            distro_packages=[
+                CVE.DistroPackage(
+                    target=affected_package,
+                    importance=BugTaskImportance.LOW,
+                    package_name=affected_package.sourcepackagename,
+                ),
+            ],
+            series_packages=[
+                CVE.SeriesPackage(
+                    target=SourcePackage(
+                        sourcepackagename=affected_package.sourcepackagename,
+                        distroseries=supported_series,
+                    ),
+                    package_name=affected_package.sourcepackagename,
+                    importance=BugTaskImportance.HIGH,
+                    status=BugTaskStatus.FIXRELEASED,
+                    status_explanation="released",
+                ),
+                CVE.SeriesPackage(
+                    target=SourcePackage(
+                        sourcepackagename=affected_package.sourcepackagename,
+                        distroseries=current_series,
+                    ),
+                    package_name=affected_package.sourcepackagename,
+                    importance=None,
+                    status=BugTaskStatus.DOESNOTEXIST,
+                    status_explanation="does not exist",
+                ),
+            ],
+            upstream_packages=[],
+            importance=BugTaskImportance.MEDIUM,
+            status=VulnerabilityStatus.ACTIVE,
+            assignee=self.factory.makePerson(),
+            discovered_by="tr3e wang",
+            description="description",
+            ubuntu_description="ubuntu-description",
+            bug_urls=["https://github.com/mm2/Little-CMS/issues/29"],
+            references=["https://ubuntu.com/security/notices/USN-5368-1"],
+            notes="author> text",
+            mitigation="mitigation",
+            cvss=[
+                CVSS(
+                    authority="nvd",
+                    vector_string=(
+                        "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H "
+                        "[7.8 HIGH]"
+                    ),
+                ),
+            ],
+            patch_urls=[],
+        )
+        lp_cve = self.factory.makeCVE(sequence="2022-1234")
+        bug = self.importer.create_bug(cve, lp_cve)
+        self.checkBug(bug, cve)
+        self.checkBugTasks(bug, cve)
+        self.assertEqual([lp_cve], bug.cves)
 
     def test_find_existing_bug(self):
         self.assertIsNone(
