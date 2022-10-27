@@ -35,14 +35,12 @@ For example, No Privileges Person comes across a question about SVG
 support in Firefox. That question has a well-known answer, so they click
 on 'Link to a FAQ' to answer the question:
 
-    # We use backslashreplace because the page title includes smart quotes.
-    >>> from lp.services.helpers import backslashreplace
     >>> user_browser.open("http://answers.launchpad.test/firefox/+question/2")
-    >>> print(backslashreplace(user_browser.title))
-    Question #2 : ...
+    >>> print(user_browser.title)
+    Question #2 ...
 
     >>> user_browser.getLink("Link to a FAQ").click()
-    >>> print(backslashreplace(user_browser.title))
+    >>> print(user_browser.title)
     Is question #2 a FAQ...
 
 This page lists the existing FAQs matching the question's title. In
@@ -143,6 +141,7 @@ A link to the FAQ appears under the question's description:
 
 The answer message was added to the question's discussion:
 
+    >>> from lp.services.helpers import backslashreplace
     >>> print(
     ...     backslashreplace(
     ...         extract_text(
@@ -389,7 +388,7 @@ can also be linked to FAQs.
 
     >>> user_browser.open("http://answers.launchpad.test/ubuntu/+question/11")
     >>> print(user_browser.title)
-    Question #11 : ...
+    Question #11 ...
     >>> user_browser.getLink("Link to a FAQ").click()
     >>> print(user_browser.title)
     Is question #11 a FAQ...
@@ -399,7 +398,7 @@ can also be linked to FAQs.
     ...     "/+question/8"
     ... )
     >>> print(user_browser.title)
-    Question #8 : ...
+    Question #8 ...
     >>> user_browser.getLink("Link to a FAQ").click()
     >>> user_browser.title
     'Is question #8 a FAQ...
@@ -439,7 +438,7 @@ added to the question, and their message was added to the question's
 discussion.
 
     >>> print(user_browser.title)
-    Question #9 : ...
+    Question #9 ...
     >>> print_question_status(user_browser)
     Status: Solved
 
