@@ -35,6 +35,19 @@ def prepare_rabbitmq(rabbitmq):
     rabbitmq.request_access(config["rabbitmq_user"], config["domain"])
 
 
+def get_rabbitmq_uris(rabbitmq):
+    for conversation in rabbitmq.conversations():
+        for relation_id in conversation.relation_ids:
+            for unit in hookenv.related_units(relation_id):
+                hostname = hookenv.relation_get(
+                    "private-address", unit, relation_id
+                )
+                vhost = rabbitmq.vhost()
+                username = rabbitmq.username()
+                password = rabbitmq.password()
+                yield f"amqp://{username}:{password}@{hostname}/{vhost}"
+
+
 @when("ols.configured", "db.master.available", "rabbitmq.available")
 @when_not("launchpad.base.configured")
 def configure(db, rabbitmq):
@@ -54,14 +67,7 @@ def configure(db, rabbitmq):
     # specific to the appserver.  We need to teach Launchpad to be able to
     # log in as one role and then switch to another.
     config["db_user"] = parse_dsn(db_primary)["user"]
-    # XXX cjwatson 2022-09-29: How do we implement HA?  Looks like we'd need
-    # code changes to let us configure multiple broker URLs.  (At the moment
-    # we rely on round-robin DNS on production, but that probably doesn't
-    # provide very good HA either.)
-    config["rabbitmq_host"] = rabbitmq.private_address()
-    config["rabbitmq_username"] = rabbitmq.username()
-    config["rabbitmq_password"] = rabbitmq.password()
-    config["rabbitmq_vhost"] = rabbitmq.vhost()
+    config["rabbitmq_broker_urls"] = sorted(get_rabbitmq_uris(rabbitmq))
     configure_lazr(
         config,
         "launchpad-base-lazr.conf",
@@ -98,5 +104,11 @@ def build_label_changed():
 
 @when("config.changed")
 def config_changed():
+    remove_state("launchpad.base.configured")
+    remove_state("service.configured")
+
+
+@hook("{requires:rabbitmq}-relation-changed")
+def rabbitmq_relation_changed(rabbitmq):
     remove_state("launchpad.base.configured")
     remove_state("service.configured")
