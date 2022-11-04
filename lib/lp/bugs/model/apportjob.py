@@ -60,7 +60,7 @@ class ApportJob(StormBase):
     # only delegates to ApportJob we can't simply directly access the
     # _json_data property, so we use a getter and setter here instead.
     def _set_metadata(self, metadata):
-        self._json_data = six.ensure_text(json.dumps(metadata, "utf-8"))
+        self._json_data = six.ensure_text(json.dumps(metadata))
 
     def _get_metadata(self):
         return json.loads(self._json_data)
