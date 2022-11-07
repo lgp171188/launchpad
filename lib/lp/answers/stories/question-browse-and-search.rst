@@ -139,7 +139,7 @@ details of the question are available.
 
     >>> browser.getLink("Slow system").click()
     >>> print(browser.title)
-    Question #7 : ...
+    Question #7 “Slow system” : ...
     >>> soup = find_main_content(browser.contents)
     >>> soup("div", "report")
     [<div class="report"><p>I get really poor hard drive
@@ -161,9 +161,8 @@ to jump to the question.
     >>> browser.open("http://answers.launchpad.test/")
     >>> browser.getControl(name="field.search_text").value = "9"
     >>> browser.getControl("Find Answers").click()
-    >>> from lp.services.helpers import backslashreplace
-    >>> print(backslashreplace(browser.title))
-    Question #9 : ...
+    >>> print(browser.title)
+    Question #9 ...
 
 While reading the Ubuntu forums for a solution to his problem,
 Average Joe finds some unlinked text that refers to how to
@@ -174,8 +173,8 @@ the answer.
     >>> browser.open("http://answers.launchpad.test/")
     >>> browser.getControl(name="field.search_text").value = " #6 "
     >>> browser.getControl("Find Answers").click()
-    >>> print(backslashreplace(browser.title))
-    Question #6 : ...
+    >>> print(browser.title)
+    Question #6 ...
 
 The Answer Tracker cannot identify Question ids within text. Average
 Joe finds a reference to question 8 in a blog. He copies 'question 8'
@@ -243,7 +242,7 @@ He clicks on the link to read the question description.
 
     >>> browser.getLink("Firefox is slow").click()
     >>> print(browser.title)
-    Question #3 : ...
+    Question #3 “Firefox is slow and consumes too much RAM” : ...
 
 The user must choose at least one status when searching questions. An
 error is displayed when the user forgets to select a status.

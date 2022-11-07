@@ -59,7 +59,7 @@ question page.
 
     >>> browser.getLink("Problem showing the SVG demo on W3C site").click()
     >>> print(browser.title)
-    Question #2 : ...
+    Question #2 “Problem showing the SVG demo on W3C site” : ...
 
     >>> print(
     ...     find_main_content(browser.contents).find("h1").decode_contents()

@@ -33,7 +33,7 @@ class TestEmailObfuscated(BrowserTestCase):
         browser = self.getBrowserForQuestionWithEmail(
             email_address, no_login=False
         )
-        self.assertEqual(4, browser.contents.count(email_address))
+        self.assertEqual(6, browser.contents.count(email_address))
 
     def test_anonymous_sees_not_email_address(self):
         """The anonymous user cannot see the email address on the page."""
