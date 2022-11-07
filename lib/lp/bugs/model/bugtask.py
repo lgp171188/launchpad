@@ -357,11 +357,13 @@ def validate_target(
     if IDistributionSourcePackage.providedBy(
         target
     ) or ISourcePackage.providedBy(target):
-        # If the distribution has at least one series, check that the
-        # source package has been published in the distribution.
+        # If the distribution has at least one series and has published
+        # sources, check that the source package has been published in
+        # the distribution.
         if (
             check_source_package
             and target.sourcepackagename is not None
+            and target.distribution.has_published_sources
             and len(target.distribution.series) > 0
         ):
             try:
