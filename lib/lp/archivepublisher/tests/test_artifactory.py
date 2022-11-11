@@ -133,8 +133,9 @@ class TestArtifactoryPool(TestCase):
             "foo-1.0.tar.bz2",
             user_defined_fields=[("bogus_filed", "instead_of_subdir")],
         )
-        self.assertRaises(ValueError, pool.pathFor,
-                          None, "foo", "1.0", pub_file)
+        self.assertRaises(
+            ValueError, pool.pathFor, None, "foo", "1.0", pub_file
+        )
 
     def test_pathFor_go_proxy_with_file(self):
         pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)

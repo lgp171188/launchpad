@@ -67,10 +67,11 @@ def _path_for(
     elif repository_format == ArchiveRepositoryFormat.CONDA:
         subdir = release.getUserDefinedField("subdir")
         if subdir is None:
-            raise ValueError("Cannot publish the Conda package '%s' "
-                             "with version '%s', missing the 'subdir' "
-                             "Conda property)"
-                             % (source_name, source_version))
+            raise ValueError(
+                "Cannot publish the Conda package '%s' "
+                "with version '%s', missing the 'subdir' "
+                "Conda property)" % (source_name, source_version)
+            )
         path = rootpath / subdir
     elif repository_format == ArchiveRepositoryFormat.GO_PROXY:
         module_path = release.getUserDefinedField("module-path")
