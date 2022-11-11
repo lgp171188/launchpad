@@ -126,6 +126,16 @@ class TestArtifactoryPool(TestCase):
             pool.pathFor(None, "foo", "1.0", pub_file),
         )
 
+    def test_pathFor_conda_with_file_no_subir(self):
+        pool = self.makePool(ArchiveRepositoryFormat.CONDA)
+        pub_file = FakePackageReleaseFile(
+            b"foo",
+            "foo-1.0.tar.bz2",
+            user_defined_fields=[("bogus_filed", "instead_of_subdir")],
+        )
+        self.assertRaises(ValueError, pool.pathFor,
+                          None, "foo", "1.0", pub_file)
+
     def test_pathFor_go_proxy_with_file(self):
         pool = self.makePool(ArchiveRepositoryFormat.GO_PROXY)
         pub_file = FakePackageReleaseFile(
