@@ -877,18 +877,14 @@ class TestNativePublishing(TestNativePublishingBase):
         self.assertEqual(open(pool_path).read().strip(), "Hello world")
 
     @mock.patch.object(ArtifactoryPool, "addFile")
-    def test_publish_conda_source(self, mock):
-        root_url = "%s/%s" % (
-            "https://foo.example.com/artifactory",
-            "repository",
-        )
+    def test_publisher_skips_conda_source_packages(self, mock):
+        root_url = "https://foo.example.com/artifactory/repository"
         archive = self.factory.makeArchive(
             purpose=ArchivePurpose.PPA,
             repository_format=ArchiveRepositoryFormat.CONDA,
         )
         pool = ArtifactoryPool(archive, root_url, BufferLogger())
-        # The getPubSource helper here constructs the chain obljects we
-        # need to be able to return a SourcePackagePublishingHistory object.
+        # getPubSource returns a SourcePackagePublishingHistory object
         pub_source = self.getPubSource(
             filecontent=b"Hello world",
             archive=archive,

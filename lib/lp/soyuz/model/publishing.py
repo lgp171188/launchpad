@@ -154,6 +154,11 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
+                # XXX ilasc 2022-14-11 We want to exclude the Conda source
+                # packages as a temporary workaround to overcome the issue of
+                # the publisher crashing when the package contains files
+                # missing required metadata as was the case of the missing
+                # `subdir` from info/index.json file.
                 if (
                     self.archive.repository_format
                     == ArchiveRepositoryFormat.CONDA
