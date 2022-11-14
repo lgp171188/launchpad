@@ -10,6 +10,7 @@ import os
 import shutil
 import tempfile
 from functools import partial
+from unittest import mock
 
 import pytz
 import transaction
@@ -19,6 +20,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.archivepublisher.artifactory import ArtifactoryPool
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.indices import (
@@ -43,7 +45,7 @@ from lp.services.channels import channel_string_to_list
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.log.logger import DevNullLogger
+from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
     ArchivePurpose,
@@ -873,6 +875,28 @@ class TestNativePublishing(TestNativePublishingBase):
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
         pool_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
         self.assertEqual(open(pool_path).read().strip(), "Hello world")
+
+    @mock.patch.object(ArtifactoryPool, "addFile")
+    def test_publish_conda_source(self, mock):
+        root_url = "%s/%s" % (
+            "https://foo.example.com/artifactory",
+            "repository",
+        )
+        archive = self.factory.makeArchive(
+            purpose=ArchivePurpose.PPA,
+            repository_format=ArchiveRepositoryFormat.CONDA,
+        )
+        pool = ArtifactoryPool(archive, root_url, BufferLogger())
+        # The getPubSource helper here constructs the chain obljects we
+        # need to be able to return a SourcePackagePublishingHistory object.
+        pub_source = self.getPubSource(
+            filecontent=b"Hello world",
+            archive=archive,
+            format=SourcePackageType.CI_BUILD,
+            user_defined_fields=[("bogus_filed", "instead_of_subdir")],
+        )
+        pub_source.publish(pool, self.logger)
+        self.assertFalse(mock.called)
 
     def test_publish_binaries(self):
         # Binary publications result in a PUBLISHED publishing record and

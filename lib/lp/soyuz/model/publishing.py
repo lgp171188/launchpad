@@ -54,6 +54,7 @@ from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.enums import (
+    ArchiveRepositoryFormat,
     BinaryPackageFormat,
     PackagePublishingPriority,
     PackagePublishingStatus,
@@ -67,6 +68,7 @@ from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.distributionjob import (
     IDistroSeriesDifferenceJobSource,
 )
+from lp.soyuz.interfaces.files import ISourcePackageReleaseFile
 from lp.soyuz.interfaces.publishing import (
     DeletionError,
     IBinaryPackagePublishingHistory,
@@ -152,6 +154,12 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
+                if (
+                    self.archive.repository_format
+                    == ArchiveRepositoryFormat.CONDA
+                    and ISourcePackageReleaseFile.providedBy(pub_file)
+                ):
+                    continue
                 pool_name = self.pool_name
                 pool_version = self.pool_version
                 component = (
