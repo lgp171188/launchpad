@@ -70,7 +70,7 @@ from lp.services.database.sqlbase import (
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import block_on_job
 from lp.services.log.logger import DevNullLogger
-from lp.services.propertycache import get_property_cache
+from lp.services.propertycache import clear_property_cache, get_property_cache
 from lp.services.searchbuilder import any
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag, OAuthPermission
@@ -3461,27 +3461,52 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
         )
 
     def test_dsp_without_publications_disallowed(self):
-        # If a distribution has series, a DistributionSourcePackage task
-        # can only be created if the package is published in a distro
-        # archive.
+        # If a distribution has series and has published sources,
+        # a DistributionSourcePackage task can only be created if
+        # the package is published in a distro archive.
         series = self.factory.makeDistroSeries()
+        self.assertFalse(series.distribution.has_published_sources)
         dsp = self.factory.makeDistributionSourcePackage(
+            distribution=series.distribution
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=series,
+            sourcepackagename=dsp.sourcepackagename,
+            archive=series.main_archive,
+        )
+        clear_property_cache(series.distribution)
+        self.assertTrue(series.distribution.has_published_sources)
+        another_dsp = self.factory.makeDistributionSourcePackage(
             distribution=series.distribution
         )
         task = self.factory.makeBugTask()
         self.assertRaisesWithContent(
             IllegalTarget,
-            "Package %s not published in %s"
-            % (dsp.sourcepackagename.name, dsp.distribution.displayname),
+            "Package {} not published in {}".format(
+                another_dsp.sourcepackagename.name,
+                another_dsp.distribution.displayname,
+            ),
             validate_target,
             task.bug,
-            dsp,
+            another_dsp,
         )
 
+    def test_dsp_with_distribution_has_published_sources_false(self):
+        # If a distribution has one or more series and does not have
+        # published sources, a bug task can be created against any existing
+        # DistributionSourcePackage instance.
+        series = self.factory.makeDistroSeries()
+        self.assertFalse(series.distribution.has_published_sources)
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=series.distribution
+        )
+        task = self.factory.makeBugTask()
+        validate_target(task.bug, dsp)
+
     def test_dsp_with_publications_allowed(self):
-        # If a distribution has series, a DistributionSourcePackage task
-        # can only be created if the package is published in a distro
-        # archive.
+        # If a distribution has one or more series and has published sources,
+        # a DistributionSourcePackage task can only be created if the package
+        # is published in a distro archive.
         series = self.factory.makeDistroSeries()
         dsp = self.factory.makeDistributionSourcePackage(
             distribution=series.distribution
@@ -3495,13 +3520,22 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
         validate_target(task.bug, dsp)
 
     def test_dsp_with_only_ppa_publications_disallowed(self):
-        # If a distribution has series, a DistributionSourcePackage task
-        # can only be created if the package is published in a distro
-        # archive. PPA publications don't count.
+        # If a distribution has one or more series and has published sources,
+        # a DistributionSourcePackage task can only be created if the package
+        # is published in a distro archive. PPA publications don't count.
         series = self.factory.makeDistroSeries()
         dsp = self.factory.makeDistributionSourcePackage(
             distribution=series.distribution
         )
+        another_dsp = self.factory.makeDistributionSourcePackage(
+            distribution=series.distribution
+        )
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=series,
+            sourcepackagename=another_dsp.sourcepackagename,
+            archive=series.main_archive,
+        )
+        self.assertTrue(series.distribution.has_published_sources)
         task = self.factory.makeBugTask()
         self.factory.makeSourcePackagePublishingHistory(
             distroseries=series,
