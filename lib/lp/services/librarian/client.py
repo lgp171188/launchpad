@@ -83,6 +83,7 @@ class FileUploadClient:
         """
         try:
             self.state.s = socket.socket(AF_INET, SOCK_STREAM)
+            self.state.s.settimeout(config.librarian.client_socket_timeout)
             self.state.s.connect((self.upload_host, self.upload_port))
             self.state.f = self.state.s.makefile("rwb", 0)
 
@@ -96,13 +97,16 @@ class FileUploadClient:
 
     def _close(self):
         """Close connection"""
-        self.state.s_poll.unregister(self.state.s.fileno())
-        self.state.s_poll.close()
-        del self.state.s_poll
-        self.state.s.close()
-        del self.state.s
-        self.state.f.close()
-        del self.state.f
+        if hasattr(self.state, "s_poll"):
+            self.state.s_poll.unregister(self.state.s.fileno())
+            self.state.s_poll.close()
+            del self.state.s_poll
+        if hasattr(self.state, "s"):
+            self.state.s.close()
+            del self.state.s
+        if hasattr(self.state, "f"):
+            self.state.f.close()
+            del self.state.f
 
     def _checkError(self):
         poll_result = self.state.s_poll.poll(self.s_poll_timeout)
@@ -171,8 +175,9 @@ class FileUploadClient:
             LibraryFileContent,
         )
 
-        self._connect()
         try:
+            self._connect()
+
             # Get the name of the database the client is using, so that
             # the server can check that the client is using the same
             # database as the server.
@@ -259,6 +264,12 @@ class FileUploadClient:
                 aliasID,
             )
             return aliasID
+        except socket.timeout:
+            timeout = config.librarian.client_socket_timeout
+            raise UploadFailed(
+                "Server timed out after %s %s"
+                % (timeout, "second" if timeout == 1 else "seconds")
+            )
         finally:
             self._close()
 
