@@ -364,6 +364,12 @@ their packages in the correct archive.
     >>> print(non_free_archive.displayname)
     Primary Archive for Ubuntu Test
 
+    >>> non_free_firmware_archive = ubuntutest.getArchiveByComponent(
+    ...     "non-free-firmware"
+    ... )
+    >>> print(non_free_firmware_archive.displayname)
+    Primary Archive for Ubuntu Test
+
     >>> contrib_archive = ubuntutest.getArchiveByComponent("contrib")
     >>> print(contrib_archive.displayname)
     Primary Archive for Ubuntu Test

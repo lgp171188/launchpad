@@ -251,6 +251,7 @@ NascentUpload in the 'sync' policy in the future.
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> component_set = getUtility(IComponentSet)
     >>> non_free = component_set.new("non-free")
+    >>> non_free_firmware = component_set.new("non-free-firmware")
     >>> contrib = component_set.new("contrib")
     >>> import transaction
     >>> transaction.commit()

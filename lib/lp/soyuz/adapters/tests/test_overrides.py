@@ -563,7 +563,7 @@ class TestUnknownOverridePolicy(TestCaseWithFactory):
     def test_unknown_sources(self):
         # The unknown policy uses a default component based on the
         # pre-override component.
-        for component in ("contrib", "non-free"):
+        for component in ("contrib", "non-free", "non-free-firmware"):
             self.factory.makeComponent(component)
         distroseries = self.factory.makeDistroSeries()
         spns = [self.factory.makeSourcePackageName() for i in range(3)]
@@ -578,7 +578,7 @@ class TestUnknownOverridePolicy(TestCaseWithFactory):
                     component=getUtility(IComponentSet)[component]
                 )
                 for spn, component in zip(
-                    spns, ("main", "contrib", "non-free")
+                    spns, ("main", "contrib", "non-free", "non-free-firmware")
                 )
             }
         )
@@ -587,7 +587,7 @@ class TestUnknownOverridePolicy(TestCaseWithFactory):
                 component=getUtility(IComponentSet)[component], new=True
             )
             for spn, component in zip(
-                spns, ("universe", "multiverse", "multiverse")
+                spns, ("universe", "multiverse", "multiverse", "multiverse")
             )
         }
         self.assertEqual(expected, overrides)

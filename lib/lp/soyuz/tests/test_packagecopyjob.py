@@ -1196,12 +1196,26 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
     def test_copying_to_main_archive_debian_override_nonfree(self):
         # The job uses the overrides to map debian components to
         # the right components.
-        # 'nonfree' gets mapped to 'multiverse'.
+        # 'non-free' gets mapped to 'multiverse'.
 
         # Create debian component.
         self.factory.makeComponent("non-free")
         # Create a copy job for a package in 'non-free'.
         pcj = self.createCopyJob("package", "non-free", "web", "2.8.1")
+
+        self.assertEqual("multiverse", pcj.metadata["component_override"])
+
+    def test_copying_to_main_archive_debian_override_nonfree_firmware(self):
+        # The job uses the overrides to map debian components to
+        # the right components.
+        # 'non-free-firmware' gets mapped to 'multiverse'.
+
+        # Create debian component.
+        self.factory.makeComponent("non-free-firmware")
+        # Create a copy job for a package in 'non-free-firmware'.
+        pcj = self.createCopyJob(
+            "package", "non-free-firmware", "web", "2.8.1"
+        )
 
         self.assertEqual("multiverse", pcj.metadata["component_override"])
 
