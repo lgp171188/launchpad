@@ -351,7 +351,9 @@ class LibrarianClientTestCase(TestCase):
                 "text/plain",
             )
 
-        with override_timeout(3600):
+        # Time out this operation after a minute, to make sure that the test
+        # doesn't hang forever if the socket timeout isn't set properly.
+        with override_timeout(60):
             add_file()
 
     def test_addFile_uses_primary(self):
