@@ -343,7 +343,7 @@ class LibrarianClientTestCase(TestCase):
         def add_file():
             self.assertRaisesWithContent(
                 UploadFailed,
-                "Server timed out after 1 second",
+                "Server timed out after 1 second(s)",
                 client.addFile,
                 "sample.txt",
                 6,

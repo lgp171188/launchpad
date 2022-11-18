@@ -266,10 +266,7 @@ class FileUploadClient:
             return aliasID
         except socket.timeout:
             timeout = config.librarian.client_socket_timeout
-            raise UploadFailed(
-                "Server timed out after %s %s"
-                % (timeout, "second" if timeout == 1 else "seconds")
-            )
+            raise UploadFailed("Server timed out after %s second(s)" % timeout)
         finally:
             self._close()
 
