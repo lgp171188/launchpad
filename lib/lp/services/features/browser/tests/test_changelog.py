@@ -6,8 +6,8 @@
 from zope.component import getUtility
 
 from lp.services.features.changelog import ChangeLog
+from lp.services.features.interfaces import IFeatureRules
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.testing import TestCaseWithFactory, login_celebrity, login_person
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import find_tag_by_id
@@ -26,7 +26,7 @@ class TestChangeLogView(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.root = getUtility(ILaunchpadRoot)
+        self.feature_rules = getUtility(IFeatureRules)
         self.person = self.factory.makePerson()
 
     def makeFeatureFlagChanges(self):
@@ -35,37 +35,37 @@ class TestChangeLogView(TestCaseWithFactory):
 
     def test_anonymous_no_access(self):
         # Anonymous users cannot access the view.
-        view = create_view(self.root, name="+feature-changelog")
-        self.assertFalse(check_permission("launchpad.Edit", view))
+        view = create_view(self.feature_rules, name="changelog")
+        self.assertFalse(check_permission("launchpad.View", view))
 
     def test_logged_on_user_no_access(self):
         # Login users cannot access the view.
         login_person(self.factory.makePerson())
-        view = create_view(self.root, name="+feature-changelog")
-        self.assertFalse(check_permission("launchpad.Edit", view))
+        view = create_view(self.feature_rules, name="changelog")
+        self.assertFalse(check_permission("launchpad.View", view))
 
     def test_registry_experts_access(self):
         # Registry expert members can access the view.
         login_celebrity("registry_experts")
-        view = create_view(self.root, name="+feature-changelog")
-        self.assertTrue(check_permission("launchpad.Edit", view))
+        view = create_view(self.feature_rules, name="changelog")
+        self.assertTrue(check_permission("launchpad.View", view))
 
     def test_admin_access(self):
         # Admin members can access the view.
         login_celebrity("admin")
-        view = create_view(self.root, name="+feature-changelog")
-        self.assertTrue(check_permission("launchpad.Edit", view))
+        view = create_view(self.feature_rules, name="changelog")
+        self.assertTrue(check_permission("launchpad.View", view))
 
     def test_batched_page_title(self):
         # The view provides a page_title and label.
-        view = create_view(self.root, name="+feature-changelog")
+        view = create_view(self.feature_rules, name="changelog")
         self.assertEqual(view.label, view.page_title)
         self.assertEqual("Feature flag changelog", view.page_title)
 
     def test_batched_changes(self):
         # The view provides a batched iterator of changes.
         self.makeFeatureFlagChanges()
-        view = create_view(self.root, name="+feature-changelog")
+        view = create_view(self.feature_rules, name="changelog")
         batch = view.changes
         self.assertEqual("change", batch._singular_heading)
         self.assertEqual("changes", batch._plural_heading)
@@ -76,7 +76,7 @@ class TestChangeLogView(TestCaseWithFactory):
         self.makeFeatureFlagChanges()
         member = login_celebrity("admin")
         view = create_view(
-            self.root, name="+feature-changelog", principal=member
+            self.feature_rules, name="changelog", principal=member
         )
         tag = find_tag_by_id(view.render(), "changes")
         self.assertTrue("table", tag.name)

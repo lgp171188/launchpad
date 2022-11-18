@@ -6,24 +6,29 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser">
 
-    <include
-        package=".browser"/>
+  <authorizations module=".security"/>
 
-    <subscriber
-        for="zope.publisher.interfaces.IStartRequestEvent"
-        handler="lp.services.features.webapp.start_request"
-        />
+  <include package=".browser"/>
 
-    <subscriber
-        for="zope.publisher.interfaces.IEndRequestEvent"
-        handler="lp.services.features.webapp.end_request"
-        />
+  <subscriber
+      for="zope.publisher.interfaces.IStartRequestEvent"
+      handler="lp.services.features.webapp.start_request"
+  />
 
-    <securedutility
-        class="lp.services.features.xmlrpc.FeatureFlagApplication"
-        provides="lp.services.features.xmlrpc.IFeatureFlagApplication">
-        <allow
-            interface="lp.services.features.xmlrpc.IFeatureFlagApplication"/>
-    </securedutility>
+  <subscriber
+      for="zope.publisher.interfaces.IEndRequestEvent"
+      handler="lp.services.features.webapp.end_request"/>
+
+  <securedutility
+      class="lp.services.features.model.FeatureRules"
+      provides="lp.services.features.interfaces.IFeatureRules">
+    <allow interface="lp.services.features.interfaces.IFeatureRules"/>
+  </securedutility>
+
+  <securedutility
+      class="lp.services.features.xmlrpc.FeatureFlagApplication"
+      provides="lp.services.features.xmlrpc.IFeatureFlagApplication">
+    <allow interface="lp.services.features.xmlrpc.IFeatureFlagApplication"/>
+  </securedutility>
 
 </configure>

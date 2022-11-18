@@ -101,6 +101,7 @@ from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
+from lp.services.features.interfaces import IFeatureRules
 from lp.services.helpers import intOrZero
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.propertycache import cachedproperty
@@ -899,6 +900,7 @@ class LaunchpadRootNavigation(Navigation):
         "testopenid": ITestOpenIDApplication,
         "questions": IQuestionSet,
         "temporary-blobs": ITemporaryStorageManager,
+        "+feature-rules": IFeatureRules,
         # These three have been renamed, and no redirects done, as the old
         # urls now point to the product pages.
         # "bazaar": IBazaarApplication,
