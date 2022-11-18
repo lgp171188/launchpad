@@ -15,9 +15,9 @@ from lp.services.features.flags import (
     undocumented_flags,
     value_domain_info,
 )
+from lp.services.features.interfaces import IFeatureRules
 from lp.services.features.scopes import HANDLERS, undocumented_scopes
 from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.testing import BrowserTestCase, TestCase, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import Contains
@@ -29,8 +29,7 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def getFeatureInfoUrl(self):
         """Find the URL to the feature info page."""
-        root = getUtility(ILaunchpadRoot)
-        return canonical_url(root, view_name="+feature-info")
+        return canonical_url(getUtility(IFeatureRules), view_name="info")
 
     def getUserBrowserAsAdmin(self):
         """Make a new TestBrowser logged in as an admin user."""

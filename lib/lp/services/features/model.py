@@ -12,9 +12,20 @@ from datetime import datetime
 import pytz
 import six
 from storm.locals import DateTime, Int, Reference, Storm, Unicode
+from zope.interface import implementer
 
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
+from lp.services.features.interfaces import IFeatureRules
+
+
+@implementer(IFeatureRules)
+class FeatureRules:
+    """
+    See `IFeatureRules`
+    """
+
+    pass
 
 
 class FeatureFlag(Storm):

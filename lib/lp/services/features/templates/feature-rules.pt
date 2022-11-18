@@ -21,11 +21,11 @@
 
       <p>
       For more information about the available feature flags and scopes see
-      the <a href="+feature-info">feature flag info</a>. For other
+      the <a tal:attributes="href context/fmt:url/info">feature flag info</a>. For other
       documentation on feature flags, see the
       <a href="https://dev.launchpad.net/FeatureFlags">development wiki</a>.
       You can review the
-      <a class="sprite info" href="+feature-changelog">changelog</a> to see
+      <a class="sprite info" tal:attributes="href context/fmt:url/changelog">changelog</a> to see
         previous rule changes.
       </p>
 

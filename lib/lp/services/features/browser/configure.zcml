@@ -9,36 +9,36 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <!-- View or edit all feature rules.
+  <browser:url
+      for="lp.services.features.interfaces.IFeatureRules"
+      path_expression="string:+feature-rules"
+      parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
 
-     Readonly access is guarded by launchpad.Edit on ILaunchpadRoot, which
-     limits it to ~admins + ~registry, which are all trusted users.  Write
-     access is for admins only.
-    -->
-    <browser:page
-        for="lp.services.webapp.interfaces.ILaunchpadRoot"
-        class="lp.services.features.browser.edit.FeatureControlView"
-        name="+feature-rules"
-        permission="launchpad.Edit"
-        template="../templates/feature-rules.pt"/>
+  <browser:defaultView
+      for="lp.services.features.interfaces.IFeatureRules"
+      name="+index"/>
 
-    <!-- View documentary info about the available feature flags.
+  <!-- View or edit all feature rules. -->
+  <browser:page
+      for="lp.services.features.interfaces.IFeatureRules"
+      class="lp.services.features.browser.edit.FeatureControlView"
+      name="+index"
+      permission="launchpad.View"
+      template="../templates/feature-rules.pt"/>
 
-     Access is guarded by launchpad.Edit on ILaunchpadRoot, just like
-     +feature-rules.
-    -->
-    <browser:page
-        for="lp.services.webapp.interfaces.ILaunchpadRoot"
-        class="lp.services.features.browser.info.FeatureInfoView"
-        name="+feature-info"
-        permission="launchpad.Edit"
-        template="../templates/feature-info.pt"/>
+  <!-- View documentation about the available feature flags. -->
+  <browser:page
+      for="lp.services.features.interfaces.IFeatureRules"
+      class="lp.services.features.browser.info.FeatureInfoView"
+      name="info"
+      permission="launchpad.View"
+      template="../templates/feature-info.pt"/>
 
-    <browser:page
-        for="lp.services.webapp.interfaces.ILaunchpadRoot"
-        class="lp.services.features.browser.changelog.FeatureChangeLogView"
-        name="+feature-changelog"
-        permission="launchpad.Edit"
-        template="../templates/feature-changelog.pt"/>
+  <browser:page
+      for="lp.services.features.interfaces.IFeatureRules"
+      class="lp.services.features.browser.changelog.FeatureChangeLogView"
+      name="changelog"
+      permission="launchpad.View"
+      template="../templates/feature-changelog.pt"/>
 
 </configure>
