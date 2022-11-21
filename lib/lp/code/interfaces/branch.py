@@ -1266,6 +1266,20 @@ class IBranchModerate(Interface):
         A convenience function wrapper around unscan().
         """
 
+    @call_with(break_references=True)
+    @export_destructor_operation()
+    @operation_for_version("beta")
+    def destroySelf(break_references=False):
+        """Delete the specified branch.
+
+        BranchRevisions associated with this branch will also be deleted.
+
+        :param break_references: If supplied, break any references to this
+            branch by deleting items with mandatory references and
+            NULLing other references.
+        :raise: CannotDeleteBranch if the branch cannot be deleted.
+        """
+
 
 class IBranchEditableAttributes(Interface):
     """IBranch attributes that can be edited.
@@ -1399,20 +1413,6 @@ class IBranchEdit(IWebhookTarget):
         :param branch_format: The entry from BranchFormat for the branch.
         :param repository_format: The entry from RepositoryFormat for the
             branch.
-        """
-
-    @call_with(break_references=True)
-    @export_destructor_operation()
-    @operation_for_version("beta")
-    def destroySelf(break_references=False):
-        """Delete the specified branch.
-
-        BranchRevisions associated with this branch will also be deleted.
-
-        :param break_references: If supplied, break any references to this
-            branch by deleting items with mandatory references and
-            NULLing other references.
-        :raise: CannotDeleteBranch if the branch cannot be deleted.
         """
 
 

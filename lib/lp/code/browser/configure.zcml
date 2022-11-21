@@ -468,7 +468,7 @@
         name="+delete"
         for="lp.code.interfaces.branch.IBranch"
         class="lp.code.browser.branch.BranchDeletionView"
-        permission="launchpad.Edit"
+        permission="launchpad.Moderate"
         template="../templates/branch-delete.pt"/>
     <browser:pages
         for="lp.code.interfaces.branch.IBranch"

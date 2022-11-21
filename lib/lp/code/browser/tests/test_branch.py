@@ -29,7 +29,7 @@ from lp.code.model.branchjob import BranchScanJob
 from lp.code.tests.helpers import BranchHostingFixture
 from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
-from lp.registry.interfaces.person import PersonVisibility
+from lp.registry.interfaces.person import PersonVisibility, IPersonSet
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -207,6 +207,38 @@ class TestBranchView(BrowserTestCase):
         branch = self.factory.makeAnyBranch()
         view = create_initialized_view(branch, "+index")
         self.assertFalse(view.show_merge_links)
+
+    def testDeleteBranch(self):
+        expert = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName("registry")]
+        )
+        commercial_admin = self.factory.makeCommercialAdmin()
+        random_user = self.factory.makePerson()
+
+        branch = self.factory.makeAnyBranch()
+        branch_url = canonical_url(
+            branch, view_name="+index", rootsite="code"
+        )
+
+        # the branch owner sees the Delete Branch link
+        browser = self.getUserBrowser(branch_url, user=branch.owner)
+        browser.open(branch_url)
+        self.assertIn("Delete branch", browser.contents)
+
+        # a commercial admin sees the Delete Branch link
+        browser = self.getUserBrowser(branch_url, user=commercial_admin)
+        browser.open(branch_url)
+        self.assertIn("Delete branch", browser.contents)
+
+        # a registry expert sees the Delete Branch link
+        browser = self.getUserBrowser(branch_url, user=expert)
+        browser.open(branch_url)
+        self.assertIn("Delete branch", browser.contents)
+
+        # random user does not see the Delete Branch link
+        browser = self.getUserBrowser(branch_url, user=random_user)
+        browser.open(branch_url)
+        self.assertNotIn("Delete branch", browser.contents)
 
     def testNoProductSeriesPushingTranslations(self):
         # By default, a branch view shows no product series pushing
@@ -671,6 +703,50 @@ class TestBranchView(BrowserTestCase):
         with StormStatementRecorder() as recorder:
             browser.open(branch_url)
         self.assertThat(recorder, HasQueryCount(Equals(30)))
+
+
+class TestBranchDeletionView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_owner_can_delete(self):
+        branch = self.factory.makeAnyBranch()
+        branch_name = branch.displayname
+        branch_unique_name = branch.unique_name
+        branch_url = canonical_url(
+            branch, view_name="+delete", rootsite="code"
+        )
+        browser = self.getUserBrowser(branch_url, user=branch.owner)
+        browser.open(branch_url)
+        self.assertIn("Delete branch %s" % branch_name, browser.contents)
+
+        browser.getControl("Delete").click()
+        self.assertIn("Branch %s deleted." % branch_unique_name,
+                      browser.contents)
+
+    def test_registry_expert_can_delete(self):
+        expert = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName("registry")]
+        )
+        branch = self.factory.makeAnyBranch()
+        branch_name = branch.displayname
+        branch_unique_name = branch.unique_name
+        branch_url = canonical_url(
+            branch, view_name="+delete", rootsite="code"
+        )
+        browser = self.getUserBrowser(branch_url, user=expert)
+        browser.open(branch_url)
+        self.assertIn("Delete branch %s" % branch_name, browser.contents)
+        browser.getControl("Delete").click()
+        self.assertIn("Branch %s deleted." % branch_unique_name,
+                      browser.contents)
+
+    def test_other_user_can_not_delete(self):
+        branch = self.factory.makeAnyBranch()
+        branch_url = canonical_url(
+            branch, view_name="+delete", rootsite="code"
+        )
+        self.assertRaises(Unauthorized, self.getUserBrowser, branch_url)
 
 
 class TestBranchRescanView(BrowserTestCase):

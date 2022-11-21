@@ -206,7 +206,7 @@ class ModerateBranch(EditBranch):
         pillar = branch.product or branch.distribution
         if pillar is not None and user.inTeam(pillar.owner):
             return True
-        return user.in_commercial_admin
+        return user.in_commercial_admin or user.in_registry_experts
 
 
 def can_upload_linked_package(person_role, branch):
