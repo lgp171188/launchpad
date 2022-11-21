@@ -17,6 +17,7 @@ __all__ = [
     "IsDistinctFrom",
     "IsFalse",
     "IsTrue",
+    "JSONContains",
     "JSONExtract",
     "NullCount",
     "NullsFirst",
@@ -280,6 +281,11 @@ compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
 class JSONExtract(BinaryOper):
     __slots__ = ()
     oper = "->"
+
+
+class JSONContains(BinaryOper):
+    __slots__ = ()
+    oper = "@>"
 
 
 class WithMaterialized(Expr):

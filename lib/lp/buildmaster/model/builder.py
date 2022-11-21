@@ -8,6 +8,7 @@ __all__ = [
 ]
 
 import pytz
+from storm.databases.postgres import JSON
 from storm.expr import Coalesce, Count, Sum
 from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
@@ -60,6 +61,8 @@ class Builder(StormBase):
     virtualized = Bool(name="virtualized", default=True, allow_none=False)
     manual = Bool(name="manual", default=False)
     vm_host = Unicode(name="vm_host")
+    open_resources = JSON(name="open_resources", allow_none=True)
+    restricted_resources = JSON(name="restricted_resources", allow_none=True)
     active = Bool(name="active", allow_none=False, default=True)
     failure_count = Int(name="failure_count", default=0, allow_none=False)
     version = Unicode(name="version")
@@ -80,6 +83,8 @@ class Builder(StormBase):
         virtualized=True,
         vm_host=None,
         vm_reset_protocol=None,
+        open_resources=None,
+        restricted_resources=None,
         builderok=True,
         manual=False,
     ):
@@ -95,6 +100,8 @@ class Builder(StormBase):
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
+        self.open_resources = open_resources
+        self.restricted_resources = restricted_resources
         self._builderok = builderok
         self.manual = manual
         # We have to add the new object to the store here (it might more
@@ -263,6 +270,8 @@ class BuilderSet:
         virtualized=False,
         vm_host=None,
         vm_reset_protocol=None,
+        open_resources=None,
+        restricted_resources=None,
         manual=True,
     ):
         """See IBuilderSet."""
@@ -276,6 +285,8 @@ class BuilderSet:
             virtualized=virtualized,
             vm_host=vm_host,
             vm_reset_protocol=vm_reset_protocol,
+            open_resources=open_resources,
+            restricted_resources=restricted_resources,
             builderok=True,
             manual=manual,
         )
@@ -333,6 +344,9 @@ class BuilderSet:
 
     def getBuildQueueSizes(self):
         """See `IBuilderSet`."""
+        # XXX cjwatson 2022-11-18: We should probably also expose
+        # resource-dependent queue sizes, but we need to work out how best
+        # to represent that.
         results = (
             IStandbyStore(BuildQueue)
             .find(

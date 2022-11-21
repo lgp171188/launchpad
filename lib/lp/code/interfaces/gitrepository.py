@@ -307,6 +307,16 @@ class IGitRepositoryView(IHasRecipes):
         )
     )
 
+    builder_constraints = List(
+        title=_("Builder constraints"),
+        required=False,
+        readonly=True,
+        value_type=TextLine(),
+        description=_(
+            "Builder resource tags required by builds of this repository."
+        ),
+    )
+
     def getClonedFrom():
         """Returns from which repository the given repo is a clone from."""
 

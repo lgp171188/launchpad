@@ -5,7 +5,7 @@
 
 from json import dumps
 
-from testtools.matchers import Equals
+from testtools.matchers import ContainsDict, Equals, Is
 from zope.component import getUtility
 
 from lp.buildmaster.interfaces.builder import IBuilderSet
@@ -139,8 +139,57 @@ class TestBuildersCollection(TestCaseWithFactory):
         response = webservice.named_post("/builders", "new", **args)
         self.assertEqual(201, response.status)
 
-        self.assertEqual(
-            "foobar", webservice.get("/builders/foo").jsonBody()["title"]
+        self.assertThat(
+            webservice.get("/builders/foo").jsonBody(),
+            ContainsDict(
+                {
+                    "name": Equals("foo"),
+                    "title": Equals("foobar"),
+                    "url": Equals("http://foo.buildd:8221/"),
+                    "virtualized": Is(False),
+                    "open_resources": Is(None),
+                    "restricted_resources": Is(None),
+                }
+            ),
+        )
+
+    def test_new_resources(self):
+        person = self.factory.makePerson()
+        badmins = getUtility(IPersonSet).getByName("launchpad-buildd-admins")
+        webservice = webservice_for_person(
+            person, permission=OAuthPermission.WRITE_PRIVATE
+        )
+        args = dict(
+            name="foo",
+            processors=["/+processors/386"],
+            title="foobar",
+            url="http://foo.buildd:8221/",
+            virtualized=True,
+            open_resources=["large"],
+            restricted_resources=["gpu"],
+            api_version="devel",
+        )
+
+        response = webservice.named_post("/builders", "new", **args)
+        self.assertEqual(401, response.status)
+
+        with admin_logged_in():
+            badmins.addMember(person, badmins)
+        response = webservice.named_post("/builders", "new", **args)
+        self.assertEqual(201, response.status)
+
+        self.assertThat(
+            webservice.get("/builders/foo").jsonBody(),
+            ContainsDict(
+                {
+                    "name": Equals("foo"),
+                    "title": Equals("foobar"),
+                    "url": Equals("http://foo.buildd:8221/"),
+                    "virtualized": Is(True),
+                    "open_resources": Equals(["large"]),
+                    "restricted_resources": Equals(["gpu"]),
+                }
+            ),
         )
 
 

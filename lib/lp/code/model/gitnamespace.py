@@ -87,6 +87,7 @@ class _BaseGitNamespace:
         async_hosting=False,
         status=GitRepositoryStatus.AVAILABLE,
         clone_from_repository=None,
+        builder_constraints=None,
     ):
         """See `IGitNamespace`."""
         repository_set = getUtility(IGitRepositorySet)
@@ -110,6 +111,7 @@ class _BaseGitNamespace:
             reviewer=reviewer,
             description=description,
             status=status,
+            builder_constraints=builder_constraints,
         )
         repository._reconcileAccess()
 

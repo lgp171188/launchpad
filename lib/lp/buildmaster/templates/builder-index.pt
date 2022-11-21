@@ -42,8 +42,7 @@
             <dd>
               <tal:processors repeat="processor context/processors"
                   content="processor/name">386 amd64</tal:processors>
-              <tal:virtual condition="context/virtualized">(virtual)
-              </tal:virtual>
+              <tal:extras content="view/extra_properties_text" />
             </dd>
             <dt>Location:</dt>
             <dd tal:content="context/url" />

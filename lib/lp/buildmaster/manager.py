@@ -82,7 +82,12 @@ class PrefetchedBuildCandidates:
     @staticmethod
     def _getBuilderGroupKeys(vitals):
         return [
-            (processor_name, vitals.virtualized)
+            (
+                processor_name,
+                vitals.virtualized,
+                vitals.restricted_resources,
+                vitals.open_resources,
+            )
             for processor_name in vitals.processor_names + [None]
         ]
 
@@ -111,17 +116,24 @@ class PrefetchedBuildCandidates:
                 if processor_name is not None
                 else None
             )
-            for processor_name, _ in missing_builder_group_keys
+            for processor_name, _, _, _ in missing_builder_group_keys
         }
         bq_set = getUtility(IBuildQueueSet)
         for builder_group_key in missing_builder_group_keys:
-            processor_name, virtualized = builder_group_key
+            (
+                processor_name,
+                virtualized,
+                restricted_resources,
+                open_resources,
+            ) = builder_group_key
             self._addCandidates(
                 builder_group_key,
                 bq_set.findBuildCandidates(
-                    processors_by_name[processor_name],
-                    virtualized,
-                    len(self.builder_groups[builder_group_key]),
+                    processor=processors_by_name[processor_name],
+                    virtualized=virtualized,
+                    limit=len(self.builder_groups[builder_group_key]),
+                    open_resources=open_resources,
+                    restricted_resources=restricted_resources,
                 ),
             )
 

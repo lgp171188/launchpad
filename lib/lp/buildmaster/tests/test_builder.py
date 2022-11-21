@@ -136,29 +136,140 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
 
         # No job is returned for a fresh processor.
         proc = self.factory.makeProcessor()
-        self.assertEqual([], self.bq_set.findBuildCandidates(proc, True, 3))
+        self.assertEqual(
+            [],
+            self.bq_set.findBuildCandidates(
+                processor=proc, virtualized=True, limit=3
+            ),
+        )
 
         # bq1 is the best candidate for its processor.
         self.assertEqual(
-            [bq1], self.bq_set.findBuildCandidates(bq1.processor, True, 3)
+            [bq1],
+            self.bq_set.findBuildCandidates(
+                processor=bq1.processor, virtualized=True, limit=3
+            ),
         )
 
         # bq2's score doesn't matter when finding candidates for bq1's
         # processor.
         bq2.manualScore(3000)
-        self.assertEqual([], self.bq_set.findBuildCandidates(proc, True, 3))
         self.assertEqual(
-            [bq1], self.bq_set.findBuildCandidates(bq1.processor, True, 3)
+            [],
+            self.bq_set.findBuildCandidates(
+                processor=proc, virtualized=True, limit=3
+            ),
+        )
+        self.assertEqual(
+            [bq1],
+            self.bq_set.findBuildCandidates(
+                processor=bq1.processor, virtualized=True, limit=3
+            ),
         )
 
         # When looking at bq2's processor, the build with the higher score
         # wins.
         self.assertEqual(
-            [bq2, bq3], self.bq_set.findBuildCandidates(bq2.processor, True, 3)
+            [bq2, bq3],
+            self.bq_set.findBuildCandidates(
+                processor=bq2.processor, virtualized=True, limit=3
+            ),
         )
         bq3.manualScore(4000)
         self.assertEqual(
-            [bq3, bq2], self.bq_set.findBuildCandidates(bq2.processor, True, 3)
+            [bq3, bq2],
+            self.bq_set.findBuildCandidates(
+                processor=bq2.processor, virtualized=True, limit=3
+            ),
+        )
+
+    def test_findBuildCandidates_honours_virtualized(self):
+        proc = self.factory.makeProcessor(supports_virtualized=True)
+        bq_nonvirt = self.factory.makeBinaryPackageBuild(
+            archive=self.factory.makeArchive(virtualized=False), processor=proc
+        ).queueBuild()
+        bq_virt = self.factory.makeBinaryPackageBuild(
+            archive=self.factory.makeArchive(virtualized=True), processor=proc
+        ).queueBuild()
+
+        self.assertEqual(
+            [bq_nonvirt],
+            self.bq_set.findBuildCandidates(
+                processor=proc, virtualized=False, limit=3
+            ),
+        )
+        self.assertEqual(
+            [bq_virt],
+            self.bq_set.findBuildCandidates(
+                processor=proc, virtualized=True, limit=3
+            ),
+        )
+
+    def test_findBuildCandidates_honours_resources(self):
+        (
+            repository_plain,
+            repository_large,
+            repository_gpu,
+            repository_gpu_large,
+        ) = (
+            self.factory.makeGitRepository(builder_constraints=constraints)
+            for constraints in (None, ["large"], ["gpu"], ["gpu", "large"])
+        )
+        das = self.factory.makeDistroArchSeries()
+        bq_plain, bq_large, bq_gpu, bq_gpu_large = (
+            self.factory.makeCIBuild(
+                git_repository=repository, distro_arch_series=das
+            ).queueBuild()
+            for repository in (
+                repository_plain,
+                repository_large,
+                repository_gpu,
+                repository_gpu_large,
+            )
+        )
+
+        self.assertEqual(
+            [bq_plain],
+            self.bq_set.findBuildCandidates(
+                processor=das.processor, virtualized=True, limit=5
+            ),
+        )
+        self.assertContentEqual(
+            [bq_plain, bq_large],
+            self.bq_set.findBuildCandidates(
+                processor=das.processor,
+                virtualized=True,
+                limit=5,
+                open_resources=["large"],
+            ),
+        )
+        self.assertContentEqual(
+            [bq_plain, bq_large, bq_gpu, bq_gpu_large],
+            self.bq_set.findBuildCandidates(
+                processor=das.processor,
+                virtualized=True,
+                limit=5,
+                open_resources=["large", "gpu"],
+            ),
+        )
+        self.assertEqual(
+            [bq_gpu],
+            self.bq_set.findBuildCandidates(
+                processor=das.processor,
+                virtualized=True,
+                limit=5,
+                restricted_resources=["gpu"],
+            ),
+        )
+        self.assertEqual(
+            [bq_gpu, bq_gpu_large],
+            self.bq_set.findBuildCandidates(
+                processor=das.processor,
+                virtualized=True,
+                limit=5,
+                open_resources=["large"],
+                restricted_resources=["gpu"],
+            ),
         )
 
     def test_findBuildCandidates_honours_limit(self):
@@ -173,13 +284,22 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
         ]
 
         self.assertEqual(
-            bqs[:5], self.bq_set.findBuildCandidates(processor, True, 5)
+            bqs[:5],
+            self.bq_set.findBuildCandidates(
+                processor=processor, virtualized=True, limit=5
+            ),
         )
         self.assertEqual(
-            bqs, self.bq_set.findBuildCandidates(processor, True, 10)
+            bqs,
+            self.bq_set.findBuildCandidates(
+                processor=processor, virtualized=True, limit=10
+            ),
         )
         self.assertEqual(
-            bqs, self.bq_set.findBuildCandidates(processor, True, 11)
+            bqs,
+            self.bq_set.findBuildCandidates(
+                processor=processor, virtualized=True, limit=11
+            ),
         )
 
     def test_findBuildCandidates_honours_minimum_score(self):
@@ -204,10 +324,16 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
         # By default, each processor has the two builds we just created for
         # it as candidates, with the highest score first.
         self.assertEqual(
-            bqs[0], self.bq_set.findBuildCandidates(processors[0], True, 3)
+            bqs[0],
+            self.bq_set.findBuildCandidates(
+                processor=processors[0], virtualized=True, limit=3
+            ),
         )
         self.assertEqual(
-            bqs[1], self.bq_set.findBuildCandidates(processors[1], True, 3)
+            bqs[1],
+            self.bq_set.findBuildCandidates(
+                processor=processors[1], virtualized=True, limit=3
+            ),
         )
 
         # If we set a minimum score, then only builds above that threshold
@@ -215,11 +341,19 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
         with FeatureFixture({"buildmaster.minimum_score": "100000"}):
             self.assertEqual(
                 [bqs[0][0]],
-                self.bq_set.findBuildCandidates(processors[0], True, 3),
+                self.bq_set.findBuildCandidates(
+                    processor=processors[0],
+                    virtualized=True,
+                    limit=3,
+                ),
             )
             self.assertEqual(
                 [bqs[1][0]],
-                self.bq_set.findBuildCandidates(processors[1], True, 3),
+                self.bq_set.findBuildCandidates(
+                    processor=processors[1],
+                    virtualized=True,
+                    limit=3,
+                ),
             )
 
         # We can similarly set a minimum score for individual processors.
@@ -240,7 +374,11 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                 for i, processor in enumerate(processors):
                     self.assertEqual(
                         expected_bqs[i],
-                        self.bq_set.findBuildCandidates(processor, True, 3),
+                        self.bq_set.findBuildCandidates(
+                            processor=processor,
+                            virtualized=True,
+                            limit=3,
+                        ),
                     )
 
         # If we set an invalid minimum score, buildd-manager doesn't
@@ -249,11 +387,19 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
             with FeatureFixture({"buildmaster.minimum_score": "nonsense"}):
                 self.assertEqual(
                     bqs[0],
-                    self.bq_set.findBuildCandidates(processors[0], True, 3),
+                    self.bq_set.findBuildCandidates(
+                        processor=processors[0],
+                        virtualized=True,
+                        limit=3,
+                    ),
                 )
                 self.assertEqual(
                     bqs[1],
-                    self.bq_set.findBuildCandidates(processors[1], True, 3),
+                    self.bq_set.findBuildCandidates(
+                        processor=processors[1],
+                        virtualized=True,
+                        limit=3,
+                    ),
                 )
             self.assertEqual(
                 "invalid buildmaster.minimum_score: nonsense\n"
@@ -354,7 +500,9 @@ class TestFindBuildCandidatesPPABase(TestFindBuildCandidatesBase):
 class TestFindBuildCandidatesPPA(TestFindBuildCandidatesPPABase):
     def test_findBuildCandidate(self):
         # joe's fourth i386 build will be the next build candidate.
-        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
+        [next_job] = self.bq_set.findBuildCandidates(
+            processor=self.proc_386, virtualized=True, limit=1
+        )
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
         self.assertEqual("joesppa", build.archive.name)
 
@@ -362,13 +510,15 @@ class TestFindBuildCandidatesPPA(TestFindBuildCandidatesPPABase):
         # Disabled archives should not be considered for dispatching
         # builds.
         [disabled_job] = self.bq_set.findBuildCandidates(
-            self.proc_386, True, 1
+            processor=self.proc_386, virtualized=True, limit=1
         )
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(
             disabled_job
         )
         build.archive.disable()
-        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
+        [next_job] = self.bq_set.findBuildCandidates(
+            processor=self.proc_386, virtualized=True, limit=1
+        )
         self.assertNotEqual(disabled_job, next_job)
 
 
@@ -378,7 +528,9 @@ class TestFindBuildCandidatesPrivatePPA(TestFindBuildCandidatesPPABase):
 
     def test_findBuildCandidate_for_private_ppa(self):
         # joe's fourth i386 build will be the next build candidate.
-        [next_job] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
+        [next_job] = self.bq_set.findBuildCandidates(
+            processor=self.proc_386, virtualized=True, limit=1
+        )
         build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(next_job)
         self.assertEqual("joesppa", build.archive.name)
 
@@ -387,7 +539,9 @@ class TestFindBuildCandidatesPrivatePPA(TestFindBuildCandidatesPPABase):
         # the source files from the librarian.
         pub = build.current_source_publication
         pub.status = PackagePublishingStatus.PENDING
-        [candidate] = self.bq_set.findBuildCandidates(self.proc_386, True, 1)
+        [candidate] = self.bq_set.findBuildCandidates(
+            processor=self.proc_386, virtualized=True, limit=1
+        )
         self.assertEqual(next_job.id, candidate.id)
 
 
@@ -420,7 +574,9 @@ class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):
                 self.gedit_build.buildqueue_record,
                 self.firefox_build.buildqueue_record,
             ],
-            self.bq_set.findBuildCandidates(self.proc_386, True, 3),
+            self.bq_set.findBuildCandidates(
+                processor=self.proc_386, virtualized=True, limit=3
+            ),
         )
 
         # Now even if we set the build building, we'll still get the
@@ -430,7 +586,9 @@ class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):
         )
         self.assertEqual(
             [self.firefox_build.buildqueue_record],
-            self.bq_set.findBuildCandidates(self.proc_386, True, 3),
+            self.bq_set.findBuildCandidates(
+                processor=self.proc_386, virtualized=True, limit=3
+            ),
         )
 
     def test_findBuildCandidate_for_recipe_build(self):
@@ -456,7 +614,9 @@ class TestFindBuildCandidatesDistroArchive(TestFindBuildCandidatesBase):
                 self.gedit_build.buildqueue_record,
                 self.firefox_build.buildqueue_record,
             ],
-            self.bq_set.findBuildCandidates(self.proc_386, True, 3),
+            self.bq_set.findBuildCandidates(
+                processor=self.proc_386, virtualized=True, limit=3
+            ),
         )
 
 
@@ -497,5 +657,7 @@ class TestFindRecipeBuildCandidates(TestFindBuildCandidatesBase):
         # This test is run in a "recipe builds only" context.
         self.assertEqual(
             [self.bq2, self.bq1],
-            self.bq_set.findBuildCandidates(self.proc_386, True, 2),
+            self.bq_set.findBuildCandidates(
+                processor=self.proc_386, virtualized=True, limit=2
+            ),
         )

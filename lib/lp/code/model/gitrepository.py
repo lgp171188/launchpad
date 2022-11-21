@@ -24,7 +24,7 @@ from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
-from storm.databases.postgres import Returning
+from storm.databases.postgres import JSON, Returning
 from storm.expr import SQL, And, Coalesce, Desc, Insert, Join, Not, Or, Select
 from storm.info import ClassAlias, get_cls_info
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
@@ -323,6 +323,8 @@ class GitRepository(
         name="date_last_scanned", tzinfo=pytz.UTC, allow_none=True
     )
 
+    builder_constraints = JSON(name="builder_constraints", allow_none=True)
+
     def __init__(
         self,
         repository_type,
@@ -339,6 +341,7 @@ class GitRepository(
         pack_count=None,
         date_last_scanned=None,
         date_last_repacked=None,
+        builder_constraints=None,
     ):
         super().__init__()
         self.repository_type = repository_type
@@ -371,6 +374,7 @@ class GitRepository(
         self.pack_count = pack_count
         self.date_last_repacked = date_last_repacked
         self.date_last_scanned = date_last_scanned
+        self.builder_constraints = builder_constraints
 
     def _createOnHostingService(
         self, clone_from_repository=None, async_create=False

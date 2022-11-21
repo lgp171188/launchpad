@@ -10,7 +10,16 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Int, Text, Timedelta
+from zope.schema import (
+    Bool,
+    Choice,
+    Datetime,
+    Int,
+    List,
+    Text,
+    TextLine,
+    Timedelta,
+)
 
 from lp import _
 from lp.buildmaster.enums import BuildQueueStatus
@@ -55,6 +64,13 @@ class IBuildQueue(Interface):
         required=False,
         description=_(
             "The virtualization setting required by this build farm job."
+        ),
+    )
+    builder_constraints = List(
+        required=False,
+        value_type=TextLine(),
+        description=_(
+            "Builder resource tags required by this build farm job."
         ),
     )
 
@@ -153,10 +169,17 @@ class IBuildQueueSet(Interface):
     def preloadForBuildFarmJobs(builds):
         """Preload buildqueue_record for the given IBuildFarmJobs."""
 
-    def findBuildCandidates(processor, virtualized, limit):
+    def findBuildCandidates(
+        processor,
+        virtualized,
+        limit,
+        open_resources=None,
+        restricted_resources=None,
+    ):
         """Find candidate jobs for dispatch to idle builders.
 
         :return: A sequence of up to `limit` `IBuildQueue` items with the
             highest score that are for the given `processor` and that match
-            the given value of `virtualized`.
+            the given values of `virtualized`, `open_resources`, and
+            `restricted_resources`.
         """

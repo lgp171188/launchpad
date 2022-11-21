@@ -3806,6 +3806,8 @@ class LaunchpadObjectFactory(ObjectFactory):
         virtualized=True,
         vm_host=None,
         vm_reset_protocol=None,
+        open_resources=None,
+        restricted_resources=None,
         manual=False,
     ):
         """Make a new builder for i386 virtualized builds by default.
@@ -3839,6 +3841,8 @@ class LaunchpadObjectFactory(ObjectFactory):
                 vm_host,
                 manual=manual,
                 vm_reset_protocol=vm_reset_protocol,
+                open_resources=open_resources,
+                restricted_resources=restricted_resources,
             )
 
     def makeRecipeText(self, *branches):
