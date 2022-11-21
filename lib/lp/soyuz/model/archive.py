@@ -3418,7 +3418,7 @@ class ArchiveSet:
 
         if new_archive.is_ppa:
             new_archive.authorized_size = (
-                20480 if new_archive.private else 2048
+                20480 if new_archive.private else 8192
             )
 
         new_archive.suppress_subscription_notifications = (

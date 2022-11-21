@@ -1507,7 +1507,7 @@ the IArchive context, in this case only Celso has it.
     >>> pprint_entry(
     ...     cprov_webservice.get("/~cprov/+archive/ubuntu/p3a").jsonBody()
     ... )
-    authorized_size: 2048
+    authorized_size: 8192
     dependencies_collection_link:
         'http://.../~cprov/+archive/ubuntu/p3a/dependencies'
     description: 'packages to help my friends.'

@@ -29,7 +29,7 @@ class TestCreatePPA(TestCaseWithFactory):
         with person_logged_in(person):
             ppa = person.createPPA()
         self.assertEqual(ppa.name, "ppa")
-        self.assertEqual(2048, ppa.authorized_size)
+        self.assertEqual(8192, ppa.authorized_size)
 
     def test_private(self):
         with celebrity_logged_in("commercial_admin") as person:
