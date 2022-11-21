@@ -32,6 +32,7 @@ from lp.services.librarian.client import (
 from lp.services.librarian.interfaces.client import UploadFailed
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty
+from lp.services.timeout import override_timeout, with_timeout
 from lp.testing import TestCase
 from lp.testing.layers import (
     DatabaseLayer,
@@ -231,6 +232,22 @@ class EchoServer(threading.Thread):
         self.socket.close()
 
 
+class TimingOutServer(EchoServer):
+    """Fake TCP server that never sends a reply."""
+
+    def run(self):
+        while not self.should_stop:
+            try:
+                conn, addr = self.socket.accept()
+                self.connections.append(conn)
+            except socket.timeout:
+                pass
+        for conn in self.connections:
+            conn.close()
+        self.connections = []
+        self.socket.close()
+
+
 class LibrarianClientTestCase(TestCase):
     layer = LaunchpadFunctionalLayer
 
@@ -306,6 +323,38 @@ class LibrarianClientTestCase(TestCase):
             io.BytesIO(b"sample"),
             "text/plain",
         )
+
+    def test_addFile_fails_when_server_times_out(self):
+        server = TimingOutServer()
+        server.start()
+        self.addCleanup(server.join)
+
+        upload_host, upload_port = server.socket.getsockname()
+        self.pushConfig(
+            "librarian",
+            upload_host=upload_host,
+            upload_port=upload_port,
+            client_socket_timeout=1,
+        )
+
+        client = LibrarianClient()
+
+        @with_timeout()
+        def add_file():
+            self.assertRaisesWithContent(
+                UploadFailed,
+                "Server timed out after 1 second(s)",
+                client.addFile,
+                "sample.txt",
+                6,
+                io.BytesIO(b"sample"),
+                "text/plain",
+            )
+
+        # Time out this operation after a minute, to make sure that the test
+        # doesn't hang forever if the socket timeout isn't set properly.
+        with override_timeout(60):
+            add_file()
 
     def test_addFile_uses_primary(self):
         # addFile is a write operation, so it should always use the

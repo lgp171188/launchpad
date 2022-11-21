@@ -1079,10 +1079,10 @@ PPAs are created with the name attribute set to 'ppa' by default.
     ppa
 
 We can take the opportunity to check if the default 'authorized_size'
-corresponds to what we state in our policy, 2048 MiB:
+corresponds to what we state in our policy, 8192 MiB:
 
     >>> name16.archive.authorized_size
-    2048
+    8192
 
 An archive is also associated with a distribution.  This can be found on
 the distribution property.  The default distribution is "ubuntu":
