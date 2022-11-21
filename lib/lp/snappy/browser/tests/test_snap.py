@@ -682,7 +682,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(
             expected_body, json.loads(call.request.body.decode("UTF-8"))
         )
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
             urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
@@ -1729,7 +1729,7 @@ class TestSnapEditView(BaseTestSnapView):
         self.assertEqual(
             expected_body, json.loads(call.request.body.decode("UTF-8"))
         )
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
             urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
@@ -1815,7 +1815,7 @@ class TestSnapAuthorizeView(BaseTestSnapView):
             self.assertEqual(
                 {"root": root_macaroon_raw}, self.snap.store_secrets
             )
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         self.assertEqual(
             snap_url + "/+authorize/+login?macaroon_caveat_id=dummy&"
             "discharge_macaroon_action=field.actions.complete&"

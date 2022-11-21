@@ -452,9 +452,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             # ensure the url works
             browser = self.getNonRedirectingBrowser()
             browser.open(log_url)
-            self.assertEqual(
-                303, int(browser.headers["Status"].split(" ", 1)[0])
-            )
+            self.assertEqual(303, browser.responseStatusCode)
             self.assertEqual(
                 b"log_data", requests.get(browser.headers["Location"]).content
             )
@@ -517,9 +515,7 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             # we should be redirected to librarian with authentication
             browser = self.getNonRedirectingBrowser(user=requester)
             browser.open(log_url)
-            self.assertEqual(
-                303, int(browser.headers["Status"].split(" ", 1)[0])
-            )
+            self.assertEqual(303, browser.responseStatusCode)
             # Actually requesting files from the restricted librarian is
             # cumbersome, but at least test that we're redirected to the
             # restricted librarian with a suitable token.

@@ -14,6 +14,7 @@ __all__ = [
 ]
 
 import ssl
+from typing import Optional
 
 import six
 from lazr.uri import URI
@@ -62,6 +63,13 @@ class Browser(_Browser):
     def urlpath(self):
         uri = URI(self.url)
         return uri.path
+
+    @property
+    def responseStatusCode(self) -> Optional[int]:
+        try:
+            return int(self.headers["Status"].split(" ", 1)[0])
+        except (KeyError, IndexError, ValueError):
+            return None
 
 
 def setUp(test):
