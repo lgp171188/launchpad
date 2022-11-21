@@ -29,7 +29,7 @@ from lp.code.model.branchjob import BranchScanJob
 from lp.code.tests.helpers import BranchHostingFixture
 from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
-from lp.registry.interfaces.person import PersonVisibility, IPersonSet
+from lp.registry.interfaces.person import IPersonSet, PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -216,9 +216,7 @@ class TestBranchView(BrowserTestCase):
         random_user = self.factory.makePerson()
 
         branch = self.factory.makeAnyBranch()
-        branch_url = canonical_url(
-            branch, view_name="+index", rootsite="code"
-        )
+        branch_url = canonical_url(branch, view_name="+index", rootsite="code")
 
         # the branch owner sees the Delete Branch link
         browser = self.getUserBrowser(branch_url, user=branch.owner)
@@ -721,8 +719,9 @@ class TestBranchDeletionView(BrowserTestCase):
         self.assertIn("Delete branch %s" % branch_name, browser.contents)
 
         browser.getControl("Delete").click()
-        self.assertIn("Branch %s deleted." % branch_unique_name,
-                      browser.contents)
+        self.assertIn(
+            "Branch %s deleted." % branch_unique_name, browser.contents
+        )
 
     def test_registry_expert_can_delete(self):
         expert = self.factory.makePerson(
@@ -738,8 +737,25 @@ class TestBranchDeletionView(BrowserTestCase):
         browser.open(branch_url)
         self.assertIn("Delete branch %s" % branch_name, browser.contents)
         browser.getControl("Delete").click()
-        self.assertIn("Branch %s deleted." % branch_unique_name,
-                      browser.contents)
+        self.assertIn(
+            "Branch %s deleted." % branch_unique_name, browser.contents
+        )
+
+    def test_commercial_admin_can_delete(self):
+        commercial_admin = self.factory.makeCommercialAdmin()
+        branch = self.factory.makeAnyBranch()
+        branch_name = branch.displayname
+        branch_unique_name = branch.unique_name
+        branch_url = canonical_url(
+            branch, view_name="+delete", rootsite="code"
+        )
+        browser = self.getUserBrowser(branch_url, user=commercial_admin)
+        browser.open(branch_url)
+        self.assertIn("Delete branch %s" % branch_name, browser.contents)
+        browser.getControl("Delete").click()
+        self.assertIn(
+            "Branch %s deleted." % branch_unique_name, browser.contents
+        )
 
     def test_other_user_can_not_delete(self):
         branch = self.factory.makeAnyBranch()
