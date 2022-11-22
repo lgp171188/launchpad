@@ -133,7 +133,7 @@ from lp.services.webapp.interfaces import (
     INavigationMenu,
 )
 from lp.services.webapp.menu import get_facet
-from lp.services.webapp.publisher import RedirectionView
+from lp.services.webapp.publisher import RedirectionView, redirection
 from lp.services.webapp.url import urlappend
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.services.worlddata.interfaces.language import ILanguageSet
@@ -855,6 +855,14 @@ class LaunchpadRootNavigation(Navigation):
         return self.redirectSubTree(
             urlappend(new_url, "/".join(self.request.stepstogo))
         )
+
+    @redirection("+feature-info", status=301)
+    def redirect_feature_info(self):
+        return "/+feature-rules/info"
+
+    @redirection("+feature-changelog", status=301)
+    def redirect_feature_changelog(self):
+        return "/+feature-rules/changelog"
 
     # XXX cprov 2009-03-19 bug=345877: path segments starting with '+'
     # should never correspond to a valid traversal, they confuse the

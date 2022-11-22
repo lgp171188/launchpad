@@ -23,6 +23,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from io import BytesIO
 from itertools import chain
+from typing import Optional
 from urllib.parse import urljoin
 
 import six
@@ -815,6 +816,13 @@ class Browser(_Browser):
         baseurl = self._getBaseUrl()
 
         return Link(elem, self, baseurl)
+
+    @property
+    def responseStatusCode(self) -> Optional[int]:
+        try:
+            return int(self.headers["Status"].split(" ", 1)[0])
+        except (KeyError, IndexError, ValueError):
+            return None
 
 
 def setupBrowser(auth=None):

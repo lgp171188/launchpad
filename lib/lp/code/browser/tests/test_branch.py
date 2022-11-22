@@ -1413,7 +1413,7 @@ class TestBranchDiffView(BrowserTestCase):
         browser = self.getUserBrowser()
         browser.raiseHttpErrors = False
         browser.open(branch_url + "/+diff/2/1")
-        self.assertEqual(401, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(401, browser.responseStatusCode)
         self.assertEqual(
             "Proxying of branch diffs is disabled.\n", browser.contents
         )

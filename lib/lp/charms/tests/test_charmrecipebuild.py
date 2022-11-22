@@ -985,7 +985,7 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
 
     def assertCanOpenRedirectedUrl(self, browser, url):
         browser.open(url)
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         urlopen(browser.headers["Location"]).close()
 
     def test_logs(self):

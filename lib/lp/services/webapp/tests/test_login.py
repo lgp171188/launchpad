@@ -765,15 +765,12 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
 
         self.assertEqual("Login", browser.title)
         fill_login_form_and_submit(browser, "test@canonical.com")
-        self.assertEqual(
-            http.client.FOUND, int(browser.headers["Status"].split(" ", 1)[0])
-        )
+        self.assertEqual(http.client.FOUND, browser.responseStatusCode)
         callback_url = browser.headers["Location"]
         self.assertIn("+openid-callback", callback_url)
         browser.open(callback_url)
         self.assertEqual(
-            http.client.TEMPORARY_REDIRECT,
-            int(browser.headers["Status"].split(" ", 1)[0]),
+            http.client.TEMPORARY_REDIRECT, browser.responseStatusCode
         )
         browser.open(browser.headers["Location"])
         login_status = extract_text(
