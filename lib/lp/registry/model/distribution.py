@@ -2011,6 +2011,7 @@ class Distribution(
             "partner": ArchivePurpose.PARTNER,
             "contrib": ArchivePurpose.PRIMARY,
             "non-free": ArchivePurpose.PRIMARY,
+            "non-free-firmware": ArchivePurpose.PRIMARY,
         }
 
         try:

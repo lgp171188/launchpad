@@ -430,7 +430,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
                 ]
             ),
         )
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         return_to_matcher = AfterPreprocessing(
             urlsplit,
             MatchesStructure(
@@ -716,7 +716,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         browser.getControl("Update charm recipe").click()
 
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
 
         browser = self.getViewBrowser(recipe, user=self.person)
         content = find_main_content(browser.contents)
@@ -792,7 +792,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         browser.getControl("Update charm recipe").click()
 
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
 
         browser = self.getViewBrowser(recipe, user=self.person)
         content = find_main_content(browser.contents)
@@ -1101,7 +1101,7 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
             self.assertEqual(
                 {"root": root_macaroon_raw}, self.recipe.store_secrets
             )
-        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        self.assertEqual(303, browser.responseStatusCode)
         return_to_matcher = AfterPreprocessing(
             urlsplit,
             MatchesStructure(

@@ -1417,6 +1417,7 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
     # such that:
     #   'contrib' -> 'multiverse'
     #   'non-free' -> 'multiverse'
+    #   'non-free-firmware' -> 'multiverse'
     #   everything else -> 'universe'
     #
     # This is to relieve the archive admins of some work where this is
@@ -1467,11 +1468,22 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
             "bar_1.0-1_nonfree_component", "multiverse"
         )
 
+    def testUploadNonfreeFirmwareComponentOverride(self):
+        """
+        Test the overriding of the non-free-firmware component on uploads.
+        """
+        # The component non-free-firmware does not exist in the sample data, so
+        # add it here.
+        getUtility(IComponentSet).new("non-free-firmware")
+        self.checkComponentOverride(
+            "bar_1.0-1_nonfreefirmware_component", "multiverse"
+        )
+
     def testUploadDefaultComponentOverride(self):
         """Test the overriding of the component on uploads.
 
-        Components other than non-free and contrib should override to
-        universe.
+        Components other than non-free, non-free-firmware, and contrib should
+        override to universe.
         """
         self.checkComponentOverride("bar_1.0-1", "universe")
 

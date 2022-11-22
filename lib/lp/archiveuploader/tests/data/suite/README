@@ -1,0 +1,18 @@
+Some files in this directory are PGP-signed
+
+See `lp/testing/gpgkeys/data/README` for more information about the keys being used.
+
+To sign a file you should
+
+1. Import the key:
+
+```
+gpg --import lib/lp/testing/gpgkeys/data/foo.bar@canonical.com.pub
+gpg --import lib/lp/testing/gpgkeys/data/foo.bar@canonical.com.sec
+```
+
+2. Add a signature like so:
+
+```
+gpg --clearsign -u foo.bar@canonical.com PATH_TO_THE_FILE
+```
