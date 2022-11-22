@@ -459,6 +459,7 @@ class UnknownOverridePolicy(BaseOverridePolicy):
     values.  The rules for overriding are: (See bug #120052)
         'contrib' -> 'multiverse'
         'non-free' -> 'multiverse'
+        'non-free-firmware' -> 'multiverse'
         everything else -> 'universe'
     This mainly relates to Debian syncs, where the default component
     is 'main' but should not be in main for Ubuntu.
@@ -467,6 +468,7 @@ class UnknownOverridePolicy(BaseOverridePolicy):
     DEBIAN_COMPONENT_OVERRIDE_MAP = {
         "contrib": "multiverse",
         "non-free": "multiverse",
+        "non-free-firmware": "multiverse",
     }
 
     DEFAULT_OVERRIDE_COMPONENT = "universe"
