@@ -80,7 +80,10 @@ class ILibraryFileAlias(Interface):
     # We can't use TextLine here because they return
     # byte strings.
     http_url = Attribute(
-        _("The http URL to this file; consider using getURL() instead")
+        _(
+            "The http URL to this file; consider using getURL() instead, as "
+            "it returns an HTTPS URL where appropriate"
+        )
     )
     https_url = Attribute(_("The https URL to this file"))
     private_url = Attribute(_("The secure URL to this file (private files)"))
