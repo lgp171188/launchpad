@@ -224,8 +224,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
                 pocket=PackagePublishingPocket.UPDATES
             )
             self.assertEqual(sha1_2, updates_chroot.content.sha1)
-            release_chroot_url = release_chroot.http_url
-            updates_chroot_url = updates_chroot.http_url
+            release_chroot_url = release_chroot.getURL()
+            updates_chroot_url = updates_chroot.getURL()
         response = ws.named_get(das_url, "getChrootURL", pocket="Release")
         self.assertEqual(200, response.status)
         self.assertEqual(release_chroot_url, response.jsonBody())
@@ -257,7 +257,7 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
                 pocket=PackagePublishingPocket.UPDATES
             )
             self.assertEqual(sha1_2, updates_chroot.content.sha1)
-            updates_chroot_url = updates_chroot.http_url
+            updates_chroot_url = updates_chroot.getURL()
         response = ws.named_get(das_url, "getChrootURL", pocket="Release")
         self.assertEqual(200, response.status)
         self.assertEqual(release_chroot_url, response.jsonBody())
@@ -296,8 +296,8 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             self.assertEqual(sha1_1, chroot_image.content.sha1)
             lxd_image = das.getChroot(image_type=BuildBaseImageType.LXD)
             self.assertEqual(sha1_2, lxd_image.content.sha1)
-            chroot_image_url = chroot_image.http_url
-            lxd_image_url = lxd_image.http_url
+            chroot_image_url = chroot_image.getURL()
+            lxd_image_url = lxd_image.getURL()
         response = ws.named_get(
             das_url, "getChrootURL", image_type="Chroot tarball"
         )

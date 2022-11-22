@@ -79,7 +79,9 @@ class ILibraryFileAlias(Interface):
     # XXX Guilherme Salgado, 2007-01-18 bug=80487:
     # We can't use TextLine here because they return
     # byte strings.
-    http_url = Attribute(_("The http URL to this file"))
+    http_url = Attribute(
+        _("The http URL to this file; consider using getURL() instead")
+    )
     https_url = Attribute(_("The https URL to this file"))
     private_url = Attribute(_("The secure URL to this file (private files)"))
 
