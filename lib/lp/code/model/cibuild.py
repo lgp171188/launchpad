@@ -7,6 +7,7 @@ __all__ = [
     "CIBuild",
 ]
 
+import re
 from datetime import timedelta
 from operator import attrgetter, itemgetter
 
@@ -455,7 +456,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `ICIBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
             file_object = self.upload_log
         else:
             file_object = None

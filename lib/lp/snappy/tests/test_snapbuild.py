@@ -315,7 +315,7 @@ class TestSnapBuild(TestCaseWithFactory):
 
     def test_getFileByName_uploaded_files(self):
         # getFileByName returns uploaded files when requested by name.
-        filenames = ("ubuntu.squashfs", "ubuntu.manifest")
+        filenames = ("ubuntu.squashfs", "ubuntu.manifest", "foo_log.txt")
         lfas = []
         for filename in filenames:
             lfa = self.factory.makeLibraryFileAlias(filename=filename)

@@ -6,6 +6,7 @@ __all__ = [
     "LiveFSFile",
 ]
 
+import re
 from datetime import timedelta
 
 import pytz
@@ -285,7 +286,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         """See `ILiveFSBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
             file_object = self.upload_log
         else:
             file_object = (

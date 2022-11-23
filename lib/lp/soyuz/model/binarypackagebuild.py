@@ -12,6 +12,7 @@ __all__ = [
 ]
 
 import datetime
+import re
 import warnings
 from operator import attrgetter, itemgetter
 
@@ -774,7 +775,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             file_object = self.upload_changesfile
         elif filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
             file_object = self.upload_log
         elif filename.endswith("deb"):
             file_object = self._getDebByFileName(filename)
