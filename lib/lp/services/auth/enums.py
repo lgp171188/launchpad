@@ -21,6 +21,14 @@ class AccessTokenScope(EnumeratedType):
         """
     )
 
+    REPOSITORY_PULL = Item(
+        """
+        repository:pull
+
+        Can pull from a repository.
+        """
+    )
+
     REPOSITORY_PUSH = Item(
         """
         repository:push

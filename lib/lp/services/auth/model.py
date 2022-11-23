@@ -156,6 +156,10 @@ class AccessTokenSet:
         store.add(token)
         return token
 
+    def getByID(self, token_id):
+        """See `IAccessTokenSet`."""
+        return IStore(AccessToken).get(AccessToken, token_id)
+
     def getBySecret(self, secret):
         """See `IAccessTokenSet`."""
         return (

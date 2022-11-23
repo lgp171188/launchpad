@@ -157,6 +157,12 @@ class IAccessTokenSet(Interface):
             None.
         """
 
+    def getByID(token_id):
+        """Return the access token with this ID, or None.
+
+        :param token_id: An `AccessToken` ID.
+        """
+
     def getBySecret(secret):
         """Return the access token with this secret, or None.
 

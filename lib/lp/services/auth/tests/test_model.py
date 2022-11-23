@@ -198,6 +198,12 @@ class TestAccessTokenSet(TestCaseWithFactory):
             ),
         )
 
+    def test_getByID(self):
+        secret, token = self.factory.makeAccessToken()
+        token_id = removeSecurityProxy(token).id
+        self.assertEqual(token, getUtility(IAccessTokenSet).getByID(token_id))
+        self.assertIsNone(getUtility(IAccessTokenSet).getByID(token_id + 1))
+
     def test_getBySecret(self):
         secret, token = self.factory.makeAccessToken()
         self.assertEqual(
