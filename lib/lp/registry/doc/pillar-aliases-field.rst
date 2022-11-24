@@ -71,10 +71,10 @@ Also, they must not be identical to the pillar's own name.
     ...
     lp.app.validators.LaunchpadValidationError: This is your name: firefox
 
-Black-listed names are not accepted as aliases either.
+Blocklisted names are not accepted as aliases either.
 
-    >>> bound_field.validate("blacklisted")
+    >>> bound_field.validate("blocklisted")
     Traceback (most recent call last):
     ...
     lp.app.validators.LaunchpadValidationError:
-    The name &#x27;blacklisted&#x27; has been blocked...
+    The name &#x27;blocklisted&#x27; has been blocked...

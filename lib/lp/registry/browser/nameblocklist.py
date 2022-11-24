@@ -2,11 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
-    "NameBlacklistAddView",
-    "NameBlacklistEditView",
-    "NameBlacklistNavigationMenu",
-    "NameBlacklistSetNavigationMenu",
-    "NameBlacklistSetView",
+    "NameBlocklistAddView",
+    "NameBlocklistEditView",
+    "NameBlocklistNavigationMenu",
+    "NameBlocklistSetNavigationMenu",
+    "NameBlocklistSetView",
 ]
 
 import re
@@ -18,9 +18,9 @@ from zope.interface import implementer
 
 from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.registry.browser import RegistryEditFormView
-from lp.registry.interfaces.nameblacklist import (
-    INameBlacklist,
-    INameBlacklistSet,
+from lp.registry.interfaces.nameblocklist import (
+    INameBlocklist,
+    INameBlocklistSet,
 )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IBreadcrumb
@@ -37,7 +37,7 @@ from lp.services.webapp.publisher import (
 )
 
 
-class NameBlacklistValidationMixin:
+class NameBlocklistValidationMixin:
     """Validate regular expression when adding or editing."""
 
     def validate(self, data):
@@ -45,15 +45,15 @@ class NameBlacklistValidationMixin:
         regexp = data["regexp"]
         try:
             re.compile(regexp)
-            name_blacklist_set = getUtility(INameBlacklistSet)
+            name_blocklist_set = getUtility(INameBlocklistSet)
             if (
-                INameBlacklistSet.providedBy(self.context)
+                INameBlocklistSet.providedBy(self.context)
                 or self.context.regexp != regexp
             ):
                 # Check if the regular expression already exists if a
                 # new expression is being created or if an existing
                 # regular expression has been modified.
-                if name_blacklist_set.getByRegExp(regexp) is not None:
+                if name_blocklist_set.getByRegExp(regexp) is not None:
                     self.setFieldError(
                         "regexp", "This regular expression already exists."
                     )
@@ -61,29 +61,29 @@ class NameBlacklistValidationMixin:
             self.setFieldError("regexp", "Invalid regular expression: %s" % e)
 
 
-class NameBlacklistEditView(
-    NameBlacklistValidationMixin, RegistryEditFormView
+class NameBlocklistEditView(
+    NameBlocklistValidationMixin, RegistryEditFormView
 ):
-    """View for editing a blacklist expression."""
+    """View for editing a blocklist expression."""
 
-    schema = INameBlacklist
+    schema = INameBlocklist
     field_names = ["regexp", "admin", "comment"]
-    label = "Edit a blacklist expression"
+    label = "Edit a blocklist expression"
     page_title = label
 
     @property
     def cancel_url(self):
-        return canonical_url(getUtility(INameBlacklistSet))
+        return canonical_url(getUtility(INameBlocklistSet))
 
     next_url = cancel_url
 
 
-class NameBlacklistAddView(NameBlacklistValidationMixin, LaunchpadFormView):
-    """View for adding a blacklist expression."""
+class NameBlocklistAddView(NameBlocklistValidationMixin, LaunchpadFormView):
+    """View for adding a blocklist expression."""
 
-    schema = INameBlacklist
+    schema = INameBlocklist
     field_names = ["regexp", "admin", "comment"]
-    label = "Add a new blacklist expression"
+    label = "Add a new blocklist expression"
     page_title = label
 
     custom_widget_regexp = CustomWidgetFactory(TextWidget, displayWidth=60)
@@ -95,66 +95,66 @@ class NameBlacklistAddView(NameBlacklistValidationMixin, LaunchpadFormView):
 
     next_url = cancel_url
 
-    @action("Add to blacklist", name="add")
+    @action("Add to blocklist", name="add")
     def add_action(self, action, data):
-        name_blacklist_set = getUtility(INameBlacklistSet)
-        name_blacklist_set.create(
+        name_blocklist_set = getUtility(INameBlocklistSet)
+        name_blocklist_set.create(
             regexp=data["regexp"],
             comment=data["comment"],
             admin=data["admin"],
         )
         self.request.response.addInfoNotification(
-            'Regular expression "%s" has been added to the name blacklist.'
+            'Regular expression "%s" has been added to the name blocklist.'
             % data["regexp"]
         )
 
 
-class NameBlacklistSetView(LaunchpadView):
-    """View for /+nameblacklists top level collection."""
+class NameBlocklistSetView(LaunchpadView):
+    """View for /+nameblocklists top level collection."""
 
-    label = "Blacklist for names of Launchpad pillars and persons"
+    label = "Blocklist for names of Launchpad pillars and persons"
     page_title = label
 
 
-class NameBlacklistSetNavigation(Navigation):
+class NameBlocklistSetNavigation(Navigation):
 
-    usedfor = INameBlacklistSet
+    usedfor = INameBlocklistSet
 
     def traverse(self, name):
         return self.context.get(name)
 
 
-class NameBlacklistSetNavigationMenu(NavigationMenu):
-    """Action menu for NameBlacklistSet."""
+class NameBlocklistSetNavigationMenu(NavigationMenu):
+    """Action menu for NameBlocklistSet."""
 
-    usedfor = INameBlacklistSet
+    usedfor = INameBlocklistSet
     facet = "overview"
     links = [
-        "add_blacklist_expression",
+        "add_blocklist_expression",
     ]
 
     @enabled_with_permission("launchpad.Edit")
-    def add_blacklist_expression(self):
-        return Link("+add", "Add blacklist expression", icon="add")
+    def add_blocklist_expression(self):
+        return Link("+add", "Add blocklist expression", icon="add")
 
 
-class NameBlacklistNavigationMenu(ApplicationMenu):
-    """Action menu for NameBlacklist."""
+class NameBlocklistNavigationMenu(ApplicationMenu):
+    """Action menu for NameBlocklist."""
 
-    usedfor = INameBlacklist
+    usedfor = INameBlocklist
     facet = "overview"
     links = [
-        "edit_blacklist_expression",
+        "edit_blocklist_expression",
     ]
 
     @enabled_with_permission("launchpad.Edit")
-    def edit_blacklist_expression(self):
-        return Link("+edit", "Edit blacklist expression", icon="edit")
+    def edit_blocklist_expression(self):
+        return Link("+edit", "Edit blocklist expression", icon="edit")
 
 
-@adapter(INameBlacklistSet)
+@adapter(INameBlocklistSet)
 @implementer(IBreadcrumb)
-class NameBlacklistSetBreadcrumb(Breadcrumb):
-    """Return a breadcrumb for an `INameBlackListSet`."""
+class NameBlocklistSetBreadcrumb(Breadcrumb):
+    """Return a breadcrumb for an `INameBlockListSet`."""
 
-    text = "Name Blacklist"
+    text = "Name Blocklist"

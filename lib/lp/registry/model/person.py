@@ -3794,7 +3794,7 @@ class PersonSet:
     def __init__(self):
         self.title = "People registered with Launchpad"
 
-    def isNameBlacklisted(self, name, user=None):
+    def isNameBlocklisted(self, name, user=None):
         """See `IPersonSet`."""
         if user is None:
             user_id = 0
@@ -3802,7 +3802,7 @@ class PersonSet:
             user_id = user.id
         cur = cursor()
         cur.execute(
-            "SELECT is_blacklisted_name(%(name)s, %(user_id)s)",
+            "SELECT is_blocklisted_name(%(name)s, %(user_id)s)",
             {"name": name, "user_id": user_id},
         )
         return bool(cur.fetchone()[0])
@@ -5311,7 +5311,7 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
 
     It is technically possible for this function to raise a
     NicknameGenerationError, but this will only occur if an operator
-    has majorly screwed up the name blacklist.
+    has majorly screwed up the name blocklist.
     """
     email_addr = email_addr.strip().lower()
 
@@ -5330,7 +5330,7 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
             return False
         elif is_registered(nick):
             return False
-        elif person_set.isNameBlacklisted(nick):
+        elif person_set.isNameBlocklisted(nick):
             return False
         else:
             return True
@@ -5381,7 +5381,7 @@ def generate_nick(email_addr, is_registered=_is_nick_registered):
         raise NicknameGenerationError(
             "No nickname could be generated. "
             "This should be impossible to trigger unless some twonk has "
-            "registered a match everything regexp in the black list."
+            "registered a match everything regexp in the blocklist."
         )
 
     finally:

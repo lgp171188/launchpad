@@ -130,7 +130,7 @@ from lp.registry.interfaces.teammembership import (
 from lp.registry.interfaces.wikiname import IWikiName
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.fields import (
-    BlacklistableContentNameField,
+    BlocklistableContentNameField,
     IconImageUpload,
     LogoImageUpload,
     MugshotImageUpload,
@@ -469,11 +469,11 @@ class PersonCreationRationale(DBEnumeratedType):
     )
 
 
-class PersonNameField(BlacklistableContentNameField):
-    """A `Person` team name, which is unique and performs pseudo blacklisting.
+class PersonNameField(BlocklistableContentNameField):
+    """A `Person` team name, which is unique and performs pseudo blocklisting.
 
     If the team name is not unique, and the clash is with a private team,
-    return the blacklist message.  Also return the blacklist message if the
+    return the blocklist message.  Also return the blocklist message if the
     private prefix is used but the user is not privileged to create private
     teams.
     """
@@ -500,19 +500,19 @@ class PersonNameField(BlacklistableContentNameField):
             # private prefix.
 
             if input.startswith(PRIVATE_TEAM_PREFIX):
-                raise LaunchpadValidationError(self.blacklistmessage % input)
+                raise LaunchpadValidationError(self.blocklistmessage % input)
 
             # If a non-privileged user attempts to use an existing name AND
-            # the existing project is private, then return the blacklist
+            # the existing project is private, then return the blocklist
             # message rather than the message indicating the project exists.
             existing_object = self._getByAttribute(input)
             if (
                 existing_object is not None
                 and existing_object.visibility != PersonVisibility.PUBLIC
             ):
-                raise LaunchpadValidationError(self.blacklistmessage % input)
+                raise LaunchpadValidationError(self.blocklistmessage % input)
 
-        # Perform the normal validation, including the real blacklist checks.
+        # Perform the normal validation, including the real blocklist checks.
         super()._validate(input)
 
 
@@ -2466,12 +2466,12 @@ class IPersonSetPublic(Interface):
     def getTopContributors(limit=50):
         """Return the top contributors in Launchpad, up to the given limit."""
 
-    def isNameBlacklisted(name, user=None):
-        """Is the given name blacklisted by Launchpad Administrators?
+    def isNameBlocklisted(name, user=None):
+        """Is the given name blocklisted by Launchpad Administrators?
 
         :param name: The name to be checked.
         :param user: The `IPerson` that wants to use the name. If the user
-            is an admin for the nameblacklist expression, they can use the
+            is an admin for the nameblocklist expression, they can use the
             name.
         """
 
