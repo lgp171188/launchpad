@@ -27,7 +27,7 @@ from lp.registry.errors import (
     NoSuchAccount,
     NotPlaceholderAccount,
 )
-from lp.registry.interfaces.nameblacklist import INameBlacklistSet
+from lp.registry.interfaces.nameblocklist import INameBlocklistSet
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -96,21 +96,21 @@ class TestPersonSet(TestCaseWithFactory):
         self.addCleanup(logout)
         self.person_set = getUtility(IPersonSet)
 
-    def test_isNameBlacklisted(self):
+    def test_isNameBlocklisted(self):
         cursor().execute(
-            "INSERT INTO NameBlacklist(id, regexp) VALUES (-100, 'foo')"
+            "INSERT INTO NameBlocklist(id, regexp) VALUES (-100, 'foo')"
         )
-        self.assertTrue(self.person_set.isNameBlacklisted("foo"))
-        self.assertFalse(self.person_set.isNameBlacklisted("bar"))
+        self.assertTrue(self.person_set.isNameBlocklisted("foo"))
+        self.assertFalse(self.person_set.isNameBlocklisted("bar"))
 
-    def test_isNameBlacklisted_user_is_admin(self):
+    def test_isNameBlocklisted_user_is_admin(self):
         team = self.factory.makeTeam()
-        name_blacklist_set = getUtility(INameBlacklistSet)
-        self.admin_exp = name_blacklist_set.create("fnord", admin=team)
+        name_blocklist_set = getUtility(INameBlocklistSet)
+        self.admin_exp = name_blocklist_set.create("fnord", admin=team)
         self.store = IStore(self.admin_exp)
         self.store.flush()
         user = team.teamowner
-        self.assertFalse(self.person_set.isNameBlacklisted("fnord", user))
+        self.assertFalse(self.person_set.isNameBlocklisted("fnord", user))
 
     def test_getByEmail_ignores_case_and_whitespace(self):
         person1_email = "foo.bar@canonical.com"

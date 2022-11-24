@@ -86,7 +86,7 @@ def close_account(username, log):
     def table_notification(table):
         log.debug("Handling the %s table" % table)
 
-    # All names starting with 'removed' are blacklisted, so this will always
+    # All names starting with 'removed' are blocklisted, so this will always
     # succeed.
     new_name = "removed%d" % person.id
 

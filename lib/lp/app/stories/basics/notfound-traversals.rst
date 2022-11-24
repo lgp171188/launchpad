@@ -176,6 +176,10 @@ Check legacy URL redirects
     >>> check_redirect("/people/stub", status=301)
     http://launchpad.test/~stub
 
+    # wokeignore:rule=blacklist
+    >>> check_redirect("/+nameblacklist", auth=True, status=301)
+    +nameblocklist
+
 Check redirects of Unicode URLs works
 
     >>> check_not_found("/ubuntu/foo%C3%A9")

@@ -1,12 +1,12 @@
-NameBlacklist pages
+NameBlocklist pages
 ===================
 
     >>> import transaction
     >>> from zope.component import getUtility
     >>> from lp.testing.sampledata import ADMIN_EMAIL
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> from lp.registry.interfaces.nameblacklist import INameBlacklistSet
-    >>> name_blacklist_set = getUtility(INameBlacklistSet)
+    >>> from lp.registry.interfaces.nameblocklist import INameBlocklistSet
+    >>> name_blocklist_set = getUtility(INameBlocklistSet)
     >>> from lp.testing.pages import extract_text, find_tag_by_id
     >>> registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
     >>> registry_expert = factory.makePerson()
@@ -18,24 +18,24 @@ NameBlacklist pages
 View all
 --------
 
-All the blacklisted regular expressions that filter pillar names and
-person names can be seen on the /+nameblacklist page.
+All the blocklisted regular expressions that filter pillar names and
+person names can be seen on the /+nameblocklist page.
 
     >>> ignored = login_person(registry_expert)
     >>> view = create_initialized_view(
-    ...     name_blacklist_set, "+index", principal=registry_expert
+    ...     name_blocklist_set, "+index", principal=registry_expert
     ... )
     >>> print(
     ...     extract_text(
-    ...         find_tag_by_id(view.render(), "blacklist"), formatter="html"
+    ...         find_tag_by_id(view.render(), "blocklist"), formatter="html"
     ...     )
     ... )
     Regular Expression                   Admin    Comment
-    ^admin Edit blacklist expression     &mdash;
-    blacklist Edit blacklist expression  &mdash;  For testing purposes
+    ^admin Edit blocklist expression     &mdash;
+    blocklist Edit blocklist expression  &mdash;  For testing purposes
 
 
-Add expression to blacklist
+Add expression to blocklist
 ---------------------------
 
 An invalid regular expression cannot be added.
@@ -44,9 +44,9 @@ An invalid regular expression cannot be added.
     ...     "field.regexp": "(",
     ...     "field.admin": registry_experts.name,
     ...     "field.comment": "old-comment",
-    ...     "field.actions.add": "Add to blacklist",
+    ...     "field.actions.add": "Add to blocklist",
     ... }
-    >>> view = create_initialized_view(name_blacklist_set, "+add", form=form)
+    >>> view = create_initialized_view(name_blocklist_set, "+add", form=form)
     >>> for error in view.errors:
     ...     print(error)
     ...
@@ -54,8 +54,8 @@ An invalid regular expression cannot be added.
 
 A duplicate regular expression cannot be added.
 
-    >>> form["field.regexp"] = "blacklist"
-    >>> view = create_initialized_view(name_blacklist_set, "+add", form=form)
+    >>> form["field.regexp"] = "blocklist"
+    >>> view = create_initialized_view(name_blocklist_set, "+add", form=form)
     >>> for error in view.errors:
     ...     print(error)
     ...
@@ -64,21 +64,21 @@ A duplicate regular expression cannot be added.
 After adding a regular expression, a notification will be displayed.
 
     >>> form["field.regexp"] = "foo"
-    >>> view = create_initialized_view(name_blacklist_set, "+add", form=form)
+    >>> view = create_initialized_view(name_blocklist_set, "+add", form=form)
     >>> for notification in view.request.response.notifications:
     ...     print(notification.message)
     ...
-    Regular expression &quot;foo&quot; has been added to the name blacklist.
+    Regular expression &quot;foo&quot; has been added to the name blocklist.
 
     >>> transaction.commit()
-    >>> foo_exp = name_blacklist_set.getByRegExp("foo")
+    >>> foo_exp = name_blocklist_set.getByRegExp("foo")
     >>> print(foo_exp.regexp)
     foo
     >>> print(foo_exp.admin.name)
     registry
 
 
-Edit expression in blacklist
+Edit expression in blocklist
 ----------------------------
 
 When a regular expression is edited, it still must be valid.
@@ -97,7 +97,7 @@ When a regular expression is edited, it still must be valid.
 
 It cannot changed to conflict with another regular expression.
 
-    >>> form["field.regexp"] = "blacklist"
+    >>> form["field.regexp"] = "blocklist"
     >>> view = create_initialized_view(foo_exp, "+edit", form=form)
     >>> for error in view.errors:
     ...     print(error)

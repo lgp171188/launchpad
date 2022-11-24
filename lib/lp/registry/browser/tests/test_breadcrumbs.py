@@ -5,7 +5,7 @@ from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.browser.tests.test_pillar_sharing import SharingBaseTestCase
-from lp.registry.interfaces.nameblacklist import INameBlacklistSet
+from lp.registry.interfaces.nameblocklist import INameBlocklistSet
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import login_person
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
@@ -155,26 +155,26 @@ class TestPollBreadcrumb(BaseBreadcrumbTestCase):
         self.assertEqual(self.poll.title, last_crumb.text)
 
 
-class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):
-    """Test breadcrumbs for +nameblacklist."""
+class TestNameblocklistBreadcrumb(BaseBreadcrumbTestCase):
+    """Test breadcrumbs for +nameblocklist."""
 
     def setUp(self):
         super().setUp()
-        self.name_blacklist_set = getUtility(INameBlacklistSet)
+        self.name_blocklist_set = getUtility(INameBlocklistSet)
         self.registry_expert = self.factory.makeRegistryExpert()
         login_person(self.registry_expert)
 
-    def test_nameblacklist(self):
-        expected = [("Name Blacklist", "http://launchpad.test/+nameblacklist")]
-        self.assertBreadcrumbs(expected, self.name_blacklist_set)
+    def test_nameblocklist(self):
+        expected = [("Name Blocklist", "http://launchpad.test/+nameblocklist")]
+        self.assertBreadcrumbs(expected, self.name_blocklist_set)
 
-    def test_nameblacklist_edit(self):
-        blacklist = self.name_blacklist_set.getByRegExp("blacklist")
+    def test_nameblocklist_edit(self):
+        blocklist = self.name_blocklist_set.getByRegExp("blocklist")
         expected = [
-            ("Name Blacklist", "http://launchpad.test/+nameblacklist"),
+            ("Name Blocklist", "http://launchpad.test/+nameblocklist"),
             (
-                "Edit a blacklist expression",
-                "http://launchpad.test/+nameblacklist/1/+edit",
+                "Edit a blocklist expression",
+                "http://launchpad.test/+nameblocklist/1/+edit",
             ),
         ]
-        self.assertBreadcrumbs(expected, blacklist, view_name="+edit")
+        self.assertBreadcrumbs(expected, blocklist, view_name="+edit")

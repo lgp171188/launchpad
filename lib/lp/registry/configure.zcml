@@ -203,27 +203,27 @@
       <allow interface=".interfaces.productjob.IThirtyDayCommercialExpirationJob"/>
     </class>
 
-    <!-- INameBlacklist -->
+    <!-- INameBlocklist -->
     <securedutility
-        class="lp.registry.model.nameblacklist.NameBlacklistSet"
-        provides="lp.registry.interfaces.nameblacklist.INameBlacklistSet">
+        class="lp.registry.model.nameblocklist.NameBlocklistSet"
+        provides="lp.registry.interfaces.nameblocklist.INameBlocklistSet">
         <allow
-            interface="lp.registry.interfaces.nameblacklist.INameBlacklistSet"/>
+            interface="lp.registry.interfaces.nameblocklist.INameBlocklistSet"/>
     </securedutility>
 
-    <class class="lp.registry.model.nameblacklist.NameBlacklistSet">
+    <class class="lp.registry.model.nameblocklist.NameBlocklistSet">
         <require
             permission="launchpad.Edit"
-            interface="lp.registry.interfaces.nameblacklist.INameBlacklistSet"/>
+            interface="lp.registry.interfaces.nameblocklist.INameBlocklistSet"/>
     </class>
 
-    <class class="lp.registry.model.nameblacklist.NameBlacklist">
+    <class class="lp.registry.model.nameblocklist.NameBlocklist">
         <require
             permission="launchpad.View"
-            interface="lp.registry.interfaces.nameblacklist.INameBlacklist"/>
+            interface="lp.registry.interfaces.nameblocklist.INameBlocklist"/>
         <require
             permission="launchpad.Edit"
-            set_schema="lp.registry.interfaces.nameblacklist.INameBlacklist"/>
+            set_schema="lp.registry.interfaces.nameblocklist.INameBlocklist"/>
     </class>
 
     <!-- Location -->

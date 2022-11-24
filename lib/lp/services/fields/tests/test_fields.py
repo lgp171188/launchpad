@@ -14,11 +14,11 @@ from zope.schema.interfaces import TooShort
 from lp.app.validators import LaunchpadValidationError
 from lp.blueprints.enums import SpecificationWorkItemStatus
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY, INCLUSIVE_TEAM_POLICY
-from lp.registry.interfaces.nameblacklist import INameBlacklistSet
+from lp.registry.interfaces.nameblocklist import INameBlocklistSet
 from lp.services.database.interfaces import IStore
 from lp.services.fields import (
     BaseImageUpload,
-    BlacklistableContentNameField,
+    BlocklistableContentNameField,
     FormattableDate,
     StrippableText,
     WorkItemsText,
@@ -536,15 +536,15 @@ class TestWorkItemsText(TestCase):
         )
 
 
-class TestBlacklistableContentNameField(TestCaseWithFactory):
+class TestBlocklistableContentNameField(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super().setUp()
-        name_blacklist_set = getUtility(INameBlacklistSet)
+        name_blocklist_set = getUtility(INameBlocklistSet)
         self.team = self.factory.makeTeam()
-        admin_exp = name_blacklist_set.create("fnord", admin=self.team)
+        admin_exp = name_blocklist_set.create("fnord", admin=self.team)
         IStore(admin_exp).flush()
 
     def makeTestField(self):
@@ -553,7 +553,7 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
         class ITestInterface(Interface):
             pass
 
-        class TestField(BlacklistableContentNameField):
+        class TestField(BlocklistableContentNameField):
             _content_iface = ITestInterface
 
             def _getByName(self, name):
@@ -561,15 +561,15 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
 
         return TestField(__name__="test")
 
-    def test_validate_fails_with_blacklisted_name_anonymous(self):
+    def test_validate_fails_with_blocklisted_name_anonymous(self):
         # Anonymous users, processes, cannot create a name that matches
-        # a blacklisted name.
+        # a blocklisted name.
         field = self.makeTestField()
         date_value = "fnord"
         self.assertRaises(LaunchpadValidationError, field.validate, date_value)
 
-    def test_validate_fails_with_blacklisted_name_not_admin(self):
-        # Users who do not adminster a blacklisted name cannot create
+    def test_validate_fails_with_blocklisted_name_not_admin(self):
+        # Users who do not administer a blocklisted name cannot create
         # a matching name.
         field = self.makeTestField()
         date_value = "fnord"
@@ -577,7 +577,7 @@ class TestBlacklistableContentNameField(TestCaseWithFactory):
         self.assertRaises(LaunchpadValidationError, field.validate, date_value)
 
     def test_validate_passes_for_admin(self):
-        # Users in the team that adminsters a blacklisted name may create
+        # Users in the team that administers a blocklisted name may create
         # matching names.
         field = self.makeTestField()
         date_value = "fnord"
