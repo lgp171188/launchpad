@@ -17,19 +17,19 @@
 
     <div metal:fill-slot="main" class="main-portlet">
       <p>
-        There are two kinds of blacklisted names:
+        There are two kinds of blocklisted names:
       </p>
       <ul class="bulleted">
         <li>
-          Organisational blacklisted names have an administering team
+          Organisational blocklisted names have an administering team
           that is permitted to use the name for projects and teams.
          </li>
         <li>
-          Application blacklisted names cannot have an administering team.
+          Application blocklisted names cannot have an administering team.
           No one can override them.
          </li>
       </ul>
-      <table id="blacklist" class="listing sortable">
+      <table id="blocklist" class="listing sortable">
         <thead>
           <th>Regular Expression</th>
           <th>Admin</th>
@@ -41,7 +41,7 @@
               <tt tal:content="item/regexp"/>
               <tal:link replace="
                 structure
-                item/menu:overview/edit_blacklist_expression/fmt:icon"/>
+                item/menu:overview/edit_blocklist_expression/fmt:icon"/>
             </td>
             <td>
               <a

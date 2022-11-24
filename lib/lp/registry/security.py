@@ -41,9 +41,9 @@ from lp.registry.interfaces.gpg import IGPGKey
 from lp.registry.interfaces.irc import IIrcID
 from lp.registry.interfaces.location import IPersonLocation
 from lp.registry.interfaces.milestone import IMilestone, IProjectGroupMilestone
-from lp.registry.interfaces.nameblacklist import (
-    INameBlacklist,
-    INameBlacklistSet,
+from lp.registry.interfaces.nameblocklist import (
+    INameBlocklist,
+    INameBlocklistSet,
 )
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
@@ -1211,24 +1211,24 @@ class AddPOTemplate(OnlyRosettaExpertsAndAdmins):
     usedfor = IProductSeries
 
 
-class ViewNameBlacklist(EditByRegistryExpertsOrAdmins):
+class ViewNameBlocklist(EditByRegistryExpertsOrAdmins):
     permission = "launchpad.View"
-    usedfor = INameBlacklist
+    usedfor = INameBlocklist
 
 
-class EditNameBlacklist(EditByRegistryExpertsOrAdmins):
+class EditNameBlocklist(EditByRegistryExpertsOrAdmins):
     permission = "launchpad.Edit"
-    usedfor = INameBlacklist
+    usedfor = INameBlocklist
 
 
-class ViewNameBlacklistSet(EditByRegistryExpertsOrAdmins):
+class ViewNameBlocklistSet(EditByRegistryExpertsOrAdmins):
     permission = "launchpad.View"
-    usedfor = INameBlacklistSet
+    usedfor = INameBlocklistSet
 
 
-class EditNameBlacklistSet(EditByRegistryExpertsOrAdmins):
+class EditNameBlocklistSet(EditByRegistryExpertsOrAdmins):
     permission = "launchpad.Edit"
-    usedfor = INameBlacklistSet
+    usedfor = INameBlocklistSet
 
 
 class AdminDistroSeriesTranslations(AuthorizationBase):

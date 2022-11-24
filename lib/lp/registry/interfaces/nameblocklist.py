@@ -1,11 +1,11 @@
 # Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""NameBlacklist interfaces."""
+"""NameBlocklist interfaces."""
 
 __all__ = [
-    "INameBlacklist",
-    "INameBlacklistSet",
+    "INameBlocklist",
+    "INameBlocklistSet",
 ]
 
 from zope.interface import Interface
@@ -14,15 +14,15 @@ from zope.schema import Choice, Int, Text, TextLine
 from lp import _
 
 
-class INameBlacklist(Interface):
-    """The interface for the NameBlacklist table."""
+class INameBlocklist(Interface):
+    """The interface for the NameBlocklist table."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
     regexp = TextLine(title=_("Regular expression"), required=True)
     comment = Text(
         title=_("Comment"),
         description=_(
-            "Why is the name blacklisted? Does the namespace belong to an "
+            "Why is the name blocklisted? Does the namespace belong to an "
             "organization or is the namespace reserved by the application?"
         ),
         required=False,
@@ -38,17 +38,17 @@ class INameBlacklist(Interface):
     )
 
 
-class INameBlacklistSet(Interface):
-    """The set of INameBlacklist objects."""
+class INameBlocklistSet(Interface):
+    """The set of INameBlocklist objects."""
 
     def getAll():
-        """Return all the name blacklist expressions."""
+        """Return all the name blocklist expressions."""
 
     def create(regexp, comment=None):
-        """Create and return a new NameBlacklist with given arguments."""
+        """Create and return a new NameBlocklist with given arguments."""
 
     def get(id):
-        """Return the NameBlacklist with the given id or None."""
+        """Return the NameBlocklist with the given id or None."""
 
     def getByRegExp(regexp):
-        """Return the NameBlacklist with the given regexp or None."""
+        """Return the NameBlocklist with the given regexp or None."""

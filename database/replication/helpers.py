@@ -46,7 +46,7 @@ LPMAIN_SEED = frozenset(
         ("public", "person"),
         ("public", "databasereplicationlag"),
         ("public", "fticache"),
-        ("public", "nameblacklist"),
+        ("public", "nameblocklist"),
         ("public", "openidconsumerassociation"),
         ("public", "openidconsumernonce"),
         ("public", "codeimportmachine"),

@@ -87,7 +87,7 @@ from lp.registry.interfaces.announcement import IAnnouncementSet
 from lp.registry.interfaces.codeofconduct import ICodeOfConductSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.karma import IKarmaActionSet
-from lp.registry.interfaces.nameblacklist import INameBlacklistSet
+from lp.registry.interfaces.nameblocklist import INameBlocklistSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.poll import IPollSet
@@ -864,6 +864,10 @@ class LaunchpadRootNavigation(Navigation):
     def redirect_feature_changelog(self):
         return "/+feature-rules/changelog"
 
+    @redirection("+nameblacklist", status=301)  # wokeignore:rule=blacklist
+    def redirect_nameblacklist(self):  # wokeignore:rule=blacklist
+        return "+nameblocklist"
+
     # XXX cprov 2009-03-19 bug=345877: path segments starting with '+'
     # should never correspond to a valid traversal, they confuse the
     # hierarchical navigation model.
@@ -887,7 +891,7 @@ class LaunchpadRootNavigation(Navigation):
         "+imports": ITranslationImportQueue,
         "+languages": ILanguageSet,
         "livefses": ILiveFSSet,
-        "+nameblacklist": INameBlacklistSet,
+        "+nameblocklist": INameBlocklistSet,
         "package-sets": IPackagesetSet,
         "people": IPersonSet,
         "pillars": IPillarNameSet,

@@ -4,7 +4,7 @@
 __all__ = [
     "AnnouncementDate",
     "BaseImageUpload",
-    "BlacklistableContentNameField",
+    "BlocklistableContentNameField",
     "BugField",
     "ContentNameField",
     "Description",
@@ -499,22 +499,22 @@ class ContentNameField(UniqueField):
         UniqueField._validate(self, name)
 
 
-class BlacklistableContentNameField(ContentNameField):
-    """ContentNameField that also checks that a name is not blacklisted"""
+class BlocklistableContentNameField(ContentNameField):
+    """ContentNameField that also checks that a name is not blocklisted"""
 
-    blacklistmessage = _(
+    blocklistmessage = _(
         "The name '%s' has been blocked by the Launchpad "
         "administrators. Contact Launchpad Support if you "
         "want to use this name."
     )
 
     def _validate(self, input):
-        """Check that the given name is valid, unique and not blacklisted."""
+        """Check that the given name is valid, unique and not blocklisted."""
         super()._validate(input)
 
         # Although this check is performed in UniqueField._validate(), we need
         # to do it here again to avoid checking whether or not the name is
-        # blacklisted when it hasn't been changed.
+        # blocklisted when it hasn't been changed.
         if self.unchanged(input):
             # The attribute wasn't changed.
             return
@@ -523,8 +523,8 @@ class BlacklistableContentNameField(ContentNameField):
         from lp.registry.interfaces.person import IPersonSet
 
         user = getUtility(ILaunchBag).user
-        if getUtility(IPersonSet).isNameBlacklisted(input, user):
-            raise LaunchpadValidationError(self.blacklistmessage % input)
+        if getUtility(IPersonSet).isNameBlocklisted(input, user):
+            raise LaunchpadValidationError(self.blocklistmessage % input)
 
 
 class PillarAliases(TextLine):
@@ -823,7 +823,7 @@ class MugshotImageUpload(BaseImageUpload):
     max_size = 100 * 1024
 
 
-class PillarNameField(BlacklistableContentNameField):
+class PillarNameField(BlocklistableContentNameField):
     """Base field used for names of distros/project groups/products."""
 
     errormessage = _("%s is already used by another project")
