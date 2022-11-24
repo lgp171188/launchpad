@@ -5427,13 +5427,13 @@ INSERT INTO public.mirrorproberecord (id, distribution_mirror, log_file, date_cr
 ALTER TABLE public.mirrorproberecord ENABLE TRIGGER ALL;
 
 
-ALTER TABLE public.nameblacklist DISABLE TRIGGER ALL;
+ALTER TABLE public.nameblocklist DISABLE TRIGGER ALL;
 
-INSERT INTO public.nameblacklist (id, regexp, comment, admin) VALUES (1, 'blacklist', 'For testing purposes', NULL);
-INSERT INTO public.nameblacklist (id, regexp, comment, admin) VALUES (2, '^admin', NULL, NULL);
+INSERT INTO public.nameblocklist (id, regexp, comment, admin) VALUES (1, 'blacklist', 'For testing purposes', NULL);
+INSERT INTO public.nameblocklist (id, regexp, comment, admin) VALUES (2, '^admin', NULL, NULL);
 
 
-ALTER TABLE public.nameblacklist ENABLE TRIGGER ALL;
+ALTER TABLE public.nameblocklist ENABLE TRIGGER ALL;
 
 
 ALTER TABLE public.oauthconsumer DISABLE TRIGGER ALL;
