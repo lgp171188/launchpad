@@ -1064,7 +1064,7 @@ class TestGitRefView(BrowserTestCase):
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = hashlib.sha1(b"merged").hexdigest()
         self.scanRef(mp.merge_source, merged_tip)
-        mp.markAsMerged(merged_revision_id=log[0]["sha1"])
+        removeSecurityProxy(mp).markAsMerged(merged_revision_id=log[0]["sha1"])
         view = create_initialized_view(ref, "+index")
         contents = view()
         soup = BeautifulSoup(contents)
@@ -1118,7 +1118,7 @@ class TestGitRefView(BrowserTestCase):
         merged_tip = dict(log[-1])
         merged_tip["sha1"] = hashlib.sha1(b"merged").hexdigest()
         self.scanRef(mp.merge_source, merged_tip)
-        mp.markAsMerged(merged_revision_id=log[0]["sha1"])
+        removeSecurityProxy(mp).markAsMerged(merged_revision_id=log[0]["sha1"])
         mp.source_git_repository.removeRefs([mp.source_git_path])
         view = create_initialized_view(ref, "+index")
         contents = view()
@@ -1282,7 +1282,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_view(ref, "+index")
         with StormStatementRecorder() as recorder:
             view.landing_candidates
-        self.assertThat(recorder, HasQueryCount(Equals(12)))
+        self.assertThat(recorder, HasQueryCount(Equals(13)))
 
     def test_query_count_landing_targets(self):
         project = self.factory.makeProduct()
@@ -1299,7 +1299,7 @@ class TestGitRefView(BrowserTestCase):
         view = create_view(ref, "+index")
         with StormStatementRecorder() as recorder:
             view.landing_targets
-        self.assertThat(recorder, HasQueryCount(Equals(12)))
+        self.assertThat(recorder, HasQueryCount(Equals(13)))
 
     def test_timeout(self):
         # The page renders even if fetching commits times out.

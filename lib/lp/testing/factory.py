@@ -2120,7 +2120,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         }
         with GitHostingFixture():
             refs_by_path = {
-                ref.path: ref
+                ref.path: ProxyFactory(ref)
                 for ref in removeSecurityProxy(repository).createOrUpdateRefs(
                     refs_info, get_objects=True
                 )

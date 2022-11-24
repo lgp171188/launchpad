@@ -1839,6 +1839,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                 {"uid": bmp.source_git_repository.owner.id},
             )
         )
+        login_person(self.user)
         self.assertTrue(view.pending_diff)
 
     def test_description_is_meta_description(self):
@@ -1857,10 +1858,11 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_revisionStatusReports_display(self):
         bmp = self.factory.makeBranchMergeProposalForGit()
+        owner = bmp.source_git_repository.owner
         sha1 = hashlib.sha1(b"0").hexdigest()
         commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
         report1 = self.factory.makeRevisionStatusReport(
-            user=bmp.source_git_repository.owner,
+            user=owner,
             git_repository=bmp.source_git_repository,
             title="CI",
             commit_sha1=sha1,
@@ -1869,7 +1871,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
             result=RevisionStatusResult.SUCCEEDED,
         )
         pending_report = self.factory.makeRevisionStatusReport(
-            user=bmp.source_git_repository.owner,
+            user=owner,
             git_repository=bmp.source_git_repository,
             title="Build",
             commit_sha1=sha1,
@@ -1893,13 +1895,13 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
         browser = self.getUserBrowser(
             canonical_url(bmp, rootsite="code"),
-            user=bmp.source_git_repository.owner,
+            user=owner,
         )
 
         reports_section = find_tags_by_class(
             browser.contents, "status-reports-table"
         )
-        with person_logged_in(bmp.source_git_repository.owner):
+        with person_logged_in(owner):
             self.assertThat(
                 reports_section[0],
                 Within(
@@ -2164,7 +2166,9 @@ class TestBranchMergeProposalBrowserView(BrowserTestCase):
         # information.
         hosting_fixture = self.useFixture(GitHostingFixture())
         bmp = self.factory.makeBranchMergeProposalForGit()
+        owner = bmp.source_git_repository.owner
         self.getMainText(bmp, "+index")
+        login_person(owner)
         target_path = bmp.target_git_repository.getInternalPath()
         source_path = bmp.source_git_repository.getInternalPath()
         self.assertThat(

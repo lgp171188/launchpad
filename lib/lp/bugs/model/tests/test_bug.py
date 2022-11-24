@@ -536,10 +536,10 @@ class TestBug(TestCaseWithFactory):
         [private_git_ref] = self.factory.makeGitRefs(
             owner=private_owner, information_type=InformationType.USERDATA
         )
-        private_bmp = self.factory.makeBranchMergeProposalForGit(
-            source_ref=private_git_ref
-        )
         with person_logged_in(private_owner):
+            private_bmp = self.factory.makeBranchMergeProposalForGit(
+                source_ref=private_git_ref
+            )
             bug.linkMergeProposal(private_bmp, private_bmp.registrant)
         public_owner = self.factory.makePerson()
         public_git_refs = [self.factory.makeGitRefs()[0] for i in range(4)]

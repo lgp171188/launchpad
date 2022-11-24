@@ -1842,7 +1842,7 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
                 "message": "Non-existent bug; LP: #%d" % (bugs[2].id + 100),
             },
         ]
-        related_bugs = bmp._fetchRelatedBugIDsFromSource()
+        related_bugs = removeSecurityProxy(bmp)._fetchRelatedBugIDsFromSource()
         path = "%s:%s" % (
             bmp.target_git_repository.getInternalPath(),
             bmp.source_git_repository.getInternalPath(),
