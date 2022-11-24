@@ -12,7 +12,6 @@ __all__ = [
 ]
 
 import datetime
-import re
 import warnings
 from operator import attrgetter, itemgetter
 
@@ -31,6 +30,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.builder import Builder
 from lp.buildmaster.model.buildfarmjob import (
     BuildFarmJob,
@@ -775,7 +775,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             file_object = self.upload_changesfile
         elif filename.endswith(".txt.gz"):
             file_object = self.log
-        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
+        elif is_upload_log(filename):
             file_object = self.upload_log
         elif filename.endswith("deb"):
             file_object = self._getDebByFileName(filename)

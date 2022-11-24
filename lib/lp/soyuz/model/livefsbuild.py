@@ -6,7 +6,6 @@ __all__ = [
     "LiveFSFile",
 ]
 
-import re
 from datetime import timedelta
 
 import pytz
@@ -32,6 +31,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -286,7 +286,7 @@ class LiveFSBuild(PackageBuildMixin, Storm):
         """See `ILiveFSBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
+        elif is_upload_log(filename):
             file_object = self.upload_log
         else:
             file_object = (

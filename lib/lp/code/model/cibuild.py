@@ -7,7 +7,6 @@ __all__ = [
     "CIBuild",
 ]
 
-import re
 from datetime import timedelta
 from operator import attrgetter, itemgetter
 
@@ -30,6 +29,7 @@ from lp.buildmaster.enums import (
 )
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.buildfarmjob import (
     BuildFarmJob,
     SpecificBuildFarmJobSourceMixin,
@@ -456,7 +456,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `ICIBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None:
+        elif is_upload_log(filename):
             file_object = self.upload_log
         else:
             file_object = None
