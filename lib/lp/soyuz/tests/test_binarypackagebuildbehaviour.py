@@ -839,7 +839,8 @@ class TestBinaryBuildPackageBehaviourBuildCollection(TestCaseWithFactory):
             # Check that the original file from the worker matches the
             # uncompressed file in the librarian.
             def got_orig_log(ignored):
-                orig_file_content = open(tmp_orig_file_name, "rb").read()
+                with open(tmp_orig_file_name, "rb") as orig_file:
+                    orig_file_content = orig_file.read()
                 self.assertEqual(orig_file_content, uncompressed_file)
 
             d = removeSecurityProxy(worker).getFile(

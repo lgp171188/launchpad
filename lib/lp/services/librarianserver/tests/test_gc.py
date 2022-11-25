@@ -687,10 +687,14 @@ class TestDiskLibrarianGarbageCollection(
             noisefile1_path = os.path.join(noisedir1_path, "abc")
             noisefile2_path = os.path.join(noisedir2_path, "def")
             noisefile3_path = os.path.join(noisedir2_path, "ghi")
-            open(noisefile1_path, "w").write("hello")
-            open(noisefile2_path, "w").write("there")
-            open(noisefile3_path, "w").write("testsuite")
-            open(migrated_path, "w").write("migrant")
+            with open(noisefile1_path, "w") as noisefile1:
+                noisefile1.write("hello")
+            with open(noisefile2_path, "w") as noisefile2:
+                noisefile2.write("there")
+            with open(noisefile3_path, "w") as noisefile3:
+                noisefile3.write("testsuite")
+            with open(migrated_path, "w") as migrated:
+                migrated.write("migrant")
 
             # Pretend it is tomorrow to ensure the files don't count as
             # recently created, and run the delete_unwanted_files process.
