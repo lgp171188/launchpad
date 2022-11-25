@@ -21,6 +21,7 @@ import os
 import sys
 import xmlrpc.client
 from collections import OrderedDict
+from copy import copy
 
 import fixtures
 from lpbuildd.tests.harness import BuilddTestSetup
@@ -60,6 +61,8 @@ class MockBuilder:
         version=None,
         clean_status=BuilderCleanStatus.DIRTY,
         vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
+        open_resources=None,
+        restricted_resources=None,
         active=True,
     ):
         self.currentjob = None
@@ -71,6 +74,8 @@ class MockBuilder:
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
+        self.open_resources = copy(open_resources)
+        self.restricted_resources = copy(restricted_resources)
         self.failnotes = None
         self.version = version
         self.clean_status = clean_status

@@ -35,6 +35,7 @@ from lp.app.browser.launchpadform import (
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.app.widgets.owner import HiddenUserWidget
+from lp.app.widgets.textwidgets import DelimitedListWidget
 from lp.buildmaster.interfaces.builder import IBuilder, IBuilderSet
 from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.code.interfaces.sourcepackagerecipebuild import (
@@ -194,6 +195,8 @@ class BuilderSetView(CleanInfoMixin, LaunchpadView):
     def getBuilderSortKey(builder):
         return (
             not builder.virtualized,
+            tuple(builder.restricted_resources or ()),
+            tuple(builder.open_resources or ()),
             tuple(p.name for p in builder.processors),
             builder.name,
         )
@@ -236,6 +239,8 @@ class BuilderSetView(CleanInfoMixin, LaunchpadView):
         builderset = getUtility(IBuilderSet)
         return builderset.getBuildQueueSizes()
 
+    # XXX cjwatson 2022-11-16: We should probably group builders by
+    # resources, once we work out how best to represent that.
     @property
     def virt_builders(self):
         """Return a BuilderCategory object for virtual builders."""
@@ -256,7 +261,11 @@ class BuilderSetView(CleanInfoMixin, LaunchpadView):
 
 
 class BuilderClump:
-    """A "clump" of builders with the same virtualization and processors.
+    """A "clump" of builders with the same principal properties.
+
+    The properties we care about here are whether the builder is
+    virtualized, any extra resources it supports, and which processors it
+    supports.
 
     The name came in desperation from a thesaurus; BuilderGroup and
     BuilderCategory are already in use here for slightly different kinds of
@@ -265,6 +274,8 @@ class BuilderClump:
 
     def __init__(self, builders):
         self.virtualized = builders[0].virtualized
+        self.open_resources = builders[0].open_resources
+        self.restricted_resources = builders[0].restricted_resources
         self.processors = builders[0].processors
         self.builders = builders
 
@@ -351,6 +362,20 @@ class BuilderView(CleanInfoMixin, LaunchpadView):
         return english_list(p.name for p in self.context.processors)
 
     @property
+    def extra_properties_text(self):
+        extras = []
+        if self.context.virtualized:
+            extras.append("virtual")
+        if self.context.open_resources:
+            extras.extend(self.context.open_resources)
+        if self.context.restricted_resources:
+            extras.extend(self.context.restricted_resources)
+        if extras:
+            return "(%s)" % ", ".join(extras)
+        else:
+            return ""
+
+    @property
     def current_build_duration(self):
         if self.context.currentjob is None:
             return None
@@ -409,12 +434,20 @@ class BuilderSetAddView(LaunchpadFormView):
         "virtualized",
         "vm_host",
         "vm_reset_protocol",
+        "open_resources",
+        "restricted_resources",
         "owner",
     ]
     custom_widget_owner = HiddenUserWidget
     custom_widget_url = CustomWidgetFactory(TextWidget, displayWidth=30)
     custom_widget_vm_host = CustomWidgetFactory(TextWidget, displayWidth=30)
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    custom_widget_open_resources = CustomWidgetFactory(
+        DelimitedListWidget, height=5
+    )
+    custom_widget_restricted_resources = CustomWidgetFactory(
+        DelimitedListWidget, height=5
+    )
 
     @action(_("Register builder"), name="register")
     def register_action(self, action, data):
@@ -429,6 +462,8 @@ class BuilderSetAddView(LaunchpadFormView):
             virtualized=data.get("virtualized"),
             vm_host=data.get("vm_host"),
             vm_reset_protocol=data.get("vm_reset_protocol"),
+            open_resources=data.get("open_resources"),
+            restricted_resources=data.get("restricted_resources"),
         )
         notify(ObjectCreatedEvent(builder))
         self.next_url = canonical_url(builder)
@@ -461,9 +496,17 @@ class BuilderEditView(LaunchpadEditFormView):
         "failnotes",
         "vm_host",
         "vm_reset_protocol",
+        "open_resources",
+        "restricted_resources",
         "active",
     ]
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    custom_widget_open_resources = CustomWidgetFactory(
+        DelimitedListWidget, height=5
+    )
+    custom_widget_restricted_resources = CustomWidgetFactory(
+        DelimitedListWidget, height=5
+    )
 
     @action(_("Change"), name="update")
     def change_details(self, action, data):

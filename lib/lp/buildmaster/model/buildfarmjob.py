@@ -116,6 +116,10 @@ class BuildFarmJob(Storm):
 
 class BuildFarmJobMixin:
     @property
+    def builder_constraints(self):
+        return None
+
+    @property
     def dependencies(self):
         return None
 
@@ -277,6 +281,7 @@ class BuildFarmJobMixin:
             build_farm_job=self.build_farm_job,
             processor=self.processor,
             virtualized=self.virtualized,
+            builder_constraints=self.builder_constraints,
         )
 
         # This build queue job is to be created in a suspended state.

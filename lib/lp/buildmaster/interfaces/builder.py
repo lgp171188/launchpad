@@ -216,6 +216,31 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
         )
     )
 
+    open_resources = exported(
+        List(
+            title=_("Open resources"),
+            description=_(
+                "Resource tags offered by this builder, that can be required "
+                "by a build and if required must match."
+            ),
+            value_type=TextLine(),
+            required=False,
+        )
+    )
+
+    restricted_resources = exported(
+        List(
+            title=_("Restricted resources"),
+            description=_(
+                "Resource tags offered by this builder, indicating that the "
+                "builder may only be used by builds that explicitly require "
+                "these tags."
+            ),
+            value_type=TextLine(),
+            required=False,
+        )
+    )
+
     active = exported(
         Bool(
             title=_("Publicly Visible"),
@@ -306,8 +331,9 @@ class IBuilder(IBuilderEdit, IBuilderView, IBuilderModerateAttributes):
     machine is accessed through an XML-RPC interface; name, title for entity
     identification and browsing purposes; an LP-like owner which has
     unrestricted access to the instance; the machine status
-    representation, including the field/properties: virtualized, builderok,
-    status, failnotes and currentjob.
+    representation, including the field/properties: virtualized,
+    open_resources, restricted_resources, builderok, status, failnotes and
+    currentjob.
     """
 
 
@@ -323,6 +349,8 @@ class IBuilderSetAdmin(Interface):
             "active",
             "virtualized",
             "vm_host",
+            "open_resources",
+            "restricted_resources",
         ],
     )
     @operation_for_version("devel")
@@ -335,6 +363,8 @@ class IBuilderSetAdmin(Interface):
         active=True,
         virtualized=False,
         vm_host=None,
+        open_resources=None,
+        restricted_resources=None,
     ):
         """Create a new builder.
 
@@ -415,4 +445,4 @@ class IBuilderSet(IBuilderSetAdmin):
     @export_read_operation()
     @operation_for_version("devel")
     def getBuildersForQueue(processor, virtualized):
-        """Return all builders for given processor/virtualization setting."""
+        """Return all builders with the given properties."""

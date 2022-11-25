@@ -95,6 +95,7 @@ class NamespaceMixin:
         self.assertEqual(registrant, repository.registrant)
         self.assertEqual(reviewer, repository.reviewer)
         self.assertEqual(description, repository.description)
+        self.assertIsNone(repository.builder_constraints)
 
     def test_createRepository_subscribes_owner(self):
         owner = self.factory.makeTeam()
@@ -144,6 +145,20 @@ class NamespaceMixin:
             [mock.call(path, clone_from=None, async_create=True)],
             hosting_client.create.call_args_list,
         )
+
+    def test_createRepository_builder_constraints(self):
+        # createRepository can be told to create a repository whose builds
+        # have certain builder constraints.
+        namespace = self.getNamespace()
+        repository_name = self.factory.getUniqueUnicode()
+        registrant = removeSecurityProxy(namespace).owner
+        repository = namespace.createRepository(
+            GitRepositoryType.HOSTED,
+            registrant,
+            repository_name,
+            builder_constraints=["gpu"],
+        )
+        self.assertEqual(["gpu"], repository.builder_constraints)
 
     def test_getRepositories_no_repositories(self):
         # getRepositories on an IGitNamespace returns a result set of

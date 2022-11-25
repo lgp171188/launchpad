@@ -944,6 +944,57 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         # by ID.
         self.assertThat(recorder, HasQueryCount(Equals(1)))
 
+    def test_findBuildCandidate_honours_resources(self):
+        das = self.factory.makeDistroArchSeries()
+        builders = [
+            self.factory.makeBuilder(
+                processors=[das.processor],
+                open_resources=open_resources,
+                restricted_resources=restricted_resources,
+            )
+            for open_resources, restricted_resources in (
+                (None, None),
+                (None, None),
+                (["large"], None),
+                (["large"], None),
+                (["large"], None),
+                (None, ["gpu"]),
+                (None, ["gpu"]),
+            )
+        ]
+        repository_plain, repository_large, repository_gpu = (
+            self.factory.makeGitRepository(builder_constraints=constraints)
+            for constraints in (None, ["large"], ["gpu"])
+        )
+        bq_plain, bq_large, bq_gpu = (
+            self.factory.makeCIBuild(
+                git_repository=repository, distro_arch_series=das
+            ).queueBuild()
+            for repository in (
+                repository_plain,
+                repository_large,
+                repository_gpu,
+            )
+        )
+        transaction.commit()
+        pbf = PrefetchedBuilderFactory()
+        pbf.update()
+
+        # PrefetchedBuilderFactory.findBuildCandidate finds the next build
+        # candidate and removes it from its prefetched list for that
+        # builder's "vitals" (identical for each group of builders with the
+        # same properties), but it doesn't mark the candidate as building;
+        # that's left to PrefetchedBuilderFactory.acquireBuildCandidate.  We
+        # can thus determine the effective queue of builds for each group by
+        # repeatedly calling findBuildCandidate for each of a group of
+        # builders, even if some of those queues overlap.
+        for builder, bq in zip(
+            builders, [bq_plain, None, bq_plain, bq_large, None, bq_gpu, None]
+        ):
+            self.assertEqual(
+                bq, pbf.findBuildCandidate(pbf.getVitals(builder.name))
+            )
+
     def test_acquireBuildCandidate_marks_building(self):
         # acquireBuildCandidate calls findBuildCandidate and marks the build
         # as building.
