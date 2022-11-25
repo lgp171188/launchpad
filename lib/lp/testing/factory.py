@@ -2149,7 +2149,9 @@ class LaunchpadObjectFactory(ObjectFactory):
         if creator is None:
             creator = repository.owner
         with person_logged_in(creator):
-            return repository.addRule(ref_pattern, creator, position=position)
+            return ProxyFactory(
+                repository.addRule(ref_pattern, creator, position=position)
+            )
 
     def makeGitRuleGrant(
         self,
@@ -2167,14 +2169,16 @@ class LaunchpadObjectFactory(ObjectFactory):
         if grantee is None:
             grantee = self.makePerson()
         if grantor is None:
-            grantor = rule.repository.owner
+            grantor = removeSecurityProxy(rule).repository.owner
         with person_logged_in(grantor):
-            return rule.addGrant(
-                grantee,
-                grantor,
-                can_create=can_create,
-                can_push=can_push,
-                can_force_push=can_force_push,
+            return ProxyFactory(
+                rule.addGrant(
+                    grantee,
+                    grantor,
+                    can_create=can_create,
+                    can_push=can_push,
+                    can_force_push=can_force_push,
+                )
             )
 
     def makeRevisionStatusReport(
