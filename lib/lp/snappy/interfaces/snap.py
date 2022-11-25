@@ -24,7 +24,6 @@ __all__ = [
     "SNAP_PRIVATE_FEATURE_FLAG",
     "SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG",
     "SNAP_TESTING_FLAGS",
-    "SNAP_WEBHOOKS_FEATURE_FLAG",
     "SnapAuthorizationBadGeneratedMacaroon",
     "SnapBuildAlreadyPending",
     "SnapBuildArchiveOwnerMismatch",
@@ -100,12 +99,10 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 SNAP_PRIVATE_FEATURE_FLAG = "snap.allow_private"
 SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = "snap.channels.snapcraft"
-SNAP_WEBHOOKS_FEATURE_FLAG = "snap.webhooks.enabled"
 
 
 SNAP_TESTING_FLAGS = {
     SNAP_PRIVATE_FEATURE_FLAG: "on",
-    SNAP_WEBHOOKS_FEATURE_FLAG: "on",
 }
 
 
