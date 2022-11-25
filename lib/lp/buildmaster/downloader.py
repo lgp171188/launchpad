@@ -59,39 +59,39 @@ class RequestProcess(AMPChild):
 
     @DownloadCommand.responder
     def downloadCommand(self, file_url, path_to_write, timeout):
-        session = Session()
-        session.trust_env = False
-        response = session.get(file_url, timeout=timeout, stream=True)
-        response.raise_for_status()
-        try:
-            os.makedirs(os.path.dirname(path_to_write))
-        except FileExistsError:
-            pass
-        f = tempfile.NamedTemporaryFile(
-            mode="wb",
-            prefix=os.path.basename(path_to_write) + "_",
-            dir=os.path.dirname(path_to_write),
-            delete=False,
-        )
-        try:
-            stream.stream_response_to_file(response, path=f)
-        except Exception:
-            f.close()
-            os.unlink(f.name)
-            raise
-        else:
-            f.close()
-            os.rename(f.name, path_to_write)
-        return {}
+        with Session() as session:
+            session.trust_env = False
+            response = session.get(file_url, timeout=timeout, stream=True)
+            response.raise_for_status()
+            try:
+                os.makedirs(os.path.dirname(path_to_write))
+            except FileExistsError:
+                pass
+            f = tempfile.NamedTemporaryFile(
+                mode="wb",
+                prefix=os.path.basename(path_to_write) + "_",
+                dir=os.path.dirname(path_to_write),
+                delete=False,
+            )
+            try:
+                stream.stream_response_to_file(response, path=f)
+            except Exception:
+                f.close()
+                os.unlink(f.name)
+                raise
+            else:
+                f.close()
+                os.rename(f.name, path_to_write)
+            return {}
 
     @RequestProxyTokenCommand.responder
     def requestProxyTokenCommand(self, url, auth_header, proxy_username):
-        session = Session()
-        session.trust_env = False
-        response = session.post(
-            url,
-            headers={"Authorization": auth_header},
-            json={"username": proxy_username},
-        )
-        response.raise_for_status()
-        return response.json()
+        with Session() as session:
+            session.trust_env = False
+            response = session.post(
+                url,
+                headers={"Authorization": auth_header},
+                json={"username": proxy_username},
+            )
+            response.raise_for_status()
+            return response.json()

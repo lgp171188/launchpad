@@ -412,6 +412,8 @@ class ArtifactoryPool:
         # Artifactory bindings can't be told to use
         # lp.services.timeout.urlfetch directly, but only given a substitute
         # session.)
+        # XXX cjwatson 2022-11-25: Nothing ever closes this session
+        # explicitly.
         session = requests.Session()
         session.trust_env = False
         if config.launchpad.http_proxy:
