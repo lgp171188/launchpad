@@ -2330,6 +2330,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 for build in builds
             ]
             repository = refs[0].repository
+            registrant = repository.registrant
             path = "/%s" % repository.unique_name
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2370,7 +2371,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             macaroon_raw="nonsense",
         )
         self.assertUnauthorized(
-            repository.registrant,
+            registrant,
             path,
             permission="read",
             macaroon_raw=macaroons[0].serialize(),
@@ -3505,10 +3506,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             issuer = getUtility(IMacaroonIssuer, "snap-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
             build.updateStatus(BuildStatus.BUILDING)
+            repository = ref.repository
             path = ref.path.encode("UTF-8")
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES,
-            ref.repository,
+            repository,
             [path],
             {path: []},
             macaroon_raw=macaroon.serialize(),
@@ -3528,10 +3530,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             issuer = getUtility(IMacaroonIssuer, "ci-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
             build.updateStatus(BuildStatus.BUILDING)
+            repository = ref.repository
             path = ref.path.encode("UTF-8")
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES,
-            ref.repository,
+            repository,
             [path],
             {path: []},
             macaroon_raw=macaroon.serialize(),

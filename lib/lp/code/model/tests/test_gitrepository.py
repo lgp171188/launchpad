@@ -707,7 +707,7 @@ class TestGitRepository(TestCaseWithFactory):
             grantee=GitGranteeType.REPOSITORY_OWNER,
         )
 
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER, ref_pattern=ref.path
         )
         self.assertEqual([exact_grant], list(results))
@@ -730,11 +730,11 @@ class TestGitRepository(TestCaseWithFactory):
             grantee=GitGranteeType.REPOSITORY_OWNER,
         )
 
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER, include_transitive=False
         )
         self.assertItemsEqual([exact_grant, wildcard_grant], list(results))
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER,
             ref_pattern=ref.path,
             include_transitive=False,
@@ -3879,9 +3879,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         self.assertNotEqual(
             BranchMergeProposalStatus.MERGED, proposal.queue_status
         )
-        proposal.target_git_repository._markProposalMerged(
-            proposal, proposal.target_git_commit_sha1
-        )
+        removeSecurityProxy(
+            proposal.target_git_repository
+        )._markProposalMerged(proposal, proposal.target_git_commit_sha1)
         self.assertEqual(
             BranchMergeProposalStatus.MERGED, proposal.queue_status
         )
