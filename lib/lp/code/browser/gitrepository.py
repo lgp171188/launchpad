@@ -55,6 +55,7 @@ from lp.app.browser.launchpadform import (
 from lp.app.errors import NotFoundError, UnexpectedFormData
 from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidgetWithDescription
+from lp.app.widgets.textwidgets import DelimitedListWidget
 from lp.charms.browser.hascharmrecipes import HasCharmRecipesViewMixin
 from lp.code.browser.branch import CodeEditOwnerMixin
 from lp.code.browser.branchmergeproposal import (
@@ -270,6 +271,7 @@ class GitRepositoryEditMenu(NavigationMenu):
         "activity",
         "access_tokens",
         "webhooks",
+        "builder_constraints",
         "delete",
     ]
 
@@ -302,6 +304,11 @@ class GitRepositoryEditMenu(NavigationMenu):
     def webhooks(self):
         text = "Manage webhooks"
         return Link("+webhooks", text, icon="edit")
+
+    @enabled_with_permission("launchpad.Admin")
+    def builder_constraints(self):
+        text = "Set builder constraints"
+        return Link("+builder-constraints", text, icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
@@ -626,7 +633,10 @@ class GitRepositoryEditFormView(LaunchpadEditFormView):
             normally editable through the interface.
             """
 
-            use_template(IGitRepository, include=["default_branch"])
+            use_template(
+                IGitRepository,
+                include=["builder_constraints", "default_branch"],
+            )
             information_type = copy_field(
                 IGitRepository["information_type"],
                 readonly=False,
@@ -774,6 +784,15 @@ class GitRepositoryEditReviewerView(GitRepositoryEditFormView):
     @property
     def initial_values(self):
         return {"reviewer": self.context.code_reviewer}
+
+
+class GitRepositoryEditBuilderConstraintsView(GitRepositoryEditFormView):
+    """A view to set builder constraints."""
+
+    field_names = ["builder_constraints"]
+    custom_widget_builder_constraints = CustomWidgetFactory(
+        DelimitedListWidget, height=5
+    )
 
 
 class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):

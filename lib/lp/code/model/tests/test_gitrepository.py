@@ -6601,6 +6601,46 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response.body,
         )
 
+    def test_builder_constraints_commercial_admin(self):
+        # A commercial admin can change a repository's builder constraints.
+        repository_db = self.factory.makeGitRepository()
+        commercial_admin = getUtility(
+            ILaunchpadCelebrities
+        ).commercial_admin.teamowner
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["gpu"]}),
+        )
+        self.assertEqual(209, response.status)
+        with person_logged_in(ANONYMOUS):
+            self.assertEqual(["gpu"], repository_db.builder_constraints)
+
+    def test_builder_constraints_owner(self):
+        # The owner of a repository cannot change its builder constraints
+        # (unless they're also a (commercial) admin).
+        repository_db = self.factory.makeGitRepository()
+        webservice = webservice_for_person(
+            repository_db.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["gpu"]}),
+        )
+        self.assertEqual(401, response.status)
+        with person_logged_in(ANONYMOUS):
+            self.assertIsNone(repository_db.builder_constraints)
+
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     """Test GitRepository macaroon issuing and verification."""

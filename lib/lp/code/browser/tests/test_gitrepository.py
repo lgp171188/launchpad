@@ -33,6 +33,7 @@ from zope.formlib.itemswidgets import ItemDisplayWidget
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.app.errors import UnexpectedFormData
@@ -71,6 +72,7 @@ from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
     admin_logged_in,
+    login_celebrity,
     login_person,
     logout,
     person_logged_in,
@@ -1068,6 +1070,42 @@ class TestGitRepositoryEditReviewerView(TestCaseWithFactory):
         self.assertIsNone(repository.reviewer)
         # Last modified has not been updated.
         self.assertEqual(modified_date, repository.date_last_modified)
+
+
+class TestGitRepositoryEditBuilderConstraintsView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_unauthorized(self):
+        # A non-commercial-admin user cannot administer a Git repository.
+        self.useFixture(FakeLogger())
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=owner)
+        repository_url = canonical_url(repository, rootsite="code")
+        browser = self.getViewBrowser(repository, user=owner)
+        self.assertRaises(
+            LinkNotFoundError, browser.getLink, "Set builder constraints"
+        )
+        self.assertRaises(
+            Unauthorized,
+            self.getUserBrowser,
+            repository_url + "/+builder-constraints",
+            user=owner,
+        )
+
+    def test_commercial_admin(self):
+        # A commercial admin can set builder constraints on a Git
+        # repository.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=owner)
+        commercial_admin = login_celebrity("commercial_admin")
+        browser = self.getViewBrowser(repository, user=commercial_admin)
+        browser.getLink("Set builder constraints").click()
+        browser.getControl("Builder constraints").value = "gpu\nlarge"
+        browser.getControl("Change Git Repository").click()
+
+        login_person(owner)
+        self.assertEqual(["gpu", "large"], repository.builder_constraints)
 
 
 class TestGitRepositoryEditView(TestCaseWithFactory):
