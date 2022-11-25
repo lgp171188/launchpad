@@ -90,16 +90,20 @@ class GitRefMixin:
             and self.path == other.path
         ):
             return False
+        if isinstance(self, GitRefDefault) and isinstance(
+            other, GitRefDefault
+        ):
+            # Two references to the default branch for the same repository
+            # are equal.
+            return True
         try:
             self_commit_sha1 = self.commit_sha1
-        except NotFoundError:
-            # Possible for GitRefDefault objects.
-            self_commit_sha1 = None
-        try:
             other_commit_sha1 = other.commit_sha1
         except NotFoundError:
-            # Possible for GitRefDefault objects.
-            other_commit_sha1 = None
+            # Possible for GitRefDefault objects; an unresolvable default is
+            # not equal to anything other than another GitRefDefault object
+            # for the same repository.
+            return False
         return self_commit_sha1 == other_commit_sha1
 
     def __ne__(self, other):
