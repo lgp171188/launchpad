@@ -116,7 +116,8 @@ class TestPublishDistro(TestNativePublishingBase):
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
 
         foo_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
-        self.assertEqual(open(foo_path).read().strip(), "foo")
+        with open(foo_path) as foo:
+            self.assertEqual(foo.read().strip(), "foo")
 
     def testDirtySuiteProcessing(self):
         """Test dirty suite processing.
@@ -177,7 +178,8 @@ class TestPublishDistro(TestNativePublishingBase):
         self.assertNotExists(foo_path)
 
         baz_path = "%s/main/b/baz/baz_666.dsc" % self.pool_dir
-        self.assertEqual("baz", open(baz_path).read().strip())
+        with open(baz_path) as baz:
+            self.assertEqual("baz", baz.read().strip())
 
     def publishToArchiveWithOverriddenDistsroot(self, archive):
         """Publish a test package to the specified archive.
@@ -311,14 +313,16 @@ class TestPublishDistro(TestNativePublishingBase):
             "cprov",
             "ppa/ubuntutest/pool/main/b/baz/baz_666.dsc",
         )
-        self.assertEqual("baz", open(baz_path).read().strip())
+        with open(baz_path) as baz:
+            self.assertEqual("baz", baz.read().strip())
 
         bar_path = os.path.join(
             config.personalpackagearchive.root,
             "name16",
             "ppa/ubuntutest/pool/main/b/bar/bar_666.dsc",
         )
-        self.assertEqual("bar", open(bar_path).read().strip())
+        with open(bar_path) as bar:
+            self.assertEqual("bar", bar.read().strip())
 
     @defer.inlineCallbacks
     def testForPrivatePPA(self):

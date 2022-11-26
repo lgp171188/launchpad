@@ -65,7 +65,8 @@ class RoundupSniffer:
             urlsafe_b64encode(url.encode("UTF-8")).decode("ASCII"),
         )
         if not exists(filename):
-            open(filename, "wb").write(urlopen(url).read())
+            with open(filename, "wb") as f:
+                f.write(urlopen(url).read())
         return open(filename, "rb")
 
     def get_all_bugs(self):
