@@ -123,6 +123,7 @@ class Database:
         def __next__(self):
             line = self.index.readline()
             if not line:
+                self.index.close()
                 raise StopIteration
 
             match = self.index_record.match(line)
@@ -184,6 +185,8 @@ class Database:
             message = email.message_from_file(fd)
         except Exception as e:
             raise SummaryParseError("%s: %s" % (summary, str(e)))
+        finally:
+            fd.close()
 
         version = message["format-version"]
         if version is None:
@@ -223,8 +226,10 @@ class Database:
         except FileNotFoundError:
             raise ReportMissing(report)
 
-        bug.report = fd.read()
-        fd.close()
+        try:
+            bug.report = fd.read()
+        finally:
+            fd.close()
 
         report_msg = email.message_from_bytes(bug.report)
         charset = report_msg.get_content_charset("ascii")
