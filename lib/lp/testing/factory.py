@@ -1888,7 +1888,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         preview_diff.target_revision_id = self.getUniqueUnicode()
         if date_created:
             preview_diff.date_created = date_created
-        return preview_diff
+        return ProxyFactory(preview_diff)
 
     def makeIncrementalDiff(
         self, merge_proposal=None, old_revision=None, new_revision=None
