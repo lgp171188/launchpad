@@ -136,13 +136,13 @@ Let's set up the filesystem:
 And give it a spin:
 
     >>> gina_proc = ["scripts/gina.py", "-q", "hoary", "breezy"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
 
 Check STDERR for the errors we expected:
 
-    >>> print(proc.stderr.read())
+    >>> print(proc.stderr)
     ERROR   Error processing package files for clearlooks
     ...
     ...ExecutionError: Error 2 unpacking source
@@ -200,7 +200,7 @@ Check STDERR for the errors we expected:
 
 The exit status must be 0, for success:
 
-    >>> proc.wait()
+    >>> proc.returncode
     0
     >>> transaction.commit()
 
@@ -567,10 +567,10 @@ been updated for packages in breezy which have changed since the last
 run.
 
     >>> gina_proc = ["scripts/gina.py", "-q", "hoary", "breezy"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
-    >>> print(proc.stderr.read())
+    >>> print(proc.stderr)
     ERROR   Error processing package files for clearlooks
     ...
     ...ExecutionError: Error 2 unpacking source
@@ -615,7 +615,7 @@ run.
     ...
     ...PoolFileNotFound: .../python-sqlite_1.0.1-2ubuntu1_all.deb not found
     <BLANKLINE>
-    >>> proc.wait()
+    >>> proc.returncode
     0
     >>> transaction.commit()
 
@@ -709,10 +709,10 @@ First get a set of existing publishings for both source and binary:
 Now run gina to import packages and convert them to partner:
 
     >>> gina_proc = ["scripts/gina.py", "-q", "partner"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
-    >>> proc.wait()
+    >>> proc.returncode
     0
     >>> transaction.commit()
 
@@ -826,10 +826,10 @@ Commit the changes and run the importer script.
     >>> transaction.commit()
 
     >>> gina_proc = ["scripts/gina.py", "-q", "lenny"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
-    >>> proc.wait()
+    >>> proc.returncode
     0
 
     >>> transaction.commit()
@@ -866,11 +866,11 @@ Both, 'lenny' and 'hoary' (as partner) will be processed in the same
 batch.
 
     >>> gina_proc = ["scripts/gina.py", "lenny", "partner"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
 
-    >>> print(proc.stderr.read())
+    >>> print(proc.stderr)
     INFO    Creating lockfile: /var/lock/launchpad-gina.lock
     ...
     INFO    === Processing debian/lenny/release ===
@@ -878,7 +878,7 @@ batch.
     INFO    === Processing ubuntu/hoary/release ===
     ...
 
-    >>> proc.wait()
+    >>> proc.returncode
     0
 
 
@@ -888,15 +888,15 @@ Other tests
 For kicks, finally, run gina on a configured but incomplete archive:
 
     >>> gina_proc = ["scripts/gina.py", "-q", "bogus"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
-    >>> print(proc.stderr.read())
+    >>> print(proc.stderr)
     ERROR   Failed to analyze archive for bogoland
     ...
     ...MangledArchiveError: No archive directory for bogoland/main
     <BLANKLINE>
-    >>> proc.wait()
+    >>> proc.returncode
     1
 
 
