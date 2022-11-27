@@ -80,18 +80,21 @@ class LaunchpadLogFile(DailyLogFile):
         maxRotatedFiles=None,
         compressLast=None,
     ):
-        DailyLogFile.__init__(self, name, directory, defaultMode)
         if maxRotatedFiles is not None:
             self.maxRotatedFiles = int(maxRotatedFiles)
         if compressLast is not None:
             self.compressLast = int(compressLast)
 
+        # Check parameters before calling the superclass's __init__, since
+        # that opens a file that we'd otherwise need to close.
         assert (
             self.compressLast <= self.maxRotatedFiles
         ), "Only %d rotate files are kept, cannot compress %d" % (
             self.maxRotatedFiles,
             self.compressLast,
         )
+
+        super().__init__(name, directory, defaultMode)
 
     def _compressFile(self, path):
         """Compress the file in the given path using bzip2.
