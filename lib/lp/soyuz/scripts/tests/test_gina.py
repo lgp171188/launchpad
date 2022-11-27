@@ -244,10 +244,13 @@ class TestArchiveFilesystemInfo(TestCase):
         archive_info = ArchiveFilesystemInfo(
             archive_root, "breezy", "main", "i386"
         )
-        sources = apt_pkg.TagFile(archive_info.srcfile)
-        self.assertEqual("archive-copier", next(sources)["Package"])
-        binaries = apt_pkg.TagFile(archive_info.binfile)
-        self.assertEqual("python-pam", next(binaries)["Package"])
+        try:
+            with apt_pkg.TagFile(archive_info.srcfile) as sources:
+                self.assertEqual("archive-copier", next(sources)["Package"])
+            with apt_pkg.TagFile(archive_info.binfile) as binaries:
+                self.assertEqual("python-pam", next(binaries)["Package"])
+        finally:
+            archive_info.cleanup()
 
     def test_uncompressed(self):
         self.assertCompressionTypeWorks(lambda path: None)
