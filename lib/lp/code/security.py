@@ -50,8 +50,8 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.product import IProduct
 from lp.security import (
-    AdminByAdminsTeam,
     AdminByBuilddAdmin,
+    AdminByCommercialTeamOrAdmins,
     OnlyBazaarExpertsAndAdmins,
     OnlyVcsImportsAndAdmins,
 )
@@ -296,9 +296,14 @@ class ModerateGitRepository(EditGitRepository):
         return user.in_commercial_admin
 
 
-class AdminGitRepository(AdminByAdminsTeam):
-    """The admins can administer Git repositories."""
+class AdminGitRepository(AdminByCommercialTeamOrAdmins):
+    """Restrict changing builder constraints on Git repositories.
 
+    The security of some parts of the build farm depends on these settings,
+    so they can only be changed by (commercial) admins.
+    """
+
+    permission = "launchpad.Admin"
     usedfor = IGitRepository
 
 
