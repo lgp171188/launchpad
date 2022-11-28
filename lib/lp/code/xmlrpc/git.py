@@ -55,8 +55,15 @@ from lp.registry.errors import InvalidName, NoSuchSourcePackageName
 from lp.registry.interfaces.person import IPersonSet, NoSuchPerson
 from lp.registry.interfaces.product import InvalidProductName, NoSuchProduct
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.auth.enums import AccessTokenScope
+from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.features import getFeatureFlag
-from lp.services.macaroons.interfaces import NO_USER, IMacaroonIssuer
+from lp.services.identity.interfaces.account import AccountStatus
+from lp.services.macaroons.interfaces import (
+    NO_USER,
+    IMacaroonIssuer,
+    IMacaroonVerificationResult,
+)
 from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
@@ -107,6 +114,28 @@ class GitLoggerAdapter(logging.LoggerAdapter):
         return msg, kwargs
 
 
+@implementer(IMacaroonVerificationResult)
+class AccessTokenVerificationResult:
+    def __init__(self, token):
+        self.token = token
+
+    @property
+    def issuer_name(self):
+        return None
+
+    @property
+    def user(self):
+        return self.token.owner
+
+    @property
+    def can_pull(self):
+        return AccessTokenScope.REPOSITORY_PULL in self.token.scopes
+
+    @property
+    def can_push(self):
+        return AccessTokenScope.REPOSITORY_PUSH in self.token.scopes
+
+
 @implementer(IGitAPI)
 class GitAPI(LaunchpadXMLRPCView):
     """See `IGitAPI`."""
@@ -141,27 +170,52 @@ class GitAPI(LaunchpadXMLRPCView):
                     raise faults.Unauthorized()
         return verified
 
+    def _verifyAccessToken(
+        self, user, secret=None, token_id=None, repository=None
+    ):
+        access_token_set = removeSecurityProxy(getUtility(IAccessTokenSet))
+        if secret is not None:
+            assert token_id is None
+            access_token = access_token_set.getBySecret(secret)
+        else:
+            assert token_id is not None
+            access_token = access_token_set.getByID(token_id)
+        if access_token is None:
+            return None
+        if (
+            access_token.is_expired
+            or access_token.owner != user
+            or access_token.owner.account_status != AccountStatus.ACTIVE
+        ):
+            raise faults.Unauthorized()
+        if repository is not None and access_token.target != repository:
+            raise faults.Unauthorized()
+        access_token.updateLastUsed()
+        return AccessTokenVerificationResult(access_token)
+
     def _verifyAuthParams(self, requester, repository, auth_params):
         """Verify authentication parameters in the context of a repository.
 
         There are several possibilities:
 
-         * Anonymous authentication with no macaroon.  We do no additional
-           checks here.
-         * Anonymous authentication with a macaroon.  This is forbidden.
-         * User authentication with no macaroon.  We can only get here if
-           something else has already verified user authentication (SSH with
-           a key checked against the authserver, or
+         * Anonymous authentication with no macaroon or access token.  We do
+           no additional checks here.
+         * Anonymous authentication with a macaroon or access token.  This
+           is forbidden.
+         * User authentication with no macaroon or access token.  We can
+           only get here if something else has already verified user
+           authentication (SSH with a key checked against the authserver, or
            `authenticateWithPassword`); we do no additional checks beyond
            that.
-         * User authentication with a macaroon.  As above, we can only get
-           here if something else has already verified user authentication.
-           In this case, the macaroon is required to match the requester,
-           and constrains their permissions.
+         * User authentication with a macaroon or access token.  As above,
+           we can only get here if something else has already verified user
+           authentication.  In this case, the macaroon or access token is
+           required to match the requester, and constrains their
+           permissions.
          * Internal-services authentication with a macaroon.  In this case,
            we require that the macaroon does not identify a user.
-         * Internal-services authentication with no macaroon.  This is
-           forbidden.
+         * Internal-services authentication with no macaroon or with an
+           access token.  This is forbidden.
 
         :param requester: The logged-in `IPerson`, `LAUNCHPAD_SERVICES`, or
             None for anonymous access.
@@ -198,6 +252,34 @@ class GitAPI(LaunchpadXMLRPCView):
             # Internal services must authenticate using a macaroon.
             raise faults.Unauthorized()
 
+        access_token_id = auth_params.get("access-token")
+        if access_token_id is not None:
+            if requester is None:
+                raise faults.Unauthorized()
+            verified = self._verifyAccessToken(
+                requester, token_id=access_token_id, repository=repository
+            )
+            if verified is None:
+                # Access token authentication failed.  Don't fall back to
+                # the requester's permission, since an access token is
+                # typically supposed to convey additional constraints.
+                # Instead, just return "authorisation required", thus
+                # preventing probing for the existence of repositories
+                # without presenting valid credentials.
+                raise faults.Unauthorized()
+            # _verifyAccessToken checks that the access token's owner
+            # matches the requester.
+            return verified
+
+    def _isReadable(self, requester, repository, verified):
+        # Most authentication methods allow readability.
+        readable = True
+        if isinstance(verified, AccessTokenVerificationResult):
+            # Access token authentication only allows readability with the
+            # "repository:pull" scope.
+            readable = verified.can_pull
+        return readable
+
     def _isWritable(self, requester, repository, verified):
         writable = False
         naked_repository = removeSecurityProxy(repository)
@@ -207,13 +289,21 @@ class GitAPI(LaunchpadXMLRPCView):
             # macaroon that specifically grants access to this repository.
             # This is only permitted for macaroons not bound to a user.
             writable = _can_internal_issuer_write(verified)
+        elif (
+            isinstance(verified, AccessTokenVerificationResult)
+            and not verified.can_push
+        ):
+            # The user authenticated with an access token without the
+            # "repository:push" scope, so pushing isn't allowed no matter
+            # what permissions they might ordinarily have.
+            writable = False
+        elif repository.repository_type != GitRepositoryType.HOSTED:
+            # Normal users can never push to non-hosted repositories.
+            writable = False
         else:
             # This isn't an authorised internal service, so perform normal
             # user authorisation.
-            writable = (
-                repository.repository_type == GitRepositoryType.HOSTED
-                and check_permission("launchpad.Edit", repository)
-            )
+            writable = check_permission("launchpad.Edit", repository)
             if not writable:
                 grants = naked_repository.findRuleGrantsByGrantee(requester)
                 if not grants.is_empty():
@@ -256,10 +346,12 @@ class GitAPI(LaunchpadXMLRPCView):
             except Unauthorized:
                 return naked_repository, None
             private = repository.private
+        readable = self._isReadable(requester, repository, verified)
         writable = self._isWritable(requester, repository, verified)
 
         return naked_repository, {
             "path": hosting_path,
+            "readable": readable,
             "writable": writable,
             "trailing": extra_path,
             "private": private,
@@ -445,6 +537,8 @@ class GitAPI(LaunchpadXMLRPCView):
                     }
             if result is None:
                 raise faults.GitRepositoryNotFound(path)
+            if permission == "read" and not result["readable"]:
+                raise faults.PermissionDenied()
             if permission != "read" and not result["writable"]:
                 raise faults.PermissionDenied()
             return result
@@ -610,6 +704,9 @@ class GitAPI(LaunchpadXMLRPCView):
             if username and username != LAUNCHPAD_SERVICES
             else None
         )
+        verified = self._verifyAccessToken(user, secret=password)
+        if verified is not None:
+            return {"access-token": verified.token.id, "uid": user.id}
         verified = self._verifyMacaroon(password, user=user)
         if verified:
             auth_params = {"macaroon": password}
@@ -681,6 +778,16 @@ class GitAPI(LaunchpadXMLRPCView):
                 # as an anonymous repository owner.  This is only permitted
                 # for selected macaroon issuers.
                 requester = GitGranteeType.REPOSITORY_OWNER
+            elif (
+                isinstance(verified, AccessTokenVerificationResult)
+                and not verified.can_push
+            ):
+                # The user authenticated with an access token without the
+                # "repository:push" scope, so pushing isn't allowed no
+                # matter what permissions they might ordinarily have.  (This
+                # should already have been checked earlier, but it doesn't
+                # hurt to be careful about it here as well.)
+                raise faults.Unauthorized()
         except faults.Unauthorized:
             # XXX cjwatson 2019-05-09: It would be simpler to just raise
             # this directly, but turnip won't handle it very gracefully at
@@ -761,12 +868,17 @@ class GitAPI(LaunchpadXMLRPCView):
 
         verified = self._verifyAuthParams(requester, repository, auth_params)
         if verified is not None and verified.user is NO_USER:
-            # For internal-services authentication, we check if its using a
+            # For internal-services authentication, we check if it's using a
             # suitable macaroon that specifically grants access to this
             # repository.  This is only permitted for macaroons not bound to
             # a user.
             if not _can_internal_issuer_write(verified):
                 raise faults.Unauthorized()
+        elif isinstance(verified, AccessTokenVerificationResult):
+            # Access tokens can currently only be issued for an existing
+            # repository, so it doesn't make sense to allow using one for
+            # creating a repository.
+            raise faults.Unauthorized()
         else:
             # This checks `requester` against `repo.registrant` because the
             # requester should be the only user able to confirm/abort
