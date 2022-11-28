@@ -1044,10 +1044,14 @@ class TestCloseAccount(TestCaseWithFactory):
                 self.runScript,
                 script,
             )
+        self.assertIn(
+            "ERROR User %s is still referenced by 1 announcement.registrant "
+            "values" % person.name,
+            script.logger.getLogBuffer(),
+        )
         self.assertNotRemoved(account_id, person_id)
 
     def test_skip_milestone_tags_from_inactive_products(self):
-
         active_product = self.factory.makeProduct()
         inactive_product = self.factory.makeProduct()
         inactive_product.active = False
@@ -1081,6 +1085,11 @@ class TestCloseAccount(TestCaseWithFactory):
                         "User %s is still referenced" % person.name,
                         self.runScript,
                         script,
+                    )
+                    self.assertIn(
+                        "ERROR User %s is still referenced by 1 "
+                        "milestonetag.created_by values" % person.name,
+                        script.logger.getLogBuffer(),
                     )
                     self.assertNotRemoved(account_id, person_id)
                 else:
@@ -1196,6 +1205,11 @@ class TestCloseAccount(TestCaseWithFactory):
                             self.runScript,
                             script,
                         )
+                        self.assertIn(
+                            "ERROR User %s is still referenced by 1 "
+                            "branch.%s values" % (person.name, col_name),
+                            script.logger.getLogBuffer(),
+                        )
                         self.assertNotRemoved(account_id, person_id)
                     else:
                         self.runScript(script)
@@ -1226,6 +1240,11 @@ class TestCloseAccount(TestCaseWithFactory):
                         "User %s is still referenced" % person.name,
                         self.runScript,
                         script,
+                    )
+                    self.assertIn(
+                        "ERROR User %s is still referenced by 1 "
+                        "specification.assignee values" % person.name,
+                        script.logger.getLogBuffer(),
                     )
                     self.assertNotRemoved(account_id, person_id)
                 else:
