@@ -2311,7 +2311,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )
-        with person_logged_in(self.factory.makePerson()) as owner:
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
             refs = [
                 self.factory.makeGitRefs(
                     owner=owner, information_type=InformationType.USERDATA
@@ -2338,7 +2339,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             permission="write",
             macaroon_raw=macaroons[0].serialize(),
         )
-        removeSecurityProxy(builds[0]).updateStatus(BuildStatus.BUILDING)
+        with person_logged_in(owner):
+            builds[0].updateStatus(BuildStatus.BUILDING)
         self.assertTranslates(
             LAUNCHPAD_SERVICES,
             path,
