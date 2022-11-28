@@ -109,7 +109,7 @@ def configure(argv):
     }
     result["enable_utc"] = True
     result["imports"] = ("lp.services.job.celeryjob",)
-    result["result_backend"] = "amqp"
+    result["result_backend"] = "rpc"
     result["task_acks_late"] = True
     result["task_create_missing_queues"] = False
     result["task_default_exchange"] = "job"
