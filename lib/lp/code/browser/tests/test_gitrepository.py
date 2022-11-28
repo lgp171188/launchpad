@@ -1096,12 +1096,26 @@ class TestGitRepositoryEditBuilderConstraintsView(BrowserTestCase):
     def test_commercial_admin(self):
         # A commercial admin can set builder constraints on a Git
         # repository.
+        self.factory.makeBuilder(open_resources=["gpu", "large", "another"])
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=owner)
         commercial_admin = login_celebrity("commercial_admin")
         browser = self.getViewBrowser(repository, user=commercial_admin)
         browser.getLink("Set builder constraints").click()
-        browser.getControl("Builder constraints").value = "gpu\nlarge"
+        builder_constraints = browser.getControl(
+            name="field.builder_constraints"
+        )
+        self.assertEqual(
+            ["another", "gpu", "large"], builder_constraints.displayOptions
+        )
+        self.assertEqual(
+            ["another", "gpu", "large"], builder_constraints.options
+        )
+        self.assertEqual([], builder_constraints.value)
+        builder_constraints.value = [
+            "gpu",
+            "large",
+        ]
         browser.getControl("Change Git Repository").click()
 
         login_person(owner)

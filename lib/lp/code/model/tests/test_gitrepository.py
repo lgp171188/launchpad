@@ -6603,6 +6603,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_builder_constraints_commercial_admin(self):
         # A commercial admin can change a repository's builder constraints.
+        self.factory.makeBuilder(open_resources=["gpu", "large"])
         repository_db = self.factory.makeGitRepository()
         commercial_admin = getUtility(
             ILaunchpadCelebrities
@@ -6625,6 +6626,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_builder_constraints_owner(self):
         # The owner of a repository cannot change its builder constraints
         # (unless they're also a (commercial) admin).
+        self.factory.makeBuilder(open_resources=["gpu", "large"])
         repository_db = self.factory.makeGitRepository()
         webservice = webservice_for_person(
             repository_db.owner, permission=OAuthPermission.WRITE_PUBLIC
@@ -6640,6 +6642,32 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(401, response.status)
         with person_logged_in(ANONYMOUS):
             self.assertIsNone(repository_db.builder_constraints)
+
+    def test_builder_constraints_nonexistent(self):
+        # Only known builder resources may be set as builder constraints.
+        self.factory.makeBuilder(
+            open_resources=["large"], restricted_resources=["gpu"]
+        )
+        repository_db = self.factory.makeGitRepository()
+        commercial_admin = getUtility(
+            ILaunchpadCelebrities
+        ).commercial_admin.teamowner
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["really-large"]}),
+        )
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"builder_constraints: 'really-large' isn't a valid token",
+            response.body,
+        )
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

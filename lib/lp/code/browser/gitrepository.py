@@ -54,8 +54,10 @@ from lp.app.browser.launchpadform import (
 )
 from lp.app.errors import NotFoundError, UnexpectedFormData
 from lp.app.vocabularies import InformationTypeVocabulary
-from lp.app.widgets.itemswidgets import LaunchpadRadioWidgetWithDescription
-from lp.app.widgets.textwidgets import DelimitedListWidget
+from lp.app.widgets.itemswidgets import (
+    LabeledMultiCheckBoxWidget,
+    LaunchpadRadioWidgetWithDescription,
+)
 from lp.charms.browser.hascharmrecipes import HasCharmRecipesViewMixin
 from lp.code.browser.branch import CodeEditOwnerMixin
 from lp.code.browser.branchmergeproposal import (
@@ -790,9 +792,7 @@ class GitRepositoryEditBuilderConstraintsView(GitRepositoryEditFormView):
     """A view to set builder constraints."""
 
     field_names = ["builder_constraints"]
-    custom_widget_builder_constraints = CustomWidgetFactory(
-        DelimitedListWidget, height=5
-    )
+    custom_widget_builder_constraints = LabeledMultiCheckBoxWidget
 
 
 class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):

@@ -1251,7 +1251,7 @@ class IGitRepositoryAdminAttributes(Interface):
             title=_("Builder constraints"),
             required=False,
             readonly=False,
-            value_type=TextLine(),
+            value_type=Choice(vocabulary="BuilderResource"),
             description=_(
                 "Builder resource tags required by builds of this repository."
             ),
