@@ -179,6 +179,12 @@ class GitAPI(LaunchpadXMLRPCView):
             access_token = access_token_set.getBySecret(secret)
         else:
             assert token_id is not None
+            try:
+                # turnip sends authentication parameters as strings.
+                # Convert this back.
+                token_id = int(token_id)
+            except ValueError:
+                return None
             access_token = access_token_set.getByID(token_id)
         if access_token is None:
             return None
