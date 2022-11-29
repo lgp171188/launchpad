@@ -30,6 +30,7 @@ from lp.buildmaster.enums import (
 )
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.buildfarmjob import (
     BuildFarmJob,
     SpecificBuildFarmJobSourceMixin,
@@ -460,7 +461,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `ICIBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif is_upload_log(filename):
             file_object = self.upload_log
         else:
             file_object = None

@@ -38,6 +38,7 @@ from lp.buildmaster.enums import (
     BuildStatus,
 )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.charms.interfaces.charmrecipe import ICharmRecipeSet
@@ -384,7 +385,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
         """See `ICharmRecipeBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif is_upload_log(filename):
             file_object = self.upload_log
         else:
             file_object = (
