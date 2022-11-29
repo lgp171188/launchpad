@@ -406,6 +406,42 @@ Two more email notifications were sent, we'd better get rid of them.
 
     >>> discard = pop_notifications()
 
+If uploading the exported file to the librarian fails, then we send failure
+notifications in the same way as we do if the export fails.
+
+    >>> export_request_set.addRequest(
+    ...     carlos, pofiles=[pofile], format=TranslationFileFormat.PO
+    ... )
+    >>> transaction.commit()
+    >>> with mock.patch.object(
+    ...     ExportResult, "upload", side_effect=Exception("librarian melted")
+    ... ):
+    ...     process_queue(transaction, logging.getLogger())
+    >>> test_emails = pop_notifications()
+    >>> len(test_emails)
+    2
+    >>> for email in test_emails:
+    ...     if "carlos@canonical.com" in email["to"]:
+    ...         print_emails(notifications=[email], decode=True)  # noqa
+    ...
+    From: ...
+    To: carlos@canonical.com
+    Subject: Launchpad translation download: ...
+    Hello Carlos Perelló Marín,
+    <BLANKLINE>
+    Launchpad encountered problems exporting the files you requested.
+    The Launchpad Translations team has been notified of this problem.
+    Please reply to this email for further assistance.
+    <BLANKLINE>
+    If you want to retry your request, you can do so at
+    <BLANKLINE>
+      http://translations.launchpad.../+export.
+    <BLANKLINE>
+    -- 
+    Automatic message from Launchpad.net.
+    <BLANKLINE>
+    ----------------------------------------
+
 Finally, if we try to do an export with an empty queue, we don't do
 anything:
 
