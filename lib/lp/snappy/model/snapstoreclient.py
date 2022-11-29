@@ -34,6 +34,7 @@ from lp.snappy.interfaces.snapstoreclient import (
     ISnapStoreClient,
     NeedsRefreshResponse,
     ScanFailedResponse,
+    SnapNotFoundResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotScannedYetResponse,
@@ -245,6 +246,8 @@ class SnapStoreClient:
                 raise BadRequestPackageUploadResponse(response.text)
             return response_data["macaroon"]
         except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                raise cls._makeSnapStoreError(SnapNotFoundResponse, e)
             raise cls._makeSnapStoreError(BadRequestPackageUploadResponse, e)
         finally:
             timeline_action.finish()

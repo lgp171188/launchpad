@@ -94,6 +94,7 @@ from lp.snappy.interfaces.snappyseries import (
 )
 from lp.snappy.interfaces.snapstoreclient import (
     BadRequestPackageUploadResponse,
+    SnapNotFoundResponse,
 )
 from lp.soyuz.browser.archive import EnableProcessorsMixin
 from lp.soyuz.browser.build import get_build_by_id_str
@@ -1078,20 +1079,35 @@ class SnapAuthorizeView(LaunchpadEditFormView):
         """Begin the process of authorizing uploads of a snap package."""
         try:
             sso_caveat_id = snap.beginAuthorization()
-            base_url = canonical_url(snap, view_name="+authorize")
-            login_url = urlappend(base_url, "+login")
-            login_url += "?%s" % urlencode(
-                [
-                    ("macaroon_caveat_id", sso_caveat_id),
-                    ("discharge_macaroon_action", "field.actions.complete"),
-                    ("discharge_macaroon_field", "field.discharge_macaroon"),
-                ]
-            )
-            return login_url
         except CannotAuthorizeStoreUploads as e:
             request.response.addInfoNotification(str(e))
             request.response.redirect(canonical_url(snap))
             return
+        except SnapNotFoundResponse:
+            request.response.addInfoNotification(
+                structured(
+                    _(
+                        "The requested snap name '%(name)s' is not registered "
+                        "in the snap store. You can register it at "
+                        '<a href="%(register_url)s" target="_blank">'
+                        "%(register_url)s</a>"
+                    ),
+                    name=snap.store_name,
+                    register_url="https://snapcraft.io/register-snap",
+                )
+            )
+            request.response.redirect(canonical_url(snap))
+            return
+        base_url = canonical_url(snap, view_name="+authorize")
+        login_url = urlappend(base_url, "+login")
+        login_url += "?%s" % urlencode(
+            [
+                ("macaroon_caveat_id", sso_caveat_id),
+                ("discharge_macaroon_action", "field.actions.complete"),
+                ("discharge_macaroon_field", "field.discharge_macaroon"),
+            ]
+        )
+        return login_url
 
     @action("Begin authorization", name="begin")
     def begin_action(self, action, data):

@@ -1828,6 +1828,26 @@ class TestSnapAuthorizeView(BaseTestSnapView):
             browser.headers["Location"],
         )
 
+    @responses.activate
+    def test_begin_authorization__snap_not_registered(self):
+        snap_url = canonical_url(self.snap)
+        self.pushConfig("snappy", store_url="http://sca.example/")
+        responses.add("POST", "http://sca.example/dev/api/acl/", status=404)
+        browser = self.getUserBrowser(
+            url=snap_url + "/+authorize", user=self.snap.owner
+        )
+        browser.getControl("Begin authorization").click()
+        self.assertEqual(snap_url, browser.url)
+        messages = find_tags_by_class(
+            browser.contents, "informational message"
+        )
+        self.assertEqual(1, len(messages))
+        self.assertStartsWith(
+            extract_text(messages[0]),
+            "The requested snap name '{}' is not registered in the "
+            "snap store".format(removeSecurityProxy(self.snap).store_name),
+        )
+
     def test_complete_authorization_missing_discharge_macaroon(self):
         # If the form does not include a discharge macaroon, the "complete"
         # action fails.
