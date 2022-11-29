@@ -10,6 +10,7 @@ __all__ = [
     "ISnapStoreClient",
     "NeedsRefreshResponse",
     "ScanFailedResponse",
+    "SnapNotFoundResponse",
     "SnapStoreError",
     "UnauthorizedUploadResponse",
     "UploadFailedResponse",
@@ -35,6 +36,10 @@ class SnapStoreError(Exception):
 
 @error_status(http.client.INTERNAL_SERVER_ERROR)
 class BadRequestPackageUploadResponse(SnapStoreError):
+    pass
+
+
+class SnapNotFoundResponse(SnapStoreError):
     pass
 
 

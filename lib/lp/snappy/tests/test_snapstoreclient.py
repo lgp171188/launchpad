@@ -43,6 +43,7 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadScanStatusResponse,
     ISnapStoreClient,
     ScanFailedResponse,
+    SnapNotFoundResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
     UploadNotScannedYetResponse,
@@ -415,7 +416,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         snappy_series = self.factory.makeSnappySeries()
         responses.add("POST", "http://sca.example/dev/api/acl/", status=404)
         self.assertRaisesWithContent(
-            BadRequestPackageUploadResponse,
+            SnapNotFoundResponse,
             "404 Client Error: Not Found",
             self.client.requestPackageUploadPermission,
             snappy_series,
