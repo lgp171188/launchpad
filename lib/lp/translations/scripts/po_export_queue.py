@@ -431,7 +431,10 @@ def process_queue(transaction_manager, logger):
 
         # Almost done.  Now we can go back to using the primary database
         # where needed.
-        result.upload(logger=logger)
+        try:
+            result.upload(logger=logger)
+        except Exception:
+            result.addFailure()
         result.notify()
 
         request_set.removeRequest(request_ids)
