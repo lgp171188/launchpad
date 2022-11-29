@@ -600,7 +600,7 @@
     <browser:page
         name="+export"
         for="lp.registry.interfaces.productseries.IProductSeries"
-        permission="launchpad.AnyPerson"
+        permission="launchpad.ExpensiveRequest"
         template="../templates/translations-export.pt"
         class="lp.translations.browser.productseries.ProductSeriesTranslationsExportView"/>
     <browser:page
