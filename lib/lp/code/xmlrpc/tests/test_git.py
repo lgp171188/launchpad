@@ -96,7 +96,10 @@ def _make_auth_params(
     if macaroon_raw is not None:
         auth_params["macaroon"] = macaroon_raw
     if access_token_id is not None:
-        auth_params["access-token"] = access_token_id
+        # turnip marshals its authentication parameters as strings even if
+        # it received them from authenticateWithPassword as integers, so
+        # emulate it.
+        auth_params["access-token"] = str(access_token_id)
     return auth_params
 
 
@@ -2766,6 +2769,24 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             "/%s" % repository.unique_name,
             permission="write",
             access_token_id=0,
+        )
+
+    def test_translatePath_user_access_token_non_integer(self):
+        # Attempting to pass a non-integer access token ID returns
+        # Unauthorized.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="read",
+            access_token_id="string",
+        )
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="write",
+            access_token_id="string",
         )
 
     def test_getMergeProposalURL_user(self):
