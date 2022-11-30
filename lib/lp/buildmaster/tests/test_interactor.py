@@ -635,23 +635,15 @@ class TestWorker(TestCase):
     @defer.inlineCallbacks
     def test_status_after_build(self):
         # Calling 'status' returns the current status of the worker.  After a
-        # build has been triggered, the status is BUILDING.  (It may also be
-        # WAITING if the build finishes before we have a chance to check its
-        # status.)
+        # build has been triggered, the status is BUILDING.
         worker = self.worker_helper.getClientWorker()
         build_id = "status-build-id"
         response = yield self.worker_helper.triggerGoodBuild(worker, build_id)
         self.assertEqual([BuilderStatus.BUILDING, build_id], response)
         status = yield worker.status()
-        self.assertIn(
-            status["builder_status"],
-            {BuilderStatus.BUILDING, BuilderStatus.WAITING},
-        )
+        self.assertEqual(BuilderStatus.BUILDING, status["builder_status"])
         self.assertEqual(build_id, status["build_id"])
-        # We only see a logtail if the build is still in the BUILDING
-        # status.
-        if "logtail" in status:
-            self.assertIsInstance(status["logtail"], xmlrpc.client.Binary)
+        self.assertIsInstance(status["logtail"], xmlrpc.client.Binary)
 
     @defer.inlineCallbacks
     def test_ensurepresent_not_there(self):
