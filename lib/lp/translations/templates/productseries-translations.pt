@@ -189,7 +189,6 @@
                 <tal:expensive condition="context/required:launchpad.ExpensiveRequest">
                   or
                   <a tal:attributes="href context/menu:navigation/translationdownload/url"
-                     tal:condition="context/required:launchpad.AnyPerson"
                      class="download sprite">download</a>
                 </tal:expensive>
                 translation tarballs.
