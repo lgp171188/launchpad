@@ -273,6 +273,39 @@ class DownloadFullSourcePackageTranslations(OnlyRosettaExpertsAndAdmins):
         )
 
 
+class DownloadFullProductSeriesTranslations(OnlyRosettaExpertsAndAdmins):
+    """Restrict full `ProductSeries` translation downloads.
+
+    Some product series contain a large number of templates, and requests
+    for those can swamp the export queue.  Most translators probably only
+    need individual files.
+    """
+
+    permission = "launchpad.ExpensiveRequest"
+    usedfor = IProductSeries
+
+    def checkAuthenticated(self, user):
+        """Define who may download these translations.
+
+        Admins and Translations admins have access, as does the owner of
+        the translation group (if applicable) and distribution uploaders.
+        """
+        translation_group = self.obj.product.translationgroup
+        return (
+            # User is admin of some relevant kind.
+            OnlyRosettaExpertsAndAdmins.checkAuthenticated(self, user)
+            # User is the owner of the product, or the release manager of
+            # the series.
+            or user.isOwner(self.obj.product)
+            or user.isDriver(self.obj)
+            # User is owner of applicable translation group.
+            or (
+                translation_group is not None
+                and user.inTeam(translation_group.owner)
+            )
+        )
+
+
 class EditProductRelease(EditByOwnersOrAdmins):
     permission = "launchpad.Edit"
     usedfor = IProductRelease

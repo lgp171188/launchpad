@@ -2,10 +2,13 @@ Downloading Product Series Translations
 =======================================
 
 Products and product series that use Translations offer complete
-translation downloads.
+translation downloads to qualified users.  (See
+``../productseries/xx-productseries-translation-export.rst`` for more
+details on who counts as "qualified".)
 
-    >>> user_browser.open("http://translations.launchpad.test/evolution")
-    >>> download = user_browser.getLink("download")
+    >>> browser = setupBrowser(auth="Basic mark@example.com:test")
+    >>> browser.open("http://translations.launchpad.test/evolution")
+    >>> download = browser.getLink("download")
 
 For products, that option downloads translations for the series that is
 currently the preferred translation target.
@@ -17,21 +20,19 @@ currently the preferred translation target.
 Another way of getting that same export would be to browse to the series
 first and requesting a download there.
 
-    >>> user_browser.open(
-    ...     "http://translations.launchpad.test/evolution/trunk"
-    ... )
-    >>> user_browser.getLink("download").click()
-    >>> user_browser.url
+    >>> browser.open("http://translations.launchpad.test/evolution/trunk")
+    >>> browser.getLink("download").click()
+    >>> browser.url
     'http://translations.launchpad.test/evolution/trunk/+export'
 
 The translations export is implemented by the same machinery that does
 it for source packages (tested and documented separately).
 
-    >>> print(user_browser.title)
+    >>> print(browser.title)
     Download : Series trunk : Translations...
 
-    >>> user_browser.getControl("Request Download").click()
-    >>> print_feedback_messages(user_browser.contents)
+    >>> browser.getControl("Request Download").click()
+    >>> print_feedback_messages(browser.contents)
     Your request has been received.  Expect to receive an email shortly.
 
 
@@ -49,8 +50,8 @@ Use the DB classes directly to avoid having to setup a zope interaction
     >>> product = Product.byName("evolution")
     >>> product.translations_usage = ServiceUsage.NOT_APPLICABLE
     >>> product.sync()
-    >>> user_browser.open("http://translations.launchpad.test/evolution")
-    >>> user_browser.getLink("download")
+    >>> browser.open("http://translations.launchpad.test/evolution")
+    >>> browser.getLink("download")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -59,8 +60,8 @@ Restore previous state for subsequent tests, and verify.
 
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
     >>> product.sync()
-    >>> user_browser.open("http://translations.launchpad.test/evolution")
-    >>> user_browser.getLink("download") is not None
+    >>> browser.open("http://translations.launchpad.test/evolution")
+    >>> browser.getLink("download") is not None
     True
 
 
@@ -71,6 +72,16 @@ Only logged-in users get the option to request downloads.
 
     >>> anon_browser.open("http://translations.launchpad.test/evolution/")
     >>> anon_browser.getLink("download").click()
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+
+Unqualified users (see
+``../productseries/xx-productseries-translation-export.rst``) do not get the
+option to request downloads.
+
+    >>> user_browser.open("http://translations.launchpad.test/evolution")
+    >>> user_browser.getLink("download")
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
@@ -93,6 +104,11 @@ We can't see its placeholder in non-development mode:
 Even "hacking the URL" to the download option will fail.
 
     >>> anon_browser.open(download_url)
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized: ...
+
+    >>> user_browser.open(download_url)
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized: ...

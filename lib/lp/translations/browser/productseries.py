@@ -93,6 +93,7 @@ class ProductSeriesTranslationsMenuMixIn:
         """Return a link to upload translations."""
         return Link("+translations-upload", "Upload", site="translations")
 
+    @enabled_with_permission("launchpad.ExpensiveRequest")
     def translationdownload(self):
         """Return a link to download the translations."""
         return Link("+export", "Download", site="translations")
