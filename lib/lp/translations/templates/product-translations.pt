@@ -57,7 +57,7 @@
                   Launchpad currently recommends translating
                   <tal:target replace="structure target/fmt:link"
                               >trunk</tal:target>.
-                  <span tal:condition="context/required:launchpad.AnyPerson">
+                  <span tal:condition="python: path('target/required:launchpad.ExpensiveRequest') or admin_user">
                     You can also
                     <tal:expensive condition="target/required:launchpad.ExpensiveRequest">
                       <a tal:attributes="href target/fmt:url:translations/+export"

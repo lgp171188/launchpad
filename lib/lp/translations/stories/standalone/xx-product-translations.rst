@@ -199,10 +199,31 @@ That's all an anonymous user will see.
     >>> print(find_translation_recommendation(anon_browser))
     Launchpad currently recommends translating Evolution trunk series.
 
-A logged-in user is also invited to download translations.
+A logged-in user with no special privileges can neither download
+translations for the whole series (since that's expensive) nor upload them.
 
     >>> user_browser.open(product_url)
     >>> print(find_translation_recommendation(user_browser))
+    Launchpad currently recommends translating Evolution trunk series.
+
+An owner of a related translation group can download translations, but they
+can't upload to the whole series.
+
+    >>> from zope.component import getUtility
+
+    >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.testing.pages import setupBrowserForUser
+
+    >>> login("foo.bar@canonical.com")
+    >>> group_owner = factory.makePerson()
+    >>> translators = factory.makeTeam(group_owner)
+    >>> group = factory.makeTranslationGroup(translators)
+    >>> evolution = getUtility(IProductSet).getByName("evolution")
+    >>> evolution.translationgroup = group
+    >>> logout()
+    >>> group_owner_browser = setupBrowserForUser(group_owner)
+    >>> group_owner_browser.open(product_url)
+    >>> print(find_translation_recommendation(group_owner_browser))
     Launchpad currently recommends translating Evolution trunk series.
     You can also download translations for trunk.
 
@@ -219,8 +240,6 @@ A series is not translatable if all templates are disabled. We need to jump
 through some hoops to create that situation.
 
     >>> login("foo.bar@canonical.com")
-    >>> from zope.component import getUtility
-    >>> from lp.registry.interfaces.product import IProductSet
     >>> evotrunk = (
     ...     getUtility(IProductSet).getByName("evolution").getSeries("trunk")
     ... )
