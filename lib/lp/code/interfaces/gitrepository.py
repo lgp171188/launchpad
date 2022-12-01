@@ -1240,6 +1240,26 @@ class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
         """
 
 
+class IGitRepositoryAdminAttributes(Interface):
+    """`IGitRepository` attributes that can be edited by admins.
+
+    These attributes need launchpad.View to see, and launchpad.Admin to change.
+    """
+
+    builder_constraints = exported(
+        List(
+            title=_("Builder constraints"),
+            required=False,
+            readonly=False,
+            value_type=Choice(vocabulary="BuilderResource"),
+            description=_(
+                "Builder resource tags required by builds of this repository."
+            ),
+        ),
+        as_of="devel",
+    )
+
+
 # XXX cjwatson 2015-01-19 bug=760849: "beta" is a lie to get WADL
 # generation working.  Individual attributes must set their version to
 # "devel".
@@ -1251,6 +1271,7 @@ class IGitRepository(
     IGitRepositoryEditableAttributes,
     IGitRepositoryEdit,
     IGitRepositoryExpensiveRequest,
+    IGitRepositoryAdminAttributes,
 ):
     """A Git repository."""
 

@@ -6,32 +6,27 @@
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
-from lp.services.features import getFeatureFlag
 from lp.services.scripts import log
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.payload import compose_webhook_payload
-from lp.snappy.interfaces.snap import SNAP_WEBHOOKS_FEATURE_FLAG
 from lp.snappy.interfaces.snapbuild import ISnapBuild
 from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
 
 
 def _trigger_snap_build_webhook(snapbuild, action):
-    if getFeatureFlag(SNAP_WEBHOOKS_FEATURE_FLAG):
-        payload = {
-            "snap_build": canonical_url(snapbuild, force_local_path=True),
-            "action": action,
-        }
-        payload.update(
-            compose_webhook_payload(
-                ISnapBuild,
-                snapbuild,
-                ["snap", "build_request", "status", "store_upload_status"],
-            )
+    payload = {
+        "snap_build": canonical_url(snapbuild, force_local_path=True),
+        "action": action,
+    }
+    payload.update(
+        compose_webhook_payload(
+            ISnapBuild,
+            snapbuild,
+            ["snap", "build_request", "status", "store_upload_status"],
         )
-        getUtility(IWebhookSet).trigger(
-            snapbuild.snap, "snap:build:0.1", payload
-        )
+    )
+    getUtility(IWebhookSet).trigger(snapbuild.snap, "snap:build:0.1", payload)
 
 
 def snap_build_created(snapbuild, event):

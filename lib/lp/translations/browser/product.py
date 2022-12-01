@@ -55,6 +55,9 @@ class ProductTranslationsMenu(NavigationMenu):
         enabled = (
             service_uses_launchpad(self.context.translations_usage)
             and preferred_series is not None
+            and check_permission(
+                "launchpad.ExpensiveRequest", preferred_series
+            )
         )
         link = ""
         if enabled:

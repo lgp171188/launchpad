@@ -6,8 +6,10 @@
 __all__ = [
     "IPackageBuild",
     "IPackageBuildView",
+    "is_upload_log",
 ]
 
+import re
 
 from lazr.restful.declarations import exported
 from lazr.restful.fields import Reference
@@ -24,6 +26,13 @@ from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.archive import IArchive
+
+
+def is_upload_log(filename: str) -> bool:
+    """Is this filename an upload log?"""
+    # Keep this in sync with
+    # lp.buildmaster.model.packagebuild.PackageBuildMixin.storeUploadLog.
+    return re.match(r"^upload_[0-9]+_log\.txt$", filename) is not None
 
 
 class IPackageBuildView(IBuildFarmJobView):

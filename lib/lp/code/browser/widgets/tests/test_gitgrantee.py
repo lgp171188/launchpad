@@ -22,7 +22,7 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import TestCaseWithFactory, verifyObject
+from lp.testing import TestCaseWithFactory, login_person, verifyObject
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -32,7 +32,9 @@ class TestGitGranteeWidgetBase:
 
     def setUp(self):
         super().setUp()
-        [self.ref] = self.factory.makeGitRefs()
+        owner = self.factory.makePerson()
+        login_person(owner)
+        [self.ref] = self.factory.makeGitRefs(owner=owner)
         self.rule = self.factory.makeGitRule(
             repository=self.ref.repository, ref_pattern=self.ref.path
         )

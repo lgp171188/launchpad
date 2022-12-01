@@ -268,15 +268,16 @@ class TestPPAReport(unittest.TestCase):
         os.close(unused_fd)
         reporter = self.getReporter(gen_missing_repos=True, output=output_path)
         reporter.main()
-        self.assertEqual(
-            open(output_path).read().splitlines(),
-            [
-                "= Missing PPA repositories =",
-                "/var/tmp/ppa.test/cprov",
-                "/var/tmp/ppa.test/mark",
-                "",
-            ],
-        )
+        with open(output_path) as output_file:
+            self.assertEqual(
+                output_file.read().splitlines(),
+                [
+                    "= Missing PPA repositories =",
+                    "/var/tmp/ppa.test/cprov",
+                    "/var/tmp/ppa.test/mark",
+                    "",
+                ],
+            )
         # Remove the report file.
         os.remove(output_path)
 

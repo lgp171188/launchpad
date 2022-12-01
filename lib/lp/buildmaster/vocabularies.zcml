@@ -16,4 +16,16 @@
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
+  <securedutility
+    name="BuilderResource"
+    component="lp.buildmaster.vocabularies.BuilderResourceVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory"
+    >
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class="lp.buildmaster.vocabularies.BuilderResourceVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IVocabularyTokenized"/>
+  </class>
+
 </configure>

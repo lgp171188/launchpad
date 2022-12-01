@@ -11,7 +11,7 @@ __all__ = [
 from typing import List, Tuple
 
 import six
-from storm.expr import And, LeftJoin, Lower, Or
+from storm.expr import Join, LeftJoin, Lower, Or
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -491,29 +491,37 @@ def close_account(username, log):
 
     # Check announcements, skipping the ones
     # that are related to inactive products.
-    count = store.find(
-        Announcement,
-        Or(
-            And(Announcement.product == Product.id, Product.active),
-            Announcement.product == None,
-        ),
-        Announcement.registrant == person,
-    ).count()
+    count = (
+        store.using(
+            Announcement,
+            LeftJoin(Product, Announcement.product == Product.id),
+        )
+        .find(
+            Announcement,
+            Or(Product.active, Announcement.product == None),
+            Announcement.registrant == person,
+        )
+        .count()
+    )
     if count:
         reference_counts.append(("announcement.registrant", count))
     skip.add(("announcement", "registrant"))
 
     # Check MilestoneTags, skipping the ones
     # that are related to inactive products / product series.
-    count = store.find(
-        MilestoneTag,
-        MilestoneTag.milestone_id == Milestone.id,
-        Or(
-            And(Milestone.product == Product.id, Product.active),
-            Milestone.product == None,
-        ),
-        MilestoneTag.created_by_id == person.id,
-    ).count()
+    count = (
+        store.using(
+            MilestoneTag,
+            Join(Milestone, MilestoneTag.milestone_id == Milestone.id),
+            LeftJoin(Product, Milestone.product == Product.id),
+        )
+        .find(
+            MilestoneTag,
+            Or(Product.active, Milestone.product == None),
+            MilestoneTag.created_by_id == person.id,
+        )
+        .count()
+    )
     if count:
         reference_counts.append(("milestonetag.created_by", count))
     skip.add(("milestonetag", "created_by"))
@@ -531,7 +539,7 @@ def close_account(username, log):
         reference_counts.append(("productrelease.owner", count))
     skip.add(("productrelease", "owner"))
 
-    # Check ProductReleases, skipping the ones
+    # Check ProductReleaseFiles, skipping the ones
     # that are related to inactive products / product series.
     count = store.find(
         ProductReleaseFile,
@@ -547,34 +555,36 @@ def close_account(username, log):
 
     # Check Branches, skipping the ones that are related to inactive products.
     for col_name in "owner", "reviewer":
-        count = store.find(
-            Branch,
-            Or(
-                And(
-                    Branch.product == Product.id,
-                    Product.active,
-                ),
-                Branch.product == None,
-            ),
-            getattr(Branch, col_name) == person.id,
-        ).count()
+        count = (
+            store.using(
+                Branch,
+                LeftJoin(Product, Branch.product == Product.id),
+            )
+            .find(
+                Branch,
+                Or(Product.active, Branch.product == None),
+                getattr(Branch, col_name) == person.id,
+            )
+            .count()
+        )
         if count:
             reference_counts.append(("branch.{}".format(col_name), count))
         skip.add(("branch", col_name))
 
     # Check Specification, skipping the ones
     # that are related to inactive products / product series.
-    count = store.find(
-        Specification,
-        Or(
-            And(
-                Specification.product == Product.id,
-                Product.active,
-            ),
-            Specification.product == None,
-        ),
-        Specification._assignee == person.id,
-    ).count()
+    count = (
+        store.using(
+            Specification,
+            LeftJoin(Product, Specification.product == Product.id),
+        )
+        .find(
+            Specification,
+            Or(Product.active, Specification.product == None),
+            Specification._assignee == person.id,
+        )
+        .count()
+    )
     if count:
         reference_counts.append(("specification.assignee", count))
     skip.add(("specification", "assignee"))

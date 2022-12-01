@@ -349,6 +349,8 @@ class TestSnapAddView(BaseTestSnapView):
         self.useFixture(GitHostingFixture(blob=b""))
         project = self.factory.makeProduct()
         [git_ref] = self.factory.makeGitRefs()
+        git_ref_shortened_path = git_ref.repository.shortened_path
+        git_ref_path = git_ref.path
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
             project, view_name="+new-snap", user=self.person
@@ -357,8 +359,8 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(name="field.vcs").value = "GIT"
         browser.getControl(
             name="field.git_ref.repository"
-        ).value = git_ref.repository.shortened_path
-        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        ).value = git_ref_shortened_path
+        browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create snap package").click()
 
         content = find_main_content(browser.contents)
@@ -978,6 +980,9 @@ class TestSnapEditView(BaseTestSnapView):
                 usable_distro_series=[new_series]
             )
         [new_git_ref] = self.factory.makeGitRefs()
+        new_git_ref_display_name = new_git_ref.display_name
+        new_git_ref_identity = new_git_ref.repository.identity
+        new_git_ref_path = new_git_ref.path
         archive = self.factory.makeArchive()
 
         browser = self.getViewBrowser(snap, user=self.person)
@@ -990,8 +995,8 @@ class TestSnapEditView(BaseTestSnapView):
         browser.getControl("Git", index=0).click()
         browser.getControl(
             name="field.git_ref.repository"
-        ).value = new_git_ref.repository.identity
-        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        ).value = new_git_ref_identity
+        browser.getControl(name="field.git_ref.path").value = new_git_ref_path
         browser.getControl("Build source tarball").selected = True
         browser.getControl(
             "Automatically build when branch changes"
@@ -1015,7 +1020,7 @@ class TestSnapEditView(BaseTestSnapView):
             MatchesTagText(content, "distro_series"),
         )
         self.assertThat(
-            "Source:\n%s\nEdit snap package" % new_git_ref.display_name,
+            "Source:\n%s\nEdit snap package" % new_git_ref_display_name,
             MatchesTagText(content, "source"),
         )
         self.assertThat(
@@ -1823,6 +1828,26 @@ class TestSnapAuthorizeView(BaseTestSnapView):
             browser.headers["Location"],
         )
 
+    @responses.activate
+    def test_begin_authorization__snap_not_registered(self):
+        snap_url = canonical_url(self.snap)
+        self.pushConfig("snappy", store_url="http://sca.example/")
+        responses.add("POST", "http://sca.example/dev/api/acl/", status=404)
+        browser = self.getUserBrowser(
+            url=snap_url + "/+authorize", user=self.snap.owner
+        )
+        browser.getControl("Begin authorization").click()
+        self.assertEqual(snap_url, browser.url)
+        messages = find_tags_by_class(
+            browser.contents, "informational message"
+        )
+        self.assertEqual(1, len(messages))
+        self.assertStartsWith(
+            extract_text(messages[0]),
+            "The requested snap name '{}' is not registered in the "
+            "snap store".format(removeSecurityProxy(self.snap).store_name),
+        )
+
     def test_complete_authorization_missing_discharge_macaroon(self):
         # If the form does not include a discharge macaroon, the "complete"
         # action fails.
@@ -2090,7 +2115,8 @@ class TestSnapView(BaseTestSnapView):
             paths=["refs/heads/master"],
             information_type=InformationType.PRIVATESECURITY,
         )
-        snap = self.makeSnap(git_ref=ref, private=True)
+        with person_logged_in(self.person):
+            snap = self.makeSnap(git_ref=ref, private=True)
         with admin_logged_in():
             self.makeBuild(
                 snap=snap,
@@ -2132,7 +2158,8 @@ class TestSnapView(BaseTestSnapView):
             paths=["refs/heads/master"],
             information_type=InformationType.PRIVATESECURITY,
         )
-        snap = self.makeSnap(git_ref=ref, private=True)
+        with person_logged_in(self.person):
+            snap = self.makeSnap(git_ref=ref, private=True)
         with admin_logged_in():
             archive = self.factory.makeArchive(private=True)
             self.makeBuild(

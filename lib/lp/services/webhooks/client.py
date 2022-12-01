@@ -76,50 +76,57 @@ class WebhookClient:
             url.startswith("%s://" % scheme) for scheme in proxies.keys()
         ):
             raise Exception("Unproxied scheme!")
-        session = requests.Session()
-        session.trust_env = False
-        session.headers = {}
+        with requests.Session() as session:
+            session.trust_env = False
+            session.headers = {}
 
-        body, headers = create_request(
-            user_agent, secret, delivery_id, event_type, payload
-        )
-        preq = session.prepare_request(
-            requests.Request("POST", url, data=body, headers=headers)
-        )
-
-        result = {
-            "request": {
-                "url": url,
-                "method": "POST",
-                "headers": dict(preq.headers),
-                "body": preq.body,
-            },
-        }
-        connection_error = None
-        try:
-            resp = session.send(preq, proxies=proxies, timeout=timeout)
-        except (requests.ConnectionError, requests.exceptions.ProxyError) as e:
-            connection_error = str(e)
-        except requests.exceptions.ReadTimeout:
-            connection_error = "Request timeout"
-        if connection_error is not None:
-            result["connection_error"] = connection_error
-            return result
-        # If there was a request error, try to interpret any Squid
-        # error.
-        squid_error = resp.headers.get("X-Squid-Error")
-        if (resp.status_code < 200 or resp.status_code > 299) and squid_error:
-            human_readable = SQUID_ERROR_MESSAGES.get(
-                squid_error.split(" ", 1)[0]
+            body, headers = create_request(
+                user_agent, secret, delivery_id, event_type, payload
             )
-            if human_readable:
-                result["connection_error"] = human_readable
-            else:
-                result["connection_error"] = "Proxy error: %s" % squid_error
-        else:
-            result["response"] = {
-                "status_code": resp.status_code,
-                "headers": dict(resp.headers),
-                "body": resp.content,
+            preq = session.prepare_request(
+                requests.Request("POST", url, data=body, headers=headers)
+            )
+
+            result = {
+                "request": {
+                    "url": url,
+                    "method": "POST",
+                    "headers": dict(preq.headers),
+                    "body": preq.body,
+                },
             }
-        return result
+            connection_error = None
+            try:
+                resp = session.send(preq, proxies=proxies, timeout=timeout)
+            except (
+                requests.ConnectionError,
+                requests.exceptions.ProxyError,
+            ) as e:
+                connection_error = str(e)
+            except requests.exceptions.ReadTimeout:
+                connection_error = "Request timeout"
+            if connection_error is not None:
+                result["connection_error"] = connection_error
+                return result
+            # If there was a request error, try to interpret any Squid
+            # error.
+            squid_error = resp.headers.get("X-Squid-Error")
+            if (
+                resp.status_code < 200 or resp.status_code > 299
+            ) and squid_error:
+                human_readable = SQUID_ERROR_MESSAGES.get(
+                    squid_error.split(" ", 1)[0]
+                )
+                if human_readable:
+                    result["connection_error"] = human_readable
+                else:
+                    result["connection_error"] = (
+                        "Proxy error: %s" % squid_error
+                    )
+            else:
+                result["response"] = {
+                    "status_code": resp.status_code,
+                    "headers": dict(resp.headers),
+                    "body": resp.content,
+                }
+            return result

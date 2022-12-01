@@ -212,6 +212,8 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
     def test_create_new_recipe_project(self):
         project = self.factory.makeProduct(displayname="Test Project")
         [git_ref] = self.factory.makeGitRefs()
+        git_ref_shortened_path = git_ref.repository.shortened_path
+        git_ref_path = git_ref.path
         source_display = git_ref.display_name
         browser = self.getViewBrowser(
             project, view_name="+new-charm-recipe", user=self.person
@@ -219,8 +221,8 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl(name="field.name").value = "charm-name"
         browser.getControl(
             name="field.git_ref.repository"
-        ).value = git_ref.repository.shortened_path
-        browser.getControl(name="field.git_ref.path").value = git_ref.path
+        ).value = git_ref_shortened_path
+        browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create charm recipe").click()
 
         content = find_main_content(browser.contents)
@@ -514,7 +516,6 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         self.assertIn("You must select a risk.", browser.contents)
 
         # Entering only the track is not enough
-        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl(name="field.project").value = "test-project"
         browser.getControl("Automatically upload to store").selected = True
@@ -529,7 +530,6 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         self.assertIn("You must select a risk.", browser.contents)
 
         # Entering only the track and branch will error
-        view_url = canonical_url(git_ref, view_name="+new-charm-recipe")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl(name="field.project").value = "test-project"
         browser.getControl("Automatically upload to store").selected = True
@@ -615,6 +615,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="new-team", displayname="New Team", members=[self.person]
         )
         [new_git_ref] = self.factory.makeGitRefs()
+        new_git_ref_display_name = new_git_ref.display_name
+        new_git_ref_identity = new_git_ref.repository.identity
+        new_git_ref_path = new_git_ref.path
 
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
@@ -622,8 +625,8 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl(
             name="field.git_ref.repository"
-        ).value = new_git_ref.repository.identity
-        browser.getControl(name="field.git_ref.path").value = new_git_ref.path
+        ).value = new_git_ref_identity
+        browser.getControl(name="field.git_ref.path").value = new_git_ref_path
         browser.getControl(
             "Automatically build when branch changes"
         ).selected = True
@@ -636,7 +639,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.assertEqual("new-name", extract_text(content.h1))
         self.assertThat("New Team", MatchesPickerText(content, "edit-owner"))
         self.assertThat(
-            "Source:\n%s\nEdit charm recipe" % new_git_ref.display_name,
+            "Source:\n%s\nEdit charm recipe" % new_git_ref_display_name,
             MatchesTagText(content, "source"),
         )
         self.assertThat(

@@ -46,6 +46,7 @@ class IGitNamespace(Interface):
         async_hosting=False,
         status=None,
         clone_from_repository=None,
+        builder_constraints=None,
     ):
         """Create and return an `IGitRepository` in this namespace.
 

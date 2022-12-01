@@ -1888,7 +1888,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         preview_diff.target_revision_id = self.getUniqueUnicode()
         if date_created:
             preview_diff.date_created = date_created
-        return preview_diff
+        return ProxyFactory(preview_diff)
 
     def makeIncrementalDiff(
         self, merge_proposal=None, old_revision=None, new_revision=None
@@ -2120,7 +2120,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         }
         with GitHostingFixture():
             refs_by_path = {
-                ref.path: ref
+                ref.path: ProxyFactory(ref)
                 for ref in removeSecurityProxy(repository).createOrUpdateRefs(
                     refs_info, get_objects=True
                 )
@@ -2149,7 +2149,9 @@ class LaunchpadObjectFactory(ObjectFactory):
         if creator is None:
             creator = repository.owner
         with person_logged_in(creator):
-            return repository.addRule(ref_pattern, creator, position=position)
+            return ProxyFactory(
+                repository.addRule(ref_pattern, creator, position=position)
+            )
 
     def makeGitRuleGrant(
         self,
@@ -2167,14 +2169,16 @@ class LaunchpadObjectFactory(ObjectFactory):
         if grantee is None:
             grantee = self.makePerson()
         if grantor is None:
-            grantor = rule.repository.owner
+            grantor = removeSecurityProxy(rule).repository.owner
         with person_logged_in(grantor):
-            return rule.addGrant(
-                grantee,
-                grantor,
-                can_create=can_create,
-                can_push=can_push,
-                can_force_push=can_force_push,
+            return ProxyFactory(
+                rule.addGrant(
+                    grantee,
+                    grantor,
+                    can_create=can_create,
+                    can_push=can_push,
+                    can_force_push=can_force_push,
+                )
             )
 
     def makeRevisionStatusReport(
@@ -3806,6 +3810,8 @@ class LaunchpadObjectFactory(ObjectFactory):
         virtualized=True,
         vm_host=None,
         vm_reset_protocol=None,
+        open_resources=None,
+        restricted_resources=None,
         manual=False,
     ):
         """Make a new builder for i386 virtualized builds by default.
@@ -3839,6 +3845,8 @@ class LaunchpadObjectFactory(ObjectFactory):
                 vm_host,
                 manual=manual,
                 vm_reset_protocol=vm_reset_protocol,
+                open_resources=open_resources,
+                restricted_resources=restricted_resources,
             )
 
     def makeRecipeText(self, *branches):

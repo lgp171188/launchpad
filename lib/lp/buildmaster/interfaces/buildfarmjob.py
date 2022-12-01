@@ -29,7 +29,7 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Int, TextLine, Timedelta
+from zope.schema import Bool, Choice, Datetime, Int, List, TextLine, Timedelta
 
 from lp import _
 from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
@@ -106,6 +106,16 @@ class IBuildFarmJobView(Interface):
             "The virtualization setting required by this build farm job. "
             "This should be None for job types that do not care whether "
             "they run virtualized."
+        ),
+    )
+
+    builder_constraints = List(
+        title=_("Builder constraints"),
+        required=False,
+        readonly=True,
+        value_type=TextLine(),
+        description=_(
+            "Builder resource tags required by this build farm job."
         ),
     )
 

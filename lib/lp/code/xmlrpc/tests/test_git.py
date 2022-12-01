@@ -6,7 +6,7 @@
 import hashlib
 import uuid
 import xmlrpc.client
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote
 
 import pytz
@@ -50,8 +50,10 @@ from lp.code.model.gitjob import GitRefScanJob
 from lp.code.tests.helpers import GitHostingFixture
 from lp.code.xmlrpc.git import GIT_ASYNC_CREATE_REPO
 from lp.registry.enums import TeamMembershipPolicy
+from lp.services.auth.enums import AccessTokenScope
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.runner import JobRunner
 from lp.services.macaroons.interfaces import (
     NO_USER,
@@ -77,7 +79,12 @@ from lp.testing.xmlrpc import XMLRPCTestTransport
 from lp.xmlrpc import faults
 
 
-def _make_auth_params(requester, can_authenticate=False, macaroon_raw=None):
+def _make_auth_params(
+    requester,
+    can_authenticate=False,
+    macaroon_raw=None,
+    access_token_id=None,
+):
     auth_params = {
         "can-authenticate": can_authenticate,
         "request-id": str(uuid.uuid4()),
@@ -88,6 +95,11 @@ def _make_auth_params(requester, can_authenticate=False, macaroon_raw=None):
         auth_params["uid"] = requester.id
     if macaroon_raw is not None:
         auth_params["macaroon"] = macaroon_raw
+    if access_token_id is not None:
+        # turnip marshals its authentication parameters as strings even if
+        # it received them from authenticateWithPassword as integers, so
+        # emulate it.
+        auth_params["access-token"] = str(access_token_id)
     return auth_params
 
 
@@ -216,13 +228,11 @@ class TestGitAPIMixin:
         path,
         permission="read",
         can_authenticate=False,
-        macaroon_raw=None,
+        **auth_kwargs
     ):
         """Assert that the given path cannot be translated."""
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         self.assertFault(
@@ -241,13 +251,11 @@ class TestGitAPIMixin:
         message="Permission denied.",
         permission="read",
         can_authenticate=False,
-        macaroon_raw=None,
+        **auth_kwargs
     ):
         """Assert that looking at the given path returns PermissionDenied."""
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         self.assertFault(
@@ -266,13 +274,11 @@ class TestGitAPIMixin:
         message="Authorisation required.",
         permission="read",
         can_authenticate=False,
-        macaroon_raw=None,
+        **auth_kwargs
     ):
         """Assert that looking at the given path returns Unauthorized."""
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         self.assertFault(
@@ -374,17 +380,16 @@ class TestGitAPIMixin:
         requester,
         path,
         repository,
-        writable,
         permission="read",
         can_authenticate=False,
-        macaroon_raw=None,
+        readable=True,
+        writable=False,
         trailing="",
         private=False,
+        **auth_kwargs
     ):
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         translation = self.assertDoesNotFault(
@@ -394,6 +399,7 @@ class TestGitAPIMixin:
         self.assertEqual(
             {
                 "path": removeSecurityProxy(repository).getInternalPath(),
+                "readable": readable,
                 "writable": writable,
                 "trailing": trailing,
                 "private": private,
@@ -402,11 +408,7 @@ class TestGitAPIMixin:
         )
 
     def assertConfirmsRepoCreation(
-        self,
-        requester,
-        git_repository,
-        can_authenticate=True,
-        macaroon_raw=None,
+        self, requester, git_repository, can_authenticate=True, **auth_kwargs
     ):
         # Puts some refs in git hosting, to make sure we scanned them.
         sha1 = lambda x: hashlib.sha1(x).hexdigest()
@@ -430,9 +432,7 @@ class TestGitAPIMixin:
         )
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
@@ -474,13 +474,11 @@ class TestGitAPIMixin:
         requester,
         git_repository,
         can_authenticate=True,
-        macaroon_raw=None,
+        **auth_kwargs
     ):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         original_status = git_repository.status
@@ -497,29 +495,23 @@ class TestGitAPIMixin:
         self.assertEqual(original_status, git_repository.status)
 
     def assertConfirmRepoCreationUnauthorized(
-        self,
-        requester,
-        git_repository,
-        can_authenticate=True,
-        macaroon_raw=None,
+        self, requester, git_repository, can_authenticate=True, **auth_kwargs
     ):
         failure = faults.Unauthorized
         self.assertConfirmRepoCreationFails(
-            failure, requester, git_repository, can_authenticate, macaroon_raw
+            failure,
+            requester,
+            git_repository,
+            can_authenticate=can_authenticate,
+            **auth_kwargs,
         )
 
     def assertAbortsRepoCreation(
-        self,
-        requester,
-        git_repository,
-        can_authenticate=True,
-        macaroon_raw=None,
+        self, requester, git_repository, can_authenticate=True, **auth_kwargs
     ):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         result = self.assertDoesNotFault(
@@ -537,13 +529,11 @@ class TestGitAPIMixin:
         requester,
         git_repository,
         can_authenticate=True,
-        macaroon_raw=None,
+        **auth_kwargs
     ):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
-            requester,
-            can_authenticate=can_authenticate,
-            macaroon_raw=macaroon_raw,
+            requester, can_authenticate=can_authenticate, **auth_kwargs
         )
         request_id = auth_params["request-id"]
         original_status = git_repository.status
@@ -565,15 +555,15 @@ class TestGitAPIMixin:
             self.assertEqual(original_status, git_repository.status)
 
     def assertAbortRepoCreationUnauthorized(
-        self,
-        requester,
-        git_repository,
-        can_authenticate=True,
-        macaroon_raw=None,
+        self, requester, git_repository, can_authenticate=True, **auth_kwargs
     ):
         failure = faults.Unauthorized
         self.assertAbortRepoCreationFails(
-            failure, requester, git_repository, can_authenticate, macaroon_raw
+            failure,
+            requester,
+            git_repository,
+            can_authenticate=can_authenticate,
+            **auth_kwargs,
         )
 
     def assertCreates(
@@ -601,6 +591,7 @@ class TestGitAPIMixin:
         cloned_from = repository.getClonedFrom()
         expected_translation = {
             "path": repository.getInternalPath(),
+            "readable": True,
             "writable": True,
             "trailing": "",
             "private": private,
@@ -654,9 +645,9 @@ class TestGitAPIMixin:
         self.assertEqual(0, self.hosting_fixture.create.call_count)
 
     def assertHasRefPermissions(
-        self, requester, repository, ref_paths, permissions, macaroon_raw=None
+        self, requester, repository, ref_paths, permissions, **auth_kwargs
     ):
-        auth_params = _make_auth_params(requester, macaroon_raw=macaroon_raw)
+        auth_params = _make_auth_params(requester, **auth_kwargs)
         request_id = auth_params["request-id"]
         translated_path = removeSecurityProxy(repository).getInternalPath()
         ref_paths = [xmlrpc.client.Binary(ref_path) for ref_path in ref_paths]
@@ -706,7 +697,9 @@ class TestGitAPIMixin:
             )
         )
         path = "/%s" % repository.unique_name
-        self.assertTranslates(requester, path, repository, True, private=True)
+        self.assertTranslates(
+            requester, path, repository, writable=True, private=True
+        )
 
     def test_translatePath_cannot_see_private_repository(self):
         requester = self.factory.makePerson()
@@ -752,7 +745,7 @@ class TestGitAPIMixin:
         team = self.factory.makeTeam(self.factory.makePerson())
         repository = self.factory.makeGitRepository(owner=team)
         path = "/%s" % repository.unique_name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository, writable=False)
         self.assertPermissionDenied(requester, path, permission="write")
 
     def test_translatePath_imported(self):
@@ -761,7 +754,7 @@ class TestGitAPIMixin:
             owner=requester, repository_type=GitRepositoryType.IMPORTED
         )
         path = "/%s" % repository.unique_name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository, writable=False)
         self.assertPermissionDenied(requester, path, permission="write")
 
     def test_translatePath_create_personal_team_denied(self):
@@ -851,7 +844,7 @@ class TestGitAPIMixin:
         )
         path = "/%s" % repository.unique_name
         self.assertTranslates(
-            other_person, path, repository, True, private=False
+            other_person, path, repository, writable=True, private=False
         )
 
     def test_translatePath_grant_but_no_access(self):
@@ -867,7 +860,7 @@ class TestGitAPIMixin:
         )
         path = "/%s" % repository.unique_name
         self.assertTranslates(
-            other_person, path, repository, False, private=False
+            other_person, path, repository, writable=False, private=False
         )
 
     def test_translatePath_grant_to_other_private(self):
@@ -1388,6 +1381,24 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, repository, macaroon_raw=macaroon.serialize()
                 )
 
+    def test_confirm_git_repository_access_token(self):
+        # An access token cannot be used to authorize confirming repository
+        # creation.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=requester, status=GitRepositoryStatus.CREATING
+        )
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        self.assertConfirmRepoCreationUnauthorized(
+            requester,
+            repository,
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
     def test_abort_repo_creation(self):
         requester = self.factory.makePerson()
         repo = self.factory.makeGitRepository(owner=requester)
@@ -1599,6 +1610,24 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, repository, macaroon_raw=macaroon.serialize()
                 )
 
+    def test_abort_git_repository_access_token(self):
+        # An access token cannot be used to authorize aborting repository
+        # creation.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=requester, status=GitRepositoryStatus.CREATING
+        )
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        self.assertAbortRepoCreationUnauthorized(
+            requester,
+            repository,
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
     def test_abort_git_repository_creation_of_non_existing_repository(self):
         owner = self.factory.makePerson()
         repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
@@ -1619,27 +1648,25 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         path = "/%s" % repository.unique_name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository)
 
     def test_translatePath_repository_with_no_leading_slash(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         path = repository.unique_name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository)
 
     def test_translatePath_repository_with_trailing_slash(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         path = "/%s/" % repository.unique_name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository)
 
     def test_translatePath_repository_with_trailing_segments(self):
         requester = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         path = "/%s/foo/bar" % repository.unique_name
-        self.assertTranslates(
-            requester, path, repository, False, trailing="foo/bar"
-        )
+        self.assertTranslates(requester, path, repository, trailing="foo/bar")
 
     def test_translatePath_no_such_repository(self):
         requester = self.factory.makePerson()
@@ -1657,10 +1684,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         path = "/%s" % repository.unique_name
         self.assertTranslates(
-            None, path, repository, False, can_authenticate=False
+            None, path, repository, can_authenticate=False, writable=False
         )
         self.assertTranslates(
-            None, path, repository, False, can_authenticate=True
+            None, path, repository, can_authenticate=True, writable=False
         )
 
     def test_translatePath_owned(self):
@@ -1668,7 +1695,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repository = self.factory.makeGitRepository(owner=requester)
         path = "/%s" % repository.unique_name
         self.assertTranslates(
-            requester, path, repository, True, permission="write"
+            requester, path, repository, permission="write", writable=True
         )
 
     def test_translatePath_team_owned(self):
@@ -1677,7 +1704,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repository = self.factory.makeGitRepository(owner=team)
         path = "/%s" % repository.unique_name
         self.assertTranslates(
-            requester, path, repository, True, permission="write"
+            requester, path, repository, permission="write", writable=True
         )
 
     def test_translatePath_shortened_path(self):
@@ -1689,7 +1716,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 repository.target, repository
             )
         path = "/%s" % repository.target.name
-        self.assertTranslates(requester, path, repository, False)
+        self.assertTranslates(requester, path, repository)
 
     def test_translatePath_create_project_async(self):
         # translatePath creates a project repository that doesn't exist, if
@@ -2198,9 +2225,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             LAUNCHPAD_SERVICES,
             path,
             code_imports[0].git_repository,
-            True,
             permission="write",
             macaroon_raw=macaroons[0].serialize(),
+            writable=True,
         )
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2270,10 +2297,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             LAUNCHPAD_SERVICES,
             path,
             code_imports[0].git_repository,
-            True,
             permission="write",
             macaroon_raw=macaroons[0].serialize(),
             private=True,
+            writable=True,
         )
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2304,6 +2331,42 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             macaroon_raw=macaroons[0].serialize(),
         )
 
+    def test_translatePath_private_code_import_access_token(self):
+        # An access token can only allow pulling from a code import
+        # repository, not pushing to it.
+        code_import = self.factory.makeCodeImport(
+            target_rcs_type=TargetRevisionControlSystems.GIT
+        )
+        repository = code_import.git_repository
+        owner = repository.owner
+        removeSecurityProxy(repository).transitionToInformationType(
+            InformationType.PRIVATESECURITY, owner
+        )
+        with person_logged_in(owner):
+            path = "/%s" % repository.unique_name
+            _, token = self.factory.makeAccessToken(
+                owner=owner,
+                target=repository,
+                scopes=[
+                    AccessTokenScope.REPOSITORY_PULL,
+                    AccessTokenScope.REPOSITORY_PUSH,
+                ],
+            )
+        self.assertTranslates(
+            owner,
+            path,
+            repository,
+            permission="read",
+            access_token_id=removeSecurityProxy(token).id,
+            private=True,
+        )
+        self.assertPermissionDenied(
+            owner,
+            path,
+            permission="write",
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
     def test_translatePath_private_snap_build(self):
         # A builder with a suitable macaroon can read from a repository
         # associated with a running private snap build.
@@ -2311,7 +2374,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )
-        with person_logged_in(self.factory.makePerson()) as owner:
+        owner = self.factory.makePerson()
+        with person_logged_in(owner):
             refs = [
                 self.factory.makeGitRefs(
                     owner=owner, information_type=InformationType.USERDATA
@@ -2330,6 +2394,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 for build in builds
             ]
             repository = refs[0].repository
+            registrant = repository.registrant
             path = "/%s" % repository.unique_name
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2337,15 +2402,16 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             permission="write",
             macaroon_raw=macaroons[0].serialize(),
         )
-        removeSecurityProxy(builds[0]).updateStatus(BuildStatus.BUILDING)
+        with person_logged_in(owner):
+            builds[0].updateStatus(BuildStatus.BUILDING)
         self.assertTranslates(
             LAUNCHPAD_SERVICES,
             path,
             repository,
-            False,
             permission="read",
             macaroon_raw=macaroons[0].serialize(),
             private=True,
+            writable=False,
         )
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2370,7 +2436,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             macaroon_raw="nonsense",
         )
         self.assertUnauthorized(
-            repository.registrant,
+            registrant,
             path,
             permission="read",
             macaroon_raw=macaroons[0].serialize(),
@@ -2420,10 +2486,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             LAUNCHPAD_SERVICES,
             path,
             repository,
-            False,
             permission="read",
             macaroon_raw=macaroons[0].serialize(),
             private=True,
+            writable=False,
         )
         self.assertUnauthorized(
             LAUNCHPAD_SERVICES,
@@ -2487,9 +2553,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                         requester,
                         paths[i],
                         repository,
-                        True,
                         permission="write",
                         macaroon_raw=macaroon.serialize(),
+                        writable=True,
                         private=(i == 2),
                     )
                 else:
@@ -2548,8 +2614,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester,
                     path,
                     repository,
-                    False,
                     permission="read",
+                    writable=False,
                     macaroon_raw=macaroon.serialize(),
                 )
             for requester in unauthorized:
@@ -2560,6 +2626,168 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     permission="read",
                     macaroon_raw=macaroon.serialize(),
                 )
+
+    def test_translatePath_user_access_token_pull(self):
+        # A user with a suitable access token can pull from the
+        # corresponding repository, but not others, even if they own them.
+        requester = self.factory.makePerson()
+        repositories = [
+            self.factory.makeGitRepository(owner=requester) for _ in range(2)
+        ]
+        repositories.append(
+            self.factory.makeGitRepository(
+                owner=requester,
+                information_type=InformationType.PRIVATESECURITY,
+            )
+        )
+        tokens = []
+        with person_logged_in(requester):
+            for repository in repositories:
+                _, token = self.factory.makeAccessToken(
+                    owner=requester,
+                    target=repository,
+                    scopes=[AccessTokenScope.REPOSITORY_PULL],
+                )
+                tokens.append(token)
+            paths = [
+                "/%s" % repository.unique_name for repository in repositories
+            ]
+        for i, repository in enumerate(repositories):
+            for j, token in enumerate(tokens):
+                login(ANONYMOUS)
+                if i == j:
+                    self.assertTranslates(
+                        requester,
+                        paths[i],
+                        repository,
+                        permission="read",
+                        access_token_id=removeSecurityProxy(token).id,
+                        private=(i == 2),
+                    )
+                else:
+                    self.assertUnauthorized(
+                        requester,
+                        paths[i],
+                        permission="read",
+                        access_token_id=removeSecurityProxy(token).id,
+                    )
+
+    def test_translatePath_user_access_token_pull_wrong_scope(self):
+        # A user with an access token that does not have the repository:pull
+        # scope cannot pull from the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
+        )
+        self.assertPermissionDenied(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="read",
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_translatePath_user_access_token_push(self):
+        # A user with a suitable access token can push to the corresponding
+        # repository, but not others, even if they own them.
+        requester = self.factory.makePerson()
+        repositories = [
+            self.factory.makeGitRepository(owner=requester) for _ in range(2)
+        ]
+        repositories.append(
+            self.factory.makeGitRepository(
+                owner=requester,
+                information_type=InformationType.PRIVATESECURITY,
+            )
+        )
+        tokens = []
+        with person_logged_in(requester):
+            for repository in repositories:
+                _, token = self.factory.makeAccessToken(
+                    owner=requester,
+                    target=repository,
+                    scopes=[AccessTokenScope.REPOSITORY_PUSH],
+                )
+                tokens.append(token)
+            paths = [
+                "/%s" % repository.unique_name for repository in repositories
+            ]
+        for i, repository in enumerate(repositories):
+            for j, token in enumerate(tokens):
+                login(ANONYMOUS)
+                if i == j:
+                    self.assertTranslates(
+                        requester,
+                        paths[i],
+                        repository,
+                        permission="write",
+                        access_token_id=removeSecurityProxy(token).id,
+                        readable=False,
+                        writable=True,
+                        private=(i == 2),
+                    )
+                else:
+                    self.assertUnauthorized(
+                        requester,
+                        paths[i],
+                        permission="write",
+                        access_token_id=removeSecurityProxy(token).id,
+                    )
+
+    def test_translatePath_user_access_token_push_wrong_scope(self):
+        # A user with an access token that does not have the repository:push
+        # scope cannot push to the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PULL],
+        )
+        self.assertPermissionDenied(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="write",
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_translatePath_user_access_token_nonexistent(self):
+        # Attempting to pass a nonexistent access token ID returns
+        # Unauthorized.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="read",
+            access_token_id=0,
+        )
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="write",
+            access_token_id=0,
+        )
+
+    def test_translatePath_user_access_token_non_integer(self):
+        # Attempting to pass a non-integer access token ID returns
+        # Unauthorized.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="read",
+            access_token_id="string",
+        )
+        self.assertUnauthorized(
+            requester,
+            "/%s" % repository.unique_name,
+            permission="write",
+            access_token_id="string",
+        )
 
     def test_getMergeProposalURL_user(self):
         # A merge proposal URL is returned by LP for a non-default branch
@@ -2674,6 +2902,50 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     pushed_branch,
                     auth_params,
                 )
+
+    def test_getMergeProposalURL_user_access_token(self):
+        # The merge proposal URL is returned by LP for a non-default branch
+        # pushed by a user with a suitable access token that has their
+        # ordinary privileges on the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/main"]
+        )
+        removeSecurityProxy(repository).default_branch = "refs/heads/main"
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        auth_params = _make_auth_params(
+            requester, access_token_id=removeSecurityProxy(token).id
+        )
+        self.assertHasMergeProposalURL(repository, "branch", auth_params)
+
+    def test_getMergeProposalURL_user_access_token_wrong_repository(self):
+        # getMergeProposalURL refuses access tokens for a different
+        # repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/main"]
+        )
+        removeSecurityProxy(repository).default_branch = "refs/heads/main"
+        _, token = self.factory.makeAccessToken(
+            owner=requester, scopes=[AccessTokenScope.REPOSITORY_PUSH]
+        )
+        auth_params = _make_auth_params(
+            requester, access_token_id=removeSecurityProxy(token).id
+        )
+        self.assertFault(
+            faults.Unauthorized,
+            None,
+            "getMergeProposalURL",
+            repository.getInternalPath(),
+            "branch",
+            auth_params,
+        )
 
     def test_getMergeProposalURL_code_import(self):
         # A merge proposal URL from LP to Turnip is not returned for
@@ -3004,6 +3276,32 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     {"loose_object_count": 5, "pack_count": 2},
                     auth_params,
                 )
+
+    def test_notify_set_repack_data_user_access_token(self):
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        auth_params = _make_auth_params(
+            requester, access_token_id=removeSecurityProxy(token).id
+        )
+        self.assertSetsRepackData(repository, auth_params)
+
+    def test_notify_set_repack_data_user_access_token_nonexistent(self):
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        auth_params = _make_auth_params(requester, access_token_id=0)
+        self.assertFault(
+            faults.Unauthorized,
+            None,
+            "notify",
+            repository.getInternalPath(),
+            {"loose_object_count": 5, "pack_count": 2},
+            auth_params,
+        )
 
     def test_notify_set_repack_data_code_import(self):
         # We set the repack data on a repository from a code import worker
@@ -3336,6 +3634,73 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     macaroon.serialize(),
                 )
 
+    def test_authenticateWithPassword_user_access_token(self):
+        # A user with a suitable access token can authenticate using it, in
+        # which case we return both the access token and the uid for use by
+        # later calls.
+        requester = self.factory.makePerson()
+        secret, token = self.factory.makeAccessToken(owner=requester)
+        self.assertIsNone(removeSecurityProxy(token).date_last_used)
+        self.assertEqual(
+            {
+                "access-token": removeSecurityProxy(token).id,
+                "uid": requester.id,
+            },
+            self.assertDoesNotFault(
+                None, "authenticateWithPassword", requester.name, secret
+            ),
+        )
+        self.assertIsNotNone(removeSecurityProxy(token).date_last_used)
+        for username in ("", "+launchpad-services", "nonexistent"):
+            self.assertFault(
+                faults.Unauthorized,
+                None,
+                "authenticateWithPassword",
+                username,
+                secret,
+            )
+
+    def test_authenticateWithPassword_user_access_token_expired(self):
+        # An expired access token is rejected.
+        requester = self.factory.makePerson()
+        secret, _ = self.factory.makeAccessToken(
+            owner=requester,
+            date_expires=datetime.now(pytz.UTC) - timedelta(days=1),
+        )
+        self.assertFault(
+            faults.Unauthorized,
+            None,
+            "authenticateWithPassword",
+            requester.name,
+            secret,
+        )
+
+    def test_authenticateWithPassword_user_access_token_wrong_user(self):
+        # An access token for a different user is rejected.
+        requester = self.factory.makePerson()
+        secret, _ = self.factory.makeAccessToken()
+        self.assertFault(
+            faults.Unauthorized,
+            None,
+            "authenticateWithPassword",
+            requester.name,
+            secret,
+        )
+
+    def test_authenticateWithPassword_user_access_token_inactive_account(self):
+        # An access token for an inactive user is rejected.
+        requester = self.factory.makePerson(
+            account_status=AccountStatus.SUSPENDED
+        )
+        secret, _ = self.factory.makeAccessToken(owner=requester)
+        self.assertFault(
+            faults.Unauthorized,
+            None,
+            "authenticateWithPassword",
+            requester.name,
+            secret,
+        )
+
     def test_checkRefPermissions_code_import(self):
         # A code import worker with a suitable macaroon has repository owner
         # privileges on a repository associated with a running code import
@@ -3505,10 +3870,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             issuer = getUtility(IMacaroonIssuer, "snap-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
             build.updateStatus(BuildStatus.BUILDING)
+            repository = ref.repository
             path = ref.path.encode("UTF-8")
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES,
-            ref.repository,
+            repository,
             [path],
             {path: []},
             macaroon_raw=macaroon.serialize(),
@@ -3528,10 +3894,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             issuer = getUtility(IMacaroonIssuer, "ci-build")
             macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
             build.updateStatus(BuildStatus.BUILDING)
+            repository = ref.repository
             path = ref.path.encode("UTF-8")
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES,
-            ref.repository,
+            repository,
             [path],
             {path: []},
             macaroon_raw=macaroon.serialize(),
@@ -3658,6 +4025,64 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     {ref_path: []},
                     macaroon_raw=macaroon.serialize(),
                 )
+
+    def test_checkRefPermissions_user_access_token(self):
+        # A user with a suitable access token has their ordinary privileges
+        # on the corresponding repository, but not others, even if they own
+        # them.
+        requester = self.factory.makePerson()
+        repositories = [
+            self.factory.makeGitRepository(owner=requester) for _ in range(2)
+        ]
+        repositories.append(
+            self.factory.makeGitRepository(
+                owner=requester,
+                information_type=InformationType.PRIVATESECURITY,
+            )
+        )
+        ref_path = b"refs/heads/main"
+        tokens = []
+        with person_logged_in(requester):
+            for repository in repositories:
+                _, token = self.factory.makeAccessToken(
+                    owner=requester,
+                    target=repository,
+                    scopes=[AccessTokenScope.REPOSITORY_PUSH],
+                )
+                tokens.append(token)
+        for i, repository in enumerate(repositories):
+            for j, token in enumerate(tokens):
+                login(ANONYMOUS)
+                if i == j:
+                    expected_permissions = ["create", "push", "force_push"]
+                else:
+                    expected_permissions = []
+                self.assertHasRefPermissions(
+                    requester,
+                    repository,
+                    [ref_path],
+                    {ref_path: expected_permissions},
+                    access_token_id=removeSecurityProxy(token).id,
+                )
+
+    def test_checkRefPermissions_user_access_token_wrong_scope(self):
+        # A user with an access token that does not have the repository:push
+        # scope cannot push to any branch in the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PULL],
+        )
+        ref_path = b"refs/heads/main"
+        self.assertHasRefPermissions(
+            requester,
+            repository,
+            [ref_path],
+            {ref_path: []},
+            access_token_id=removeSecurityProxy(token).id,
+        )
 
     def assertUpdatesRepackStats(self, repo):
         start_time = datetime.now(pytz.UTC)

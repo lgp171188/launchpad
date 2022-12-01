@@ -7,6 +7,7 @@ __all__ = [
     "CIBuild",
 ]
 
+from copy import copy
 from datetime import timedelta
 from operator import attrgetter, itemgetter
 
@@ -29,6 +30,7 @@ from lp.buildmaster.enums import (
 )
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.interfaces.packagebuild import is_upload_log
 from lp.buildmaster.model.buildfarmjob import (
     BuildFarmJob,
     SpecificBuildFarmJobSourceMixin,
@@ -183,6 +185,8 @@ class CIBuild(PackageBuildMixin, StormBase):
 
     virtualized = Bool(name="virtualized", allow_none=False)
 
+    builder_constraints = JSON(name="builder_constraints", allow_none=True)
+
     date_created = DateTime(
         name="date_created", tzinfo=pytz.UTC, allow_none=False
     )
@@ -224,6 +228,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         distro_arch_series,
         processor,
         virtualized,
+        builder_constraints,
         stages,
         date_created=DEFAULT,
     ):
@@ -235,6 +240,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         self.distro_arch_series = distro_arch_series
         self.processor = processor
         self.virtualized = virtualized
+        self.builder_constraints = builder_constraints
         self._jobs = {"stages": stages}
         self.date_created = date_created
         self.status = BuildStatus.NEEDSBUILD
@@ -455,7 +461,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `ICIBuild`."""
         if filename.endswith(".txt.gz"):
             file_object = self.log
-        elif filename.endswith("_log.txt"):
+        elif is_upload_log(filename):
             file_object = self.upload_log
         else:
             file_object = None
@@ -591,6 +597,9 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             distro_arch_series,
             distro_arch_series.processor,
             virtualized=True,
+            builder_constraints=copy(
+                removeSecurityProxy(git_repository.builder_constraints)
+            ),
             stages=stages,
             date_created=date_created,
         )

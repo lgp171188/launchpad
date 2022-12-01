@@ -3902,14 +3902,14 @@ class TestSnapWebservice(TestCaseWithFactory):
 
     def test_set_git_path(self):
         # Setting git_path on a Git-based Snap works.
-        ref_master, ref_next = self.factory.makeGitRefs(
+        ref_master, _ = self.factory.makeGitRefs(
             paths=["refs/heads/master", "refs/heads/next"]
         )
         snap = self.makeSnap(git_ref=ref_master)
         response = self.webservice.patch(
             snap["self_link"],
             "application/json",
-            json.dumps({"git_path": ref_next.path}),
+            json.dumps({"git_path": "refs/heads/next"}),
         )
         self.assertEqual(209, response.status)
         self.assertThat(
@@ -3917,7 +3917,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             ContainsDict(
                 {
                     "git_repository_link": Equals(snap["git_repository_link"]),
-                    "git_path": Equals(ref_next.path),
+                    "git_path": Equals("refs/heads/next"),
                 }
             ),
         )

@@ -1842,7 +1842,7 @@ class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
                 "message": "Non-existent bug; LP: #%d" % (bugs[2].id + 100),
             },
         ]
-        related_bugs = bmp._fetchRelatedBugIDsFromSource()
+        related_bugs = removeSecurityProxy(bmp)._fetchRelatedBugIDsFromSource()
         path = "%s:%s" % (
             bmp.target_git_repository.getInternalPath(),
             bmp.source_git_repository.getInternalPath(),
@@ -3131,7 +3131,7 @@ class TestWebservice(WebServiceTestCase):
     def test_previewdiff_with_null_diffstat(self):
         # A previewdiff with an empty diffstat doesn't crash when fetched.
         previewdiff = self.factory.makePreviewDiff()
-        previewdiff.diff.diffstat = None
+        removeSecurityProxy(previewdiff).diff.diffstat = None
         user = previewdiff.branch_merge_proposal.target_branch.owner
         ws_previewdiff = self.wsObject(previewdiff, user=user)
         self.assertIsNone(ws_previewdiff.diffstat)

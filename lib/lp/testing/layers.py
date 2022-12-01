@@ -821,11 +821,11 @@ class LibrarianLayer(DatabaseLayer):
     def _check_and_reset(cls):
         """Raise an exception if the Librarian has been killed, else reset."""
         try:
-            session = Session()
-            session.mount(
-                config.librarian.download_url, HTTPAdapter(max_retries=3)
-            )
-            session.get(config.librarian.download_url).content
+            with Session() as session:
+                session.mount(
+                    config.librarian.download_url, HTTPAdapter(max_retries=3)
+                )
+                session.get(config.librarian.download_url).content
         except Exception as e:
             raise LayerIsolationError(
                 "Librarian has been killed or has hung."

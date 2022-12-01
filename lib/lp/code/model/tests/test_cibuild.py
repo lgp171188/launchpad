@@ -155,8 +155,20 @@ class TestCIBuild(TestCaseWithFactory):
         )
         self.assertEqual(build, bq.specific_build)
         self.assertEqual(build.virtualized, bq.virtualized)
+        self.assertIsNone(bq.builder_constraints)
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, build.buildqueue_record)
+
+    def test_queueBuild_builder_constraints(self):
+        # Builds inherit any builder constraints from their repository.
+        build = self.factory.makeCIBuild(
+            git_repository=self.factory.makeGitRepository(
+                builder_constraints=["gpu"]
+            )
+        )
+        bq = build.queueBuild()
+        self.assertProvides(bq, IBuildQueue)
+        self.assertEqual(["gpu"], bq.builder_constraints)
 
     def test_is_private(self):
         # A CIBuild is private iff its repository is.
@@ -661,6 +673,7 @@ class TestCIBuildSet(TestCaseWithFactory):
         ).one()
         self.assertProvides(build_queue, IBuildQueue)
         self.assertTrue(build_queue.virtualized)
+        self.assertIsNone(build_queue.builder_constraints)
         self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
 
     def test_requestBuild_score(self):
@@ -728,6 +741,7 @@ class TestCIBuildSet(TestCaseWithFactory):
                 repository, commit_sha1, das, [[("test", 0)]]
             )
             self.assertTrue(build.virtualized)
+            self.assertIsNone(build.builder_constraints)
 
     def test_requestBuild_nonvirtualized(self):
         # A non-virtualized processor cannot run a CI build.
@@ -747,6 +761,23 @@ class TestCIBuildSet(TestCaseWithFactory):
             das,
             [[("test", 0)]],
         )
+
+    def test_requestBuild_builder_constraints(self):
+        # New builds inherit any builder constraints from their repository.
+        repository = self.factory.makeGitRepository(
+            builder_constraints=["gpu"]
+        )
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        distro_series = self.factory.makeDistroSeries()
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distro_series,
+            supports_virtualized=True,
+            supports_nonvirtualized=False,
+        )
+        build = getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, das, [[("test", 0)]]
+        )
+        self.assertEqual(["gpu"], build.builder_constraints)
 
     def test_requestBuildsForRefs_triggers_builds(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu

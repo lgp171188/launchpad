@@ -707,7 +707,7 @@ class TestGitRepository(TestCaseWithFactory):
             grantee=GitGranteeType.REPOSITORY_OWNER,
         )
 
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER, ref_pattern=ref.path
         )
         self.assertEqual([exact_grant], list(results))
@@ -730,11 +730,11 @@ class TestGitRepository(TestCaseWithFactory):
             grantee=GitGranteeType.REPOSITORY_OWNER,
         )
 
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER, include_transitive=False
         )
         self.assertItemsEqual([exact_grant, wildcard_grant], list(results))
-        results = ref.repository.findRuleGrantsByGrantee(
+        results = repository.findRuleGrantsByGrantee(
             GitGranteeType.REPOSITORY_OWNER,
             ref_pattern=ref.path,
             include_transitive=False,
@@ -3879,9 +3879,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         self.assertNotEqual(
             BranchMergeProposalStatus.MERGED, proposal.queue_status
         )
-        proposal.target_git_repository._markProposalMerged(
-            proposal, proposal.target_git_commit_sha1
-        )
+        removeSecurityProxy(
+            proposal.target_git_repository
+        )._markProposalMerged(proposal, proposal.target_git_commit_sha1)
         self.assertEqual(
             BranchMergeProposalStatus.MERGED, proposal.queue_status
         )
@@ -6598,6 +6598,74 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(401, response.status)
         self.assertEqual(
             b"Personal access tokens may only be issued for a logged-in user.",
+            response.body,
+        )
+
+    def test_builder_constraints_commercial_admin(self):
+        # A commercial admin can change a repository's builder constraints.
+        self.factory.makeBuilder(open_resources=["gpu", "large"])
+        repository_db = self.factory.makeGitRepository()
+        commercial_admin = getUtility(
+            ILaunchpadCelebrities
+        ).commercial_admin.teamowner
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["gpu"]}),
+        )
+        self.assertEqual(209, response.status)
+        with person_logged_in(ANONYMOUS):
+            self.assertEqual(["gpu"], repository_db.builder_constraints)
+
+    def test_builder_constraints_owner(self):
+        # The owner of a repository cannot change its builder constraints
+        # (unless they're also a (commercial) admin).
+        self.factory.makeBuilder(open_resources=["gpu", "large"])
+        repository_db = self.factory.makeGitRepository()
+        webservice = webservice_for_person(
+            repository_db.owner, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["gpu"]}),
+        )
+        self.assertEqual(401, response.status)
+        with person_logged_in(ANONYMOUS):
+            self.assertIsNone(repository_db.builder_constraints)
+
+    def test_builder_constraints_nonexistent(self):
+        # Only known builder resources may be set as builder constraints.
+        self.factory.makeBuilder(
+            open_resources=["large"], restricted_resources=["gpu"]
+        )
+        repository_db = self.factory.makeGitRepository()
+        commercial_admin = getUtility(
+            ILaunchpadCelebrities
+        ).commercial_admin.teamowner
+        webservice = webservice_for_person(
+            commercial_admin, permission=OAuthPermission.WRITE_PUBLIC
+        )
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository_db)
+        response = webservice.patch(
+            repository_url,
+            "application/json",
+            json.dumps({"builder_constraints": ["really-large"]}),
+        )
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"builder_constraints: 'really-large' isn't a valid token",
             response.body,
         )
 

@@ -179,11 +179,10 @@ def start_as_process(service_binary_name):
     # and have fewer things that can go wrong shutting down the process.
     proc = subprocess.Popen(
         script,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.STDOUT,
     )
-    proc.stdin.close()
     return proc
 
 

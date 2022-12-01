@@ -828,7 +828,8 @@
         interface="lp.app.interfaces.launchpad.IPrivacy
                    lp.code.interfaces.gitrepository.IGitRepositoryView
                    lp.code.interfaces.gitrepository.IGitRepositoryModerateAttributes
-                   lp.code.interfaces.gitrepository.IGitRepositoryEditableAttributes" />
+                   lp.code.interfaces.gitrepository.IGitRepositoryEditableAttributes
+                   lp.code.interfaces.gitrepository.IGitRepositoryAdminAttributes" />
     <require
         permission="launchpad.Moderate"
         interface="lp.code.interfaces.gitrepository.IGitRepositoryModerate"
@@ -841,6 +842,9 @@
     <require
         permission="launchpad.ExpensiveRequest"
         interface="lp.code.interfaces.gitrepository.IGitRepositoryExpensiveRequest"/>
+    <require
+        permission="launchpad.Admin"
+        set_schema="lp.code.interfaces.gitrepository.IGitRepositoryAdminAttributes" />
   </class>
   <adapter
       for="lp.code.interfaces.gitrepository.IGitRepository"

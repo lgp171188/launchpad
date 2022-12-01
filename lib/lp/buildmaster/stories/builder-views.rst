@@ -81,6 +81,8 @@ by mark. we nee to log in as mark or any other member of admin team
     failnotes
     vm_host
     vm_reset_protocol
+    open_resources
+    restricted_resources
     active
 
     >>> for action in builder_view.actions:

@@ -24,6 +24,7 @@ from testtools.matchers import (
     MatchesStructure,
 )
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.informationtype import IInformationType
@@ -153,11 +154,13 @@ class TestGitRef(TestCaseWithFactory):
         verifyObject(IPrivacy, ref)
 
     def test_refs_in_private_repositories_are_private(self):
+        owner = self.factory.makePerson()
         [ref] = self.factory.makeGitRefs(
-            information_type=InformationType.USERDATA
+            owner=owner, information_type=InformationType.USERDATA
         )
-        self.assertTrue(ref.private)
-        self.assertEqual(InformationType.USERDATA, ref.information_type)
+        with person_logged_in(owner):
+            self.assertTrue(ref.private)
+            self.assertEqual(InformationType.USERDATA, ref.information_type)
 
 
 class TestGitRefGetCommits(TestCaseWithFactory):
@@ -385,7 +388,7 @@ class TestGitRefGetCommits(TestCaseWithFactory):
 
     def test_extended_details_with_merge(self):
         mp = self.factory.makeBranchMergeProposalForGit(target_ref=self.ref)
-        mp.markAsMerged(merged_revision_id=self.sha1_tip)
+        removeSecurityProxy(mp).markAsMerged(merged_revision_id=self.sha1_tip)
         revisions = self.ref.getLatestCommits(
             self.sha1_tip, extended_details=True, user=self.ref.owner
         )
@@ -707,9 +710,10 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
         """Personal repositories cannot be used as a source for MPs to
         project repositories.
         """
-        self.source.repository.setTarget(
-            target=self.source.owner, user=self.source.owner
-        )
+        with person_logged_in(self.source.owner):
+            self.source.repository.setTarget(
+                target=self.source.owner, user=self.source.owner
+            )
         self.assertRaises(
             InvalidBranchMergeProposal,
             self.source.addLandingTarget,
@@ -721,17 +725,19 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
         """A branch in a personal repository can be used as a source for MPs
         to another branch in the same personal repository.
         """
-        self.target.repository.setTarget(
-            target=self.target.owner, user=self.target.owner
-        )
+        with person_logged_in(self.target.owner):
+            self.target.repository.setTarget(
+                target=self.target.owner, user=self.target.owner
+            )
         [source] = self.factory.makeGitRefs(repository=self.target.repository)
         source.addLandingTarget(self.user, self.target)
 
     def test_target_repository_same_target(self):
         """The target repository's target must match that of the source."""
-        self.target.repository.setTarget(
-            target=self.target.owner, user=self.target.owner
-        )
+        with person_logged_in(self.target.owner):
+            self.target.repository.setTarget(
+                target=self.target.owner, user=self.target.owner
+            )
         self.assertRaises(
             InvalidBranchMergeProposal,
             self.source.addLandingTarget,
@@ -740,9 +746,10 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
         )
 
         project = self.factory.makeProduct()
-        self.target.repository.setTarget(
-            target=project, user=self.target.owner
-        )
+        with person_logged_in(self.target.owner):
+            self.target.repository.setTarget(
+                target=project, user=self.target.owner
+            )
         self.assertRaises(
             InvalidBranchMergeProposal,
             self.source.addLandingTarget,
@@ -761,9 +768,10 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
 
     def test_prerequisite_repository_same_target(self):
         """The prerequisite repository, if any, must be for the same target."""
-        self.prerequisite.repository.setTarget(
-            target=self.prerequisite.owner, user=self.prerequisite.owner
-        )
+        with person_logged_in(self.prerequisite.owner):
+            self.prerequisite.repository.setTarget(
+                target=self.prerequisite.owner, user=self.prerequisite.owner
+            )
         self.assertRaises(
             InvalidBranchMergeProposal,
             self.source.addLandingTarget,
@@ -773,9 +781,10 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
         )
 
         project = self.factory.makeProduct()
-        self.prerequisite.repository.setTarget(
-            target=project, user=self.prerequisite.owner
-        )
+        with person_logged_in(self.prerequisite.owner):
+            self.prerequisite.repository.setTarget(
+                target=project, user=self.prerequisite.owner
+            )
         self.assertRaises(
             InvalidBranchMergeProposal,
             self.source.addLandingTarget,
@@ -826,7 +835,8 @@ class TestGitRefCreateMergeProposal(TestCaseWithFactory):
         proposal = self.source.addLandingTarget(
             self.user, self.target, self.prerequisite
         )
-        proposal.rejectBranch(self.user, "some_revision")
+        with person_logged_in(self.user):
+            proposal.rejectBranch(self.user, "some_revision")
         self.source.addLandingTarget(self.user, self.target, self.prerequisite)
 
     def test_default_reviewer(self):
@@ -927,8 +937,10 @@ class TestGitRefGrants(TestCaseWithFactory):
             repository=repository, ref_pattern="refs/heads/*"
         )
         self.factory.makeGitRuleGrant(rule=wildcard_rule)
+        with person_logged_in(repository.owner):
+            observed_grants = ref.getGrants()
         self.assertThat(
-            ref.getGrants(),
+            observed_grants,
             MatchesSetwise(
                 MatchesStructure(
                     rule=Equals(rule),

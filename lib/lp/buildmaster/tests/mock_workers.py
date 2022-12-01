@@ -18,15 +18,23 @@ __all__ = [
 ]
 
 import os
+import shlex
 import sys
 import xmlrpc.client
 from collections import OrderedDict
+from copy import copy
+from textwrap import dedent
+
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 
 import fixtures
-from lpbuildd.tests.harness import BuilddTestSetup
 from testtools.content import attach_file
 from twisted.internet import defer
 from twisted.web.xmlrpc import Proxy
+from txfixtures.tachandler import TacTestFixture
 
 from lp.buildmaster.enums import BuilderCleanStatus, BuilderResetProtocol
 from lp.buildmaster.interactor import BuilderWorker
@@ -60,6 +68,8 @@ class MockBuilder:
         version=None,
         clean_status=BuilderCleanStatus.DIRTY,
         vm_reset_protocol=BuilderResetProtocol.PROTO_1_1,
+        open_resources=None,
+        restricted_resources=None,
         active=True,
     ):
         self.currentjob = None
@@ -71,6 +81,8 @@ class MockBuilder:
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
+        self.open_resources = copy(open_resources)
+        self.restricted_resources = copy(restricted_resources)
         self.failnotes = None
         self.version = version
         self.clean_status = clean_status
@@ -310,11 +322,74 @@ class DeadProxy(Proxy):
         return defer.Deferred()
 
 
-class LPBuilddTestSetup(BuilddTestSetup):
+# XXX cjwatson 2022-11-30:
+# https://git.launchpad.net/launchpad-buildd/commit?id=a42da402b9 made the
+# harness less stateful in a way that's useful for some of our tests, but
+# unfortunately it was after launchpad-buildd began to require Python >= 3.6
+# which we can't yet do in Launchpad itself.  Copy launchpad-buildd's code
+# for now, but once Launchpad is running on Python >= 3.6 we should go back
+# to subclassing it.  (For similar reasons, we're currently stuck with some
+# non-inclusive terminology here until we can upgrade the version of
+# launchpad-buildd in our virtualenv.)
+class LPBuilddTestSetup(TacTestFixture):
     """A BuilddTestSetup that uses the LP virtualenv."""
+
+    _root = None
 
     def setUp(self):
         super().setUp(python_path=sys.executable, twistd_script=twistd_script)
+
+    def setUpRoot(self):
+        filecache = os.path.join(self.root, "filecache")
+        os.mkdir(filecache)
+        self.useFixture(fixtures.EnvironmentVariable("HOME", self.root))
+        test_conffile = os.path.join(self.root, "buildd.conf")
+        with open(test_conffile, "w") as f:
+            f.write(
+                dedent(
+                    """\
+                    [builder]
+                    architecturetag = i386
+                    filecache = {filecache}
+                    bindhost = localhost
+                    bindport = {self.daemon_port}
+                    sharepath = {self.root}
+                    """.format(
+                        filecache=filecache, self=self
+                    )
+                )
+            )
+        self.useFixture(
+            fixtures.EnvironmentVariable("BUILDD_SLAVE_CONFIG", test_conffile)
+        )
+
+    @property
+    def root(self):
+        if self._root is None:
+            self._root = self.useFixture(fixtures.TempDir()).path
+        return self._root
+
+    @property
+    def tacfile(self):
+        # importlib.resources.path makes no guarantees about whether the
+        # path is still valid after exiting the context manager (it might be
+        # a temporary file), but in practice this works fine in Launchpad's
+        # virtualenv setup.
+        with resources.path("lpbuildd", "buildd-slave.tac") as tacpath:
+            pass
+        return tacpath.as_posix()
+
+    @property
+    def pidfile(self):
+        return os.path.join(self.root, "buildd.pid")
+
+    @property
+    def logfile(self):
+        return "/var/tmp/buildd.log"
+
+    @property
+    def daemon_port(self):
+        return 8321
 
 
 class WorkerTestHelpers(fixtures.Fixture):
@@ -365,6 +440,30 @@ class WorkerTestHelpers(fixtures.Fixture):
             fd.write(contents)
         self.addCleanup(os.unlink, path)
 
+    def configureWaitingBuilder(self, tachandler):
+        """Set up a builder to wait forever until told to stop."""
+        fifo = os.path.join(tachandler.root, "builder-prep.fifo")
+        os.mkfifo(fifo)
+        builder_prep = os.path.join(tachandler.root, "bin", "builder-prep")
+        os.makedirs(os.path.dirname(builder_prep), exist_ok=True)
+        with open(builder_prep, "w") as f:
+            f.write("#! /bin/sh\nread x <%s\nexit 1\n" % shlex.quote(fifo))
+            os.fchmod(f.fileno(), 0o755)
+        # This is run on cleanup, and we don't want it to fail.
+        in_target = os.path.join(tachandler.root, "bin", "in-target")
+        os.symlink("/bin/true", in_target)
+        self.addCleanup(self.continueBuild, tachandler)
+
+    def continueBuild(self, tachandler):
+        """Continue a build set up to wait via `configureWaitingBuilder`."""
+        flag = os.path.join(tachandler.root, "builder-prep.continued")
+        if not os.path.exists(flag):
+            fifo = os.path.join(tachandler.root, "builder-prep.fifo")
+            with open(fifo, "w") as f:
+                f.write("\n")
+            with open(flag, "w"):
+                pass
+
     def triggerGoodBuild(self, worker, build_id=None):
         """Trigger a good build on 'worker'.
 
@@ -381,6 +480,7 @@ class WorkerTestHelpers(fixtures.Fixture):
         dsc_file = "thing"
         self.makeCacheFile(tachandler, chroot_file)
         self.makeCacheFile(tachandler, dsc_file)
+        self.configureWaitingBuilder(tachandler)
         extra_args = {
             "distribution": "ubuntu",
             "series": "precise",

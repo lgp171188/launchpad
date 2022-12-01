@@ -6,13 +6,15 @@ __all__ = [
     "BuildQueueSet",
 ]
 
+import json
 import logging
 from datetime import datetime
 from itertools import groupby
 from operator import attrgetter
 
 import pytz
-from storm.expr import SQL, And, Desc, Exists, Or
+from storm.databases.postgres import JSON
+from storm.expr import SQL, Cast, Coalesce, Desc, Exists, Or
 from storm.properties import Bool, DateTime, Int, TimeDelta, Unicode
 from storm.references import Reference
 from storm.store import Store
@@ -33,6 +35,7 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import JSONContains
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty, get_property_cache
 
@@ -69,6 +72,7 @@ class BuildQueue(StormBase):
         estimated_duration=DEFAULT,
         virtualized=DEFAULT,
         processor=DEFAULT,
+        builder_constraints=None,
         lastscore=None,
     ):
         super().__init__()
@@ -76,6 +80,7 @@ class BuildQueue(StormBase):
         self.estimated_duration = estimated_duration
         self.virtualized = virtualized
         self.processor = processor
+        self.builder_constraints = builder_constraints
         self.lastscore = lastscore
         if lastscore is None and self.specific_build is not None:
             self.score()
@@ -96,6 +101,7 @@ class BuildQueue(StormBase):
     processor_id = Int(name="processor")
     processor = Reference(processor_id, "Processor.id")
     virtualized = Bool(name="virtualized")
+    builder_constraints = JSON(name="builder_constraints", allow_none=True)
 
     @property
     def specific_source(self):
@@ -290,7 +296,14 @@ class BuildQueueSet:
         logger = logging.getLogger("worker-scanner")
         return logger
 
-    def findBuildCandidates(self, processor, virtualized, limit):
+    def findBuildCandidates(
+        self,
+        processor,
+        virtualized,
+        limit,
+        open_resources=None,
+        restricted_resources=None,
+    ):
         """See `IBuildQueueSet`."""
         # Circular import.
         from lp.buildmaster.model.buildfarmjob import BuildFarmJob
@@ -333,19 +346,47 @@ class BuildQueueSet:
                 BuildQueue.lastscore >= max(minimum_scores)
             )
 
+        builder_constraints = Coalesce(
+            BuildQueue.builder_constraints, Cast("[]", "jsonb")
+        )
+        # All constraints on the build queue entry must be satisfied by the
+        # builder's resources.
+        resource_conditions = [
+            JSONContains(
+                Cast(
+                    json.dumps(
+                        tuple(open_resources or ())
+                        + tuple(restricted_resources or ())
+                    ),
+                    "jsonb",
+                ),
+                builder_constraints,
+            )
+        ]
+        # If the builder has any restricted resources, then the build queue
+        # entry must specify all of them.
+        if restricted_resources:
+            resource_conditions.append(
+                JSONContains(
+                    builder_constraints,
+                    Cast(json.dumps(restricted_resources), "jsonb"),
+                )
+            )
+
         store = IStore(BuildQueue)
         return list(
-            store.using(BuildQueue, BuildFarmJob)
-            .find(
+            store.using(BuildQueue, BuildFarmJob).find(
                 BuildQueue,
                 BuildFarmJob.id == BuildQueue._build_farm_job_id,
                 BuildQueue.status == BuildQueueStatus.WAITING,
                 BuildQueue.processor == processor,
                 BuildQueue.virtualized == virtualized,
                 BuildQueue.builder == None,
-                And(*(job_type_conditions + score_conditions))
-                # This must match the ordering used in
-                # PrefetchedBuildCandidates._getSortKey.
+                *job_type_conditions,
+                *score_conditions,
+                *resource_conditions,
             )
+            # This must match the ordering used in
+            # PrefetchedBuildCandidates._getSortKey.
             .order_by(Desc(BuildQueue.lastscore), BuildQueue.id)[:limit]
         )

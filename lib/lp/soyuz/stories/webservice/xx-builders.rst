@@ -38,7 +38,9 @@ Each builder has a number of properties exposed:
     failure_count
     manual
     name
+    open_resources
     processors
+    restricted_resources
     title
     url
     version

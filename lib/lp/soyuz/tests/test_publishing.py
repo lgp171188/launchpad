@@ -874,7 +874,8 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source.publish(self.disk_pool, self.logger)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
         pool_path = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
-        self.assertEqual(open(pool_path).read().strip(), "Hello world")
+        with open(pool_path) as pool_file:
+            self.assertEqual(pool_file.read().strip(), "Hello world")
 
     @mock.patch.object(ArtifactoryPool, "addFile")
     def test_publisher_skips_conda_source_packages(self, mock):
@@ -901,7 +902,8 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_binary.publish(self.disk_pool, self.logger)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_binary.status)
         pool_path = "%s/main/f/foo/foo-bin_666_all.deb" % self.pool_dir
-        self.assertEqual(open(pool_path).read().strip(), "Hello world")
+        with open(pool_path) as pool_file:
+            self.assertEqual(pool_file.read().strip(), "Hello world")
 
     def test_publish_isolated_binaries(self):
         # Some binary publications have no associated source publication
@@ -997,7 +999,8 @@ class TestNativePublishing(TestNativePublishingBase):
 
         self.layer.commit()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PENDING)
-        self.assertEqual(open(foo_dsc_path).read().strip(), "Hello world")
+        with open(foo_dsc_path) as foo_dsc:
+            self.assertEqual(foo_dsc.read().strip(), "Hello world")
 
     def testPublishingDifferentContents(self):
         """Test if publishOne refuses to overwrite its own publication."""
@@ -1008,7 +1011,8 @@ class TestNativePublishing(TestNativePublishingBase):
         foo_name = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
         pub_source.sync()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
-        self.assertEqual(open(foo_name).read().strip(), "foo is happy")
+        with open(foo_name) as foo:
+            self.assertEqual(foo.read().strip(), "foo is happy")
 
         # try to publish 'foo' again with a different content, it
         # raises internally and keeps the files with the original
@@ -1019,7 +1023,8 @@ class TestNativePublishing(TestNativePublishingBase):
 
         pub_source2.sync()
         self.assertEqual(pub_source2.status, PackagePublishingStatus.PENDING)
-        self.assertEqual(open(foo_name).read().strip(), "foo is happy")
+        with open(foo_name) as foo:
+            self.assertEqual(foo.read().strip(), "foo is happy")
 
     def testPublishingAlreadyInPool(self):
         """Test if publishOne works if file is already in Pool.
@@ -1033,7 +1038,8 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source.publish(self.disk_pool, self.logger)
         self.layer.commit()
         bar_name = "%s/main/b/bar/bar_666.dsc" % self.pool_dir
-        self.assertEqual(open(bar_name).read().strip(), "bar is good")
+        with open(bar_name) as bar:
+            self.assertEqual(bar.read().strip(), "bar is good")
         pub_source.sync()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
 
@@ -1112,7 +1118,8 @@ class TestNativePublishing(TestNativePublishingBase):
             pub_source.sourcepackagerelease.upload_archive, cprov.archive
         )
         foo_name = "%s/main/f/foo/foo_666.dsc" % test_pool_dir
-        self.assertEqual(open(foo_name).read().strip(), "Am I a PPA Record ?")
+        with open(foo_name) as foo:
+            self.assertEqual(foo.read().strip(), "Am I a PPA Record ?")
 
         # Remove locally created dir.
         shutil.rmtree(test_pool_dir)
