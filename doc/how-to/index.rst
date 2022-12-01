@@ -47,3 +47,4 @@ Operating Canonical's instances
    restarting-services-on-dogfood
    deploying-configuration-changes
    checking-availability-of-launchpad-frontends
+   getting-overview-of-build-farm
