@@ -43,7 +43,16 @@ from lazr.restful.fields import CollectionField, Reference
 from lazr.restful.interface import copy_field
 from zope.component import getUtility
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
+from zope.schema import (
+    Bool,
+    Choice,
+    Datetime,
+    Int,
+    List,
+    Text,
+    TextLine,
+    Tuple,
+)
 
 from lp import _
 from lp.app.enums import InformationType
@@ -1247,7 +1256,7 @@ class IGitRepositoryAdminAttributes(Interface):
     """
 
     builder_constraints = exported(
-        List(
+        Tuple(
             title=_("Builder constraints"),
             required=False,
             readonly=False,

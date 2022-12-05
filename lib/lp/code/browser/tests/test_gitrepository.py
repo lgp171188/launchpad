@@ -1119,7 +1119,7 @@ class TestGitRepositoryEditBuilderConstraintsView(BrowserTestCase):
         browser.getControl("Change Git Repository").click()
 
         login_person(owner)
-        self.assertEqual(["gpu", "large"], repository.builder_constraints)
+        self.assertEqual(("gpu", "large"), repository.builder_constraints)
 
 
 class TestGitRepositoryEditView(TestCaseWithFactory):

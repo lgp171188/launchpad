@@ -24,7 +24,7 @@ from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
-from storm.databases.postgres import JSON, Returning
+from storm.databases.postgres import Returning
 from storm.expr import SQL, And, Coalesce, Desc, Insert, Join, Not, Or, Select
 from storm.info import ClassAlias, get_cls_info
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
@@ -143,6 +143,7 @@ from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
     BulkUpdate,
+    ImmutablePgJSON,
     Values,
 )
 from lp.services.features import getFeatureFlag
@@ -323,7 +324,9 @@ class GitRepository(
         name="date_last_scanned", tzinfo=pytz.UTC, allow_none=True
     )
 
-    builder_constraints = JSON(name="builder_constraints", allow_none=True)
+    builder_constraints = ImmutablePgJSON(
+        name="builder_constraints", allow_none=True
+    )
 
     def __init__(
         self,

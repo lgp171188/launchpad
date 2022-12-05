@@ -8,7 +8,6 @@ __all__ = [
 ]
 
 import pytz
-from storm.databases.postgres import JSON
 from storm.expr import Coalesce, Count, Sum
 from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
@@ -34,6 +33,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStandbyStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import ImmutablePgJSON
 from lp.services.propertycache import cachedproperty, get_property_cache
 
 # XXX Michael Nelson 2010-01-13 bug=491330
@@ -61,8 +61,10 @@ class Builder(StormBase):
     virtualized = Bool(name="virtualized", default=True, allow_none=False)
     manual = Bool(name="manual", default=False)
     vm_host = Unicode(name="vm_host")
-    open_resources = JSON(name="open_resources", allow_none=True)
-    restricted_resources = JSON(name="restricted_resources", allow_none=True)
+    open_resources = ImmutablePgJSON(name="open_resources", allow_none=True)
+    restricted_resources = ImmutablePgJSON(
+        name="restricted_resources", allow_none=True
+    )
     active = Bool(name="active", allow_none=False, default=True)
     failure_count = Int(name="failure_count", default=0, allow_none=False)
     version = Unicode(name="version")
