@@ -34,7 +34,16 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import Reference, ReferenceChoice
 from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Int, List, Text, TextLine
+from zope.schema import (
+    Bool,
+    Choice,
+    Datetime,
+    Int,
+    List,
+    Text,
+    TextLine,
+    Tuple,
+)
 
 from lp import _
 from lp.app.validators.name import name_validator
@@ -217,7 +226,7 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
     )
 
     open_resources = exported(
-        List(
+        Tuple(
             title=_("Open resources"),
             description=_(
                 "Resource tags offered by this builder, that can be required "
@@ -229,7 +238,7 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
     )
 
     restricted_resources = exported(
-        List(
+        Tuple(
             title=_("Restricted resources"),
             description=_(
                 "Resource tags offered by this builder, indicating that the "

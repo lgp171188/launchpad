@@ -391,16 +391,8 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
         builder.virtualized,
         builder.vm_host,
         builder.vm_reset_protocol,
-        (
-            None
-            if builder.open_resources is None
-            else tuple(builder.open_resources)
-        ),
-        (
-            None
-            if builder.restricted_resources is None
-            else tuple(builder.restricted_resources)
-        ),
+        builder.open_resources,
+        builder.restricted_resources,
         builder.builderok,
         builder.manual,
         build_queue,

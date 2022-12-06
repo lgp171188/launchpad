@@ -195,8 +195,8 @@ class BuilderSetView(CleanInfoMixin, LaunchpadView):
     def getBuilderSortKey(builder):
         return (
             not builder.virtualized,
-            tuple(builder.restricted_resources or ()),
-            tuple(builder.open_resources or ()),
+            builder.restricted_resources or (),
+            builder.open_resources or (),
             tuple(p.name for p in builder.processors),
             builder.name,
         )

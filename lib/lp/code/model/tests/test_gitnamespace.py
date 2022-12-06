@@ -158,7 +158,7 @@ class NamespaceMixin:
             repository_name,
             builder_constraints=["gpu"],
         )
-        self.assertEqual(["gpu"], repository.builder_constraints)
+        self.assertEqual(("gpu",), repository.builder_constraints)
 
     def test_getRepositories_no_repositories(self):
         # getRepositories on an IGitNamespace returns a result set of

@@ -13,7 +13,6 @@ from itertools import groupby
 from operator import attrgetter
 
 import pytz
-from storm.databases.postgres import JSON
 from storm.expr import SQL, Cast, Coalesce, Desc, Exists, Or
 from storm.properties import Bool, DateTime, Int, TimeDelta, Unicode
 from storm.references import Reference
@@ -35,7 +34,7 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import JSONContains
+from lp.services.database.stormexpr import ImmutablePgJSON, JSONContains
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty, get_property_cache
 
@@ -101,7 +100,9 @@ class BuildQueue(StormBase):
     processor_id = Int(name="processor")
     processor = Reference(processor_id, "Processor.id")
     virtualized = Bool(name="virtualized")
-    builder_constraints = JSON(name="builder_constraints", allow_none=True)
+    builder_constraints = ImmutablePgJSON(
+        name="builder_constraints", allow_none=True
+    )
 
     @property
     def specific_source(self):
@@ -355,8 +356,7 @@ class BuildQueueSet:
             JSONContains(
                 Cast(
                     json.dumps(
-                        tuple(open_resources or ())
-                        + tuple(restricted_resources or ())
+                        (open_resources or ()) + (restricted_resources or ())
                     ),
                     "jsonb",
                 ),
