@@ -112,6 +112,7 @@ def close_account(username, log):
         ("bug", "owner"),
         ("bug", "who_made_private"),
         ("bugactivity", "person"),
+        ("bugbranch", "registrant"),
         ("bugnomination", "decider"),
         ("bugnomination", "owner"),
         ("bugtask", "owner"),
