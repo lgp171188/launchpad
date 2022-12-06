@@ -6621,7 +6621,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         )
         self.assertEqual(209, response.status)
         with person_logged_in(ANONYMOUS):
-            self.assertEqual(["gpu"], repository_db.builder_constraints)
+            self.assertEqual(("gpu",), repository_db.builder_constraints)
 
     def test_builder_constraints_owner(self):
         # The owner of a repository cannot change its builder constraints

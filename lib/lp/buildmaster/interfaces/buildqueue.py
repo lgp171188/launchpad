@@ -15,10 +15,10 @@ from zope.schema import (
     Choice,
     Datetime,
     Int,
-    List,
     Text,
     TextLine,
     Timedelta,
+    Tuple,
 )
 
 from lp import _
@@ -66,7 +66,7 @@ class IBuildQueue(Interface):
             "The virtualization setting required by this build farm job."
         ),
     )
-    builder_constraints = List(
+    builder_constraints = Tuple(
         required=False,
         value_type=TextLine(),
         description=_(

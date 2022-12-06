@@ -22,7 +22,6 @@ import shlex
 import sys
 import xmlrpc.client
 from collections import OrderedDict
-from copy import copy
 from textwrap import dedent
 
 try:
@@ -81,8 +80,8 @@ class MockBuilder:
         self.virtualized = virtualized
         self.vm_host = vm_host
         self.vm_reset_protocol = vm_reset_protocol
-        self.open_resources = copy(open_resources)
-        self.restricted_resources = copy(restricted_resources)
+        self.open_resources = open_resources
+        self.restricted_resources = restricted_resources
         self.failnotes = None
         self.version = version
         self.clean_status = clean_status

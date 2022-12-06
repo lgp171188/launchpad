@@ -29,7 +29,7 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Int, List, TextLine, Timedelta
+from zope.schema import Bool, Choice, Datetime, Int, TextLine, Timedelta, Tuple
 
 from lp import _
 from lp.buildmaster.enums import BuildFarmJobType, BuildStatus
@@ -109,7 +109,7 @@ class IBuildFarmJobView(Interface):
         ),
     )
 
-    builder_constraints = List(
+    builder_constraints = Tuple(
         title=_("Builder constraints"),
         required=False,
         readonly=True,

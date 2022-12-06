@@ -168,7 +168,7 @@ class TestCIBuild(TestCaseWithFactory):
         )
         bq = build.queueBuild()
         self.assertProvides(bq, IBuildQueue)
-        self.assertEqual(["gpu"], bq.builder_constraints)
+        self.assertEqual(("gpu",), bq.builder_constraints)
 
     def test_is_private(self):
         # A CIBuild is private iff its repository is.
@@ -777,7 +777,7 @@ class TestCIBuildSet(TestCaseWithFactory):
         build = getUtility(ICIBuildSet).requestBuild(
             repository, commit_sha1, das, [[("test", 0)]]
         )
-        self.assertEqual(["gpu"], build.builder_constraints)
+        self.assertEqual(("gpu",), build.builder_constraints)
 
     def test_requestBuildsForRefs_triggers_builds(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu

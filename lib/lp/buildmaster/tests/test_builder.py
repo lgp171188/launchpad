@@ -240,7 +240,7 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                 processor=das.processor,
                 virtualized=True,
                 limit=5,
-                open_resources=["large"],
+                open_resources=("large",),
             ),
         )
         self.assertContentEqual(
@@ -249,7 +249,7 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                 processor=das.processor,
                 virtualized=True,
                 limit=5,
-                open_resources=["large", "gpu"],
+                open_resources=("large", "gpu"),
             ),
         )
         self.assertEqual(
@@ -258,7 +258,7 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                 processor=das.processor,
                 virtualized=True,
                 limit=5,
-                restricted_resources=["gpu"],
+                restricted_resources=("gpu",),
             ),
         )
         self.assertEqual(
@@ -267,8 +267,8 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
                 processor=das.processor,
                 virtualized=True,
                 limit=5,
-                open_resources=["large"],
-                restricted_resources=["gpu"],
+                open_resources=("large",),
+                restricted_resources=("gpu",),
             ),
         )
 

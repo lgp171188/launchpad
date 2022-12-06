@@ -14,6 +14,7 @@ __all__ = [
     "fti_search",
     "Greatest",
     "get_where_for_reference",
+    "ImmutablePgJSON",
     "IsDistinctFrom",
     "IsFalse",
     "IsTrue",
@@ -29,6 +30,9 @@ __all__ = [
     "Values",
     "WithMaterialized",
 ]
+
+import json
+from types import MappingProxyType
 
 from storm import Undef
 from storm.exceptions import ClassInfoError
@@ -49,6 +53,8 @@ from storm.expr import (
     compile,
 )
 from storm.info import get_cls_info, get_obj_info
+from storm.properties import SimpleProperty
+from storm.variables import Variable
 
 
 class BulkUpdate(Expr):
@@ -322,6 +328,85 @@ def compile_with_materialized(compile, with_expr, state):
         tokens.append("MATERIALIZED ")
     tokens.append(compile(with_expr.select, state))
     return "".join(tokens)
+
+
+class ImmutablePgJSONVariable(Variable):
+    """An immutable version of `storm.databases.postgres.JSONVariable`.
+
+    Storm can't easily detect when variables that contain references to
+    mutable content have been changed, and has to work around this by
+    checking the variable's state when the store is flushing current
+    objects.  Unfortunately, this means that if there's a large number of
+    live objects containing mutable-value properties, then flushes become
+    very slow as Storm has to dump many objects to check whether they've
+    changed.
+
+    This class works around this performance problem by disabling the
+    mutable-value tracking, at the expense of users no longer being able to
+    mutate the value in place.  Any mutations must be implemented by
+    assigning to the property, rather than by mutating its value.
+    """
+
+    __slots__ = ()
+
+    def get_state(self):
+        return self._lazy_value, self._dumps(self._value)
+
+    def set_state(self, state):
+        self._lazy_value = state[0]
+        self._value = self._loads(state[1])
+
+    def _make_immutable(self, value):
+        """Return an immutable version of `value`.
+
+        This only supports those types that `json.loads` can return as part
+        of a decoded object.
+        """
+        if isinstance(value, list):
+            return tuple(self._make_immutable(item) for item in value)
+        elif isinstance(value, dict):
+            return MappingProxyType(
+                {k: self._make_immutable(v) for k, v in value.items()}
+            )
+        else:
+            return value
+
+    def parse_set(self, value, from_db):
+        if from_db:
+            value = self._loads(value)
+        return self._make_immutable(value)
+
+    def parse_get(self, value, to_db):
+        if to_db:
+            return self._dumps(value)
+        else:
+            return value
+
+    def _loads(self, value):
+        # psycopg2 >= 2.5 automatically decodes JSON columns for us.
+        return value
+
+    def _dumps(self, value):
+        # See https://github.com/python/cpython/issues/79039.
+        def default(value):
+            if isinstance(value, MappingProxyType):
+                return value.copy()
+            else:
+                raise TypeError(
+                    "Object of type %s is not JSON serializable"
+                    % value.__class__.__name__
+                )
+
+        return json.dumps(value, ensure_ascii=False, default=default)
+
+
+class ImmutablePgJSON(SimpleProperty):
+    """An immutable version of `storm.databases.postgres.JSON`.
+
+    See `ImmutablePgJSONVariable`.
+    """
+
+    variable_class = ImmutablePgJSONVariable
 
 
 def get_where_for_reference(reference, other):
