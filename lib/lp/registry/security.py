@@ -10,6 +10,7 @@ __all__ = [
 
 from storm.expr import Select, Union
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.security import (
     AnonymousAuthorization,
@@ -678,9 +679,10 @@ class PublicOrPrivateTeamsExistence(AuthorizationBase):
             and self.obj.visibility == PersonVisibility.PRIVATE
         ):
             # Grant visibility to people with subscriptions on a private
-            # team's private PPA.
-            subscriptions = getUtility(IArchiveSubscriberSet).getBySubscriber(
-                user.person
+            # team's private PPA.  We can safely skip security checks here: the
+            # user can view all their own subscriptions.
+            subscriptions = removeSecurityProxy(
+                getUtility(IArchiveSubscriberSet).getBySubscriber(user.person)
             )
             subscriber_archive_ids = {sub.archive_id for sub in subscriptions}
             team_ppa_ids = {ppa.id for ppa in self.obj.ppas if ppa.private}
