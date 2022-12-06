@@ -122,6 +122,7 @@ def close_account(username, log):
         ("codeimportjob", "requesting_user"),
         ("codeimportevent", "person"),
         ("codeimportresult", "requesting_user"),
+        ("codereviewvote", "reviewer"),
         ("distroarchseriesfilter", "creator"),
         ("faq", "last_updated_by"),
         ("featureflagchangelogentry", "person"),
