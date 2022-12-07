@@ -22,7 +22,11 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
-from lp.code.enums import CodeImportResultStatus, TargetRevisionControlSystems
+from lp.code.enums import (
+    CodeImportResultStatus,
+    CodeReviewVote,
+    TargetRevisionControlSystems,
+)
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
@@ -754,6 +758,22 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, product.owner)
+
+    def test_skips_codereviewvote_reviewer(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        merge_proposal = self.factory.makeBranchMergeProposal(
+            reviewer=person, registrant=self.factory.makePerson()
+        )
+        merge_proposal.createComment(
+            person,
+            vote=CodeReviewVote.APPROVE,
+        )
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
 
     def test_skips_code_import(self):
         self.useFixture(GitHostingFixture())
