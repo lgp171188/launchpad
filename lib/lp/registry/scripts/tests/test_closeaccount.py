@@ -426,6 +426,20 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
+    def test_skips_po_template_owners(self):
+        person = self.factory.makePerson()
+        productseries = self.factory.makeProductSeries()
+        potemplate = self.factory.makePOTemplate(
+            owner=person, productseries=productseries
+        )
+        potemplate.owner = person
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_archive_subscriptions_and_tokens(self):
         person = self.factory.makePerson()
         ppa = self.factory.makeArchive(private=True)
