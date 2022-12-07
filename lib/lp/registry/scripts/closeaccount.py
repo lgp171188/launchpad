@@ -145,6 +145,7 @@ def close_account(username, log):
         ("pofile", "lasttranslator"),
         ("pofile", "owner"),
         ("pofiletranslator", "person"),
+        ("potemplate", "owner"),
         ("product", "registrant"),
         ("question", "answerer"),
         ("questionreopening", "answerer"),
