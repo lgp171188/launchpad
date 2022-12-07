@@ -321,6 +321,18 @@ class TestCloseAccount(TestCaseWithFactory):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
 
+    def test_skips_bugbranch_registrant(self):
+        person = self.factory.makePerson()
+        person_id = person.id
+        account_id = person.account.id
+        bug = self.factory.makeBug()
+        branch = self.factory.makeBranch()
+        bug.linkBranch(branch, person)
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_handles_packaging_references(self):
         person = self.factory.makePerson()
         person_id = person.id
