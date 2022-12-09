@@ -384,6 +384,17 @@ class EditDistributionMirrorByOwnerOrDistroOwnerOrMirrorAdminsOrAdmins(
         )
 
 
+class ModerateDistributionMirror(AuthorizationBase):
+    permission = "launchpad.Moderate"
+    usedfor = IDistributionMirror
+
+    def checkAuthenticated(self, user):
+        return (
+            self.forwardCheckAuthenticated(user, self.obj, "launchpad.Edit")
+            or user.in_launchpad_developers
+        )
+
+
 class ViewDistributionMirror(AnonymousAuthorization):
     """Anyone can view an IDistributionMirror."""
 

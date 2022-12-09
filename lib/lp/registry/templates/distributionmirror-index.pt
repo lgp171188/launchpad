@@ -157,7 +157,7 @@
     </div>
   </tal:main>
 
-  <tal:side metal:fill-slot="side" condition="context/required:launchpad.Edit">
+  <tal:side metal:fill-slot="side" condition="context/required:launchpad.Moderate">
     <tal:menu replace="structure context/@@+global-actions" />
   </tal:side>
 </body>
