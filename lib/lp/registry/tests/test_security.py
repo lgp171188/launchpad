@@ -125,7 +125,9 @@ class TestPublicOrPrivateTeamsExistence(TestCaseWithFactory):
                 archive = self.factory.makeArchive(
                     owner=private_team, private=True
                 )
-                archive.newSubscription(person, team_owner)
+                archive.newSubscription(
+                    self.factory.makeTeam(owner=person), team_owner
+                )
 
         def check_team_limited_view():
             person.clearInTeamCache()
