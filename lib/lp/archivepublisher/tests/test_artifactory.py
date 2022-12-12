@@ -409,6 +409,7 @@ class TestArtifactoryPool(TestCase):
             filename="bar-1.0.tar.gz",
             release_type=FakeReleaseType.SOURCE,
             release_id=1,
+            filetype=SourcePackageFileType.GENERIC,
             user_defined_fields=[
                 ("name", "bar"),
                 ("version", "1.0"),
@@ -418,6 +419,8 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(
             {
                 PurePath("bar/1.0/bar-1.0.tar.gz"): {
+                    "generic.name": ["bar"],
+                    "generic.version": ["1.0"],
                     "launchpad.release-id": ["source:1"],
                     "launchpad.source-name": ["bar"],
                     "launchpad.source-version": ["1.0"],
@@ -1219,6 +1222,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo-package"],
                 "launchpad.source-version": ["1.0"],
@@ -1232,6 +1237,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         pool.updateProperties(spr.name, spr.version, [sprf], spphs)
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo-package"],
                 "launchpad.source-version": ["1.0"],
@@ -1302,6 +1309,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
@@ -1315,6 +1324,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],

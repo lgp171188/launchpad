@@ -22,9 +22,10 @@ from packaging import utils as packaging_utils
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
+from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
-from lp.soyuz.enums import ArchiveRepositoryFormat
+from lp.soyuz.enums import ArchiveRepositoryFormat, BinaryPackageFileType
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
@@ -298,6 +299,15 @@ class ArtifactoryPoolEntry:
                     # likely that a path will begin with "spdx:" so there
                     # probably won't be significant confusion in practice.
                     properties["soss.license"] = [license_field["path"]]
+        if self.pub_file.filetype in (
+            SourcePackageFileType.GENERIC,
+            BinaryPackageFileType.GENERIC,
+        ):
+            package_name = release.getUserDefinedField("name")
+            if package_name is None:
+                package_name = self.source_name
+            properties["generic.name"] = [package_name]
+            properties["generic.version"] = [self.source_version]
         return properties
 
     def addFile(self):
