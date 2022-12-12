@@ -272,8 +272,10 @@ class ArtifactoryPoolEntry:
         # (private).
         if ISourcePackageReleaseFile.providedBy(self.pub_file):
             release = self.pub_file.sourcepackagerelease
+            properties["soss.type"] = ["source"]
         elif IBinaryPackageFile.providedBy(self.pub_file):
             release = self.pub_file.binarypackagerelease
+            properties["soss.type"] = ["binary"]
         else:
             # There are no other kinds of `IPackageReleaseFile` at the moment.
             raise AssertionError("Unsupported file: %r" % self.pub_file)
