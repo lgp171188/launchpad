@@ -1446,7 +1446,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         )
 
         self.assertEqual(
-            ["text with special characters: ;=|,\\"],
+            ["text with special characters: ;=|,"],
             path.properties["pypi.summary"],
         )
 
