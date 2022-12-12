@@ -61,7 +61,7 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
         text = "Change details"
         return Link("+edit", text, icon="edit")
 
-    @enabled_with_permission("launchpad.Edit")
+    @enabled_with_permission("launchpad.Moderate")
     def proberlogs(self):
         text = "Prober logs"
         enabled = self.context.last_probe_record is not None

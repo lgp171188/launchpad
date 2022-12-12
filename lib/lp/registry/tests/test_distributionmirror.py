@@ -18,11 +18,14 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
     TestCaseWithFactory,
+    admin_logged_in,
     api_url,
+    celebrity_logged_in,
     login,
     login_as,
     person_logged_in,
@@ -56,6 +59,22 @@ class TestDistributionMirror(TestCaseWithFactory):
             archseries, pocket, component
         )
         removeSecurityProxy(bin_mirror).freshness = freshness
+
+    def test_distributionmirror_moderate_permission(self):
+        with admin_logged_in():
+            self.assertTrue(
+                check_permission("launchpad.Moderate", self.archive_mirror)
+            )
+
+        with person_logged_in(self.archive_mirror.distribution.owner):
+            self.assertTrue(
+                check_permission("launchpad.Moderate", self.archive_mirror)
+            )
+
+        with celebrity_logged_in("launchpad_developers"):
+            self.assertTrue(
+                check_permission("launchpad.Moderate", self.archive_mirror)
+            )
 
     def test_archive_mirror_without_content_should_be_disabled(self):
         self.assertTrue(self.archive_mirror.shouldDisable())
