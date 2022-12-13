@@ -3602,8 +3602,10 @@ class LaunchpadObjectFactory(ObjectFactory):
         # processor to go with it.
         if architecturetag is None:
             architecturetag = self.getUniqueString("arch")
-        return distroseries.newArch(
-            architecturetag, processor, official, owner, enabled
+        return ProxyFactory(
+            distroseries.newArch(
+                architecturetag, processor, official, owner, enabled
+            )
         )
 
     def makeBuildableDistroArchSeries(
@@ -5463,12 +5465,14 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
         if creator is None:
             creator = self.makePerson()
-        return DistroArchSeriesFilter(
-            distroarchseries=distroarchseries,
-            packageset=packageset,
-            sense=sense,
-            creator=creator,
-            date_created=date_created,
+        return ProxyFactory(
+            DistroArchSeriesFilter(
+                distroarchseries=distroarchseries,
+                packageset=packageset,
+                sense=sense,
+                creator=creator,
+                date_created=date_created,
+            )
         )
 
     def getAnyPocket(self):
