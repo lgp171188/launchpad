@@ -360,11 +360,14 @@ class ArtifactoryPoolEntry:
         # "|", and "=" (and handles URL-encoding at a lower layer).  In
         # practice, backslash must apparently not be quoted, and ";" must be
         # quoted as otherwise ";" within items will be confused with a
-        # property separator.  This is not very satisfactory as we're
-        # essentially playing core wars with the artifactory module, but
-        # this solves the problem for now.
+        # property separator; we must also remove any trailing backslashes as
+        # they'll cause any following property to be interpreted as part of
+        # this property value.  This is not very satisfactory as we're
+        # essentially playing core wars with the artifactory module, and
+        # removing trailing backslashes unavoidably loses some information,
+        # but this solves the problem for now.
         new_properties = {
-            key: [v.replace(";", r"\;") for v in value]
+            key: [v.rstrip("\\").replace(";", r"\;") for v in value]
             for key, value in new_properties.items()
         }
         if old_properties != new_properties:
