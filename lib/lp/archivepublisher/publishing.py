@@ -1249,6 +1249,9 @@ class Publisher:
             # about to delete the only file and need to know to prune it.
             by_hashes.registerChild(os.path.dirname(strip_dists(db_file.path)))
 
+            # XXX cjwatson 2022-12-13: This should check
+            # db_file.date_superseded instead once that column has been
+            # backfilled.
             if db_file.scheduled_deletion_date is None:
                 # XXX wgrant 2020-09-16: Once we have
                 # ArchiveFile.date_superseded in place, this should be a DB
@@ -1285,12 +1288,17 @@ class Publisher:
             if key not in new_live_files
         ]
         if old_files:
-            for container, path, sha256 in archive_file_set.scheduleDeletion(
+            archive_file_set.scheduleDeletion(
                 old_files, timedelta(days=BY_HASH_STAY_OF_EXECUTION)
-            ):
+            )
+            for db_file in old_files:
                 self.log.debug(
                     "by-hash: Scheduled %s for %s in %s for deletion"
-                    % (sha256, path, container)
+                    % (
+                        db_file.library_file.content.sha256,
+                        db_file.path,
+                        db_file.container,
+                    )
                 )
 
         # Ensure that all the current index files are in by-hash and have
@@ -1302,39 +1310,21 @@ class Publisher:
             file_key = (path, sha256)
             full_path = os.path.join(self._config.distsroot, real_path)
             assert os.path.exists(full_path)  # guaranteed by _getCurrentFiles
-            # Ensure there's a current ArchiveFile row, either by finding a
-            # matching non-live file and marking it live again, or by
-            # creating a new one based on the file on disk.
+            # If there isn't a matching live ArchiveFile row, create one.
             if file_key not in existing_live_files:
-                if file_key in existing_nonlive_files:
-                    db_file = existing_nonlive_files[file_key]
-                    keep_files.add(db_file)
-                else:
-                    with open(full_path, "rb") as fileobj:
-                        db_file = archive_file_set.newFromFile(
-                            self.archive,
-                            container,
-                            os.path.join("dists", path),
-                            fileobj,
-                            size,
-                            filenameToContentType(path),
-                        )
+                with open(full_path, "rb") as fileobj:
+                    db_file = archive_file_set.newFromFile(
+                        self.archive,
+                        container,
+                        os.path.join("dists", path),
+                        fileobj,
+                        size,
+                        filenameToContentType(path),
+                    )
             # And ensure the by-hash links exist on disk.
             if not by_hashes.known(path, "SHA256", sha256):
                 by_hashes.add(
                     path, db_file.library_file, copy_from_path=real_path
-                )
-
-        # Unschedule the deletion of any ArchiveFiles which are current in
-        # the archive this round but that were previously scheduled for
-        # deletion in the DB.
-        if keep_files:
-            for container, path, sha256 in archive_file_set.unscheduleDeletion(
-                keep_files
-            ):
-                self.log.debug(
-                    "by-hash: Unscheduled %s for %s in %s for deletion"
-                    % (sha256, path, container)
                 )
 
         # Remove any files from disk that aren't recorded in the database.

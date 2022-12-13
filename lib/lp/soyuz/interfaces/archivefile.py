@@ -1,4 +1,4 @@
-# Copyright 2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for a file in an archive."""
@@ -50,6 +50,20 @@ class IArchiveFile(Interface):
         schema=ILibraryFileAlias,
         required=True,
         readonly=True,
+    )
+
+    date_created = Datetime(
+        title=_("The date when this file was created."),
+        # XXX cjwatson 2018-04-17: Should be required=True, but we need to
+        # backfill existing rows first.
+        required=False,
+        readonly=False,
+    )
+
+    date_superseded = Datetime(
+        title=_("The date when this file was scheduled for future deletion."),
+        required=False,
+        readonly=False,
     )
 
     scheduled_deletion_date = Datetime(
@@ -116,19 +130,6 @@ class IArchiveFileSet(Interface):
         :param archive_files: The `IArchiveFile`s to schedule for deletion.
         :param stay_of_execution: A `timedelta`; schedule files for deletion
             this amount of time in the future.
-        :return: An iterable of (container, path, sha256) for files that
-            were scheduled for deletion.
-        """
-
-    def unscheduleDeletion(archive_files):
-        """Unschedule these archive files for deletion.
-
-        This is useful in the case when the new content of a file is
-        identical to a version that was previously condemned.
-
-        :param archive_files: The `IArchiveFile`s to unschedule for deletion.
-        :return: An iterable of (container, path, sha256) for files that
-            were unscheduled for deletion.
         """
 
     def getContainersToReap(archive, container_prefix=None):
