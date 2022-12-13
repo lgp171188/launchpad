@@ -3029,6 +3029,12 @@ class TestUpdateByHash(TestPublisherBase):
                 "lp.soyuz.model.archivefile._now", lambda: self.times[-1]
             )
         )
+        self.useFixture(
+            MonkeyPatch(
+                "lp.archivepublisher.publishing.get_transaction_timestamp",
+                lambda _: self.times[-1],
+            )
+        )
 
     def advanceTime(self, delta=None, absolute=None):
         if delta is not None:

@@ -140,11 +140,10 @@ class IArchiveFileSet(Interface):
         :return: An iterable of matched container names.
         """
 
-    def reap(archive, container=None):
-        """Delete archive files that are past their scheduled deletion date.
+    def delete(archive_files):
+        """Delete these archive files.
 
-        :param archive: Delete files from this `IArchive`.
-        :param container: Delete only files with this container.
+        :param archive_files: The `IArchiveFile`s to unschedule for deletion.
         :return: An iterable of (container, path, sha256) for files that
             were deleted.
         """

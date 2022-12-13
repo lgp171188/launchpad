@@ -256,40 +256,22 @@ class TestArchiveFile(TestCaseWithFactory):
             ),
         )
 
-    def test_reap(self):
+    def test_delete(self):
         archive = self.factory.makeArchive()
         archive_files = [
-            self.factory.makeArchiveFile(archive=archive, container="foo")
-            for _ in range(3)
+            self.factory.makeArchiveFile(archive=archive) for _ in range(4)
         ]
-        archive_files.append(self.factory.makeArchiveFile(archive=archive))
-        other_archive = self.factory.makeArchive()
-        archive_files.append(
-            self.factory.makeArchiveFile(archive=other_archive)
-        )
-        now = get_transaction_timestamp(Store.of(archive_files[0]))
-        removeSecurityProxy(
-            archive_files[0]
-        ).scheduled_deletion_date = now - timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[1]
-        ).scheduled_deletion_date = now + timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[3]
-        ).scheduled_deletion_date = now - timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[4]
-        ).scheduled_deletion_date = now - timedelta(days=1)
-        archive_file_set = getUtility(IArchiveFileSet)
         expected_rows = [
             (
-                "foo",
-                archive_files[0].path,
-                archive_files[0].library_file.content.sha256,
-            ),
+                archive_file.container,
+                archive_file.path,
+                archive_file.library_file.content.sha256,
+            )
+            for archive_file in archive_files[:2]
         ]
-        rows = archive_file_set.reap(archive, container="foo")
+        archive_file_set = getUtility(IArchiveFileSet)
+        rows = archive_file_set.delete(archive_files[:2])
         self.assertContentEqual(expected_rows, rows)
         self.assertContentEqual(
-            archive_files[1:4], archive_file_set.getByArchive(archive)
+            archive_files[2:], archive_file_set.getByArchive(archive)
         )
