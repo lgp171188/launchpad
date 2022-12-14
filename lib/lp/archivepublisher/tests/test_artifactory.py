@@ -192,6 +192,7 @@ class TestArtifactoryPool(TestCase):
                 "launchpad.release-id": ["binary:1"],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0+1"],
+                "soss.type": ["binary"],
             },
             foo.getProperties(),
         )
@@ -317,11 +318,13 @@ class TestArtifactoryPool(TestCase):
                     "launchpad.release-id": ["binary:1"],
                     "launchpad.source-name": ["foo"],
                     "launchpad.source-version": ["1.0"],
+                    "soss.type": ["binary"],
                 },
                 PurePath("pool/f/foo/foo-1.1.deb"): {
                     "launchpad.release-id": ["binary:2"],
                     "launchpad.source-name": ["foo"],
                     "launchpad.source-version": ["1.1"],
+                    "soss.type": ["binary"],
                 },
             },
             pool.getAllArtifacts(
@@ -345,6 +348,7 @@ class TestArtifactoryPool(TestCase):
                     "launchpad.release-id": ["binary:3"],
                     "launchpad.source-name": ["bar"],
                     "launchpad.source-version": ["1.0"],
+                    "soss.type": ["binary"],
                 },
             },
             pool.getAllArtifacts(
@@ -369,6 +373,7 @@ class TestArtifactoryPool(TestCase):
                     "launchpad.release-id": ["binary:4"],
                     "launchpad.source-name": ["qux"],
                     "launchpad.source-version": ["1.0"],
+                    "soss.type": ["binary"],
                 },
             },
             pool.getAllArtifacts(
@@ -393,6 +398,7 @@ class TestArtifactoryPool(TestCase):
                     "launchpad.release-id": ["source:5"],
                     "launchpad.source-name": ["go-module"],
                     "launchpad.source-version": ["v0.0.1"],
+                    "soss.type": ["source"],
                 },
             },
             pool.getAllArtifacts(
@@ -409,6 +415,7 @@ class TestArtifactoryPool(TestCase):
             filename="bar-1.0.tar.gz",
             release_type=FakeReleaseType.SOURCE,
             release_id=1,
+            filetype=SourcePackageFileType.GENERIC,
             user_defined_fields=[
                 ("name", "bar"),
                 ("version", "1.0"),
@@ -418,9 +425,12 @@ class TestArtifactoryPool(TestCase):
         self.assertEqual(
             {
                 PurePath("bar/1.0/bar-1.0.tar.gz"): {
+                    "generic.name": ["bar"],
+                    "generic.version": ["1.0"],
                     "launchpad.release-id": ["source:1"],
                     "launchpad.source-name": ["bar"],
                     "launchpad.source-version": ["1.0"],
+                    "soss.type": ["source"],
                 },
             },
             pool.getAllArtifacts(
@@ -453,6 +463,7 @@ class TestArtifactoryPool(TestCase):
                     "launchpad.source-name": ["bar"],
                     "launchpad.source-version": ["1.0"],
                     "pypi.requires.python": [""],
+                    "soss.type": ["binary"],
                 },
             },
             pool.getAllArtifacts(
@@ -521,6 +532,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -535,6 +547,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.name": [spr.name],
                 "deb.version": [spr.version],
                 "soss.license": ["debian/copyright"],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -594,6 +607,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -609,6 +623,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.component": ["main"],
                 "deb.architecture": [processor.name],
                 "soss.license": ["/usr/share/doc/foo/copyright"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -662,6 +677,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -679,6 +695,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     sorted(das.architecturetag for das in dases)
                 ),
                 "soss.license": ["/usr/share/doc/foo/copyright"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -738,6 +755,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -754,6 +772,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -814,6 +833,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -830,6 +850,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -889,6 +910,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -905,6 +927,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -981,6 +1004,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -997,6 +1021,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1064,6 +1089,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1080,6 +1106,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1147,6 +1174,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1163,6 +1191,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1219,6 +1248,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo-package"],
                 "launchpad.source-version": ["1.0"],
@@ -1226,12 +1257,15 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
         pool.updateProperties(spr.name, spr.version, [sprf], spphs)
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["source:%d" % spr.id],
                 "launchpad.source-name": ["foo-package"],
                 "launchpad.source-version": ["1.0"],
@@ -1242,6 +1276,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["source"],
             },
             path.properties,
         )
@@ -1302,6 +1337,8 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         self.assertFalse(path.is_symlink())
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
@@ -1309,12 +1346,15 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
         pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
         self.assertEqual(
             {
+                "generic.name": ["foo"],
+                "generic.version": ["1.0"],
                 "launchpad.release-id": ["binary:%d" % bpr.id],
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
@@ -1325,6 +1365,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                     ci_build.git_repository.getCodebrowseUrl()
                 ],
                 "soss.commit_id": [ci_build.commit_sha1],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1377,6 +1418,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "launchpad.source-name": ["foo"],
                 "launchpad.source-version": ["1.0"],
                 "deb.version": ["1.0"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )
@@ -1393,6 +1435,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
                 "deb.architecture": [das.architecturetag],
                 "deb.version": ["1.0"],
                 "soss.license": ["/usr/share/doc/foo/copyright"],
+                "soss.type": ["binary"],
             },
             path.properties,
         )

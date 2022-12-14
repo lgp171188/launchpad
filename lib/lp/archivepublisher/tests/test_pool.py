@@ -10,8 +10,9 @@ from lazr.enum import EnumeratedType, Item
 from zope.interface import alsoProvides, implementer
 
 from lp.archivepublisher.diskpool import DiskPool, poolify, unpoolify
+from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.log.logger import BufferLogger
-from lp.soyuz.enums import ArchiveRepositoryFormat
+from lp.soyuz.enums import ArchiveRepositoryFormat, BinaryPackageFileType
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
     IPackageReleaseFile,
@@ -78,11 +79,13 @@ class FakePackageReleaseFile:
         filename,
         release_type=FakeReleaseType.BINARY,
         release_id=1,
+        filetype=None,
         user_defined_fields=None,
         ci_build=None,
     ):
         self.libraryfile = FakeLibraryFileAlias(contents, filename)
         if release_type == FakeReleaseType.SOURCE:
+            self.filetype = filetype or SourcePackageFileType.DSC
             self.sourcepackagereleaseID = release_id
             self.sourcepackagerelease = FakePackageRelease(
                 release_id,
@@ -91,6 +94,7 @@ class FakePackageReleaseFile:
             )
             alsoProvides(self, ISourcePackageReleaseFile)
         elif release_type == FakeReleaseType.BINARY:
+            self.filetype = filetype or BinaryPackageFileType.DEB
             self.binarypackagereleaseID = release_id
             self.binarypackagerelease = FakePackageRelease(
                 release_id, user_defined_fields=user_defined_fields
@@ -107,6 +111,7 @@ class PoolTestingFile:
         filename,
         release_type=FakeReleaseType.BINARY,
         release_id=1,
+        filetype=None,
         user_defined_fields=None,
     ):
         self.pool = pool
@@ -117,6 +122,7 @@ class PoolTestingFile:
             filename,
             release_type=release_type,
             release_id=release_id,
+            filetype=filetype,
             user_defined_fields=user_defined_fields,
         )
 

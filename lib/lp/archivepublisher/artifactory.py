@@ -22,9 +22,10 @@ from packaging import utils as packaging_utils
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
+from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
-from lp.soyuz.enums import ArchiveRepositoryFormat
+from lp.soyuz.enums import ArchiveRepositoryFormat, BinaryPackageFileType
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
@@ -205,6 +206,10 @@ class ArtifactoryPoolEntry:
         the AQL search via `ArtifactoryPool.getAllArtifacts`, and so
         `updateProperties` will always try to update them even if there
         aren't really any changes.
+
+        We also set an assortment of additional metadata items, specified in
+        https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
+        (private).
         """
         properties = {}
         properties["launchpad.release-id"] = [release_id]
@@ -271,8 +276,14 @@ class ArtifactoryPoolEntry:
         # (private).
         if ISourcePackageReleaseFile.providedBy(self.pub_file):
             release = self.pub_file.sourcepackagerelease
+            # Allow automation built on top of Artifactory to tell that this
+            # is a source package.
+            properties["soss.type"] = ["source"]
         elif IBinaryPackageFile.providedBy(self.pub_file):
             release = self.pub_file.binarypackagerelease
+            # Allow automation built on top of Artifactory to tell that this
+            # is a binary package.
+            properties["soss.type"] = ["binary"]
         else:
             # There are no other kinds of `IPackageReleaseFile` at the moment.
             raise AssertionError("Unsupported file: %r" % self.pub_file)
@@ -298,6 +309,22 @@ class ArtifactoryPoolEntry:
                     # likely that a path will begin with "spdx:" so there
                     # probably won't be significant confusion in practice.
                     properties["soss.license"] = [license_field["path"]]
+        if self.pub_file.filetype in (
+            SourcePackageFileType.GENERIC,
+            BinaryPackageFileType.GENERIC,
+        ):
+            # For most artifact types, Artifactory sets "name" and "version"
+            # properties itself by scanning the artifact.  However, for
+            # generic artifacts it obviously can't do this, since the
+            # content doesn't necessarily have any particular known
+            # structure.  Since we already require generic artifacts to have
+            # "name" and "version" output properties set by the build job,
+            # fill in this gap by passing those on to Artifactory.
+            package_name = release.getUserDefinedField("name")
+            if package_name is None:
+                package_name = self.source_name
+            properties["generic.name"] = [package_name]
+            properties["generic.version"] = [self.source_version]
         return properties
 
     def addFile(self):
