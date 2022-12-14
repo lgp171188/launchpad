@@ -206,6 +206,10 @@ class ArtifactoryPoolEntry:
         the AQL search via `ArtifactoryPool.getAllArtifacts`, and so
         `updateProperties` will always try to update them even if there
         aren't really any changes.
+
+        We also set an assortment of additional metadata items, specified in
+        https://docs.google.com/spreadsheets/d/15Xkdi-CRu2NiQfLoclP5PKW63Zw6syiuao8VJG7zxvw
+        (private).
         """
         properties = {}
         properties["launchpad.release-id"] = [release_id]
@@ -272,9 +276,13 @@ class ArtifactoryPoolEntry:
         # (private).
         if ISourcePackageReleaseFile.providedBy(self.pub_file):
             release = self.pub_file.sourcepackagerelease
+            # Allow automation built on top of Artifactory to tell that this
+            # is a source package.
             properties["soss.type"] = ["source"]
         elif IBinaryPackageFile.providedBy(self.pub_file):
             release = self.pub_file.binarypackagerelease
+            # Allow automation built on top of Artifactory to tell that this
+            # is a binary package.
             properties["soss.type"] = ["binary"]
         else:
             # There are no other kinds of `IPackageReleaseFile` at the moment.
@@ -305,6 +313,13 @@ class ArtifactoryPoolEntry:
             SourcePackageFileType.GENERIC,
             BinaryPackageFileType.GENERIC,
         ):
+            # For most artifact types, Artifactory sets "name" and "version"
+            # properties itself by scanning the artifact.  However, for
+            # generic artifacts it obviously can't do this, since the
+            # content doesn't necessarily have any particular known
+            # structure.  Since we already require generic artifacts to have
+            # "name" and "version" output properties set by the build job,
+            # fill in this gap by passing those on to Artifactory.
             package_name = release.getUserDefinedField("name")
             if package_name is None:
                 package_name = self.source_name
