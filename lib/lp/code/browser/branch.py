@@ -219,7 +219,7 @@ class BranchEditMenu(NavigationMenu):
         text = "Change branch details"
         return Link("+edit", text, icon="edit")
 
-    @enabled_with_permission("launchpad.Edit")
+    @enabled_with_permission("launchpad.Moderate")
     def delete(self):
         text = "Delete branch"
         return Link("+delete", text, icon="trash-icon")

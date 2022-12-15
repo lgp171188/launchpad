@@ -4221,6 +4221,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["debian/copyright"],
+                "soss.type": ["source"],
             },
             source_path.properties,
         )
@@ -4241,6 +4242,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.type": ["binary"],
             },
             binary_path.properties,
         )
@@ -4318,6 +4320,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["debian/copyright"],
+                "soss.type": ["source"],
             },
             dsc_path.properties,
         )
@@ -4333,6 +4336,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["debian/copyright"],
+                "soss.type": ["source"],
             },
             tar_path.properties,
         )
@@ -4347,6 +4351,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.type": ["binary"],
             },
             binary_path.properties,
         )
@@ -4408,6 +4413,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["debian/copyright"],
+                "soss.type": ["source"],
             },
             source_path.properties,
         )
@@ -4419,6 +4425,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.type": ["binary"],
             },
             binary_path.properties,
         )

@@ -14,7 +14,7 @@ from lp.soyuz.interfaces.distroarchseriesfilter import (
     IDistroArchSeriesFilter,
     IDistroArchSeriesFilterSet,
 )
-from lp.testing import TestCaseWithFactory, person_logged_in
+from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
@@ -25,7 +25,8 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
     def test_implements_interfaces(self):
         # DistroArchSeriesFilter implements IDistroArchSeriesFilter.
         dasf = self.factory.makeDistroArchSeriesFilter()
-        self.assertProvides(dasf, IDistroArchSeriesFilter)
+        with admin_logged_in():
+            self.assertProvides(dasf, IDistroArchSeriesFilter)
 
     def test___repr__(self):
         # `DistroArchSeriesFilter` objects have an informative __repr__.
@@ -42,7 +43,8 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         dasf = self.factory.makeDistroArchSeriesFilter(
             sense=DistroArchSeriesFilterSense.INCLUDE
         )
-        dasf.packageset.add(spns[:2])
+        with admin_logged_in():
+            dasf.packageset.add(spns[:2])
         self.assertTrue(dasf.isSourceIncluded(spns[0]))
         self.assertTrue(dasf.isSourceIncluded(spns[1]))
         self.assertFalse(dasf.isSourceIncluded(spns[2]))
@@ -54,7 +56,8 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         dasf = self.factory.makeDistroArchSeriesFilter(
             sense=DistroArchSeriesFilterSense.EXCLUDE
         )
-        dasf.packageset.add(spns[:2])
+        with admin_logged_in():
+            dasf.packageset.add(spns[:2])
         self.assertFalse(dasf.isSourceIncluded(spns[0]))
         self.assertFalse(dasf.isSourceIncluded(spns[1]))
         self.assertTrue(dasf.isSourceIncluded(spns[2]))
