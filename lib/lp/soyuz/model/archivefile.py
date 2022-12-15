@@ -216,18 +216,17 @@ class ArchiveFileSet:
         )
 
     @staticmethod
-    def reap(archive, container=None):
+    def delete(archive_files):
         """See `IArchiveFileSet`."""
         # XXX cjwatson 2016-03-30 bug=322972: Requires manual SQL due to
         # lack of support for DELETE FROM ... USING ... in Storm.
         clauses = [
-            ArchiveFile.archive == archive,
-            ArchiveFile.scheduled_deletion_date < _now(),
+            ArchiveFile.id.is_in(
+                {archive_file.id for archive_file in archive_files}
+            ),
             ArchiveFile.library_file_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
         ]
-        if container is not None:
-            clauses.append(ArchiveFile.container == container)
         where = convert_storm_clause_to_string(And(*clauses))
         return list(
             IPrimaryStore(ArchiveFile).execute(
