@@ -143,7 +143,7 @@ class IArchiveFileSet(Interface):
     def delete(archive_files):
         """Delete these archive files.
 
-        :param archive_files: The `IArchiveFile`s to unschedule for deletion.
+        :param archive_files: The `IArchiveFile`s to delete.
         :return: An iterable of (container, path, sha256) for files that
             were deleted.
         """
