@@ -8,7 +8,7 @@ __all__ = [
     "IBuildFarmJobBehaviour",
 ]
 
-from typing import Any, Dict, Generator, List, Union
+from typing import Any, Dict, Generator, List, Tuple, Union
 
 from typing_extensions import TypedDict
 from zope.interface import Attribute, Interface
@@ -71,6 +71,8 @@ BuildArgs = TypedDict(
         "build_source_tarball": bool,
         # The URL of this build.
         "build_url": str,
+        # Builder resource tags required by this build farm job.
+        "builder_constraints": Tuple[str],
         # Source snap channels to use for this build [charm, ci, snap].
         "channels": Dict[str, str],
         # The date stamp to set in the built image [livefs].

@@ -299,6 +299,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
+                    "builder_constraints": Is(None),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": Equals(
@@ -434,6 +435,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
+                    "builder_constraints": Is(None),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": Equals(
@@ -608,6 +610,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
+                    "builder_constraints": Is(None),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": AfterPreprocessing(
@@ -650,6 +653,18 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                 }
             ),
         )
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_builder_constraints(self):
+        git_repository = self.factory.makeGitRepository(
+            builder_constraints=["gpu"]
+        )
+        job = self.makeJob(
+            stages=[[("test", 0)]], git_repository=git_repository
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(["gpu"], args["builder_constraints"])
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
