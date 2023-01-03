@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A file in an archive."""
@@ -12,7 +12,6 @@ import os.path
 import re
 
 import pytz
-from storm.databases.postgres import Returning
 from storm.locals import And, DateTime, Int, Reference, Storm, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -22,10 +21,19 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
-from lp.services.database.stormexpr import BulkUpdate, RegexpMatch
+from lp.services.database.stormexpr import RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.soyuz.interfaces.archivefile import IArchiveFile, IArchiveFileSet
+
+
+def _now():
+    """Get the current transaction timestamp.
+
+    Tests can override this with a Storm expression or a `datetime` to
+    simulate time changes.
+    """
+    return UTC_NOW
 
 
 @implementer(IArchiveFile)
@@ -46,6 +54,18 @@ class ArchiveFile(Storm):
     library_file_id = Int(name="library_file", allow_none=False)
     library_file = Reference(library_file_id, "LibraryFileAlias.id")
 
+    date_created = DateTime(
+        name="date_created",
+        tzinfo=pytz.UTC,
+        # XXX cjwatson 2018-04-17: Should be allow_none=False, but we need
+        # to backfill existing rows first.
+        allow_none=True,
+    )
+
+    date_superseded = DateTime(
+        name="date_superseded", tzinfo=pytz.UTC, allow_none=True
+    )
+
     scheduled_deletion_date = DateTime(
         name="scheduled_deletion_date", tzinfo=pytz.UTC, allow_none=True
     )
@@ -57,16 +77,9 @@ class ArchiveFile(Storm):
         self.container = container
         self.path = path
         self.library_file = library_file
+        self.date_created = _now()
+        self.date_superseded = None
         self.scheduled_deletion_date = None
-
-
-def _now():
-    """Get the current transaction timestamp.
-
-    Tests can override this with a Storm expression or a `datetime` to
-    simulate time changes.
-    """
-    return UTC_NOW
 
 
 @implementer(IArchiveFileSet)
@@ -145,60 +158,15 @@ class ArchiveFileSet:
     @staticmethod
     def scheduleDeletion(archive_files, stay_of_execution):
         """See `IArchiveFileSet`."""
-        clauses = [
+        rows = IPrimaryStore(ArchiveFile).find(
+            ArchiveFile,
             ArchiveFile.id.is_in(
                 {archive_file.id for archive_file in archive_files}
             ),
-            ArchiveFile.library_file == LibraryFileAlias.id,
-            LibraryFileAlias.content == LibraryFileContent.id,
-        ]
-        new_date = _now() + stay_of_execution
-        return_columns = [
-            ArchiveFile.container,
-            ArchiveFile.path,
-            LibraryFileContent.sha256,
-        ]
-        return list(
-            IPrimaryStore(ArchiveFile).execute(
-                Returning(
-                    BulkUpdate(
-                        {ArchiveFile.scheduled_deletion_date: new_date},
-                        table=ArchiveFile,
-                        values=[LibraryFileAlias, LibraryFileContent],
-                        where=And(*clauses),
-                    ),
-                    columns=return_columns,
-                )
-            )
         )
-
-    @staticmethod
-    def unscheduleDeletion(archive_files):
-        """See `IArchiveFileSet`."""
-        clauses = [
-            ArchiveFile.id.is_in(
-                {archive_file.id for archive_file in archive_files}
-            ),
-            ArchiveFile.library_file == LibraryFileAlias.id,
-            LibraryFileAlias.content == LibraryFileContent.id,
-        ]
-        return_columns = [
-            ArchiveFile.container,
-            ArchiveFile.path,
-            LibraryFileContent.sha256,
-        ]
-        return list(
-            IPrimaryStore(ArchiveFile).execute(
-                Returning(
-                    BulkUpdate(
-                        {ArchiveFile.scheduled_deletion_date: None},
-                        table=ArchiveFile,
-                        values=[LibraryFileAlias, LibraryFileContent],
-                        where=And(*clauses),
-                    ),
-                    columns=return_columns,
-                )
-            )
+        rows.set(
+            date_superseded=_now(),
+            scheduled_deletion_date=_now() + stay_of_execution,
         )
 
     @staticmethod
