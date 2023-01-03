@@ -15,6 +15,7 @@ __all__ = [
 
 import os.path
 import tempfile
+from typing import List, Tuple
 
 from ampoule.child import AMPChild
 from requests import RequestException, Session
@@ -30,7 +31,7 @@ class DownloadCommand(amp.Command):
         (b"path_to_write", amp.Unicode()),
         (b"timeout", amp.Integer()),
     ]
-    response = []
+    response = []  # type: List[Tuple[bytes, amp.Argument]]
     errors = {
         RequestException: b"REQUEST_ERROR",
         StreamingError: b"STREAMING_ERROR",
