@@ -15,8 +15,10 @@ from lp.testing.layers import RabbitMQLayer
 @contextmanager
 def changed_config(changes):
     config.push("test_changes", changes)
-    yield
-    config.pop("test_changes")
+    try:
+        yield
+    finally:
+        config.pop("test_changes")
 
 
 class TestCeleryWorkerConfiguration(TestCase):
@@ -55,7 +57,7 @@ class TestCeleryWorkerConfiguration(TestCase):
         self.assertEqual("job", config["task_default_exchange"])
         self.assertEqual("launchpad_job", config["task_default_queue"])
         self.assertEqual(("lp.services.job.celeryjob",), config["imports"])
-        self.assertEqual("amqp", config["result_backend"])
+        self.assertEqual("rpc", config["result_backend"])
 
     def test_app_server_configuration(self):
         from lp.services.job.celeryconfig import configure
