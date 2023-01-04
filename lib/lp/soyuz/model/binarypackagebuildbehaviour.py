@@ -8,12 +8,14 @@ __all__ = [
 ]
 
 from collections import OrderedDict
+from typing import Any, Generator
 
 from twisted.internet import defer
 from zope.interface import implementer
 
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -151,7 +153,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         )
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
         Return the extra arguments required by the worker for the given build.
         """
@@ -159,7 +161,7 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         das = build.distro_arch_series
 
         # Build extra arguments.
-        args = yield super().extraBuildArgs(logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         args["arch_indep"] = build.arch_indep
         args["distribution"] = das.distroseries.distribution.name
         args["suite"] = das.distroseries.getSuite(build.pocket)

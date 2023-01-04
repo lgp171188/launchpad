@@ -7,6 +7,8 @@ __all__ = [
     "RecipeBuildBehaviour",
 ]
 
+from typing import Any, Generator
+
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -14,6 +16,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -53,7 +56,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             return None
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
         Return the extra arguments required by the worker for the given build.
         """
@@ -67,7 +70,7 @@ class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             )
 
         # Build extra arguments.
-        args = yield super().extraBuildArgs(logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         args["suite"] = self.build.distroseries.getSuite(self.build.pocket)
         requester = self.build.requester
         if requester.preferredemail is None:

@@ -10,6 +10,7 @@ __all__ = [
 import json
 from configparser import NoSectionError
 from copy import deepcopy
+from typing import Any, Generator
 
 from twisted.internet import defer
 from zope.component import adapter
@@ -20,6 +21,7 @@ from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -164,7 +166,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         )
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """Return extra builder arguments for this build."""
         build = self.build
         if not build.stages:
@@ -173,7 +175,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 % (build.git_repository.unique_name, build.commit_sha1)
             )
 
-        args = yield super().extraBuildArgs(logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         yield self.addProxyArgs(args)
         (
             args["archives"],

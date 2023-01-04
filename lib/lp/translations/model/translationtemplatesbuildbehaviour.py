@@ -22,6 +22,7 @@ from zope.interface import implementer
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -68,7 +69,7 @@ class TranslationTemplatesBuildBehaviour(BuildFarmJobBehaviourBase):
     def pocket(self):
         return PackagePublishingPocket.RELEASE
 
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> BuildArgs:
         args = super().extraBuildArgs(logger=logger)
         args["branch_url"] = self.build.branch.composePublicURL()
         return args
