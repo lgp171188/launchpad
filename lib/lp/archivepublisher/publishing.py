@@ -1202,16 +1202,17 @@ class Publisher:
             real_name = current_entry.get("real_name", current_entry["name"])
             real_path = os.path.join(suite_dir, real_name)
             full_path = os.path.join(self._config.distsroot, real_path)
+            # Release files include entries for uncompressed versions of
+            # Packages and Sources files (which don't exist on disk, but
+            # allow clients to check them after decompressing) as well as
+            # for the compressed versions which do exist on disk.  As a
+            # result, it's routine that `full_path` may not exist; we skip
+            # those cases silently.
             if os.path.exists(full_path):
                 current_files[path] = (
                     int(current_entry["size"]),
                     current_entry["sha256"],
                     real_path,
-                )
-            else:
-                self.log.warning(
-                    "%s contains %s, but %s does not exist!"
-                    % (release_path, path, full_path)
                 )
         return current_files
 
