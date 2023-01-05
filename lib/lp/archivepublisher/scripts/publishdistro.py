@@ -202,6 +202,13 @@ class PublishDistro(PublisherScript):
             help="Only run over the copy archives.",
         )
 
+        self.parser.add_option(
+            "--archive",
+            dest="archive",
+            metavar="REFERENCE",
+            help="Only run over the archive identified by this reference.",
+        )
+
     def isCareful(self, option):
         """Is the given "carefulness" option enabled?
 
@@ -243,6 +250,7 @@ class PublishDistro(PublisherScript):
             self.options.ppa,
             self.options.private_ppa,
             self.options.copy_archive,
+            self.options.archive,
         ]
         return len(list(filter(None, exclusive_options)))
 
@@ -271,7 +279,7 @@ class PublishDistro(PublisherScript):
         if self.countExclusiveOptions() > 1:
             raise OptionValueError(
                 "Can only specify one of partner, ppa, private-ppa, "
-                "copy-archive."
+                "copy-archive, archive."
             )
 
         if self.options.all_derived and self.options.distribution is not None:
@@ -342,7 +350,15 @@ class PublishDistro(PublisherScript):
 
     def getTargetArchives(self, distribution):
         """Find the archive(s) selected by the script's options."""
-        if self.options.partner:
+        if self.options.archive:
+            archive = getUtility(IArchiveSet).getByReference(
+                self.options.archive
+            )
+            if archive.distribution == distribution:
+                return [archive]
+            else:
+                return []
+        elif self.options.partner:
             return [distribution.getArchiveByComponent("partner")]
         elif self.options.ppa:
             return filter(is_ppa_public, self.getPPAs(distribution))
