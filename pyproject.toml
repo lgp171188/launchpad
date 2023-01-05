@@ -10,6 +10,10 @@ exclude = [
 ]
 
 [[tool.mypy.overrides]]
+module = "ampoule.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "apt_inst"
 ignore_missing_imports = true
 
@@ -62,6 +66,10 @@ module = "lazr.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "lpbuildd.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "packaging"
 ignore_missing_imports = true
 
@@ -71,6 +79,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "pystache"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "requests_toolbelt.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -103,6 +115,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "twisted.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "txfixtures.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

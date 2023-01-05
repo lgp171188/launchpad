@@ -14,6 +14,7 @@ __all__ = [
 import json
 import os
 from datetime import datetime
+from typing import Any, Generator
 
 import pytz
 from twisted.internet import defer
@@ -25,6 +26,7 @@ from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import BuildDaemonError, CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -130,12 +132,12 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         return info
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        args = yield super().extraBuildArgs(logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         yield self.addProxyArgs(args, build.recipe.allow_internet)
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.

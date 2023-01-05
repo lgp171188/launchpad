@@ -25,6 +25,7 @@ from lp.buildmaster.enums import (
     BuildStatus,
 )
 from lp.buildmaster.interfaces.builder import BuildDaemonError, CannotBuild
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import BuildArgs
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.helpers import filenameToContentType
@@ -93,15 +94,15 @@ class BuildFarmJobBehaviourBase:
             "This build type does not support accessing private resources."
         )
 
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> BuildArgs:
         """The default behaviour is to send only common extra arguments."""
-        args = {}
-        args["arch_tag"] = self.distro_arch_series.architecturetag
-        args["archive_private"] = self.archive.private
-        args["build_url"] = canonical_url(self.build)
-        args["fast_cleanup"] = self._builder.virtualized
-        args["series"] = self.distro_arch_series.distroseries.name
-        return args
+        return {
+            "arch_tag": self.distro_arch_series.architecturetag,
+            "archive_private": self.archive.private,
+            "build_url": canonical_url(self.build),
+            "fast_cleanup": self._builder.virtualized,
+            "series": self.distro_arch_series.distroseries.name,
+        }
 
     @defer.inlineCallbacks
     def composeBuildRequest(self, logger):
