@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
+    "BY_HASH_STAY_OF_EXECUTION",
     "cannot_modify_suite",
     "DirectoryHash",
     "FORMAT_TO_SUBCOMPONENT",

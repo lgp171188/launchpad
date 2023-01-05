@@ -7,6 +7,7 @@ import os
 import signal
 import time
 import xmlrpc.client
+from typing import Dict
 from unittest import mock
 
 import transaction
@@ -1013,7 +1014,7 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
 class FakeBuilddManager:
     """A minimal fake version of `BuilddManager`."""
 
-    pending_logtails = {}
+    pending_logtails = {}  # type: Dict[int, str]
 
     def addLogTail(self, build_queue_id, logtail):
         self.pending_logtails[build_queue_id] = logtail

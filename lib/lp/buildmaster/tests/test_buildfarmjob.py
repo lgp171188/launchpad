@@ -4,6 +4,7 @@
 """Tests for `IBuildFarmJob`."""
 
 from datetime import datetime, timedelta
+from typing import Type
 
 import pytz
 from storm.store import Store
@@ -23,16 +24,20 @@ from lp.buildmaster.interfaces.buildfarmjob import (
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.services.database.sqlbase import flush_database_updates
 from lp.testing import TestCaseWithFactory, admin_logged_in, login
-from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
+from lp.testing.layers import (
+    BaseLayer,
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+)
 
 
 class TestBuildFarmJobBase:
 
-    layer = DatabaseFunctionalLayer
+    layer = DatabaseFunctionalLayer  # type: Type[BaseLayer]
 
-    def setUp(self):
+    def setUp(self, *args, **kwargs):
         """Create a build farm job with which to test."""
-        super().setUp()
+        super().setUp(*args, **kwargs)
         self.build_farm_job = self.makeBuildFarmJob()
 
     def makeBuildFarmJob(

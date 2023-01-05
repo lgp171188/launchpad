@@ -10,6 +10,8 @@ __all__ = [
     "LiveFSBuildBehaviour",
 ]
 
+from typing import Any, Generator, cast
+
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -18,6 +20,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -93,20 +96,25 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         )
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        base_args = yield super().extraBuildArgs(logger=logger)
+        base_args = yield super().extraBuildArgs(
+            logger=logger
+        )  # type: BuildArgs
         # Non-trivial metadata values may have been security-wrapped, which
         # is pointless here and just gets in the way of xmlrpc.client
         # serialisation.
-        args = dict(removeSecurityProxy(build.livefs.metadata))
+        args = cast(
+            BuildArgs, dict(removeSecurityProxy(build.livefs.metadata))
+        )
         if build.metadata_override is not None:
             args.update(removeSecurityProxy(build.metadata_override))
         # Everything else overrides anything in the metadata.
-        args.update(base_args)
+        # https://github.com/python/mypy/issues/6462
+        args.update(base_args)  # type: ignore[typeddict-item]
         args["pocket"] = build.pocket.name.lower()
         args["datestamp"] = build.version
         (

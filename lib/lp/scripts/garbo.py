@@ -48,6 +48,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
+from lp.archivepublisher.publishing import BY_HASH_STAY_OF_EXECUTION
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugattachment import BugAttachment
@@ -127,6 +128,7 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
+from lp.soyuz.model.archivefile import ArchiveFile
 from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
@@ -2243,6 +2245,39 @@ class BinaryPackagePublishingHistorySPNPopulator(BulkPruner):
         transaction.commit()
 
 
+class ArchiveFileDatePopulator(TunableLoop):
+    """Populates ArchiveFile.date_superseded."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IPrimaryStore(ArchiveFile)
+
+    def findArchiveFiles(self):
+        archive_files = self.store.find(
+            ArchiveFile,
+            ArchiveFile.id >= self.start_at,
+            ArchiveFile.date_superseded == None,
+            ArchiveFile.scheduled_deletion_date != None,
+        )
+        return archive_files.order_by(ArchiveFile.id)
+
+    def isDone(self):
+        return self.findArchiveFiles().is_empty()
+
+    def __call__(self, chunk_size):
+        archive_files = list(self.findArchiveFiles()[:chunk_size])
+        for archive_file in archive_files:
+            archive_file.date_superseded = (
+                archive_file.scheduled_deletion_date
+                - timedelta(days=BY_HASH_STAY_OF_EXECUTION)
+            )
+        self.start_at = archive_files[-1].id + 1
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
 
@@ -2556,6 +2591,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     tunable_loops = [
         AnswerContactPruner,
         ArchiveArtifactoryColumnsPopulator,
+        ArchiveFileDatePopulator,
         BinaryPackagePublishingHistoryFormatPopulator,
         BinaryPackagePublishingHistorySPNPopulator,
         BranchJobPruner,

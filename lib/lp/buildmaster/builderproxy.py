@@ -16,11 +16,13 @@ __all__ = [
 
 import base64
 import time
+from typing import Dict, Generator
 
 from twisted.internet import defer
 
 from lp.buildmaster.downloader import RequestProxyTokenCommand
 from lp.buildmaster.interfaces.builder import CannotBuild
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import BuildArgs
 from lp.services.config import config
 
 
@@ -33,7 +35,9 @@ class BuilderProxyMixin:
     """Methods for handling builds with the Snap Build Proxy enabled."""
 
     @defer.inlineCallbacks
-    def addProxyArgs(self, args, allow_internet=True):
+    def addProxyArgs(
+        self, args: BuildArgs, allow_internet: bool = True
+    ) -> Generator[None, Dict[str, str], None]:
         if _get_proxy_config("builder_proxy_host") and allow_internet:
             token = yield self._requestProxyToken()
             args[

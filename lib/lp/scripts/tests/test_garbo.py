@@ -72,6 +72,7 @@ from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.teammembership import TeamMembership
 from lp.scripts.garbo import (
     AntiqueSessionPruner,
+    ArchiveFileDatePopulator,
     BulkPruner,
     DailyDatabaseGarbageCollector,
     DuplicateSessionPruner,
@@ -127,6 +128,7 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
 )
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
+from lp.soyuz.interfaces.archivefile import IArchiveFileSet
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.model.distributionsourcepackagecache import (
@@ -434,7 +436,11 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.log_buffer = io.StringIO()
         handler = logging.StreamHandler(self.log_buffer)
         self.log.addHandler(handler)
-        self.addDetail("garbo-log", text_content(self.log_buffer.getvalue()))
+        self.addCleanup(
+            lambda: self.addDetail(
+                "garbo-log", text_content(self.log_buffer.getvalue())
+            )
+        )
 
     def runFrequently(self, maximum_chunk_size=2, test_args=()):
         switch_dbuser("garbo_daily")
@@ -2558,6 +2564,58 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             self.assertEqual(spn, bpph.sourcepackagename)
         # Other publications are left alone.
         self.assertIsNone(bpphs[2].sourcepackagename)
+
+    def test_ArchiveFileDatePopulator(self):
+        switch_dbuser("testadmin")
+        now = datetime.now(UTC)
+        archive_files = [self.factory.makeArchiveFile() for _ in range(2)]
+        removeSecurityProxy(
+            archive_files[1]
+        ).scheduled_deletion_date = now + timedelta(hours=6)
+
+        self.runDaily()
+
+        self.assertThat(
+            archive_files,
+            MatchesListwise(
+                [
+                    MatchesStructure(date_superseded=Is(None)),
+                    MatchesStructure.byEquality(
+                        date_superseded=now - timedelta(hours=18)
+                    ),
+                ]
+            ),
+        )
+
+    def test_ArchiveFileDatePopulator_findArchiveFiles_filters_correctly(self):
+        switch_dbuser("testadmin")
+
+        # Create three ArchiveFiles: one with date_superseded set, one with
+        # date_superseded unset and scheduled_deletion_date set, and one
+        # with both unset.
+        archive_files = [self.factory.makeArchiveFile() for _ in range(3)]
+
+        Store.of(archive_files[0]).flush()
+        getUtility(IArchiveFileSet).scheduleDeletion(
+            [archive_files[0]], timedelta(days=1)
+        )
+        self.assertIsNotNone(archive_files[0].date_superseded)
+
+        removeSecurityProxy(
+            archive_files[1]
+        ).scheduled_deletion_date = datetime.now(UTC) + timedelta(days=1)
+        self.assertIsNone(archive_files[1].date_superseded)
+
+        self.assertIsNone(archive_files[2].date_superseded)
+        self.assertIsNone(archive_files[2].scheduled_deletion_date)
+
+        populator = ArchiveFileDatePopulator(None)
+        # Consider only ArchiveFiles created by this test.
+        populator.start_at = archive_files[0].id
+
+        rs = populator.findArchiveFiles()
+        self.assertEqual(1, rs.count())
+        self.assertEqual(archive_files[1], rs.one())
 
 
 class TestGarboTasks(TestCaseWithFactory):

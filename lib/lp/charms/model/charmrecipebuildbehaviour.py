@@ -10,6 +10,8 @@ __all__ = [
     "CharmRecipeBuildBehaviour",
 ]
 
+from typing import Any, Generator
+
 from twisted.internet import defer
 from zope.component import adapter
 from zope.interface import implementer
@@ -19,6 +21,7 @@ from lp.buildmaster.builderproxy import BuilderProxyMixin
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    BuildArgs,
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.model.buildfarmjobbehaviour import (
@@ -70,12 +73,12 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             )
 
     @defer.inlineCallbacks
-    def extraBuildArgs(self, logger=None):
+    def extraBuildArgs(self, logger=None) -> Generator[Any, Any, BuildArgs]:
         """
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        args = yield super().extraBuildArgs(logger=logger)
+        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         yield self.addProxyArgs(args)
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}

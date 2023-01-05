@@ -27,7 +27,7 @@ from textwrap import dedent
 try:
     from importlib import resources
 except ImportError:
-    import importlib_resources as resources
+    import importlib_resources as resources  # type: ignore
 
 import fixtures
 from testtools.content import attach_file
