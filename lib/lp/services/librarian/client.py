@@ -83,7 +83,8 @@ class FileUploadClient:
         """
         try:
             self.state.s = socket.socket(AF_INET, SOCK_STREAM)
-            self.state.s.settimeout(config.librarian.client_socket_timeout)
+            if config.librarian.client_socket_timeout is not None:
+                self.state.s.settimeout(config.librarian.client_socket_timeout)
             self.state.s.connect((self.upload_host, self.upload_port))
             self.state.f = self.state.s.makefile("rwb", 0)
 
