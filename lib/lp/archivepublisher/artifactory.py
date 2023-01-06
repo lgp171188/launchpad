@@ -22,6 +22,7 @@ from packaging import utils as packaging_utils
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.archivepublisher.diskpool import FileAddActionEnum, poolify
+from lp.archiveuploader.utils import re_no_epoch
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
@@ -262,6 +263,21 @@ class ArtifactoryPoolEntry:
                     properties["soss.license"] = [
                         "/usr/share/doc/%s/copyright"
                         % publications[0].binary_package_name
+                    ]
+                    # Point to the corresponding .dsc, so that binaries
+                    # uniformly have a property referring to their source
+                    # code.  We don't have the .dsc conveniently in hand
+                    # here without a cumbersome database walk, but
+                    # fortunately it has a predictable file name.
+                    properties["soss.source_url"] = [
+                        (
+                            self.rootpath
+                            / poolify(self.source_name)
+                            / "{}_{}.dsc".format(
+                                self.source_name,
+                                re_no_epoch.sub("", self.source_version),
+                            )
+                        ).as_posix()
                     ]
             else:
                 properties["launchpad.channel"] = sorted(
