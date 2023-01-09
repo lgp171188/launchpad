@@ -2038,7 +2038,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             parent_ids=parent_ids,
             revision_date=revision_date,
         )
-        return branch.createBranchRevision(sequence, revision)
+        return ProxyFactory(branch.createBranchRevision(sequence, revision))
 
     def makeGitRepository(
         self,

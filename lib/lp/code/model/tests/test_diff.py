@@ -482,14 +482,14 @@ class TestPreviewDiff(DiffTestCase):
         )
         self.assertEqual("rev-a into rev-b", preview.title)
         # Revision number is used only when it (sequence) is defined.
-        source_rev.sequence = 10
+        removeSecurityProxy(source_rev).sequence = 10
         self.assertEqual("r10 into rev-b", preview.title)
         # Same behavior is applied to the target_branch information.
         target_rev = self.factory.makeBranchRevision(
             branch=mp.target_branch, revision_id="rev-b", sequence=None
         )
         self.assertEqual("r10 into rev-b", preview.title)
-        target_rev.sequence = 1
+        removeSecurityProxy(target_rev).sequence = 1
         self.assertEqual("r10 into r1", preview.title)
 
     def test_title_git(self):
