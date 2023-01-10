@@ -18,6 +18,7 @@ import transaction
 from twisted.internet import defer
 from twisted.web import xmlrpc
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import (
     BuildBaseImageType,
@@ -100,6 +101,9 @@ class BuildFarmJobBehaviourBase:
             "arch_tag": self.distro_arch_series.architecturetag,
             "archive_private": self.archive.private,
             "build_url": canonical_url(self.build),
+            "builder_constraints": removeSecurityProxy(
+                self.build.builder_constraints
+            ),
             "fast_cleanup": self._builder.virtualized,
             "series": self.distro_arch_series.distroseries.name,
         }

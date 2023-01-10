@@ -445,6 +445,72 @@ class TestPublishDistro(TestNativePublishingBase):
         pool_path = os.path.join(repo_path, "pool/main/b/baz/baz_666.dsc")
         self.assertExists(pool_path)
 
+    @defer.inlineCallbacks
+    def testForSingleArchive(self):
+        """Run publish-distro over a single archive specified by reference."""
+        ubuntutest = getUtility(IDistributionSet)["ubuntutest"]
+        name16 = getUtility(IPersonSet).getByName("name16")
+        archives = [
+            getUtility(IArchiveSet).new(
+                purpose=ArchivePurpose.PPA,
+                owner=name16,
+                name=name,
+                distribution=ubuntutest,
+            )
+            for name in (
+                self.factory.getUniqueUnicode(),
+                self.factory.getUniqueUnicode(),
+            )
+        ]
+        archive_references = [archive.reference for archive in archives]
+        pub_source_ids = [
+            self.getPubSource(archive=archive).id for archive in archives
+        ]
+
+        self.setUpRequireSigningKeys()
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
+        for archive in archives:
+            yield IArchiveGPGSigningKey(archive).setSigningKey(
+                key_path, async_keyserver=True
+            )
+
+        self.layer.txn.commit()
+
+        self.assertEqual(
+            [PackagePublishingStatus.PENDING, PackagePublishingStatus.PENDING],
+            [
+                self.loadPubSource(pub_source_id).status
+                for pub_source_id in pub_source_ids
+            ],
+        )
+
+        self.runPublishDistro(["--archive", archive_references[0]])
+
+        self.assertEqual(
+            [
+                PackagePublishingStatus.PUBLISHED,
+                PackagePublishingStatus.PENDING,
+            ],
+            [
+                self.loadPubSource(pub_source_id).status
+                for pub_source_id in pub_source_ids
+            ],
+        )
+
+        self.runPublishDistro(["--archive", archive_references[1]])
+
+        self.assertEqual(
+            [
+                PackagePublishingStatus.PUBLISHED,
+                PackagePublishingStatus.PUBLISHED,
+            ],
+            [
+                self.loadPubSource(pub_source_id).status
+                for pub_source_id in pub_source_ids
+            ],
+        )
+
     def testPublishToArtifactory(self):
         """Publishing to Artifactory doesn't require generated signing keys."""
         self.setUpRequireSigningKeys()
