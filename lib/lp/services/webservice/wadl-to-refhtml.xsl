@@ -778,6 +778,8 @@
         </div>
     </xsl:template>
 
+    <!-- These should match the corresponding path segments in
+         lp.app.browser.launchpad.LaunchpadRootNavigation.stepto_utilities. -->
     <xsl:template name="find-root-object-uri">
         <xsl:value-of select="$base"/>
         <xsl:choose>
@@ -786,6 +788,9 @@
             </xsl:when>
             <xsl:when test="@id = 'charm_recipes'">
                 <xsl:text>/+charm-recipes</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'git_repositories'">
+                <xsl:text>/+git</xsl:text>
             </xsl:when>
             <xsl:when test="@id = 'polls'">
                 <xsl:text>/+polls</xsl:text>
