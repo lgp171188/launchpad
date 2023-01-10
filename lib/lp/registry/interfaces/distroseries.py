@@ -6,6 +6,7 @@
 __all__ = [
     "DerivationError",
     "DistroSeriesNameField",
+    "DistroSeriesTranslationTemplateStatistics",
     "IDistroSeries",
     "IDistroSeriesEditRestricted",
     "IDistroSeriesPublic",
@@ -13,6 +14,8 @@ __all__ = [
 ]
 
 import http.client
+import typing
+from datetime import datetime
 
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
@@ -31,6 +34,7 @@ from lazr.restful.declarations import (
     rename_parameters_as,
 )
 from lazr.restful.fields import CollectionField, Reference, ReferenceChoice
+from typing_extensions import TypedDict
 from zope.component import getUtility
 from zope.interface import Attribute, Interface
 from zope.schema import Bool, Choice, Datetime, List, Object, TextLine
@@ -163,6 +167,30 @@ class DistroSeriesVersionField(UniqueField):
             Version(version)
         except VersionError as error:
             raise LaunchpadValidationError("'%s': %s" % (version, error))
+
+
+DistroSeriesTranslationTemplateStatistics = TypedDict(
+    "DistroSeriesTranslationTemplateStatistics",
+    {
+        # The name of the source package that uses the template.
+        "sourcepackage": str,
+        # The translation domain for the template.
+        "translation_domain": str,
+        # The name of the template.
+        "template_name": str,
+        # The number of translation messages for the template.
+        "total": int,
+        # Whether the template is active.
+        "enabled": bool,
+        # Whether the template is part of a language pack.
+        "languagepack": bool,
+        # A number that describes how important this template is; templates
+        # with higher priorities should be translated first.
+        "priority": int,
+        # When the template was last updated.
+        "date_last_updated": datetime,
+    },
+)
 
 
 class IDistroSeriesPublic(
@@ -1096,6 +1124,28 @@ class IDistroSeriesPublic(
         :return: A Storm result set of `IDistroSeriesDifferenceComment`
             objects for this distroseries, ordered from oldest to newest
             comment.
+        """
+
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getTranslationTemplateStatistics() -> typing.List[
+        DistroSeriesTranslationTemplateStatistics
+    ]:
+        """Return statistics for translation templates in this series.
+
+        The return value is a list of dicts for each template in the series,
+        each of which has this form::
+
+            {
+                "sourcepackage": ...,
+                "translation_domain": ...,
+                "name": ...,
+                "total": ...,
+                "enabled": ...,
+                "languagepack": ...,
+                "priority": ...,
+                "date_last_updated": ...,
+            }
         """
 
 

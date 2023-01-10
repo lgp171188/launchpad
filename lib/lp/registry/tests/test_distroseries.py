@@ -712,6 +712,42 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
         self.assertEqual(209, response.status)
         self.assertTrue(distroseries.language_pack_full_export_requested)
 
+    def test_translation_template_statistics(self):
+        distroseries = self.factory.makeDistroSeries()
+        templates = [
+            self.factory.makePOTemplate(distroseries=distroseries)
+            for _ in range(3)
+        ]
+        removeSecurityProxy(templates[0]).messagecount = 100
+        removeSecurityProxy(templates[0]).priority = 10
+        removeSecurityProxy(templates[1]).iscurrent = False
+        removeSecurityProxy(templates[2]).languagepack = True
+        self.factory.makePOTemplate()
+        distroseries_url = api_url(distroseries)
+        webservice = webservice_for_person(None, default_api_version="devel")
+        response = webservice.named_get(
+            distroseries_url, "getTranslationTemplateStatistics"
+        )
+        self.assertEqual(200, response.status)
+        self.assertEqual(
+            [
+                {
+                    "sourcepackage": template.sourcepackage.name,
+                    "translation_domain": template.translation_domain,
+                    "template_name": template.name,
+                    "total": template.messagecount,
+                    "enabled": template.iscurrent,
+                    "languagepack": template.languagepack,
+                    "priority": template.priority,
+                    "date_last_updated": (
+                        template.date_last_updated.isoformat()
+                    ),
+                }
+                for template in templates
+            ],
+            response.jsonBody(),
+        )
+
 
 class TestDistroSeriesSet(TestCaseWithFactory):
 
