@@ -4260,6 +4260,10 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.source_url": [
+                    "%s/%s/pool/h/hello/hello_1.0.dsc"
+                    % (self.base_url, self.archive.name)
+                ],
                 "soss.type": ["binary"],
             },
             binary_path.properties,
@@ -4369,6 +4373,10 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.source_url": [
+                    "%s/%s/pool/h/hello/hello_1.0.dsc"
+                    % (self.base_url, self.archive.name)
+                ],
                 "soss.type": ["binary"],
             },
             binary_path.properties,
@@ -4517,6 +4525,10 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
                 "soss.license": ["/usr/share/doc/hello/copyright"],
+                "soss.source_url": [
+                    "%s/%s/pool/h/hello/hello_1.0.dsc"
+                    % (self.base_url, self.archive.name)
+                ],
                 "soss.type": ["binary"],
             },
             binary_path.properties,
