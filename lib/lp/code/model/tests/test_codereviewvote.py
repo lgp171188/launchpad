@@ -156,6 +156,7 @@ class TestCodeReviewVoteReferenceClaimReview(TestCaseWithFactory):
     def test_repeat_claim(self):
         # Attempting to claim an already-claimed review works.
         review = self.factory.makeCodeReviewVoteReference()
+        login_person(review.reviewer)
         review.claimReview(review.reviewer)
 
 

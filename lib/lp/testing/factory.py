@@ -478,9 +478,7 @@ def check_security_proxy(func):
     def wrapped(*args, **kw):
         result = func(*args, **kw)
         if not is_security_proxied_or_harmless(result):
-            warnings.warn(
-                UnproxiedFactoryMethodWarning(func.__name__), stacklevel=1
-            )
+            raise UnproxiedFactoryMethodError(func.__name__)
         return result
 
     return wrapped
@@ -492,6 +490,17 @@ class LaunchpadObjectFactory(ObjectFactory):
     All the factory methods should be callable with no parameters.
     When this is done, the returned object should have unique references
     for any other required objects.
+
+    Factory methods must always return objects that are either harmless (see
+    `is_security_proxied_or_harmless`) or wrapped with a security proxy.
+    The purpose of this is to ensure that production code works when given
+    security-proxied objects.  It's OK for test-only code (including factory
+    methods) to remove security proxies as needed when creating test
+    objects, although when they're making assertions about the behaviour of
+    production code then they should make sure to log in as an appropriate
+    user (for webapp code) or use a Zopeless layer (for scripts) in order to
+    make sure that they're accurately simulating how the code will run in
+    production.
     """
 
     __decorators = (check_security_proxy,)
@@ -1459,7 +1468,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if creator is None:
             creator = owner
         namespace = target.getNamespace(owner)
-        return namespace.createBranch(branch_type, name, creator)
+        return ProxyFactory(namespace.createBranch(branch_type, name, creator))
 
     def makeRelatedBranchesForSourcePackage(
         self, sourcepackage=None, **kwargs
@@ -1557,7 +1566,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             linked_branch = ICanHasLinkedBranch(naked_product)
             linked_branch.setBranch(devel_branch)
             related_series_branch_info.insert(
-                0, (devel_branch, naked_product.development_focus)
+                0,
+                (devel_branch, ProxyFactory(naked_product.development_focus)),
             )
 
         if with_package_branches:
@@ -1754,7 +1764,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         else:
             raise AssertionError("Unknown status: %s" % set_state)
 
-        return proposal
+        return ProxyFactory(proposal)
 
     def makeBranchMergeProposalForGit(
         self,
@@ -1836,7 +1846,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         else:
             raise AssertionError("Unknown status: %s" % set_state)
 
-        return proposal
+        return ProxyFactory(proposal)
 
     def makeBranchSubscription(
         self, branch=None, person=None, subscribed_by=None
@@ -2923,8 +2933,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             target = self.makeProduct()
         if title is None:
             title = self.getUniqueString("title")
-        return target.newFAQ(
-            owner=target.owner, title=title, content="content"
+        return ProxyFactory(
+            target.newFAQ(owner=target.owner, title=title, content="content")
         )
 
     def makePackageCodeImport(self, sourcepackage=None, **kwargs):
@@ -3164,14 +3174,16 @@ class LaunchpadObjectFactory(ObjectFactory):
                     registrant=sender
                 )
         with person_logged_in(sender):
-            return merge_proposal.createComment(
-                sender,
-                subject,
-                body,
-                vote,
-                vote_tag,
-                parent,
-                _date_created=date_created,
+            return ProxyFactory(
+                merge_proposal.createComment(
+                    sender,
+                    subject,
+                    body,
+                    vote,
+                    vote_tag,
+                    parent,
+                    _date_created=date_created,
+                )
             )
 
     def makeCodeReviewVoteReference(self, git=False):
@@ -3180,7 +3192,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         else:
             bmp = removeSecurityProxy(self.makeBranchMergeProposal())
         candidate = self.makePerson()
-        return bmp.nominateReviewer(candidate, bmp.registrant)
+        return ProxyFactory(bmp.nominateReviewer(candidate, bmp.registrant))
 
     def makeMessage(
         self,
@@ -3270,12 +3282,14 @@ class LaunchpadObjectFactory(ObjectFactory):
                 sha1=hashlib.sha1(content).hexdigest(),
                 md5=hashlib.md5(content).hexdigest(),
             )
-            lfa = LibraryFileAlias(
-                content=lfc,
-                filename=filename,
-                mimetype=content_type,
-                expires=expires,
-                restricted=restricted,
+            lfa = ProxyFactory(
+                LibraryFileAlias(
+                    content=lfc,
+                    filename=filename,
+                    mimetype=content_type,
+                    expires=expires,
+                    restricted=restricted,
+                )
             )
         else:
             lfa = getUtility(ILibraryFileAliasSet).create(
@@ -3669,7 +3683,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             distroseries=distroseries, component=component
         )
         del get_property_cache(distroseries).components
-        return selection
+        return ProxyFactory(selection)
 
     def makeArchive(
         self,
@@ -3729,7 +3743,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         # Making a distribution makes an archive, and there can be only one
         # per distribution.
         if purpose == ArchivePurpose.PRIMARY:
-            return distribution.main_archive
+            return ProxyFactory(distribution.main_archive)
 
         admins = getUtility(ILaunchpadCelebrities).admin
         with person_logged_in(admins.teamowner):
@@ -4324,6 +4338,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
             if date_created is not None:
                 removeSecurityProxy(message).date_created = date_created
+        message = ProxyFactory(message)
 
         message.markReviewed(reviewer, date_reviewed)
 
@@ -4504,7 +4519,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
 
         proberecord = mirror.newProbeRecord(library_alias)
-        return proberecord
+        return ProxyFactory(proberecord)
 
     def makeMirror(
         self,
@@ -4540,7 +4555,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             rsync_base_url=rsync_url,
             official_candidate=official_candidate,
         )
-        return mirror
+        return ProxyFactory(mirror)
 
     def makeUniqueRFC822MsgId(self):
         """Make a unique RFC 822 message id.
@@ -4602,7 +4617,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         return distroseries.getSourcePackage(sourcepackagename)
 
     def getAnySourcePackageUrgency(self):
-        return SourcePackageUrgency.MEDIUM
+        return ProxyFactory(SourcePackageUrgency.MEDIUM)
 
     def makePackageUpload(
         self,
@@ -4651,7 +4666,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                     ),
                 }
                 status_changers[status]()
-        return package_upload
+        return ProxyFactory(package_upload)
 
     def makeSourcePackageUpload(
         self, distroseries=None, sourcepackagename=None, component=None
@@ -4836,7 +4851,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if copyright is None:
             copyright = self.getUniqueString()
 
-        return distroseries.createUploadedSourcePackageRelease(
+        spr = distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=sourcepackagename,
             format=format,
             maintainer=maintainer,
@@ -4866,6 +4881,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             user_defined_fields=user_defined_fields,
             homepage=homepage,
         )
+        return ProxyFactory(spr)
 
     def makeSourcePackageReleaseFile(
         self, sourcepackagerelease=None, library_file=None, filetype=None
@@ -5393,7 +5409,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             description=description,
         )
         store.add(signing_key)
-        return signing_key
+        return ProxyFactory(signing_key)
 
     def makeArchiveSigningKey(
         self, archive=None, distro_series=None, signing_key=None
@@ -5476,7 +5492,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
 
     def getAnyPocket(self):
-        return PackagePublishingPocket.BACKPORTS
+        return ProxyFactory(PackagePublishingPocket.BACKPORTS)
 
     def makeSuiteSourcePackage(
         self, distroseries=None, sourcepackagename=None, pocket=None
@@ -5687,7 +5703,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             "processed_data": FileBugData(**metadata).asDict()
         }
         job.job.complete()
-        return blob
+        return ProxyFactory(blob)
 
     def makeLaunchpadService(self, person=None, version="devel"):
         if person is None:
@@ -6008,7 +6024,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             whiteboard="",
         )
         del get_property_cache(pillar).commercial_subscription
-        return commercial_subscription
+        return ProxyFactory(commercial_subscription)
 
     def grantCommercialSubscription(self, person):
         """Give 'person' a commercial subscription."""
@@ -7003,13 +7019,13 @@ def is_security_proxied_or_harmless(obj):
     return False
 
 
-class UnproxiedFactoryMethodWarning(UserWarning):
+class UnproxiedFactoryMethodError(Exception):
     """Raised when someone calls an unproxied factory method."""
 
     def __init__(self, method_name):
         super().__init__(
-            "PLEASE FIX: LaunchpadObjectFactory.%s returns an "
-            "unproxied object." % (method_name,)
+            "LaunchpadObjectFactory.%s returns an unproxied object."
+            % (method_name,)
         )
 
 
