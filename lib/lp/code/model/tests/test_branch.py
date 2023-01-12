@@ -3509,8 +3509,9 @@ class TestGetMergeProposals(TestCaseWithFactory):
         bmp = make_proposal_and_branch_revision(
             self.factory, 5, "rev-id", userdata_target=True
         )
+        owner = removeSecurityProxy(bmp).target_branch.owner
         result = self.branch_set.getMergeProposals(
-            merged_revision="rev-id", visible_by_user=bmp.target_branch.owner
+            merged_revision="rev-id", visible_by_user=owner
         )
         self.assertEqual([bmp], list(result))
 

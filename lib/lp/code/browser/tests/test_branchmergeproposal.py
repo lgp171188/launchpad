@@ -140,10 +140,13 @@ class TestDecoratedCodeReviewVoteReference(TestCaseWithFactory):
         """It should be possible to review an unmergeable proposal."""
         request = self.factory.makeCodeReviewVoteReference()
         bmp = request.branch_merge_proposal
-        bmp.rejectBranch(bmp.target_branch.owner, "foo")
-        d = DecoratedCodeReviewVoteReference(request, request.reviewer, None)
-        self.assertTrue(d.user_can_review)
-        self.assertTrue(d.can_change_review)
+        with person_logged_in(bmp.target_branch.owner):
+            bmp.rejectBranch(bmp.target_branch.owner, "foo")
+            d = DecoratedCodeReviewVoteReference(
+                request, request.reviewer, None
+            )
+            self.assertTrue(d.user_can_review)
+            self.assertTrue(d.can_change_review)
 
 
 class TestBranchMergeProposalMergedViewMixin:
@@ -1608,8 +1611,11 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
     def test_claim_no_oops(self):
         """ "An invalid attempt to claim a review should not oops."""
         review = self.factory.makeCodeReviewVoteReference()
-        view = create_initialized_view(review.branch_merge_proposal, "+index")
-        view.claim_action.success({"review_id": review.id})
+        with person_logged_in(review.branch_merge_proposal.registrant):
+            view = create_initialized_view(
+                review.branch_merge_proposal, "+index"
+            )
+            view.claim_action.success({"review_id": review.id})
         self.assertEqual(
             ["Cannot claim non-team reviews."],
             [n.message for n in view.request.response.notifications],
