@@ -522,6 +522,40 @@ class GitRepository(
             self, commit_sha1
         )
 
+    def fork(self, requester, new_owner):
+        if not requester.inTeam(new_owner):
+            raise Unauthorized(
+                "The owner of the new repository must be you or a team of "
+                "which you are a member."
+            )
+        namespace = get_git_namespace(self.target, new_owner)
+        name = namespace.findUnusedName(self.name)
+        repository = getUtility(IGitRepositorySet).new(
+            repository_type=GitRepositoryType.HOSTED,
+            registrant=requester,
+            owner=new_owner,
+            target=self.target,
+            name=name,
+            information_type=self.information_type,
+            date_created=UTC_NOW,
+            description=self.description,
+            with_hosting=True,
+            async_hosting=True,
+            status=GitRepositoryStatus.CREATING,
+            clone_from_repository=self,
+        )
+        if self.target_default or self.owner_default:
+            try:
+                # If the origin is the default for its target or for its
+                # owner and target, then try to set the new repo as
+                # owner-default.
+                repository.setOwnerDefault(True)
+            except GitDefaultConflict:
+                # If there is already a owner-default for this owner/target,
+                # just move on.
+                pass
+        return repository
+
     @property
     def namespace(self):
         """See `IGitRepository`."""
@@ -2195,35 +2229,6 @@ class GitRepositorySet:
             status=status,
             clone_from_repository=clone_from_repository,
         )
-
-    def fork(self, origin, requester, new_owner):
-        namespace = get_git_namespace(origin.target, new_owner)
-        name = namespace.findUnusedName(origin.name)
-        repository = self.new(
-            repository_type=GitRepositoryType.HOSTED,
-            registrant=requester,
-            owner=new_owner,
-            target=origin.target,
-            name=name,
-            information_type=origin.information_type,
-            date_created=UTC_NOW,
-            description=origin.description,
-            with_hosting=True,
-            async_hosting=True,
-            status=GitRepositoryStatus.CREATING,
-            clone_from_repository=origin,
-        )
-        if origin.target_default or origin.owner_default:
-            try:
-                # If the origin is the default for its target or for its
-                # owner and target, then try to set the new repo as
-                # owner-default.
-                repository.setOwnerDefault(True)
-            except GitDefaultConflict:
-                # If there is already a owner-default for this owner/target,
-                # just move on.
-                pass
-        return repository
 
     def getByPath(self, user, path):
         """See `IGitRepositorySet`."""
