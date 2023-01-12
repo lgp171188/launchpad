@@ -536,7 +536,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -612,7 +612,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             path.properties,
         )
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs
         )
         self.assertEqual(
             {
@@ -682,7 +682,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             path.properties,
         )
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs
         )
         self.assertEqual(
             {
@@ -759,7 +759,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -837,7 +837,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -914,7 +914,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["source:%d" % spr.id],
@@ -1008,7 +1008,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -1093,7 +1093,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -1178,7 +1178,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
         self.assertEqual(
             {
                 "launchpad.release-id": ["binary:%d" % bpr.id],
@@ -1261,7 +1261,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(spr.name, spr.version, [sprf], spphs)
+        pool.updateProperties(spr.name, spr.version, sprf, spphs)
         self.assertEqual(
             {
                 "generic.name": ["foo"],
@@ -1350,7 +1350,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             },
             path.properties,
         )
-        pool.updateProperties(bpph.pool_name, bpph.pool_version, [bpf], bpphs)
+        pool.updateProperties(bpph.pool_name, bpph.pool_version, bpf, bpphs)
         self.assertEqual(
             {
                 "generic.name": ["foo"],
@@ -1423,7 +1423,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
             path.properties,
         )
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs
         )
         self.assertEqual(
             {
@@ -1485,7 +1485,7 @@ class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
         ]["pypi.summary"] = ["text with special characters: ;=|,\\"]
 
         pool.updateProperties(
-            bpr.sourcepackagename, bpr.sourcepackageversion, [bpf], bpphs
+            bpr.sourcepackagename, bpr.sourcepackageversion, bpf, bpphs
         )
 
         self.assertEqual(

@@ -4374,6 +4374,80 @@ class TestArtifactoryPublishing(TestPublisherBase):
             binary_path.properties,
         )
 
+    def test_update_properties_shared_orig(self):
+        """An .orig from a previous Debian revision doesn't confuse matters."""
+        self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)
+        publisher = Publisher(
+            self.logger, self.config, self.disk_pool, self.archive
+        )
+        orig_tar_file = self.addMockFile(
+            "hello_1.0.orig.tar.xz", b"An orig tarball"
+        )
+        source_1 = self.getPubSource(
+            sourcename="hello",
+            version="1.0-1",
+            archive=self.archive,
+        )
+        source_1.sourcepackagerelease.addFile(
+            self.addMockFile("hello_1.0-1.debian.tar.xz", b"A tarball")
+        )
+        source_1.sourcepackagerelease.addFile(orig_tar_file)
+        transaction.commit()
+
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        # Publish 1.0-2, remove 1.0-1, and simulate process-death-row.
+        source_2 = self.getPubSource(
+            sourcename="hello",
+            version="1.0-2",
+            archive=self.archive,
+        )
+        source_2.sourcepackagerelease.addFile(
+            self.addMockFile("hello_1.0-2.debian.tar.xz", b"A tarball")
+        )
+        source_2.sourcepackagerelease.addFile(orig_tar_file)
+        source_1.requestDeletion(self.archive.owner)
+        for pub_file in source_1.files:
+            if not pub_file.libraryfile.filename.endswith(".orig.tar.xz"):
+                self.disk_pool.removeFile("main", "hello", "1.0-1", pub_file)
+        transaction.commit()
+
+        publisher.A_publish(False)
+        publisher.C_updateArtifactoryProperties(False)
+
+        for name in "hello_1.0-1.dsc", "hello_1.0-1.debian.tar.xz":
+            self.assertFalse(
+                (self.disk_pool.rootpath / "h" / "hello" / name).exists()
+            )
+        for spph, name in (
+            (source_2, "hello_1.0-2.dsc"),
+            (source_2, "hello_1.0-2.debian.tar.xz"),
+            # The shared .orig file ends up still having a
+            # launchpad.release-id property associated with version 1.0-1,
+            # because ArtifactoryPoolEntry.updateProperties always keeps the
+            # release-id from the properties passed to it from Artifactory.
+            # This isn't ideal, but is a relatively minor problem, so allow
+            # it for now.
+            (source_1, "hello_1.0.orig.tar.xz"),
+        ):
+            self.assertEqual(
+                {
+                    "deb.component": ["main"],
+                    "deb.distribution": ["breezy-autotest"],
+                    "deb.name": ["hello"],
+                    "deb.version": ["1.0-2"],
+                    "launchpad.release-id": [
+                        "source:%d" % spph.sourcepackagereleaseID
+                    ],
+                    "launchpad.source-name": ["hello"],
+                    "launchpad.source-version": ["1.0-2"],
+                    "soss.license": ["debian/copyright"],
+                    "soss.type": ["source"],
+                },
+                (self.disk_pool.rootpath / "h" / "hello" / name).properties,
+            )
+
     def test_remove_properties(self):
         """We remove properties if a file is no longer published anywhere."""
         self.setUpArtifactory(ArchiveRepositoryFormat.DEBIAN)

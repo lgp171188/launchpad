@@ -24,6 +24,7 @@ from functools import partial
 from itertools import chain, groupby
 from operator import attrgetter
 
+from artifactory import ArtifactoryPath
 from debian.deb822 import Release, _multivalued
 from storm.expr import Desc
 from zope.component import getUtility
@@ -817,7 +818,13 @@ class Publisher:
                 # Skip any files that Launchpad didn't put in Artifactory.
                 continue
             plan.append(
-                (source_name[0], source_version[0], release_id[0], properties)
+                (
+                    source_name[0],
+                    source_version[0],
+                    release_id[0],
+                    path,
+                    properties,
+                )
             )
 
         # Releases that have been removed may still have corresponding
@@ -826,7 +833,7 @@ class Publisher:
         # corresponding pool entries.
         missing_sources = set()
         missing_binaries = set()
-        for _, _, release_id, _ in plan:
+        for _, _, release_id, _, _ in plan:
             if release_id in releases_by_id:
                 continue
             match = re.match(r"^source:(\d+)$", release_id)
@@ -841,12 +848,48 @@ class Publisher:
         for bpr in load(BinaryPackageRelease, missing_binaries):
             releases_by_id["binary:%d" % bpr.id] = bpr
 
-        for source_name, source_version, release_id, properties in plan:
+        # Work out the publication files and publications that each path
+        # belongs to (usually just one, but there are cases where one file
+        # may be shared among multiple releases, such as .orig.tar.* files
+        # in Debian-format source packages).
+        pub_files_by_path = defaultdict(set)
+        pubs_by_path = defaultdict(set)
+        for source_name, source_version, release_id, _, _ in plan:
+            for pub_file in releases_by_id[release_id].files:
+                path = self._diskpool.pathFor(
+                    None, source_name, source_version, pub_file
+                )
+                pub_files_by_path[path].add(pub_file)
+                if release_id in pubs_by_id:
+                    pubs_by_path[path].update(pubs_by_id[release_id])
+
+        root_path = ArtifactoryPath(self._config.archiveroot)
+        for source_name, source_version, _, path, properties in plan:
+            full_path = root_path / path
+            # For now, any of the possible publication files matching this
+            # path should do just as well; it's only used to work out the
+            # artifact path.  Just to make sure things are deterministic,
+            # use the one with the lowest ID.
+            pub_file = sorted(
+                pub_files_by_path[full_path], key=attrgetter("id")
+            )[0]
+            # Tell the pool about all the publications that refer to this
+            # file, since it may set some properties to describe the union
+            # of all of them.
+            publications = sorted(
+                pubs_by_path.get(full_path, []), key=attrgetter("id")
+            )
+            # Use the name and version from the first publication if we can,
+            # but if there aren't any then fall back to the property values
+            # from Artifactory.
+            if publications:
+                source_name = publications[0].pool_name
+                source_version = publications[0].pool_version
             self._diskpool.updateProperties(
                 source_name,
                 source_version,
-                releases_by_id[release_id].files,
-                pubs_by_id.get(release_id),
+                pub_file,
+                publications,
                 old_properties=properties,
             )
 
