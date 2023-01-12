@@ -12,7 +12,7 @@ import os
 import tempfile
 from collections import defaultdict
 from pathlib import Path, PurePath
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import quote_plus
 
 import requests
@@ -553,14 +553,13 @@ class ArtifactoryPool:
         self,
         source_name: str,
         source_version: str,
-        pub_files: List[IPackageReleaseFile],
+        pub_file: IPackageReleaseFile,
         publications,
         old_properties=None,
     ):
         """Update a file's properties in Artifactory."""
-        for pub_file in pub_files:
-            entry = self._getEntry(source_name, source_version, pub_file)
-            entry.updateProperties(publications, old_properties=old_properties)
+        entry = self._getEntry(source_name, source_version, pub_file)
+        entry.updateProperties(publications, old_properties=old_properties)
 
     def getArtifactPatterns(self, repository_format):
         """Get patterns matching artifacts in a repository of this format.
