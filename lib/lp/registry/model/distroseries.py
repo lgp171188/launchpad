@@ -13,6 +13,7 @@ __all__ = [
 import collections
 from io import BytesIO
 from operator import itemgetter
+from typing import List
 
 import apt_pkg
 from lazr.delegates import delegate_to
@@ -41,6 +42,7 @@ from lp.buildmaster.model.processor import Processor
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.distroseries import (
     DerivationError,
+    DistroSeriesTranslationTemplateStatistics,
     IDistroSeries,
     IDistroSeriesSet,
 )
@@ -1703,6 +1705,42 @@ class DistroSeries(
         return comment_source.getForDistroSeries(
             self, since=since, source_package_name=source_package_name
         )
+
+    def getTranslationTemplateStatistics(
+        self,
+    ) -> List[DistroSeriesTranslationTemplateStatistics]:
+        """See `IDistroSeries`."""
+        rows = (
+            IStore(POTemplate)
+            .find(
+                (
+                    SourcePackageName.name,
+                    POTemplate.translation_domain,
+                    POTemplate.name,
+                    POTemplate.messagecount,
+                    POTemplate.iscurrent,
+                    POTemplate.languagepack,
+                    POTemplate.priority,
+                    POTemplate.date_last_updated,
+                ),
+                POTemplate.distroseries == self,
+                POTemplate.sourcepackagename == SourcePackageName.id,
+            )
+            .order_by(SourcePackageName.name, POTemplate.name)
+        )
+        return [
+            {
+                "sourcepackage": row[0],
+                "translation_domain": row[1],
+                "template_name": row[2],
+                "total": row[3],
+                "enabled": row[4],
+                "languagepack": row[5],
+                "priority": row[6],
+                "date_last_updated": row[7],
+            }
+            for row in rows
+        ]
 
 
 @implementer(IDistroSeriesSet)

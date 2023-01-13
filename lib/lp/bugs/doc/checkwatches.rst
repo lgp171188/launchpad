@@ -74,6 +74,7 @@ require no action from the Launchpad end.
     ...             body=socket.timeout("Connection timed out."),
     ...         )
     ...         yield
+    ...
 
     >>> with CaptureOops() as capture, timeout_requests():
     ...     updater = CheckwatchesMaster(transaction.manager)

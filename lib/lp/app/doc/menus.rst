@@ -55,6 +55,7 @@ for traversable objects.
     ...         self.path = name
     ...         self.inside = parent
     ...         self.rootsite = None
+    ...
 
     >>> class Root(BaseContent):
     ...     """The root of 'cookery', a vhost and facet."""
@@ -63,10 +64,12 @@ for traversable objects.
     >>> @implementer(ICookbook)
     ... class Cookbook(BaseContent):
     ...     pass
+    ...
 
     >>> @implementer(IRecipe)
     ... class Recipe(BaseContent):
     ...     pass
+    ...
 
 
 Content views associates with menus
@@ -124,14 +127,17 @@ content object's menu.
     >>> @implementer(IRecipeEditMenuMarker)
     ... class RecipeEditInstructionsView(LaunchpadView):
     ...     """View for editing recipe instructions on the cookery facet."""
+    ...
 
     >>> @implementer(IRecipeEditMenuMarker)
     ... class RecipeEditIngredientsView(LaunchpadView):
     ...     """View for editing recipe ingedients on the cookery facet."""
+    ...
 
     >>> @implementer(IRecipeJournalMenuMarker)
     ... class RecipeReadJournalView(LaunchpadView):
     ...     """View for reading a recipe's journal on the cookery facet."""
+    ...
 
     >>> class RecipeQuestionsAllView(LaunchpadView):
     ...     """View for all questions of a recipe on the questions facet."""
@@ -1085,6 +1091,7 @@ that the comment refers to.
     >>> @implementer(IComment)
     ... class Comment(BaseContent):
     ...     pass
+    ...
 
     # This is usually done in ZCML by browser:defaultView.
 

@@ -27,6 +27,7 @@ time we adapt.
     ... class LaunchpadPrincipal:
     ...
     ...     person = cached_person
+    ...
 
     >>> person_from_principal(LaunchpadPrincipal()) is cached_person
     True

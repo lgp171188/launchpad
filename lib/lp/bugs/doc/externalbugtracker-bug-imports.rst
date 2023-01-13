@@ -26,6 +26,7 @@ methods.
     ...
     ...     def getBugTargetName(self, remote_bug):
     ...         return self._bugs[remote_bug]["package"]
+    ...
 
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.registry.interfaces.distribution import IDistributionSet

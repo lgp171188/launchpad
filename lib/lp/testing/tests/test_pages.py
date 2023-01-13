@@ -30,10 +30,10 @@ class TestMakeStoryTest(unittest.TestCase):
 
     def test_dir_construction_and_trivial_running(self):
         test_filename = os.path.join(self.tempdir, "xx-foo.rst")
-        test_file = open(test_filename, "wt")
+        test_file = open(test_filename, "w")
         test_file.close()
         test_filename = os.path.join(self.tempdir, "xx-bar.rst")
-        test_file = open(test_filename, "wt")
+        test_file = open(test_filename, "w")
         test_file.close()
         # The test directory is looked up relative to the calling
         # module's path.

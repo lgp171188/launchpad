@@ -15,8 +15,10 @@ if [ "$LOCKFILEOPTIONS" == "" ]; then
    LOCKFILEOPTIONS="-r1"
 fi
 
-# Claim the lockfile.
-if ! lockfile $LOCKFILEOPTIONS $LOCKFILE; then
+# Claim the lockfile.  ($LOCKFILEOPTIONS is deliberately unquoted, since it
+# may expand to either zero words or one word.)
+# shellcheck disable=SC2086
+if ! lockfile $LOCKFILEOPTIONS "$LOCKFILE"; then
   echo "Could not claim lock file."
   exit 1
 fi

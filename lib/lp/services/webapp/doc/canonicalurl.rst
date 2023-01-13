@@ -29,6 +29,7 @@ First, we'll construct an example object hierarchy.
     ...         self.path = name
     ...         self.inside = parent
     ...         self.rootsite = None
+    ...
 
     >>> class Root(BaseContent):
     ...     pass
@@ -37,10 +38,12 @@ First, we'll construct an example object hierarchy.
     >>> @implementer(ICookbook)
     ... class Cookbook(BaseContent):
     ...     pass
+    ...
 
     >>> @implementer(IRecipe)
     ... class Recipe(BaseContent):
     ...     pass
+    ...
 
 Here is the structure of our hierarchy:
 
@@ -62,6 +65,7 @@ We'll try adapting our objects to a made-up interface, ICookingDirections.
     ... class CookingDirections:
     ...     def __init__(self, context):
     ...         self.context = context
+    ...
 
 Right now, none of our example objects can be turned into cooking
 directions.
@@ -137,6 +141,7 @@ First we need a named adapter to use:
     ... class LabelledCookbook:
     ...     def __init__(self, context):
     ...         self.context = context
+    ...
 
     >>> provideAdapter(
     ...     LabelledCookbook, [ICookbook], ILabelledCookbook, name="foo"

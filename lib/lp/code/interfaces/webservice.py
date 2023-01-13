@@ -211,6 +211,7 @@ patch_collection_return_type(
 patch_list_parameter_type(
     IGitRepository, "setRules", "rules", InlineObject(schema=IGitNascentRule)
 )
+patch_entry_return_type(IGitRepository, "fork", IGitRepository)
 
 # IHasBranches
 patch_collection_return_type(IHasBranches, "getBranches", IBranch)

@@ -239,7 +239,7 @@ that mirror followed by the main cdimage repository
     canonical-releases: United Kingdom
 
 Since there are no archive mirrors in Germany, any user in that country
-will be directed to other mirrors in the same continet.
+will be directed to other mirrors in the same continent.
 
     >>> archive = MirrorContent.ARCHIVE
     >>> mirrors = ubuntu.getBestMirrorsForCountry(germany, archive)
@@ -818,7 +818,7 @@ all official mirrors independently if they were probed recently or not.
     INFO    Done.
     <BLANKLINE>
 
-When a mirror is not reachabe or fail to mirror the content that it
+When a mirror is not reachable or fail to mirror the content that it
 should, it's marked as disabled (as you can see above) and thus not
 shown on the public mirror listings. We'll keep probing these disabled
 mirrors and once they're reachable and don't fail the content check

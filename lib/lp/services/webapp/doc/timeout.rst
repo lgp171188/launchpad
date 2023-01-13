@@ -66,6 +66,7 @@ Same thing if a function decorated using @with_timeout is called.
     >>> @with_timeout()
     ... def wait_a_little():
     ...     time.sleep(1)
+    ...
     >>> wait_a_little()
     Traceback (most recent call last):
       ...
@@ -79,6 +80,7 @@ successfully.
     >>> @with_timeout(timeout=2)
     ... def wait_a_little_more():
     ...     time.sleep(1)
+    ...
     >>> wait_a_little_more()
 
     >>> def _timeout():
@@ -87,6 +89,7 @@ successfully.
     >>> @with_timeout(timeout=_timeout)
     ... def wait_a_little_again():
     ...     time.sleep(1)
+    ...
     >>> wait_a_little_again()
 
     >>> class Foo:

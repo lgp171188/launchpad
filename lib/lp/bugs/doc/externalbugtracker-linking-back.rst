@@ -25,6 +25,7 @@ about the bug.
     ...     ):
     ...         self.last_launchpad_bug_id = launchpad_bug_id
     ...         print("Setting Launchpad id for bug %s" % remote_bug)
+    ...
 
 The methods are called by the CheckwatchesMaster class:
 
