@@ -74,6 +74,7 @@ ISupportsCommentPushing interface.
     ...
     ...         self.next_comment_id += 1
     ...         return remote_comment_id
+    ...
 
     >>> external_bugtracker = CommentPushingExternalBugTracker(
     ...     "http://example.com/"

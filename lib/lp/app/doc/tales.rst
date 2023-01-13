@@ -1466,6 +1466,7 @@ Test the 'fmt:url' namespace for canonical urls.
     ...     path = "bonobo/saki"
     ...     inside = None
     ...     rootsite = None
+    ...
 
     >>> object_having_url = ObjectThatHasUrl()
     >>> print(test_tales("foo/fmt:url", foo=object_having_url))

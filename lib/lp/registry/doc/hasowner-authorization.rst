@@ -15,6 +15,7 @@ itself or a Launchpad admin.
     >>> @implementer(IHasOwner)
     ... class FooObject:
     ...     owner = salgado
+    ...
 
 Salgado is the owner of any FooObject we create, so he can edit it.
 

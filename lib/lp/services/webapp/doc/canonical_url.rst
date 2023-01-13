@@ -96,17 +96,20 @@ interfaces.  First, we create some countryset, country and town objects.
     >>> @implementer(ICountrySet)
     ... class CountrySet:
     ...     pass
+    ...
     >>> countryset_instance = CountrySet()
 
     >>> @implementer(ICountry)
     ... class Country:
     ...     name = "England"
+    ...
     >>> country_instance = Country()
 
     >>> @implementer(ITown)
     ... class Town:
     ...     country = country_instance
     ...     name = "London"
+    ...
     >>> town_instance = Town()
 
 Next, we check there are no ICanonicalUrlData adapters for these objects.
@@ -231,6 +234,7 @@ an adapter.
     ...     @property
     ...     def inside(self):
     ...         return getUtility(ILaunchpadRoot)
+    ...
 
 The CountrySetUrl class needs to be accessible from zcml.  So, we put it
 in our temporary module.
@@ -322,6 +326,7 @@ ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
     ...     def __init__(self, name, parent):
     ...         self.path = name
     ...         self.inside = parent
+    ...
     >>> unrooted_object = ObjectThatHasUrl("unrooted", object_that_has_no_url)
     >>> canonical_url(unrooted_object)
     Traceback (most recent call last):
@@ -418,6 +423,7 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
     ...         ), "this is not a real IHTTPApplicationRequest"
     ...         assert not path_only, "not a real IHTTPApplicationRequest"
     ...         return self.applicationurl
+    ...
 
     >>> mandrill_request = FakeRequest("https://mandrill.example.org:23")
     >>> print(canonical_url(country_instance))

@@ -41,6 +41,7 @@ publishing behaviour using a mock PackageUploadCustom object:
     ...         self.customformat = (
     ...             PackageUploadCustomFormat.STATIC_TRANSLATIONS
     ...         )
+    ...
 
 
     >>> bat = getUtility(IDistributionSet)["ubuntu"]["breezy-autotest"]

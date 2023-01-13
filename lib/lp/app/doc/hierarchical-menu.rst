@@ -38,6 +38,7 @@ First, we need a hierarchy of objects to build upon:
     ...             self.path = name
     ...         self.inside = parent
     ...         self.rootsite = None
+    ...
 
     >>> class Root(BaseContent):
     ...     """The site root."""
@@ -46,14 +47,17 @@ First, we need a hierarchy of objects to build upon:
     >>> @implementer(ICookbook)
     ... class Cookbook(BaseContent):
     ...     pass
+    ...
 
     >>> @implementer(IRecipe)
     ... class Recipe(BaseContent):
     ...     pass
+    ...
 
     >>> @implementer(ICooker)
     ... class Cooker(BaseContent):
     ...     pass
+    ...
 
 Today we'll be cooking with Spam!
 

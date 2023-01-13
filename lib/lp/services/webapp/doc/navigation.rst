@@ -134,6 +134,7 @@ interface, we'll define one here.
     ...             return self.query_string
     ...         else:
     ...             return None
+    ...
 
     >>> request = Request()
 
@@ -149,6 +150,7 @@ interface, we'll define one here.
     ...
     ...     def __repr__(self):
     ...         return "<Thing '%s'>" % self.value
+    ...
 
     >>> @implementer(IThingSet)
     ... class ThingSet:
@@ -160,6 +162,7 @@ interface, we'll define one here.
     ...
     ...     def __repr__(self):
     ...         return "<ThingSet>"
+    ...
 
     >>> thingset = ThingSet()
 

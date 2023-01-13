@@ -87,6 +87,7 @@ architectures, compilers used for the Python interpreter, etc.
     ...         self.last_chunk_size = chunk_size
     ...         self.clock += self.timings[self.iteration]
     ...         self.iteration += 1
+    ...
 
 
 In combination with that, we tweak LoopTuner to simulate the timings we gave
@@ -218,6 +219,7 @@ This variant of the LoopTuner simulates an overridable cost function:
     ...
     ...     def computeCost(self):
     ...         return self.cost_function(self.last_chunk_size)
+    ...
 
 
     >>> class CostedTuner(LoopTuner):
@@ -424,6 +426,7 @@ of the actual run-time.
     ...     def __call__(self, chunk_size):
     ...         print("Processing %d items." % (chunk_size))
     ...         self.iteration += 1
+    ...
 
 Aim for a low goal_seconds (to reduce test runtime), and only 3 iterations.
 

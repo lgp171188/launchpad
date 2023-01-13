@@ -35,6 +35,7 @@ methods as well.
     ...
     ...     def dispatchBuildToWorker(self, logger):
     ...         print("Did something special to dispatch MySpecialBuild.")
+    ...
 
 For this documentation, we'll also need a dummy new build farm job.
 
@@ -45,6 +46,7 @@ For this documentation, we'll also need a dummy new build farm job.
     >>> @implementer(IMyNewBuildFarmJob)
     ... class MyNewBuildFarmJob:
     ...     pass
+    ...
 
 Custom behaviours are not normally instantiated directly, instead an adapter
 is specified for the specific IBuildFarmJob. Normally we'd add some ZCML to
