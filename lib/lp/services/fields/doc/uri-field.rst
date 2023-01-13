@@ -209,6 +209,7 @@ This widget is registered as an input widget:
     >>> @implementer(IURIFieldTest)
     ... class URIFieldTest:
     ...     field = None
+    ...
 
     >>> context = URIFieldTest()
     >>> field = IURIFieldTest["field"].bind(context)

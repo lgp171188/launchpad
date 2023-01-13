@@ -35,6 +35,7 @@ developer.
     >>> @implementer(ILaunchBag)
     ... class FakeLaunchBag:
     ...     developer = False
+    ...
     >>> the_launchbag = FakeLaunchBag()
     >>> provideUtility(the_launchbag, ILaunchBag)
 

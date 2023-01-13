@@ -45,6 +45,7 @@ are usually bound to a view.
     ...
     ...     # A hack that reveals secret of how facets work.
     ...     __launchpad_facetname__ = "overview"
+    ...
 
     # Menus are normally registered using the menu ZCML directive.
     >>> provideAdapter(

@@ -37,6 +37,7 @@ handle, and register them for some domains:
     ...     def process(self, mail, to_addr, filealias):
     ...         self.handledMails.append(mail["Message-Id"])
     ...         return True
+    ...
 
     >>> from lp.services.mail.handlers import mail_handlers
     >>> foo_handler = MockHandler()
@@ -257,6 +258,7 @@ attempting to process incoming mail.
     ...
     ...     def process(self, mail, to_addr, filealias):
     ...         raise TestOopsException()
+    ...
     >>> mail_handlers.add("oops.com", OopsHandler())
 
 And submit an email to the handler.
@@ -371,6 +373,7 @@ reporting in the web interface, are not ignored in the email interface.
     ... class UnauthorizedOopsHandler:
     ...     def process(self, mail, to_addr, filealias):
     ...         raise Unauthorized()
+    ...
     >>> mail_handlers.add("unauthorized.com", UnauthorizedOopsHandler())
 
     >>> msg = email.message_from_string(
@@ -434,6 +437,7 @@ Let's create and register a handler which raises a SQL error:
     ...     def process(self, mail, to_addr, filealias):
     ...         cur = cursor()
     ...         cur.execute("SELECT 1/0")
+    ...
     >>> mail_handlers.add("except.com", DBExceptionRaiser())
 
 Now we send a mail to the handler, which will cause an exception:

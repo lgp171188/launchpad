@@ -27,6 +27,7 @@ Construct an example url hierarchy
     ...         self.path = name  # See ICanonicalUrlData.
     ...         self.inside = parent  # See ICanonicalUrlData.
     ...         self.rootsite = None  # See ICanonicalUrlData.
+    ...
 
 Here's a useful class that we can use to effectively register adapters
 for an object, without actually using adapter registries.  This comes
@@ -351,6 +352,7 @@ Next, we return the link as HTML.
     ... class InteractiveTestRequest(LaunchpadTestRequest):
     ...     principal = None
     ...     interaction = None
+    ...
     >>> request = InteractiveTestRequest()
     >>> login(ANONYMOUS, request)
 
@@ -647,6 +649,7 @@ object.
     >>> @implementer(IThingHavingFacets)
     ... class SomeThing:
     ...     pass
+    ...
     >>> something_with_facets = SomeThing()
     >>> IFacetMenu(something_with_facets, None) is None
     True
@@ -657,6 +660,7 @@ We also need to check that we have no IApplicationMenu adapter named
     >>> @implementer(IThingHavingMenus)
     ... class SomeOtherThing:
     ...     pass
+    ...
     >>> something_with_menus = SomeOtherThing()
     >>> print(queryAdapter(something_with_menus, IApplicationMenu, "foo"))
     None
@@ -761,6 +765,7 @@ link should appear linked. The request is also set as the menu's
     ...
     ...     def setPrincipal(self, principal):
     ...         self.principal = principal
+    ...
     >>> request = FakeRequest("http://launchpad.test/sesamestreet/+bar")
     >>> view = LaunchpadView(house, request)
     >>> view.__launchpad_facetname__ = "bar"

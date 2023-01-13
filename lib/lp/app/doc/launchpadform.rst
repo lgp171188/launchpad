@@ -61,6 +61,7 @@ example schema:
     ...     name = "fred"
     ...     displayname = "Fred"
     ...     password = "password"
+    ...
 
 
 A form that handles all fields in the schema needs only set the

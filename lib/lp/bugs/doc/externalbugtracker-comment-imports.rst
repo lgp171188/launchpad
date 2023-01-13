@@ -83,6 +83,7 @@ ExternalBugTracker class which implements these three methods.
     ...             rfc822msgid=comment_id,
     ...         )
     ...         return message
+    ...
 
     >>> external_bugtracker = CommentImportingExternalBugTracker(
     ...     "http://example.com/"

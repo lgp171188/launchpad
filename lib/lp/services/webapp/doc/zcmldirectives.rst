@@ -60,10 +60,12 @@ default view for the IFooLayer layer.
     >>> @implementer(IFoo)
     ... class FooObject:
     ...     pass
+    ...
     >>> fooobject = FooObject()
     >>> @implementer(IFooLayer)
     ... class Request:
     ...     pass
+    ...
     >>> request = Request()
 
     >>> class FooView:

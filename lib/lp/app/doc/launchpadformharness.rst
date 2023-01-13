@@ -20,6 +20,7 @@ To demonstrate its use we'll create a sample schema and view class:
     ... class HarnessTest:
     ...     string = None
     ...     number = 0
+    ...
 
     >>> class HarnessTestView(LaunchpadFormView):
     ...     schema = IHarnessTest

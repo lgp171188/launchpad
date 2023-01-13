@@ -197,6 +197,7 @@ determination methods to use the results of an alternative query.
     ...     def blueprints(self):
     ...         print("Foo.blueprints")
     ...         return []
+    ...
 
 Now define the adapter for the Foo content class.
 
@@ -271,6 +272,7 @@ branches in the batch and that is used to construct the DecoratedBranch.
     ...
     ...     def isBlueprintBadgeVisible(self):
     ...         return False
+    ...
 
     >>> delegating_foo = DelegatingFoo(foo)
     >>> delegating_foo

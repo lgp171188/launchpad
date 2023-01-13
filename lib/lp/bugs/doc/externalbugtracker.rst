@@ -437,6 +437,7 @@ logged saying that comments won't be imported.
     ... class CommentImportExternalBugTracker(TimeUnknownExternalBugTracker):
     ...     baseurl = "http://whatever.com"
     ...     sync_comments = True
+    ...
 
     >>> checkwatches_master = CheckwatchesMaster(
     ...     transaction, syncable_gnome_products=[], logger=FakeLogger()

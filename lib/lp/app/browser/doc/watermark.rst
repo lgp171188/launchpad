@@ -123,5 +123,6 @@ for the context and the heading is rendered in H1.
     >>> @implementer(IMajorHeadingView)
     ... class HeadingView(TrivialView):
     ...     pass
+    ...
     >>> print(get_hierarchy(widget, viewcls=HeadingView).heading())
     <h1...><a...>Widget</a></h1>
