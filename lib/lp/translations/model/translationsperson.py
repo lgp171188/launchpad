@@ -321,7 +321,7 @@ class TranslationsPerson:
                     Join(
                         SQL("reviewable_groups"),
                         SQL("reviewable_groups.id")
-                        == Distribution.translationgroupID,
+                        == Distribution.translationgroup_id,
                     ),
                 ],
             ),
@@ -348,7 +348,7 @@ class TranslationsPerson:
                     Join(
                         SQL("reviewable_groups"),
                         SQL("reviewable_groups.id")
-                        == Product.translationgroupID,
+                        == Product.translationgroup_id,
                     ),
                 ],
             ),
@@ -421,9 +421,9 @@ class TranslationsPerson:
 
         # Look up translation group.
         groupjoin_conditions = Or(
-            TranslationGroup.id == Product.translationgroupID,
-            TranslationGroup.id == Distribution.translationgroupID,
-            TranslationGroup.id == ProjectGroup.translationgroupID,
+            TranslationGroup.id == Product.translationgroup_id,
+            TranslationGroup.id == Distribution.translationgroup_id,
+            TranslationGroup.id == ProjectGroup.translationgroup_id,
         )
         if expect_reviewer_status:
             GroupJoin = Join(TranslationGroup, groupjoin_conditions)
