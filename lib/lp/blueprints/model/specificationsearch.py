@@ -111,12 +111,14 @@ def search_specifications(
             Select(Specification.id, And(clauses), tables=tables),
         )
         store = store.with_(relevant_specification_cte)
-        tables = [Specification]
-        clauses = [
-            Specification.id.is_in(
-                Select(Column("id", RelevantSpecification))
+        tables = [
+            Specification,
+            Join(
+                RelevantSpecification,
+                Specification.id == Column("id", RelevantSpecification),
             ),
         ]
+        clauses = []
     clauses.extend(get_specification_privacy_filter(user))
     clauses.extend(get_specification_filters(spec_filter))
 
