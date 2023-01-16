@@ -38,7 +38,7 @@ __all__ = [
     "ProjectAddStepTwo",
 ]
 
-
+from collections import defaultdict
 from operator import attrgetter
 from typing import Type
 from urllib.parse import urlunsplit
@@ -140,6 +140,7 @@ from lp.registry.browser.pillar import (
     PillarViewMixin,
 )
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.ociproject import (
     OCI_PROJECT_ALLOW_CREATE,
     IOCIProjectSet,
@@ -1281,10 +1282,16 @@ class ProductPackagesPortletView(LaunchpadView):
     @cachedproperty
     def sourcepackages(self):
         """The project's latest source packages."""
+        distro_series_packages = defaultdict(list)
+        for sp in self.context.sourcepackages:
+            distro_series_packages[sp.distroseries].append(
+                sp.sourcepackagename
+            )
+        releases = getUtility(IDistroSeriesSet).getCurrentSourceReleases(
+            distro_series_packages
+        )
         current_packages = [
-            sp
-            for sp in self.context.sourcepackages
-            if sp.currentrelease is not None
+            sp for sp in self.context.sourcepackages if sp in releases
         ]
         current_packages.reverse()
         return current_packages[0:5]
