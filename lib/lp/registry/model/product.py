@@ -32,7 +32,7 @@ from storm.expr import (
     Or,
     Select,
 )
-from storm.locals import Int, List, Store, Unicode
+from storm.locals import Int, List, Reference, Store, Unicode
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -332,12 +332,10 @@ class Product(
     )
     downloadurl = StringCol(dbName="downloadurl", notNull=False, default=None)
     lastdoap = StringCol(dbName="lastdoap", notNull=False, default=None)
-    translationgroup = ForeignKey(
-        dbName="translationgroup",
-        foreignKey="TranslationGroup",
-        notNull=False,
-        default=None,
+    translationgroup_id = Int(
+        name="translationgroup", allow_none=True, default=None
     )
+    translationgroup = Reference(translationgroup_id, "TranslationGroup.id")
     translationpermission = DBEnum(
         name="translationpermission",
         allow_none=False,

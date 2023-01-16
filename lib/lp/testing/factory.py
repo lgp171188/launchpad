@@ -894,14 +894,16 @@ class LaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if name is None:
-            name = self.getUniqueString("translationgroup")
+            name = self.getUniqueUnicode("translationgroup")
         if title is None:
-            title = self.getUniqueString("title")
+            title = self.getUniqueUnicode("title")
         if summary is None:
-            summary = self.getUniqueString("summary")
-        return getUtility(ITranslationGroupSet).new(
+            summary = self.getUniqueUnicode("summary")
+        group = getUtility(ITranslationGroupSet).new(
             name, title, summary, url, owner
         )
+        IStore(group).flush()
+        return group
 
     def makeTranslator(
         self,

@@ -19,7 +19,7 @@ from zope.schema.vocabulary import SimpleTerm
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.database.sqlobject import AND
 from lp.services.webapp.vocabulary import (
-    NamedSQLObjectVocabulary,
+    NamedStormVocabulary,
     SQLObjectVocabularyBase,
     StormVocabularyBase,
 )
@@ -75,7 +75,7 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
         return term
 
 
-class TranslationGroupVocabulary(NamedSQLObjectVocabulary):
+class TranslationGroupVocabulary(NamedStormVocabulary):
 
     _table = TranslationGroup
 
