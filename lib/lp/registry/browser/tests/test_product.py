@@ -35,6 +35,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
+from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import RedirectionView, canonical_url
 from lp.services.webapp.servers import WebServiceTestRequest
 from lp.services.webapp.vhosts import allvhosts
@@ -796,6 +797,32 @@ class TestProductView(BrowserTestCase):
             )
         self.assertIn(public.name, browser.contents)
         self.assertIn(proprietary_name, browser.contents)
+
+
+class TestProductPackagesPortletView(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_query_count(self):
+        # The query count of ProductPackagesPortletView.sourcepackages is
+        # constant in the number of packages.
+        product = self.factory.makeProduct()
+        view = create_initialized_view(product, "+portlet-packages")
+
+        def create_packages():
+            self.factory.makePackagingLink(
+                productseries=product.development_focus, in_ubuntu=True
+            )
+
+        def get_packages():
+            clear_property_cache(product)
+            clear_property_cache(view)
+            return view.sourcepackages
+
+        recorder1, recorder2 = record_two_runs(
+            get_packages, create_packages, 2
+        )
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestProductEditView(BrowserTestCase):
