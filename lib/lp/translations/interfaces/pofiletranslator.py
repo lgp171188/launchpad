@@ -40,6 +40,9 @@ class IPOFileTranslator(Interface):
         readonly=True,
     )
 
+    def destroySelf():
+        """Delete this record."""
+
 
 class IPOFileTranslatorSet(Interface):
     """Interface representing the set of `IPOFileTranslator`records.

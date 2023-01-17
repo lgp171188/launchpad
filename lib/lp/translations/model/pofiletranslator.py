@@ -8,7 +8,9 @@ __all__ = [
 
 from operator import itemgetter
 
+import pytz
 from storm.expr import And, Join, LeftJoin
+from storm.locals import DateTime, Int, Reference
 from storm.store import Store
 from zope.interface import implementer
 
@@ -17,11 +19,9 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.pofiletranslator import (
     IPOFileTranslator,
     IPOFileTranslatorSet,
@@ -31,19 +31,36 @@ from lp.translations.model.potemplate import POTemplate
 
 
 @implementer(IPOFileTranslator)
-class POFileTranslator(SQLBase):
+class POFileTranslator(StormBase):
     """See `IPOFileTranslator`."""
 
-    pofile = ForeignKey(foreignKey="POFile", dbName="pofile", notNull=True)
-    person = ForeignKey(
-        dbName="person",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    __storm_table__ = "POFileTranslator"
+
+    id = Int(primary=True)
+    pofile_id = Int(name="pofile", allow_none=False)
+    pofile = Reference(pofile_id, "POFile.id")
+    person_id = Int(
+        name="person", validator=validate_public_person, allow_none=False
     )
-    date_last_touched = UtcDateTimeCol(
-        dbName="date_last_touched", notNull=False, default=None
+    person = Reference(person_id, "Person.id")
+    date_last_touched = DateTime(
+        name="date_last_touched",
+        allow_none=True,
+        default=None,
+        tzinfo=pytz.UTC,
     )
+
+    def __init__(self, pofile, person_id, date_last_touched=None):
+        super().__init__()
+        self.pofile = pofile
+        # Taking `Person.ID` rather than `Person` is unusual, but it fits
+        # better with how `lp.translators.scripts.scrub_pofiletranslator` is
+        # designed.
+        self.person_id = person_id
+        self.date_last_touched = date_last_touched
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IPOFileTranslatorSet)
@@ -107,6 +124,6 @@ class POFileTranslatorSet:
         """See `IPOFileTranslatorSet`."""
         return Store.of(potemplate).find(
             POFileTranslator,
-            POFileTranslator.pofileID == POFile.id,
+            POFileTranslator.pofile_id == POFile.id,
             POFile.potemplateID == potemplate.id,
         )

@@ -189,8 +189,8 @@ class TranslationsPerson:
         tables = self._composePOFileReviewerJoins(expect_reviewer_status=False)
 
         join_condition = And(
-            POFileTranslator.personID == self.person.id,
-            POFileTranslator.pofileID == POFile.id,
+            POFileTranslator.person == self.person,
+            POFileTranslator.pofile_id == POFile.id,
             POFile.language != getUtility(ILaunchpadCelebrities).english,
         )
 
@@ -261,7 +261,7 @@ class TranslationsPerson:
         Returns a list of Storm CTEs, much the same as
         _composePOFileReviewerJoins."""
         clause = [
-            POFileTranslator.personID == self.person.id,
+            POFileTranslator.person == self.person,
             POFile.language != getUtility(ILaunchpadCelebrities).english,
         ]
         if no_older_than:
