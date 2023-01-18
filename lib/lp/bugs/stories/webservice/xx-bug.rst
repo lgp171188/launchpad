@@ -1510,7 +1510,7 @@ Non-admins can't disable a bugtracker through the API.
     ... )
     HTTP/1.1 401 Unauthorized
     ...
-    (<BugTracker at ...>, 'active', 'launchpad.Admin')
+    (<...BugTracker object at ...>, 'active', 'launchpad.Admin')
 
 Admins can, however.
 
