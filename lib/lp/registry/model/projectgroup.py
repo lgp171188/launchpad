@@ -11,6 +11,7 @@ __all__ = [
 
 import six
 from storm.expr import SQL, And, In, Join
+from storm.locals import Int, Reference
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -151,12 +152,10 @@ class ProjectGroup(
     )
     freshmeatproject = None
     lastdoap = StringCol(dbName="lastdoap", notNull=False, default=None)
-    translationgroup = ForeignKey(
-        dbName="translationgroup",
-        foreignKey="TranslationGroup",
-        notNull=False,
-        default=None,
+    translationgroup_id = Int(
+        name="translationgroup", allow_none=True, default=None
     )
+    translationgroup = Reference(translationgroup_id, "TranslationGroup.id")
     translationpermission = DBEnum(
         name="translationpermission",
         allow_none=False,

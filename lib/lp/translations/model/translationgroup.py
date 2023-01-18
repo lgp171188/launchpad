@@ -8,8 +8,10 @@ __all__ = [
 
 import operator
 
+import pytz
 from storm.expr import Desc, Join, LeftJoin
-from storm.references import ReferenceSet
+from storm.properties import DateTime, Int, Unicode
+from storm.references import Reference, ReferenceSet
 from storm.store import Store
 from zope.interface import implementer
 
@@ -19,16 +21,9 @@ from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStandbyStore, IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.worlddata.model.language import Language
 from lp.translations.interfaces.translationgroup import (
@@ -39,38 +34,51 @@ from lp.translations.model.translator import Translator
 
 
 @implementer(ITranslationGroup)
-class TranslationGroup(SQLBase):
+class TranslationGroup(StormBase):
     """A TranslationGroup."""
 
+    __storm_table__ = "TranslationGroup"
     # default to listing alphabetically
-    _defaultOrder = "name"
+    __storm_order__ = "name"
 
     # db field names
-    name = StringCol(unique=True, alternateID=True, notNull=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    id = Int(primary=True)
+    name = Unicode(allow_none=False)
+    title = Unicode(allow_none=False)
+    summary = Unicode(allow_none=False)
+    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
+    owner = Reference(owner_id, "Person.id")
 
     # useful joins
-    distributions = SQLMultipleJoin(
-        "Distribution", joinColumn="translationgroup"
-    )
+    distributions = ReferenceSet("id", "Distribution.translationgroup_id")
     languages = ReferenceSet(
-        "<primary key>",
+        "id",
         "Translator.translationgroup_id",
         "Translator.language_id",
         "Language.id",
     )
-    translators = ReferenceSet(
-        "<primary key>", "Translator.translationgroup_id"
-    )
-    translation_guide_url = StringCol(notNull=False, default=None)
+    translators = ReferenceSet("id", "Translator.translationgroup_id")
+    translation_guide_url = Unicode(allow_none=True, default=None)
+
+    def __init__(
+        self,
+        name,
+        title,
+        summary,
+        owner,
+        datecreated=DEFAULT,
+        translation_guide_url=None,
+    ):
+        super().__init__()
+        self.name = name
+        self.title = title
+        self.summary = summary
+        self.owner = owner
+        self.datecreated = datecreated
+        self.translation_guide_url = translation_guide_url
 
     def __getitem__(self, language_code):
         """See `ITranslationGroup`."""
@@ -205,7 +213,7 @@ class TranslationGroup(SQLBase):
             IStore(Product)
             .find(
                 Product,
-                Product.translationgroupID == self.id,
+                Product.translationgroup == self,
                 Product.active == True,
                 ProductSet.getProductPrivacyFilter(user),
             )
@@ -241,7 +249,7 @@ class TranslationGroup(SQLBase):
             .using(*using)
             .find(
                 tables,
-                ProjectGroup.translationgroupID == self.id,
+                ProjectGroup.translationgroup == self,
                 ProjectGroup.active == True,
             )
             .order_by(ProjectGroup.display_name)
@@ -272,7 +280,7 @@ class TranslationGroup(SQLBase):
         distro_data = (
             IStandbyStore(Distribution)
             .using(*using)
-            .find(tables, Distribution.translationgroupID == self.id)
+            .find(tables, Distribution.translationgroup == self)
             .order_by(Distribution.display_name)
         )
 
@@ -305,10 +313,12 @@ class TranslationGroupSet:
 
     def getByName(self, name):
         """See ITranslationGroupSet."""
-        try:
-            return TranslationGroup.byName(name)
-        except SQLObjectNotFound:
+        group = (
+            IStore(TranslationGroup).find(TranslationGroup, name=name).one()
+        )
+        if group is None:
             raise NotFoundError(name)
+        return group
 
     def _get(self):
         return IStore(TranslationGroup).find(TranslationGroup)
