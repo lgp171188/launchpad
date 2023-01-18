@@ -384,7 +384,10 @@ class PublishDistro(PublisherScript):
 
     def deleteArchive(self, archive, publisher):
         """Ask `publisher` to delete `archive`."""
-        if archive.purpose == ArchivePurpose.PPA:
+        if (
+            archive.purpose == ArchivePurpose.PPA
+            and archive.publishing_method == ArchivePublishingMethod.LOCAL
+        ):
             publisher.deleteArchive()
             return True
         else:

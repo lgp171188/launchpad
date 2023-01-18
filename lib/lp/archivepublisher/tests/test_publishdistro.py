@@ -1109,7 +1109,7 @@ class TestPublishDistroMethods(TestCaseWithFactory):
             ppa, script.getPublisher(distro, ppa, [])
         )
         self.assertTrue(deletion_done)
-        self.assertContentEqual([], script.getPPAs(distro))
+        self.assertEqual(ArchiveStatus.DELETED, ppa.status)
 
     def test_deleteArchive_ignores_non_ppa(self):
         # If fed an archive that's not a PPA, deleteArchive will do
@@ -1121,7 +1121,21 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         script = self.makeScript(distro)
         deletion_done = script.deleteArchive(archive, None)
         self.assertFalse(deletion_done)
-        self.assertEqual(archive, distro.getArchiveByComponent("partner"))
+        self.assertEqual(ArchiveStatus.ACTIVE, archive.status)
+
+    def test_deleteArchive_ignores_non_local(self):
+        # If fed an Artifactory PPA, deleteArchive will do nothing and
+        # return False to indicate the fact.
+        distro = self.makeDistro()
+        ppa = self.factory.makeArchive(
+            distro,
+            purpose=ArchivePurpose.PPA,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+        )
+        script = self.makeScript(distro)
+        deletion_done = script.deleteArchive(ppa, None)
+        self.assertFalse(deletion_done)
+        self.assertEqual(ArchiveStatus.ACTIVE, ppa.status)
 
     def test_publishArchive_drives_publisher(self):
         # publishArchive puts a publisher through its paces.  This work
