@@ -401,8 +401,10 @@ class Bug(SQLBase, InformationTypeMixin):
     bug_messages = ReferenceSet(
         "id", BugMessage.bug_id, order_by=BugMessage.index
     )
-    watches = SQLMultipleJoin(
-        "BugWatch", joinColumn="bug", orderBy=["bugtracker_id", "remotebug"]
+    watches = ReferenceSet(
+        "id",
+        BugWatch.bug_id,
+        order_by=(BugWatch.bugtracker_id, BugWatch.remotebug),
     )
     duplicates = SQLMultipleJoin("Bug", joinColumn="duplicateof", orderBy="id")
     linked_bugbranches = ReferenceSet(
@@ -811,7 +813,7 @@ class Bug(SQLBase, InformationTypeMixin):
         load_something("distribution_id", Distribution)
         load_something("distroseries_id", DistroSeries)
         load_something("sourcepackagename_id", SourcePackageName)
-        list(store.find(BugWatch, BugWatch.bugID == self.id))
+        list(store.find(BugWatch, BugWatch.bug == self))
         return sorted(tasks, key=bugtask_sort_key)
 
     @property
@@ -2122,11 +2124,16 @@ class Bug(SQLBase, InformationTypeMixin):
         # This matching is a bit fragile, since bugwatch.remotebug
         # is a user editable text string. We should improve the
         # matching so that for example '#42' matches '42' and so on.
-        return BugWatch.selectFirstBy(
-            bug=self,
-            bugtracker=bugtracker,
-            remotebug=str(remote_bug),
-            orderBy="id",
+        return (
+            IStore(BugWatch)
+            .find(
+                BugWatch,
+                bug=self,
+                bugtracker=bugtracker,
+                remotebug=str(remote_bug),
+            )
+            .order_by("id")
+            .first()
         )
 
     def setStatus(self, target, status, user):

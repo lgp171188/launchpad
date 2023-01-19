@@ -18,7 +18,7 @@ from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
 from storm.expr import Desc, Not
-from storm.locals import Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -43,15 +43,8 @@ from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.messages.model.message import Message
@@ -100,27 +93,44 @@ class BugWatchDeletionError(Exception):
 
 
 @implementer(IBugWatch)
-class BugWatch(SQLBase):
+class BugWatch(StormBase):
     """See `IBugWatch`."""
 
-    _table = "BugWatch"
-    bug = ForeignKey(dbName="bug", foreignKey="Bug", notNull=True)
+    __storm_table__ = "BugWatch"
+    id = Int(primary=True)
+    bug_id = Int(name="bug", allow_none=False)
+    bug = Reference(bug_id, "Bug.id")
     bugtracker_id = Int(name="bugtracker", allow_none=False)
     bugtracker = Reference(bugtracker_id, "BugTracker.id")
-    remotebug = StringCol(notNull=True)
-    remotestatus = StringCol(notNull=False, default=None)
-    remote_importance = StringCol(notNull=False, default=None)
-    lastchanged = UtcDateTimeCol(notNull=False, default=None)
-    lastchecked = UtcDateTimeCol(notNull=False, default=None)
+    remotebug = Unicode(allow_none=False)
+    remotestatus = Unicode(allow_none=True, default=None)
+    remote_importance = Unicode(allow_none=True, default=None)
+    lastchanged = DateTime(allow_none=True, default=None, tzinfo=utc)
+    lastchecked = DateTime(allow_none=True, default=None, tzinfo=utc)
     last_error_type = DBEnum(enum=BugWatchActivityStatus, default=None)
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    datecreated = DateTime(allow_none=False, default=UTC_NOW, tzinfo=utc)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    next_check = UtcDateTimeCol()
+    owner = Reference(owner_id, "Person.id")
+    next_check = DateTime(tzinfo=utc)
+
+    def __init__(
+        self,
+        bug,
+        bugtracker,
+        remotebug,
+        owner,
+        datecreated=UTC_NOW,
+        lastchanged=None,
+    ):
+        super().__init__()
+        self.bug = bug
+        self.bugtracker = bugtracker
+        self.remotebug = remotebug
+        self.owner = owner
+        self.datecreated = datecreated
+        self.lastchanged = lastchanged
 
     @property
     def bugtasks(self):
@@ -173,9 +183,9 @@ class BugWatch(SQLBase):
         if self.remote_importance != remote_importance:
             self.remote_importance = remote_importance
             self.lastchanged = UTC_NOW
-            # Sync the object in order to convert the UTC_NOW sql
+            # Flush the object in order to convert the UTC_NOW sql
             # constant to a datetime value.
-            self.sync()
+            IStore(self).flush()
         for linked_bugtask in self.bugtasks_to_update:
             old_bugtask = Snapshot(
                 linked_bugtask, providing=providedBy(linked_bugtask)
@@ -198,9 +208,9 @@ class BugWatch(SQLBase):
         if self.remotestatus != remote_status:
             self.remotestatus = remote_status
             self.lastchanged = UTC_NOW
-            # Sync the object in order to convert the UTC_NOW sql
+            # Flush the object in order to convert the UTC_NOW sql
             # constant to a datetime value.
-            self.sync()
+            IStore(self).flush()
         for linked_bugtask in self.bugtasks_to_update:
             old_bugtask = Snapshot(
                 linked_bugtask, providing=providedBy(linked_bugtask)
@@ -231,11 +241,11 @@ class BugWatch(SQLBase):
             )
         # Remove any BugWatchActivity entries for this bug watch.
         self.activity.remove()
+        store = Store.of(self)
+        store.remove(self)
         # XXX 2010-09-29 gmb bug=647103
         #     We flush the store to make sure that errors bubble up and
         #     are caught by the OOPS machinery.
-        SQLBase.destroySelf(self)
-        store = Store.of(self)
         store.flush()
 
     @property
@@ -421,13 +431,13 @@ class BugWatchSet:
 
     def get(self, watch_id):
         """See `IBugWatch`Set."""
-        try:
-            return BugWatch.get(watch_id)
-        except SQLObjectNotFound:
+        watch = IStore(BugWatch).get(BugWatch, watch_id)
+        if watch is None:
             raise NotFoundError(watch_id)
+        return watch
 
     def search(self):
-        return BugWatch.select()
+        return IStore(BugWatch).find(BugWatch)
 
     def fromText(self, text, bug, owner):
         """See `IBugWatchSet`."""
@@ -489,7 +499,7 @@ class BugWatchSet:
 
     def createBugWatch(self, bug, owner, bugtracker, remotebug):
         """See `IBugWatchSet`."""
-        return BugWatch(
+        watch = BugWatch(
             bug=bug,
             owner=owner,
             datecreated=UTC_NOW,
@@ -497,6 +507,8 @@ class BugWatchSet:
             bugtracker=bugtracker,
             remotebug=remotebug,
         )
+        IStore(watch).flush()
+        return watch
 
     def parseBugzillaURL(self, scheme, host, path, query):
         """Extract the Bugzilla base URL and bug ID."""
@@ -828,7 +840,7 @@ class BugWatchActivity(StormBase):
     id = Int(primary=True)
     bug_watch_id = Int(name="bug_watch")
     bug_watch = Reference(bug_watch_id, BugWatch.id)
-    activity_date = UtcDateTimeCol(notNull=True)
+    activity_date = DateTime(allow_none=False, tzinfo=utc)
     result = DBEnum(enum=BugWatchActivityStatus, allow_none=True)
     message = Unicode()
     oops_id = Unicode()

@@ -159,7 +159,7 @@ def project_products_using_malone_vocabulary_factory(context):
     )
 
 
-class BugWatchVocabulary(SQLObjectVocabularyBase):
+class BugWatchVocabulary(StormVocabularyBase):
     _table = BugWatch
 
     def __iter__(self):
