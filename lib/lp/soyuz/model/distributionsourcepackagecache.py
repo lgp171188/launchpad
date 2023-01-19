@@ -8,6 +8,7 @@ __all__ = [
 from collections import defaultdict
 from operator import attrgetter, itemgetter
 
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.code.model.seriessourcepackagebranch import SeriesSourcePackageBranch
@@ -16,8 +17,7 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.distributionsourcepackagecache import (
     IDistributionSourcePackageCache,
 )
@@ -32,24 +32,39 @@ _DEFAULT = object()
 
 
 @implementer(IDistributionSourcePackageCache)
-class DistributionSourcePackageCache(SQLBase):
-    _table = "DistributionSourcePackageCache"
+class DistributionSourcePackageCache(StormBase):
+    __storm_table__ = "DistributionSourcePackageCache"
 
-    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=False)
-    distribution = ForeignKey(
-        dbName="distribution", foreignKey="Distribution", notNull=True
-    )
-    sourcepackagename = ForeignKey(
-        dbName="sourcepackagename",
-        foreignKey="SourcePackageName",
-        notNull=True,
-    )
+    id = Int(primary=True)
+    archive_id = Int(name="archive", allow_none=True)
+    archive = Reference(archive_id, "Archive.id")
+    distribution_id = Int(name="distribution", allow_none=False)
+    distribution = Reference(distribution_id, "Distribution.id")
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=False)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
 
-    name = StringCol(notNull=False, default=None)
-    binpkgnames = StringCol(notNull=False, default=None)
-    binpkgsummaries = StringCol(notNull=False, default=None)
-    binpkgdescriptions = StringCol(notNull=False, default=None)
-    changelog = StringCol(notNull=False, default=None)
+    name = Unicode(allow_none=True, default=None)
+    binpkgnames = Unicode(allow_none=True, default=None)
+    binpkgsummaries = Unicode(allow_none=True, default=None)
+    binpkgdescriptions = Unicode(allow_none=True, default=None)
+    changelog = Unicode(allow_none=True, default=None)
+
+    def __init__(
+        self,
+        archive,
+        distribution,
+        sourcepackagename,
+        name=None,
+        binpkgnames=None,
+        binpkgsummaries=None,
+    ):
+        super().__init__()
+        self.archive = archive
+        self.distribution = distribution
+        self.sourcepackagename = sourcepackagename
+        self.name = name
+        self.binpkgnames = binpkgnames
+        self.binpkgsummaries = binpkgsummaries
 
     @property
     def distributionsourcepackage(self):
@@ -89,7 +104,7 @@ class DistributionSourcePackageCache(SQLBase):
         If 'archive' is not given it will return all caches stored for the
         distribution main archives (PRIMARY and PARTNER).
         """
-        archive_column = DistributionSourcePackageCache.archiveID
+        archive_column = DistributionSourcePackageCache.archive_id
         if archive is _DEFAULT:
             archive_clause = archive_column.is_in(
                 distro.all_distro_archive_ids
@@ -106,7 +121,7 @@ class DistributionSourcePackageCache(SQLBase):
                 DistributionSourcePackageCache.distribution == distro,
                 archive_clause,
                 SourcePackageName.id
-                == DistributionSourcePackageCache.sourcepackagenameID,
+                == DistributionSourcePackageCache.sourcepackagename_id,
             )
             .order_by(DistributionSourcePackageCache.name)
         )
@@ -137,7 +152,7 @@ class DistributionSourcePackageCache(SQLBase):
                     "Removing source cache for '%s' (%s)"
                     % (cache.name, cache.id)
                 )
-                cache.destroySelf()
+                IStore(cache).remove(cache)
 
     @classmethod
     def update(
@@ -180,7 +195,7 @@ class DistributionSourcePackageCache(SQLBase):
             cls,
             cls.distribution == distro,
             cls.archive == archive,
-            cls.sourcepackagenameID.is_in(
+            cls.sourcepackagename_id.is_in(
                 [spn.id for spn in sourcepackagenames]
             ),
         )
@@ -285,7 +300,7 @@ class DistributionSourcePackageCache(SQLBase):
             cls,
             cls.distribution == distro,
             cls.archive == None,
-            cls.sourcepackagenameID.is_in(
+            cls.sourcepackagename_id.is_in(
                 [spn.id for spn in sourcepackagenames]
             ),
         )

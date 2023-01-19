@@ -189,7 +189,7 @@ class DistributionSourcePackageRelease:
                 DistroSeriesPackageCache,
                 And(
                     DistroSeriesPackageCache.distroseries == DistroSeries.id,
-                    DistroSeriesPackageCache.archiveID.is_in(archive_ids),
+                    DistroSeriesPackageCache.archive_id.is_in(archive_ids),
                     DistroSeriesPackageCache.binarypackagename
                     == BinaryPackageName.id,
                 ),

@@ -1581,7 +1581,7 @@ class Distribution(
         conditions = [
             DistributionSourcePackageCache.distribution == self,
             Or(
-                DistributionSourcePackageCache.archiveID.is_in(
+                DistributionSourcePackageCache.archive_id.is_in(
                     self.all_distro_archive_ids
                 ),
                 DistributionSourcePackageCache.archive == None,
@@ -1613,7 +1613,7 @@ class Distribution(
                 Join(
                     SourcePackagePublishingHistory,
                     SourcePackagePublishingHistory.sourcepackagenameID
-                    == DistributionSourcePackageCache.sourcepackagenameID,
+                    == DistributionSourcePackageCache.sourcepackagename_id,
                 )
             )
             conditions.extend(
@@ -1668,7 +1668,7 @@ class Distribution(
 
         find_spec = (
             DistributionSourcePackageCache.distribution == self,
-            DistributionSourcePackageCache.archiveID.is_in(
+            DistributionSourcePackageCache.archive_id.is_in(
                 self.all_distro_archive_ids
             ),
         )

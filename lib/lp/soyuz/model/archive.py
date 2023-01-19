@@ -1205,6 +1205,9 @@ class Archive(SQLBase):
 
     def updateArchiveCache(self):
         """See `IArchive`."""
+        # Circular imports.
+        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.distroseries import DistroSeries
         from lp.soyuz.model.distributionsourcepackagecache import (
             DistributionSourcePackageCache,
         )
@@ -1235,20 +1238,24 @@ class Archive(SQLBase):
 
         # Cache source package name and its binaries information, binary
         # names and summaries.
-        sources_cached = DistributionSourcePackageCache.select(
-            "archive = %s" % sqlvalues(self), prejoins=["distribution"]
+        sources_cached = IStore(DistributionSourcePackageCache).find(
+            (DistributionSourcePackageCache, Distribution),
+            DistributionSourcePackageCache.archive == self,
+            DistributionSourcePackageCache.distribution_id == Distribution.id,
         )
-        for cache in sources_cached:
+        for cache, _ in sources_cached:
             add_cache_content(cache.distribution.name)
             add_cache_content(cache.name)
             add_cache_content(cache.binpkgnames)
             add_cache_content(cache.binpkgsummaries)
 
         # Cache distroseries names with binaries.
-        binaries_cached = DistroSeriesPackageCache.select(
-            "archive = %s" % sqlvalues(self), prejoins=["distroseries"]
+        binaries_cached = IStore(DistroSeriesPackageCache).find(
+            (DistroSeriesPackageCache, DistroSeries),
+            DistroSeriesPackageCache.archive == self,
+            DistroSeriesPackageCache.distroseries_id == DistroSeries.id,
         )
-        for cache in binaries_cached:
+        for cache, _ in binaries_cached:
             add_cache_content(cache.distroseries.name)
 
         # Collapse all relevant terms in 'package_description_cache' and

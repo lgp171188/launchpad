@@ -13,7 +13,6 @@ from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distroarchseriesbinarypackage import (
@@ -78,17 +77,19 @@ class DistroArchSeriesBinaryPackage:
             DistroSeriesPackageCache,
         )
 
-        query = """
-            distroseries = %s AND
-            archive IN %s AND
-            binarypackagename = %s
-        """ % sqlvalues(
-            self.distroseries,
-            self.distribution.all_distro_archive_ids,
-            self.binarypackagename,
+        return (
+            IStore(DistroSeriesPackageCache)
+            .find(
+                DistroSeriesPackageCache,
+                DistroSeriesPackageCache.distroseries == self.distroseries,
+                DistroSeriesPackageCache.archive_id.is_in(
+                    self.distribution.all_distro_archive_ids
+                ),
+                DistroSeriesPackageCache.binarypackagename
+                == self.binarypackagename,
+            )
+            .one()
         )
-
-        return DistroSeriesPackageCache.selectOne(query)
 
     @property
     def summary(self):
