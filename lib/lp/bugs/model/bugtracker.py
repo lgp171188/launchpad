@@ -12,12 +12,12 @@ __all__ = [
 
 from datetime import datetime
 from itertools import chain
+from operator import itemgetter
 from urllib.parse import quote, urlsplit, urlunsplit
 
-import six
 from lazr.uri import URI
 from pytz import timezone
-from storm.expr import Count, Desc, Not
+from storm.expr import Count, Desc, Not, Or
 from storm.locals import SQL, Bool, Int, Reference, ReferenceSet, Unicode
 from storm.store import Store
 from zope.component import getUtility
@@ -45,17 +45,10 @@ from lp.bugs.model.bugwatch import BugWatch
 from lp.registry.interfaces.person import IPersonSet, validate_public_person
 from lp.registry.model.product import Product, ProductSet
 from lp.registry.model.projectgroup import ProjectGroup
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, flush_database_updates
-from lp.services.database.sqlobject import (
-    OR,
-    BoolCol,
-    ForeignKey,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 
@@ -286,7 +279,7 @@ class BugTrackerComponentGroup(StormBase):
 
 
 @implementer(IBugTracker)
-class BugTracker(SQLBase):
+class BugTracker(StormBase):
     """A class to access the BugTracker table in the database.
 
     Each BugTracker is a distinct instance of that bug tracking
@@ -295,34 +288,59 @@ class BugTracker(SQLBase):
     distinct BugTrackers.
     """
 
-    _table = "BugTracker"
+    __storm_table__ = "BugTracker"
 
+    id = Int(primary=True)
     bugtrackertype = DBEnum(
         name="bugtrackertype", enum=BugTrackerType, allow_none=False
     )
-    name = StringCol(notNull=True, unique=True)
-    title = StringCol(notNull=True)
-    summary = StringCol(notNull=False)
-    baseurl = StringCol(notNull=True)
+    name = Unicode(name="name", allow_none=False)
+    title = Unicode(name="title", allow_none=False)
+    summary = Unicode(name="summary", allow_none=True)
+    baseurl = Unicode(name="baseurl", allow_none=False)
     active = Bool(name="active", allow_none=False, default=True)
 
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    contactdetails = StringCol(notNull=False)
-    has_lp_plugin = BoolCol(notNull=False, default=False)
-    products = SQLMultipleJoin(
-        "Product", joinColumn="bugtracker", orderBy="name"
+    owner = Reference(owner_id, "Person.id")
+    contactdetails = Unicode(name="contactdetails", allow_none=True)
+    has_lp_plugin = Bool(name="has_lp_plugin", allow_none=True, default=False)
+    products = ReferenceSet(
+        "id", "Product.bugtracker_id", order_by="Product.name"
     )
-    watches = SQLMultipleJoin(
-        "BugWatch",
-        joinColumn="bugtracker",
-        orderBy="-datecreated",
-        prejoins=["bug"],
-    )
+
+    @property
+    def watches(self):
+        return DecoratedResultSet(
+            IStore(BugWatch)
+            .find(
+                (BugWatch, Bug),
+                BugWatch.bugtracker == self,
+                BugWatch.bugID == Bug.id,
+            )
+            .order_by(Desc(BugWatch.datecreated)),
+            result_decorator=itemgetter(0),
+        )
+
+    def __init__(
+        self,
+        bugtrackertype,
+        name,
+        title,
+        baseurl,
+        owner,
+        summary=None,
+        contactdetails=None,
+    ):
+        super().__init__()
+        self.bugtrackertype = bugtrackertype
+        self.name = name
+        self.title = title
+        self.baseurl = baseurl
+        self.owner = owner
+        self.summary = summary
+        self.contactdetails = contactdetails
 
     _filing_url_patterns = {
         BugTrackerType.BUGZILLA: (
@@ -548,7 +566,7 @@ class BugTracker(SQLBase):
             .find(
                 Bug,
                 BugWatch.bugID == Bug.id,
-                BugWatch.bugtrackerID == self.id,
+                BugWatch.bugtracker == self,
                 BugWatch.remotebug == remotebug,
             )
             .config(distinct=True)
@@ -590,9 +608,7 @@ class BugTracker(SQLBase):
 
     # Join to return a list of BugTrackerAliases relating to this
     # BugTracker.
-    _bugtracker_aliases = ReferenceSet(
-        "<primary key>", "BugTrackerAlias.bugtracker_id"
-    )
+    _bugtracker_aliases = ReferenceSet("id", "BugTrackerAlias.bugtracker_id")
 
     def _get_aliases(self):
         """See `IBugTracker.aliases`."""
@@ -646,7 +662,7 @@ class BugTracker(SQLBase):
             .find(
                 BugMessage,
                 BugMessage.bugwatch_id == BugWatch.id,
-                BugWatch.bugtrackerID == self.id,
+                BugWatch.bugtracker == self,
             )
             .order_by(BugMessage.id)
         )
@@ -807,7 +823,7 @@ class BugTracker(SQLBase):
             IStore(Product)
             .find(
                 Product,
-                Product.bugtrackerID == self.id,
+                Product.bugtracker == self,
                 Product.active == True,
                 ProductSet.getProductPrivacyFilter(user),
             )
@@ -817,12 +833,15 @@ class BugTracker(SQLBase):
             IStore(ProjectGroup)
             .find(
                 ProjectGroup,
-                ProjectGroup.bugtrackerID == self.id,
+                ProjectGroup.bugtracker == self,
                 ProjectGroup.active == True,
             )
             .order_by(ProjectGroup.name)
         )
         return groups, products
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IBugTrackerSet)
@@ -831,53 +850,52 @@ class BugTrackerSet:
     either the full set in the db, or a subset.
     """
 
-    table = BugTracker
-
     def __init__(self):
         self.title = "Bug trackers registered in Launchpad"
 
     def get(self, bugtracker_id, default=None):
         """See `IBugTrackerSet`."""
-        try:
-            return BugTracker.get(bugtracker_id)
-        except SQLObjectNotFound:
+        bugtracker = IStore(BugTracker).get(BugTracker, bugtracker_id)
+        if bugtracker is None:
             return default
+        return bugtracker
 
     def getByName(self, name, default=None):
         """See `IBugTrackerSet`."""
-        return self.table.selectOne(self.table.q.name == name)
+        return IStore(BugTracker).find(BugTracker, name=name).one()
 
     def __getitem__(self, name):
-        item = self.table.selectOne(self.table.q.name == name)
+        item = IStore(BugTracker).find(BugTracker, name=name).one()
         if item is None:
             raise NotFoundError(name)
         else:
             return item
 
     def __iter__(self):
-        yield from self.table.select(orderBy="title")
+        yield from IStore(BugTracker).find(BugTracker).order_by("title")
 
     def queryByBaseURL(self, baseurl):
         """See `IBugTrackerSet`."""
         # All permutations we'll search for.
         permutations = base_url_permutations(baseurl)
         # Construct the search. All the important parts in the next
-        # expression are lazily evaluated. SQLObject queries do not
+        # expression are lazily evaluated. Storm queries do not
         # execute any SQL until results are pulled, so the first query
         # to return a match will be the last query executed.
         matching_bugtrackers = chain(
             # Search for any permutation in BugTracker.
-            BugTracker.select(
-                OR(*(BugTracker.q.baseurl == url for url in permutations))
+            IStore(BugTracker).find(
+                BugTracker,
+                Or(*(BugTracker.baseurl == url for url in permutations)),
             ),
             # Search for any permutation in BugTrackerAlias.
             (
                 alias.bugtracker
                 for alias in IStore(BugTrackerAlias).find(
                     BugTrackerAlias,
-                    OR(
+                    Or(
                         *(
-                            BugTrackerAlias.base_url == six.ensure_text(url)
+                            BugTrackerAlias.base_url == url
                             for url in permutations
                         )
                     ),
@@ -891,7 +909,7 @@ class BugTrackerSet:
 
     def search(self):
         """See `IBugTrackerSet`."""
-        return BugTracker.select()
+        return IStore(BugTracker).find(BugTracker)
 
     def getAllTrackers(self, active=None):
         if active is not None:
@@ -945,17 +963,17 @@ class BugTrackerSet:
 
     @property
     def count(self):
-        return IStore(self.table).find(self.table).count()
+        return IStore(BugTracker).find(BugTracker).count()
 
     @property
     def names(self):
-        return IStore(self.table).find(self.table).values(self.table.name)
+        return IStore(BugTracker).find(BugTracker).values(BugTracker.name)
 
     def getMostActiveBugTrackers(self, limit=None):
         """See `IBugTrackerSet`."""
         return (
             IStore(BugTracker)
-            .find(BugTracker, BugTracker.id == BugWatch.bugtrackerID)
+            .find(BugTracker, BugTracker.id == BugWatch.bugtracker_id)
             .group_by(BugTracker)
             .order_by(Desc(Count(BugWatch)))
             .config(limit=limit)
@@ -968,7 +986,7 @@ class BugTrackerSet:
             IStore(Product)
             .find(
                 Product,
-                Product.bugtrackerID.is_in(ids),
+                Product.bugtracker_id.is_in(ids),
                 Product.active == True,
                 ProductSet.getProductPrivacyFilter(user),
             )
@@ -978,7 +996,7 @@ class BugTrackerSet:
             IStore(ProjectGroup)
             .find(
                 ProjectGroup,
-                ProjectGroup.bugtrackerID.is_in(ids),
+                ProjectGroup.bugtracker_id.is_in(ids),
                 ProjectGroup.active == True,
             )
             .order_by(ProjectGroup.name)

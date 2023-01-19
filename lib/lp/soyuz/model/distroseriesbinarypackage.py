@@ -68,7 +68,7 @@ class DistroSeriesBinaryPackage:
         result = store.find(
             DistroSeriesPackageCache,
             DistroSeriesPackageCache.distroseries == self.distroseries,
-            DistroSeriesPackageCache.archiveID.is_in(archive_ids),
+            DistroSeriesPackageCache.archive_id.is_in(archive_ids),
             (
                 DistroSeriesPackageCache.binarypackagename
                 == self.binarypackagename

@@ -1290,7 +1290,7 @@ class DistroSeries(
             .find(
                 find_spec,
                 DistroSeriesPackageCache.distroseries == self,
-                DistroSeriesPackageCache.archiveID.is_in(
+                DistroSeriesPackageCache.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 Or(

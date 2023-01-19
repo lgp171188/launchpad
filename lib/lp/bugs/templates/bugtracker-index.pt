@@ -44,7 +44,7 @@
       <div tal:replace="structure context/@@+portlet-components" />
     </div>
     <div class="yui-u"
-      tal:condition="context/watches">
+      tal:condition="not: context/watches/is_empty">
       <div tal:replace="structure context/@@+portlet-watches" />
     </div>
   </div>

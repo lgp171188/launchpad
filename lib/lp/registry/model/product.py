@@ -348,12 +348,8 @@ class Product(
         notNull=False,
         default=None,
     )
-    bugtracker = ForeignKey(
-        foreignKey="BugTracker",
-        dbName="bugtracker",
-        notNull=False,
-        default=None,
-    )
+    bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
+    bugtracker = Reference(bugtracker_id, "BugTracker.id")
     official_answers = BoolCol(
         dbName="official_answers", notNull=True, default=False
     )

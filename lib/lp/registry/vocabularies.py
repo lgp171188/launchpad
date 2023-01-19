@@ -2098,7 +2098,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
     _clauses = [
         SourcePackageName.id.is_in(
             Select(
-                DistributionSourcePackageCache.sourcepackagenameID,
+                DistributionSourcePackageCache.sourcepackagename_id,
                 # No current users of this vocabulary can easily provide a
                 # distribution context, since the distribution and source
                 # package name are typically selected together, so the best
@@ -2111,7 +2111,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
                 tables=LeftJoin(
                     DistributionSourcePackageCache,
                     Archive,
-                    DistributionSourcePackageCache.archiveID == Archive.id,
+                    DistributionSourcePackageCache.archive_id == Archive.id,
                 ),
             )
         ),
@@ -2214,7 +2214,7 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
     def _cache_location_clauses(self):
         return [
             Or(
-                DistributionSourcePackageCache.archiveID.is_in(
+                DistributionSourcePackageCache.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 DistributionSourcePackageCache.archive == None,
@@ -2260,7 +2260,7 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
                 empty = (
                     IStore(DistributionSourcePackageCache)
                     .find(
-                        DistributionSourcePackageCache.sourcepackagenameID,
+                        DistributionSourcePackageCache.sourcepackagename_id,
                         *self._cache_location_clauses,
                     )
                     .is_empty()
@@ -2302,7 +2302,7 @@ class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
             Select(
                 (
                     DSPC.name,
-                    DSPC.sourcepackagenameID,
+                    DSPC.sourcepackagename_id,
                     DSPC.binpkgnames,
                 ),
                 where=And(

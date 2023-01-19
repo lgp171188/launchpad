@@ -9,12 +9,12 @@ from collections import defaultdict
 from operator import attrgetter
 
 from storm.expr import Desc, Max, Select
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.services.database import bulk
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.distroseriespackagecache import (
     IDistroSeriesPackageCache,
 )
@@ -26,24 +26,37 @@ from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
 
 @implementer(IDistroSeriesPackageCache)
-class DistroSeriesPackageCache(SQLBase):
-    _table = "DistroSeriesPackageCache"
+class DistroSeriesPackageCache(StormBase):
+    __storm_table__ = "DistroSeriesPackageCache"
 
-    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", notNull=True
-    )
-    binarypackagename = ForeignKey(
-        dbName="binarypackagename",
-        foreignKey="BinaryPackageName",
-        notNull=True,
-    )
+    id = Int(primary=True)
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    binarypackagename_id = Int(name="binarypackagename", allow_none=False)
+    binarypackagename = Reference(binarypackagename_id, "BinaryPackageName.id")
 
-    name = StringCol(notNull=False, default=None)
-    summary = StringCol(notNull=False, default=None)
-    description = StringCol(notNull=False, default=None)
-    summaries = StringCol(notNull=False, default=None)
-    descriptions = StringCol(notNull=False, default=None)
+    name = Unicode(allow_none=True, default=None)
+    summary = Unicode(allow_none=True, default=None)
+    description = Unicode(allow_none=True, default=None)
+    summaries = Unicode(allow_none=True, default=None)
+    descriptions = Unicode(allow_none=True, default=None)
+
+    def __init__(
+        self,
+        archive,
+        distroseries,
+        binarypackagename,
+        summary=None,
+        description=None,
+    ):
+        super().__init__()
+        self.archive = archive
+        self.distroseries = distroseries
+        self.binarypackagename = binarypackagename
+        self.summary = summary
+        self.description = description
 
     @classmethod
     def findCurrentBinaryPackageNames(cls, archive, distroseries):
@@ -84,7 +97,7 @@ class DistroSeriesPackageCache(SQLBase):
             .find(
                 cls,
                 cls.distroseries == distroseries,
-                cls.archiveID.is_in(archives),
+                cls.archive_id.is_in(archives),
             )
             .order_by(cls.name)
         )
@@ -116,7 +129,7 @@ class DistroSeriesPackageCache(SQLBase):
                     "Removing binary cache for '%s' (%s)"
                     % (cache.name, cache.id)
                 )
-                cache.destroySelf()
+                IStore(cache).remove(cache)
 
     @classmethod
     def _update(cls, distroseries, binarypackagenames, archive, log):
@@ -177,7 +190,7 @@ class DistroSeriesPackageCache(SQLBase):
             cls,
             cls.distroseries == distroseries,
             cls.archive == archive,
-            cls.binarypackagenameID.is_in(
+            cls.binarypackagename_id.is_in(
                 [bpn.id for bpn in binarypackagenames]
             ),
         )

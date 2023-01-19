@@ -544,16 +544,20 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
             DistributionSourcePackageCache,
             In(
                 Row(
-                    DistributionSourcePackageCache.archiveID,
-                    DistributionSourcePackageCache.distributionID,
-                    DistributionSourcePackageCache.sourcepackagenameID,
+                    DistributionSourcePackageCache.archive_id,
+                    DistributionSourcePackageCache.distribution_id,
+                    DistributionSourcePackageCache.sourcepackagename_id,
                 ),
                 [Row(cache_key) for cache_key in cache_filter_data],
             ),
         )
         for dspc in rows:
             existing_records.add(
-                (dspc.archiveID, dspc.distributionID, dspc.sourcepackagenameID)
+                (
+                    dspc.archive_id,
+                    dspc.distribution_id,
+                    dspc.sourcepackagename_id,
+                )
             )
 
         # Bulk-create missing cache rows.
@@ -566,9 +570,9 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
         if inserts:
             create(
                 (
-                    DistributionSourcePackageCache.archiveID,
-                    DistributionSourcePackageCache.distributionID,
-                    DistributionSourcePackageCache.sourcepackagenameID,
+                    DistributionSourcePackageCache.archive_id,
+                    DistributionSourcePackageCache.distribution_id,
+                    DistributionSourcePackageCache.sourcepackagename_id,
                     DistributionSourcePackageCache.name,
                 ),
                 inserts,
