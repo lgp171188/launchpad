@@ -2048,7 +2048,7 @@ class BugTaskSet:
                     Select(
                         1,
                         tables=[BugWatch],
-                        where=[BugWatch.bugID == BugTaskFlat.bug_id],
+                        where=[BugWatch.bug_id == BugTaskFlat.bug_id],
                     )
                 )
             ),

@@ -317,7 +317,7 @@ class BugTracker(StormBase):
             .find(
                 (BugWatch, Bug),
                 BugWatch.bugtracker == self,
-                BugWatch.bugID == Bug.id,
+                BugWatch.bug_id == Bug.id,
             )
             .order_by(Desc(BugWatch.datecreated)),
             result_decorator=itemgetter(0),
@@ -565,7 +565,7 @@ class BugTracker(StormBase):
             Store.of(self)
             .find(
                 Bug,
-                BugWatch.bugID == Bug.id,
+                BugWatch.bug_id == Bug.id,
                 BugWatch.bugtracker == self,
                 BugWatch.remotebug == remotebug,
             )
