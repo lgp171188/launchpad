@@ -164,12 +164,8 @@ class ProjectGroup(
     )
     active = BoolCol(dbName="active", notNull=True, default=True)
     reviewed = BoolCol(dbName="reviewed", notNull=True, default=False)
-    bugtracker = ForeignKey(
-        foreignKey="BugTracker",
-        dbName="bugtracker",
-        notNull=False,
-        default=None,
-    )
+    bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
+    bugtracker = Reference(bugtracker_id, "BugTracker.id")
     bug_reporting_guidelines = StringCol(default=None)
     bug_reported_acknowledgement = StringCol(default=None)
 

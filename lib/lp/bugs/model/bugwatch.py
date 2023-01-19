@@ -105,9 +105,8 @@ class BugWatch(SQLBase):
 
     _table = "BugWatch"
     bug = ForeignKey(dbName="bug", foreignKey="Bug", notNull=True)
-    bugtracker = ForeignKey(
-        dbName="bugtracker", foreignKey="BugTracker", notNull=True
-    )
+    bugtracker_id = Int(name="bugtracker", allow_none=False)
+    bugtracker = Reference(bugtracker_id, "BugTracker.id")
     remotebug = StringCol(notNull=True)
     remotestatus = StringCol(notNull=False, default=None)
     remote_importance = StringCol(notNull=False, default=None)

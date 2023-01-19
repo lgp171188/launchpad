@@ -402,7 +402,7 @@ class Bug(SQLBase, InformationTypeMixin):
         "id", BugMessage.bug_id, order_by=BugMessage.index
     )
     watches = SQLMultipleJoin(
-        "BugWatch", joinColumn="bug", orderBy=["bugtracker", "remotebug"]
+        "BugWatch", joinColumn="bug", orderBy=["bugtracker_id", "remotebug"]
     )
     duplicates = SQLMultipleJoin("Bug", joinColumn="duplicateof", orderBy="id")
     linked_bugbranches = ReferenceSet(

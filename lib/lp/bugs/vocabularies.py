@@ -48,7 +48,7 @@ from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import CONTAINSSTRING, OR
+from lp.services.database.sqlobject import OR
 from lp.services.helpers import shortlist
 from lp.services.webapp.escaping import html_escape, structured
 from lp.services.webapp.interfaces import ILaunchBag
@@ -57,6 +57,7 @@ from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     NamedSQLObjectVocabulary,
     SQLObjectVocabularyBase,
+    StormVocabularyBase,
 )
 
 
@@ -91,14 +92,13 @@ class BugVocabulary(SQLObjectVocabularyBase):
 
 
 @implementer(IHugeVocabulary)
-class BugTrackerVocabulary(SQLObjectVocabularyBase):
+class BugTrackerVocabulary(StormVocabularyBase):
     """All web and email based external bug trackers."""
 
     displayname = "Select a bug tracker"
     step_title = "Search"
     _table = BugTracker
     _filter = True
-    _orderBy = "title"
     _order_by = [BugTracker.title]
 
     def toTerm(self, obj):
@@ -125,10 +125,10 @@ class BugTrackerVocabulary(SQLObjectVocabularyBase):
                 self._filter,
                 BugTracker.active == True,
                 Or(
-                    CONTAINSSTRING(BugTracker.name, query),
-                    CONTAINSSTRING(BugTracker.title, query),
-                    CONTAINSSTRING(BugTracker.summary, query),
-                    CONTAINSSTRING(BugTracker.baseurl, query),
+                    BugTracker.name.contains_string(query),
+                    BugTracker.title.contains_string(query),
+                    BugTracker.summary.contains_string(query),
+                    BugTracker.baseurl.contains_string(query),
                 ),
             ),
         )
