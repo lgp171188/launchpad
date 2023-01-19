@@ -981,7 +981,7 @@ class MirrorDistroArchSeries(StormBase, _MirrorSeriesMixIn):
             clauses.extend(
                 [
                     BinaryPackagePublishingHistory.binarypackagereleaseID
-                    == BinaryPackageFile.binarypackagereleaseID,
+                    == BinaryPackageFile.binarypackagerelease_id,
                     BinaryPackageFile.filetype == BinaryPackageFileType.DEB,
                 ]
             )

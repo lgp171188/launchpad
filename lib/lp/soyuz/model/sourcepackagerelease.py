@@ -305,7 +305,7 @@ class SourcePackageRelease(SQLBase):
         return list(
             Store.of(self)
             .find(SourcePackageReleaseFile, sourcepackagerelease=self)
-            .order_by(SourcePackageReleaseFile.libraryfileID)
+            .order_by(SourcePackageReleaseFile.libraryfile_id)
         )
 
     def getFileByName(self, filename):
@@ -315,7 +315,7 @@ class SourcePackageRelease(SQLBase):
             .find(
                 SourcePackageReleaseFile,
                 SourcePackageReleaseFile.sourcepackagerelease == self.id,
-                LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+                LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
                 LibraryFileAlias.filename == filename,
             )
             .one()

@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 
 import pytz
 from lazr.delegates import delegate_to
-from storm.locals import Date, Desc, Int, Reference, Store
+from storm.locals import Date, Desc, Int, Reference, ReferenceSet, Store
 from zope.component import adapter, getUtility
 from zope.interface import Interface, implementer
 
@@ -88,11 +88,11 @@ class LibraryFileAlias(SQLBase):
         intermediateTable="ProductReleaseFile",
     )
 
-    sourcepackages = SQLRelatedJoin(
-        "SourcePackageRelease",
-        joinColumn="libraryfile",
-        otherColumn="sourcepackagerelease",
-        intermediateTable="SourcePackageReleaseFile",
+    sourcepackages = ReferenceSet(
+        "id",
+        "SourcePackageReleaseFile.libraryfile_id",
+        "SourcePackageReleaseFile.sourcepackagerelease_id",
+        "SourcePackageRelease.id",
     )
 
     @property
@@ -206,11 +206,11 @@ class LibraryFileAlias(SQLBase):
         intermediateTable="ProductReleaseFile",
     )
 
-    sourcepackages = SQLRelatedJoin(
-        "SourcePackageRelease",
-        joinColumn="libraryfile",
-        otherColumn="sourcepackagerelease",
-        intermediateTable="SourcePackageReleaseFile",
+    sourcepackages = ReferenceSet(
+        "id",
+        "SourcePackageReleaseFile.libraryfile_id",
+        "SourcePackageReleaseFile.sourcepackagerelease_id",
+        "SourcePackageRelease.id",
     )
 
     @property

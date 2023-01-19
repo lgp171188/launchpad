@@ -916,7 +916,7 @@ class BinaryPackageHandler:
 
         alias = getLibraryAlias(path, fname)
         BinaryPackageFile(
-            binarypackagerelease=binpkg.id,
+            binarypackagerelease=binpkg,
             libraryfile=alias,
             filetype=determine_binary_file_type(fname),
         )
