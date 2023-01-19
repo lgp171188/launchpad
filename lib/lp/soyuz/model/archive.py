@@ -3562,6 +3562,7 @@ class ArchiveSet:
                 SourcePackagePublishingHistory.distroseries == DistroSeries.id,
                 Archive.private == False,
                 Archive._enabled == True,
+                Archive.distribution == distribution,
                 DistroSeries.distribution == distribution,
                 Archive.purpose == ArchivePurpose.PPA,
             )
