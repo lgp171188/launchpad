@@ -306,7 +306,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         # The filetype attribute is set based on the file extension.
         dsc = self.getBaseDsc()
         uploadfile = self.createDSCFile(
-            "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42", None
+            "foo_0.42.dsc", dsc, "main/net", "extra", "dulwich", "0.42", None
         )
         self.assertEqual(
             "text/x-debian-source-package", uploadfile.content_type
@@ -318,13 +318,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         dsc["Build-Depends"] = "dpkg, bzr"
         changes = self.getBaseChanges()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", changes),
+            self.createChangesFile("foo_0.42.changes", changes),
         )
         uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
@@ -339,13 +339,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         dsc["buIld-depends"] = "dpkg, bzr"
         changes = self.getBaseChanges()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", changes),
+            self.createChangesFile("foo_0.42.changes", changes),
         )
         uploadfile.files = []
         uploadfile.changelog = b"DUMMY"
@@ -358,13 +358,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         dsc["Python-Version"] = "2.5"
         changes = self.getBaseChanges()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", changes),
+            self.createChangesFile("foo_0.42.changes", changes),
         )
         uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
@@ -380,13 +380,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         dsc["Homepage"] = "http://samba.org/~jelmer/bzr"
         changes = self.getBaseChanges()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", changes),
+            self.createChangesFile("foo_0.42.changes", changes),
         )
         uploadfile.changelog = b"DUMMY"
         uploadfile.files = []
@@ -407,13 +407,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         )
         dsc = self.getBaseDsc()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", self.getBaseChanges()),
+            self.createChangesFile("foo_0.42.changes", self.getBaseChanges()),
         )
         uploadfile.checkBuild(build)
         # checkBuild() sets the build status to FULLYBUILT and
@@ -435,13 +435,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         )
         dsc = self.getBaseDsc()
         uploadfile = self.createDSCFile(
-            "foo.dsc",
+            "foo_0.42.dsc",
             dsc,
             "main/net",
             "extra",
             "dulwich",
             "0.42",
-            self.createChangesFile("foo.changes", self.getBaseChanges()),
+            self.createChangesFile("foo_0.42.changes", self.getBaseChanges()),
         )
         self.assertRaises(UploadError, uploadfile.checkBuild, build)
 
