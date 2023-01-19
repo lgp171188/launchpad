@@ -328,8 +328,10 @@ And check that its files actually ended up in the librarian (these sha1sums
 were calculated directly on the files):
 
     >>> from lp.soyuz.model.files import SourcePackageReleaseFile
-    >>> files = SourcePackageReleaseFile.selectBy(
-    ...     sourcepackagereleaseID=cap.id, orderBy="libraryfile"
+    >>> files = (
+    ...     IStore(SourcePackageReleaseFile)
+    ...     .find(SourcePackageReleaseFile, sourcepackagerelease=cap)
+    ...     .order_by("libraryfile")
     ... )
     >>> for f in files:
     ...     print(f.libraryfile.content.sha1)

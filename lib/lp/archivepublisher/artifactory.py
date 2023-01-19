@@ -142,11 +142,11 @@ class ArtifactoryPoolEntry:
         """
         if ISourcePackageReleaseFile.providedBy(pub_file):
             return "source:{:d}".format(
-                pub_file.sourcepackagereleaseID
+                pub_file.sourcepackagerelease_id
             )  # type: ignore
         elif IBinaryPackageFile.providedBy(pub_file):
             return "binary:{:d}".format(
-                pub_file.binarypackagereleaseID
+                pub_file.binarypackagerelease_id
             )  # type: ignore
         else:
             raise AssertionError("Unsupported file: %r" % pub_file)

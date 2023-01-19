@@ -682,8 +682,13 @@ so we need to skip that upload.
     ...     time_interval, deb_only=False
     ... )
 
-    >>> bpf = BinaryPackageFile.selectOneBy(
-    ...     binarypackagereleaseID=upload.binarypackagerelease.id
+    >>> bpf = (
+    ...     IStore(BinaryPackageFile)
+    ...     .find(
+    ...         BinaryPackageFile,
+    ...         binarypackagerelease=upload.binarypackagerelease,
+    ...     )
+    ...     .one()
     ... )
     >>> print(upload.binarypackagerelease.version)
     3.14156

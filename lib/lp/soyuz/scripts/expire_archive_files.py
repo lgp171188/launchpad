@@ -126,7 +126,7 @@ class ArchiveExpirer(LaunchpadCronScript):
             ),
         )
         denied = Select(
-            xPF.libraryfileID,
+            xPF.libraryfile_id,
             where=And(
                 xPR_join,
                 xPPH.archive == Archive.id,

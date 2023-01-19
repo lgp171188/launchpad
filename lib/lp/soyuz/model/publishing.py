@@ -385,7 +385,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             bpfs = list(
                 Store.of(self).find(
                     BinaryPackageFile,
-                    BinaryPackageFile.binarypackagereleaseID.is_in(bpr_ids),
+                    BinaryPackageFile.binarypackagerelease_id.is_in(bpr_ids),
                 )
             )
             bpfs_by_bpr = defaultdict(list)
@@ -395,7 +395,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 get_property_cache(bpr).files = bpfs_by_bpr[bpr]
 
             # Preload LibraryFileAliases.
-            lfa_ids = {bpf.libraryfileID for bpf in bpfs}
+            lfa_ids = {bpf.libraryfile_id for bpf in bpfs}
             list(
                 Store.of(self).find(
                     LibraryFileAlias, LibraryFileAlias.id.is_in(lfa_ids)
@@ -476,7 +476,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     def files(self):
         """See `IPublishing`."""
         files = self.sourcepackagerelease.files
-        lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfileID"])
+        lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfile_id"])
         bulk.load_related(LibraryFileContent, lfas, ["contentID"])
         return files
 
@@ -659,7 +659,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         sources = Store.of(self).find(
             (LibraryFileAlias, LibraryFileContent),
             LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
             == self.sourcepackagereleaseID,
         )
@@ -834,7 +834,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     def files(self):
         """See `IPublishing`."""
         files = self.binarypackagerelease.files
-        lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfileID"])
+        lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfile_id"])
         bulk.load_related(LibraryFileContent, lfas, ["contentID"])
         return files
 
@@ -1254,7 +1254,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         binaries = Store.of(self).find(
             (LibraryFileAlias, LibraryFileContent),
             LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
+            LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease
             == self.binarypackagereleaseID,
         )
@@ -1848,7 +1848,7 @@ class PublishingSet:
                 LibraryFileContent,
             ),
             LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
+            LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
             BinaryPackageRelease.buildID == BinaryPackageBuild.id,
             SourcePackagePublishingHistory.sourcepackagereleaseID
@@ -1876,7 +1876,7 @@ class PublishingSet:
                 LibraryFileContent,
             ),
             LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
             == SourcePackagePublishingHistory.sourcepackagereleaseID,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
@@ -2005,11 +2005,11 @@ class PublishingSet:
                 IStore(SourcePackageReleaseFile)
                 .find(
                     SourcePackageReleaseFile,
-                    SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
+                    SourcePackageReleaseFile.sourcepackagerelease_id.is_in(
                         spr_ids
                     ),
                 )
-                .order_by(SourcePackageReleaseFile.libraryfileID)
+                .order_by(SourcePackageReleaseFile.libraryfile_id)
             )
             file_map = defaultdict(list)
             for sprf in sprfs:
@@ -2017,7 +2017,7 @@ class PublishingSet:
             for spr, files in file_map.items():
                 get_property_cache(spr).files = files
             lfas = bulk.load_related(
-                LibraryFileAlias, sprfs, ["libraryfileID"]
+                LibraryFileAlias, sprfs, ["libraryfile_id"]
             )
             bulk.load_related(LibraryFileContent, lfas, ["contentID"])
 
@@ -2063,14 +2063,16 @@ class PublishingSet:
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
             bpfs = bulk.load_referencing(
-                BinaryPackageFile, bprs, ["binarypackagereleaseID"]
+                BinaryPackageFile, bprs, ["binarypackagerelease_id"]
             )
             file_map = defaultdict(list)
             for bpf in bpfs:
                 file_map[bpf.binarypackagerelease].append(bpf)
             for bpr, files in file_map.items():
                 get_property_cache(bpr).files = files
-            lfas = bulk.load_related(LibraryFileAlias, bpfs, ["libraryfileID"])
+            lfas = bulk.load_related(
+                LibraryFileAlias, bpfs, ["libraryfile_id"]
+            )
             bulk.load_related(LibraryFileContent, lfas, ["contentID"])
             bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
             bulk.load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
