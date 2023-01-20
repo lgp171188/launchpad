@@ -3,41 +3,60 @@
 
 __all__ = ["GPGKey", "GPGKeySet"]
 
+from storm.locals import And, Bool, Int, Not, Reference, Select, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.registry.interfaces.gpg import IGPGKey, IGPGKeySet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.gpg.interfaces import GPGKeyAlgorithm, IGPGHandler
+from lp.services.verification.model.logintoken import LoginToken
 
 
 @implementer(IGPGKey)
-class GPGKey(SQLBase):
+class GPGKey(StormBase):
 
-    _table = "GPGKey"
-    _defaultOrder = ["owner", "keyid"]
+    __storm_table__ = "GPGKey"
+    __storm_order__ = ["owner", "keyid"]
 
-    owner = ForeignKey(dbName="owner", foreignKey="Person", notNull=True)
+    id = Int(primary=True)
 
-    keyid = StringCol(dbName="keyid", notNull=True)
-    fingerprint = StringCol(dbName="fingerprint", notNull=True)
+    owner_id = Int(name="owner", allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
-    keysize = IntCol(dbName="keysize", notNull=True)
+    keyid = Unicode(name="keyid", allow_none=False)
+    fingerprint = Unicode(name="fingerprint", allow_none=False)
+
+    keysize = Int(name="keysize", allow_none=False)
 
     algorithm = DBEnum(
         name="algorithm", allow_none=False, enum=GPGKeyAlgorithm
     )
 
-    active = BoolCol(dbName="active", notNull=True)
+    active = Bool(name="active", allow_none=False)
 
-    can_encrypt = BoolCol(dbName="can_encrypt", notNull=False)
+    can_encrypt = Bool(name="can_encrypt", allow_none=True)
+
+    def __init__(
+        self,
+        owner,
+        keyid,
+        fingerprint,
+        keysize,
+        algorithm,
+        active,
+        can_encrypt=False,
+    ):
+        super().__init__()
+        self.owner = owner
+        self.keyid = keyid
+        self.fingerprint = fingerprint
+        self.keysize = keysize
+        self.algorithm = algorithm
+        self.active = active
+        self.can_encrypt = can_encrypt
 
     @property
     def keyserverURL(self):
@@ -58,7 +77,7 @@ class GPGKey(SQLBase):
 class GPGKeySet:
     def new(
         self,
-        ownerID,
+        owner,
         keyid,
         fingerprint,
         keysize,
@@ -68,7 +87,7 @@ class GPGKeySet:
     ):
         """See `IGPGKeySet`"""
         return GPGKey(
-            owner=ownerID,
+            owner=owner,
             keyid=keyid,
             fingerprint=fingerprint,
             keysize=keysize,
@@ -80,7 +99,7 @@ class GPGKeySet:
     def activate(self, requester, key, can_encrypt):
         """See `IGPGKeySet`."""
         fingerprint = key.fingerprint
-        lp_key = GPGKey.selectOneBy(fingerprint=fingerprint)
+        lp_key = IStore(GPGKey).find(GPGKey, fingerprint=fingerprint).one()
         if lp_key:
             assert lp_key.owner == requester
             is_new = False
@@ -89,12 +108,11 @@ class GPGKeySet:
             lp_key.can_encrypt = can_encrypt
         else:
             is_new = True
-            ownerID = requester.id
             keyid = key.keyid
             keysize = key.keysize
             algorithm = key.algorithm
             lp_key = self.new(
-                ownerID,
+                requester,
                 keyid,
                 fingerprint,
                 keysize,
@@ -104,30 +122,37 @@ class GPGKeySet:
         return lp_key, is_new
 
     def deactivate(self, key):
-        lp_key = GPGKey.selectOneBy(fingerprint=key.fingerprint)
+        lp_key = IStore(GPGKey).find(GPGKey, fingerprint=key.fingerprint).one()
         lp_key.active = False
 
     def getByFingerprint(self, fingerprint, default=None):
         """See `IGPGKeySet`"""
-        result = GPGKey.selectOneBy(fingerprint=fingerprint)
+        result = IStore(GPGKey).find(GPGKey, fingerprint=fingerprint).one()
         if result is None:
             return default
         return result
 
     def getGPGKeysForPerson(self, owner, active=True):
+        clauses = []
         if active is False:
-            query = """
-                active = false
-                AND fingerprint NOT IN
-                    (SELECT fingerprint FROM LoginToken
-                     WHERE fingerprint IS NOT NULL
-                           AND requester = %s
-                           AND date_consumed is NULL
-                    )
-                """ % sqlvalues(
-                owner.id
+            clauses.extend(
+                [
+                    Not(GPGKey.active),
+                    Not(
+                        GPGKey.fingerprint.is_in(
+                            Select(
+                                LoginToken.fingerprint,
+                                where=And(
+                                    LoginToken.fingerprint != None,
+                                    LoginToken.requester == owner,
+                                    LoginToken.date_consumed == None,
+                                ),
+                            )
+                        )
+                    ),
+                ]
             )
         else:
-            query = "active=true"
-        query += " AND owner=%s" % sqlvalues(owner.id)
-        return list(GPGKey.select(query, orderBy="id"))
+            clauses.append(GPGKey.active)
+        clauses.append(GPGKey.owner == owner)
+        return list(IStore(GPGKey).find(GPGKey, *clauses).order_by(GPGKey.id))

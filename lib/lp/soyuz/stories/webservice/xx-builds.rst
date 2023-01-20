@@ -18,8 +18,9 @@ source publications can be retrieved.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.gpgkey import GPGKey
+    >>> from lp.services.database.interfaces import IStore
     >>> name16 = getUtility(IPersonSet).getByName("name16")
-    >>> fake_signer = GPGKey.selectOneBy(owner=name16)
+    >>> fake_signer = IStore(GPGKey).find(GPGKey, owner=name16).one()
     >>> ppa = getUtility(IPersonSet).getByName("cprov").archive
     >>> for pub in ppa.getPublishedSources():
     ...     pub = removeSecurityProxy(pub)

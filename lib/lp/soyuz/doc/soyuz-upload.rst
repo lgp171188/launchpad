@@ -226,7 +226,7 @@ Assign the loaded GPG key to the katie user.
 
     >>> key_set = getUtility(IGPGKeySet)
     >>> user_key = key_set.new(
-    ...     ownerID=user.id,
+    ...     owner=user,
     ...     keyid=key.keyid,
     ...     fingerprint=key.fingerprint,
     ...     algorithm=key.algorithm,
