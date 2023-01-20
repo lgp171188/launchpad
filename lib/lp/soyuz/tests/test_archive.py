@@ -65,6 +65,7 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.propertycache import clear_property_cache, get_property_cache
 from lp.services.timeout import default_timeout
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
@@ -129,6 +130,7 @@ from lp.testing import (
     admin_logged_in,
     celebrity_logged_in,
     login,
+    login_celebrity,
     login_person,
     person_logged_in,
 )
@@ -6629,3 +6631,36 @@ class TestMarkSuiteDirty(TestCaseWithFactory):
             ["%s-updates" % distroseries.name, distroseries.name],
             archive.dirty_suites,
         )
+
+
+class TestArchivePermissions(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_archive_owner_does_not_have_admin(self):
+        archive = self.factory.makeArchive()
+        login_person(archive.owner)
+        self.assertFalse(check_permission("launchpad.Admin", archive))
+
+    def test_archive_launchpad_ppa_admins_have_admin(self):
+        archive = self.factory.makeArchive()
+        login_celebrity("ppa_admin")
+        self.assertTrue(check_permission("launchpad.Admin", archive))
+
+    def test_archive_commercial_admin_have_admin(self):
+        archive = self.factory.makeArchive()
+        login_celebrity("commercial_admin")
+        self.assertTrue(check_permission("launchpad.Admin", archive))
+
+    def test_launchpad_ppa_self_admins_no_admin_for_other_archives(self):
+        archive = self.factory.makeArchive()
+        # archive owner is not part of `ppa_self_admins`
+        login_celebrity("ppa_self_admins")
+        self.assertFalse(check_permission("launchpad.Admin", archive))
+
+    def test_launchpad_ppa_self_admins_have_admin_for_own_archives(self):
+        celeb = getUtility(ILaunchpadCelebrities).ppa_self_admins
+        owner = self.factory.makePerson(member_of=[celeb])
+        archive = self.factory.makeArchive(owner=owner)
+        login_person(archive.owner)
+        self.assertTrue(check_permission("launchpad.Admin", archive))
