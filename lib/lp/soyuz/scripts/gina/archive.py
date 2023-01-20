@@ -125,10 +125,13 @@ class ArchiveFilesystemInfo:
 
     def cleanup(self):
         os.unlink(self.sources_tagfile)
+        self.srcfile.close()
         if self.source_only:
             return
         os.unlink(self.binaries_tagfile)
+        self.binfile.close()
         os.unlink(self.di_tagfile)
+        self.difile.close()
 
 
 class ArchiveComponentItems:

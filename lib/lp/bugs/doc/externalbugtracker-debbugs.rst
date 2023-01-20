@@ -175,11 +175,10 @@ cause importance to be set to medium, equivalent to the default normal
 severity in debbugs.
 
     >>> import email
-    >>> summary = email.message_from_file(
-    ...     open(
-    ...         os.path.join(test_db_location, "db-h", "01", "237001.summary")
-    ...     )
-    ... )
+    >>> with open(
+    ...     os.path.join(test_db_location, "db-h", "01", "237001.summary")
+    ... ) as summary_file:
+    ...     summary = email.message_from_file(summary_file)
     >>> "Severity" not in summary
     True
 
@@ -327,11 +326,10 @@ The Debbugs ExternalBugTracker can import a Debian bug into Launchpad.
 The bug reporter gets taken from the From field in the debbugs bug
 report.
 
-    >>> report = email.message_from_file(
-    ...     open(
-    ...         os.path.join(test_db_location, "db-h", "35", "322535.report")
-    ...     )
-    ... )
+    >>> with open(
+    ...     os.path.join(test_db_location, "db-h", "35", "322535.report")
+    ... ) as report_file:
+    ...     report = email.message_from_file(report_file)
     >>> print(report["From"])
     Moritz Muehlenhoff <jmm@inutil.org>
 
