@@ -15,8 +15,6 @@ __all__ = [
 
 import os
 
-import six
-
 from lp.archiveuploader.buildinfofile import BuildInfoFile
 from lp.archiveuploader.dscfile import DSCFile, SignableTagFile
 from lp.archiveuploader.nascentuploadfile import (
@@ -267,7 +265,7 @@ class ChangesFile(SignableTagFile):
             # Urgency is recommended but not mandatory. Default to 'low'
             self._dict["Urgency"] = b"low"
 
-        raw_urgency = six.ensure_text(self._dict["Urgency"]).lower()
+        raw_urgency = self._dict["Urgency"].decode().lower()
         if raw_urgency not in self.urgency_map:
             yield UploadWarning(
                 "Unable to grok urgency %s, overriding with 'low'"
@@ -326,7 +324,7 @@ class ChangesFile(SignableTagFile):
 
         For example, 'hoary' or 'hoary-security'.
         """
-        return six.ensure_text(self._dict["Distribution"])
+        return self._dict["Distribution"].decode()
 
     @property
     def architectures(self):
@@ -335,24 +333,22 @@ class ChangesFile(SignableTagFile):
         For instance ['source', 'all'] or ['source', 'i386', 'amd64']
         or ['source'].
         """
-        return set(six.ensure_text(self._dict["Architecture"]).split())
+        return set(self._dict["Architecture"].decode().split())
 
     @property
     def binaries(self):
         """Return set of binary package names listed."""
-        return set(
-            six.ensure_text(self._dict.get("Binary", "")).strip().split()
-        )
+        return set(self._dict.get("Binary", "").decode().strip().split())
 
     @property
     def converted_urgency(self):
         """Return the appropriate SourcePackageUrgency item."""
-        return self.urgency_map[six.ensure_text(self._dict["Urgency"]).lower()]
+        return self.urgency_map[self._dict["Urgency"].decode().lower()]
 
     @property
     def version(self):
         """Return changesfile claimed version."""
-        return six.ensure_text(self._dict["Version"])
+        return self._dict["Version"].decode()
 
     @classmethod
     def formatChangesComment(cls, comment):
@@ -376,17 +372,17 @@ class ChangesFile(SignableTagFile):
     @property
     def date(self):
         """Return changesfile date."""
-        return six.ensure_text(self._dict["Date"])
+        return self._dict["Date"].decode()
 
     @property
     def source(self):
         """Return changesfile claimed source name."""
-        return six.ensure_text(self._dict["Source"])
+        return self._dict["Source"].decode()
 
     @property
     def architecture_line(self):
         """Return changesfile archicteture line."""
-        return six.ensure_text(self._dict["Architecture"])
+        return self._dict["Architecture"].decode()
 
     @property
     def simulated_changelog(self):

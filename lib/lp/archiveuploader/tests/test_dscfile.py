@@ -168,8 +168,8 @@ class TestSignableTagFile(TestCaseWithFactory):
         tagfile.logger = DevNullLogger()
         tagfile.policy = FakePolicy(None, None, create_people=True)
         tagfile._dict = {
-            "Source": "arbitrary-source-package-name",
-            "Version": "1.0",
+            "Source": b"arbitrary-source-package-name",
+            "Version": b"1.0",
         }
         return tagfile
 
