@@ -86,7 +86,7 @@ class FakePackageReleaseFile:
         self.libraryfile = FakeLibraryFileAlias(contents, filename)
         if release_type == FakeReleaseType.SOURCE:
             self.filetype = filetype or SourcePackageFileType.DSC
-            self.sourcepackagereleaseID = release_id
+            self.sourcepackagerelease_id = release_id
             self.sourcepackagerelease = FakePackageRelease(
                 release_id,
                 user_defined_fields=user_defined_fields,
@@ -95,7 +95,7 @@ class FakePackageReleaseFile:
             alsoProvides(self, ISourcePackageReleaseFile)
         elif release_type == FakeReleaseType.BINARY:
             self.filetype = filetype or BinaryPackageFileType.DEB
-            self.binarypackagereleaseID = release_id
+            self.binarypackagerelease_id = release_id
             self.binarypackagerelease = FakePackageRelease(
                 release_id, user_defined_fields=user_defined_fields
             )
