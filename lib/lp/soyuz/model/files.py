@@ -7,12 +7,12 @@ __all__ = [
     "SourcePackageReleaseFile",
 ]
 
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import BinaryPackageFileType
 from lp.soyuz.interfaces.files import (
     IBinaryPackageFile,
@@ -21,20 +21,29 @@ from lp.soyuz.interfaces.files import (
 
 
 @implementer(IBinaryPackageFile)
-class BinaryPackageFile(SQLBase):
+class BinaryPackageFile(StormBase):
     """See IBinaryPackageFile"""
 
-    _table = "BinaryPackageFile"
+    __storm_table__ = "BinaryPackageFile"
 
-    binarypackagerelease = ForeignKey(
-        dbName="binarypackagerelease",
-        foreignKey="BinaryPackageRelease",
-        notNull=True,
+    id = Int(primary=True)
+    binarypackagerelease_id = Int(
+        name="binarypackagerelease", allow_none=False
     )
-    libraryfile = ForeignKey(
-        dbName="libraryfile", foreignKey="LibraryFileAlias", notNull=True
+    binarypackagerelease = Reference(
+        binarypackagerelease_id, "BinaryPackageRelease.id"
     )
-    filetype = DBEnum(name="filetype", enum=BinaryPackageFileType)
+    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
+    filetype = DBEnum(
+        name="filetype", enum=BinaryPackageFileType, allow_none=False
+    )
+
+    def __init__(self, binarypackagerelease, libraryfile, filetype):
+        super().__init__()
+        self.binarypackagerelease = binarypackagerelease
+        self.libraryfile = libraryfile
+        self.filetype = filetype
 
 
 class SourceFileMixin:
@@ -51,13 +60,26 @@ class SourceFileMixin:
 
 
 @implementer(ISourcePackageReleaseFile)
-class SourcePackageReleaseFile(SourceFileMixin, SQLBase):
+class SourcePackageReleaseFile(SourceFileMixin, StormBase):
     """See ISourcePackageFile"""
 
-    sourcepackagerelease = ForeignKey(
-        foreignKey="SourcePackageRelease", dbName="sourcepackagerelease"
+    __storm_table__ = "SourcePackageReleaseFile"
+
+    id = Int(primary=True)
+    sourcepackagerelease_id = Int(
+        name="sourcepackagerelease", allow_none=False
     )
-    libraryfile = ForeignKey(
-        foreignKey="LibraryFileAlias", dbName="libraryfile"
+    sourcepackagerelease = Reference(
+        sourcepackagerelease_id, "SourcePackageRelease.id"
     )
-    filetype = DBEnum(enum=SourcePackageFileType)
+    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
+    filetype = DBEnum(
+        name="filetype", enum=SourcePackageFileType, allow_none=False
+    )
+
+    def __init__(self, sourcepackagerelease, libraryfile, filetype):
+        super().__init__()
+        self.sourcepackagerelease = sourcepackagerelease
+        self.libraryfile = libraryfile
+        self.filetype = filetype

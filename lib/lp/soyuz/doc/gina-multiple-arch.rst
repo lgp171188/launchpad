@@ -98,17 +98,17 @@ Let's set up the filesystem:
     >>> os.symlink(path, "/tmp/gina_test_archive")
 
     >>> gina_proc = ["scripts/gina.py", "-q", "dapper", "dapper-updates"]
-    >>> proc = subprocess.Popen(
+    >>> proc = subprocess.run(
     ...     gina_proc, stderr=subprocess.PIPE, universal_newlines=True
     ... )
-    >>> print(proc.stderr.read())
+    >>> print(proc.stderr)
     WARNING ...
     WARNING No source package bdftopcf (0.99.0-1) listed for bdftopcf
             (0.99.0-1), scrubbing archive...
     WARNING The archive for dapper-updates/universe doesn't contain a
             directory for powerpc, skipping
     <BLANKLINE>
-    >>> proc.wait()
+    >>> proc.returncode
     0
 
 Make the changes visible elsewhere:

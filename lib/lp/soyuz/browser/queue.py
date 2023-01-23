@@ -225,13 +225,13 @@ class QueueItemsView(LaunchpadView):
         bpbs = load_related(BinaryPackageBuild, pubs, ["build_id"])
         bprs = load_referencing(BinaryPackageRelease, bpbs, ["buildID"])
         source_files = load_referencing(
-            SourcePackageReleaseFile, source_sprs, ["sourcepackagereleaseID"]
+            SourcePackageReleaseFile, source_sprs, ["sourcepackagerelease_id"]
         )
         binary_files = load_referencing(
-            BinaryPackageFile, bprs, ["binarypackagereleaseID"]
+            BinaryPackageFile, bprs, ["binarypackagerelease_id"]
         )
         file_lfas = load_related(
-            LibraryFileAlias, source_files + binary_files, ["libraryfileID"]
+            LibraryFileAlias, source_files + binary_files, ["libraryfile_id"]
         )
         load_related(LibraryFileContent, file_lfas, ["contentID"])
 

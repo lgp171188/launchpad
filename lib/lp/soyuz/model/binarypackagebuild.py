@@ -436,8 +436,8 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             ),
             BinaryPackageRelease.build == self,
             BinaryPackageRelease.id
-            == BinaryPackageFile.binarypackagereleaseID,
-            LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
+            == BinaryPackageFile.binarypackagerelease_id,
+            LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             LibraryFileContent.id == LibraryFileAlias.contentID,
         )
         return result.order_by(
@@ -796,7 +796,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
                 BinaryPackageRelease.build == self.id,
                 BinaryPackageFile.binarypackagerelease
                 == BinaryPackageRelease.id,
-                LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
+                LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
                 LibraryFileAlias.filename == filename,
             )
             .one()
@@ -1576,7 +1576,7 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
             clauses.extend(
                 [
                     BinaryPackageBuild.source_package_release_id
-                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                    == SourcePackageReleaseFile.sourcepackagerelease_id,
                     SourcePackageReleaseFile.libraryfile == context,
                 ]
             )

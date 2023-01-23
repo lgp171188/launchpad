@@ -614,7 +614,7 @@ class MemcachedLayer(BaseLayer):
             except OSError:
                 pass
             # Clean up the resulting zombie.
-            MemcachedLayer._memcached_process.wait()
+            MemcachedLayer._memcached_process.communicate()
             MemcachedLayer._memcached_process = None
 
     @classmethod
@@ -1689,6 +1689,7 @@ class LayerProcessController:
         except ProcessLookupError:
             # The child process doesn't exist.  Maybe it went away by the
             # time we got here.
+            cls.appserver.communicate()
             cls.appserver = None
             return False
         else:
@@ -1722,6 +1723,7 @@ class LayerProcessController:
                         # The process is already gone.
                         return
                     until = datetime.datetime.now() + WAIT_INTERVAL
+            cls.appserver.communicate()
             cls.appserver = None
 
     @classmethod
@@ -1810,6 +1812,7 @@ class LayerProcessController:
                 break
         else:
             os.kill(cls.appserver.pid, signal.SIGTERM)
+            cls.appserver.communicate()
             cls.appserver = None
             # Go no further.
             raise AssertionError("App server startup timed out.")

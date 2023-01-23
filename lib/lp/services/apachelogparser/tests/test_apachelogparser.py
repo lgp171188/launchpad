@@ -36,12 +36,12 @@ class TestLineParsing(TestCase):
     """Test parsing of lines of an apache log file."""
 
     def test_return_value(self):
-        fd = open(
+        with open(
             os.path.join(here, "apache-log-files", "librarian-oneline.log")
-        )
-        host, date, status, request = get_host_date_status_and_request(
-            fd.readline()
-        )
+        ) as fd:
+            host, date, status, request = get_host_date_status_and_request(
+                fd.readline()
+            )
         self.assertEqual(host, "201.158.154.121")
         self.assertEqual(date, "[13/Jun/2008:18:38:57 +0100]")
         self.assertEqual(status, "200")
@@ -158,8 +158,11 @@ class Test_get_fd_and_file_size(TestCase):
         very beginning.
         """
         fd, file_size = get_fd_and_file_size(file_path)
-        self.assertEqual(fd.tell(), 0)
-        self.assertEqual(len(fd.read()), file_size)
+        try:
+            self.assertEqual(fd.tell(), 0)
+            self.assertEqual(len(fd.read()), file_size)
+        finally:
+            fd.close()
 
     def test_regular_file(self):
         file_path = os.path.join(
@@ -212,58 +215,61 @@ class TestLogFileParsing(TestCase):
         # also been downloaded once (last line of the sample log), but
         # parse_file() always skips the last line as it may be truncated, so
         # it doesn't show up in the dict returned.
-        fd = open(
+        with open(
             os.path.join(
                 here, "apache-log-files", "launchpadlibrarian.net.access-log"
             ),
             "rb",
-        )
-        downloads, parsed_bytes, parsed_lines = parse_file(
-            fd,
-            start_position=0,
-            logger=self.logger,
-            get_download_key=get_path_download_key,
-        )
-        self.assertEqual(
-            self.logger.getLogBuffer().strip(),
-            "INFO Parsed 5 lines resulting in 3 download stats.",
-        )
-        date = datetime(2008, 6, 13)
-        self.assertContentEqual(
-            downloads.items(),
-            [
-                ("/12060796/me-tv-icon-64x64.png", {date: {"AU": 1}}),
-                ("/8196569/mediumubuntulogo.png", {date: {"AR": 1, "JP": 1}}),
-                ("/9096290/me-tv-icon-14x14.png", {date: {"AU": 1}}),
-            ],
-        )
+        ) as fd:
+            downloads, parsed_bytes, parsed_lines = parse_file(
+                fd,
+                start_position=0,
+                logger=self.logger,
+                get_download_key=get_path_download_key,
+            )
+            self.assertEqual(
+                self.logger.getLogBuffer().strip(),
+                "INFO Parsed 5 lines resulting in 3 download stats.",
+            )
+            date = datetime(2008, 6, 13)
+            self.assertContentEqual(
+                downloads.items(),
+                [
+                    ("/12060796/me-tv-icon-64x64.png", {date: {"AU": 1}}),
+                    (
+                        "/8196569/mediumubuntulogo.png",
+                        {date: {"AR": 1, "JP": 1}},
+                    ),
+                    ("/9096290/me-tv-icon-14x14.png", {date: {"AU": 1}}),
+                ],
+            )
 
-        # The last line is skipped, so we'll record that the file has been
-        # parsed until the beginning of the last line.
-        self.assertNotEqual(parsed_bytes, fd.tell())
-        self.assertEqual(parsed_bytes, self._getLastLineStart(fd))
+            # The last line is skipped, so we'll record that the file has been
+            # parsed until the beginning of the last line.
+            self.assertNotEqual(parsed_bytes, fd.tell())
+            self.assertEqual(parsed_bytes, self._getLastLineStart(fd))
 
     def test_parsing_last_line(self):
         # When there's only the last line of a given file for us to parse, we
         # assume the file has been rotated and it's safe to parse its last
         # line without worrying about whether or not it's been truncated.
-        fd = open(
+        with open(
             os.path.join(
                 here, "apache-log-files", "launchpadlibrarian.net.access-log"
             ),
             "rb",
-        )
-        downloads, parsed_bytes, parsed_lines = parse_file(
-            fd,
-            start_position=self._getLastLineStart(fd),
-            logger=self.logger,
-            get_download_key=get_path_download_key,
-        )
-        self.assertEqual(
-            self.logger.getLogBuffer().strip(),
-            "INFO Parsed 1 lines resulting in 1 download stats.",
-        )
-        self.assertEqual(parsed_bytes, fd.tell())
+        ) as fd:
+            downloads, parsed_bytes, parsed_lines = parse_file(
+                fd,
+                start_position=self._getLastLineStart(fd),
+                logger=self.logger,
+                get_download_key=get_path_download_key,
+            )
+            self.assertEqual(
+                self.logger.getLogBuffer().strip(),
+                "INFO Parsed 1 lines resulting in 1 download stats.",
+            )
+            self.assertEqual(parsed_bytes, fd.tell())
 
         self.assertContentEqual(
             downloads.items(),
@@ -526,7 +532,8 @@ class TestParsedFilesDetection(TestCase):
         # A file that has been parsed already but in which new content was
         # added will be parsed again, starting from where parsing stopped last
         # time.
-        first_line = open(self.file_path).readline()
+        with open(self.file_path) as fd:
+            first_line = fd.readline()
         ParsedApacheLog(first_line, len(first_line))
 
         files_to_parse = list(get_files_to_parse([self.file_path]))
@@ -576,7 +583,8 @@ class TestParsedFilesDetection(TestCase):
         # stopped last time. (Here we pretend we parsed only the first line)
         gz_name = "launchpadlibrarian.net.access-log.1.gz"
         gz_path = os.path.join(self.root, gz_name)
-        first_line = gzip.open(gz_path).readline()
+        with gzip.open(gz_path) as gz:
+            first_line = gz.readline()
         ParsedApacheLog(first_line, len(first_line))
         files_to_parse = get_files_to_parse([gz_path])
         positions = []

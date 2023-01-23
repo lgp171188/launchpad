@@ -178,7 +178,7 @@ class DeathRow:
                     SourcePackagePublishingHistory.archive == self.archive,
                     SourcePackagePublishingHistory.dateremoved == None,
                     SourcePackagePublishingHistory.sourcepackagerelease
-                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                    == SourcePackageReleaseFile.sourcepackagerelease_id,
                     SourcePackageReleaseFile.libraryfile
                     == LibraryFileAlias.id,
                 ]
@@ -189,7 +189,7 @@ class DeathRow:
                     BinaryPackagePublishingHistory.archive == self.archive,
                     BinaryPackagePublishingHistory.dateremoved == None,
                     BinaryPackagePublishingHistory.binarypackagerelease
-                    == BinaryPackageFile.binarypackagereleaseID,
+                    == BinaryPackageFile.binarypackagerelease_id,
                     BinaryPackageFile.libraryfile == LibraryFileAlias.id,
                 ]
             )

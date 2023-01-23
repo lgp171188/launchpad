@@ -350,7 +350,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
         output_lines.append(nonblocking_readline(proc.stdout, 60).rstrip("\n"))
 
         os.kill(proc.pid, signal.SIGINT)
-        err = proc.stderr.read()
+        _, err = proc.communicate()
         # The script produces logging output, but not to stderr.
         self.assertEqual("", err)
         self.assertEqual(expected_lines, output_lines)
@@ -373,6 +373,7 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
             universal_newlines=True,
         )
 
+        self.addCleanup(self.rewriter_proc.communicate)
         self.addCleanup(self.rewriter_proc.terminate)
 
     def request(self, query):

@@ -195,10 +195,10 @@ class PackageDiff(StormBase):
             IStore(LibraryFileAlias)
             .find(
                 LibraryFileAlias.id,
-                SourcePackageReleaseFile.sourcepackagereleaseID.is_in(
+                SourcePackageReleaseFile.sourcepackagerelease_id.is_in(
                     (self.from_source_id, self.to_source_id)
                 ),
-                SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
+                SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
                 LibraryFileAlias.content == None,
             )
             .count()

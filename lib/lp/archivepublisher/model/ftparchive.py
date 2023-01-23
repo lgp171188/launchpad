@@ -671,11 +671,11 @@ class FTPArchiveHandler:
             Component.name,
         )
         join_conditions = [
-            SourcePackageReleaseFile.sourcepackagereleaseID
+            SourcePackageReleaseFile.sourcepackagerelease_id
             == SourcePackagePublishingHistory.sourcepackagereleaseID,
             SourcePackageName.id
             == SourcePackagePublishingHistory.sourcepackagenameID,
-            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+            LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             Component.id == SourcePackagePublishingHistory.component_id,
         ]
         select_conditions = [
@@ -713,11 +713,11 @@ class FTPArchiveHandler:
         join_conditions = [
             BinaryPackageRelease.id
             == BinaryPackagePublishingHistory.binarypackagereleaseID,
-            BinaryPackageFile.binarypackagereleaseID
+            BinaryPackageFile.binarypackagerelease_id
             == BinaryPackagePublishingHistory.binarypackagereleaseID,
             BinaryPackageBuild.id == BinaryPackageRelease.buildID,
             SourcePackageName.id == BinaryPackageBuild.source_package_name_id,
-            LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
+            LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             DistroArchSeries.id
             == BinaryPackagePublishingHistory.distroarchseriesID,
             Component.id == BinaryPackagePublishingHistory.component_id,

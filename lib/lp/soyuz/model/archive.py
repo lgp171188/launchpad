@@ -870,8 +870,8 @@ class Archive(SQLBase):
             SourcePackagePublishingHistory.archive == self.id,
             SourcePackagePublishingHistory.dateremoved == None,
             SourcePackagePublishingHistory.sourcepackagereleaseID
-            == SourcePackageReleaseFile.sourcepackagereleaseID,
-            SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
+            == SourcePackageReleaseFile.sourcepackagerelease_id,
+            SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
         )
 
@@ -1159,8 +1159,8 @@ class Archive(SQLBase):
             BinaryPackagePublishingHistory.archive == self.id,
             BinaryPackagePublishingHistory.dateremoved == None,
             BinaryPackagePublishingHistory.binarypackagereleaseID
-            == BinaryPackageFile.binarypackagereleaseID,
-            BinaryPackageFile.libraryfileID == LibraryFileAlias.id,
+            == BinaryPackageFile.binarypackagerelease_id,
+            BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
         )
         # See `IArchive.sources_size`.
@@ -1952,15 +1952,15 @@ class Archive(SQLBase):
             clauses = (
                 SourcePackagePublishingHistory.archive == self.id,
                 SourcePackagePublishingHistory.sourcepackagereleaseID
-                == SourcePackageReleaseFile.sourcepackagereleaseID,
-                SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
+                == SourcePackageReleaseFile.sourcepackagerelease_id,
+                SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
             )
         elif re_isadeb.match(filename):
             clauses = (
                 BinaryPackagePublishingHistory.archive == self.id,
                 BinaryPackagePublishingHistory.binarypackagereleaseID
-                == BinaryPackageFile.binarypackagereleaseID,
-                BinaryPackageFile.libraryfileID == LibraryFileAlias.id,
+                == BinaryPackageFile.binarypackagerelease_id,
+                BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
             )
         elif filename.endswith(".changes"):
             clauses = (
@@ -2013,8 +2013,8 @@ class Archive(SQLBase):
             SourcePackageName.name == name,
             Cast(SourcePackageRelease.version, "text") == version,
             SourcePackageRelease.id
-            == SourcePackageReleaseFile.sourcepackagereleaseID,
-            SourcePackageReleaseFile.libraryfileID == LibraryFileAlias.id,
+            == SourcePackageReleaseFile.sourcepackagerelease_id,
+            SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
             LibraryFileAlias.filename == filename,
             LibraryFileAlias.content != None,
         )
@@ -2061,7 +2061,7 @@ class Archive(SQLBase):
                     BinaryPackageBuild.source_package_name
                     == SourcePackageName.id,
                     BinaryPackagePublishingHistory.binarypackagerelease
-                    == BinaryPackageFile.binarypackagereleaseID,
+                    == BinaryPackageFile.binarypackagerelease_id,
                 ]
             )
         else:
@@ -2072,7 +2072,7 @@ class Archive(SQLBase):
                     SourcePackagePublishingHistory.sourcepackagename
                     == SourcePackageName.id,
                     SourcePackagePublishingHistory.sourcepackagerelease
-                    == SourcePackageReleaseFile.sourcepackagereleaseID,
+                    == SourcePackageReleaseFile.sourcepackagerelease_id,
                 ]
             )
         clauses.extend(
@@ -2120,9 +2120,9 @@ class Archive(SQLBase):
             IStore(BinaryPackageRelease)
             .find(
                 BinaryPackageRelease,
-                BinaryPackageFile.binarypackagereleaseID
+                BinaryPackageFile.binarypackagerelease_id
                 == BinaryPackageRelease.id,
-                BinaryPackageFile.libraryfileID == LibraryFileAlias.id,
+                BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
                 LibraryFileAlias.filename == filename,
                 BinaryPackagePublishingHistory.archive == self,
                 BinaryPackagePublishingHistory.binarypackagereleaseID
@@ -2855,8 +2855,8 @@ class Archive(SQLBase):
                 (LibraryFileAlias.filename, LibraryFileContent.sha1),
                 SourcePackagePublishingHistory.archive == self,
                 SourcePackagePublishingHistory.sourcepackagerelease
-                == SourcePackageReleaseFile.sourcepackagereleaseID,
-                LibraryFileAlias.id == SourcePackageReleaseFile.libraryfileID,
+                == SourcePackageReleaseFile.sourcepackagerelease_id,
+                LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
                 LibraryFileAlias.filename.is_in(source_files),
                 LibraryFileContent.id == LibraryFileAlias.contentID,
             )

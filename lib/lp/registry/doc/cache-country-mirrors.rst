@@ -48,8 +48,9 @@ look good.
     >>> fr_txt_path = os.path.join(directory, "FR.txt")
     >>> print("%o" % stat.S_IMODE(os.stat(fr_txt_path).st_mode))
     644
-    >>> for line in sorted(open(fr_txt_path).read().split("\n")):
-    ...     print(line)
+    >>> with open(fr_txt_path) as fr_txt:
+    ...     for line in sorted(fr_txt.read().split("\n")):
+    ...         print(line)
     ...
     http://archive.ubuntu.com/ubuntu/
     http://localhost:11375/archive-mirror/

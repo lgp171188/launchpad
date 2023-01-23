@@ -24,7 +24,7 @@ class IPackageReleaseFile(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    libraryfileID = Int(
+    libraryfile_id = Int(
         title=_("The LibraryFileAlias id for this file"),
         required=True,
         readonly=True,
@@ -52,7 +52,7 @@ class IBinaryPackageFile(IPackageReleaseFile):
         readonly=False,
     )
 
-    binarypackagereleaseID = Int(
+    binarypackagerelease_id = Int(
         title=_("ID of the binary package release being published"),
         required=True,
         readonly=False,
@@ -69,7 +69,7 @@ class ISourcePackageReleaseFile(IPackageReleaseFile):
         readonly=False,
     )
 
-    sourcepackagereleaseID = Int(
+    sourcepackagerelease_id = Int(
         title=_("ID of the source package release being published"),
         required=True,
         readonly=False,

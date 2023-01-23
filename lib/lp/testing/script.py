@@ -20,7 +20,7 @@ def run_command(command, args=None, input=None, universal_newlines=True):
     :param input: optional text to feed to command's standard input.
     :param universal_newlines: passed to `subprocess.Popen`, defaulting to
         True.
-    :return: tuple of return value, standard output, and standard error.
+    :return: tuple of returncode, standard output, and standard error.
     """
     command_line = [command]
     if args:
@@ -38,8 +38,8 @@ def run_command(command, args=None, input=None, universal_newlines=True):
         universal_newlines=universal_newlines,
     )
     stdout, stderr = child.communicate(input)
-    result = child.wait()
-    return (result, stdout, stderr)
+    returncode = child.wait()
+    return (returncode, stdout, stderr)
 
 
 def run_script(script, args=None, input=None, universal_newlines=True):
