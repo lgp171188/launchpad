@@ -11,7 +11,7 @@ __all__ = [
 from datetime import datetime
 
 import pytz
-from storm.locals import DateTime, Int, Reference, Storm
+from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
 from lp.code.interfaces.seriessourcepackagebranch import (
@@ -21,10 +21,11 @@ from lp.code.interfaces.seriessourcepackagebranch import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ISeriesSourcePackageBranch)
-class SeriesSourcePackageBranch(Storm):
+class SeriesSourcePackageBranch(StormBase):
     """See `ISeriesSourcePackageBranch`."""
 
     __storm_table__ = "SeriesSourcePackageBranch"

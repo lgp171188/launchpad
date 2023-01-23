@@ -12,7 +12,7 @@ import datetime
 
 import pytz
 from storm.expr import Desc, LeftJoin, Or
-from storm.locals import DateTime, Int, Reference, Storm
+from storm.locals import DateTime, Int, Reference
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -29,6 +29,7 @@ from lp.buildmaster.interfaces.buildfarmjob import (
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
@@ -53,7 +54,7 @@ VALID_STATUS_TRANSITIONS = {
 
 @implementer(IBuildFarmJob, IBuildFarmJobDB)
 @provider(IBuildFarmJobSource)
-class BuildFarmJob(Storm):
+class BuildFarmJob(StormBase):
     """A base implementation for `IBuildFarmJob` classes."""
 
     __storm_table__ = "BuildFarmJob"

@@ -9,7 +9,7 @@ __all__ = [
     "OCIPushRuleSet",
 ]
 
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.oci.interfaces.ocipushrule import (
@@ -18,10 +18,11 @@ from lp.oci.interfaces.ocipushrule import (
     OCIPushRuleAlreadyExists,
 )
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IOCIPushRule)
-class OCIPushRule(Storm):
+class OCIPushRule(StormBase):
 
     __storm_table__ = "OCIPushRule"
 

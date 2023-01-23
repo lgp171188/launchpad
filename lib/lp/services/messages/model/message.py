@@ -29,7 +29,6 @@ from storm.locals import (
     Reference,
     ReferenceSet,
     Store,
-    Storm,
     Unicode,
 )
 from zope.component import getUtility
@@ -54,6 +53,7 @@ from lp.services.database.sqlobject import (
     SQLRelatedJoin,
     StringCol,
 )
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.messages.interfaces.message import (
     IDirectEmailAuthorization,
@@ -648,7 +648,7 @@ class MessageChunk(SQLBase):
 
 
 @implementer(IUserToUserEmail)
-class UserToUserEmail(Storm):
+class UserToUserEmail(StormBase):
     """See `IUserToUserEmail`."""
 
     __storm_table__ = "UserToUserEmail"

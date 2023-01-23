@@ -8,7 +8,7 @@ __all__ = [
     "DistroSeriesParentSet",
 ]
 
-from storm.locals import SQL, Bool, Int, Reference, Storm
+from storm.locals import SQL, Bool, Int, Reference
 from zope.interface import implementer
 
 from lp.registry.interfaces.distroseriesparent import (
@@ -18,10 +18,11 @@ from lp.registry.interfaces.distroseriesparent import (
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IDistroSeriesParent)
-class DistroSeriesParent(Storm):
+class DistroSeriesParent(StormBase):
     """See `IDistroSeriesParent`."""
 
     __storm_table__ = "DistroSeriesParent"

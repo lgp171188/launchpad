@@ -11,11 +11,12 @@ from datetime import datetime
 
 import pytz
 import six
-from storm.locals import DateTime, Int, Reference, Storm, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.features.interfaces import IFeatureRules
 
 
@@ -28,7 +29,7 @@ class FeatureRules:
     pass
 
 
-class FeatureFlag(Storm):
+class FeatureFlag(StormBase):
     """Database setting of a particular flag in a scope"""
 
     __storm_table__ = "FeatureFlag"
@@ -48,7 +49,7 @@ class FeatureFlag(Storm):
         self.value = value
 
 
-class FeatureFlagChangelogEntry(Storm):
+class FeatureFlagChangelogEntry(StormBase):
     """A record of a change to the whole set of feature flags."""
 
     __storm_table__ = "FeatureFlagChangelogEntry"

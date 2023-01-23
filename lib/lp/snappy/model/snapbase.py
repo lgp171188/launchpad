@@ -12,16 +12,7 @@ from typing import Dict, Optional
 import pytz
 from lazr.enum import Item
 from storm.databases.postgres import JSON as PgJSON
-from storm.locals import (
-    JSON,
-    Bool,
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Storm,
-    Unicode,
-)
+from storm.locals import JSON, Bool, DateTime, Int, Reference, Store, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -32,6 +23,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.snappy.interfaces.snapbase import (
     CannotDeleteSnapBase,
     ISnapBase,
@@ -49,7 +41,7 @@ from lp.soyuz.model.archivedependency import ArchiveDependency
 
 
 @implementer(ISnapBase)
-class SnapBase(Storm):
+class SnapBase(StormBase):
     """See `ISnapBase`."""
 
     __storm_table__ = "SnapBase"
@@ -222,7 +214,7 @@ class SnapBase(Storm):
         Store.of(self).remove(self)
 
 
-class SnapBaseArch(Storm):
+class SnapBaseArch(StormBase):
     """Link table to back `SnapArch.processors`."""
 
     __storm_table__ = "SnapBaseArch"

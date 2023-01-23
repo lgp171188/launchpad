@@ -21,7 +21,6 @@ from storm.locals import (
     Reference,
     ReferenceSet,
     Store,
-    Storm,
     Unicode,
 )
 from zope.component import getUtility
@@ -48,6 +47,7 @@ from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Greatest, NullsLast
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.model.archive import Archive
@@ -67,7 +67,7 @@ class NonPPABuildRequest(Exception):
     unsupported."""
 
 
-class _SourcePackageRecipeDistroSeries(Storm):
+class _SourcePackageRecipeDistroSeries(StormBase):
     """Link table for many-to-many relationship."""
 
     __storm_table__ = "SourcePackageRecipeDistroSeries"
@@ -83,7 +83,7 @@ class _SourcePackageRecipeDistroSeries(Storm):
 @implementer(ISourcePackageRecipe)
 @provider(ISourcePackageRecipeSource)
 @delegate_to(ISourcePackageRecipeData, context="_recipe_data")
-class SourcePackageRecipe(Storm):
+class SourcePackageRecipe(StormBase):
     """See `ISourcePackageRecipe` and `ISourcePackageRecipeSource`."""
 
     __storm_table__ = "SourcePackageRecipe"

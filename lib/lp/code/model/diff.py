@@ -23,7 +23,7 @@ from breezy.merge import Merge3Merger
 from breezy.patches import Patch, parse_patches
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
@@ -37,6 +37,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
@@ -335,7 +336,7 @@ class Diff(SQLBase):
 
 @implementer(IIncrementalDiff)
 @delegate_to(IDiff, context="diff")
-class IncrementalDiff(Storm):
+class IncrementalDiff(StormBase):
     """See `IIncrementalDiff."""
 
     __storm_table__ = "IncrementalDiff"
@@ -365,7 +366,7 @@ class IncrementalDiff(Storm):
 
 @implementer(IPreviewDiff)
 @delegate_to(IDiff, context="diff")
-class PreviewDiff(Storm):
+class PreviewDiff(StormBase):
     """See `IPreviewDiff`."""
 
     __storm_table__ = "PreviewDiff"

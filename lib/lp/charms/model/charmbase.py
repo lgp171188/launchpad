@@ -9,7 +9,7 @@ __all__ = [
 
 import pytz
 from storm.databases.postgres import JSON
-from storm.locals import DateTime, Int, Reference, Store, Storm
+from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
 from lp.buildmaster.model.processor import Processor
@@ -21,10 +21,11 @@ from lp.charms.interfaces.charmbase import (
 )
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ICharmBase)
-class CharmBase(Storm):
+class CharmBase(StormBase):
     """See `ICharmBase`."""
 
     __storm_table__ = "CharmBase"
@@ -91,7 +92,7 @@ class CharmBase(Storm):
         Store.of(self).remove(self)
 
 
-class CharmBaseArch(Storm):
+class CharmBaseArch(StormBase):
     """Link table to back `CharmBase.processors`."""
 
     __storm_table__ = "CharmBaseArch"

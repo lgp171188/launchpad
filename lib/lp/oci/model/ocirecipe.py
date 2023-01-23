@@ -17,7 +17,7 @@ import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.expr import SQL, And, Coalesce, Desc, Exists, Join, Not, Or, Select
-from storm.locals import Bool, DateTime, Int, Reference, Store, Storm, Unicode
+from storm.locals import Bool, DateTime, Int, Reference, Store, Unicode
 from zope.component import getAdapter, getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -95,6 +95,7 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
     ArrayAgg,
@@ -121,7 +122,7 @@ def oci_recipe_modified(recipe, event):
 
 
 @implementer(IOCIRecipe)
-class OCIRecipe(Storm, WebhookTargetMixin):
+class OCIRecipe(StormBase, WebhookTargetMixin):
 
     __storm_table__ = "OCIRecipe"
 
@@ -866,7 +867,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         return push_rule
 
 
-class OCIRecipeArch(Storm):
+class OCIRecipeArch(StormBase):
     """Link table to back `OCIRecipe.processors`."""
 
     __storm_table__ = "OCIRecipeArch"

@@ -16,7 +16,7 @@ import six
 import transaction
 from breezy.lru_cache import LRUCache
 from storm.expr import And, Cast, Desc
-from storm.locals import SQL, Bool, Int, Not, Reference, Store, Storm, Unicode
+from storm.locals import SQL, Bool, Int, Not, Reference, Store, Unicode
 from zope.interface import implementer
 
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
@@ -44,6 +44,7 @@ from lp.registry.model.sourcepackage import (
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.model.archive import Archive
@@ -576,7 +577,7 @@ class ThreadLocalLRUCache(LRUCache, local):
         self.clear()
 
 
-class DistributionSourcePackageInDatabase(Storm):
+class DistributionSourcePackageInDatabase(StormBase):
     """Temporary class to allow access to the database."""
 
     # XXX: allenap 2008-11-13 bug=297736: This is a temporary measure

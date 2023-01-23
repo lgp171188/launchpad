@@ -10,16 +10,7 @@ __all__ = [
 ]
 
 import pytz
-from storm.locals import (
-    Bool,
-    DateTime,
-    Desc,
-    Int,
-    Reference,
-    Store,
-    Storm,
-    Unicode,
-)
+from storm.locals import Bool, DateTime, Desc, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.series import SeriesStatus
@@ -27,6 +18,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeries,
@@ -38,7 +30,7 @@ from lp.snappy.interfaces.snappyseries import (
 
 
 @implementer(ISnappySeries)
-class SnappySeries(Storm):
+class SnappySeries(StormBase):
     """See `ISnappySeries`."""
 
     __storm_table__ = "SnappySeries"
@@ -220,7 +212,7 @@ class SnappyDistroSeriesMixin:
 
 
 @implementer(ISnappyDistroSeries)
-class SnappyDistroSeries(Storm, SnappyDistroSeriesMixin):
+class SnappyDistroSeries(StormBase, SnappyDistroSeriesMixin):
     """Link table between `SnappySeries` and `DistroSeries`."""
 
     __storm_table__ = "SnappyDistroSeries"

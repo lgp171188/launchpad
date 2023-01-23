@@ -6,7 +6,7 @@ __all__ = ["Packageset", "PackagesetSet"]
 import pytz
 import six
 from storm.expr import SQL
-from storm.locals import DateTime, Int, Reference, Storm, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -16,6 +16,7 @@ from lp.registry.interfaces.sourcepackagename import (
 )
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackageset,
@@ -32,7 +33,7 @@ def _order_result_set(result_set):
 
 
 @implementer(IPackageset)
-class Packageset(Storm):
+class Packageset(StormBase):
     """See `IPackageset`."""
 
     __storm_table__ = "Packageset"

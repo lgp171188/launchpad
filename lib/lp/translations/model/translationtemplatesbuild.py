@@ -12,7 +12,7 @@ import logging
 from datetime import timedelta
 
 import pytz
-from storm.locals import Bool, DateTime, Int, Reference, Storm
+from storm.locals import Bool, DateTime, Int, Reference
 from zope.component import getUtility
 from zope.interface import implementer, provider
 from zope.security.proxy import removeSecurityProxy
@@ -32,6 +32,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.translationtemplatesbuild import (
     ITranslationTemplatesBuild,
     ITranslationTemplatesBuildSource,
@@ -44,7 +45,7 @@ HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE = 2515
 @implementer(ITranslationTemplatesBuild)
 @provider(ITranslationTemplatesBuildSource)
 class TranslationTemplatesBuild(
-    SpecificBuildFarmJobSourceMixin, BuildFarmJobMixin, Storm
+    SpecificBuildFarmJobSourceMixin, BuildFarmJobMixin, StormBase
 ):
     """A `BuildFarmJob` extension for translation templates builds."""
 

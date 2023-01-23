@@ -10,7 +10,7 @@ __all__ = [
     "OfficialBugTagTargetMixin",
 ]
 
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -26,6 +26,7 @@ from lp.bugs.model.bugtask import BugTaskSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.product import IProduct
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 class HasBugsBase:
@@ -215,7 +216,7 @@ class OfficialBugTagTargetMixin:
 
 
 @implementer(IOfficialBugTag)
-class OfficialBugTag(Storm):
+class OfficialBugTag(StormBase):
     """See `IOfficialBugTag`."""
 
     # XXX Abel Deuring, 2009-03-11: The SQL table OfficialBugTag has

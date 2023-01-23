@@ -5,13 +5,14 @@ __all__ = ["PackageCopyRequest", "PackageCopyRequestSet"]
 
 import itertools
 
-from storm.locals import Bool, DateTime, Enum, Int, Reference, Storm, Unicode
+from storm.locals import Bool, DateTime, Enum, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import PackageCopyStatus
 from lp.soyuz.interfaces.packagecopyrequest import (
     IPackageCopyRequest,
@@ -25,7 +26,7 @@ def _construct_enum_mapping(db_item_cls):
 
 
 @implementer(IPackageCopyRequest)
-class PackageCopyRequest(Storm):
+class PackageCopyRequest(StormBase):
     """See `IPackageCopyRequest`."""
 
     __storm_table__ = "PackageCopyRequest"
