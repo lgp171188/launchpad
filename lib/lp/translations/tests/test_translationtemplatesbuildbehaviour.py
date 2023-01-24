@@ -113,7 +113,7 @@ class TestTranslationTemplatesBuildBehaviour(
                     "archive_private": False,
                     "branch_url": behaviour.build.branch.composePublicURL(),
                     "build_url": canonical_url(behaviour.build),
-                    "builder_constraints": None,
+                    "builder_constraints": [],
                     "fast_cleanup": True,
                     "series": das.distroseries.name,
                 },

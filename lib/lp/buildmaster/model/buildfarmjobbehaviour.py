@@ -102,7 +102,7 @@ class BuildFarmJobBehaviourBase:
             "archive_private": self.archive.private,
             "build_url": canonical_url(self.build),
             "builder_constraints": removeSecurityProxy(
-                self.build.builder_constraints
+                self.build.builder_constraints or []
             ),
             "fast_cleanup": self._builder.virtualized,
             "series": self.distro_arch_series.distroseries.name,
