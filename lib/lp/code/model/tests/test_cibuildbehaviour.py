@@ -299,7 +299,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
-                    "builder_constraints": Is(None),
+                    "builder_constraints": Equals([]),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": Equals(
@@ -435,7 +435,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
-                    "builder_constraints": Is(None),
+                    "builder_constraints": Equals([]),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": Equals(
@@ -610,7 +610,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     "archives": Equals(expected_archives),
                     "arch_tag": Equals("i386"),
                     "build_url": Equals(canonical_url(job.build)),
-                    "builder_constraints": Is(None),
+                    "builder_constraints": Equals([]),
                     "fast_cleanup": Is(True),
                     "git_path": Equals(job.build.commit_sha1),
                     "git_repository": AfterPreprocessing(
