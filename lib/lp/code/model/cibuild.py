@@ -310,6 +310,13 @@ class CIBuild(PackageBuildMixin, StormBase):
             return False
         return super().can_be_retried
 
+    def resetBuild(self):
+        """See `IBuildFarmJob`."""
+        super().resetBuild()
+        self.builder_constraints = copy(
+            removeSecurityProxy(self.git_repository.builder_constraints)
+        )
+
     def calculateScore(self):
         # Low latency is especially useful for CI builds, so score these
         # above bulky things like live filesystem builds, but below
