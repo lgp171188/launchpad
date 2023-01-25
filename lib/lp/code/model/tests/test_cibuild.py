@@ -68,6 +68,7 @@ from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
     api_url,
+    celebrity_logged_in,
     login,
     logout,
     person_logged_in,
@@ -239,6 +240,19 @@ class TestCIBuild(TestCaseWithFactory):
         self.assertIsNone(build.log)
         self.assertIsNone(build.upload_log)
         self.assertEqual(0, build.failure_count)
+
+    def test_retry_resets_builder_constraints(self):
+        # Retrying a build recalculates its builder constraints.
+        build = self.factory.makeCIBuild()
+        self.assertIsNone(build.builder_constraints)
+        build.updateStatus(BuildStatus.BUILDING)
+        build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        build.gotFailure()
+        with celebrity_logged_in("commercial_admin"):
+            build.git_repository.builder_constraints = ["gpu"]
+        with person_logged_in(build.git_repository.owner):
+            build.retry()
+        self.assertEqual(("gpu",), build.builder_constraints)
 
     def test_cancel_not_in_progress(self):
         # The cancel() method for a pending build leaves it in the CANCELLED
