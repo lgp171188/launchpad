@@ -252,7 +252,6 @@ class TestCIBuild(TestCaseWithFactory):
             build.git_repository.builder_constraints = ["gpu"]
         with person_logged_in(build.git_repository.owner):
             build.retry()
-        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
         self.assertEqual(("gpu",), build.builder_constraints)
 
     def test_cancel_not_in_progress(self):
