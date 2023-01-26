@@ -13,7 +13,6 @@ from textwrap import dedent
 from urllib.parse import quote
 
 import pytz
-from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 from zope.browserpage import ViewPageTemplateFile
@@ -446,23 +445,6 @@ class RequestAPI:
         if domain is not None:
             params += "; Domain=%s" % domain
         return params
-
-
-@implementer(ITraversable)
-class DBSchemaAPI:
-    """Adapter from integers to things that can extract information from
-    DBSchemas.
-    """
-
-    def __init__(self, number):
-        self._number = number
-
-    def traverse(self, name, furtherPath):
-        if name in enumerated_type_registry:
-            enum = enumerated_type_registry[name]
-            return enum.items[self._number].title
-        else:
-            raise TraversalError(name)
 
 
 # Python 3 doesn't have types.NoneType, but we still need to be able to

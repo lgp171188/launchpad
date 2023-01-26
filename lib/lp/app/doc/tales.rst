@@ -1569,21 +1569,6 @@ with 'None/fmt:foo'.
     ''
 
 
-The lp: namespace for presenting DBSchema items
------------------------------------------------
-
-This is deprecated, and should raise a deprecation warning in the
-future, and eventually be removed.  It is no longer needed, now that we
-have an EnumCol for sqlobject.
-
-Test the 'lp:' namespace for presenting DBSchema items.
-
-    >>> from lp.soyuz.enums import BinaryPackageFormat
-    >>> deb = BinaryPackageFormat.DEB.value
-    >>> test_tales("deb/lp:BinaryPackageFormat", deb=deb)
-    'Ubuntu Package'
-
-
 The someobject/required:some.Permission helper
 ----------------------------------------------
 
@@ -1615,6 +1600,7 @@ template matches a particular valid value for that DBSchema enum.
 This was going to be called 'enum-value', but Zope doesn't allow this.
 To be fixed upstream.
 
+    >>> from lp.soyuz.enums import BinaryPackageFormat
     >>> deb = BinaryPackageFormat.DEB
     >>> udeb = BinaryPackageFormat.UDEB
     >>> test_tales("deb/enumvalue:DEB", deb=deb)
