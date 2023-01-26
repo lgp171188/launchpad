@@ -54,7 +54,7 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
         script.main()
 
     def _setUpExpirablePublications(self, archive=None):
-        """Helper to set up two publications that are both expirable."""
+        """Helper to set up publications and indexes that are all expirable."""
         if archive is None:
             archive = self.archive
         pkg5 = self.stp.getPubSource(
@@ -78,7 +78,21 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
             self.archive2.distribution.currentseries, pub.pocket, self.archive2
         )
         other_binary.dateremoved = self.over_threshold_date
-        return pkg5, pub
+        af = self.factory.makeArchiveFile(
+            archive=archive,
+            container="release:",
+            path="dists/%s/Release" % pkg5.distroseries.getSuite(pkg5.pocket),
+            date_removed=self.over_threshold_date,
+        )
+        self.factory.makeArchiveFile(
+            archive=self.archive2,
+            container="release:",
+            path="dists/%s/Release"
+            % self.archive2.distribution.currentseries.getSuite(pub.pocket),
+            library_file=af.library_file,
+            date_removed=self.over_threshold_date,
+        )
+        return pkg5, pub, af
 
     def assertBinaryExpired(self, publication):
         self.assertNotEqual(
@@ -108,6 +122,18 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
             "lfa.expires should be None, but it's not.",
         )
 
+    def assertIndexExpired(self, archive_file):
+        self.assertIsNotNone(
+            archive_file.library_file.expires,
+            "lfa.expires should be set, but it's not.",
+        )
+
+    def assertIndexNotExpired(self, archive_file):
+        self.assertIsNone(
+            archive_file.library_file.expires,
+            "lfa.expires should be None, but it's not.",
+        )
+
 
 class ArchiveExpiryCommonTests:
     """Common source/binary expiration test cases.
@@ -126,10 +152,16 @@ class ArchiveExpiryCommonTests:
         [pub] = self.stp.getPubBinaries(
             pub_source=pkg1, dateremoved=None, archive=self.archive
         )
+        af = self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg1.distroseries.getSuite(pkg1.pocket),
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg1)
         self.assertBinaryNotExpired(pub)
+        self.assertIndexNotExpired(af)
 
     def testNoExpirationWithDateUnderThreshold(self):
         """Test no expiring if dateremoved too recent."""
@@ -144,10 +176,17 @@ class ArchiveExpiryCommonTests:
             dateremoved=self.under_threshold_date,
             archive=self.archive,
         )
+        af = self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg2.distroseries.getSuite(pkg2.pocket),
+            date_removed=self.under_threshold_date,
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg2)
         self.assertBinaryNotExpired(pub)
+        self.assertIndexNotExpired(af)
 
     def testExpirationWithDateOverThreshold(self):
         """Test expiring works if dateremoved old enough."""
@@ -162,10 +201,17 @@ class ArchiveExpiryCommonTests:
             dateremoved=self.over_threshold_date,
             archive=self.archive,
         )
+        af = self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg3.distroseries.getSuite(pkg3.pocket),
+            date_removed=self.over_threshold_date,
+        )
 
         self.runScript()
         self.assertSourceExpired(pkg3)
         self.assertBinaryExpired(pub)
+        self.assertIndexExpired(af)
 
     def testNoExpirationWithDateOverThresholdAndOtherValidPublication(self):
         """Test no expiry if dateremoved old enough but other publication."""
@@ -190,10 +236,23 @@ class ArchiveExpiryCommonTests:
             self.archive2.distribution.currentseries, pub.pocket, self.archive2
         )
         other_binary.dateremoved = None
+        af = self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg4.distroseries.getSuite(pkg4.pocket),
+            date_removed=self.over_threshold_date,
+        )
+        self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg4.distroseries.getSuite(pkg4.pocket),
+            library_file=af.library_file,
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg4)
         self.assertBinaryNotExpired(pub)
+        self.assertIndexNotExpired(af)
 
     def testNoExpirationWithDateOverThresholdAndOtherPubUnderThreshold(self):
         """Test no expiring.
@@ -222,10 +281,24 @@ class ArchiveExpiryCommonTests:
             self.archive2.distribution.currentseries, pub.pocket, self.archive2
         )
         other_binary.dateremoved = self.under_threshold_date
+        af = self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg5.distroseries.getSuite(pkg5.pocket),
+            date_removed=self.over_threshold_date,
+        )
+        self.factory.makeArchiveFile(
+            archive=self.archive,
+            container="release:",
+            path="dists/%s/Release" % pkg5.distroseries.getSuite(pkg5.pocket),
+            library_file=af.library_file,
+            date_removed=self.under_threshold_date,
+        )
 
         self.runScript()
         self.assertSourceNotExpired(pkg5)
         self.assertBinaryNotExpired(pub)
+        self.assertIndexNotExpired(af)
 
     def testNoExpirationWithDateOverThresholdAndOtherPubOverThreshold(self):
         """Test expiring works.
@@ -233,14 +306,15 @@ class ArchiveExpiryCommonTests:
         Test expiring works if dateremoved old enough and other publication
         is over date threshold.
         """
-        source, binary = self._setUpExpirablePublications()
+        source, binary, index = self._setUpExpirablePublications()
         self.runScript()
         self.assertSourceExpired(source)
         self.assertBinaryExpired(binary)
+        self.assertIndexExpired(index)
 
     def testDryRun(self):
         """Test that when dryrun is specified, nothing is expired."""
-        source, binary = self._setUpExpirablePublications()
+        source, binary, index = self._setUpExpirablePublications()
         # We have to commit here otherwise when the script aborts it
         # will remove the test publications we just created.
         self.layer.txn.commit()
@@ -249,16 +323,20 @@ class ArchiveExpiryCommonTests:
         script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
+        self.assertIndexNotExpired(index)
 
     def testDoesNotAffectPrimary(self):
         """Test that expiry does not happen for non-PPA publications."""
         primary_archive = getUtility(IDistributionSet)[
             "ubuntutest"
         ].main_archive
-        source, binary = self._setUpExpirablePublications(primary_archive)
+        source, binary, index = self._setUpExpirablePublications(
+            primary_archive
+        )
         self.runScript()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
+        self.assertIndexNotExpired(index)
 
 
 class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
@@ -280,7 +358,9 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
 
     def testNeverExpireWorks(self):
         """Test that never-expiring PPA owners are not expired."""
-        source, binary = self._setUpExpirablePublications(archive=self.archive)
+        source, binary, index = self._setUpExpirablePublications(
+            archive=self.archive
+        )
         script = self.getScript()
         script.never_expire = [
             self.archive.owner.name,
@@ -289,10 +369,13 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
+        self.assertIndexNotExpired(index)
 
     def testNeverExpireArchivesWorks(self):
         """Test that never-expiring individual PPAs are not expired."""
-        source, binary = self._setUpExpirablePublications(archive=self.archive)
+        source, binary, index = self._setUpExpirablePublications(
+            archive=self.archive
+        )
         script = self.getScript()
         script.never_expire = [
             "%s/%s" % (self.archive.owner.name, self.archive.name)
@@ -301,25 +384,28 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
+        self.assertIndexNotExpired(index)
 
     def testAlwaysExpireWorks(self):
         """Test that always-expiring private PPAs are expired anyway."""
         p3a = self.factory.makeArchive(private=True)
-        source, binary = self._setUpExpirablePublications(archive=p3a)
+        source, binary, index = self._setUpExpirablePublications(archive=p3a)
         script = self.getScript()
         script.always_expire = ["%s/%s" % (p3a.owner.name, p3a.name)]
         switch_dbuser(self.dbuser)
         script.main()
         self.assertSourceExpired(source)
         self.assertBinaryExpired(binary)
+        self.assertIndexExpired(index)
 
     def testPrivatePPAsNotExpired(self):
         """Test that private PPAs are not expired."""
         self.archive.private = True
-        source, binary = self._setUpExpirablePublications()
+        source, binary, index = self._setUpExpirablePublications()
         self.runScript()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
+        self.assertIndexNotExpired(index)
 
 
 class TestPartnerExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):

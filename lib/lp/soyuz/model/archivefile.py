@@ -12,7 +12,7 @@ import os.path
 import re
 
 import pytz
-from storm.locals import And, DateTime, Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -20,7 +20,6 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import convert_storm_clause_to_string
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -71,6 +70,10 @@ class ArchiveFile(StormBase):
         name="scheduled_deletion_date", tzinfo=pytz.UTC, allow_none=True
     )
 
+    date_removed = DateTime(
+        name="date_removed", tzinfo=pytz.UTC, allow_none=True
+    )
+
     def __init__(self, archive, container, path, library_file):
         """Construct an `ArchiveFile`."""
         super().__init__()
@@ -81,6 +84,7 @@ class ArchiveFile(StormBase):
         self.date_created = _now()
         self.date_superseded = None
         self.scheduled_deletion_date = None
+        self.date_removed = None
 
 
 @implementer(IArchiveFileSet)
@@ -116,6 +120,7 @@ class ArchiveFileSet:
         path_parent=None,
         sha256=None,
         condemned=None,
+        only_published=False,
         eager_load=False,
     ):
         """See `IArchiveFileSet`."""
@@ -145,6 +150,8 @@ class ArchiveFileSet:
                 clauses.append(ArchiveFile.scheduled_deletion_date != None)
             else:
                 clauses.append(ArchiveFile.scheduled_deletion_date == None)
+        if only_published:
+            clauses.append(ArchiveFile.date_removed == None)
         archive_files = IStore(ArchiveFile).find(ArchiveFile, *clauses)
 
         def eager_load(rows):
@@ -185,30 +192,13 @@ class ArchiveFileSet:
         )
 
     @staticmethod
-    def delete(archive_files):
+    def markDeleted(archive_files):
         """See `IArchiveFileSet`."""
-        # XXX cjwatson 2016-03-30 bug=322972: Requires manual SQL due to
-        # lack of support for DELETE FROM ... USING ... in Storm.
-        clauses = [
+        rows = IPrimaryStore(ArchiveFile).find(
+            ArchiveFile,
             ArchiveFile.id.is_in(
                 {archive_file.id for archive_file in archive_files}
             ),
-            ArchiveFile.library_file_id == LibraryFileAlias.id,
-            LibraryFileAlias.contentID == LibraryFileContent.id,
-        ]
-        where = convert_storm_clause_to_string(And(*clauses))
-        return list(
-            IPrimaryStore(ArchiveFile).execute(
-                """
-            DELETE FROM ArchiveFile
-            USING LibraryFileAlias, LibraryFileContent
-            WHERE """
-                + where
-                + """
-            RETURNING
-                ArchiveFile.container,
-                ArchiveFile.path,
-                LibraryFileContent.sha256
-            """
-            )
+            ArchiveFile.date_removed == None,
         )
+        rows.set(date_removed=_now())
