@@ -50,6 +50,7 @@ from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.timeline.requesttimeline import temporary_request_timeline
 from lp.services.webapp.errorlog import ErrorReportingUtility, ScriptRequest
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
@@ -190,7 +191,8 @@ class ArchivePublisherBase:
             properties = [("error-explanation", message)]
             request = ScriptRequest(properties)
             error_utility = ErrorReportingUtility()
-            error_utility.raising(sys.exc_info(), request)
+            with temporary_request_timeline(request):
+                error_utility.raising(sys.exc_info(), request)
             log.error("%s (%s)" % (message, request.oopsid))
         else:
             self.setPublished()

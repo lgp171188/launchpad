@@ -6,7 +6,10 @@
 __all__ = [
     "get_request_timeline",
     "set_request_timeline",
+    "temporary_request_timeline",
 ]
+
+from contextlib import contextmanager
 
 from timeline import Timeline
 
@@ -48,3 +51,20 @@ def set_request_timeline(request, timeline):
     return timeline
     # Disabled code path: bug 623199, ideally we would use this code path.
     request.annotations["timeline"] = timeline
+
+
+@contextmanager
+def temporary_request_timeline(request):
+    """Give `request` a temporary timeline.
+
+    This is useful in contexts where we want to raise an OOPS but we know
+    that the timeline is uninteresting and may be very large.
+
+    :param request: A Zope/Launchpad request object.
+    """
+    old_timeline = get_request_timeline(request)
+    try:
+        set_request_timeline(request, Timeline())
+        yield
+    finally:
+        set_request_timeline(request, old_timeline)
