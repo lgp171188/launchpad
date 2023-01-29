@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import time
@@ -31,7 +31,7 @@ defaultResource = static.Data(
         file repository used by
         <a href="https://launchpad.net/">Launchpad</a>.
         </p>
-        <p><small>Copyright 2004-2022 Canonical Ltd.</small></p>
+        <p><small>Copyright 2004-2023 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
         """,
