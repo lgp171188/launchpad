@@ -43,7 +43,7 @@ repos:
             |utilities/community-contributions\.py
           )$
 -   repo: https://github.com/PyCQA/isort
-    rev: 5.11.4
+    rev: 5.12.0
     hooks:
     -   id: isort
         name: isort
@@ -58,7 +58,7 @@ repos:
         additional_dependencies:
           - flake8-absolute-import==1.0.0.1
 -   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.31.0
+    rev: v8.33.0
     hooks:
     -   id: eslint
         args: [--quiet]
