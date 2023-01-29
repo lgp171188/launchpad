@@ -994,8 +994,11 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source = self.getPubSource(filecontent=b"Something")
         pub_source.publish(self.disk_pool, self.logger)
 
-        # And an oops should be filed for the error.
+        # An oops should be filed for the error, but we don't include the
+        # SQL timeline; it may be very large and tells us nothing that we
+        # can't get from the error message.
         self.assertEqual("PoolFileOverwriteError", self.oopses[0]["type"])
+        self.assertEqual([], self.oopses[0]["timeline"])
 
         self.layer.commit()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PENDING)
