@@ -589,11 +589,11 @@ class GitAPI(LaunchpadXMLRPCView):
             del result
 
     @return_fault
-    def _notify(self, requester, translated_path, statistics, auth_params):
+    def _notify(self, translated_path, statistics, auth_params):
         logger = self._getLogger()
-        if requester == LAUNCHPAD_ANONYMOUS:
-            requester = None
-        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
         if repository is None:
             fault = faults.NotFound(
                 "No repository found for '%s'." % translated_path
@@ -602,22 +602,30 @@ class GitAPI(LaunchpadXMLRPCView):
             return fault
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
-        if auth_params is not None:
-            verified = self._verifyAuthParams(
-                requester, repository, auth_params
+        if statistics:
+            removeSecurityProxy(repository).setRepackData(
+                statistics.get("loose_object_count"),
+                statistics.get("pack_count"),
             )
-            writable = self._isWritable(requester, repository, verified)
-            if writable and statistics:
-                removeSecurityProxy(repository).setRepackData(
-                    statistics.get("loose_object_count"),
-                    statistics.get("pack_count"),
-                )
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository)
         )
 
     def notify(self, translated_path, statistics, auth_params):
         """See `IGitAPI`."""
+        # This receives authentication parameters for historical reasons,
+        # but ignores them.  We already checked authorization at the start
+        # of the operation whose completion we're now being notified about,
+        # so we don't do so again here, as it can have weird effects: for
+        # example, it should be possible to have a short-duration personal
+        # access token that expires between the start and the end of a long
+        # push operation.  We have to trust turnip anyway, and the worst
+        # thing that any of this can do is spuriously update statistics.
+        #
+        # If we feel the need to authorize notify calls in future, then it
+        # should be done by checking whether a previous operation was
+        # authorized, e.g. by generating a single-use token earlier.  At the
+        # moment this seems like overkill, though.
         logger = self._getLogger()
         logger.info(
             "Request received: notify('%s', '%d', '%d')",
@@ -626,14 +634,7 @@ class GitAPI(LaunchpadXMLRPCView):
             statistics.get("pack_count"),
         )
 
-        requester_id = _get_requester_id(auth_params)
-        result = run_with_login(
-            requester_id,
-            self._notify,
-            translated_path,
-            statistics,
-            auth_params,
-        )
+        result = self._notify(translated_path, statistics, auth_params)
         try:
             if isinstance(result, xmlrpc.client.Fault):
                 logger.error("notify failed: %r", result)
