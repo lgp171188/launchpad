@@ -410,7 +410,7 @@ class BranchLookup:
     def getByPath(self, path):
         """See `IBranchLookup`."""
         try:
-            return self.getByLPPath(path)[0]
+            branch, suffix = self.getByLPPath(path)
         except (
             CannotHaveLinkedBranch,
             InvalidNamespace,
@@ -424,6 +424,9 @@ class BranchLookup:
             NoLinkedBranch,
         ):
             return None
+        if suffix:
+            return None
+        return branch
 
     def _getLinkedBranchAndPath(self, provided):
         """Get the linked branch for 'provided', and the bzr_path.
