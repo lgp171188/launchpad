@@ -351,7 +351,7 @@
     <allow interface="lp.code.interfaces.branchsubscription.IBranchSubscription"/>
     <allow interface="lp.code.interfaces.branchtarget.IHasBranchTarget"/>
     <require
-        permission="zope.Public"
+        permission="launchpad.Edit"
         set_schema="lp.code.interfaces.branchsubscription.IBranchSubscription"/>
   </class>
 
@@ -893,7 +893,7 @@
   <class class="lp.code.model.gitsubscription.GitSubscription">
     <allow interface="lp.code.interfaces.gitsubscription.IGitSubscription"/>
     <require
-        permission="zope.Public"
+        permission="launchpad.Edit"
         set_schema="lp.code.interfaces.gitsubscription.IGitSubscription"/>
   </class>
 
