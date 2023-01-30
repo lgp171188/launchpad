@@ -25,6 +25,7 @@ Common development tasks
    land-update-for-loggerhead
    update-configuration-for-testing
    doc-theme
+   testing-scripts
 
 Operating development instances
 -------------------------------
