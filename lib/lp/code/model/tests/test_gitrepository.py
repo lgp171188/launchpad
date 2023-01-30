@@ -1400,6 +1400,10 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
 
     def test_related_access_tokens_deleted(self):
         _, token = self.factory.makeAccessToken(target=self.repository)
+        _, expired_token = self.factory.makeAccessToken(
+            target=self.repository,
+            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+        )
         other_repository = self.factory.makeGitRepository()
         _, other_token = self.factory.makeAccessToken(target=other_repository)
         self.repository.destroySelf()
@@ -1407,6 +1411,12 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         # The deleted repository's access tokens are gone.
         self.assertRaises(
             LostObjectError, getattr, removeSecurityProxy(token), "target"
+        )
+        self.assertRaises(
+            LostObjectError,
+            getattr,
+            removeSecurityProxy(expired_token),
+            "target",
         )
         # An unrelated repository's access tokens are still present.
         self.assertEqual(

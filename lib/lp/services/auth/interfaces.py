@@ -175,12 +175,15 @@ class IAccessTokenSet(Interface):
         :param owner: An `IPerson`.
         """
 
-    def findByTarget(target, visible_by_user=None):
+    def findByTarget(target, visible_by_user=None, include_expired=False):
         """Return all access tokens for this target.
 
         :param target: An `IAccessTokenTarget`.
         :param visible_by_user: If given, return only access tokens visible
             by this user.
+        :param include_expired: If True, include expired access tokens.
+            This must only be used for non-authentication purposes, such as
+            deleting database rows.
         """
 
     def getByTargetAndID(target, token_id, visible_by_user=None):
@@ -208,8 +211,15 @@ class IAccessTokenTarget(Interface):
     @operation_returns_collection_of(IAccessToken)
     @export_read_operation()
     @operation_for_version("devel")
-    def getAccessTokens(visible_by_user=None):
-        """Return personal access tokens for this target."""
+    def getAccessTokens(visible_by_user=None, include_expired=False):
+        """Return personal access tokens for this target.
+
+        :param visible_by_user: If given, return only access tokens visible
+            by this user.
+        :param include_expired: If True, include expired access tokens.
+            This must only be used for non-authentication purposes, such as
+            deleting database rows.
+        """
 
 
 patch_reference_property(IAccessToken, "target", IAccessTokenTarget)

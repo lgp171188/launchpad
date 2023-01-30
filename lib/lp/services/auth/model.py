@@ -175,7 +175,9 @@ class AccessTokenSet:
         """See `IAccessTokenSet`."""
         return IStore(AccessToken).find(AccessToken, owner=owner)
 
-    def findByTarget(self, target, visible_by_user=None):
+    def findByTarget(
+        self, target, visible_by_user=None, include_expired=False
+    ):
         """See `IAccessTokenSet`."""
         clauses = []
         if IGitRepository.providedBy(target):
@@ -203,12 +205,13 @@ class AccessTokenSet:
                 )
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
-        clauses.append(
-            Or(
-                AccessToken.date_expires == None,
-                AccessToken.date_expires > UTC_NOW,
+        if not include_expired:
+            clauses.append(
+                Or(
+                    AccessToken.date_expires == None,
+                    AccessToken.date_expires > UTC_NOW,
+                )
             )
-        )
         return (
             IStore(AccessToken)
             .find(AccessToken, *clauses)
@@ -227,8 +230,10 @@ class AccessTokenSet:
 class AccessTokenTargetMixin:
     """Mix this into classes that implement `IAccessTokenTarget`."""
 
-    def getAccessTokens(self, visible_by_user=None):
+    def getAccessTokens(self, visible_by_user=None, include_expired=False):
         """See `IAccessTokenTarget`."""
         return getUtility(IAccessTokenSet).findByTarget(
-            self, visible_by_user=visible_by_user
+            self,
+            visible_by_user=visible_by_user,
+            include_expired=include_expired,
         )
