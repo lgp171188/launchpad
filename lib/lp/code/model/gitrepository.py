@@ -2121,7 +2121,9 @@ class GitRepository(
         # activity logs for removed repositories anyway.
         self.grants.remove()
         self.rules.remove()
-        removeSecurityProxy(self.getAccessTokens()).remove()
+        removeSecurityProxy(
+            self.getAccessTokens(include_expired=True)
+        ).remove()
         getUtility(IRevisionStatusReportSet).deleteForRepository(self)
         getUtility(ICIBuildSet).deleteByGitRepository(self)
 

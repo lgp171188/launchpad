@@ -297,6 +297,12 @@ class TestAccessTokenSet(TestCaseWithFactory):
             [current_token, expires_soon_token],
             getUtility(IAccessTokenSet).findByTarget(target),
         )
+        self.assertContentEqual(
+            [current_token, expires_soon_token, expired_token],
+            getUtility(IAccessTokenSet).findByTarget(
+                target, include_expired=True
+            ),
+        )
 
     def test_getByTargetAndID(self):
         targets = [self.factory.makeGitRepository() for _ in range(3)]
@@ -417,6 +423,26 @@ class TestAccessTokenTargetBase:
         self.assertEqual(200, response.status)
         self.assertContentEqual(
             ["Test token 1", "Test token 2"],
+            [entry["description"] for entry in response.jsonBody()["entries"]],
+        )
+
+    def test_getAccessTokens_excludes_expired(self):
+        with person_logged_in(self.owner):
+            self.factory.makeAccessToken(
+                owner=self.owner, description="Current", target=self.target
+            )
+            self.factory.makeAccessToken(
+                owner=self.owner,
+                description="Expired",
+                target=self.target,
+                date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+            )
+        response = self.webservice.named_get(
+            self.target_url, "getAccessTokens", api_version="devel"
+        )
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            ["Current"],
             [entry["description"] for entry in response.jsonBody()["entries"]],
         )
 
