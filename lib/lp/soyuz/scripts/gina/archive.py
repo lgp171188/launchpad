@@ -20,7 +20,6 @@ import tempfile
 from collections import defaultdict
 
 import apt_pkg
-import six
 
 from lp.services.scripts import log
 from lp.soyuz.scripts.gina import call
@@ -236,10 +235,8 @@ class PackagesMap:
                 for section in sources:
                     try:
                         src_tmp = dict(section)
-                        src_tmp["Component"] = six.ensure_binary(
-                            info_set.component
-                        )
-                        src_name = six.ensure_text(src_tmp["Package"])
+                        src_tmp["Component"] = info_set.component.encode()
+                        src_name = src_tmp["Package"].decode()
                     except KeyError:
                         log.exception(
                             "Invalid Sources stanza in %s",
@@ -267,10 +264,8 @@ class PackagesMap:
                 try:
                     bin_tmp = dict(section)
                     # The component isn't listed in the tagfile.
-                    bin_tmp["Component"] = six.ensure_binary(
-                        info_set.component
-                    )
-                    bin_name = six.ensure_text(bin_tmp["Package"])
+                    bin_tmp["Component"] = info_set.component.encode()
+                    bin_name = bin_tmp["Package"].decode()
                 except KeyError:
                     log.exception(
                         "Invalid Releases stanza in %s",
@@ -284,10 +279,8 @@ class PackagesMap:
             for section in dibinaries:
                 try:
                     dibin_tmp = dict(section)
-                    dibin_tmp["Component"] = six.ensure_binary(
-                        info_set.component
-                    )
-                    dibin_name = six.ensure_text(dibin_tmp["Package"])
+                    dibin_tmp["Component"] = info_set.component.encode()
+                    dibin_name = dibin_tmp["Package"].decode()
                 except KeyError:
                     log.exception(
                         "Invalid D-I Releases stanza in %s" % info_set.difile

@@ -7,6 +7,7 @@ __all__ = ["TagFileParseError", "parse_tagfile", "parse_tagfile_content"]
 
 
 import tempfile
+from typing import Dict, Optional
 
 import apt_pkg
 
@@ -19,7 +20,9 @@ class TagFileParseError(Exception):
     pass
 
 
-def parse_tagfile_content(content, filename=None):
+def parse_tagfile_content(
+    content: bytes, filename: Optional[str] = None
+) -> Dict[str, bytes]:
     """Parses a tag file and returns a dictionary where each field is a key.
 
     The mandatory first argument is the contents of the tag file as a
@@ -56,7 +59,7 @@ def parse_tagfile_content(content, filename=None):
     return trimmed_dict
 
 
-def parse_tagfile(filename):
+def parse_tagfile(filename: str) -> Dict[str, bytes]:
     """Parses a tag file and returns a dictionary where each field is a key.
 
     The mandatory first argument is the filename of the tag file, and

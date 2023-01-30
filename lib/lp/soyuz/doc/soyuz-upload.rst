@@ -60,14 +60,14 @@ been uploaded over FTP.
     ...         tf = {}
     ...
     ...     if "Source" in tf:
-    ...         package_names.append(six.ensure_text(tf["Source"]))
+    ...         package_names.append(tf["Source"].decode())
     ...
     ...     send_filepaths = [changes_filepath]
     ...     if "Files" in tf:
     ...         send_filepaths.extend(
     ...             [
     ...                 os.path.join(test_files_dir, line.split()[-1])
-    ...                 for line in six.ensure_text(tf["Files"]).splitlines()
+    ...                 for line in tf["Files"].decode().splitlines()
     ...                 if line
     ...             ]
     ...         )

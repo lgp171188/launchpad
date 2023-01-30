@@ -11,7 +11,6 @@ from textwrap import dedent
 from unittest import TestLoader
 
 import apt_pkg
-import six
 import transaction
 from fixtures import EnvironmentVariableFixture
 from testtools.matchers import MatchesSetwise, MatchesStructure
@@ -338,7 +337,7 @@ class TestSourcePackageData(TestCaseWithFactory):
             )
 
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents["Directory"] = six.ensure_binary(pool_dir)
+        dsc_contents["Directory"] = pool_dir.encode()
         dsc_contents["Package"] = b"foo"
         dsc_contents["Component"] = b"main"
         dsc_contents["Section"] = b"misc"
@@ -409,7 +408,7 @@ class TestSourcePackageData(TestCaseWithFactory):
             )
 
         dsc_contents = parse_tagfile(dsc_path)
-        dsc_contents["Directory"] = six.ensure_binary(pool_dir)
+        dsc_contents["Directory"] = pool_dir.encode()
         dsc_contents["Package"] = b"foo"
         dsc_contents["Component"] = b"main"
         dsc_contents["Section"] = b"misc"

@@ -274,8 +274,8 @@ Some fields extracted from the tag_file are required, they are always
 present in ChangesFile and DSCFile:
 
     >>> sig_file._dict = {}
-    >>> sig_file._dict["Source"] = "some-source"
-    >>> sig_file._dict["Version"] = "6.6.6"
+    >>> sig_file._dict["Source"] = b"some-source"
+    >>> sig_file._dict["Version"] = b"6.6.6"
 
 After initialising sig_file we can parse addresses and look them up in
 Launchpad:
