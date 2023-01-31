@@ -13,6 +13,7 @@ __all__ = [
 
 import re
 import typing
+from datetime import datetime
 from operator import attrgetter
 from pathlib import PurePath
 
@@ -2047,7 +2048,7 @@ class Archive(SQLBase):
         return archive_file
 
     def getPoolFileByPath(
-        self, path: PurePath
+        self, path: PurePath, live_at: typing.Optional[datetime] = None
     ) -> typing.Optional[LibraryFileAlias]:
         """See `IArchive`."""
         try:
@@ -2100,10 +2101,21 @@ class Archive(SQLBase):
                 xPPH.archive == self,
                 xPPH.component == Component.id,
                 xPPH.datepublished != None,
-                xPPH.dateremoved == None,
                 xPF.libraryfile == LibraryFileAlias.id,
             ]
         )
+        if live_at:
+            clauses.extend(
+                [
+                    xPPH.datepublished <= live_at,
+                    Or(
+                        xPPH.dateremoved == None,
+                        xPPH.dateremoved > live_at,
+                    ),
+                ]
+            )
+        else:
+            clauses.append(xPPH.dateremoved == None)
         return (
             store.find(LibraryFileAlias, *clauses)
             .config(distinct=True)

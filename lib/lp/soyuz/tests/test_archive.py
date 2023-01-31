@@ -3374,6 +3374,65 @@ class TestGetPoolFileByPath(TestCaseWithFactory):
             ),
         )
 
+    def test_source_live_at(self):
+        now = datetime.now(UTC)
+        archive = self.factory.makeArchive()
+        spph_1 = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.DELETED,
+            sourcepackagename="test-package",
+            component="main",
+            version="1",
+        )
+        removeSecurityProxy(spph_1).datepublished = now - timedelta(days=3)
+        removeSecurityProxy(spph_1).dateremoved = now - timedelta(days=1)
+        sprf_1 = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph_1.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        spph_2 = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+            version="2",
+        )
+        removeSecurityProxy(spph_2).datepublished = now - timedelta(days=2)
+        sprf_2 = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph_2.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_2.dsc", db_only=True
+            ),
+        )
+        IStore(archive).flush()
+        for days, expected_file in (
+            (4, None),
+            (3, sprf_1.libraryfile),
+            (2, sprf_1.libraryfile),
+            (1, None),
+        ):
+            self.assertEqual(
+                expected_file,
+                archive.getPoolFileByPath(
+                    PurePath("pool/main/t/test-package/test-package_1.dsc"),
+                    live_at=now - timedelta(days=days),
+                ),
+            )
+        for days, expected_file in (
+            (3, None),
+            (2, sprf_2.libraryfile),
+            (1, sprf_2.libraryfile),
+        ):
+            self.assertEqual(
+                expected_file,
+                archive.getPoolFileByPath(
+                    PurePath("pool/main/t/test-package/test-package_2.dsc"),
+                    live_at=now - timedelta(days=days),
+                ),
+            )
+
     def test_binary_not_found(self):
         archive = self.factory.makeArchive()
         self.factory.makeBinaryPackagePublishingHistory(
@@ -3465,6 +3524,69 @@ class TestGetPoolFileByPath(TestCaseWithFactory):
                 PurePath("pool/main/t/test-package/test-package_1_amd64.deb")
             ),
         )
+
+    def test_binary_live_at(self):
+        now = datetime.now(UTC)
+        archive = self.factory.makeArchive()
+        bpph_1 = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.DELETED,
+            sourcepackagename="test-package",
+            component="main",
+            version="1",
+        )
+        removeSecurityProxy(bpph_1).datepublished = now - timedelta(days=3)
+        removeSecurityProxy(bpph_1).dateremoved = now - timedelta(days=1)
+        bpf_1 = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph_1.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        bpph_2 = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+            version="2",
+        )
+        removeSecurityProxy(bpph_2).datepublished = now - timedelta(days=2)
+        bpf_2 = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph_2.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_2_amd64.deb", db_only=True
+            ),
+        )
+        IStore(archive).flush()
+        for days, expected_file in (
+            (4, None),
+            (3, bpf_1.libraryfile),
+            (2, bpf_1.libraryfile),
+            (1, None),
+        ):
+            self.assertEqual(
+                expected_file,
+                archive.getPoolFileByPath(
+                    PurePath(
+                        "pool/main/t/test-package/test-package_1_amd64.deb"
+                    ),
+                    live_at=now - timedelta(days=days),
+                ),
+            )
+        for days, expected_file in (
+            (3, None),
+            (2, bpf_2.libraryfile),
+            (1, bpf_2.libraryfile),
+        ):
+            self.assertEqual(
+                expected_file,
+                archive.getPoolFileByPath(
+                    PurePath(
+                        "pool/main/t/test-package/test-package_2_amd64.deb"
+                    ),
+                    live_at=now - timedelta(days=days),
+                ),
+            )
 
 
 class TestGetPublishedSources(TestCaseWithFactory):

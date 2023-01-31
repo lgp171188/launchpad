@@ -8,6 +8,7 @@ __all__ = [
 ]
 
 import logging
+from datetime import datetime
 from pathlib import PurePath
 from typing import Optional, Union
 from xmlrpc.client import Fault
@@ -18,6 +19,7 @@ from zope.interface import implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
+from lp.services.database.constants import UTC_NOW
 from lp.services.macaroons.interfaces import NO_USER, IMacaroonIssuer
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.soyuz.enums import ArchiveRepositoryFormat
@@ -126,7 +128,11 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         )
 
     def _translatePathByHash(
-        self, archive_reference: str, archive, path: PurePath
+        self,
+        archive_reference: str,
+        archive,
+        path: PurePath,
+        existed_at: Optional[datetime],
     ) -> Optional[str]:
         suite = path.parts[1]
         checksum_type = path.parts[-2]
@@ -145,6 +151,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 container="release:%s" % suite,
                 path_parent="/".join(path.parts[:-3]),
                 sha256=checksum,
+                existed_at=UTC_NOW if existed_at is None else existed_at,
             )
             .any()
         )
@@ -152,20 +159,27 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             return None
 
         log.info(
-            "%s: %s (by-hash) -> LFA %d",
+            "%s: %s (by-hash)%s -> LFA %d",
             archive_reference,
             path.as_posix(),
+            "" if existed_at is None else " at %s" % existed_at.isoformat(),
             archive_file.library_file.id,
         )
         return archive_file.library_file.getURL(include_token=True)
 
     def _translatePathNonPool(
-        self, archive_reference: str, archive, path: PurePath
+        self,
+        archive_reference: str,
+        archive,
+        path: PurePath,
+        live_at: Optional[datetime],
     ) -> Optional[str]:
         archive_file = (
             getUtility(IArchiveFileSet)
             .getByArchive(
-                archive=archive, path=path.as_posix(), condemned=False
+                archive=archive,
+                path=path.as_posix(),
+                live_at=UTC_NOW if live_at is None else live_at,
             )
             .one()
         )
@@ -173,30 +187,41 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             return None
 
         log.info(
-            "%s: %s (non-pool) -> LFA %d",
+            "%s: %s (non-pool)%s -> LFA %d",
             archive_reference,
             path.as_posix(),
+            "" if live_at is None else " at %s" % live_at.isoformat(),
             archive_file.library_file.id,
         )
         return archive_file.library_file.getURL(include_token=True)
 
     def _translatePathPool(
-        self, archive_reference: str, archive, path: PurePath
+        self,
+        archive_reference: str,
+        archive,
+        path: PurePath,
+        live_at: Optional[datetime],
     ) -> Optional[str]:
-        lfa = archive.getPoolFileByPath(path)
+        lfa = archive.getPoolFileByPath(path, live_at=live_at)
         if lfa is None or lfa.deleted:
             return None
 
         log.info(
-            "%s: %s (pool) -> LFA %d",
+            "%s: %s (pool)%s -> LFA %d",
             archive_reference,
             path.as_posix(),
+            "" if live_at is None else " at %s" % live_at.isoformat(),
             lfa.id,
         )
         return lfa.getURL(include_token=True)
 
     @return_fault
-    def _translatePath(self, archive_reference: str, path: PurePath) -> str:
+    def _translatePath(
+        self,
+        archive_reference: str,
+        path: PurePath,
+        live_at: Optional[datetime],
+    ) -> str:
         archive = getUtility(IArchiveSet).getByReference(archive_reference)
         if archive is None:
             log.info("%s: No archive found", archive_reference)
@@ -214,35 +239,52 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 message="Can't translate paths in '%s' with format %s."
                 % (archive_reference, archive.repository_format)
             )
+        live_at_message = (
+            "" if live_at is None else " at %s" % live_at.isoformat()
+        )
 
         # Consider by-hash index files.
         if path.parts[0] == "dists" and path.parts[2:][-3:-2] == ("by-hash",):
-            url = self._translatePathByHash(archive_reference, archive, path)
+            url = self._translatePathByHash(
+                archive_reference, archive, path, live_at
+            )
             if url is not None:
                 return url
 
         # Consider other non-pool files.
         elif path.parts[0] != "pool":
-            url = self._translatePathNonPool(archive_reference, archive, path)
+            url = self._translatePathNonPool(
+                archive_reference, archive, path, live_at
+            )
             if url is not None:
                 return url
 
         # Consider pool files.
         else:
-            url = self._translatePathPool(archive_reference, archive, path)
+            url = self._translatePathPool(
+                archive_reference, archive, path, live_at
+            )
             if url is not None:
                 return url
 
-        log.info("%s: %s not found", archive_reference, path.as_posix())
+        log.info(
+            "%s: %s not found%s",
+            archive_reference,
+            path.as_posix(),
+            live_at_message,
+        )
         raise faults.NotFound(
-            message="'%s' not found in '%s'."
-            % (path.as_posix(), archive_reference)
+            message="'%s' not found in '%s'%s."
+            % (path.as_posix(), archive_reference, live_at_message)
         )
 
     def translatePath(
-        self, archive_reference: str, path: str
+        self,
+        archive_reference: str,
+        path: str,
+        live_at: Optional[datetime] = None,
     ) -> Union[str, Fault]:
         """See `IArchiveAPI`."""
         # This thunk exists because you can't use a decorated function as
         # the implementation of a method exported over XML-RPC.
-        return self._translatePath(archive_reference, PurePath(path))
+        return self._translatePath(archive_reference, PurePath(path), live_at)

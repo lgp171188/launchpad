@@ -4,14 +4,17 @@
 """ArchiveFile tests."""
 
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import AfterPreprocessing, Equals, Is, MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import IncompatibleArguments
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
@@ -84,13 +87,8 @@ class TestArchiveFile(TestCaseWithFactory):
     def test_getByArchive(self):
         archives = [self.factory.makeArchive(), self.factory.makeArchive()]
         archive_files = []
-        now = get_transaction_timestamp(Store.of(archives[0]))
         for archive in archives:
-            archive_files.append(
-                self.factory.makeArchiveFile(
-                    archive=archive, scheduled_deletion_date=now
-                )
-            )
+            archive_files.append(self.factory.makeArchiveFile(archive=archive))
             archive_files.append(
                 self.factory.makeArchiveFile(archive=archive, container="foo")
             )
@@ -115,14 +113,6 @@ class TestArchiveFile(TestCaseWithFactory):
             [], archive_file_set.getByArchive(archives[0], path="other")
         )
         self.assertContentEqual(
-            [archive_files[0]],
-            archive_file_set.getByArchive(archives[0], condemned=True),
-        )
-        self.assertContentEqual(
-            [archive_files[1]],
-            archive_file_set.getByArchive(archives[0], condemned=False),
-        )
-        self.assertContentEqual(
             archive_files[2:], archive_file_set.getByArchive(archives[1])
         )
         self.assertContentEqual(
@@ -140,14 +130,6 @@ class TestArchiveFile(TestCaseWithFactory):
         )
         self.assertContentEqual(
             [], archive_file_set.getByArchive(archives[1], path="other")
-        )
-        self.assertContentEqual(
-            [archive_files[2]],
-            archive_file_set.getByArchive(archives[1], condemned=True),
-        )
-        self.assertContentEqual(
-            [archive_files[3]],
-            archive_file_set.getByArchive(archives[1], condemned=False),
         )
         self.assertContentEqual(
             [archive_files[0]],
@@ -185,6 +167,126 @@ class TestArchiveFile(TestCaseWithFactory):
             [],
             archive_file_set.getByArchive(archive, path_parent="dists/xenial"),
         )
+
+    def test_getByArchive_both_live_at_and_existed_at(self):
+        now = datetime.now(pytz.UTC)
+        archive = self.factory.makeArchive()
+        self.assertRaisesWithContent(
+            IncompatibleArguments,
+            "You cannot specify both 'live_at' and 'existed_at'.",
+            getUtility(IArchiveFileSet).getByArchive,
+            archive,
+            live_at=now,
+            existed_at=now,
+        )
+
+    def test_getByArchive_live_at(self):
+        archive = self.factory.makeArchive()
+        now = get_transaction_timestamp(Store.of(archive))
+        archive_file_1 = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file_1 = removeSecurityProxy(archive_file_1)
+        naked_archive_file_1.date_created = now - timedelta(days=3)
+        naked_archive_file_1.date_superseded = now - timedelta(days=1)
+        archive_file_2 = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file_2 = removeSecurityProxy(archive_file_2)
+        naked_archive_file_2.date_created = now - timedelta(days=1)
+        archive_file_set = getUtility(IArchiveFileSet)
+        for days, expected_file in (
+            (4, None),
+            (3, archive_file_1),
+            (2, archive_file_1),
+            (1, archive_file_2),
+            (0, archive_file_2),
+        ):
+            self.assertEqual(
+                expected_file,
+                archive_file_set.getByArchive(
+                    archive,
+                    path="dists/jammy/InRelease",
+                    live_at=now - timedelta(days=days) if days else UTC_NOW,
+                ).one(),
+            )
+
+    def test_getByArchive_live_at_without_date_created(self):
+        archive = self.factory.makeArchive()
+        now = get_transaction_timestamp(Store.of(archive))
+        archive_file = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file = removeSecurityProxy(archive_file)
+        naked_archive_file.date_created = None
+        naked_archive_file.date_superseded = now
+        archive_file_set = getUtility(IArchiveFileSet)
+        for days, expected_file in ((1, archive_file), (0, None)):
+            self.assertEqual(
+                expected_file,
+                archive_file_set.getByArchive(
+                    archive,
+                    path="dists/jammy/InRelease",
+                    live_at=now - timedelta(days=days) if days else UTC_NOW,
+                ).one(),
+            )
+
+    def test_getByArchive_existed_at(self):
+        archive = self.factory.makeArchive()
+        now = get_transaction_timestamp(Store.of(archive))
+        archive_file_1 = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file_1 = removeSecurityProxy(archive_file_1)
+        naked_archive_file_1.date_created = now - timedelta(days=3)
+        naked_archive_file_1.date_superseded = now - timedelta(days=2)
+        naked_archive_file_1.date_removed = now - timedelta(days=1)
+        archive_file_2 = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file_2 = removeSecurityProxy(archive_file_2)
+        naked_archive_file_2.date_created = now - timedelta(days=2)
+        archive_file_set = getUtility(IArchiveFileSet)
+        for days, existed in ((4, False), (3, True), (2, True), (1, False)):
+            self.assertEqual(
+                archive_file_1 if existed else None,
+                archive_file_set.getByArchive(
+                    archive,
+                    path="dists/jammy/InRelease",
+                    sha256=archive_file_1.library_file.content.sha256,
+                    existed_at=now - timedelta(days=days),
+                ).one(),
+            )
+        for days, existed in ((3, False), (2, True), (1, True), (0, True)):
+            self.assertEqual(
+                archive_file_2 if existed else None,
+                archive_file_set.getByArchive(
+                    archive,
+                    path="dists/jammy/InRelease",
+                    sha256=archive_file_2.library_file.content.sha256,
+                    existed_at=now - timedelta(days=days) if days else UTC_NOW,
+                ).one(),
+            )
+
+    def test_getByArchive_existed_at_without_date_created(self):
+        archive = self.factory.makeArchive()
+        now = get_transaction_timestamp(Store.of(archive))
+        archive_file = self.factory.makeArchiveFile(
+            archive=archive, path="dists/jammy/InRelease"
+        )
+        naked_archive_file = removeSecurityProxy(archive_file)
+        naked_archive_file.date_created = None
+        naked_archive_file.date_removed = now
+        archive_file_set = getUtility(IArchiveFileSet)
+        for days, expected_file in ((1, archive_file), (0, None)):
+            self.assertEqual(
+                expected_file,
+                archive_file_set.getByArchive(
+                    archive,
+                    path="dists/jammy/InRelease",
+                    existed_at=now - timedelta(days=days) if days else UTC_NOW,
+                ).one(),
+            )
 
     def test_scheduleDeletion(self):
         archive_files = [self.factory.makeArchiveFile() for _ in range(3)]

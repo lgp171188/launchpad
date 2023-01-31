@@ -8,6 +8,9 @@ __all__ = [
     "IArchiveApplication",
 ]
 
+from datetime import datetime
+from typing import Optional
+
 from zope.interface import Interface
 
 from lp.services.webapp.interfaces import ILaunchpadApplication
@@ -42,12 +45,16 @@ class IArchiveAPI(Interface):
             None.
         """
 
-    def translatePath(archive_reference, path):
+    def translatePath(
+        archive_reference: str, path: str, live_at: Optional[datetime] = None
+    ):
         """Find the librarian URL for a relative path within an archive.
 
         :param archive_reference: The reference form of the archive to check.
         :param path: The relative path within the archive.  This should not
             begin with a "/" character.
+        :param live_at: An optional timestamp; if passed, only return paths
+            that existed at this timestamp.
 
         :return: A `NotFound` fault if `archive_reference` does not identify
             an archive, or the archive's repository format is something

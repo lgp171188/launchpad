@@ -55,6 +55,8 @@ __all__ = [
 import http.client
 import re
 import typing
+from datetime import datetime
+from pathlib import PurePath
 from urllib.parse import urlparse
 
 from lazr.restful.declarations import (
@@ -792,12 +794,16 @@ class IArchiveSubscriberView(Interface):
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
 
-    def getPoolFileByPath(path):
+    def getPoolFileByPath(
+        path: PurePath, live_at: typing.Optional[datetime] = None
+    ):
         """Return the `ILibraryFileAlias` for a path in this archive's pool.
 
         :param path: A `PurePath` for where a source or binary package file
             is published in this archive's pool, e.g.
             "pool/main/p/package/package_1.dsc".
+        :param live_at: If not None, return only files that existed in the
+            archive at this `datetime`.
         :return: An `ILibraryFileAlias`, or None.
         """
 
