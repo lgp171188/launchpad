@@ -1252,7 +1252,7 @@ class Snap(Storm, WebhookTargetMixin):
             .find(
                 SnapBuild,
                 SnapBuild.snap == self,
-                SnapBuild._store_upload_revision == store_upload_revision,
+                SnapBuild.store_upload_revision == store_upload_revision,
                 SnapBuild.archive == Archive.id,
                 Archive._enabled,
                 get_enabled_archive_filter(

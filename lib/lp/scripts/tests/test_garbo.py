@@ -80,7 +80,6 @@ from lp.scripts.garbo import (
     HourlyDatabaseGarbageCollector,
     LoginTokenPruner,
     OpenIDConsumerAssociationPruner,
-    PopulateSnapBuildStoreRevision,
     ProductVCSPopulator,
     UnusedPOTMsgSetPruner,
     UnusedSessionPruner,
@@ -112,14 +111,8 @@ from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
-from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
-from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJob, SnapStoreUploadJob
-from lp.snappy.tests.test_snapbuildjob import (
-    FakeSnapStoreClient,
-    run_isolated_jobs,
-)
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
     ArchiveRepositoryFormat,
@@ -143,8 +136,7 @@ from lp.testing import (
     admin_logged_in,
     person_logged_in,
 )
-from lp.testing.dbuser import dbuser, switch_dbuser
-from lp.testing.fixture import ZopeUtilityFixture
+from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadScriptLayer,
@@ -2247,67 +2239,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         self.assertIsNotNone(token.date_deactivated)
         self.assertEmailQueueLength(0)
-
-    def test_PopulateSnapBuildStoreRevision(self):
-        switch_dbuser("testadmin")
-        snap1 = self.factory.makeSnap()
-        build1 = self.factory.makeSnapBuild(
-            snap=snap1, status=BuildStatus.FULLYBUILT
-        )
-        snap1_lfa = self.factory.makeLibraryFileAlias(
-            filename="test-snap.snap", content=b"dummy snap content"
-        )
-        self.factory.makeSnapFile(snapbuild=build1, libraryfile=snap1_lfa)
-
-        # test that build1 does not get picked up
-        # as it is a build without a store upload
-        populator = PopulateSnapBuildStoreRevision(None)
-        rs = populator.findSnapBuilds()
-        self.assertEqual(0, rs.count())
-
-        # Upload build
-        job = getUtility(ISnapStoreUploadJobSource).create(build1)
-        client = FakeSnapStoreClient()
-        client.uploadFile.result = 1
-        client.push.result = (
-            "http://sca.example/dev/api/snaps/1/builds/1/status"
-        )
-        client.checkStatus.result = (
-            "http://sca.example/dev/click-apps/1/rev/1/",
-            1,
-        )
-        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
-        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
-            run_isolated_jobs([job])
-
-        # The _store_upload_revision now gets populated when
-        # uploading the build as part of the
-        # `SnapStoreUploadJob.store_revision` property setter.
-        # Assert that upload job above populated _store_upload_revision
-        # for build1:
-        build1 = removeSecurityProxy(build1)
-        self.assertEqual(build1._store_upload_revision, 1)
-
-        # and that the populator job doesn't pick up build1 anymore.
-        populator = PopulateSnapBuildStoreRevision(None)
-        filter = populator.findSnapBuilds()
-        self.assertEqual(0, filter.count())
-
-        # We manually simulate here the situation
-        # where a job to upload snap to the store has run in the past
-        # without populating the new column (prior to MP 407781).
-        build1._store_upload_revision = None
-
-        # in this case the populator garbo job should pick up build1
-        # to update the _store_upload_revision for it:
-        populator = PopulateSnapBuildStoreRevision(None)
-        filter = populator.findSnapBuilds()
-        self.assertEqual(1, filter.count())
-        self.assertEqual(build1, filter.one())
-
-        self.runDaily()
-        switch_dbuser("testadmin")
-        self.assertEqual(build1._store_upload_revision, 1)
 
     def test_RevisionStatusReportPruner(self):
         # Artifacts for report1 are older than 90 days
