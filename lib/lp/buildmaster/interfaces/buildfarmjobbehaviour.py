@@ -77,14 +77,6 @@ BuildArgs = TypedDict(
         "channels": Dict[str, str],
         # The date stamp to set in the built image [livefs].
         "datestamp": str,
-        # The name of the distribution to build for [no longer used, but
-        # currently required for binarypackage].
-        "distribution": str,
-        # The name of the series to build for [sourcepackagerecipe].
-        # XXX cjwatson 2017-07-26: This duplicates "series", which is common
-        # to all build types; this name for it is deprecated and should be
-        # removed once launchpad-buildd no longer requires it.
-        "distroseries_name": str,
         # A dictionary of additional environment variables to pass to the CI
         # build runner [ci].
         "environment_variables": Dict[str, str],

@@ -163,7 +163,6 @@ class BinaryPackageBuildBehaviour(BuildFarmJobBehaviourBase):
         # Build extra arguments.
         args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
         args["arch_indep"] = build.arch_indep
-        args["distribution"] = das.distroseries.distribution.name
         args["suite"] = das.distroseries.getSuite(build.pocket)
 
         archive_purpose = build.archive.purpose
