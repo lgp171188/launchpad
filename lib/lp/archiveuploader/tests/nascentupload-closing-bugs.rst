@@ -82,7 +82,7 @@ This new version fixes bug #6 according its changesfiles:
     >>> print(bar2_src.changes.changed_by["person"].name)
     kinnison
 
-    >>> print(six.ensure_str(bar2_src.changes._dict["Launchpad-bugs-fixed"]))
+    >>> print(bar2_src.changes._dict["Launchpad-bugs-fixed"].decode())
     6
 
     >>> print(bar2_src.changes.changes_comment)

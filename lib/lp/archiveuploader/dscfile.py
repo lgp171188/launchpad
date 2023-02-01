@@ -23,7 +23,6 @@ import shutil
 import tempfile
 import warnings
 
-import six
 from debian.deb822 import Deb822Dict, PkgRelation
 from zope.component import getUtility
 
@@ -220,8 +219,8 @@ class SignableTagFile:
             raise UploadError("Invalid Maintainer.")
 
         if person is None and self.policy.create_people:
-            package = six.ensure_text(self._dict["Source"])
-            version = six.ensure_text(self._dict["Version"])
+            package = self._dict["Source"].decode()
+            version = self._dict["Version"].decode()
             if self.policy.distroseries and self.policy.pocket:
                 policy_suite = "%s/%s" % (
                     self.policy.distroseries.name,
@@ -344,8 +343,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
 
         if self.format is None:
             raise EarlyReturnUploadError(
-                "Unsupported source format: %s"
-                % six.ensure_str(self._dict["Format"])
+                "Unsupported source format: %s" % self._dict["Format"].decode()
             )
 
     #
@@ -354,19 +352,19 @@ class DSCFile(SourceUploadFile, SignableTagFile):
     @property
     def source(self):
         """Return the DSC source name."""
-        return six.ensure_text(self._dict["Source"])
+        return self._dict["Source"].decode()
 
     @property
     def dsc_version(self):
         """Return the DSC source version."""
-        return six.ensure_text(self._dict["Version"])
+        return self._dict["Version"].decode()
 
     @property
     def format(self):
         """Return the DSC format."""
         try:
             return SourcePackageFormat.getTermByToken(
-                six.ensure_text(self._dict["Format"])
+                self._dict["Format"].decode()
             ).value
         except LookupError:
             return None
@@ -374,12 +372,12 @@ class DSCFile(SourceUploadFile, SignableTagFile):
     @property
     def architecture(self):
         """Return the DSC source architecture."""
-        return six.ensure_text(self._dict["Architecture"])
+        return self._dict["Architecture"].decode()
 
     @property
     def binary(self):
         """Return the DSC claimed binary line."""
-        return six.ensure_text(self._dict["Binary"])
+        return self._dict["Binary"].decode()
 
     #
     # DSC file checks.
@@ -449,7 +447,7 @@ class DSCFile(SourceUploadFile, SignableTagFile):
         for field_name in ["Build-Depends", "Build-Depends-Indep"]:
             field = self._dict.get(field_name, None)
             if field is not None:
-                field = six.ensure_text(field)
+                field = field.decode()
                 if field.startswith("ARRAY"):
                     yield UploadError(
                         "%s: invalid %s field produced by a broken version "

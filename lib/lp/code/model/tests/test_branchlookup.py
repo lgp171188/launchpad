@@ -268,7 +268,10 @@ class TestGetByPath(TestGetByLPPath):
         self.assertIsNone(self.getByPath(path))
 
     def assertPath(self, expected_branch, expected_suffix, path):
-        self.assertEqual(expected_branch, self.getByPath(path))
+        if expected_suffix:
+            self.assertIsNone(self.getByPath(path))
+        else:
+            self.assertEqual(expected_branch, self.getByPath(path))
 
 
 class TestGetByUrl(TestCaseWithFactory):

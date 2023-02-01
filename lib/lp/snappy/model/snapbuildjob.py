@@ -276,7 +276,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         if self.snapbuild.store_upload_metadata is None:
             self.snapbuild.store_upload_metadata = {}
         self.snapbuild.store_upload_metadata["store_revision"] = revision
-        self.snapbuild._store_upload_revision = revision
+        self.snapbuild.store_upload_revision = revision
 
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all

@@ -181,7 +181,7 @@ class SnapBuild(PackageBuildMixin, Storm):
 
     failure_count = Int(name="failure_count", allow_none=False)
 
-    _store_upload_revision = Int(name="store_upload_revision", allow_none=True)
+    store_upload_revision = Int(name="store_upload_revision", allow_none=True)
 
     store_upload_metadata = JSON("store_upload_json_data", allow_none=True)
 
@@ -498,21 +498,6 @@ class SnapBuild(PackageBuildMixin, Storm):
     def store_upload_url(self):
         job = self.last_store_upload_job
         return job and job.store_url
-
-    @property
-    def store_upload_revision(self):
-        # We are now persisting the revision assigned by the store
-        # on package upload in the new DB column _store_upload_revision.
-        # We backfill _store_upload_revision with
-        # PopulateSnapBuildStoreRevision.
-        # If the persisted field (_store_upload_revision)
-        # is not populated yet we return the old way of computing this
-        # value so that we don't break existing API clients.
-        if self._store_upload_revision:
-            return self._store_upload_revision
-        else:
-            job = self.last_store_upload_job
-            return job and job.store_revision
 
     @property
     def store_upload_error_message(self):
