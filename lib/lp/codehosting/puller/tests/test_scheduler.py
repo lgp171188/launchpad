@@ -684,12 +684,12 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
 
         def check_authserver_called(ignored):
             default_format = format_registry.get("default")()
-            control_string = six.ensure_str(default_format.get_format_string())
-            branch_string = six.ensure_str(
+            control_string = default_format.get_format_string().decode()
+            branch_string = (
                 default_format.get_branch_format().get_format_string()
-            )
-            repository_string = six.ensure_str(
-                default_format.repository_format.get_format_string()
+            ).decode()
+            repository_string = (
+                default_format.repository_format.get_format_string().decode()
             )
             self.assertEqual(
                 [

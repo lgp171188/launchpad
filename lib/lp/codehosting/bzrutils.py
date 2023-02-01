@@ -27,7 +27,6 @@ import os
 import sys
 from contextlib import contextmanager
 
-import six
 from breezy import config, trace
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.remote import RemoteBranch, RemoteBzrDir, RemoteRepository
@@ -316,13 +315,13 @@ def get_branch_info(branch):
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.
-    info["control_string"] = six.ensure_str(
-        branch.controldir._format.get_format_string()
-    )
-    info["branch_string"] = six.ensure_str(branch._format.get_format_string())
-    info["repository_string"] = six.ensure_str(
-        branch.repository._format.get_format_string()
-    )
+    info[
+        "control_string"
+    ] = branch.controldir._format.get_format_string().decode()
+    info["branch_string"] = branch._format.get_format_string().decode()
+    info[
+        "repository_string"
+    ] = branch.repository._format.get_format_string().decode()
     return info
 
 

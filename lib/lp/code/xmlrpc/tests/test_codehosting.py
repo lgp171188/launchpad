@@ -8,7 +8,6 @@ import os
 import threading
 
 import pytz
-import six
 import transaction
 from breezy import controldir
 from breezy.urlutils import escape
@@ -708,12 +707,12 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
 
     def getFormatStringsForFormatName(self, format_name):
         default_format = controldir.format_registry.get(format_name)()
-        control_string = six.ensure_str(default_format.get_format_string())
-        branch_string = six.ensure_str(
-            default_format.get_branch_format().get_format_string()
+        control_string = default_format.get_format_string().decode()
+        branch_string = (
+            default_format.get_branch_format().get_format_string().decode()
         )
-        repository_string = six.ensure_str(
-            default_format.repository_format.get_format_string()
+        repository_string = (
+            default_format.repository_format.get_format_string().decode()
         )
         return (control_string, branch_string, repository_string)
 

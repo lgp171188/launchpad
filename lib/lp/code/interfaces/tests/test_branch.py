@@ -3,7 +3,6 @@
 
 """Tests of the branch interface."""
 
-import six
 from breezy.branch import format_registry as branch_format_registry
 from breezy.bzr import BzrProber
 from breezy.repository import format_registry as repo_format_registry
@@ -34,7 +33,7 @@ class TestFormatSupport(TestCase):
         """Ensure the Breezy format marker list is a subset of Launchpad."""
         breezy_format_strings = set(breezy_formats)
         launchpad_format_strings = {
-            six.ensure_binary(format.title) for format in launchpad_enum.items
+            format.title.encode() for format in launchpad_enum.items
         }
         self.assertEqual(
             set(), breezy_format_strings.difference(launchpad_format_strings)

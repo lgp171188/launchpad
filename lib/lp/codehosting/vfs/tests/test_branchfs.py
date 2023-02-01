@@ -9,7 +9,6 @@ import re
 import sys
 import xmlrpc.client
 
-import six
 from breezy import errors
 from breezy.bzr.bzrdir import BzrDir
 from breezy.controldir import format_registry
@@ -268,9 +267,7 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
             % (branch.owner.name, branch.product.name)
         )
         self.assertEqual(
-            six.ensure_binary(
-                "default_stack_on = %s\n" % branch_id_alias(branch)
-            ),
+            ("default_stack_on = %s\n" % branch_id_alias(branch)).encode(),
             transport.get_bytes(path),
         )
 
@@ -1087,12 +1084,10 @@ class TestBranchChangedNotification(TestCaseWithTransport):
 
     def assertFormatStringsPassed(self, branch):
         self.assertEqual(1, len(self._branch_changed_log))
-        control_string = six.ensure_str(
-            branch.controldir._format.get_format_string()
-        )
-        branch_string = six.ensure_str(branch._format.get_format_string())
-        repository_string = six.ensure_str(
-            branch.repository._format.get_format_string()
+        control_string = branch.controldir._format.get_format_string().decode()
+        branch_string = branch._format.get_format_string().decode()
+        repository_string = (
+            branch.repository._format.get_format_string().decode()
         )
         self.assertEqual(
             (control_string, branch_string, repository_string),
