@@ -173,7 +173,7 @@ ICveSet.getBugCvesForBugTasks:
     >>> ubuntu = Distribution.selectOneBy(name="ubuntu")
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> bugcves = cveset.getBugCvesForBugTasks(ubuntu_tasks)
-    >>> for (bug, cve) in bugcves:
+    >>> for bug, cve in bugcves:
     ...     print("%d: %s" % (bug.id, cve.title))
     ...
     1: CVE-1999-8979 (Entry)

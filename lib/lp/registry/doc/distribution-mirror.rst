@@ -482,7 +482,7 @@ IDistributionMirror.
 
     >>> mirror = mirrorset.getByName("archive-mirror2")
     >>> paths = mirror.getExpectedPackagesPaths()
-    >>> for (series, pocket, component, path) in paths:
+    >>> for series, pocket, component, path in paths:
     ...     print(path)
     ...
     dists/breezy-autotest/main/binary-i386/Packages.gz
@@ -529,7 +529,7 @@ IDistributionMirror.
     >>> warty.status = SeriesStatus.OBSOLETE
 
     >>> paths = mirror.getExpectedSourcesPaths()
-    >>> for (series, pocket, component, path) in paths:
+    >>> for series, pocket, component, path in paths:
     ...     print(path)
     ...
     dists/breezy-autotest/main/source/Sources.gz
@@ -577,7 +577,7 @@ config.distributionmirrorprober.releases_file_list_url option)
     >>> from lp.registry.scripts.distributionmirror_prober import (
     ...     get_expected_cdimage_paths,
     ... )
-    >>> for (series, flavour, paths) in get_expected_cdimage_paths():
+    >>> for series, flavour, paths in get_expected_cdimage_paths():
     ...     for path in paths:
     ...         print(series.name, flavour, path)
     ...
@@ -626,7 +626,7 @@ checked if that mirror's last sync was in the last one or two days.
 
     >>> when = datetime(2005, 9, 17, tzinfo=utc)
     >>> urls = warty_mirror.getURLsToCheckUpdateness(when=when)
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa
     ...
     UP: http://foo.bar.com/pub/pool/main/a/alsa-utils/alsa-utils_1.0.9a-4.dsc
@@ -638,7 +638,7 @@ last upload was mirrored and then mark the mirror as up-to-date. This is
 because there were no recent uploads there.
 
     >>> urls = warty_mirror.getURLsToCheckUpdateness()
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))
     ...
     UP: http://foo.bar.com/pub/pool/main/c/cdrkit/foobar-1.0.dsc
@@ -654,7 +654,7 @@ If the mirror has no HTTP base url, we'll use the FTP one.
     ...     "ftp://foo.bar.com/pub"
     ... )
     >>> urls = warty_mirror.getURLsToCheckUpdateness()
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))
     ...
     UP: ftp://foo.bar.com/pub/pool/main/c/cdrkit/foobar-1.0.dsc
@@ -697,7 +697,7 @@ so we need to skip that upload.
 
     >>> when = datetime(2005, 6, 22, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa
     ...
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
@@ -706,7 +706,7 @@ so we need to skip that upload.
 
     >>> when = datetime(2005, 6, 20, 0, 1, tzinfo=utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa
     ...
     UP: http://foo.bar.com/pub/pool/main/p/pmount/pmount_1.9-1_all.deb
@@ -722,7 +722,7 @@ If the mirror has no HTTP base url, we'll use the FTP one.
     ...     "ftp://foo.bar.com/pub"
     ... )
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness()
-    >>> for (freshness, url) in urls.items():
+    >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))
     ...
     UP: ftp://foo.bar.com/pub/pool/main/c/cdrkit/foobar_1.0_all.deb

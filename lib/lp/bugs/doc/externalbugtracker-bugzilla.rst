@@ -89,7 +89,6 @@ we override for the purpose of this test.
 
     >>> import xmlrpc.client
     >>> class FailingXMLRPCTransport(xmlrpc.client.Transport):
-    ...
     ...     error = xmlrpc.client.Fault(
     ...         xmlrpc.client.METHOD_NOT_FOUND, "Method doesn't exist"
     ...     )
@@ -105,7 +104,6 @@ we override for the purpose of this test.
     >>> test_transport = FailingXMLRPCTransport()
 
     >>> class BugzillaWithFakeProxy(Bugzilla):
-    ...
     ...     _test_xmlrpc_proxy = xmlrpc.client.ServerProxy(
     ...         "http://example.com/xmlrpc.cgi", transport=test_transport
     ...     )
@@ -181,7 +179,6 @@ BuzillaAPI will be returned. To test this, we use a specially-crafted
 XML-RPC proxy that behaves like a Bugzilla 3.4 instance.
 
     >>> class APIXMLRPCTransport(xmlrpc.client.Transport):
-    ...
     ...     version = "3.4.2"
     ...
     ...     def request(self, host, handler, request, verbose=None):

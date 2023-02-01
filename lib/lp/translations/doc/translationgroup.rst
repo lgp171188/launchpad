@@ -188,7 +188,7 @@ The method returns tuples of respectively a Translator ("translation
 group membership entry"), its language, and the actual team or person
 assigned to that language.
 
-    >>> for (translator, language, team) in group.fetchTranslatorData():
+    >>> for translator, language, team in group.fetchTranslatorData():
     ...     print(translator.language.code, language.code, team.name)
     ...
     nl nl nl-team
@@ -197,7 +197,7 @@ assigned to that language.
 
 The members are sorted by language name in English.
 
-    >>> for (translator, language, person) in group.fetchTranslatorData():
+    >>> for translator, language, person in group.fetchTranslatorData():
     ...     print(language.englishname)
     ...
     Dutch

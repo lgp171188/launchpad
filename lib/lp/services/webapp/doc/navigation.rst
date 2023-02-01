@@ -74,7 +74,6 @@ interface, we'll define one here.
     >>> from zope.publisher.interfaces.browser import IBrowserRequest
 
     >>> class Response:
-    ...
     ...     redirected_to = None
     ...     status = None
     ...
@@ -139,7 +138,6 @@ interface, we'll define one here.
     >>> request = Request()
 
     >>> class IThing(Interface):
-    ...
     ...     value = Attribute("the value of the thing")
     ...
 
@@ -211,7 +209,6 @@ which return None to indicate 'not found' and some that raise NotFoundError.
 
 
     >>> class ThingSetNavigation(Navigation):
-    ...
     ...     usedfor = IThingSet
     ...
     ...     newlayer = INewLayer

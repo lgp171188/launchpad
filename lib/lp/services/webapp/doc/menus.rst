@@ -468,7 +468,6 @@ in practice because we need to know how to register our menu as an
 adapter.  For this part of the test, we won't worry about that.
 
     >>> class FooApplicationMenu(ApplicationMenu):
-    ...
     ...     links = ["first"]
     ...     facet = "foo"
     ...
@@ -540,7 +539,6 @@ tells the registration machinery how to render this menu as an adapter.
 For this part of the test, we won't worry about that.
 
     >>> class MyContextMenu(ContextMenu):
-    ...
     ...     links = ["first"]
     ...
     ...     def first(self):
@@ -725,7 +723,6 @@ link should appear linked. The request is also set as the menu's
     >>> from lp.services.webapp.vhosts import allvhosts
     >>> @implementer(IHTTPApplicationRequest, IBrowserRequest)
     ... class FakeRequest:
-    ...
     ...     interaction = None
     ...
     ...     def __init__(self, url, query=None, url1=None):

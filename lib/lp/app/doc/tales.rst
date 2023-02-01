@@ -1485,7 +1485,6 @@ Make a mock-up IBrowserRequest, and use this as the interaction.
     ...     ILaunchpadBrowserApplicationRequest,
     ... )
     ... class MockBrowserRequest:
-    ...
     ...     interaction = None
     ...     principal = None
     ...
