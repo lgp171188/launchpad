@@ -181,7 +181,6 @@ Firstly, we'll subclass BugzillaAPI so that we don't have to
 connect to any servers.
 
     >>> class ProductQueryingBugzillaAPI(BugzillaAPI):
-    ...
     ...     remote_bug_products = {
     ...         1: "HeartOfGold",
     ...         2: "InfiniteImprobabilityDrive",
@@ -994,7 +993,6 @@ We'll create some example unchecked watches as well as some watches with
 comments to push in order to demonstrate this.
 
     >>> class SmallBatchExternalBugTracker(TimeUnknownExternalBugTracker):
-    ...
     ...     batch_size = 5
     ...
     >>> external_bugtracker = SmallBatchExternalBugTracker(

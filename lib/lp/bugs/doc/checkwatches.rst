@@ -344,7 +344,6 @@ We'll create a non-functioning ExternalBugtracker to demonstrate this.
     ...     ISupportsCommentPushing,
     ... )
     ... class UselessExternalBugTracker(ExternalBugTracker):
-    ...
     ...     batch_size = BATCH_SIZE_UNLIMITED
     ...
     ...     def initializeRemoteBugDB(self, bug_ids):

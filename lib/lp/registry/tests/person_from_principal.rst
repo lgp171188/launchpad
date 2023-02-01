@@ -25,7 +25,6 @@ time we adapt.
     >>> cached_person = object()
     >>> @implementer(ILaunchpadPrincipal)
     ... class LaunchpadPrincipal:
-    ...
     ...     person = cached_person
     ...
 

@@ -252,7 +252,6 @@ are appropriate for a context object.
     >>> from lp.services.webapp import Link
 
     >>> class CookeryFacetMenu(FacetMenu):
-    ...
     ...     usedfor = ICookbook
     ...     links = ["summary", "questions", "variations"]
     ...     defaultlink = "summary"
@@ -496,7 +495,6 @@ The RecipeFacetMenu subclass defined below only applies to IRecipe
 content object and it has all facet links enabled.
 
     >>> class RecipeFacetMenu(CookeryFacetMenu):
-    ...
     ...     usedfor = IRecipe
     ...     enable_only = ["summary", "questions", "variations"]
     ...
@@ -568,7 +566,6 @@ links. CookeryFacetMenu did not include 'non_link' in its links, so an
 error is raised when BogusFacetMenu is used.
 
     >>> class BogusFacetMenu(CookeryFacetMenu):
-    ...
     ...     usedfor = IRecipe
     ...     enable_only = ["summary", "non_link"]
     ...
