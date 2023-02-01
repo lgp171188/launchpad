@@ -305,9 +305,7 @@
 		>Careers</a>
       </tal:careers_link>
       &nbsp;&bull;&nbsp;
-      System Status
-      <a href="https://twitter.com/launchpadstatus">Twitter</a> |
-      <a href="https://ubuntu.social/@launchpadstatus">Mastodon</a>
+      <a href="https://ubuntu.social/@launchpadstatus">System status</a>
       <span id="lp-version">
       &nbsp;&bull;&nbsp;
         <tal:display_revision replace="display_revision" />
