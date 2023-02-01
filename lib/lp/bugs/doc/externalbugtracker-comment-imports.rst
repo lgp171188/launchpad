@@ -50,7 +50,6 @@ ExternalBugTracker class which implements these three methods.
     ... )
     >>> @implementer(ISupportsCommentImport)
     ... class CommentImportingExternalBugTracker(ExternalBugTracker):
-    ...
     ...     comment_dict = {}
     ...     remote_comments = {
     ...         "1": "Example comment the first",

@@ -77,7 +77,6 @@ Trying to log in to a Bugzilla with incorrect credentials will also
 raise an error.
 
     >>> class BadCredentialsBugzillaAPI(BugzillaAPI):
-    ...
     ...     credentials = {"login": "fail", "password": "fail"}
     ...
 

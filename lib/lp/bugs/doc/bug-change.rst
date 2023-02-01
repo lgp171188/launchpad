@@ -71,7 +71,6 @@ We'll create a test class that actually implements the methods we need.
     >>> recipients.addDirectSubscriber(example_person_2)
 
     >>> class TestBugChange(BugChangeBase):
-    ...
     ...     bug_activity_data = {
     ...         "whatchanged": "Nothing",
     ...         "oldvalue": "OldValue",
@@ -217,7 +216,6 @@ If you try to send a notification without adding a text body for the
 notification you'll get an error.
 
     >>> class NoNotificationTextBugChange(TestBugChange):
-    ...
     ...     bug_notification_data = {
     ...         "text": None,
     ...     }

@@ -851,7 +851,6 @@ keeping those searchable.
 
     >>> from lp.answers.browser.questiontarget import SearchQuestionsView
     >>> class MyCustomSearchQuestionsView(SearchQuestionsView):
-    ...
     ...     default_filter = {}
     ...
     ...     def getDefaultFilter(self):

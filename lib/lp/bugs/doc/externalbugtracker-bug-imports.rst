@@ -11,7 +11,6 @@ methods.
     >>> from lp.bugs.externalbugtracker import ExternalBugTracker
     >>> @implementer(ISupportsBugImport)
     ... class BugImportingExternalBugTracker(ExternalBugTracker):
-    ...
     ...     _bugs = {}
     ...
     ...     def getBugReporter(self, remote_bug):

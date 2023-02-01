@@ -60,7 +60,6 @@ ISupportsCommentPushing interface.
 
     >>> @implementer(ISupportsCommentPushing)
     ... class CommentPushingExternalBugTracker(ExternalBugTracker):
-    ...
     ...     next_comment_id = 1
     ...     remote_comments = {}
     ...
@@ -216,7 +215,6 @@ example ExternalBugTracker that does comment importing.
     ... class CommentImportingExternalBugTracker(
     ...     CommentPushingExternalBugTracker
     ... ):
-    ...
     ...     external_comment_dict = {
     ...         "4": "External comment 1.",
     ...         "5": "External comment 2.",

@@ -52,7 +52,6 @@ ExternalBugTracker that doesn't require network access.
 
 
     >>> class NoNetworkRemoteProductUpdater(RemoteProductUpdater):
-    ...
     ...     external_bugtracker_to_return = FakeExternalBugTracker
     ...
     ...     def _getExternalBugTracker(self, bug_tracker):
