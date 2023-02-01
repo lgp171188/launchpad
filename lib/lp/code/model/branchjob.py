@@ -20,7 +20,6 @@ import shutil
 import tempfile
 from typing import Optional
 
-import six
 import transaction
 from breezy.branch import Branch as BzrBranch
 from breezy.diff import show_diff_trees
@@ -615,7 +614,7 @@ class RevisionsAddedJob(BranchJobDerived):
         show_diff_trees(
             from_tree, to_tree, diff_content, old_label="", new_label=""
         )
-        return six.ensure_text(diff_content.getvalue(), errors="replace")
+        return diff_content.getvalue().decode(errors="replace")
 
     def getMailerForRevision(self, revision, revno, generate_diff):
         """Return a BranchMailer for a revision.

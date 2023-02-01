@@ -20,7 +20,6 @@ __all__ = [
 # line below this comment.
 import lp.codehosting  # noqa: F401  # isort: split
 
-import six
 from breezy.branch import UnstackableBranchFormat
 from breezy.bzr.branch import (
     BranchReferenceFormat,
@@ -65,10 +64,10 @@ from lazr.enum import DBEnumeratedType, DBItem
 def _format_enum(num, format, format_string=None, description=None):
     instance = format()
     if format_string is None:
-        format_string = instance.get_format_string()
+        format_string = instance.get_format_string().decode()
     if description is None:
         description = instance.get_format_description()
-    return DBItem(num, six.ensure_str(format_string), description)
+    return DBItem(num, format_string, description)
 
 
 class BazaarFormatEnum(DBEnumeratedType):
@@ -313,12 +312,10 @@ def get_branch_formats(bzr_branch):
 
     :returns: tuple of (ControlFormat, BranchFormat, RepositoryFormat)
     """
-    control_string = six.ensure_str(
-        bzr_branch.controldir._format.get_format_string()
-    )
-    branch_string = six.ensure_str(bzr_branch._format.get_format_string())
-    repository_string = six.ensure_str(
-        bzr_branch.repository._format.get_format_string()
+    control_string = bzr_branch.controldir._format.get_format_string().decode()
+    branch_string = bzr_branch._format.get_format_string().decode()
+    repository_string = (
+        bzr_branch.repository._format.get_format_string().decode()
     )
     return (
         ControlFormat.get_enum(control_string),
