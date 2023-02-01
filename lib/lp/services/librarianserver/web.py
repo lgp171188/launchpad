@@ -148,6 +148,7 @@ class LibraryFileAliasResource(resource.Resource):
                 "Database unavailable",
                 "A required database is unavailable.\n"
                 "See https://twitter.com/launchpadstatus "
+                "or https://ubuntu.social/@launchpadstatus"
                 "for maintenance and outage notifications.",
             )
         else:
