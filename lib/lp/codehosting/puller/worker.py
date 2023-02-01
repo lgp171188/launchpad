@@ -484,11 +484,15 @@ class PullerWorker:
             # XXX: Aaron Bentley 2008-06-13
             # Bazaar does not provide a public API for learning about
             # format markers.  Fix this in Bazaar, then here.
-            control_string = dest_branch.controldir._format.get_format_string()
+            control_string = (
+                dest_branch.controldir._format.get_format_string().decode()
+            )
             if dest_branch._format.__class__ is BzrBranchFormat4:
                 branch_string = BranchFormat.BZR_BRANCH_4.title
             else:
-                branch_string = dest_branch._format.get_format_string()
+                branch_string = (
+                    dest_branch._format.get_format_string().decode()
+                )
             repository_format = dest_branch.repository._format
             if repository_format.__class__ is RepositoryFormat6:
                 repository_string = RepositoryFormat.BZR_REPOSITORY_6.title
@@ -497,14 +501,16 @@ class PullerWorker:
             elif repository_format.__class__ is RepositoryFormat4:
                 repository_string = RepositoryFormat.BZR_REPOSITORY_4.title
             else:
-                repository_string = repository_format.get_format_string()
+                repository_string = (
+                    repository_format.get_format_string().decode()
+                )
             self.protocol.branchChanged(
                 stacked_on_url,
                 revid_before,
                 revid_after,
-                six.ensure_str(control_string),
-                six.ensure_str(branch_string),
-                six.ensure_str(repository_string),
+                control_string,
+                branch_string,
+                repository_string,
             )
 
     def __eq__(self, other):
