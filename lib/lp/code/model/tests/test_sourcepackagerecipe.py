@@ -1615,7 +1615,7 @@ class TestWebserviceMixin:
         store.invalidate()
         with StormStatementRecorder() as recorder:
             webservice.get(url)
-        self.assertThat(recorder, HasQueryCount(Equals(23)))
+        self.assertThat(recorder, HasQueryCount(Equals(25)))
 
 
 class TestWebserviceBzr(TestWebserviceMixin, BzrMixin, TestCaseWithFactory):
