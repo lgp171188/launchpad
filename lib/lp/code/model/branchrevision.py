@@ -5,14 +5,15 @@ __all__ = [
     "BranchRevision",
 ]
 
-from storm.locals import Int, Reference, Storm
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.code.interfaces.branchrevision import IBranchRevision
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IBranchRevision)
-class BranchRevision(Storm):
+class BranchRevision(StormBase):
     """See `IBranchRevision`."""
 
     __storm_table__ = "BranchRevision"

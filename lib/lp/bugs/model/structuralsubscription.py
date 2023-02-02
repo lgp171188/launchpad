@@ -14,7 +14,6 @@ __all__ = [
 from collections import defaultdict
 
 import pytz
-from storm.base import Storm
 from storm.expr import (
     SQL,
     And,
@@ -72,6 +71,7 @@ from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
     ArrayAgg,
@@ -82,7 +82,7 @@ from lp.services.propertycache import cachedproperty
 
 
 @implementer(IStructuralSubscription)
-class StructuralSubscription(Storm):
+class StructuralSubscription(StormBase):
     """A subscription to a Launchpad structure."""
 
     __storm_table__ = "StructuralSubscription"

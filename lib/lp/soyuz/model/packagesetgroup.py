@@ -6,14 +6,15 @@ __all__ = [
 ]
 
 import pytz
-from storm.locals import DateTime, Int, Reference, Storm
+from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.packagesetgroup import IPackagesetGroup
 
 
 @implementer(IPackagesetGroup)
-class PackagesetGroup(Storm):
+class PackagesetGroup(StormBase):
     """See `IPackageset`."""
 
     __storm_table__ = "PackagesetGroup"

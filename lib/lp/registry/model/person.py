@@ -41,7 +41,6 @@ import transaction
 from lazr.delegates import delegate_to
 from lazr.restful.utils import get_current_browser_request, smartquote
 from requests import PreparedRequest
-from storm.base import Storm
 from storm.expr import (
     SQL,
     Alias,
@@ -354,7 +353,7 @@ def person_sort_key(person):
 
 
 @implementer(IPersonSettings)
-class PersonSettings(Storm):
+class PersonSettings(StormBase):
     "The relatively rarely used settings for person (not a team)."
 
     __storm_table__ = "PersonSettings"

@@ -12,7 +12,7 @@ from datetime import timedelta
 
 import pytz
 from psycopg2 import ProgrammingError
-from storm.locals import Bool, DateTime, Int, Reference, Storm, Unicode
+from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from storm.store import EmptyResultSet, Store
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -44,6 +44,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.soyuz.interfaces.archive import CannotUploadToArchive
 from lp.soyuz.model.archive import Archive
@@ -54,7 +55,7 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 @implementer(ISourcePackageRecipeBuild)
 @provider(ISourcePackageRecipeBuildSource)
 class SourcePackageRecipeBuild(
-    SpecificBuildFarmJobSourceMixin, PackageBuildMixin, Storm
+    SpecificBuildFarmJobSourceMixin, PackageBuildMixin, StormBase
 ):
 
     __storm_table__ = "SourcePackageRecipeBuild"

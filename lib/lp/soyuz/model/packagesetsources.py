@@ -10,10 +10,12 @@ __all__ = [
     "PackagesetSources",
 ]
 
-from storm.locals import Int, Reference, Storm
+from storm.locals import Int, Reference
+
+from lp.services.database.stormbase import StormBase
 
 
-class PackagesetSources(Storm):
+class PackagesetSources(StormBase):
     """Linking table: which packages are in a package set?"""
 
     # This table is largely managed from Packageset, but also directly

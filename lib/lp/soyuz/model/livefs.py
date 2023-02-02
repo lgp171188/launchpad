@@ -22,7 +22,6 @@ from storm.locals import (
     Not,
     Reference,
     Store,
-    Storm,
     TimeDelta,
     Unicode,
 )
@@ -43,6 +42,7 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.registry.model.person import Person, get_person_visibility_terms
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Greatest, IsDistinctFrom, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import ILaunchBag
@@ -76,7 +76,7 @@ def livefs_modified(livefs, event):
 
 
 @implementer(ILiveFS, IHasOwner)
-class LiveFS(Storm, WebhookTargetMixin):
+class LiveFS(StormBase, WebhookTargetMixin):
     """See `ILiveFS`."""
 
     __storm_table__ = "LiveFS"

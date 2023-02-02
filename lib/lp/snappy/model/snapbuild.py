@@ -25,7 +25,6 @@ from storm.locals import (
     Reference,
     Select,
     Store,
-    Storm,
     Unicode,
 )
 from storm.store import EmptyResultSet
@@ -57,6 +56,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
@@ -94,7 +94,7 @@ class SnapBuildStatusChangedEvent(ObjectEvent):
 
 
 @implementer(ISnapFile)
-class SnapFile(Storm):
+class SnapFile(StormBase):
     """See `ISnap`."""
 
     __storm_table__ = "SnapFile"
@@ -115,7 +115,7 @@ class SnapFile(Storm):
 
 
 @implementer(ISnapBuild)
-class SnapBuild(PackageBuildMixin, Storm):
+class SnapBuild(PackageBuildMixin, StormBase):
     """See `ISnapBuild`."""
 
     __storm_table__ = "SnapBuild"

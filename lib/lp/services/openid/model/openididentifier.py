@@ -5,13 +5,14 @@
 
 __all__ = ["OpenIdIdentifier"]
 
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.stormbase import StormBase
 
 
-class OpenIdIdentifier(Storm):
+class OpenIdIdentifier(StormBase):
     """An OpenId Identifier that can be used to log into an Account"""
 
     __storm_table__ = "openididentifier"

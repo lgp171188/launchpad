@@ -6,14 +6,14 @@ __all__ = [
 ]
 
 from storm.info import get_obj_info
-from storm.locals import Storm
+from storm.locals import Storm  # noqa: B1
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.interfaces import IStore
 from lp.services.propertycache import clear_property_cache
 
 
-class StormBase(Storm):
+class StormBase(Storm):  # noqa: B1
     """A safe version of storm.base.Storm to use in launchpad.
 
     This class adds storm cache management functions to base.Storm.

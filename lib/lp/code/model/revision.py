@@ -24,7 +24,6 @@ from storm.locals import (
     Min,
     Reference,
     ReferenceSet,
-    Storm,
     Unicode,
 )
 from storm.store import Store
@@ -713,7 +712,7 @@ def revision_time_limit(day_limit):
     )
 
 
-class RevisionCache(Storm):
+class RevisionCache(StormBase):
     """A cached version of a recent revision."""
 
     __storm_table__ = "RevisionCache"

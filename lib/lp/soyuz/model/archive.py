@@ -18,7 +18,6 @@ from pathlib import PurePath
 
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
-from storm.base import Storm
 from storm.expr import (
     And,
     Cast,
@@ -91,6 +90,7 @@ from lp.services.database.sqlobject import (
     IntCol,
     StringCol,
 )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import BulkUpdate
 from lp.services.features import getFeatureFlag
 from lp.services.gpg.interfaces import IGPGHandler
@@ -3795,7 +3795,7 @@ class ArchiveSet:
         return []
 
 
-class ArchiveArch(Storm):
+class ArchiveArch(StormBase):
     """Link table to back Archive.processors."""
 
     __storm_table__ = "ArchiveArch"

@@ -12,7 +12,7 @@ import os.path
 import re
 
 import pytz
-from storm.locals import And, DateTime, Int, Reference, Storm, Unicode
+from storm.locals import And, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -21,6 +21,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.sqlbase import convert_storm_clause_to_string
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import RegexpMatch
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -37,7 +38,7 @@ def _now():
 
 
 @implementer(IArchiveFile)
-class ArchiveFile(Storm):
+class ArchiveFile(StormBase):
     """See `IArchiveFile`."""
 
     __storm_table__ = "ArchiveFile"

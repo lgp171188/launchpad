@@ -2571,17 +2571,18 @@ class TestOCIRecipeEditPushRulesView(
             registry_credentials=registry_credentials,
             image_name=image_name,
         )
+        push_rule_id = push_rule.id
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
         with person_logged_in(self.person):
             browser.getControl(
-                name="field.delete.%d" % push_rule.id
+                name="field.delete.%d" % push_rule_id
             ).value = True
         browser.getControl("Save").click()
 
         with person_logged_in(self.person):
             self.assertIsNone(
-                getUtility(IOCIPushRuleSet).getByID(push_rule.id)
+                getUtility(IOCIPushRuleSet).getByID(push_rule_id)
             )
 
     def test_add_oci_push_rules_validations(self):
