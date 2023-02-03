@@ -4,9 +4,9 @@
 
 <configure
     xmlns="http://namespaces.zope.org/zope"
-    xmlns:browser="http://namespaces.zope.org/browser">
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-  <authorizations module=".security"/>
+  <lp:authorizations module=".security"/>
 
   <include package=".browser"/>
 

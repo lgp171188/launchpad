@@ -113,10 +113,14 @@ Note that "accessed" means ``getattr()``, while "modified" means
 to fetch the method from the object, so methods should be declared in
 ``interface`` or ``attributes`` even if they modify the object.
 
-3. Ensure that there is an ``<authorizations />`` directive in the package's
-   top-level ``configure.zcml`` file that specifies the package's security
-   module. If it isn't there already, add one like:
+3. Ensure that there is an ``<lp:authorizations />`` directive in the
+   package's top-level ``configure.zcml`` file that specifies the package's
+   security module. If it isn't there already, add one like:
 
 .. code-block:: xml
 
-    <authorizations module=".security" />
+    <lp:authorizations module=".security" />
+
+To make the ``lp:`` namespace prefix work, the ``<configure />`` tag at the
+top of the file should include the attribute
+``xmlns:lp="http://namespaces.canonical.com/lp"``.

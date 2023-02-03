@@ -5,10 +5,10 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
-    xmlns:zope="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
-  <authorizations module=".security" />
+  <lp:authorizations module=".security" />
   <include file="client.zcml" />
 
   <class class="lp.services.librarian.model.LibraryFileAlias">
