@@ -70,7 +70,7 @@
   </complexDirective>
 
   <directive
-      namespace="http://namespaces.zope.org/zope"
+      namespace="http://namespaces.canonical.com/lp"
       name="authorizations"
       schema="lp.services.webapp.metazcml.IAuthorizationsDirective"
       handler="lp.services.webapp.metazcml.authorizations"

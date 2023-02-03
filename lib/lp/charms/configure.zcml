@@ -11,7 +11,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <authorizations module=".security" />
+    <lp:authorizations module=".security" />
     <include package=".browser" />
 
     <lp:help-folder folder="help" name="+help-charms" />

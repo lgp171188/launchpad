@@ -4,10 +4,8 @@
 
 <configure
     xmlns="http://namespaces.zope.org/zope"
-    xmlns:browser="http://namespaces.zope.org/browser"
-    xmlns:grok="http://namespaces.zope.org/grok"
-    xmlns:webservice="http://namespaces.canonical.com/webservice"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
     <includeOverrides
@@ -41,7 +39,7 @@
 
     <include file="permissions.zcml" />
 
-    <authorizations module="lp.security" />
+    <lp:authorizations module="lp.security" />
 
     <!-- The default Zope 3 configuration of the SimpleComponentTraverser is
         that it applies to any object that provides Interface.
