@@ -2,6 +2,9 @@ lxml-stubs==0.4.0
 types-Markdown==0.1.0
 types-beautifulsoup4==4.9.0
 types-bleach==3.3.1
+types-oauthlib==3.1.0
+types-psycopg2==2.9.21.4
 types-pytz==0.1.0
 types-requests==0.1.13
 types-six==0.1.9
+types-urllib3==1.26.25.4

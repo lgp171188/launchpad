@@ -34,6 +34,14 @@ module = "breezy.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "brzbuildrecipe.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "cryptography.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "debian.*"
 ignore_missing_imports = true
 
@@ -62,6 +70,10 @@ module = "iso8601"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "launchpadlib.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "lazr.*"
 ignore_missing_imports = true
 
@@ -70,7 +82,23 @@ module = "lpbuildd.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "oops"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "oops_amqp"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "oops_datedir_repo.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "packaging"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pgbouncer.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -90,11 +118,31 @@ module = "responses"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "selenium.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "soupmatchers"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = "soupsieve"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = "storm.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "subunit"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "swiftclient"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "talisker.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
@@ -119,6 +167,22 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "txfixtures.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "webob.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "webtest"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "wsgi_intercept"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "wsgiproxy.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

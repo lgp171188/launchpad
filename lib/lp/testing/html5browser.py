@@ -56,7 +56,7 @@ class Browser:
     def run_tests(
         self,
         uri: str,
-        timeout: int = TIMEOUT,
+        timeout: float = TIMEOUT,
         incremental_timeout: Optional[int] = None,
     ) -> Results:
         """
@@ -95,7 +95,7 @@ class Browser:
             status=Results.Status.TIMEOUT, last_test_message=results
         )
 
-    def _get_test_results(self, timeout: int) -> Any:
+    def _get_test_results(self, timeout: float) -> Any:
         """
         Load the test results from the page.
 

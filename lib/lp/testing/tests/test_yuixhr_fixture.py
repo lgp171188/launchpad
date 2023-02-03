@@ -4,7 +4,9 @@
 """These are yui appserver fixtures for the yui appserver test code's tests.
 """
 
-__all__ = []
+__all__ = []  # type: List[str]
+
+from typing import Any, Dict, List, Tuple
 
 from zope.security.proxy import removeSecurityProxy
 
@@ -15,7 +17,7 @@ from lp.testing.yuixhr import login_as_person, make_suite, setup
 # The following are the fixtures needed by the tests.
 
 # We use this variable for test results.
-_received = []
+_received = []  # type: List[Tuple[str, Any, Dict[str, str]]]
 
 
 @setup
@@ -23,7 +25,7 @@ def baseline(request, data):
     data["hello"] = "world"
 
 
-@baseline.add_cleanup
+@baseline.add_cleanup  # type: ignore[no-redef]
 def baseline(request, data):
     global _received
     _received.append(("baseline", request, data))
@@ -34,7 +36,7 @@ def second(request, data):
     data["second"] = "here"
 
 
-@second.add_cleanup
+@second.add_cleanup  # type: ignore[no-redef]
 def second(request, data):
     global _received
     _received.append(("second", request, data))
@@ -50,7 +52,7 @@ def faux_database_thing(request, data):
     test_value = None
 
 
-@faux_database_thing.add_cleanup
+@faux_database_thing.add_cleanup  # type: ignore[no-redef]
 def faux_database_thing(request, data):
     global test_value
     test_value = "teardown was called"
@@ -61,7 +63,7 @@ def show_teardown_value(request, data):
     data["setup_data"] = "Hello world"
 
 
-@show_teardown_value.add_cleanup
+@show_teardown_value.add_cleanup  # type: ignore[no-redef]
 def show_teardown_value(request, data):
     global test_value
     test_value = data
@@ -92,7 +94,7 @@ def teardown_will_fail(request, data):
     pass
 
 
-@teardown_will_fail.add_cleanup
+@teardown_will_fail.add_cleanup  # type: ignore[no-redef]
 def teardown_will_fail(request, data):
     raise RuntimeError("rutebegas")
 
