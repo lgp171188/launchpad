@@ -6,8 +6,6 @@
 import email
 import re
 
-import six
-
 
 def get_token_url_from_email(email_msg):
     """Return the logintoken URL contained in the given email message."""
@@ -17,4 +15,4 @@ def get_token_url_from_email(email_msg):
 
 def get_token_url_from_bytes(buf):
     """Return the logintoken URL contained in the given byte string."""
-    return six.ensure_str(re.findall(rb"http.*/token/.*", buf)[0])
+    return re.findall(rb"http.*/token/.*", buf)[0].decode()

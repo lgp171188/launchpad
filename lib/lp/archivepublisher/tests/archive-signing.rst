@@ -204,7 +204,7 @@ to test the export functions.
     ...         self.fingerprint = "fpr"
     ...
     ...     def export(self):
-    ...         return six.ensure_binary("Secret %s" % self.secret)
+    ...         return ("Secret %s" % self.secret).encode()
     ...
 
 exportSecretKey() raises an error if given a public key.

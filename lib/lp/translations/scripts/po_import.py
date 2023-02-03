@@ -11,7 +11,6 @@ import sys
 from datetime import datetime, timedelta
 
 import pytz
-import six
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -79,9 +78,7 @@ class TranslationsImport(LaunchpadCronScript):
 
     def _registerFailure(self, entry, reason, traceback=False, abort=False):
         """Note that a queue entry is unusable in some way."""
-        reason_text = (
-            six.ensure_text(reason) if reason is bytes else str(reason)
-        )
+        reason_text = reason.decode() if reason is bytes else str(reason)
         entry.setStatus(
             RosettaImportStatus.FAILED,
             getUtility(ILaunchpadCelebrities).rosetta_experts,

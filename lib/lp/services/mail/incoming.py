@@ -69,20 +69,20 @@ def canonicalise_line_endings(buf):
     >>> b = canonicalise_line_endings(b"\n\nfoo\nbar\rbaz\r\n")
     >>> isinstance(b, bytes)
     True
-    >>> six.ensure_str(b)
-    '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
+    >>> b
+    b'\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
     >>> b = canonicalise_line_endings(b"\r\rfoo\r\nbar\rbaz\n")
     >>> isinstance(b, bytes)
     True
-    >>> six.ensure_str(b)
-    '\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
+    >>> b
+    b'\r\n\r\nfoo\r\nbar\r\nbaz\r\n'
 
     >>> b = canonicalise_line_endings(b"\r\nfoo\r\nbar\nbaz\r")
     >>> isinstance(b, bytes)
     True
-    >>> six.ensure_str(b)
-    '\r\nfoo\r\nbar\r\nbaz\r\n'
+    >>> b
+    b'\r\nfoo\r\nbar\r\nbaz\r\n'
     """
     if non_canonicalised_line_endings.search(buf):
         buf = non_canonicalised_line_endings.sub(b"\r\n", buf)

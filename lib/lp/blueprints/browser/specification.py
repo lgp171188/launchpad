@@ -41,7 +41,6 @@ from operator import attrgetter
 from subprocess import PIPE, Popen
 from typing import List
 
-import six
 from lazr.restful.interface import copy_field, use_template
 from lazr.restful.interfaces import (
     IFieldHTMLRenderer,
@@ -1491,7 +1490,7 @@ def to_DOT_ID(value):
 
     """
     if isinstance(value, bytes):
-        unitext = six.ensure_text(value, encoding="ascii")
+        unitext = value.decode(encoding="ascii")
     else:
         unitext = str(value)
     output = unitext.replace('"', '\\"')
