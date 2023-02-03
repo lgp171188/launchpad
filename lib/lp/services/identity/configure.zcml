@@ -33,12 +33,12 @@
                 syncUpdate"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         class="lp.services.identity.model.emailaddress.EmailAddressSet"
         provides="lp.services.identity.interfaces.emailaddress.IEmailAddressSet">
         <allow
             interface="lp.services.identity.interfaces.emailaddress.IEmailAddressSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <browser:url
         for="lp.services.identity.interfaces.emailaddress.IEmailAddress"
@@ -62,12 +62,12 @@
             set_attributes="displayname"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         class="lp.services.identity.model.account.AccountSet"
         provides="lp.services.identity.interfaces.account.IAccountSet">
         <allow
             interface="lp.services.identity.interfaces.account.IAccountSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <adapter
         for="lp.services.webapp.interfaces.ILaunchpadPrincipal"

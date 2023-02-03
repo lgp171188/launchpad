@@ -29,11 +29,11 @@
     <allow interface="lp.services.librarian.interfaces.ILibraryFileContent" />
   </class>
 
-  <securedutility
+  <lp:securedutility
     class="lp.services.librarian.model.LibraryFileAliasSet"
     provides="lp.services.librarian.interfaces.ILibraryFileAliasSet">
     <allow interface="lp.services.librarian.interfaces.ILibraryFileAliasSet" />
-  </securedutility>
+  </lp:securedutility>
 
   <browser:defaultView
     for="lp.services.librarian.interfaces.ILibraryFileAlias"

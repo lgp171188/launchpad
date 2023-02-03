@@ -54,7 +54,7 @@
       />
 
   <complexDirective
-      namespace="http://namespaces.zope.org/zope"
+      namespace="http://namespaces.canonical.com/lp"
       name="securedutility"
       schema="lp.services.webapp.metazcml.ISecuredUtilityDirective"
       handler="lp.services.webapp.metazcml.SecuredUtilityDirective"

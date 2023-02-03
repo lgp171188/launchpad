@@ -2,505 +2,507 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
-  <securedutility
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
+  <lp:securedutility
     name="Distribution"
     component="lp.registry.vocabularies.DistributionVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.DistributionVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="DistroSeries"
     component="lp.registry.vocabularies.DistroSeriesVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.DistroSeriesVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
       name="DistroSeriesDerivation"
       component=".vocabularies.DistroSeriesDerivationVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".vocabularies.DistroSeriesDerivationVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
       name="DistroSeriesDifferences"
       component=".vocabularies.DistroSeriesDifferencesVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".vocabularies.DistroSeriesDifferencesVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="FeaturedProject"
     component="lp.registry.vocabularies.FeaturedProjectVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.FeaturedProjectVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="FilteredDistroSeries"
     component="lp.registry.vocabularies.FilteredDistroSeriesVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.FilteredDistroSeriesVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="FilteredProductSeries"
     component="lp.registry.vocabularies.FilteredProductSeriesVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.FilteredProductSeriesVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="KarmaCategory"
     component="lp.registry.vocabularies.KarmaCategoryVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.KarmaCategoryVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="Milestone"
     component="lp.registry.vocabularies.MilestoneVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.MilestoneVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="MilestoneWithDateExpected"
     component="lp.registry.vocabularies.MilestoneWithDateExpectedVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.MilestoneWithDateExpectedVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="NonMergedPeopleAndTeams"
     component="lp.registry.vocabularies.NonMergedPeopleAndTeamsVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.NonMergedPeopleAndTeamsVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="AdminMergeablePerson"
     component="lp.registry.vocabularies.AdminMergeablePersonVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.AdminMergeablePersonVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="PersonAccountToMerge"
     component="lp.registry.vocabularies.PersonAccountToMergeVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.PersonAccountToMergeVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="PersonActiveMembership"
     component="lp.registry.vocabularies.PersonActiveMembershipVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.PersonActiveMembershipVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="Product"
     component="lp.registry.vocabularies.ProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ProductVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ProductRelease"
     component="lp.registry.vocabularies.ProductReleaseVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ProductReleaseVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ProductSeries"
     component="lp.registry.vocabularies.ProductSeriesVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ProductSeriesVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ProjectGroup"
     component="lp.registry.vocabularies.ProjectGroupVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ProjectGroupVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ProjectProducts"
     component="lp.registry.vocabularies.project_products_vocabulary_factory"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
 
-  <securedutility
+  <lp:securedutility
     name="CommercialProjects"
     component="lp.registry.vocabularies.CommercialProjectsVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.CommercialProjectsVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="UserTeamsParticipation"
     component="lp.registry.vocabularies.UserTeamsParticipationVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.UserTeamsParticipationVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="UserTeamsParticipationPlusSelf"
     component="lp.registry.vocabularies.UserTeamsParticipationPlusSelfVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.UserTeamsParticipationPlusSelfVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="UserTeamsParticipationPlusSelfSimpleDisplay"
     component="lp.registry.vocabularies.UserTeamsParticipationPlusSelfSimpleDisplayVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.UserTeamsParticipationPlusSelfSimpleDisplayVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="AllUserTeamsParticipation"
     component="lp.registry.vocabularies.AllUserTeamsParticipationVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.AllUserTeamsParticipationVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="AllUserTeamsParticipationPlusSelf"
     component="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="AllUserTeamsParticipationPlusSelfSimpleDisplay"
     component="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfSimpleDisplayVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfSimpleDisplayVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ActiveMailingList"
     component="lp.registry.vocabularies.ActiveMailingListVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ActiveMailingListVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidPersonOrTeam"
     component="lp.registry.vocabularies.ValidPersonOrTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidPersonOrTeamVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidAssignee"
     component="lp.registry.vocabularies.ValidPersonOrTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidMaintainer"
     component="lp.registry.vocabularies.ValidPersonOrTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidOwner"
     component="lp.registry.vocabularies.ValidPersonOrTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
     name="ValidPillarOwner"
     component="lp.registry.vocabularies.ValidPersonOrExclusiveTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
     name="ValidBranchReviewer"
     component="lp.registry.vocabularies.ValidPersonOrExclusiveTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidPersonOrExclusiveTeamVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="ValidTeam"
     component="lp.registry.vocabularies.ValidTeamVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidTeamVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidPerson"
     component="lp.registry.vocabularies.ValidPersonVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidPersonVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidTeamMember"
     component="lp.registry.vocabularies.ValidTeamMemberVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidTeamMemberVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="ValidTeamOwner"
     component="lp.registry.vocabularies.ValidTeamOwnerVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.ValidTeamOwnerVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="NewPillarGrantee"
     component="lp.registry.vocabularies.NewPillarGranteeVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.NewPillarGranteeVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="DistributionOrProduct"
     component="lp.registry.vocabularies.DistributionOrProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.DistributionOrProductVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="DistributionOrProductOrProjectGroup"
     component="lp.registry.vocabularies.DistributionOrProductOrProjectGroupVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.DistributionOrProductOrProjectGroupVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="SourcePackageName"
     component="lp.registry.vocabularies.SourcePackageNameVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.SourcePackageNameVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
@@ -511,13 +513,13 @@
     <allow interface="lp.services.webapp.vocabulary.ICountableIterator"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="DistributionSourcePackage"
     component="lp.registry.vocabularies.DistributionSourcePackageVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.registry.vocabularies.DistributionSourcePackageVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
@@ -563,12 +565,12 @@
             attributes="name title description"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="OCIProject"
         component="lp.registry.vocabularies.OCIProjectVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.registry.vocabularies.OCIProjectVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
@@ -577,12 +579,12 @@
             attributes="setPillar"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="DistributionPackage"
         component="lp.registry.vocabularies.DistributionPackageVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.registry.vocabularies.DistributionPackageVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />

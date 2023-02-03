@@ -4,16 +4,16 @@
 
 <configure
   xmlns="http://namespaces.zope.org/zope"
-  xmlns:browser="http://namespaces.zope.org/browser"
+  xmlns:lp="http://namespaces.canonical.com/lp"
   xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
   >
 
-  <securedutility
+  <lp:securedutility
     class="lp.services.authserver.xmlrpc.AuthServerApplication"
     provides="lp.services.authserver.interfaces.IAuthServerApplication">
     <allow
       interface="lp.services.authserver.interfaces.IAuthServerApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.services.authserver.interfaces.IAuthServerApplication"

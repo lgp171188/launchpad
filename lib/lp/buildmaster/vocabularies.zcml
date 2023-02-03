@@ -2,27 +2,29 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-  <securedutility
+  <lp:securedutility
     name="Processor"
     component="lp.buildmaster.vocabularies.ProcessorVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.buildmaster.vocabularies.ProcessorVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="BuilderResource"
     component="lp.buildmaster.vocabularies.BuilderResourceVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.buildmaster.vocabularies.BuilderResourceVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IVocabularyTokenized"/>

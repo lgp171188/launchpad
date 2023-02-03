@@ -2,35 +2,37 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-    <securedutility
+    <lp:securedutility
         name="OCIRecipeDistroArchSeries"
         component="lp.oci.vocabularies.OCIRecipeDistroArchSeriesVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.oci.vocabularies.OCIRecipeDistroArchSeriesVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="OCIRegistryCredentials"
         component="lp.oci.vocabularies.OCIRegistryCredentialsVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.oci.vocabularies.OCIRegistryCredentialsVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
-    <securedutility
+    <lp:securedutility
         name="OCIRecipe"
         component="lp.oci.vocabularies.OCIRecipeVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.oci.vocabularies.OCIRecipeVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />

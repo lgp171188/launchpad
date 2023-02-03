@@ -24,12 +24,12 @@
         />
 
     <!-- PublisherConfig -->
-    <securedutility
+    <lp:securedutility
         class="lp.archivepublisher.model.publisherconfig.PublisherConfigSet"
         provides="lp.archivepublisher.interfaces.publisherconfig.IPublisherConfigSet">
         <allow
             interface="lp.archivepublisher.interfaces.publisherconfig.IPublisherConfigSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class
         class="lp.archivepublisher.model.publisherconfig.PublisherConfig">
@@ -47,61 +47,61 @@
          marker in the codebase and make sure the same changes are made
          everywhere which needs them.
     -->
-    <securedutility
+    <lp:securedutility
         class="lp.archivepublisher.debian_installer.DebianInstallerUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="DEBIAN_INSTALLER">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.rosetta_translations.RosettaTranslationsUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="ROSETTA_TRANSLATIONS">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.dist_upgrader.DistUpgraderUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="DIST_UPGRADER">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.ddtp_tarball.DdtpTarballUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="DDTP_TARBALL">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.static_translations.StaticTranslationsUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="STATIC_TRANSLATIONS">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.meta_data.MetaDataUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="META_DATA">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.signing.UefiUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="UEFI">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.archivepublisher.signing.SigningUpload"
         provides="lp.soyuz.interfaces.queue.ICustomUploadHandler"
         name="SIGNING">
         <allow
             interface="lp.soyuz.interfaces.queue.ICustomUploadHandler"/>
-    </securedutility>
+    </lp:securedutility>
 
 </configure>

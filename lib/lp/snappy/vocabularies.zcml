@@ -2,36 +2,38 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-    <securedutility
+    <lp:securedutility
         name="SnapDistroArchSeries"
         component="lp.snappy.vocabularies.SnapDistroArchSeriesVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.snappy.vocabularies.SnapDistroArchSeriesVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="SnappySeries"
         component="lp.snappy.vocabularies.SnappySeriesVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.snappy.vocabularies.SnappySeriesVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="SnappyDistroSeries"
         component="lp.snappy.vocabularies.SnappyDistroSeriesVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.snappy.vocabularies.SnappyDistroSeriesVocabulary">
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
@@ -42,12 +44,12 @@
                           lazr.restful.interfaces.IJSONPublishable" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         name="SnapStoreChannel"
         component="lp.snappy.vocabularies.SnapStoreChannelVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.snappy.vocabularies.SnapStoreChannelVocabulary">
         <allow interface="zope.schema.interfaces.IVocabularyTokenized" />

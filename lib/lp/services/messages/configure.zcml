@@ -57,11 +57,11 @@
     </class>
 
   <!-- MessageSet -->
-  <securedutility
+  <lp:securedutility
       class="lp.services.messages.model.message.MessageSet"
       provides="lp.services.messages.interfaces.message.IMessageSet">
       <allow interface="lp.services.messages.interfaces.message.IMessageSet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Some message have a canonical_url -->
   <adapter for="lp.services.messages.interfaces.message.IMessage"
