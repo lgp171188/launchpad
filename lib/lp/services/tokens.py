@@ -9,8 +9,6 @@ __all__ = [
 
 import random
 
-import six
-
 
 def create_token(token_length):
     """Create a random token string.
@@ -20,8 +18,7 @@ def create_token(token_length):
     # Since tokens are, in general, user-visible, vowels are not included
     # below to prevent them from having curse/offensive words.
     characters = "0123456789bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ"
-    token = "".join(
+    return "".join(
         random.SystemRandom().choice(characters)
         for count in range(token_length)
     )
-    return six.ensure_text(token)

@@ -7,8 +7,6 @@ Run the doctests and pagetests.
 
 import os
 
-import six
-
 from lp.services.librarianserver.libraryprotocol import FileUploadProtocol
 from lp.services.librarianserver.storage import WrongDatabaseError
 from lp.services.testing import build_test_suite
@@ -112,10 +110,7 @@ def upload_request(request):
     server.dataReceived(request.replace(b"\n", b"\r\n"))
 
     # Report on what happened
-    print(
-        "reply: %r"
-        % six.ensure_str(server.transport.bytesWritten.rstrip(b"\r\n"))
-    )
+    print("reply: %r" % server.transport.bytesWritten.rstrip(b"\r\n").decode())
 
     if server.transport.connectionLost:
         print("connection closed")
@@ -124,11 +119,7 @@ def upload_request(request):
     if mockFile is not None and mockFile.stored:
         print(
             "file '%s' stored as %s, contents: %r"
-            % (
-                mockFile.name,
-                mockFile.mimetype,
-                six.ensure_str(mockFile.bytes),
-            )
+            % (mockFile.name, mockFile.mimetype, mockFile.bytes.decode())
         )
 
     # Cleanup: remove the observer.

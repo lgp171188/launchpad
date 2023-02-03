@@ -60,7 +60,7 @@ We create the POFile object where we are going to attach the .po file.
 Let's import a .po file that misses the '"' char after msgstr. That's a
 syntax error.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -75,7 +75,7 @@ syntax error.
     ... msgstr blah"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -213,7 +213,7 @@ In his rush to be the first Sumerian translator for Firefox, Mark
 submits a translation with a nonsensical plurals definition.
 
     >>> pofile = potemplate.newPOFile("sux")
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -227,7 +227,7 @@ submits a translation with a nonsensical plurals definition.
     ... msgstr "bar"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_contents,
@@ -266,7 +266,7 @@ Not enough forms
 Mark mistakenly attempts to import a translation with "zero" plural
 forms.  He receives an email notifying him of a syntax error.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -280,7 +280,7 @@ forms.  He receives an email notifying him of a syntax error.
     ... msgstr "bar"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_contents,
@@ -313,7 +313,7 @@ forms.  He receives an email notifying him of a syntax error.
 On his next attempt, Mark accidentally types a negative number of plural
 forms.  The same error is given.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -327,7 +327,7 @@ forms.  The same error is given.
     ... msgstr "bar"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_contents,
@@ -371,7 +371,7 @@ to get that information corrected if need be.
     >>> pofile = potemplate.newPOFile("ar")
 
     # PO file with nplurals=7, a value we can't handle.
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -392,7 +392,7 @@ to get that information corrected if need be.
     ... msgstr[6] "barim %%d"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_contents,
@@ -444,7 +444,7 @@ Once Mark has checked the language page and corrected the number of
 plural forms, the file imports just fine.
 
     # Same PO file as before, but with nplurals=6.
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -464,7 +464,7 @@ plural forms, the file imports just fine.
     ... msgstr[5] "barorum %%d"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_contents,

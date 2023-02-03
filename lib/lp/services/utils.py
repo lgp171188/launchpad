@@ -41,7 +41,6 @@ from textwrap import dedent
 from types import FunctionType
 
 import pytz
-import six
 from lazr.enum import BaseItem
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
@@ -123,7 +122,7 @@ def value_string(item):
     elif zope_isinstance(item, BaseItem):
         return item.title
     elif zope_isinstance(item, bytes):
-        return six.ensure_text(item)
+        return item.decode()
     else:
         return str(item)
 

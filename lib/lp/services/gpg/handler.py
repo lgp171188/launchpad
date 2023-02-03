@@ -23,7 +23,6 @@ from urllib.parse import urlencode
 import gpgme
 import pytz
 import requests
-import six
 from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
 from zope.interface import implementer
@@ -472,7 +471,7 @@ class GPGHandler:
             del os.environ["GPG_AGENT_INFO"]
 
         def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
-            os.write(fd, six.ensure_binary("%s\n" % password))
+            os.write(fd, ("%s\n" % password).encode())
 
         context.passphrase_cb = passphrase_cb
 

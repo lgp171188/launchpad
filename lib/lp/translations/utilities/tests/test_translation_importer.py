@@ -5,7 +5,6 @@
 
 from io import BytesIO
 
-import six
 import transaction
 
 from lp.services.log.logger import DevNullLogger
@@ -262,7 +261,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
             pofile=pofile, potmsgset=potmsgset1
         )
 
-        text = six.ensure_binary(
+        text = (
             """
             msgid ""
             msgstr ""
@@ -275,7 +274,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
             msgstr "A translation."
         """
             % potmsgset2.msgid_singular.msgid
-        )
+        ).encode()
 
         entry = self.factory.makeTranslationImportQueueEntry(
             "foo.po",

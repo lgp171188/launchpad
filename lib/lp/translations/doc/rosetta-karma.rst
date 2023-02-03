@@ -130,7 +130,7 @@ Let's say that we have this .po file to import:
     >>> import datetime
     >>> import pytz
     >>> UTC = pytz.timezone("UTC")
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -141,7 +141,7 @@ Let's say that we have this .po file to import:
     ... msgstr "bar"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> potemplate = POTemplate.get(1)
     >>> pofile = potemplate.getPOFileByLang("es")
 
@@ -215,7 +215,7 @@ Tell the PO file to import from the file data it has.
 Now, the user is going to upload a local edition of the .po file. In this
 case, we will give karma *only* because the translation change.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -226,7 +226,7 @@ case, we will give karma *only* because the translation change.
     ... msgstr "bars"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
 
 We attach the new file as not coming from upstream.
 

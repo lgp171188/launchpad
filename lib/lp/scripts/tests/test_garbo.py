@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 from functools import partial
 from textwrap import dedent
 
-import six
 import transaction
 from psycopg2 import IntegrityError
 from pytz import UTC
@@ -1416,10 +1415,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug.heat_last_updated = old_update
         IPrimaryStore(FeatureFlag).add(
             FeatureFlag(
-                "default",
-                0,
-                "bugs.heat_updates.cutoff",
-                six.ensure_text(cutoff.isoformat()),
+                "default", 0, "bugs.heat_updates.cutoff", cutoff.isoformat()
             )
         )
         transaction.commit()

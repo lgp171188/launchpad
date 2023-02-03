@@ -305,13 +305,11 @@ The 'No Privileges' user, the PPA owner, can download the DSC file.
 
     >>> print(
     ...     http(
-    ...         six.ensure_binary(
-    ...             r"""
+    ...         r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
     ... """
-    ...             % (dsc_file_lp_url.replace("http://launchpad.test", ""))
-    ...         )
+    ...         % (dsc_file_lp_url.replace("http://launchpad.test", ""))
     ...     )
     ... )
     HTTP/1.1 303 See Other
@@ -333,13 +331,11 @@ Binary files are served via '+files' rather than '+sourcefiles'.
     zope.security.interfaces.Unauthorized
     >>> print(
     ...     http(
-    ...         six.ensure_binary(
-    ...             r"""
+    ...         r"""
     ... GET %s HTTP/1.1
     ... Authorization: Basic no-priv@canonical.com:test
     ... """
-    ...             % (deb_file_lp_url.replace("http://launchpad.test", ""))
-    ...         )
+    ...         % (deb_file_lp_url.replace("http://launchpad.test", ""))
     ...     )
     ... )
     HTTP/1.1 303 See Other
@@ -390,12 +386,10 @@ binaries across to no-priv's public ppa.
 
     >>> print(
     ...     http(
-    ...         six.ensure_binary(
-    ...             r"""
+    ...         r"""
     ... GET %s HTTP/1.1
     ... """
-    ...             % file_lp_url.replace("http://launchpad.test", "")
-    ...         )
+    ...         % file_lp_url.replace("http://launchpad.test", "")
     ...     )
     ... )
     HTTP/1.1 303 See Other
@@ -424,13 +418,11 @@ redirect to the files for the default named PPA.
 
     >>> print(
     ...     http(
-    ...         six.ensure_binary(
-    ...             r"""
+    ...         r"""
     ... GET %s HTTP/1.1
     ... """
-    ...             % file_lp_url_without_ppa_name.replace(
-    ...                 "http://launchpad.test", ""
-    ...             )
+    ...         % file_lp_url_without_ppa_name.replace(
+    ...             "http://launchpad.test", ""
     ...         )
     ...     )
     ... )  # noqa
@@ -446,13 +438,11 @@ The same redirection happens for +archive/+build/blah urls:
     ... )
     >>> print(
     ...     http(
-    ...         six.ensure_binary(
-    ...             r"""
+    ...         r"""
     ... GET %s HTTP/1.1
     ... """
-    ...             % buildlog_lp_url_without_ppa_name.replace(
-    ...                 "http://launchpad.test", ""
-    ...             )
+    ...         % buildlog_lp_url_without_ppa_name.replace(
+    ...             "http://launchpad.test", ""
     ...         )
     ...     )
     ... )
@@ -515,12 +505,10 @@ LP proxy URL a proper NotFound error is raised.
     http://launchpad.test/~no-priv/+archive/ubuntu/ppa/+sourcefiles/test-pkg/1.0/test-pkg_1.0.dsc
 
     >>> not_found_file = http(
-    ...     six.ensure_binary(
-    ...         r"""
+    ...     r"""
     ... GET %s HTTP/1.1
     ... """
-    ...         % file_lp_url.replace("http://launchpad.test", "")
-    ...     )
+    ...     % file_lp_url.replace("http://launchpad.test", "")
     ... )
 
 It results in a 404 response.

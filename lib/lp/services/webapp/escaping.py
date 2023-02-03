@@ -7,7 +7,6 @@ __all__ = [
     "structured",
 ]
 
-import six
 from lazr.restful.utils import get_current_browser_request
 from zope.i18n import Message, translate
 from zope.interface import implementer
@@ -49,7 +48,7 @@ def html_escape(message):
         # first. See bug #54987.
         raw = translate_if_i18n(message)
         if isinstance(raw, bytes):
-            raw = six.ensure_text(raw)
+            raw = raw.decode()
         else:
             raw = str(raw)
         for needle, replacement in HTML_REPLACEMENTS:
@@ -90,7 +89,7 @@ class structured:
     def __init__(self, text, *reps, **kwreps):
         text = translate_if_i18n(text)
         if isinstance(text, bytes):
-            text = six.ensure_text(text)
+            text = text.decode()
         else:
             text = str(text)
         self.text = text
