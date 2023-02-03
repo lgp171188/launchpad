@@ -73,11 +73,9 @@ The most common case will be that the user is sent to the guided
     >>> filebug_url = "http://%s%s" % (filebug_host, filebug_path)
     >>> contents = str(
     ...     http(
-    ...         six.ensure_binary(
-    ...             "GET %s HTTP/1.1\nHostname: %s\n"
-    ...             "Authorization: Basic test@canonical.com:test\n\n"
-    ...             % (filebug_path, filebug_host)
-    ...         )
+    ...         "GET %s HTTP/1.1\nHostname: %s\n"
+    ...         "Authorization: Basic test@canonical.com:test\n\n"
+    ...         % (filebug_path, filebug_host)
     ...     )
     ... )
 

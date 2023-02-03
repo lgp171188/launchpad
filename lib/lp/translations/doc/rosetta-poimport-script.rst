@@ -32,7 +32,7 @@ the sampledata.
     None
 
     >>> pofile = potemplate.newPOFile("sr")
-    >>> pofile_content = six.ensure_binary(
+    >>> pofile_content = (
     ...     """
     ... msgid ""
     ... msgstr ""
@@ -45,7 +45,7 @@ the sampledata.
     ... msgstr "Bar"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
 
 We clean the import queue.
 

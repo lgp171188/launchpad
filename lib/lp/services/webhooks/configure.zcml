@@ -5,9 +5,10 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:webservice="http://namespaces.canonical.com/webservice">
 
-    <authorizations module=".security" />
+    <lp:authorizations module=".security" />
     <class class="lp.services.webhooks.model.Webhook">
         <require
             permission="launchpad.View"

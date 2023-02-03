@@ -14,13 +14,12 @@ from datetime import datetime, timedelta
 from functools import partial
 from textwrap import dedent
 
-import six
 import transaction
 from psycopg2 import IntegrityError
 from pytz import UTC
 from storm.exceptions import LostObjectError
 from storm.expr import SQL, In, Min, Not
-from storm.locals import Int, Storm
+from storm.locals import Int
 from storm.store import Store
 from testtools.content import text_content
 from testtools.matchers import (
@@ -95,6 +94,7 @@ from lp.services.database.constants import (
     UTC_NOW,
 )
 from lp.services.database.interfaces import IPrimaryStore
+from lp.services.database.stormbase import StormBase
 from lp.services.features.model import FeatureFlag
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
@@ -175,7 +175,7 @@ class TestGarboScript(TestCase):
         DatabaseLayer.force_dirty_database()
 
 
-class BulkFoo(Storm):
+class BulkFoo(StormBase):
     __storm_table__ = "bulkfoo"
     id = Int(primary=True)
 
@@ -1415,10 +1415,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug.heat_last_updated = old_update
         IPrimaryStore(FeatureFlag).add(
             FeatureFlag(
-                "default",
-                0,
-                "bugs.heat_updates.cutoff",
-                six.ensure_text(cutoff.isoformat()),
+                "default", 0, "bugs.heat_updates.cutoff", cutoff.isoformat()
             )
         )
         transaction.commit()

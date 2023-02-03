@@ -59,7 +59,7 @@ And this is the POTemplate where the import will be done.
 
 This is the file that'll get imported.
 
-    >>> potemplate_contents = six.ensure_binary(
+    >>> potemplate_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -92,7 +92,7 @@ This is the file that'll get imported.
     ... msgstr ""
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )  # noqa
+    ... ).encode()  # noqa
 
 We sometimes saw deadlocks as POFile statistics were updated after
 importing a template.  The operation would read all translation messages
@@ -239,7 +239,7 @@ Import With Errors
 Here are the contents of the file we'll be importing. It has some
 validation errors.
 
-    >>> pofile_with_errors = six.ensure_binary(
+    >>> pofile_with_errors = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -273,7 +273,7 @@ validation errors.
     ... msgstr[3] "We have four! %%d"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )  # noqa
+    ... ).encode()  # noqa
 
 This is the dbschema that controls the validation of a translation.
 
@@ -456,7 +456,7 @@ instance) and they don't mean that any messages failed to import.
 
 For example, here's a gettext PO file with two headers.
 
-    >>> pofile_with_warning = six.ensure_binary(
+    >>> pofile_with_warning = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -475,7 +475,7 @@ For example, here's a gettext PO file with two headers.
     ... msgstr "b"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )  # noqa
+    ... ).encode()  # noqa
     >>> eo_pofile = potemplate.newPOFile("eo")
     >>> warning_entry = translation_import_queue.addOrUpdateEntry(
     ...     "eo.po",
@@ -526,7 +526,7 @@ Import Without Errors
 Now, let's import one without errors. This file changes one translation
 and adds another one.
 
-    >>> pofile_without_errors = six.ensure_binary(
+    >>> pofile_without_errors = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -547,7 +547,7 @@ and adds another one.
     ... msgstr "helpful@example.com"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
     ...     pofile_without_errors,
@@ -701,7 +701,7 @@ plural forms).
 
 We'll import a POFile with 3 plural forms into this POFile:
 
-    >>> pofile_with_plurals = six.ensure_binary(
+    >>> pofile_with_plurals = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -719,7 +719,7 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[2] "Third form %%d"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )  # noqa
+    ... ).encode()  # noqa
 
 We now import this POFile as this language's translation for the source
 package:

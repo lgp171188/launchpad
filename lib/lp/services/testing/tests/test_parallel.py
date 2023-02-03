@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 from textwrap import dedent
 
-import six
 from fixtures import PopenFixture, TestWithFixtures
 from testtools import TestCase, TestResult
 
@@ -106,16 +105,14 @@ class TestUtilities(TestCase, TestWithFixtures):
             return {
                 "stdin": io.BytesIO(),
                 "stdout": io.BytesIO(
-                    six.ensure_binary(
-                        dedent(
-                            """\
+                    dedent(
+                        """\
                     test: quux
                     successful: quux
                     test: glom
                     successful: glom
                     """
-                        )
-                    )
+                    ).encode()
                 ),
             }
 

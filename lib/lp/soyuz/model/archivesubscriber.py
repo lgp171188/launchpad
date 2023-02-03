@@ -11,7 +11,7 @@ from operator import itemgetter
 
 import pytz
 from storm.expr import And, Desc, Join, LeftJoin
-from storm.locals import DateTime, Int, Reference, Store, Storm, Unicode
+from storm.locals import DateTime, Int, Reference, Store, Unicode
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
@@ -24,6 +24,7 @@ from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.webapp.authorization import precache_permission_for_objects
@@ -38,7 +39,7 @@ from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 
 
 @implementer(IArchiveSubscriber)
-class ArchiveSubscriber(Storm):
+class ArchiveSubscriber(StormBase):
     """See `IArchiveSubscriber`."""
 
     __storm_table__ = "ArchiveSubscriber"

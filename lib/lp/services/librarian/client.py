@@ -131,7 +131,7 @@ class FileUploadClient:
             self._checkError()
 
     def _sendHeader(self, name, value):
-        self._sendLine(six.ensure_binary("%s: %s" % (name, value)))
+        self._sendLine(("%s: %s" % (name, value)).encode())
 
     def addFile(
         self,

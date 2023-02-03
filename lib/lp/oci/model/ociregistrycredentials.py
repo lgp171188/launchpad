@@ -12,7 +12,7 @@ import base64
 import json
 
 from storm.databases.postgres import JSON
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema import ValidationError
@@ -29,6 +29,7 @@ from lp.services.config import config
 from lp.services.crypto.interfaces import CryptoError, IEncryptedContainer
 from lp.services.crypto.model import NaClEncryptedContainerBase
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IEncryptedContainer)
@@ -64,7 +65,7 @@ def url_validator(allowed_schemes):
 
 
 @implementer(IOCIRegistryCredentials)
-class OCIRegistryCredentials(Storm):
+class OCIRegistryCredentials(StormBase):
 
     __storm_table__ = "OCIRegistryCredentials"
 

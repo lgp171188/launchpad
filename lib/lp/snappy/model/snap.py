@@ -31,16 +31,7 @@ from storm.expr import (
     Or,
     Select,
 )
-from storm.locals import (
-    JSON,
-    Bool,
-    DateTime,
-    Int,
-    Reference,
-    Store,
-    Storm,
-    Unicode,
-)
+from storm.locals import JSON, Bool, DateTime, Int, Reference, Store, Unicode
 from zope.component import getAdapter, getUtility
 from zope.event import notify
 from zope.interface import directlyProvides, implementer
@@ -124,6 +115,7 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
     ArrayAgg,
@@ -288,7 +280,7 @@ class SnapBuildRequest:
 
 
 @implementer(ISnap, IHasOwner)
-class Snap(Storm, WebhookTargetMixin):
+class Snap(StormBase, WebhookTargetMixin):
     """See `ISnap`."""
 
     __storm_table__ = "Snap"
@@ -1481,7 +1473,7 @@ class Snap(Storm, WebhookTargetMixin):
         ).remove()
 
 
-class SnapArch(Storm):
+class SnapArch(StormBase):
     """Link table to back `Snap.processors`."""
 
     __storm_table__ = "SnapArch"

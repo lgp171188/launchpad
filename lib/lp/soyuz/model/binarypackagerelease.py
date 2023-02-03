@@ -11,7 +11,7 @@ import re
 from operator import attrgetter
 from typing import Any
 
-from storm.locals import Date, Int, Reference, Store, Storm
+from storm.locals import Date, Int, Reference, Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -27,6 +27,7 @@ from lp.services.database.sqlobject import (
     IntCol,
     StringCol,
 )
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.enums import (
     BinaryPackageFileType,
@@ -265,7 +266,7 @@ class BinaryPackageRelease(SQLBase):
 
 
 @implementer(IBinaryPackageReleaseDownloadCount)
-class BinaryPackageReleaseDownloadCount(Storm):
+class BinaryPackageReleaseDownloadCount(StormBase):
     """See `IBinaryPackageReleaseDownloadCount`."""
 
     __storm_table__ = "BinaryPackageReleaseDownloadCount"

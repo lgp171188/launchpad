@@ -4,7 +4,7 @@
 __all__ = ["ParsedApacheLog"]
 
 import six
-from storm.locals import Int, Storm, Unicode
+from storm.locals import Int, Unicode
 from zope.interface import implementer
 
 from lp.services.apachelogparser.interfaces.parsedapachelog import (
@@ -13,10 +13,11 @@ from lp.services.apachelogparser.interfaces.parsedapachelog import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IParsedApacheLog)
-class ParsedApacheLog(Storm):
+class ParsedApacheLog(StormBase):
     """See `IParsedApacheLog`"""
 
     __storm_table__ = "ParsedApacheLog"

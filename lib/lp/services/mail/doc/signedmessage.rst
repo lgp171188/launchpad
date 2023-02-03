@@ -14,7 +14,7 @@ the attributes are correctly set.
     True
     >>> msg["To"]
     'someone'
-    >>> print(six.ensure_text(msg.parsed_bytes))
+    >>> print(msg.parsed_bytes.decode())
     To: someone
     <BLANKLINE>
     Hello.

@@ -522,6 +522,7 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         credentials = self.factory.makeOCIRegistryCredentials(
             registrant=self.distribution.owner, owner=self.distribution.owner
         )
+        credentials_id = credentials.id
         self.distribution.oci_registry_credentials = credentials
         registry_url = self.factory.getUniqueURL()
         edit_form["field.oci_registry_credentials.url"] = registry_url
@@ -543,7 +544,7 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         )
         # This should have created new records
         self.assertNotEqual(
-            credentials.id, self.distribution.oci_registry_credentials.id
+            credentials_id, self.distribution.oci_registry_credentials.id
         )
 
     def test_oci_create_credentials_change_password(self):
@@ -551,10 +552,11 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         credentials = self.factory.makeOCIRegistryCredentials(
             registrant=self.distribution.owner, owner=self.distribution.owner
         )
+        url = credentials.url
         self.distribution.oci_registry_credentials = credentials
         transaction.commit()
         password = self.factory.getUniqueUnicode()
-        edit_form["field.oci_registry_credentials.url"] = credentials.url
+        edit_form["field.oci_registry_credentials.url"] = url
         edit_form[
             "field.oci_registry_credentials.username"
         ] = credentials.username
@@ -574,7 +576,7 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         unencrypted_credentials = distro_credentials.getCredentials()
         self.assertEqual(password, unencrypted_credentials["password"])
         # This should not have changed
-        self.assertEqual(distro_credentials.url, credentials.url)
+        self.assertEqual(url, distro_credentials.url)
 
     def test_oci_delete_credentials(self):
         edit_form = self.getDefaultEditDict()

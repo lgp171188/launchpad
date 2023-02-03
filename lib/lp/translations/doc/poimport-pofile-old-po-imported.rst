@@ -64,7 +64,7 @@ We create the POFile object where we are going to attach the .po file.
 
 First, we do a valid import.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -79,7 +79,7 @@ First, we do a valid import.
     ... msgstr "blah"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -121,7 +121,7 @@ file we just imported.
 Now, we are going to import a .po file that has a 'PO-Revision-Date'
 field with a date older than a previous .po import.
 
-    >>> pofile_contents = six.ensure_binary(
+    >>> pofile_contents = (
     ...     r"""
     ... msgid ""
     ... msgstr ""
@@ -136,7 +136,7 @@ field with a date older than a previous .po import.
     ... msgstr "blah"
     ... """
     ...     % datetime.datetime.now(UTC).isoformat()
-    ... )
+    ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,

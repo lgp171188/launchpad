@@ -5,10 +5,11 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <authorizations module=".security" />
+    <lp:authorizations module=".security" />
     <include file="errorlog.zcml" />
     <include file="database.zcml" />
 

@@ -1,7 +1,7 @@
 # Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from storm.locals import Bool, DateTime, Int, List, Reference, Storm
+from storm.locals import Bool, DateTime, Int, List, Reference
 
 from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import (
@@ -10,9 +10,10 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskStatusSearch,
 )
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 
 
-class BugTaskFlat(Storm):
+class BugTaskFlat(StormBase):
 
     __storm_table__ = "BugTaskFlat"
 

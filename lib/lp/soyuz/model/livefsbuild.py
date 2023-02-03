@@ -20,7 +20,6 @@ from storm.locals import (
     Reference,
     Select,
     Store,
-    Storm,
     Unicode,
 )
 from storm.store import EmptyResultSet
@@ -42,6 +41,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -69,7 +69,7 @@ from lp.soyuz.model.archivedependency import ArchiveDependency
 
 
 @implementer(ILiveFSFile)
-class LiveFSFile(Storm):
+class LiveFSFile(StormBase):
     """See `ILiveFS`."""
 
     __storm_table__ = "LiveFSFile"
@@ -90,7 +90,7 @@ class LiveFSFile(Storm):
 
 
 @implementer(ILiveFSBuild)
-class LiveFSBuild(PackageBuildMixin, Storm):
+class LiveFSBuild(PackageBuildMixin, StormBase):
     """See `ILiveFSBuild`."""
 
     __storm_table__ = "LiveFSBuild"

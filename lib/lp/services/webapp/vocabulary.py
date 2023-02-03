@@ -25,7 +25,7 @@ from collections import namedtuple
 from typing import Optional, Union
 
 import six
-from storm.base import Storm
+from storm.base import Storm  # noqa: B1
 from storm.expr import Expr
 from storm.store import EmptyResultSet
 from zope.interface import Attribute, Interface, implementer
@@ -489,7 +489,7 @@ class StormVocabularyBase(FilteredVocabularyBase):
         # Sometimes this method is called with a Storm instance, but z3 form
         # machinery sends through integer ids.  This might be due to a bug
         # somewhere.
-        if zisinstance(obj, Storm):
+        if zisinstance(obj, Storm):  # noqa: B1
             clauses = [self._table.id == obj.id]
             if self._clauses:
                 # XXX kiko 2007-01-16: this code is untested.
@@ -507,7 +507,7 @@ class StormVocabularyBase(FilteredVocabularyBase):
     def getTerm(self, value):
         # Short circuit.  There is probably a design problem here since we
         # sometimes get the id and sometimes a Storm instance.
-        if zisinstance(value, Storm):
+        if zisinstance(value, Storm):  # noqa: B1
             return self.toTerm(value)
 
         try:
@@ -584,7 +584,7 @@ class NamedStormVocabulary(StormVocabularyBase):
             return SimpleTerm(obj, obj.name, obj.title)
 
     def __contains__(self, obj):
-        if zisinstance(obj, Storm):
+        if zisinstance(obj, Storm):  # noqa: B1
             found_obj = (
                 IStore(self._table)
                 .find(

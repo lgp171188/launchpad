@@ -3507,7 +3507,7 @@ class TestUpdateByHash(TestPublisherBase):
         for sourcename in ("foo", "bar", "baz"):
             self.getPubSource(
                 sourcename=sourcename,
-                filecontent=six.ensure_binary("Source: %s\n" % sourcename),
+                filecontent=("Source: %s\n" % sourcename).encode(),
             )
             self.runSteps(publisher, step_a=True, step_c=True, step_d=True)
             with open(suite_path("Release"), "rb") as f:

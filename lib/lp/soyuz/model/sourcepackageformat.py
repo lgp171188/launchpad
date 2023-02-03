@@ -6,11 +6,12 @@ __all__ = [
     "SourcePackageFormatSelectionSet",
 ]
 
-from storm.locals import Int, Reference, Storm
+from storm.locals import Int, Reference
 from zope.interface import implementer
 
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelection,
@@ -19,7 +20,7 @@ from lp.soyuz.interfaces.sourcepackageformat import (
 
 
 @implementer(ISourcePackageFormatSelection)
-class SourcePackageFormatSelection(Storm):
+class SourcePackageFormatSelection(StormBase):
     """See ISourcePackageFormatSelection."""
 
     __storm_table__ = "sourcepackageformatselection"

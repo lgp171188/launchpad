@@ -10,22 +10,14 @@ __all__ = [
 import pytz
 from lazr.uri import URI
 from storm.expr import LeftJoin
-from storm.locals import (
-    And,
-    DateTime,
-    Int,
-    Join,
-    Or,
-    Reference,
-    Storm,
-    Unicode,
-)
+from storm.locals import And, DateTime, Int, Join, Or, Reference, Unicode
 from storm.store import Store
 from zope.interface import implementer
 
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.model.account import Account
 from lp.soyuz.enums import ArchiveSubscriberStatus
@@ -36,7 +28,7 @@ from lp.soyuz.interfaces.archiveauthtoken import (
 
 
 @implementer(IArchiveAuthToken)
-class ArchiveAuthToken(Storm):
+class ArchiveAuthToken(StormBase):
     """See `IArchiveAuthToken`."""
 
     __storm_table__ = "ArchiveAuthToken"

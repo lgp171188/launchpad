@@ -8,13 +8,14 @@ __all__ = [
 ]
 
 import pytz
-from storm.locals import DateTime, Int, Reference, Storm
+from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.distroarchseriesfilter import (
     IDistroArchSeriesFilter,
@@ -32,7 +33,7 @@ def distro_arch_series_filter_modified(pss, event):
 
 
 @implementer(IDistroArchSeriesFilter)
-class DistroArchSeriesFilter(Storm):
+class DistroArchSeriesFilter(StormBase):
     """See `IDistroArchSeriesFilter`."""
 
     __storm_table__ = "DistroArchSeriesFilter"

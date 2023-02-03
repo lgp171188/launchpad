@@ -3,7 +3,6 @@
 
 from textwrap import dedent
 
-import six
 from zope.interface.verify import verifyObject
 
 from lp.services.helpers import test_diff
@@ -47,12 +46,11 @@ class GettextPOExporterTestCase(TestCaseWithFactory):
             return
 
         import_lines = [
-            six.ensure_text(line, errors="replace")
-            for line in import_file.split(b"\n")
+            line.decode(errors="replace") for line in import_file.split(b"\n")
         ]
         # Remove X-Launchpad-Export-Date line to prevent time bombs in tests.
         export_lines = [
-            six.ensure_text(line, errors="replace")
+            line.decode(errors="replace")
             for line in export_file.split(b"\n")
             if (
                 not line.startswith(b'"X-Launchpad-Export-Date:')

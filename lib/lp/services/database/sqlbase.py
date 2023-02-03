@@ -42,7 +42,8 @@ from psycopg2.extensions import (
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import State
 from storm.expr import compile as storm_compile
-from storm.locals import Store, Storm
+from storm.locals import Storm  # noqa: B1
+from storm.locals import Store
 from storm.zope.interfaces import IZStorm
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
@@ -186,7 +187,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         # some_person.account = an_account fail?
         for key, argument in kwargs.items():
             argument = removeSecurityProxy(argument)
-            if not isinstance(argument, Storm):
+            if not isinstance(argument, Storm):  # noqa: B1
                 continue
             argument_store = Store.of(argument)
             if argument_store is not store:

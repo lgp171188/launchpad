@@ -168,7 +168,6 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             "build_debug_symbols": archive.build_debug_symbols,
             "build_url": canonical_url(build),
             "builder_constraints": [],
-            "distribution": das.distroseries.distribution.name,
             "fast_cleanup": builder.virtualized,
             "image_type": "chroot",
             "ogrecomponent": component,

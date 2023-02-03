@@ -9,7 +9,6 @@ from datetime import timedelta
 from textwrap import TextWrapper
 from urllib.parse import urlencode, urlparse
 
-import six
 import soupmatchers
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
@@ -1022,7 +1021,7 @@ class TestDistroSeriesLocalDiffPerformance(
                     list(prepare_statements(rec2)),
                 )
                 for line in diff:
-                    yield six.ensure_binary("%s\n" % line)
+                    yield ("%s\n" % line).encode()
 
             return statement_diff
 

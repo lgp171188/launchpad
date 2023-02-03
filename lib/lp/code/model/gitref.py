@@ -14,7 +14,6 @@ from urllib.parse import quote, quote_plus, urlsplit
 
 import pytz
 import requests
-import six
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import And, Or
 from storm.locals import DateTime, Int, Not, Reference, Store, Unicode
@@ -406,7 +405,7 @@ class GitRefMixin:
                 memcache_key += ":limit=%s" % limit
             if stop is not None:
                 memcache_key += ":stop=%s" % stop
-            memcache_key = six.ensure_binary(memcache_key)
+            memcache_key = memcache_key.encode()
 
             description = "log information for %s:%s" % (path, start)
             log = memcache_client.get_json(memcache_key, logger, description)

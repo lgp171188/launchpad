@@ -156,7 +156,7 @@ starts failing, Python is probably fixed, so the manual boundary parsing
 hack can be removed.
 
     >>> msg = read_test_message("signed_folded_header.txt")
-    >>> print(six.ensure_str(msg.parsed_bytes))
+    >>> print(msg.parsed_bytes.decode())
     ... # doctest: -NORMALIZE_WHITESPACE
     Date:...
     ...

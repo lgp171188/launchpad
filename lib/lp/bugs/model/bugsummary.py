@@ -9,7 +9,6 @@ __all__ = [
     "get_bugsummary_filter_for_user",
 ]
 
-from storm.base import Storm
 from storm.expr import SQL, And, Or, Select
 from storm.properties import Bool, Int, Unicode
 from storm.references import Reference
@@ -34,11 +33,12 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import WithMaterialized
 
 
 @implementer(IBugSummary)
-class BugSummary(Storm):
+class BugSummary(StormBase):
     """BugSummary Storm database class."""
 
     __storm_table__ = "combinedbugsummary"

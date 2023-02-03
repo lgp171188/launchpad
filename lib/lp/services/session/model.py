@@ -5,16 +5,17 @@
 
 __all__ = ["SessionData", "SessionPkgData"]
 
-from storm.locals import Pickle, Storm, Unicode
+from storm.locals import Pickle, Unicode
 from zope.interface import implementer, provider
 
 from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.stormbase import StormBase
 from lp.services.session.interfaces import IUseSessionStore
 
 
 @implementer(IUseSessionStore)
 @provider(IUseSessionStore)
-class SessionData(Storm):
+class SessionData(StormBase):
     """A user's Session."""
 
     __storm_table__ = "SessionData"
@@ -25,7 +26,7 @@ class SessionData(Storm):
 
 @implementer(IUseSessionStore)
 @provider(IUseSessionStore)
-class SessionPkgData(Storm):
+class SessionPkgData(StormBase):
     """Data storage for a Session."""
 
     __storm_table__ = "SessionPkgData"

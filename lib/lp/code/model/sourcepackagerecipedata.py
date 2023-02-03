@@ -33,7 +33,6 @@ from storm.locals import (
     ReferenceSet,
     Select,
     Store,
-    Storm,
     Unicode,
 )
 from zope.component import getUtility
@@ -62,6 +61,7 @@ from lp.code.model.gitrepository import GitRepository
 from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import (
     cachedproperty,
     clear_property_cache,
@@ -97,7 +97,7 @@ class InstructionType(DBEnumeratedType):
     )
 
 
-class _SourcePackageRecipeDataInstruction(Storm):
+class _SourcePackageRecipeDataInstruction(StormBase):
     """A single line from a recipe."""
 
     __storm_table__ = "SourcePackageRecipeDataInstruction"
@@ -192,7 +192,7 @@ MAX_RECIPE_FORMAT = 0.4
 
 @implementer(ISourcePackageRecipeData)
 @provider(IRecipeBranchSource, ISourcePackageRecipeDataSource)
-class SourcePackageRecipeData(Storm):
+class SourcePackageRecipeData(StormBase):
     """The database representation of a BaseRecipeBranch from bzr-builder.
 
     This is referenced from the SourcePackageRecipe table as the 'recipe_data'

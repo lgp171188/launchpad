@@ -9,7 +9,7 @@ __all__ = [
 
 from email.utils import make_msgid
 
-from storm.locals import Desc, Int, Reference, Storm
+from storm.locals import Desc, Int, Reference
 from zope.interface import implementer, provider
 
 from lp.registry.interfaces.distroseriesdifferencecomment import (
@@ -18,12 +18,13 @@ from lp.registry.interfaces.distroseriesdifferencecomment import (
 )
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import Message, MessageChunk
 
 
 @implementer(IDistroSeriesDifferenceComment)
 @provider(IDistroSeriesDifferenceCommentSource)
-class DistroSeriesDifferenceComment(Storm):
+class DistroSeriesDifferenceComment(StormBase):
     """See `IDistroSeriesDifferenceComment`."""
 
     __storm_table__ = "DistroSeriesDifferenceMessage"

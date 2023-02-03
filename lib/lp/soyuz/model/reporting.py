@@ -6,12 +6,12 @@ __all__ = [
 ]
 
 from lazr.delegates import delegate_to
-from storm.base import Storm
 from storm.locals import Int, Reference
 from storm.properties import DateTime
 from zope.interface import implementer
 
 from lp.services.database.enumcol import DBEnum
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.reporting import (
     ILatestPersonSourcePackageReleaseCache,
@@ -21,7 +21,7 @@ from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 
 @implementer(ILatestPersonSourcePackageReleaseCache)
 @delegate_to(ISourcePackageRelease, context="sourcepackagerelease")
-class LatestPersonSourcePackageReleaseCache(Storm):
+class LatestPersonSourcePackageReleaseCache(StormBase):
     """See `LatestPersonSourcePackageReleaseCache`."""
 
     __storm_table__ = "LatestPersonSourcePackageReleaseCache"

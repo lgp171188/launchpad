@@ -8,7 +8,7 @@ __all__ = [
     "PublisherConfigSet",
 ]
 
-from storm.locals import Int, Reference, Storm, Unicode
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.archivepublisher.interfaces.publisherconfig import (
@@ -16,10 +16,11 @@ from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfigSet,
 )
 from lp.services.database.interfaces import IPrimaryStore, IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IPublisherConfig)
-class PublisherConfig(Storm):
+class PublisherConfig(StormBase):
     """See `IArchiveAuthToken`."""
 
     __storm_table__ = "PublisherConfig"
