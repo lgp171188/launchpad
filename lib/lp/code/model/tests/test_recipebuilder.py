@@ -213,7 +213,6 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "author_name": "Joe User",
                 "build_url": canonical_url(job.build),
                 "builder_constraints": [],
-                "distroseries_name": job.build.distroseries.name,
                 "fast_cleanup": True,
                 "ogrecomponent": "universe",
                 "recipe_text": "# bzr-builder format 0.3 "
@@ -316,7 +315,6 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "author_name": "Joe User",
                 "build_url": canonical_url(job.build),
                 "builder_constraints": [],
-                "distroseries_name": job.build.distroseries.name,
                 "fast_cleanup": True,
                 "ogrecomponent": "universe",
                 "recipe_text": "# bzr-builder format 0.3 "
@@ -366,7 +364,6 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
                 "author_name": "Joe User",
                 "build_url": canonical_url(job.build),
                 "builder_constraints": [],
-                "distroseries_name": job.build.distroseries.name,
                 "fast_cleanup": True,
                 "git": True,
                 "ogrecomponent": "universe",
