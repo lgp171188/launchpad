@@ -3,6 +3,8 @@
 
 """Tests of `PersonMergeJob`."""
 
+import os
+
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -23,9 +25,10 @@ from lp.services.job.tests import block_on_job
 from lp.services.log.logger import BufferLogger
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.scripts import log
-from lp.testing import TestCaseWithFactory, person_logged_in, run_script
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import CeleryJobLayer, DatabaseFunctionalLayer
+from lp.testing.script import run_script
 
 
 def create_job(factory):
@@ -141,9 +144,12 @@ class TestPersonMergeJob(TestCaseWithFactory):
         )
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPersonMergeJobSource.getName())
+        env = os.environ.copy()
+        env["LP_DEBUG_SQL"] = "1"
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPersonMergeJobSource.getName()],
+            env=env,
         )
 
         self.addDetail("stdout", text_content(out))

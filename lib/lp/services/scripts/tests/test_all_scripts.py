@@ -10,7 +10,8 @@ from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import DocTestMatches
 
 from lp.services.scripts.tests import find_lp_scripts
-from lp.testing import TestCase, run_script
+from lp.testing import TestCase
+from lp.testing.script import run_script
 
 
 def make_id(script_path):
@@ -27,8 +28,7 @@ class ScriptsTestCase(WithScenarios, TestCase):
 
     def test_script(self):
         # Run self.script_path with '-h' to make sure it runs cleanly.
-        cmd_line = self.script_path + " -h"
-        out, err, returncode = run_script(cmd_line)
+        returncode, out, err = run_script(self.script_path, args=["-h"])
         self.assertThat(err, DocTestMatches("", doctest.REPORT_NDIFF))
         self.assertEqual("", err)
         self.assertEqual(os.EX_OK, returncode)

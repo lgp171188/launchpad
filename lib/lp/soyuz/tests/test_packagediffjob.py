@@ -1,6 +1,8 @@
 # Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import os
+
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -18,9 +20,10 @@ from lp.soyuz.interfaces.packagediffjob import (
 )
 from lp.soyuz.model.packagediffjob import PackageDiffJob
 from lp.soyuz.tests.test_packagediff import create_proper_job
-from lp.testing import TestCaseWithFactory, run_script, verifyObject
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import CeleryJobLayer, LaunchpadZopelessLayer
+from lp.testing.script import run_script
 
 
 class TestPackageDiffJob(TestCaseWithFactory):
@@ -76,9 +79,12 @@ class TestPackageDiffJob(TestCaseWithFactory):
     def test_smoke(self):
         diff = create_proper_job(self.factory)
         transaction.commit()
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPackageDiffJobSource.getName())
+        env = os.environ.copy()
+        env["LP_DEBUG_SQL"] = "1"
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPackageDiffJobSource.getName()],
+            env=env,
         )
 
         self.addDetail("stdout", text_content(out))

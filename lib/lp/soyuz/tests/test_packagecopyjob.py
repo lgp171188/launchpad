@@ -63,7 +63,6 @@ from lp.testing import (
     TestCaseWithFactory,
     admin_logged_in,
     person_logged_in,
-    run_script,
     verifyObject,
 )
 from lp.testing.dbuser import dbuser, switch_dbuser
@@ -76,6 +75,7 @@ from lp.testing.layers import (
 )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import Provides
+from lp.testing.script import run_script
 
 
 def get_dsd_comments(dsd):
@@ -726,9 +726,12 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             archive2.newComponentUploader(requester, "main")
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPlainPackageCopyJobSource.getName())
+        env = os.environ.copy()
+        env["LP_DEBUG_SQL"] = "1"
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPlainPackageCopyJobSource.getName()],
+            env=env,
         )
 
         self.addDetail("stdout", text_content(out))
