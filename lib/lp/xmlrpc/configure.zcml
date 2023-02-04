@@ -4,15 +4,15 @@
 
 <configure
   xmlns="http://namespaces.zope.org/zope"
-  xmlns:browser="http://namespaces.zope.org/browser"
+  xmlns:lp="http://namespaces.canonical.com/lp"
   xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
   >
 
-  <securedutility
+  <lp:securedutility
       class="lp.xmlrpc.application.PrivateApplication"
       provides="lp.xmlrpc.interfaces.IPrivateApplication">
       <allow interface="lp.xmlrpc.interfaces.IPrivateApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
       for="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -21,11 +21,11 @@
       permission="zope.Public"
       />
 
-  <securedutility
+  <lp:securedutility
     class="lp.systemhomes.ArchiveApplication"
     provides="lp.soyuz.interfaces.archiveapi.IArchiveApplication">
     <allow interface="lp.soyuz.interfaces.archiveapi.IArchiveApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.soyuz.interfaces.archiveapi.IArchiveApplication"
@@ -34,11 +34,11 @@
     permission="zope.Public"
     />
 
-  <securedutility
+  <lp:securedutility
     class="lp.systemhomes.CodehostingApplication"
     provides="lp.code.interfaces.codehosting.ICodehostingApplication">
     <allow interface="lp.code.interfaces.codehosting.ICodehostingApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.code.interfaces.codehosting.ICodehostingApplication"
@@ -47,11 +47,11 @@
     permission="zope.Public"
     />
 
-  <securedutility
+  <lp:securedutility
     class="lp.systemhomes.CodeImportSchedulerApplication"
     provides="lp.code.interfaces.codeimportscheduler.ICodeImportSchedulerApplication">
     <allow interface="lp.code.interfaces.codeimportscheduler.ICodeImportSchedulerApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.code.interfaces.codeimportscheduler.ICodeImportSchedulerApplication"
@@ -60,11 +60,11 @@
     permission="zope.Public"
     />
 
-  <securedutility
+  <lp:securedutility
     class="lp.systemhomes.GitApplication"
     provides="lp.code.interfaces.gitapi.IGitApplication">
     <allow interface="lp.code.interfaces.gitapi.IGitApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.code.interfaces.gitapi.IGitApplication"
@@ -73,11 +73,11 @@
     permission="zope.Public"
     />
 
-  <securedutility
+  <lp:securedutility
     class="lp.systemhomes.PrivateMaloneApplication"
     provides="lp.bugs.interfaces.malone.IPrivateMaloneApplication">
     <allow interface="lp.bugs.interfaces.malone.IPrivateMaloneApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <xmlrpc:view
     for="lp.bugs.interfaces.malone.IPrivateMaloneApplication"

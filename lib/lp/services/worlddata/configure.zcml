@@ -21,12 +21,12 @@
             interface=".interfaces.country.ICountrySet" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         class=".model.country.CountrySet"
         provides=".interfaces.country.ICountrySet">
         <allow
             interface=".interfaces.country.ICountrySet" />
-    </securedutility>
+    </lp:securedutility>
 
     <class class=".model.country.Continent">
         <allow
@@ -46,11 +46,11 @@
         factory="lp.translations.browser.language.LanguageBreadcrumb"
         permission="zope.Public"/>
 
-    <securedutility
+    <lp:securedutility
         class=".model.language.LanguageSet"
         provides=".interfaces.language.ILanguageSet">
         <allow interface=".interfaces.language.ILanguageSet" />
-    </securedutility>
+    </lp:securedutility>
 
     <adapter
         provides="lp.services.webapp.interfaces.IBreadcrumb"

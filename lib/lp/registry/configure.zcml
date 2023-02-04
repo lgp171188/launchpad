@@ -21,12 +21,12 @@
         <allow
             interface="lp.registry.interfaces.teammembership.ITeamMembershipSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.teammembership.TeamMembershipSet"
         provides="lp.registry.interfaces.teammembership.ITeamMembershipSet">
         <allow
             interface="lp.registry.interfaces.teammembership.ITeamMembershipSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- XXX: Guilherme Salgado 2008-02-15: Need to refactor ITeamMembership
                                                         into specific interfaces for each persmission. -->
@@ -88,53 +88,53 @@
     </class>
 
     <!-- IPersonTransferJob -->
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.MembershipNotificationJob"
         provides=".interfaces.persontransferjob.IMembershipNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.IMembershipNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.PersonMergeJob"
         provides=".interfaces.persontransferjob.IPersonMergeJobSource">
       <allow interface=".interfaces.persontransferjob.IPersonMergeJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.PersonDeactivateJob"
         provides=".interfaces.persontransferjob.IPersonDeactivateJobSource">
       <allow interface=".interfaces.persontransferjob.IPersonDeactivateJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.PersonCloseAccountJob"
         provides=".interfaces.persontransferjob.IPersonCloseAccountJobSource">
       <allow interface=".interfaces.persontransferjob.IPersonCloseAccountJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.TeamInvitationNotificationJob"
         provides=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.ITeamInvitationNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.TeamJoinNotificationJob"
         provides=".interfaces.persontransferjob.ITeamJoinNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.ITeamJoinNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.ExpiringMembershipNotificationJob"
         provides=".interfaces.persontransferjob.IExpiringMembershipNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.IExpiringMembershipNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         component=".model.persontransferjob.SelfRenewalNotificationJob"
         provides=".interfaces.persontransferjob.ISelfRenewalNotificationJobSource">
       <allow interface=".interfaces.persontransferjob.ISelfRenewalNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class=".model.persontransferjob.PersonTransferJob">
         <allow interface=".interfaces.persontransferjob.IPersonTransferJob"/>
@@ -173,43 +173,43 @@
     </class>
 
     <!-- IProductNotificationJob -->
-    <securedutility
+    <lp:securedutility
         component=".model.productjob.CommercialExpiredJob"
         provides=".interfaces.productjob.ICommercialExpiredJobSource">
       <allow interface=".interfaces.productjob.ICommercialExpiredJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class=".model.productjob.CommercialExpiredJob">
       <allow interface=".interfaces.productjob.ICommercialExpiredJob"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component=".model.productjob.SevenDayCommercialExpirationJob"
         provides=".interfaces.productjob.ISevenDayCommercialExpirationJobSource">
       <allow interface=".interfaces.productjob.ISevenDayCommercialExpirationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class=".model.productjob.SevenDayCommercialExpirationJob">
       <allow interface=".interfaces.productjob.ISevenDayCommercialExpirationJob"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component=".model.productjob.ThirtyDayCommercialExpirationJob"
         provides=".interfaces.productjob.IThirtyDayCommercialExpirationJobSource">
       <allow interface=".interfaces.productjob.IThirtyDayCommercialExpirationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class=".model.productjob.ThirtyDayCommercialExpirationJob">
       <allow interface=".interfaces.productjob.IThirtyDayCommercialExpirationJob"/>
     </class>
 
     <!-- INameBlocklist -->
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.nameblocklist.NameBlocklistSet"
         provides="lp.registry.interfaces.nameblocklist.INameBlocklistSet">
         <allow
             interface="lp.registry.interfaces.nameblocklist.INameBlocklistSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.registry.model.nameblocklist.NameBlocklistSet">
         <require
@@ -246,11 +246,11 @@
     </class>
 
     <!-- DistroSeriesDifference -->
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.distroseriesdifference.DistroSeriesDifference"
         provides="lp.registry.interfaces.distroseriesdifference.IDistroSeriesDifferenceSource">
         <allow interface="lp.registry.interfaces.distroseriesdifference.IDistroSeriesDifferenceSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.distroseriesdifference.DistroSeriesDifference">
         <allow interface="lp.registry.interfaces.distroseriesdifference.IDistroSeriesDifferencePublic"/>
@@ -264,23 +264,23 @@
     </class>
 
     <!-- DistroSeriesDifferenceComment -->
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.distroseriesdifferencecomment.DistroSeriesDifferenceComment"
         provides="lp.registry.interfaces.distroseriesdifferencecomment.IDistroSeriesDifferenceCommentSource">
         <allow interface="lp.registry.interfaces.distroseriesdifferencecomment.IDistroSeriesDifferenceCommentSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.distroseriesdifferencecomment.DistroSeriesDifferenceComment">
         <allow interface="lp.registry.interfaces.distroseriesdifferencecomment.IDistroSeriesDifferenceComment"/>
     </class>
 
     <!-- DistroSeriesParent -->
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.distroseriesparent.DistroSeriesParentSet"
         provides="lp.registry.interfaces.distroseriesparent.IDistroSeriesParentSet">
         <allow
             interface="lp.registry.interfaces.distroseriesparent.IDistroSeriesParentSet"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.distroseriesparent.DistroSeriesParent">
         <require
@@ -353,12 +353,12 @@
             interface="lp.bugs.interfaces.structuralsubscription.IStructuralSubscriptionTargetWrite" />
 
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.distroseries.DistroSeriesSet"
         provides="lp.registry.interfaces.distroseries.IDistroSeriesSet">
         <allow
             interface="lp.registry.interfaces.distroseries.IDistroSeriesSet"/>
-    </securedutility>
+    </lp:securedutility>
     <adapter
         provides="lp.registry.interfaces.distribution.IDistribution"
         for="lp.registry.interfaces.distroseries.IDistroSeries"
@@ -388,21 +388,21 @@
 
         <!-- CodeOfConductConf -->
 
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.codeofconduct.CodeOfConductConf"
             provides="lp.registry.interfaces.codeofconduct.ICodeOfConductConf">
             <allow
                 interface="lp.registry.interfaces.codeofconduct.ICodeOfConductConf"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- CodeOfConductSet -->
 
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.codeofconduct.CodeOfConductSet"
             provides="lp.registry.interfaces.codeofconduct.ICodeOfConductSet">
             <allow
                 interface="lp.registry.interfaces.codeofconduct.ICodeOfConductSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- SignedCodeofConduct -->
 
@@ -422,12 +422,12 @@
             <allow
                 interface="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.codeofconduct.SignedCodeOfConductSet"
             provides="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet">
             <allow
                 interface="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- string:${id} because id is an int -->
 
@@ -452,12 +452,12 @@
         <allow
             interface="lp.registry.interfaces.irc.IIrcIDSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.person.IrcIDSet"
         provides="lp.registry.interfaces.irc.IIrcIDSet">
         <allow
             interface="lp.registry.interfaces.irc.IIrcIDSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ProjectGroup -->
 
@@ -530,12 +530,12 @@
         <allow
             interface="lp.registry.interfaces.projectgroup.IProjectGroupSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.projectgroup.ProjectGroupSet"
         provides="lp.registry.interfaces.projectgroup.IProjectGroupSet">
         <allow
             interface="lp.registry.interfaces.projectgroup.IProjectGroupSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ProjectGroupSeries -->
 
@@ -686,31 +686,31 @@
         <allow
             interface="lp.registry.interfaces.jabber.IJabberIDSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.person.JabberIDSet"
         provides="lp.registry.interfaces.jabber.IJabberIDSet">
         <allow
             interface="lp.registry.interfaces.jabber.IJabberIDSet"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.pillar.PillarName">
         <allow
             interface="lp.registry.interfaces.pillar.IPillarName"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.pillar.PillarNameSet"
         provides="lp.registry.interfaces.pillar.IPillarNameSet">
         <allow
             interface="lp.registry.interfaces.pillar.IPillarNameSet"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.services.webservice.pillarset.PillarSetLink"
         provides="lp.services.webservice.pillarset.IPillarSetLink">
         <allow
             interface="lazr.restful.interfaces.ITopLevelEntryLink"/>
         <allow
             interface="lp.services.webapp.interfaces.ICanonicalUrlData"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PillarPerson-->
 
@@ -720,12 +720,12 @@
             interface="lp.registry.interfaces.pillar.IPillarPerson"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.pillar.PillarPerson"
         provides="lp.registry.interfaces.pillar.IPillarPersonFactory">
         <allow
             interface="lp.registry.interfaces.pillar.IPillarPersonFactory"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- OCIProjectName -->
     <class
@@ -735,12 +735,12 @@
     </class>
 
     <!-- OCIProjectNameSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.ociprojectname.OCIProjectNameSet"
         provides="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet">
         <allow
             interface="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.ociprojectname.OCIProjectNameSet">
         <allow
@@ -765,12 +765,12 @@
     <subscriber
         for="lp.registry.interfaces.ociproject.IOCIProject zope.lifecycleevent.interfaces.IObjectModifiedEvent"
         handler="lp.registry.model.ociproject.oci_project_modified" />
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.ociproject.OCIProjectSet"
         provides="lp.registry.interfaces.ociproject.IOCIProjectSet">
         <allow
             interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
-    </securedutility>
+    </lp:securedutility>
     <adapter
         for="lp.registry.interfaces.ociproject.IOCIProject"
         provides="lp.services.webapp.interfaces.IBreadcrumb"
@@ -799,12 +799,12 @@
 
     <!-- SourcePackageNameSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.sourcepackagename.SourcePackageNameSet"
         provides="lp.registry.interfaces.sourcepackagename.ISourcePackageNameSet">
         <allow
             interface="lp.registry.interfaces.sourcepackagename.ISourcePackageNameSet"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.sourcepackagename.SourcePackageNameSet">
         <allow
@@ -864,12 +864,12 @@
             <allow
                 interface="lp.registry.interfaces.karma.IKarmaCacheManager"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.karma.KarmaCacheManager"
             provides="lp.registry.interfaces.karma.IKarmaCacheManager">
             <allow
                 interface="lp.registry.interfaces.karma.IKarmaCacheManager"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- KarmaActionSet -->
 
@@ -878,12 +878,12 @@
             <allow
                 interface="lp.registry.interfaces.karma.IKarmaActionSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.karma.KarmaActionSet"
             provides="lp.registry.interfaces.karma.IKarmaActionSet">
             <allow
                 interface="lp.registry.interfaces.karma.IKarmaActionSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- Poll -->
 
@@ -944,12 +944,12 @@
             <allow
                 interface="lp.registry.interfaces.poll.IPollSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.poll.PollSet"
             provides="lp.registry.interfaces.poll.IPollSet">
             <allow
                 interface="lp.registry.interfaces.poll.IPollSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- PollSubset -->
 
@@ -966,24 +966,24 @@
             <allow
                 interface="lp.registry.interfaces.poll.IPollOptionSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.poll.PollOptionSet"
             provides="lp.registry.interfaces.poll.IPollOptionSet">
             <allow
                 interface="lp.registry.interfaces.poll.IPollOptionSet"/>
-        </securedutility>
-        <securedutility
+        </lp:securedutility>
+        <lp:securedutility
             class="lp.registry.model.poll.VoteSet"
             provides="lp.registry.interfaces.poll.IVoteSet">
             <allow
                 interface="lp.registry.interfaces.poll.IVoteSet"/>
-        </securedutility>
-        <securedutility
+        </lp:securedutility>
+        <lp:securedutility
             class="lp.registry.model.poll.VoteCastSet"
             provides="lp.registry.interfaces.poll.IVoteCastSet">
             <allow
                 interface="lp.registry.interfaces.poll.IVoteCastSet"/>
-        </securedutility>
+        </lp:securedutility>
 
     <!-- Announcement -->
 
@@ -1016,12 +1016,12 @@
 
     <!-- AnnouncementSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.announcement.AnnouncementSet"
         provides="lp.registry.interfaces.announcement.IAnnouncementSet">
         <allow
             interface="lp.registry.interfaces.announcement.IAnnouncementSet"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- Person -->
 
@@ -1153,7 +1153,7 @@
             <allow
                 interface="lp.registry.interfaces.person.IPersonSetPublic"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.registry.model.person.PersonSet"
             provides="lp.registry.interfaces.person.IPersonSet">
             <require
@@ -1161,15 +1161,15 @@
                 interface="lp.registry.interfaces.person.IPersonSetModerate" />
             <allow
                 interface="lp.registry.interfaces.person.IPersonSetPublic"/>
-        </securedutility>
-        <securedutility
+        </lp:securedutility>
+        <lp:securedutility
             class="lp.services.webservice.me.MeLink"
             provides="lp.services.webservice.me.IMeLink">
             <allow
                 interface="lazr.restful.interfaces.ITopLevelEntryLink"/>
             <allow
                 interface="lp.services.webapp.interfaces.ICanonicalUrlData"/>
-        </securedutility>
+        </lp:securedutility>
     <adapter
         for="lp.services.webapp.interfaces.ILaunchpadPrincipal"
         provides="lp.registry.interfaces.person.IPerson"
@@ -1252,12 +1252,12 @@
 
     <!-- IMilestoneSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.milestone.MilestoneSet"
         provides="lp.registry.interfaces.milestone.IMilestoneSet">
         <allow
             interface="lp.registry.interfaces.milestone.IMilestoneSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ProjectMilestone -->
 
@@ -1297,34 +1297,34 @@
         <allow
             interface="lp.registry.interfaces.mailinglist.IMessageApproval"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.mailinglist.MailingListSet"
         provides="lp.registry.interfaces.mailinglist.IMailingListSet">
         <allow
             interface="lp.registry.interfaces.mailinglist.IMailingListSet"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.systemhomes.MailingListApplication"
         provides="lp.registry.interfaces.mailinglist.IMailingListApplication">
         <allow
             interface="lp.registry.interfaces.mailinglist.IMailingListApplication"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.registry.model.mailinglist.MessageApprovalSet"
         provides="lp.registry.interfaces.mailinglist.IMessageApprovalSet">
         <allow
             interface="lp.registry.interfaces.mailinglist.IMessageApprovalSet"/>
-    </securedutility>
+    </lp:securedutility>
     <xmlrpc:view
         for="lp.registry.interfaces.mailinglist.IMailingListApplication"
         interface="lp.registry.interfaces.mailinglist.IMailingListAPIView"
         class="lp.registry.xmlrpc.mailinglist.MailingListAPIView"
         permission="zope.Public"/>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.xmlrpc.canonicalsso.CanonicalSSOApplication"
         provides="lp.registry.interfaces.person.ICanonicalSSOApplication">
       <allow interface="lp.registry.interfaces.person.ICanonicalSSOApplication" />
-    </securedutility>
+    </lp:securedutility>
     <xmlrpc:view
         for="lp.registry.interfaces.person.ICanonicalSSOApplication"
         interface="lp.registry.interfaces.person.ICanonicalSSOAPI"
@@ -1361,12 +1361,12 @@
         <allow
             interface="lp.registry.interfaces.wikiname.IWikiNameSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.person.WikiNameSet"
         provides="lp.registry.interfaces.wikiname.IWikiNameSet">
         <allow
             interface="lp.registry.interfaces.wikiname.IWikiNameSet"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.gpgkey.GPGKey">
         <allow
@@ -1383,12 +1383,12 @@
         <allow
             interface="lp.registry.interfaces.gpg.IGPGKeySet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.gpgkey.GPGKeySet"
         provides="lp.registry.interfaces.gpg.IGPGKeySet">
         <allow
             interface="lp.registry.interfaces.gpg.IGPGKeySet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Product -->
 
@@ -1657,7 +1657,7 @@
                 count_answered
                 count_codified"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.product.ProductSet"
         provides="lp.registry.interfaces.product.IProductSet">
         <allow
@@ -1666,7 +1666,7 @@
             permission="launchpad.Moderate"
             attributes="
                 forReview"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- SSHKey -->
 
@@ -1686,12 +1686,12 @@
         <allow
             interface="lp.registry.interfaces.ssh.ISSHKeySet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.person.SSHKeySet"
         provides="lp.registry.interfaces.ssh.ISSHKeySet">
         <allow
             interface="lp.registry.interfaces.ssh.ISSHKeySet"/>
-    </securedutility>
+    </lp:securedutility>
     <subscriber
         for="lp.registry.interfaces.teammembership.IJoinTeamEvent"
         handler="lp.registry.mail.notification.notify_team_join"/>
@@ -1810,12 +1810,12 @@
         <allow
             interface="lp.registry.interfaces.productseries.IProductSeriesSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.productseries.ProductSeriesSet"
         provides="lp.registry.interfaces.productseries.IProductSeriesSet">
         <allow
             interface="lp.registry.interfaces.productseries.IProductSeriesSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Distribution -->
 
@@ -1969,13 +1969,13 @@
             interface="lp.registry.interfaces.distribution.IDistributionSet"
             attributes="__len__"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.distribution.DistributionSet"
         provides="lp.registry.interfaces.distribution.IDistributionSet">
         <allow
             interface="lp.registry.interfaces.distribution.IDistributionSet"
             attributes="__len__"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- SourcePackage -->
     <class
@@ -1991,12 +1991,12 @@
             permission="launchpad.Edit"
             interface="lp.registry.interfaces.sourcepackage.ISourcePackageEdit"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.sourcepackage.SourcePackage"
         provides="lp.registry.interfaces.sourcepackage.ISourcePackageFactory">
         <allow
             interface="lp.registry.interfaces.sourcepackage.ISourcePackageFactory"/>
-    </securedutility>
+    </lp:securedutility>
     <adapter
         provides="lp.registry.interfaces.distribution.IDistribution"
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
@@ -2026,12 +2026,12 @@
             permission="zope.Public"
             set_schema="lp.registry.interfaces.productrelease.IProductReleaseSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.productrelease.ProductReleaseSet"
         provides="lp.registry.interfaces.productrelease.IProductReleaseSet">
         <allow
             interface="lp.registry.interfaces.productrelease.IProductReleaseSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- This is class ProductRelease -->
 
@@ -2147,11 +2147,11 @@
         <allow interface="lp.registry.interfaces.distributionmirror.IDistributionMirrorSet"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.distributionmirror.DistributionMirrorSet"
         provides="lp.registry.interfaces.distributionmirror.IDistributionMirrorSet">
         <allow interface="lp.registry.interfaces.distributionmirror.IDistributionMirrorSet" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- MirrorDistroArchSeries -->
     <class class="lp.registry.model.distributionmirror.MirrorDistroArchSeries">
@@ -2200,12 +2200,12 @@
         <allow
             interface="lp.registry.interfaces.packaging.IPackagingUtil"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.registry.model.packaging.PackagingUtil"
         provides="lp.registry.interfaces.packaging.IPackagingUtil">
         <allow
             interface="lp.registry.interfaces.packaging.IPackagingUtil"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PersonDistributionSourcePackage -->
 
@@ -2221,12 +2221,12 @@
         factory="lp.registry.browser.persondistributionsourcepackage.PersonDistributionSourcePackageBreadcrumb"
         permission="zope.Public"/>
 
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.persondistributionsourcepackage.PersonDistributionSourcePackage"
         provides="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackageFactory">
         <allow
             interface="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackageFactory"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PersonNotification -->
 
@@ -2236,12 +2236,12 @@
             interface="lp.registry.interfaces.personnotification.IPersonNotification"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         provides="lp.registry.interfaces.personnotification.IPersonNotificationSet"
         class="lp.registry.model.personnotification.PersonNotificationSet">
         <allow
             interface="lp.registry.interfaces.personnotification.IPersonNotificationSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PersonOCIProject -->
 
@@ -2251,12 +2251,12 @@
             interface="lp.registry.interfaces.personociproject.IPersonOCIProject"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.personociproject.PersonOCIProject"
         provides="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory">
         <allow
             interface="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PersonProduct -->
 
@@ -2275,12 +2275,12 @@
         factory="lp.registry.browser.personproduct.PersonProductBreadcrumb"
         permission="zope.Public"/>
 
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.personproduct.PersonProductFactory"
         provides="lp.registry.interfaces.personproduct.IPersonProductFactory">
         <allow
             interface="lp.registry.interfaces.personproduct.IPersonProductFactory"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class
         class="lp.registry.model.personroles.PersonRoles">
@@ -2297,62 +2297,62 @@
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicy"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessPolicy"
         provides="lp.registry.interfaces.accesspolicy.IAccessPolicySource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicySource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.accesspolicy.AccessArtifact">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessArtifact"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessArtifact"
         provides="lp.registry.interfaces.accesspolicy.IAccessArtifactSource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessArtifactSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.accesspolicy.AccessPolicyArtifact">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicyArtifact"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessPolicyArtifact"
         provides="lp.registry.interfaces.accesspolicy.IAccessPolicyArtifactSource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicyArtifactSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.accesspolicy.AccessArtifactGrant">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessArtifactGrant"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessArtifactGrant"
         provides="lp.registry.interfaces.accesspolicy.IAccessArtifactGrantSource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessArtifactGrantSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class
         class="lp.registry.model.accesspolicy.AccessPolicyGrant">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicyGrant"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessPolicyGrant"
         provides="lp.registry.interfaces.accesspolicy.IAccessPolicyGrantSource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicyGrantSource"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         component="lp.registry.model.accesspolicy.AccessPolicyGrantFlat"
         provides="lp.registry.interfaces.accesspolicy.IAccessPolicyGrantFlatSource">
         <allow
             interface="lp.registry.interfaces.accesspolicy.IAccessPolicyGrantFlatSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Sharing jobs -->
     <class class=".model.sharingjob.RemoveArtifactSubscriptionsJob">
@@ -2362,10 +2362,10 @@
          log_name"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component=".model.sharingjob.RemoveArtifactSubscriptionsJob"
         provides=".interfaces.sharingjob.IRemoveArtifactSubscriptionsJobSource">
       <allow interface=".interfaces.sharingjob.IRemoveArtifactSubscriptionsJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
 </configure>

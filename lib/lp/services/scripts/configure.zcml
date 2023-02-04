@@ -2,7 +2,9 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
   <class class="lp.services.scripts.model.scriptactivity.ScriptActivity">
     <allow interface="lp.services.scripts.interfaces.scriptactivity.IScriptActivity"/>
@@ -12,10 +14,10 @@
     <allow interface="lp.services.scripts.interfaces.scriptactivity.IScriptActivitySet" />
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.services.scripts.model.scriptactivity.ScriptActivitySet"
       provides="lp.services.scripts.interfaces.scriptactivity.IScriptActivitySet" >
     <allow interface="lp.services.scripts.interfaces.scriptactivity.IScriptActivitySet" />
-  </securedutility>
+  </lp:securedutility>
 
 </configure>

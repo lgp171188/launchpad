@@ -22,11 +22,11 @@
         <allow interface="lp.services.auth.interfaces.IAccessTokenSet" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         class="lp.services.auth.model.AccessTokenSet"
         provides="lp.services.auth.interfaces.IAccessTokenSet">
         <allow interface="lp.services.auth.interfaces.IAccessTokenSet" />
-    </securedutility>
+    </lp:securedutility>
 
     <browser:url
         for="lp.services.auth.interfaces.IAccessToken"

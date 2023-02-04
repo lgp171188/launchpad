@@ -63,11 +63,11 @@
 
   <!-- CodeImportMachineSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportmachine.CodeImportMachineSet"
       provides="lp.code.interfaces.codeimportmachine.ICodeImportMachineSet">
     <allow interface="lp.code.interfaces.codeimportmachine.ICodeImportMachineSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- BranchRef -->
 
@@ -126,19 +126,19 @@
       for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
       provides="lp.code.interfaces.branchcollection.IBranchCollection"
       factory="lp.code.adapters.branchcollection.branch_collection_for_distro_source_package"/>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchcollection.GenericBranchCollection"
       provides="lp.code.interfaces.branchcollection.IAllBranches">
     <allow interface="lp.code.interfaces.branchcollection.IAllBranches"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.revisioncache.GenericRevisionCollection">
     <allow interface="lp.code.interfaces.revisioncache.IRevisionCollection"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.revisioncache.GenericRevisionCollection"
       provides="lp.code.interfaces.revisioncache.IRevisionCache">
     <allow interface="lp.code.interfaces.revisioncache.IRevisionCache"/>
-  </securedutility>
+  </lp:securedutility>
   <adapter
       for="lp.registry.interfaces.person.IPerson"
       provides="lp.code.interfaces.revisioncache.IRevisionCache"
@@ -167,16 +167,16 @@
       for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
       provides="lp.code.interfaces.revisioncache.IRevisionCache"
       factory="lp.code.adapters.revisioncache.revision_cache_for_distro_source_package"/>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchpuller.BranchPuller"
       provides="lp.code.interfaces.branchpuller.IBranchPuller">
     <allow interface="lp.code.interfaces.branchpuller.IBranchPuller"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       class="lp.systemhomes.BazaarApplication"
       provides="lp.code.interfaces.codehosting.IBazaarApplication">
     <allow interface="lp.code.interfaces.codehosting.IBazaarApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- pages for the bazaar application -->
 
@@ -213,17 +213,17 @@
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJob"/>
     <allow interface="lp.code.interfaces.branchmergeproposal.IMergeProposalNeedsReviewEmailJob"/>
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.MergeProposalNeedsReviewEmailJob"
       provides="lp.code.interfaces.branchmergeproposal.IMergeProposalNeedsReviewEmailJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.IMergeProposalNeedsReviewEmailJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.BranchMergeProposalJobSource"
       provides="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class
   class="lp.code.model.branchmergeproposaljob.GenerateIncrementalDiffJob">
@@ -234,41 +234,41 @@
     <allow interface="lp.code.interfaces.branchmergeproposal.IUpdatePreviewDiffJob" />
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJob" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.UpdatePreviewDiffJob"
       provides="lp.code.interfaces.branchmergeproposal.IUpdatePreviewDiffJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.IUpdatePreviewDiffJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.code.model.branchmergeproposaljob.CodeReviewCommentEmailJob">
     <allow interface="lp.code.interfaces.branchmergeproposal.ICodeReviewCommentEmailJob" />
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJob" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.CodeReviewCommentEmailJob"
       provides="lp.code.interfaces.branchmergeproposal.ICodeReviewCommentEmailJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.ICodeReviewCommentEmailJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.code.model.branchmergeproposaljob.ReviewRequestedEmailJob">
     <allow interface="lp.code.interfaces.branchmergeproposal.IReviewRequestedEmailJob" />
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJob" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.ReviewRequestedEmailJob"
       provides="lp.code.interfaces.branchmergeproposal.IReviewRequestedEmailJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.IReviewRequestedEmailJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.code.model.branchmergeproposaljob.MergeProposalUpdatedEmailJob">
     <allow interface="lp.services.job.interfaces.job.IRunnableJob" />
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalJob" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchmergeproposaljob.MergeProposalUpdatedEmailJob"
       provides="lp.code.interfaces.branchmergeproposal.IMergeProposalUpdatedEmailJobSource">
     <allow interface="lp.code.interfaces.branchmergeproposal.IMergeProposalUpdatedEmailJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Branch Merge Proposal Subscribers -->
 
@@ -299,21 +299,21 @@
 
   <!-- hierarchy -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchmergeproposal.BranchMergeProposalGetter"
       provides="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalGetter">
     <allow interface="lp.code.interfaces.branchmergeproposal.IBranchMergeProposalGetter"/>
-  </securedutility>
+  </lp:securedutility>
   <class
       class="lp.code.model.seriessourcepackagebranch.SeriesSourcePackageBranch">
     <allow interface="lp.code.interfaces.seriessourcepackagebranch.ISeriesSourcePackageBranch"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
      class="lp.code.model.seriessourcepackagebranch.SeriesSourcePackageBranchSet"
      provides="lp.code.interfaces.seriessourcepackagebranch.IFindOfficialBranchLinks">
     <allow interface="lp.code.interfaces.seriessourcepackagebranch.IFindOfficialBranchLinks"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportResult -->
 
@@ -323,24 +323,24 @@
 
   <!-- CodeImportResultSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportresult.CodeImportResultSet"
       provides="lp.code.interfaces.codeimportresult.ICodeImportResultSet">
     <allow interface="lp.code.interfaces.codeimportresult.ICodeImportResultSet"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.branchlookup.BranchLookup">
     <allow interface="lp.code.interfaces.branchlookup.IBranchLookup"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchlookup.BranchLookup"
       provides="lp.code.interfaces.branchlookup.IBranchLookup">
     <allow interface="lp.code.interfaces.branchlookup.IBranchLookup"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       class="lp.code.model.branchlookup.LinkedBranchTraverser"
       provides="lp.code.interfaces.branchlookup.ILinkedBranchTraverser">
     <allow interface="lp.code.interfaces.branchlookup.ILinkedBranchTraverser"/>
-  </securedutility>
+  </lp:securedutility>
   <adapter factory="lp.code.model.branchlookup.ProductTraversable" />
   <adapter factory="lp.code.model.branchlookup.DistributionTraversable" />
   <adapter factory="lp.code.model.branchlookup.DistroSeriesTraversable" />
@@ -440,33 +440,33 @@
   <class class="lp.code.model.branch.BranchSet">
     <allow interface="lp.code.interfaces.branch.IBranchSet"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branch.BranchSet"
       provides="lp.code.interfaces.branch.IBranchSet">
     <allow interface="lp.code.interfaces.branch.IBranchSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- BranchListingQueryOptimiser -->
 
   <class class="lp.code.model.branchlistingqueryoptimiser.BranchListingQueryOptimiser">
     <allow interface="lp.code.interfaces.branch.IBranchListingQueryOptimiser"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchlistingqueryoptimiser.BranchListingQueryOptimiser"
       provides="lp.code.interfaces.branch.IBranchListingQueryOptimiser">
     <allow interface="lp.code.interfaces.branch.IBranchListingQueryOptimiser"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- BranchDelta -->
 
   <class class="lp.code.adapters.branch.BranchDelta">
     <allow interface="lp.code.interfaces.branch.IBranchDelta"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchcloud.BranchCloud"
       provides="lp.code.interfaces.branch.IBranchCloud">
     <allow interface="lp.code.interfaces.branch.IBranchCloud"/>
-  </securedutility>
+  </lp:securedutility>
 
   <subscriber
       for="lp.code.interfaces.branch.IBranch
@@ -494,11 +494,11 @@
     <allow interface="lp.code.interfaces.branchnamespace.IBranchNamespace"/>
     <allow interface="lp.code.interfaces.branchnamespace.IBranchNamespacePolicy"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchnamespace.BranchNamespaceSet"
       provides="lp.code.interfaces.branchnamespace.IBranchNamespaceSet">
     <allow interface="lp.code.interfaces.branchnamespace.IBranchNamespaceSet"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.branchtarget.PackageBranchTarget">
     <allow interface="lp.code.interfaces.branchtarget.IBranchTarget"/>
   </class>
@@ -539,11 +539,11 @@
   </class>
 
   <!-- Branch hosting -->
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.branchhosting.BranchHostingClient"
       provides="lp.code.interfaces.branchhosting.IBranchHostingClient">
     <allow interface="lp.code.interfaces.branchhosting.IBranchHostingClient" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeReviewComment -->
 
@@ -570,11 +570,11 @@
 
   <!-- CodeReviewInlineCommentSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codereviewinlinecomment.CodeReviewInlineCommentSet"
       provides="lp.code.interfaces.codereviewinlinecomment.ICodeReviewInlineCommentSet">
     <allow interface="lp.code.interfaces.codereviewinlinecomment.ICodeReviewInlineCommentSet"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.codereviewinlinecomment.CodeReviewInlineCommentSet">
     <allow interface="lp.code.interfaces.codereviewinlinecomment.ICodeReviewInlineCommentSet"/>
   </class>
@@ -604,31 +604,31 @@
     <allow interface="lp.code.interfaces.branchjob.IBranchModifiedMailJob"/>
     <allow interface="lp.code.interfaces.branchjob.IBranchJob"/>
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchjob.RevisionMailJob"
       provides="lp.code.interfaces.branchjob.IRevisionMailJobSource">
     <allow interface="lp.code.interfaces.branchjob.IRevisionMailJobSource"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.branchjob.RevisionsAddedJob"
       provides="lp.code.interfaces.branchjob.IRevisionsAddedJobSource">
     <allow interface="lp.code.interfaces.branchjob.IRevisionsAddedJobSource"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.branchjob.RosettaUploadJob"
       provides="lp.code.interfaces.branchjob.IRosettaUploadJobSource">
     <allow interface="lp.code.interfaces.branchjob.IRosettaUploadJobSource"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.branchjob.ReclaimBranchSpaceJob"
       provides="lp.code.interfaces.branchjob.IReclaimBranchSpaceJobSource">
     <allow interface="lp.code.interfaces.branchjob.IReclaimBranchSpaceJobSource"/>
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.branchjob.BranchModifiedMailJob"
       provides="lp.code.interfaces.branchjob.IBranchModifiedMailJobSource">
     <allow interface="lp.code.interfaces.branchjob.IBranchModifiedMailJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImport -->
 
@@ -687,11 +687,11 @@
 
   <!-- CodeImportSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimport.CodeImportSet"
       provides="lp.code.interfaces.codeimport.ICodeImportSet">
     <allow interface="lp.code.interfaces.codeimport.ICodeImportSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportJob -->
 
@@ -701,18 +701,18 @@
 
   <!-- CodeImportJobSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportjob.CodeImportJobSet"
       provides="lp.code.interfaces.codeimportjob.ICodeImportJobSet">
     <require
         permission="launchpad.View"
         interface="lp.code.interfaces.codeimportjob.ICodeImportJobSet"/>
     <allow interface="lp.code.interfaces.codeimportjob.ICodeImportJobSetPublic"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportJobWorkflow -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportjob.CodeImportJobWorkflow"
       provides="lp.code.interfaces.codeimportjob.ICodeImportJobWorkflow">
     <require
@@ -736,16 +736,16 @@
     <allow attributes="
                     startJob
                     reclaimJob"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportJobMacaroonIssuer -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportjob.CodeImportJobMacaroonIssuer"
       provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
       name="code-import-job">
     <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportEvent -->
 
@@ -755,11 +755,11 @@
 
   <!-- CodeImportEventSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.codeimportevent.CodeImportEventSet"
       provides="lp.code.interfaces.codeimportevent.ICodeImportEventSet">
     <allow interface="lp.code.interfaces.codeimportevent.ICodeImportEventSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CodeImportEventToken -->
 
@@ -788,27 +788,27 @@
     <allow interface="lp.code.interfaces.revision.IRevisionSet" />
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.revision.RevisionSet"
       provides="lp.code.interfaces.revision.IRevisionSet" >
     <allow interface="lp.code.interfaces.revision.IRevisionSet" />
-  </securedutility>
+  </lp:securedutility>
 
 
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchjob.BranchUpgradeJob"
       provides="lp.code.interfaces.branchjob.IBranchUpgradeJobSource">
     <allow interface="lp.code.interfaces.branchjob.IBranchUpgradeJobSource"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.branchjob.BranchUpgradeJob">
     <allow interface="lp.services.job.interfaces.job.IRunnableJob" />
   </class>
 
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.branchjob.BranchScanJob"
       provides="lp.code.interfaces.branchjob.IBranchScanJobSource">
     <allow interface="lp.code.interfaces.branchjob.IBranchScanJobSource"/>
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.branchjob.BranchScanJob">
     <allow interface="lp.services.job.interfaces.job.IRunnableJob" />
     <allow interface="lp.code.interfaces.branchjob.IBranchJob" />
@@ -867,20 +867,20 @@
   <class class="lp.code.model.gitrepository.GitRepositorySet">
     <allow interface="lp.code.interfaces.gitrepository.IGitRepositorySet" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitrepository.GitRepositorySet"
       provides="lp.code.interfaces.gitrepository.IGitRepositorySet">
     <allow interface="lp.code.interfaces.gitrepository.IGitRepositorySet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- GitRepositoryMacaroonIssuer -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitrepository.GitRepositoryMacaroonIssuer"
       provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
       name="git-repository">
     <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- GitRepositoryDelta -->
 
@@ -915,11 +915,11 @@
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitnamespace.GitNamespaceSet"
       provides="lp.code.interfaces.gitnamespace.IGitNamespaceSet">
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespaceSet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- GitRef -->
 
@@ -955,11 +955,11 @@
         permission="launchpad.Edit"
         interface="lp.code.interfaces.gitref.IGitRefEdit" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.gitref.GitRefRemote"
       provides="lp.code.interfaces.gitref.IGitRefRemoteSet">
     <allow interface="lp.code.interfaces.gitref.IGitRefRemoteSet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- RevisionStatusReport -->
 
@@ -981,19 +981,19 @@
   <class class="lp.code.model.revisionstatus.RevisionStatusReportSet">
     <allow interface="lp.code.interfaces.revisionstatus.IRevisionStatusReportSet" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.revisionstatus.RevisionStatusReportSet"
       provides="lp.code.interfaces.revisionstatus.IRevisionStatusReportSet">
      <allow interface="lp.code.interfaces.revisionstatus.IRevisionStatusReportSet" />
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.revisionstatus.RevisionStatusArtifactSet">
     <allow interface="lp.code.interfaces.revisionstatus.IRevisionStatusArtifactSet" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.revisionstatus.RevisionStatusArtifactSet"
       provides="lp.code.interfaces.revisionstatus.IRevisionStatusArtifactSet">
      <allow interface="lp.code.interfaces.revisionstatus.IRevisionStatusArtifactSet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Git repository access rules -->
 
@@ -1041,11 +1041,11 @@
         permission="launchpad.View"
         interface="lp.code.interfaces.gitactivity.IGitActivity" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitactivity.GitActivitySet"
       provides="lp.code.interfaces.gitactivity.IGitActivitySet">
     <allow interface="lp.code.interfaces.gitactivity.IGitActivitySet" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- GitCollection -->
 
@@ -1098,11 +1098,11 @@
       for="lp.registry.interfaces.personociproject.IPersonOCIProject"
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_person_oci_project"/>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitcollection.GenericGitCollection"
       provides="lp.code.interfaces.gitcollection.IAllGitRepositories">
     <allow interface="lp.code.interfaces.gitcollection.IAllGitRepositories"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Default Git repositories -->
 
@@ -1116,16 +1116,16 @@
   <class class="lp.code.model.gitlookup.GitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.gitlookup.GitLookup"
       provides="lp.code.interfaces.gitlookup.IGitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       class="lp.code.model.gitlookup.GitTraverser"
       provides="lp.code.interfaces.gitlookup.IGitTraverser">
     <allow interface="lp.code.interfaces.gitlookup.IGitTraverser" />
-  </securedutility>
+  </lp:securedutility>
   <adapter factory="lp.code.model.gitlookup.PersonGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.ProjectGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionGitTraversable" />
@@ -1133,31 +1133,31 @@
   <adapter factory="lp.code.model.gitlookup.DistributionOCIProjectGitTraversable" />
 
   <!-- Git hosting -->
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.githosting.GitHostingClient"
       provides="lp.code.interfaces.githosting.IGitHostingClient">
     <allow interface="lp.code.interfaces.githosting.IGitHostingClient" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Git-related jobs -->
   <class class="lp.code.model.gitjob.GitJob">
     <allow interface="lp.code.interfaces.gitjob.IGitJob" />
   </class>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.gitjob.GitRefScanJob"
       provides="lp.code.interfaces.gitjob.IGitRefScanJobSource">
     <allow interface="lp.code.interfaces.gitjob.IGitRefScanJobSource" />
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.gitjob.ReclaimGitRepositorySpaceJob"
       provides="lp.code.interfaces.gitjob.IReclaimGitRepositorySpaceJobSource">
     <allow interface="lp.code.interfaces.gitjob.IReclaimGitRepositorySpaceJobSource" />
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       component="lp.code.model.gitjob.GitRepositoryModifiedMailJob"
       provides="lp.code.interfaces.gitjob.IGitRepositoryModifiedMailJobSource">
     <allow interface="lp.code.interfaces.gitjob.IGitRepositoryModifiedMailJobSource" />
-  </securedutility>
+  </lp:securedutility>
   <class class="lp.code.model.gitjob.GitRefScanJob">
     <allow interface="lp.code.interfaces.gitjob.IGitJob" />
     <allow interface="lp.code.interfaces.gitjob.IGitRefScanJob" />
@@ -1189,12 +1189,12 @@
 
   <!-- SourcePackageRecipe -->
 
-  <securedutility
+  <lp:securedutility
      component="lp.code.model.sourcepackagerecipe.SourcePackageRecipe"
      provides="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipeSource">
     <allow interface="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipeSource"/>
 
-  </securedutility>
+  </lp:securedutility>
 
   <class
      class="lp.code.model.sourcepackagerecipebuild.SourcePackageRecipeBuild">
@@ -1209,18 +1209,18 @@
         interface="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuildAdmin"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
      component="lp.code.model.sourcepackagerecipebuild.SourcePackageRecipeBuild"
      provides="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuildSource">
     <allow interface="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuildSource"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
      component="lp.code.model.sourcepackagerecipebuild.SourcePackageRecipeBuild"
      provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
      name="RECIPEBRANCHBUILD">
     <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"/>
-  </securedutility>
+  </lp:securedutility>
 
   <adapter factory="lp.code.model.recipebuilder.RecipeBuildBehaviour"
            permission="zope.Public" />
@@ -1235,11 +1235,11 @@
     component="lp.code.model.sourcepackagerecipedata.SourcePackageRecipeData"
     provides="lp.code.interfaces.sourcepackagerecipe.IRecipeBranchSource">
   </utility>
-  <securedutility
+  <lp:securedutility
       component="lp.code.model.sourcepackagerecipedata.SourcePackageRecipeData"
       provides="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipeDataSource">
     <allow interface="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipeDataSource"/>
-  </securedutility>
+  </lp:securedutility>
   <!-- SourcePackageRecipe -->
   <class
      class="lp.code.model.sourcepackagerecipe.SourcePackageRecipe">
@@ -1299,25 +1299,25 @@
   </class>
 
   <!-- CIBuildSet -->
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.cibuild.CIBuildSet"
       provides="lp.code.interfaces.cibuild.ICIBuildSet">
     <allow interface="lp.code.interfaces.cibuild.ICIBuildSet" />
-  </securedutility>
-  <securedutility
+  </lp:securedutility>
+  <lp:securedutility
       class="lp.code.model.cibuild.CIBuildSet"
       provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
       name="CIBUILD">
     <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CIBuildMacaroonIssuer -->
-  <securedutility
+  <lp:securedutility
       class="lp.code.model.cibuild.CIBuildMacaroonIssuer"
       provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
       name="ci-build">
     <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic" />
-  </securedutility>
+  </lp:securedutility>
 
   <!-- CIBuildBehaviour -->
   <adapter

@@ -2,40 +2,42 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-  <securedutility
+  <lp:securedutility
       name="CountryName"
       component="lp.services.worlddata.vocabularies.CountryNameVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.services.worlddata.vocabularies.CountryNameVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="Language"
     component="lp.services.worlddata.vocabularies.LanguageVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.services.worlddata.vocabularies.LanguageVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
 
-  <securedutility
+  <lp:securedutility
     name="TimezoneName"
     component="lp.services.worlddata.vocabularies.TimezoneNameVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
 </configure>

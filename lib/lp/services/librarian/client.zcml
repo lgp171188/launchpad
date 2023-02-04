@@ -2,22 +2,24 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
     <class class=".client._File">
         <allow attributes="read close" />
     </class>
 
-    <securedutility
+    <lp:securedutility
         class=".client.LibrarianClient"
         provides=".interfaces.client.ILibrarianClient">
         <allow interface=".interfaces.client.ILibrarianClient" />
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         class=".client.RestrictedLibrarianClient"
         provides=".interfaces.client.IRestrictedLibrarianClient">
         <allow interface=".interfaces.client.IRestrictedLibrarianClient" />
-    </securedutility>
+    </lp:securedutility>
 </configure>
 

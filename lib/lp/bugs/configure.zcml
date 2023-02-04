@@ -35,12 +35,12 @@
         <allow
             interface="lp.bugs.interfaces.bugactivity.IBugActivity"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.bugs.model.bugactivity.BugActivitySet"
         provides="lp.bugs.interfaces.bugactivity.IBugActivitySet">
         <allow
             interface="lp.bugs.interfaces.bugactivity.IBugActivitySet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Macros -->
 
@@ -115,12 +115,12 @@
     <subscriber
         for="lp.bugs.interfaces.bug.IBug                 lazr.lifecycle.interfaces.IObjectModifiedEvent"
         handler="lp.bugs.subscribers.bug.notify_bug_modified"/>
-    <securedutility
+    <lp:securedutility
         class="lp.systemhomes.MaloneApplication"
         provides="lp.bugs.interfaces.malone.IMaloneApplication">
         <allow
             interface="lp.bugs.interfaces.malone.IMaloneApplication"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- pages for the malone application -->
 
@@ -324,12 +324,12 @@
             <allow
                 interface="lp.bugs.interfaces.bugtask.IBugTaskSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             provides="lp.bugs.interfaces.bugtask.IBugTaskSet"
             class="lp.bugs.model.bugtask.BugTaskSet">
             <allow
                 interface="lp.bugs.interfaces.bugtask.IBugTaskSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- BugTaskDelta -->
 
@@ -356,12 +356,12 @@
         <allow
             interface="lp.bugs.interfaces.bugattachment.IBugAttachmentSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.bugs.model.bugattachment.BugAttachmentSet"
         provides="lp.bugs.interfaces.bugattachment.IBugAttachmentSet">
         <allow
             interface="lp.bugs.interfaces.bugattachment.IBugAttachmentSet"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- BugTracker -->
 
@@ -438,13 +438,13 @@
                 interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"
                 attributes="__len__"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.bugtracker.BugTrackerSet"
             provides="lp.bugs.interfaces.bugtracker.IBugTrackerSet">
             <allow
                 interface="lp.bugs.interfaces.bugtracker.IBugTrackerSet"
                 attributes="__len__"/>
-        </securedutility>
+        </lp:securedutility>
         <adapter
             provides="lp.services.webapp.interfaces.IBreadcrumb"
             for="lp.bugs.interfaces.bugtracker.IBugTrackerSet"
@@ -469,12 +469,12 @@
             <allow
                 interface="lp.bugs.interfaces.bugtracker.IBugTrackerAliasSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.bugtracker.BugTrackerAliasSet"
             provides="lp.bugs.interfaces.bugtracker.IBugTrackerAliasSet">
             <allow
                 interface="lp.bugs.interfaces.bugtracker.IBugTrackerAliasSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!--BugTrackerComponent -->
 
@@ -554,12 +554,12 @@
         <allow
             interface="lp.bugs.interfaces.bugbranch.IBugBranchSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.bugs.model.bugbranch.BugBranchSet"
         provides="lp.bugs.interfaces.bugbranch.IBugBranchSet">
         <allow
             interface="lp.bugs.interfaces.bugbranch.IBugBranchSet"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- CVE -->
 
@@ -590,12 +590,12 @@
             <allow
                 interface="lp.bugs.interfaces.cve.ICveSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.cve.CveSet"
             provides="lp.bugs.interfaces.cve.ICveSet">
             <allow
                 interface="lp.bugs.interfaces.cve.ICveSet"/>
-        </securedutility>
+        </lp:securedutility>
 
     <!-- Vulnerability -->
     <class class="lp.bugs.model.vulnerability.Vulnerability">
@@ -627,11 +627,11 @@
     <class class="lp.bugs.model.vulnerability.VulnerabilitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
     </class>
-    <securedutility
+    <lp:securedutility
       class="lp.bugs.model.vulnerability.VulnerabilitySet"
       provides="lp.bugs.interfaces.vulnerability.IVulnerabilitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilitySet" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- VulnerabilityActivity -->
     <class class="lp.bugs.model.vulnerability.VulnerabilityActivity">
@@ -642,11 +642,11 @@
     <class class="lp.bugs.model.vulnerability.VulnerabilityActivitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
     </class>
-    <securedutility
+    <lp:securedutility
       class="lp.bugs.model.vulnerability.VulnerabilityActivitySet"
       provides="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet">
       <allow interface="lp.bugs.interfaces.vulnerability.IVulnerabilityActivitySet" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- BugSubscription -->
 
@@ -813,12 +813,12 @@
             <allow
                 interface="lp.bugs.interfaces.bug.IBugSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.bug.BugSet"
             provides="lp.bugs.interfaces.bug.IBugSet">
             <allow
                 interface="lp.bugs.interfaces.bug.IBugSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- BugDelta -->
 
@@ -848,12 +848,12 @@
         <allow
             interface="lp.bugs.interfaces.bugmessage.IBugMessageSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.bugs.model.bugmessage.BugMessageSet"
         provides="lp.bugs.interfaces.bugmessage.IBugMessageSet">
         <allow
             interface="lp.bugs.interfaces.bugmessage.IBugMessageSet"/>
-    </securedutility>
+    </lp:securedutility>
         <class
             class="lp.bugs.model.bugnomination.BugNomination">
             <require
@@ -884,12 +884,12 @@
                 attributes="
                     destroySelf"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.bugnomination.BugNominationSet"
             provides="lp.bugs.interfaces.bugnomination.IBugNominationSet">
             <allow
                 interface="lp.bugs.interfaces.bugnomination.IBugNominationSet"/>
-        </securedutility>
+        </lp:securedutility>
     <subscriber
         for="lp.bugs.interfaces.bug.IBug                            zope.lifecycleevent.interfaces.IObjectCreatedEvent"
         handler="lp.bugs.subscribers.bugactivity.record_bug_added"/>
@@ -982,12 +982,12 @@
             <allow
                 interface="lp.bugs.interfaces.bugwatch.IBugWatchSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.bugs.model.bugwatch.BugWatchSet"
             provides="lp.bugs.interfaces.bugwatch.IBugWatchSet">
             <allow
                 interface="lp.bugs.interfaces.bugwatch.IBugWatchSet"/>
-        </securedutility>
+        </lp:securedutility>
 
         <!-- BugWatchActivity -->
         <class
@@ -1041,24 +1041,24 @@
         <allow
             attributes="subscription_filters addFilter"/>
     </class>
-    <securedutility
+    <lp:securedutility
         provides="lp.bugs.interfaces.bugnotification.IBugNotificationSet"
         class="lp.bugs.model.bugnotification.BugNotificationSet">
         <allow
             interface="lp.bugs.interfaces.bugnotification.IBugNotificationSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ProcessApportBlobJobs -->
     <class class="lp.bugs.model.apportjob.ProcessApportBlobJob">
         <allow interface="lp.bugs.interfaces.apportjob.IApportJob" />
         <allow interface="lp.bugs.interfaces.apportjob.IProcessApportBlobJob"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.bugs.model.apportjob.ProcessApportBlobJob"
         provides="lp.bugs.interfaces.apportjob.IProcessApportBlobJobSource">
         <allow
             interface="lp.bugs.interfaces.apportjob.IProcessApportBlobJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- FileBugData -->
     <class class="lp.bugs.model.bug.FileBugData">
@@ -1106,11 +1106,11 @@
   <webservice:register module="lp.bugs.errors" />
   <webservice:register module="lp.bugs.interfaces.webservice" />
 
-  <securedutility
+  <lp:securedutility
     name="UsesBugsDistribution"
     component="lp.bugs.vocabularies.UsesBugsDistributionVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 </configure>

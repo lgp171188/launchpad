@@ -25,12 +25,12 @@
     </class>
 
     <!-- ProcessorSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.buildmaster.model.processor.ProcessorSet"
         provides="lp.buildmaster.interfaces.processor.IProcessorSet">
         <allow
             interface="lp.buildmaster.interfaces.processor.IProcessorSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Builder -->
     <class
@@ -49,7 +49,7 @@
 
 
     <!-- BuilderSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.buildmaster.model.builder.BuilderSet"
         provides="lp.buildmaster.interfaces.builder.IBuilderSet">
         <allow
@@ -57,7 +57,7 @@
         <require
             permission="launchpad.Admin"
             interface="lp.buildmaster.interfaces.builder.IBuilderSetAdmin"/>
-    </securedutility>
+    </lp:securedutility>
     <adapter
         provides="lp.services.webapp.interfaces.IBreadcrumb"
         for="lp.buildmaster.interfaces.builder.IBuilder"
@@ -76,19 +76,19 @@
         <allow
             interface="lp.buildmaster.interfaces.buildfarmjob.IBuildFarmJobDB" />
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.buildmaster.model.buildfarmjob.BuildFarmJob"
         provides="lp.buildmaster.interfaces.buildfarmjob.IBuildFarmJobSource">
 
         <allow
             interface="lp.buildmaster.interfaces.buildfarmjob.IBuildFarmJobSource" />
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.buildmaster.model.buildfarmjob.BuildFarmJobSet"
         provides="lp.buildmaster.interfaces.buildfarmjob.IBuildFarmJobSet">
         <allow
             interface="lp.buildmaster.interfaces.buildfarmjob.IBuildFarmJobSet" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- BuildQueue -->
     <class
@@ -106,12 +106,12 @@
 
 
     <!-- BuildQueueSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.buildmaster.model.buildqueue.BuildQueueSet"
         provides="lp.buildmaster.interfaces.buildqueue.IBuildQueueSet">
         <allow
             interface="lp.buildmaster.interfaces.buildqueue.IBuildQueueSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <webservice:register module="lp.buildmaster.interfaces.webservice" />
 

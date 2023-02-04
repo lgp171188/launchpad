@@ -37,11 +37,11 @@
         handler="lp.charms.model.charmrecipe.charm_recipe_modified" />
 
     <!-- CharmRecipeSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.charms.model.charmrecipe.CharmRecipeSet"
         provides="lp.charms.interfaces.charmrecipe.ICharmRecipeSet">
         <allow interface="lp.charms.interfaces.charmrecipe.ICharmRecipeSet" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- CharmRecipeBuildRequest -->
     <class class="lp.charms.model.charmrecipe.CharmRecipeBuildRequest">
@@ -51,12 +51,12 @@
     </class>
 
     <!-- CharmhubSecretsEncryptedContainer -->
-    <securedutility
+    <lp:securedutility
         class="lp.charms.model.charmrecipe.CharmhubSecretsEncryptedContainer"
         provides="lp.services.crypto.interfaces.IEncryptedContainer"
         name="charmhub-secrets">
         <allow interface="lp.services.crypto.interfaces.IEncryptedContainer" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- CharmRecipeBuild -->
     <class class="lp.charms.model.charmrecipebuild.CharmRecipeBuild">
@@ -80,17 +80,17 @@
         handler="lp.charms.subscribers.charmrecipebuild.charm_recipe_build_modified" />
 
     <!-- CharmRecipeBuildSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.charms.model.charmrecipebuild.CharmRecipeBuildSet"
         provides="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuildSet">
         <allow interface="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuildSet" />
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.charms.model.charmrecipebuild.CharmRecipeBuildSet"
         provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
         name="CHARMRECIPEBUILD">
         <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- CharmFile -->
     <class class="lp.charms.model.charmrecipebuild.CharmFile">
@@ -114,7 +114,7 @@
             interface="lp.charms.interfaces.charmbase.ICharmBaseEdit"
             set_schema="lp.charms.interfaces.charmbase.ICharmBaseEditableAttributes" />
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.charms.model.charmbase.CharmBaseSet"
         provides="lp.charms.interfaces.charmbase.ICharmBaseSet">
         <allow
@@ -122,24 +122,24 @@
         <require
             permission="launchpad.Edit"
             interface="lp.charms.interfaces.charmbase.ICharmBaseSetEdit" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Charmhub interaction -->
-    <securedutility
+    <lp:securedutility
         class="lp.charms.model.charmhubclient.CharmhubClient"
         provides="lp.charms.interfaces.charmhubclient.ICharmhubClient">
         <allow interface="lp.charms.interfaces.charmhubclient.ICharmhubClient" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Charm-related jobs -->
     <class class="lp.charms.model.charmrecipejob.CharmRecipeJob">
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeJob" />
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.charms.model.charmrecipejob.CharmRecipeRequestBuildsJob"
         provides="lp.charms.interfaces.charmrecipejob.ICharmRecipeRequestBuildsJobSource">
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeRequestBuildsJobSource" />
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.charms.model.charmrecipejob.CharmRecipeRequestBuildsJob">
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeJob" />
         <allow interface="lp.charms.interfaces.charmrecipejob.ICharmRecipeRequestBuildsJob" />
@@ -147,11 +147,11 @@
     <class class="lp.charms.model.charmrecipebuildjob.CharmRecipeBuildJob">
         <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmRecipeBuildJob" />
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.charms.model.charmrecipebuildjob.CharmhubUploadJob"
         provides="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJobSource">
         <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJobSource" />
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.charms.model.charmrecipebuildjob.CharmhubUploadJob">
         <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmRecipeBuildJob" />
         <allow interface="lp.charms.interfaces.charmrecipebuildjob.ICharmhubUploadJob" />

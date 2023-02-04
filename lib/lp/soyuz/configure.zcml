@@ -19,12 +19,12 @@
 
     <!-- PackageCloner -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.packagecloner.PackageCloner"
         provides="lp.soyuz.interfaces.packagecloner.IPackageCloner">
         <allow
             interface="lp.soyuz.interfaces.packagecloner.IPackageCloner"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- BinaryPackagePublishingHistory -->
 
@@ -77,12 +77,12 @@
         <allow
             interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReference"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.binarysourcereference.BinarySourceReferenceSet"
         provides="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet">
         <allow
             interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- SourcePackagePublishingHistory -->
 
@@ -108,12 +108,12 @@
             <allow
                 interface="lp.soyuz.interfaces.publishing.IPublishingSet"/>
         </class>
-        <securedutility
+        <lp:securedutility
             class="lp.soyuz.model.publishing.PublishingSet"
             provides="lp.soyuz.interfaces.publishing.IPublishingSet">
             <allow
                 interface="lp.soyuz.interfaces.publishing.IPublishingSet"/>
-        </securedutility>
+        </lp:securedutility>
     <class
         class="lp.soyuz.model.queue.PackageUploadQueue">
         <implements
@@ -223,12 +223,12 @@
 
     <!-- PackageUploadSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.queue.PackageUploadSet"
         provides="lp.soyuz.interfaces.queue.IPackageUploadSet">
         <allow
             interface="lp.soyuz.interfaces.queue.IPackageUploadSet"/>
-    </securedutility>
+    </lp:securedutility>
 
         <!-- BinaryPackagename -->
 
@@ -240,12 +240,12 @@
 
         <!-- BinaryPackageNameSet -->
 
-        <securedutility
+        <lp:securedutility
             class="lp.soyuz.model.binarypackagename.BinaryPackageNameSet"
             provides="lp.soyuz.interfaces.binarypackagename.IBinaryPackageNameSet">
             <allow
                 interface="lp.soyuz.interfaces.binarypackagename.IBinaryPackageNameSet"/>
-        </securedutility>
+        </lp:securedutility>
         <class
             class="lp.soyuz.model.binarypackagename.BinaryPackageNameSet">
             <allow
@@ -279,13 +279,13 @@
             interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"
             attributes="__len__"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.packagediff.PackageDiffSet"
         provides="lp.soyuz.interfaces.packagediff.IPackageDiffSet">
         <allow
             interface="lp.soyuz.interfaces.packagediff.IPackageDiffSet"
             attributes="__len__"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ArchiveAuthToken -->
 
@@ -302,12 +302,12 @@
 
     <!-- ArchiveAuthTokenSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.archiveauthtoken.ArchiveAuthTokenSet"
         provides="lp.soyuz.interfaces.archiveauthtoken.IArchiveAuthTokenSet">
         <allow
             interface="lp.soyuz.interfaces.archiveauthtoken.IArchiveAuthTokenSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- DistributionSourcePackageCache -->
     <class
@@ -404,12 +404,12 @@
         <allow
             interface="lp.soyuz.interfaces.archive.IArchiveSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.archive.ArchiveSet"
         provides="lp.soyuz.interfaces.archive.IArchiveSet">
         <allow
             interface="lp.soyuz.interfaces.archive.IArchiveSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ArchiveFile -->
 
@@ -422,42 +422,42 @@
     <class class="lp.soyuz.model.archivefile.ArchiveFileSet">
         <allow interface="lp.soyuz.interfaces.archivefile.IArchiveFileSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.archivefile.ArchiveFileSet"
         provides="lp.soyuz.interfaces.archivefile.IArchiveFileSet">
         <allow interface="lp.soyuz.interfaces.archivefile.IArchiveFileSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ArchiveJob -->
 
     <class class="lp.soyuz.model.archivejob.ArchiveJob">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.soyuz.model.archivejob.ArchiveJob"
         provides="lp.soyuz.interfaces.archivejob.IArchiveJobSource">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.soyuz.model.archivejob.PackageUploadNotificationJob">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
         <allow interface="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJob"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.soyuz.model.archivejob.PackageUploadNotificationJob"
         provides="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJobSource">
         <allow interface="lp.soyuz.interfaces.archivejob.IPackageUploadNotificationJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.soyuz.model.archivejob.CIBuildUploadJob">
         <allow interface="lp.soyuz.interfaces.archivejob.IArchiveJob"/>
         <allow interface="lp.soyuz.interfaces.archivejob.ICIBuildUploadJob"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.soyuz.model.archivejob.CIBuildUploadJob"
         provides="lp.soyuz.interfaces.archivejob.ICIBuildUploadJobSource">
         <allow interface="lp.soyuz.interfaces.archivejob.ICIBuildUploadJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ArchivePermission -->
 
@@ -474,12 +474,12 @@
         <implements
             interface="lp.soyuz.interfaces.archivepermission.IArchivePermissionSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.archivepermission.ArchivePermissionSet"
         provides="lp.soyuz.interfaces.archivepermission.IArchivePermissionSet">
         <allow
             interface="lp.soyuz.interfaces.archivepermission.IArchivePermissionSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- BinaryPackageBuild -->
 
@@ -507,27 +507,27 @@
 
     <!-- BinaryPackageBuildSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.binarypackagebuild.BinaryPackageBuildSet"
         provides="lp.soyuz.interfaces.binarypackagebuild.IBinaryPackageBuildSet">
         <allow
             interface="lp.soyuz.interfaces.binarypackagebuild.IBinaryPackageBuildSet"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.soyuz.model.binarypackagebuild.BinaryPackageBuildSet"
         provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
         name="PACKAGEBUILD">
         <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- BinaryPackageBuildMacaroonIssuer -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.binarypackagebuild.BinaryPackageBuildMacaroonIssuer"
         provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
         name="binary-package-build">
         <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- DistroArchSeriesBinaryPackage -->
 
@@ -557,7 +557,7 @@
 
     <!-- ArchiveSubscriberSet -->
 
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.archivesubscriber.ArchiveSubscriberSet"
         provides="lp.soyuz.interfaces.archivesubscriber.IArchiveSubscriberSet">
         <allow
@@ -565,7 +565,7 @@
         <require
             permission="launchpad.Admin"
             interface="lp.soyuz.interfaces.archivesubscriber.IArchiveSubscriberSetAdmin"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PersonalArchiveSubscription -->
 
@@ -663,12 +663,12 @@
             permission="launchpad.Edit"
             interface="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterEdit" />
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.distroarchseriesfilter.DistroArchSeriesFilterSet"
         provides="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterSet">
         <allow
             interface="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterSet" />
-    </securedutility>
+    </lp:securedutility>
     <subscriber
         for="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilter
              lazr.lifecycle.interfaces.IObjectModifiedEvent"
@@ -697,12 +697,12 @@
         <allow
             interface="lp.soyuz.interfaces.component.IComponentSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.component.ComponentSet"
         provides="lp.soyuz.interfaces.component.IComponentSet">
         <allow
             interface="lp.soyuz.interfaces.component.IComponentSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- Section -->
 
@@ -727,12 +727,12 @@
         <allow
             interface="lp.soyuz.interfaces.section.ISectionSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.section.SectionSet"
         provides="lp.soyuz.interfaces.section.ISectionSet">
         <allow
             interface="lp.soyuz.interfaces.section.ISectionSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- SourcePackageFormatSelection -->
 
@@ -749,12 +749,12 @@
         <allow
             interface="lp.soyuz.interfaces.sourcepackageformat.ISourcePackageFormatSelectionSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.sourcepackageformat.SourcePackageFormatSelectionSet"
         provides="lp.soyuz.interfaces.sourcepackageformat.ISourcePackageFormatSelectionSet">
         <allow
             interface="lp.soyuz.interfaces.sourcepackageformat.ISourcePackageFormatSelectionSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- SourcePackageReleaseFile -->
 
@@ -799,14 +799,14 @@
         <implements
             interface="lp.soyuz.interfaces.packageset.IPackagesetSet"/>
     </class>
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.packageset.PackagesetSet"
         provides="lp.soyuz.interfaces.packageset.IPackagesetSet">
         <allow interface=".interfaces.packageset.IPackagesetSet" />
         <require
             permission="launchpad.Edit"
             interface=".interfaces.packageset.IPackagesetSetEdit" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PackagesetGroup -->
     <class
@@ -850,13 +850,13 @@
         <allow interface="lp.services.webapp.vocabulary.ICountableIterator" />
     </class>
 
-    <securedutility
+    <lp:securedutility
       name="BinaryAndSourcePackageName"
       component="lp.soyuz.model.binaryandsourcepackagename.BinaryAndSourcePackageNameVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory"
       >
       <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-    </securedutility>
+    </lp:securedutility>
 
     <class class="lp.soyuz.model.binaryandsourcepackagename.BinaryAndSourcePackageNameVocabulary">
       <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
@@ -868,38 +868,38 @@
     </class>
 
     <!-- InitializeDistroSeriesJobSource -->
-    <securedutility
+    <lp:securedutility
       component="lp.soyuz.model.initializedistroseriesjob.InitializeDistroSeriesJob"
       provides="lp.soyuz.interfaces.distributionjob.IInitializeDistroSeriesJobSource">
         <allow interface="lp.soyuz.interfaces.distributionjob.IInitializeDistroSeriesJobSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.soyuz.model.initializedistroseriesjob.InitializeDistroSeriesJob">
         <allow interface="lp.soyuz.interfaces.distributionjob.IInitializeDistroSeriesJob" />
         <allow interface="lp.soyuz.interfaces.distributionjob.IDistributionJob" />
     </class>
 
     <!-- DistroSeriesDifferenceJobSource -->
-    <securedutility
+    <lp:securedutility
       component="lp.soyuz.model.distroseriesdifferencejob.DistroSeriesDifferenceJob"
       provides="lp.soyuz.interfaces.distributionjob.IDistroSeriesDifferenceJobSource">
         <allow interface="lp.soyuz.interfaces.distributionjob.IDistroSeriesDifferenceJobSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.soyuz.model.distroseriesdifferencejob.DistroSeriesDifferenceJob">
         <allow interface="lp.soyuz.interfaces.distributionjob.IDistroSeriesDifferenceJob" />
         <allow interface="lp.soyuz.interfaces.distributionjob.IDistributionJob" />
     </class>
 
     <!-- PackageCopyJobSource -->
-    <securedutility
+    <lp:securedutility
         component=".model.packagecopyjob.PackageCopyJob"
         provides=".interfaces.packagecopyjob.IPackageCopyJobSource">
       <allow interface=".interfaces.packagecopyjob.IPackageCopyJobSource"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         component=".model.packagecopyjob.PlainPackageCopyJob"
         provides=".interfaces.packagecopyjob.IPlainPackageCopyJobSource">
       <allow interface=".interfaces.packagecopyjob.IPlainPackageCopyJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PackageCopyJob -->
     <class class=".model.packagecopyjob.PackageCopyJob">
@@ -933,11 +933,11 @@
       factory="lp.soyuz.adapters.copypolicy.get_icopypolicy_for_packagecopypolicy"/>
 
     <!-- PackageCopyRequestSet -->
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.packagecopyrequest.PackageCopyRequestSet"
         provides="lp.soyuz.interfaces.packagecopyrequest.IPackageCopyRequestSet">
         <allow interface="lp.soyuz.interfaces.packagecopyrequest.IPackageCopyRequestSet" />
-    </securedutility>
+    </lp:securedutility>
 
 
     <!-- PackageCopyRequest -->
@@ -982,11 +982,11 @@
     </class>
 
     <!-- ProcessAcceptedBugsJobSource -->
-    <securedutility
+    <lp:securedutility
 	component=".model.processacceptedbugsjob.ProcessAcceptedBugsJob"
 	provides=".interfaces.processacceptedbugsjob.IProcessAcceptedBugsJobSource">
       <allow interface=".interfaces.processacceptedbugsjob.IProcessAcceptedBugsJobSource" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- ProcessAcceptedBugsJob -->
     <class class=".model.processacceptedbugsjob.ProcessAcceptedBugsJob">
@@ -994,11 +994,11 @@
     </class>
 
     <!-- PackageDiffJobSource -->
-    <securedutility
+    <lp:securedutility
       component=".model.packagediffjob.PackageDiffJob"
       provides=".interfaces.packagediffjob.IPackageDiffJobSource">
       <allow interface=".interfaces.packagediffjob.IPackageDiffJobSource" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PackageDiffJob -->
     <class class=".model.packagediffjob.PackageDiffJob">
@@ -1006,11 +1006,11 @@
     </class>
 
     <!-- PackageTranslationsUploadJobSource -->
-    <securedutility
+    <lp:securedutility
       component=".model.packagetranslationsuploadjob.PackageTranslationsUploadJob"
       provides=".interfaces.packagetranslationsuploadjob.IPackageTranslationsUploadJobSource">
       <allow interface=".interfaces.packagetranslationsuploadjob.IPackageTranslationsUploadJobSource" />
-    </securedutility>
+    </lp:securedutility>
 
     <!-- PackageTranslationsUploadJob -->
     <class class=".model.packagetranslationsuploadjob.PackageTranslationsUploadJob">
@@ -1042,11 +1042,11 @@
         handler=".model.livefs.livefs_modified"/>
 
     <!-- LiveFSSet -->
-    <securedutility
+    <lp:securedutility
         class=".model.livefs.LiveFSSet"
         provides=".interfaces.livefs.ILiveFSSet">
         <allow interface=".interfaces.livefs.ILiveFSSet"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- LiveFSBuild -->
     <class class=".model.livefsbuild.LiveFSBuild">
@@ -1070,25 +1070,25 @@
         handler="lp.soyuz.subscribers.livefsbuild.livefs_build_status_changed" />
 
     <!-- LiveFSBuildSet -->
-    <securedutility
+    <lp:securedutility
         class=".model.livefsbuild.LiveFSBuildSet"
         provides=".interfaces.livefsbuild.ILiveFSBuildSet">
         <allow interface=".interfaces.livefsbuild.ILiveFSBuildSet"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class=".model.livefsbuild.LiveFSBuildSet"
         provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
         name="LIVEFSBUILD">
         <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- LiveFSBuildMacaroonIssuer -->
-    <securedutility
+    <lp:securedutility
         class="lp.soyuz.model.livefsbuild.LiveFSBuildMacaroonIssuer"
         provides="lp.services.macaroons.interfaces.IMacaroonIssuer"
         name="livefs-build">
         <allow interface="lp.services.macaroons.interfaces.IMacaroonIssuerPublic"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- LiveFSBuildBehaviour -->
     <adapter
