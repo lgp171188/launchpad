@@ -19,16 +19,16 @@
       for="zope.publisher.interfaces.IEndRequestEvent"
       handler="lp.services.features.webapp.end_request"/>
 
-  <securedutility
+  <lp:securedutility
       class="lp.services.features.model.FeatureRules"
       provides="lp.services.features.interfaces.IFeatureRules">
     <allow interface="lp.services.features.interfaces.IFeatureRules"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
       class="lp.services.features.xmlrpc.FeatureFlagApplication"
       provides="lp.services.features.xmlrpc.IFeatureFlagApplication">
     <allow interface="lp.services.features.xmlrpc.IFeatureFlagApplication"/>
-  </securedutility>
+  </lp:securedutility>
 
 </configure>

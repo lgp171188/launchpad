@@ -75,11 +75,11 @@
       class="lp.blueprints.model.sprint.SprintSet">
     <allow interface="lp.blueprints.interfaces.sprint.ISprintSet"/>
   </class>
-  <securedutility
+  <lp:securedutility
       class="lp.blueprints.model.sprint.SprintSet"
       provides="lp.blueprints.interfaces.sprint.ISprintSet">
     <allow interface="lp.blueprints.interfaces.sprint.ISprintSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- SprintSpecification -->
 
@@ -100,11 +100,11 @@
 
   <!-- SpecificationWorkItemSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.blueprints.model.specificationworkitem.SpecificationWorkItemSet"
       provides="lp.blueprints.interfaces.specificationworkitem.ISpecificationWorkItemSet">
     <allow interface="lp.blueprints.interfaces.specificationworkitem.ISpecificationWorkItemSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- SpecificationDependency -->
 
@@ -161,11 +161,11 @@
 
   <!-- SpecificationBranchSet -->
 
-  <securedutility
+  <lp:securedutility
       class="lp.blueprints.model.specificationbranch.SpecificationBranchSet"
       provides="lp.blueprints.interfaces.specificationbranch.ISpecificationBranchSet">
     <allow interface="lp.blueprints.interfaces.specificationbranch.ISpecificationBranchSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- Specification -->
 
@@ -231,11 +231,11 @@
     <allow interface="lp.blueprints.interfaces.specification.ISpecificationSet"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.blueprints.model.specification.SpecificationSet"
       provides="lp.blueprints.interfaces.specification.ISpecificationSet">
     <allow interface="lp.blueprints.interfaces.specification.ISpecificationSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <!-- SpecificationDelta -->
 
@@ -255,11 +255,11 @@
     <allow interface="lp.blueprints.interfaces.specificationmessage.ISpecificationMessageSet"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.blueprints.model.specificationmessage.SpecificationMessageSet"
       provides="lp.blueprints.interfaces.specificationmessage.ISpecificationMessageSet">
     <allow interface="lp.blueprints.interfaces.specificationmessage.ISpecificationMessageSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <webservice:register module="lp.blueprints.interfaces.webservice" />
 

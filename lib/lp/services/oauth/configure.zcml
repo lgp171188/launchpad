@@ -19,12 +19,12 @@
       <allow interface="lp.services.oauth.interfaces.IOAuthConsumerSet"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.services.oauth.model.OAuthConsumerSet"
       provides="lp.services.oauth.interfaces.IOAuthConsumerSet">
       <allow
           interface="lp.services.oauth.interfaces.IOAuthConsumerSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.services.oauth.model.OAuthRequestToken">
       <allow interface="lp.services.oauth.interfaces.IOAuthRequestToken"/>
@@ -33,12 +33,12 @@
           set_schema="lp.services.oauth.interfaces.IOAuthRequestToken"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
       class="lp.services.oauth.model.OAuthRequestTokenSet"
       provides="lp.services.oauth.interfaces.IOAuthRequestTokenSet">
       <allow
           interface="lp.services.oauth.interfaces.IOAuthRequestTokenSet"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class="lp.services.oauth.model.OAuthAccessToken">
       <allow interface="lp.services.oauth.interfaces.IOAuthAccessToken"/>

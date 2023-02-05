@@ -1,5 +1,6 @@
 <configure
-    xmlns="http://namespaces.zope.org/zope">
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
     <class class="lp.services.signing.model.signingkey.ArchiveSigningKey">
         <allow
@@ -10,24 +11,24 @@
         <allow
             interface="lp.services.signing.interfaces.signingkey.ISigningKey"/>
     </class>
-    <securedutility
+    <lp:securedutility
         component="lp.services.signing.model.signingkey.SigningKey"
         provides="lp.services.signing.interfaces.signingkey.ISigningKeySet">
         <allow
             interface="lp.services.signing.interfaces.signingkey.ISigningKeySet"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         class="lp.services.signing.model.signingkey.ArchiveSigningKeySet"
         provides="lp.services.signing.interfaces.signingkey.IArchiveSigningKeySet">
         <allow
             interface="lp.services.signing.interfaces.signingkey.IArchiveSigningKeySet"/>
-    </securedutility>
+    </lp:securedutility>
 
-    <securedutility
+    <lp:securedutility
         class="lp.services.signing.proxy.SigningServiceClient"
         provides="lp.services.signing.interfaces.signingserviceclient.ISigningServiceClient">
         <allow
             interface="lp.services.signing.interfaces.signingserviceclient.ISigningServiceClient" />
-    </securedutility>
+    </lp:securedutility>
 </configure>

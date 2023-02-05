@@ -2,110 +2,112 @@
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
-<configure xmlns="http://namespaces.zope.org/zope">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:lp="http://namespaces.canonical.com/lp">
 
-  <securedutility
+  <lp:securedutility
      name="BuildableDistroSeries"
      component=".sourcepackagerecipe.BuildableDistroSeries"
      provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".sourcepackagerecipe.BuildableDistroSeries">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
      name="TargetPPAs"
      component=".sourcepackagerecipe.target_ppas_vocabulary"
      provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
     name="Branch"
     component=".branch.BranchVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".branch.BranchVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="HostedBranchRestrictedOnOwner"
     component=".branch.HostedBranchRestrictedOnOwnerVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".branch.HostedBranchRestrictedOnOwnerVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="BranchRestrictedOnProduct"
     component=".branch.BranchRestrictedOnProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".branch.BranchRestrictedOnProductVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="GitRepository"
     component=".gitrepository.GitRepositoryVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".gitrepository.GitRepositoryVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="GitRepositoryRestrictedOnProduct"
     component=".gitrepository.GitRepositoryRestrictedOnProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".gitrepository.GitRepositoryRestrictedOnProductVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="GitPermissions"
     component=".gitrule.GitPermissionsVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".gitrule.GitPermissionsVocabulary">
     <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="GitRef"
     component=".gitref.GitRefVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".gitref.GitRefVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
     <allow interface=".gitref.IRepositoryManagerGitRefVocabulary"/>
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="GitBranch"
     component=".gitref.GitBranchVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory">
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".gitref.GitBranchVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>

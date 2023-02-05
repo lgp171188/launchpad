@@ -76,11 +76,11 @@
       <allow interface=".interfaces.questionjob.IQuestionEmailJob"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component=".model.questionjob.QuestionEmailJob"
         provides=".interfaces.questionjob.IQuestionEmailJobSource">
       <allow interface=".interfaces.questionjob.IQuestionEmailJobSource"/>
-    </securedutility>
+    </lp:securedutility>
 
     <!-- QuestionSubscription -->
     <class class=".model.questionsubscription.QuestionSubscription">
@@ -185,21 +185,21 @@
     factory=".adapters.sourcepackage_to_faqtarget"
     />
 
-  <securedutility
+  <lp:securedutility
     name="UsesAnswersDistribution"
     component=".vocabulary.UsesAnswersDistributionVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
     name="UsesAnswersProduct"
     component=".vocabulary.UsesAnswersProductVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".vocabulary.UsesAnswersProductVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
@@ -209,12 +209,12 @@
     <allow interface=".interfaces.questioncollection.IQuestionSet" />
   </class>
 
-  <securedutility
+  <lp:securedutility
     class=".model.question.QuestionSet"
     provides=".interfaces.questioncollection.IQuestionSet"
     >
     <allow interface=".interfaces.questioncollection.IQuestionSet" />
-  </securedutility>
+  </lp:securedutility>
 
 
   <class class=".model.faq.FAQ">
@@ -253,20 +253,20 @@
     />
 
   <!-- IFAQSet -->
-  <securedutility
+  <lp:securedutility
     class=".model.faq.FAQSet"
     provides=".interfaces.faq.IFAQSet"
     >
     <allow interface=".interfaces.faq.IFAQSet" />
-  </securedutility>
+  </lp:securedutility>
 
-  <securedutility
+  <lp:securedutility
     name="FAQ"
     component=".vocabulary.FAQVocabulary"
     provides="zope.schema.interfaces.IVocabularyFactory"
     >
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-  </securedutility>
+  </lp:securedutility>
 
   <class class=".vocabulary.FAQVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>

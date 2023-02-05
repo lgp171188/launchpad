@@ -4,15 +4,15 @@
 
 <configure
     xmlns="http://namespaces.zope.org/zope"
-    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
     <!-- Named Services -->
-    <securedutility
+    <lp:securedutility
         name="sharing"
         class="lp.registry.services.sharingservice.SharingService"
         provides="lp.app.interfaces.services.IService">
         <allow
             interface="lp.registry.interfaces.sharingservice.ISharingService"/>
-    </securedutility>
+    </lp:securedutility>
 </configure>

@@ -6,6 +6,7 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
     <include package=".browser"/>
@@ -61,7 +62,7 @@
     <!-- Services Infrastructure -->
     <include
         package="lp.registry.services"/>
-    <securedutility
+    <lp:securedutility
         class="lp.app.services.ServiceFactory"
         provides="lp.app.interfaces.services.IServiceFactory">
         <allow
@@ -70,15 +71,15 @@
             interface="zope.publisher.interfaces.IPublishTraverse"/>
         <allow
             interface="zope.publisher.interfaces.browser.IBrowserPublisher"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         class="lp.services.webservice.services.ServicesLink"
         provides="lp.services.webservice.services.IServicesLink">
         <allow
             interface="lazr.restful.interfaces.ITopLevelEntryLink"/>
         <allow
             interface="lp.services.webapp.interfaces.ICanonicalUrlData"/>
-    </securedutility>
+    </lp:securedutility>
 
     <webservice:register module="lp.app.errors" />
 

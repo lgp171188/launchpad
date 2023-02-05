@@ -18,40 +18,40 @@
     <subscriber
         for="lp.services.webhooks.interfaces.IWebhook zope.lifecycleevent.interfaces.IObjectModifiedEvent"
         handler="lp.services.webhooks.model.webhook_modified"/>
-    <securedutility
+    <lp:securedutility
         class="lp.services.webhooks.model.WebhookSet"
         provides="lp.services.webhooks.interfaces.IWebhookSet">
         <allow interface="lp.services.webhooks.interfaces.IWebhookSet"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         name="AnyWebhookEventType"
         component="lp.services.webhooks.interfaces.AnyWebhookEventTypeVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.services.webhooks.interfaces.AnyWebhookEventTypeVocabulary">
         <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
     </class>
-    <securedutility
+    <lp:securedutility
         name="ValidWebhookEventType"
         component="lp.services.webhooks.interfaces.ValidWebhookEventTypeVocabulary"
         provides="zope.schema.interfaces.IVocabularyFactory">
         <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.services.webhooks.interfaces.ValidWebhookEventTypeVocabulary">
         <allow interface="zope.schema.interfaces.IVocabularyTokenized"/>
     </class>
 
-    <securedutility
+    <lp:securedutility
         component="lp.services.webhooks.model.WebhookJob"
         provides="lp.services.webhooks.interfaces.IWebhookJobSource">
         <allow interface="lp.services.webhooks.interfaces.IWebhookJobSource"/>
-    </securedutility>
-    <securedutility
+    </lp:securedutility>
+    <lp:securedutility
         component="lp.services.webhooks.model.WebhookDeliveryJob"
         provides="lp.services.webhooks.interfaces.IWebhookDeliveryJobSource">
         <allow interface="lp.services.webhooks.interfaces.IWebhookDeliveryJobSource"/>
-    </securedutility>
+    </lp:securedutility>
     <class class="lp.services.webhooks.model.WebhookDeliveryJob">
         <require
             permission="launchpad.View"

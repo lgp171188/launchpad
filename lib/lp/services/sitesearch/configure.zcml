@@ -3,7 +3,8 @@
 -->
 
 <configure
-  xmlns="http://namespaces.zope.org/zope">
+  xmlns="http://namespaces.zope.org/zope"
+  xmlns:lp="http://namespaces.canonical.com/lp">
 
   <class
     class="lp.services.sitesearch.PageMatch">
@@ -15,11 +16,11 @@
     <allow interface="lp.services.sitesearch.interfaces.ISearchResults" />
   </class>
 
-  <securedutility
+  <lp:securedutility
     name="bing"
     class="lp.services.sitesearch.BingSearchService"
     provides="lp.services.sitesearch.interfaces.ISearchService">
     <allow interface="lp.services.sitesearch.interfaces.ISearchService" />
-  </securedutility>
+  </lp:securedutility>
 
 </configure>
