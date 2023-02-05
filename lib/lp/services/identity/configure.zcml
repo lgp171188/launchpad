@@ -40,7 +40,7 @@
             interface="lp.services.identity.interfaces.emailaddress.IEmailAddressSet"/>
     </lp:securedutility>
 
-    <browser:url
+    <lp:url
         for="lp.services.identity.interfaces.emailaddress.IEmailAddress"
         path_expression="string:+email/${email}"
         rootsite="api"

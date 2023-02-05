@@ -118,7 +118,7 @@ class ArchivePermission(StormBase):
 
     def __storm_loaded__(self):
         # Provide the additional marker interface depending on what type
-        # of archive this is.  See also the browser:url declarations in
+        # of archive this is.  See also the lp:url declarations in
         # zcml/archivepermission.zcml.
         if self.permission == ArchivePermissionType.UPLOAD:
             alsoProvides(self, IArchiveUploader)

@@ -6,24 +6,25 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
-  <browser:url
+  <lp:url
       for="lp.registry.interfaces.person.IPersonSet"
       path_expression="string:people"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:url
+  <lp:url
       for="lp.registry.interfaces.distribution.IDistributionSet"
       path_expression="string:distros"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:url
+  <lp:url
       for="lp.registry.interfaces.sourcepackagename.ISourcePackageNameSet"
       path_expression="string:sourcepackagenames"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:url
+  <lp:url
       for="lp.registry.interfaces.projectgroup.IProjectGroupSet"
       path_expression="string:projectgroups"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -32,12 +33,12 @@
       module="lp.registry.feed.announcement"
       classes="LaunchpadAnnouncementsFeed TargetAnnouncementsFeed"
       />
-  <browser:url
+  <lp:url
       for="lp.app.interfaces.services.IServiceFactory"
       path_expression="string:+services"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:url
+  <lp:url
       for="lp.app.interfaces.services.IService"
       path_expression="string:${name}"
       parent_utility="lp.app.interfaces.services.IServiceFactory"/>
@@ -63,7 +64,7 @@
         permission="zope.Public"
         attribute="__call__"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.teammembership.ITeamMembership"
         path_expression="string:+member/${person/name}"
         rootsite="mainsite"
@@ -97,7 +98,7 @@
         classes="
                  DistroSeriesNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.distroseries.IDistroSeries"
         urldata="lp.registry.browser.distroseries.DistroSeriesURL"
         />
@@ -210,7 +211,7 @@
         permission="zope.Public"
         template="../templates/distroseries-localdifferences.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.distroseriesdifference.IDistroSeriesDifference"
         path_expression="string:+source/${source_package_name/name}/+difference/${parent_series/parent/name}/${parent_series/name}"
         rootsite="mainsite"
@@ -231,7 +232,7 @@
         module="lp.registry.browser.distroseriesdifference"
         classes="DistroSeriesDifferenceNavigation"
         />
-    <browser:url
+    <lp:url
         for="..interfaces.distroseriesdifferencecomment.IDistroSeriesDifferenceComment"
         path_expression="string:comments/${id}"
         attribute_to_parent="distro_series_difference"
@@ -296,12 +297,12 @@
         permission="launchpad.AnyPerson"
         template="../templates/signedcodeofconduct-add.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.codeofconduct.ICodeOfConductSet"
         path_expression="string:codeofconduct"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.codeofconduct.ICodeOfConduct"
         parent_utility="lp.registry.interfaces.codeofconduct.ICodeOfConductSet"
         path_expression="version"
@@ -344,12 +345,12 @@
         permission="launchpad.Admin"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet"
         path_expression="string:console"
         parent_utility="lp.registry.interfaces.codeofconduct.ICodeOfConductSet"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.codeofconduct.ISignedCodeOfConduct"
         path_expression="string:${id}"
         parent_utility="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet"
@@ -378,7 +379,7 @@
         permission="launchpad.Admin"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.irc.IIrcID"
         path_expression="string:+ircnick/${id}"
         attribute_to_parent="person"
@@ -495,7 +496,7 @@
         classes="
                  ProjectSetNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.projectgroup.IProjectGroup"
         path_expression="name"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -520,7 +521,7 @@
         permission="launchpad.Moderate"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.projectgroup.IProjectGroupSeries"
         path_expression="string:+series/${name}"
         attribute_to_parent="projectgroup"
@@ -549,7 +550,7 @@
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
         layer="lp.answers.publisher.AnswersLayer"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
         urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
         />
@@ -612,11 +613,11 @@
         name="+index"
         for="lp.registry.interfaces.ociproject.IOCIProject"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.ociproject.IOCIProject"
         urldata="lp.registry.browser.ociproject.OCIProjectURL"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
         path_expression="string:+series/${name}"
         attribute_to_parent="oci_project"
@@ -652,18 +653,18 @@
         provides="zope.traversing.interfaces.IPathAdapter"
         for="lp.registry.interfaces.ociproject.IOCIProject"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
         attribute_to_parent="pillar"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.jabber.IJabberID"
         path_expression="string:+jabberid/${jabberid}"
         attribute_to_parent="person"
         rootsite="api"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.pillar.IPillarNameSet"
         path_expression="string:pillars"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -688,7 +689,7 @@
         permission="zope.Public"
         template="../templates/pillar-involvement-portlet.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.karma.IKarmaAction"
         path_expression="name"
         parent_utility="lp.registry.interfaces.karma.IKarmaActionSet"
@@ -704,7 +705,7 @@
         permission="launchpad.Admin"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.karma.IKarmaActionSet"
         path_expression="string:karmaaction"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -760,12 +761,12 @@
         classes="
                  PollNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.poll.IPoll"
         path_expression="string:+poll/${name}"
         attribute_to_parent="team"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.poll.IPollSet"
         path_expression="string:+polls"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -816,7 +817,7 @@
         name="+edit"
         for="lp.registry.interfaces.poll.IPollOption"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.poll.IPollOption"
         path_expression="string:+option/${id}"
         attribute_to_parent="poll"
@@ -828,7 +829,7 @@
         permission="launchpad.Edit"
         template="../templates/polloption-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.announcement.IAnnouncement"
         path_expression="string:+announcement/${id}"
         attribute_to_parent="target"
@@ -899,7 +900,7 @@
         permission="launchpad.Edit"
         template="../templates/announcement-add.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.announcement.IAnnouncementSet"
         path_expression="string:+announcements"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -969,7 +970,7 @@
                  TeamOverviewNavigationMenu
                  "
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.person.IPerson"
         path_expression="string:~${name}"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -1532,13 +1533,13 @@
         name="+index"
         for="lp.registry.interfaces.milestone.IMilestoneData"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.milestone.IMilestoneData"
         path_expression="string:+milestone/${name}"
         rootsite="mainsite"
         attribute_to_parent="target"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.milestonetag.IProjectGroupMilestoneTag"
         path_expression="string:+tags/${name}"
         rootsite="mainsite"
@@ -1643,7 +1644,7 @@
         permission="launchpad.View"
         template="../templates/message-moderation.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.wikiname.IWikiName"
         path_expression="string:+wikiname/${id}"
         attribute_to_parent="person"
@@ -1667,7 +1668,7 @@
         module="lp.registry.browser.product"
         classes="ProductNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.product.IProduct"
         path_expression="name"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -1721,7 +1722,7 @@
         for="lp.registry.interfaces.pillar.IPillarPerson"
         permission="zope.Public"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.pillar.IPillarPerson"
         path_expression="string:+sharing/${person/name}"
         rootsite="mainsite"
@@ -1837,12 +1838,12 @@
         permission="launchpad.Edit"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.nameblocklist.INameBlocklistSet"
         path_expression="string:+nameblocklist"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.nameblocklist.INameBlocklist"
         path_expression="string:${id}"
         parent_utility="lp.registry.interfaces.nameblocklist.INameBlocklistSet"
@@ -1896,7 +1897,7 @@
                  ProductSetNavigation
                  "
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.product.IProductSet"
         path_expression="string:projects"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -1953,7 +1954,7 @@
         classes="
                  ProductSeriesNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.productseries.IProductSeries"
         path_expression="name"
         attribute_to_parent="product"
@@ -1962,10 +1963,10 @@
          ITimelinProductSeries. It has been configured to return the
          same url as IProductSeries. This won't cause a problem when
          navigating to the url, since ProductNavigation.traverse() just
-         returns an IProductSeries object, and browser:url only affects
+         returns an IProductSeries object, and lp:url only affects
          canonical_url().
     -->
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.productseries.ITimelineProductSeries"
         path_expression="name"
         attribute_to_parent="product"
@@ -2093,7 +2094,7 @@
         class="lp.answers.browser.questiontarget.AskAQuestionButtonPortlet"
         permission="zope.Public"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.productseries.IProductSeriesSet"
         path_expression="string:series"
         parent_utility="lp.code.interfaces.codehosting.IBazaarApplication"
@@ -2356,7 +2357,7 @@
         classes="
                  DistributionSetNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.distribution.IDistribution"
         path_expression="name"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -2404,7 +2405,7 @@
         classes="
                  SourcePackageNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         path_expression="string:+source/${name}"
         attribute_to_parent="distroseries"
@@ -2460,12 +2461,12 @@
         for="lp.registry.interfaces.productrelease.IProductRelease"
         permission="launchpad.View"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.productrelease.IProductRelease"
         path_expression="version"
         attribute_to_parent="productseries"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.productrelease.IProductReleaseFile"
         path_expression="string:+file/${libraryfile/filename}"
         rootsite="api"
@@ -2534,7 +2535,7 @@
         name="+index"
         for="lp.registry.interfaces.distributionmirror.IDistributionMirror"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.distributionmirror.IDistributionMirror"
         path_expression="string:+mirror/${name}"
         attribute_to_parent="distribution"
@@ -2631,7 +2632,7 @@
         permission="launchpad.AnyPerson"
         template="../templates/sourcepackage-remove-packaging.pt"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackage"
         path_expression="string:${distro_source_package/distribution/name}/+source/${distro_source_package/sourcepackagename/name}"
         attribute_to_parent="person"
@@ -2646,7 +2647,7 @@
         classes="
                  PersonDistributionSourcePackageFacets"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.personociproject.IPersonOCIProject"
         path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
         attribute_to_parent="person"
@@ -2655,7 +2656,7 @@
         module="lp.registry.browser.personociproject"
         classes="PersonOCIProjectNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         path_expression="product/name"
         attribute_to_parent="person"
@@ -2670,13 +2671,13 @@
         classes="
                  PersonProductFacets"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.ssh.ISSHKey"
         path_expression="string:+ssh-keys/${id}"
         rootsite="api"
         attribute_to_parent="person"
         />
-    <browser:url
+    <lp:url
         for="lp.registry.interfaces.gpg.IGPGKey"
         path_expression="string:+gpg-keys/${fingerprint}"
         rootsite="api"

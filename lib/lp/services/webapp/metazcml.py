@@ -403,7 +403,7 @@ def url(
     parent_utility=None,
     rootsite=None,
 ):
-    """browser:url directive handler."""
+    """lp:url directive handler."""
     if not attribute_to_parent and not parent_utility and not urldata:
         raise TypeError(
             "Must provide attribute_to_parent, urldata or parent_utility."

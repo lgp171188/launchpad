@@ -3,10 +3,10 @@ Canonical URLs
 
 https://launchpad.canonical.com/CanonicalUrls
 
-The browser:url ZCML directive
-------------------------------
+The lp:url ZCML directive
+-------------------------
 
-The browser:url directive registers an ICanonicalUrlData adapter.
+The lp:url directive registers an ICanonicalUrlData adapter.
 
 In this test, we'll use a URL hierarchy /countries/England/+towns/London
 
@@ -31,7 +31,7 @@ will put in a temporary module.
     ...
 
     >>> class ITown(Interface):
-    ...     """Dummy interface for use in browser:url tests."""
+    ...     """Dummy interface for use in lp:url tests."""
     ...
     ...     __module__ = module.__name__
     ...     country = Attribute("the country the town is in")
@@ -118,16 +118,16 @@ Next, we check there are no ICanonicalUrlData adapters for these objects.
     ...     assert ICanonicalUrlData(obj, None) is None
     ...
 
-Configure a browser:url for ITown.  Our first attempt fails because we
+Configure a lp:url for ITown.  Our first attempt fails because we
 mistyped 'countryOopsTypo', and there is no such name in ITown.
 
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:url
+    ...   <lp:url
     ...       for="{module_name}.ITown"
     ...       path_expression="string:+towns/${{name}}"
     ...       attribute_to_parent="countryOopsTypo"
@@ -144,9 +144,9 @@ mistyped 'countryOopsTypo', and there is no such name in ITown.
 
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:url
+    ...   <lp:url
     ...       for="{module_name}.ITown"
     ...       path_expression="string:+towns/${{name}}"
     ...       attribute_to_parent="country"
@@ -179,7 +179,7 @@ at it from zcml.  I'll put it in our temporary module.
     ...     """
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
-    ...     xmlns:browser="http://namespaces.zope.org/browser">
+    ...     xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <configure package="zope.security">
@@ -189,7 +189,7 @@ at it from zcml.  I'll put it in our temporary module.
     ...       provides="{module_name}.ICountrySet"
     ...       component="{module_name}.countryset_instance"
     ...       />
-    ...   <browser:url
+    ...   <lp:url
     ...       for="{module_name}.ICountry"
     ...       path_expression="name"
     ...       parent_utility="{module_name}.ICountrySet"
@@ -211,7 +211,7 @@ Now, there is an ICanonicalUrlData registered for ICountry.
     >>> country_urldata.inside is countryset_instance
     True
 
-We need to specify a browser:url for ICountrySet.  We'll use a variation on
+We need to specify an lp:url for ICountrySet.  We'll use a variation on
 the zcml that allows us to directly set an ICanonicalUrlData adapter to use.
 The adapter will make its parent the ILaunchpadRoot utility.  This is not the
 normal way to do this.  Normally, we'd just say
@@ -243,9 +243,9 @@ in our temporary module.
 
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:url
+    ...   <lp:url
     ...       for="{module_name}.ICountrySet"
     ...       urldata="{module_name}.CountrySetUrl"
     ...       />
@@ -485,14 +485,14 @@ And if the configuration does provide a rootsite:
     ...     """
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
-    ...     xmlns:browser="http://namespaces.zope.org/browser">
+    ...     xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <utility
     ...       provides="{module_name}.ICountrySet"
     ...       component="{module_name}.countryset_instance"
     ...       />
-    ...   <browser:url
+    ...   <lp:url
     ...       for="{module_name}.ICountry"
     ...       path_expression="name"
     ...       parent_utility="{module_name}.ICountrySet"

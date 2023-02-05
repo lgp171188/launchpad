@@ -1,9 +1,9 @@
 <configure
   xmlns="http://namespaces.zope.org/zope"
-  xmlns:browser="http://namespaces.zope.org/browser"
   xmlns:i18n="http://namespaces.zope.org/i18n"
+  xmlns:lp="http://namespaces.canonical.com/lp"
   i18n_domain="launchpad">
-  <browser:url
+  <lp:url
     for="lp.services.messages.interfaces.messagerevision.IMessageRevision"
     path_expression="string:revisions/${revision}"
     attribute_to_parent="message_implementation" />

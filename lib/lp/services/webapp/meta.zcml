@@ -5,7 +5,7 @@
 <configure xmlns="http://namespaces.zope.org/meta">
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="url"
       schema="lp.services.webapp.metazcml.IURLDirective"
       handler="lp.services.webapp.metazcml.url"

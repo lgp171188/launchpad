@@ -6,10 +6,10 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
-    xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 <facet facet="translations">
-    <browser:url
+    <lp:url
         for="lp.translations.interfaces.translations.IRosettaApplication"
         path_expression="string:translations"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
@@ -68,7 +68,7 @@
         <browser:defaultView
             for="lp.translations.interfaces.translator.ITranslator"
             name="+admin"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translator.ITranslator"
             path_expression="string:${language/code}"
             attribute_to_parent="translationgroup"
@@ -99,7 +99,7 @@
         <browser:defaultView
             for="lp.translations.interfaces.translationimportqueue.ITranslationImportQueueEntry"
             name="+index"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translationimportqueue.ITranslationImportQueueEntry"
             path_expression="string:${id}"
             parent_utility="lp.translations.interfaces.translationimportqueue.ITranslationImportQueue"/>
@@ -115,7 +115,7 @@
             name="+portlet-details"
             class="lp.translations.browser.translationimportqueue.TranslationImportQueueEntryView"
             template="../templates/translationimportqueueentry-portlet-details.pt"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translationimportqueue.ITranslationImportQueue"
             path_expression="string:+imports"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
@@ -128,7 +128,7 @@
             class="lp.translations.browser.translationimportqueue.TranslationImportQueueView"
             permission="zope.Public"
             template="../templates/translationimportqueue-index.pt"/>
-    <browser:url
+    <lp:url
         for="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"
         path_expression="string:+lang/${language/code}"
         attribute_to_parent="distroseries"
@@ -156,7 +156,7 @@
             module="lp.translations.browser.pofile"
             classes="
                 POFileNavigation"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.pofile.IPOFile"
             path_expression="language/code"
             attribute_to_parent="potemplate"
@@ -215,7 +215,7 @@
             permission="zope.Public"
             template="../templates/pofile-filter.pt"
             class="lp.translations.browser.pofile.POFileFilteredView"/>
-    <browser:url
+    <lp:url
         for="lp.translations.interfaces.productserieslanguage.IProductSeriesLanguage"
         path_expression="string:+lang/${language/code}"
         attribute_to_parent="parent"
@@ -252,7 +252,7 @@
             classes="
                 LanguageSetContextMenu
                 LanguageNavigationMenu"/>
-        <browser:url
+        <lp:url
             for="lp.services.worlddata.interfaces.language.ILanguage"
             path_expression="code"
             parent_utility="lp.services.worlddata.interfaces.language.ILanguageSet"
@@ -283,7 +283,7 @@
         <browser:defaultView
             for="lp.services.worlddata.interfaces.language.ILanguageSet"
             name="+index"/>
-        <browser:url
+        <lp:url
             for="lp.services.worlddata.interfaces.language.ILanguageSet"
             path_expression="string:+languages"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -362,10 +362,10 @@
         <browser:menus
             module="lp.translations.browser.potemplate"
             classes="POTemplateMenu"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.potemplate.IPOTemplateSubset"
             urldata="lp.translations.browser.potemplate.POTemplateSubsetURL"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.potemplate.IPOTemplate"
             urldata="lp.translations.browser.potemplate.POTemplateURL"/>
         <browser:defaultView
@@ -385,7 +385,7 @@
         <browser:defaultView
             for="lp.translations.interfaces.translationgroup.ITranslationGroup"
             name="+index"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translationgroup.ITranslationGroup"
             path_expression="name"
             rootsite="translations"
@@ -427,7 +427,7 @@
             permission="launchpad.Edit"
             name="+object-reassignment"
             template="../../app/templates/object-reassignment.pt"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translationgroup.ITranslationGroupSet"
             path_expression="string:+groups"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -447,7 +447,7 @@
             permission="zope.Public"
             template="../templates/translationgroups-index.pt"
             name="+index"/>
-        <browser:url
+        <lp:url
             for="lp.translations.interfaces.translationmessage.ITranslationMessage"
             path_expression="string:${sequence}"
             attribute_to_parent="browser_pofile"
@@ -845,7 +845,7 @@
     <browser:defaultView
         for="lp.translations.interfaces.customlanguagecode.ICustomLanguageCode"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.translations.interfaces.customlanguagecode.ICustomLanguageCode"
         path_expression="string:+customcode/${language_code}"
         attribute_to_parent="translation_target"
@@ -884,7 +884,7 @@
     <browser:defaultView
         for="lp.translations.interfaces.translationtemplatesbuild.ITranslationTemplatesBuild"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.translations.interfaces.translationtemplatesbuild.ITranslationTemplatesBuild"
         path_expression="string:+translation-templates-build/${id}"
         attribute_to_parent="branch"/>
