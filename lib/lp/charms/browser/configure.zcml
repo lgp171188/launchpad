@@ -6,9 +6,10 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
     <facet facet="overview">
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
         <browser:menus
@@ -77,17 +78,17 @@
             name="+new-charm-recipe"
             template="../templates/charmrecipe-new.pt" />
 
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeSet"
             path_expression="string:+charm-recipes"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
 
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
             attribute_to_parent="recipe" />
 
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
@@ -130,11 +131,11 @@
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
 
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmbase.ICharmBase"
             path_expression="string:${id}"
             parent_utility="lp.charms.interfaces.charmbase.ICharmBaseSet" />
-        <browser:url
+        <lp:url
             for="lp.charms.interfaces.charmbase.ICharmBaseSet"
             path_expression="string:+charm-bases"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />

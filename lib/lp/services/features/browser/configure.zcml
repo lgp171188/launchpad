@@ -6,10 +6,11 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-  <browser:url
+  <lp:url
       for="lp.services.features.interfaces.IFeatureRules"
       path_expression="string:+feature-rules"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>

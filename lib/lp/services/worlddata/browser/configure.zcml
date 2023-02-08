@@ -6,16 +6,17 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <browser:url
+    <lp:url
         for="lp.services.worlddata.interfaces.country.ICountry"
         path_expression="iso3166code2"
         parent_utility="lp.services.worlddata.interfaces.country.ICountrySet"
         rootsite="mainsite" />
 
-    <browser:url
+    <lp:url
         for="lp.services.worlddata.interfaces.country.ICountrySet"
         path_expression="string:+countries"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"

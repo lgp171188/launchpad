@@ -43,12 +43,12 @@
       classes="TemporaryBlobStorageNavigation"
       />
 
-  <browser:url
+  <lp:url
       for="lp.services.temporaryblobstorage.interfaces.ITemporaryBlobStorage"
       urldata="lp.services.temporaryblobstorage.browser.TemporaryBlobStorageURL"
       parent_utility="lp.services.webservice.interfaces.IWebServiceApplication"/>
 
-  <browser:url
+  <lp:url
       for="lp.services.temporaryblobstorage.interfaces.ITemporaryStorageManager"
       path_expression="string:temporary-blobs"
       parent_utility="lp.services.webservice.interfaces.IWebServiceApplication"/>
