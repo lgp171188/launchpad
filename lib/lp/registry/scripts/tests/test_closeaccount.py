@@ -32,8 +32,10 @@ from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.model.productrelease import ProductRelease
+from lp.registry.personmerge import merge_people
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
+from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_caches,
@@ -1296,3 +1298,20 @@ class TestCloseAccount(TestCaseWithFactory):
                 else:
                     self.runScript(script)
                     self.assertRemoved(account_id, person_id)
+
+    def test_skips_merged_and_personnotification_references(self):
+        from_person = self.factory.makePerson(
+            account_status=AccountStatus.PLACEHOLDER
+        )
+        to_person = self.factory.makePerson()
+
+        # See TestMergePeople._do_merge()
+        with dbuser(config.IPersonMergeJobSource.dbuser):
+            merge_people(from_person, to_person, None)
+
+        account_id = to_person.account.id
+        person_id = to_person.id
+        script = self.makeScript([to_person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
