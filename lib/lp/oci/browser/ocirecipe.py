@@ -61,7 +61,6 @@ from lp.oci.interfaces.ocipushrule import (
 )
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     IOCIRecipe,
     IOCIRecipeSet,
     NoSuchOCIRecipe,
@@ -157,12 +156,7 @@ class OCIRecipeNavigationMenu(NavigationMenu):
 
     @enabled_with_permission("launchpad.Edit")
     def webhooks(self):
-        return Link(
-            "+webhooks",
-            "Manage webhooks",
-            icon="edit",
-            enabled=bool(getFeatureFlag(OCI_RECIPE_WEBHOOKS_FEATURE_FLAG)),
-        )
+        return Link("+webhooks", "Manage webhooks", icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
     def delete(self):

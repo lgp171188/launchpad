@@ -6,10 +6,8 @@
 from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRegistryUploadJobSource
-from lp.services.features import getFeatureFlag
 from lp.services.scripts import log
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
@@ -17,26 +15,25 @@ from lp.services.webhooks.payload import compose_webhook_payload
 
 
 def _trigger_oci_recipe_build_webhook(build, action):
-    if getFeatureFlag(OCI_RECIPE_WEBHOOKS_FEATURE_FLAG):
-        payload = {
-            "recipe_build": canonical_url(build, force_local_path=True),
-            "action": action,
-        }
-        payload.update(
-            compose_webhook_payload(
-                IOCIRecipeBuild,
-                build,
-                [
-                    "recipe",
-                    "build_request",
-                    "status",
-                    "registry_upload_status",
-                ],
-            )
+    payload = {
+        "recipe_build": canonical_url(build, force_local_path=True),
+        "action": action,
+    }
+    payload.update(
+        compose_webhook_payload(
+            IOCIRecipeBuild,
+            build,
+            [
+                "recipe",
+                "build_request",
+                "status",
+                "registry_upload_status",
+            ],
         )
-        getUtility(IWebhookSet).trigger(
-            build.recipe, "oci-recipe:build:0.1", payload
-        )
+    )
+    getUtility(IWebhookSet).trigger(
+        build.recipe, "oci-recipe:build:0.1", payload
+    )
 
 
 def oci_recipe_build_created(build, event):

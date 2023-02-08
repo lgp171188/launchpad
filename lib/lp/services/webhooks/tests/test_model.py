@@ -13,10 +13,7 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
 )
-from lp.oci.interfaces.ocirecipe import (
-    OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-)
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -500,12 +497,7 @@ class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
         if owner is None:
             owner = self.factory.makePerson()
 
-        with FeatureFixture(
-            {
-                OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                OCI_RECIPE_ALLOW_CREATE: "on",
-            }
-        ):
+        with FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}):
             return self.factory.makeOCIRecipe(
                 registrant=owner, owner=owner, **kwargs
             )
