@@ -23,10 +23,7 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
 )
-from lp.oci.interfaces.ocirecipe import (
-    OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-)
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.interfaces.livefs import (
@@ -498,12 +495,7 @@ class TestWebhookTargetOCIRecipe(TestWebhookTargetBase, TestCaseWithFactory):
 
     def makeTarget(self):
         owner = self.factory.makePerson()
-        with FeatureFixture(
-            {
-                OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                OCI_RECIPE_ALLOW_CREATE: "on",
-            }
-        ):
+        with FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}):
             return self.factory.makeOCIRecipe(registrant=owner, owner=owner)
 
 

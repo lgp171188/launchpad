@@ -14,10 +14,7 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
 )
-from lp.oci.interfaces.ocirecipe import (
-    OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-)
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
@@ -142,14 +139,7 @@ class OCIRecipeTestHelpers:
         super().setUp()
 
     def makeTarget(self):
-        self.useFixture(
-            FeatureFixture(
-                {
-                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                    OCI_RECIPE_ALLOW_CREATE: "on",
-                }
-            )
-        )
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeOCIRecipe(registrant=owner, owner=owner)
 

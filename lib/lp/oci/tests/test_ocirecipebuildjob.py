@@ -22,10 +22,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.oci.interfaces.ocirecipe import (
-    OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-)
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
@@ -212,14 +209,7 @@ class TestOCIRegistryUploadJob(
 
     def setUp(self):
         super().setUp()
-        self.useFixture(
-            FeatureFixture(
-                {
-                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                    OCI_RECIPE_ALLOW_CREATE: "on",
-                }
-            )
-        )
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         self.setUpStats()
 
     def makeOCIRecipeBuild(self, **kwargs):
@@ -641,7 +631,6 @@ class TestOCIRegistryUploadJobViaCelery(
         self.useFixture(
             FeatureFixture(
                 {
-                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
                     OCI_RECIPE_ALLOW_CREATE: "on",
                     "jobs.celery.enabled_classes": "OCIRegistryUploadJob",
                 }

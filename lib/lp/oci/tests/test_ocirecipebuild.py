@@ -28,10 +28,7 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.oci.interfaces.ocirecipe import (
-    OCI_RECIPE_ALLOW_CREATE,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
-)
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ocirecipebuild import (
     CannotScheduleRegistryUpload,
     IOCIFileSet,
@@ -300,8 +297,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         hook = self.factory.makeWebhook(
             target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
         )
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
-            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
         expected_payload = {
             "recipe_build": Equals(
                 canonical_url(self.build, force_local_path=True)
@@ -343,8 +339,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         hook = self.factory.makeWebhook(
             target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
         )
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
-            self.build.updateStatus(BuildStatus.BUILDING)
+        self.build.updateStatus(BuildStatus.BUILDING)
         expected_logs = [
             (
                 hook,
@@ -627,8 +622,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         hook = self.factory.makeWebhook(
             target=self.build.recipe, event_types=["oci-recipe:build:0.1"]
         )
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
-            self.build.scheduleRegistryUpload()
+        self.build.scheduleRegistryUpload()
         expected_payload = {
             "recipe_build": Equals(
                 canonical_url(self.build, force_local_path=True)

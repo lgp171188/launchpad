@@ -21,7 +21,6 @@ __all__ = [
     "OCIRecipePrivacyMismatch",
     "OCI_RECIPE_ALLOW_CREATE",
     "OCI_RECIPE_BUILD_DISTRIBUTION",
-    "OCI_RECIPE_WEBHOOKS_FEATURE_FLAG",
     "UsingDistributionCredentials",
 ]
 
@@ -72,7 +71,6 @@ from lp.services.database.constants import DEFAULT
 from lp.services.fields import PersonChoice, PublicPersonChoice
 from lp.services.webhooks.interfaces import IWebhookTarget
 
-OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
 OCI_RECIPE_ALLOW_CREATE = "oci.recipe.create.enabled"
 OCI_RECIPE_BUILD_DISTRIBUTION = "oci.default_build_distribution"
 OCI_RECIPE_PRIVATE_FEATURE_FLAG = "oci.recipe.allow_private"
