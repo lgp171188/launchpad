@@ -323,7 +323,7 @@
         permission="zope.Public"
         template="../templates/branchmergeproposal-macros.pt"
         class="lp.app.browser.launchpad.Macro"/>
-    <browser:menus
+    <lp:menus
         classes="
             BranchMergeProposalContextMenu
             BranchMergeProposalEditMenu
@@ -547,7 +547,7 @@
         name="+branch-listing"
         template="../templates/branch-listing.pt"
         permission="zope.Public"/>
-    <browser:menus
+    <lp:menus
         classes="
             BranchContextMenu
             BranchEditMenu"
@@ -618,7 +618,7 @@
         class="lp.code.browser.codereviewcomment.CodeReviewCommentAddView"
         permission="launchpad.AnyPerson"
         template="../templates/codereviewcomment-reply.pt"/>
-    <browser:menus
+    <lp:menus
         classes="CodeReviewCommentContextMenu"
         module="lp.code.browser.codereviewcomment"/>
         <browser:page
@@ -731,7 +731,7 @@
         name="+count-summary"
         template="../templates/branch-count-summary.pt"/>
 
-        <browser:menus
+        <lp:menus
             module="lp.code.browser.branchlisting"
             classes="
                 PersonBranchesMenu"/>
@@ -819,7 +819,7 @@
     <browser:navigation
         module="lp.code.browser.gitrepository"
         classes="GitRepositoryNavigation"/>
-    <browser:menus
+    <lp:menus
         module="lp.code.browser.gitrepository"
         classes="
             GitRepositoryContextMenu
@@ -1042,7 +1042,7 @@
         permission="zope.Public"
         name="+dependent-merges"
         template="../templates/branchmergeproposal-generic-listing.pt"/>
-    <browser:menus
+    <lp:menus
         classes="GitRefContextMenu"
         module="lp.code.browser.gitref"/>
     <adapter
@@ -1120,7 +1120,7 @@
         template="../templates/gitrepository-listing.pt"
         permission="zope.Public"/>
 
-    <browser:menus
+    <lp:menus
         classes="ProductBranchesMenu"
         module="lp.code.browser.branchlisting"/>
 
@@ -1176,7 +1176,7 @@
         permission="launchpad.View"
         template="../templates/branchmergeproposal-diff.pt"/>
 
-    <browser:menus
+    <lp:menus
         module="lp.code.browser.branchlisting"
         classes="PersonProductBranchesMenu"/>
 
@@ -1296,7 +1296,7 @@
         attribute_to_parent="archive"
         path_expression="string:+recipebuild/${id}"
         />
-    <browser:menus
+    <lp:menus
         classes="SourcePackageRecipeBuildContextMenu"
         module="lp.code.browser.sourcepackagerecipebuild"/>
 
@@ -1352,7 +1352,7 @@
             name="+rescore"
             template="../../app/templates/generic-edit.pt"
             permission="launchpad.Admin"/>
-        <browser:menus
+        <lp:menus
             classes="
                 SourcePackageRecipeNavigationMenu
                 SourcePackageRecipeContextMenu"
@@ -1430,7 +1430,7 @@
             for="lp.code.interfaces.cibuild.ICIBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="git_repository"/>
-        <browser:menus
+        <lp:menus
             module="lp.code.browser.cibuild"
             classes="CIBuildContextMenu" />
         <browser:navigation

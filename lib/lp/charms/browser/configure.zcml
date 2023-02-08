@@ -12,7 +12,7 @@
         <lp:url
             for="lp.charms.interfaces.charmrecipe.ICharmRecipe"
             urldata="lp.charms.browser.charmrecipe.CharmRecipeURL" />
-        <browser:menus
+        <lp:menus
             module="lp.charms.browser.charmrecipe"
             classes="
                 CharmRecipeNavigationMenu
@@ -92,7 +92,7 @@
             for="lp.charms.interfaces.charmrecipebuild.ICharmRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
-        <browser:menus
+        <lp:menus
             module="lp.charms.browser.charmrecipebuild"
             classes="CharmRecipeBuildContextMenu" />
         <browser:navigation

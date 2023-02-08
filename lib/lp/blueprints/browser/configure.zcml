@@ -172,7 +172,7 @@
         class="lp.blueprints.browser.sprint.SprintAttendeesCsvExportView"
         permission="launchpad.AnyPerson"
         attribute="__call__"/>
-    <browser:menus
+    <lp:menus
         classes="
             SprintFacets
             SprintOverviewMenu
@@ -235,7 +235,7 @@
             class="lp.blueprints.browser.specificationbranch.SpecificationBranchStatusView"
             permission="launchpad.AnyPerson"
             template="../templates/specificationbranch-status.pt"/>
-        <browser:menus
+        <lp:menus
             module="lp.blueprints.browser.specification"
             classes="
                 SpecificationActionMenu
@@ -620,7 +620,7 @@
         permission="launchpad.AnyPerson"
         template="../templates/addspec.pt" />
 
-    <browser:menus
+    <lp:menus
         module="lp.blueprints.browser.person"
         classes="PersonSpecsMenu"/>
     <browser:page

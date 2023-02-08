@@ -161,7 +161,7 @@
             path_expression="language/code"
             attribute_to_parent="potemplate"
             rootsite="translations"/>
-        <browser:menus
+        <lp:menus
             module="lp.translations.browser.pofile"
             classes="POFileNavigationMenu"/>
         <browser:defaultView
@@ -247,7 +247,7 @@
         <browser:defaultView
             for="lp.services.worlddata.interfaces.language.ILanguage"
             name="+index"/>
-        <browser:menus
+        <lp:menus
             module="lp.translations.browser.language"
             classes="
                 LanguageSetContextMenu
@@ -359,7 +359,7 @@
             permission="launchpad.AnyPerson"
             template="../templates/potemplate-export.pt"
             class="lp.translations.browser.potemplate.POTemplateExportView"/>
-        <browser:menus
+        <lp:menus
             module="lp.translations.browser.potemplate"
             classes="POTemplateMenu"/>
         <lp:url
@@ -452,7 +452,7 @@
             path_expression="string:${sequence}"
             attribute_to_parent="browser_pofile"
             rootsite="translations"/>
-        <browser:menus
+        <lp:menus
             module="lp.translations.browser.translationmessage"
             classes="CurrentTranslationMessageMenu"/>
         <browser:defaultView
@@ -494,7 +494,7 @@
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         name="+translations"
         layer="lp.translations.publisher.TranslationsLayer"/>
-    <browser:menus
+    <lp:menus
         classes="SourcePackageTranslationsMenu"
         module="lp.translations.browser.sourcepackage"/>
 
@@ -540,7 +540,7 @@
         for="lp.registry.interfaces.productseries.IProductSeries"
         name="+translations"
         layer="lp.translations.publisher.TranslationsLayer"/>
-    <browser:menus
+    <lp:menus
         classes="ProductSeriesTranslationsMenu"
         module="lp.translations.browser.productseries"/>
     <browser:pages
@@ -616,7 +616,7 @@
             for="lp.registry.interfaces.person.IPerson"
             name="+translations"
             layer="lp.translations.publisher.TranslationsLayer"/>
-        <browser:menus
+        <lp:menus
             module="lp.translations.browser.person"
             classes="
                 PersonTranslationsMenu"/>
@@ -665,7 +665,7 @@
         for="lp.registry.interfaces.product.IProduct"
         layer="lp.translations.publisher.TranslationsLayer"
         name="+translations"/>
-    <browser:menus
+    <lp:menus
         classes="
             ProductTranslationsMenu"
         module="lp.translations.browser.product"/>
@@ -711,7 +711,7 @@
         for="lp.registry.interfaces.projectgroup.IProjectGroup"
         name="+translations"
         layer="lp.translations.publisher.TranslationsLayer"/>
-    <browser:menus
+    <lp:menus
         classes="
             ProjectTranslationsMenu"
         module="lp.translations.browser.project"/>
@@ -734,7 +734,7 @@
         for="lp.registry.interfaces.distribution.IDistribution"
         name="+translations"
         layer="lp.translations.publisher.TranslationsLayer"/>
-    <browser:menus
+    <lp:menus
         classes="
             DistributionTranslationsMenu"
         module="lp.translations.browser.distribution"/>
@@ -789,7 +789,7 @@
         for="lp.registry.interfaces.distroseries.IDistroSeries"
         name="+translations"
         layer="lp.translations.publisher.TranslationsLayer"/>
-    <browser:menus
+    <lp:menus
         classes="
             DistroSeriesTranslationsMenu"
         module="lp.translations.browser.distroseries"/>

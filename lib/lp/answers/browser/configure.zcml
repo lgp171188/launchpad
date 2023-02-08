@@ -111,15 +111,15 @@
     class=".questiontarget.AskAQuestionButtonPortlet"
     permission="zope.Public"
     />
-  <browser:menus
+  <lp:menus
     module=".questiontarget"
     classes="QuestionCollectionAnswersMenu QuestionTargetAnswersMenu"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.faq"
     classes="FAQNavigationMenu"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.question"
     classes="
         QuestionEditMenu
@@ -490,7 +490,7 @@
     permission="zope.Public"
     template="../templates/person-answer-contact-for.pt"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.person"
     classes="PersonAnswersMenu"
     />

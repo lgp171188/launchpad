@@ -227,7 +227,7 @@
             title="Admin"
             action="+admin"/>
     </browser:menuItems>
-    <browser:menus
+    <lp:menus
         module="lp.bugs.browser.person"
         classes="
             PersonBugsMenu
@@ -251,7 +251,7 @@
         permission="zope.Public"
         name="+portlet-stats"
         template="../templates/malone-portlet-stats.pt"/>
-    <browser:menus
+    <lp:menus
         classes="MaloneRelatedPages"
         module="lp.bugs.browser.malone"/>
     <browser:page
@@ -435,10 +435,10 @@
         class="lp.bugs.browser.buglisting.BugNominationsView"
         permission="zope.Public"
         template="../templates/series-bug-nominations.pt"/>
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.buglisting"
             classes="BugTaskSearchListingMenu"/>
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.bugtask"
             classes="BugTaskContextMenu"/>
         <browser:page
@@ -692,7 +692,7 @@
         class="lp.bugs.browser.bugsupervisor.BugSupervisorEditView"
         permission="launchpad.Edit"
         template="../templates/edit-bug-supervisor.pt"/>
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.bugtracker"
             classes="
                 BugTrackerSetContextMenu
@@ -815,7 +815,7 @@
          provides="zope.interface.Interface"
          name="lazr.restful.EntryResource"
         />
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.cve"
             classes="
                 CveContextMenu
@@ -924,7 +924,7 @@
         path_expression="string:+subscription/${person/name}"
         attribute_to_parent="bug"
         rootsite="bugs"/>
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.bug"
             classes="
                 BugContextMenu"/>
@@ -1019,7 +1019,7 @@
             for="lp.bugs.interfaces.bug.IBugSet"
             path_expression="string:bugs"
             parent_utility="lp.bugs.interfaces.malone.IMaloneApplication"/>
-        <browser:menus
+        <lp:menus
             module="lp.bugs.browser.bugnomination"
             classes="
                 BugNominationContextMenu"/>

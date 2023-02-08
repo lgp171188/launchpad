@@ -272,7 +272,7 @@
             name="+subscriptions"
             template="../templates/archive-subscribers.pt"/>
     </browser:pages>
-    <browser:menus
+    <lp:menus
         classes="
             ArchiveNavigationMenu
             ArchiveIndexActionsMenu
@@ -330,7 +330,7 @@
             name="+cancel"
             template="../../app/templates/generic-edit.pt"/>
     </browser:pages>
-    <browser:menus
+    <lp:menus
         classes="
             BuildContextMenu"
         module="lp.soyuz.browser.build"/>
@@ -454,7 +454,7 @@
         <browser:defaultView
             for="lp.soyuz.interfaces.distroarchseries.IDistroArchSeries"
             name="+index"/>
-        <browser:menus
+        <lp:menus
             module="lp.soyuz.browser.distroarchseries"
             classes="
                 DistroArchSeriesActionMenu"/>
@@ -708,7 +708,7 @@
         name="+index"
         template="../templates/livefs-index.pt"
         />
-    <browser:menus
+    <lp:menus
         module="lp.soyuz.browser.livefs"
         classes="LiveFSNavigationMenu"
         />
@@ -757,7 +757,7 @@
         path_expression="string:+build/${id}"
         attribute_to_parent="livefs"
         />
-    <browser:menus
+    <lp:menus
         module="lp.soyuz.browser.livefsbuild"
         classes="LiveFSBuildContextMenu"
         />

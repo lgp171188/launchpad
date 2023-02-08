@@ -619,9 +619,9 @@ facet name.
 
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include file="lib/lp/services/webapp/meta.zcml" />
-    ...   <browser:menus
+    ...   <lp:menus
     ...     module="lp.app.cookingexample"
     ...     classes="
     ...       CookeryFacetMenu RecipeFacetMenu

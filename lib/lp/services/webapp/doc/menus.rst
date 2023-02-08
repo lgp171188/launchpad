@@ -671,9 +671,9 @@ Same for an IContextMenu adapter.
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include file="lib/lp/services/webapp/meta.zcml" />
-    ...   <browser:menus
+    ...   <lp:menus
     ...       module="{module_name}"
     ...       classes="FacetsForThing FooMenuForThing ContextMenuForThing"
     ...       />
@@ -698,8 +698,7 @@ Same for an IContextMenu adapter.
     >>> menu3.__class__ is ContextMenuForThing
     True
 
-The browser:menus directive also makes security declarations for the
-adapters.
+The lp:menus directive also makes security declarations for the adapters.
 
 
 Using menus in page templates
