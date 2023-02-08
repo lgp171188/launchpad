@@ -12,7 +12,7 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="menus"
       schema="lp.services.webapp.metazcml.IMenusDirective"
       handler="lp.services.webapp.metazcml.menus"

@@ -152,7 +152,7 @@
 
     <facet facet="overview">
       <!-- Common menus -->
-      <browser:menus
+      <lp:menus
           module="lp.app.browser.launchpad"
           classes="LaunchpadRootFacets"
           />

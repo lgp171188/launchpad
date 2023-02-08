@@ -13,7 +13,7 @@
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}/+recipe/${name}"
             attribute_to_parent="owner" />
-        <browser:menus
+        <lp:menus
             module="lp.oci.browser.ocirecipe"
             classes="
                 OCIRecipeNavigationMenu
@@ -99,7 +99,7 @@
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
-        <browser:menus
+        <lp:menus
             module="lp.oci.browser.ocirecipebuild"
             classes="OCIRecipeBuildContextMenu" />
         <browser:navigation
