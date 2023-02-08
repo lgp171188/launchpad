@@ -42,10 +42,7 @@ from lp.services.database.sqlbase import (
     get_transaction_timestamp,
 )
 from lp.services.identity.interfaces.account import AccountStatus, IAccountSet
-from lp.services.identity.interfaces.emailaddress import (
-    EmailAddressStatus,
-    IEmailAddressSet,
-)
+from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.job.interfaces.job import JobType
 from lp.services.job.model.job import Job
 from lp.services.log.logger import BufferLogger, DevNullLogger
@@ -56,11 +53,7 @@ from lp.soyuz.enums import ArchiveSubscriberStatus, PackagePublishingStatus
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import (
-    TestCaseWithFactory,
-    celebrity_logged_in,
-    login_celebrity,
-)
+from lp.testing import TestCaseWithFactory, login_celebrity
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.interfaces.pofiletranslator import IPOFileTranslatorSet
@@ -1083,28 +1076,6 @@ class TestCloseAccount(TestCaseWithFactory):
 
         self.assertRemoved(account_id, person_id)
 
-    def test_skips_merged_and_personnotification_references(self):
-        from_person = self.factory.makePerson()
-        to_person = self.factory.makePerson()
-
-        # See TestMergePeople._do_premerge()
-        with celebrity_logged_in("admin"):
-            email = from_person.preferredemail
-            email.status = EmailAddressStatus.NEW
-            email.person = to_person
-        transaction.commit()
-
-        # See TestMergePeople._do_merge()
-        with dbuser(config.IPersonMergeJobSource.dbuser):
-            merge_people(from_person, to_person, None)
-
-        account_id = to_person.account.id
-        person_id = to_person.id
-        script = self.makeScript([to_person.name])
-        with dbuser("launchpad"):
-            self.runScript(script)
-        self.assertRemoved(account_id, person_id)
-
     def test_non_product_announcements_are_not_skipped(self):
         person = self.factory.makePerson()
         person_id = person.id
@@ -1327,3 +1298,20 @@ class TestCloseAccount(TestCaseWithFactory):
                 else:
                     self.runScript(script)
                     self.assertRemoved(account_id, person_id)
+
+    def test_skips_merged_and_personnotification_references(self):
+        from_person = self.factory.makePerson(
+            account_status=AccountStatus.PLACEHOLDER
+        )
+        to_person = self.factory.makePerson()
+
+        # See TestMergePeople._do_merge()
+        with dbuser(config.IPersonMergeJobSource.dbuser):
+            merge_people(from_person, to_person, None)
+
+        account_id = to_person.account.id
+        person_id = to_person.id
+        script = self.makeScript([to_person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
