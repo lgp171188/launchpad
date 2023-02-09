@@ -19,7 +19,7 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="navigation"
       schema="lp.services.webapp.metazcml.INavigationDirective"
       handler="lp.services.webapp.metazcml.navigation"

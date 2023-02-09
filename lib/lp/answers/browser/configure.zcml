@@ -275,15 +275,15 @@
     />
 
   <!-- IQuestionSet -->
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionSetNavigation"
     />
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionNavigation"
     />
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionMessageNavigation"
     />

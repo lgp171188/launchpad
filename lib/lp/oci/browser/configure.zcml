@@ -18,7 +18,7 @@
             classes="
                 OCIRecipeNavigationMenu
                 OCIRecipeContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.oci.browser.ocirecipe"
             classes="OCIRecipeNavigation" />
         <browser:defaultView
@@ -102,7 +102,7 @@
         <lp:menus
             module="lp.oci.browser.ocirecipebuild"
             classes="OCIRecipeBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.oci.browser.ocirecipebuild"
             classes="OCIRecipeBuildNavigation" />
         <browser:defaultView

@@ -17,7 +17,7 @@
             classes="
                 CharmRecipeNavigationMenu
                 CharmRecipeContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.charms.browser.charmrecipe"
             classes="CharmRecipeNavigation" />
         <browser:defaultView
@@ -95,7 +95,7 @@
         <lp:menus
             module="lp.charms.browser.charmrecipebuild"
             classes="CharmRecipeBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.charms.browser.charmrecipebuild"
             classes="CharmRecipeBuildNavigation" />
         <browser:defaultView
@@ -139,7 +139,7 @@
             for="lp.charms.interfaces.charmbase.ICharmBaseSet"
             path_expression="string:+charm-bases"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:navigation
+        <lp:navigation
             module="lp.charms.browser.charmbase"
             classes="CharmBaseSetNavigation" />
 

@@ -34,7 +34,7 @@
             path_expression="string:+binarypub"
             attribute_to_parent="archive"
             urldata="lp.soyuz.browser.publishing.BinaryPublicationURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.binarypackagerelease"
         classes="
             BinaryPackageReleaseNavigation"/>
@@ -130,7 +130,7 @@
             path_expression="string:+sourcepub"
             attribute_to_parent="archive"
             urldata="lp.soyuz.browser.publishing.SourcePublicationURL"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.soyuz.browser.publishing"
             classes="SourcePackagePublishingHistoryNavigation" />
     <browser:defaultView
@@ -140,7 +140,7 @@
         for="lp.soyuz.interfaces.distroarchseriesbinarypackagerelease.IDistroArchSeriesBinaryPackageRelease"
         path_expression="version"
         attribute_to_parent="distroarchseriesbinarypackage"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroarchseriesbinarypackagerelease"
         classes="
             DistroArchSeriesBinaryPackageReleaseNavigation"/>
@@ -170,7 +170,7 @@
     <browser:defaultView
         for="lp.soyuz.interfaces.archive.IArchive"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.archive"
         classes="ArchiveNavigation" />
     <lp:url
@@ -294,7 +294,7 @@
     <lp:url
         for="lp.soyuz.interfaces.binarypackagebuild.IBinaryPackageBuild"
         urldata="lp.soyuz.browser.build.BuildUrl"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.build"
         classes="
             BuildNavigation"/>
@@ -341,7 +341,7 @@
         for="lp.soyuz.interfaces.distroarchseriesbinarypackage.IDistroArchSeriesBinaryPackage"
         path_expression="name"
         attribute_to_parent="distroarchseries"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroarchseriesbinarypackage"
         classes="
             DistroArchSeriesBinaryPackageNavigation"/>
@@ -398,7 +398,7 @@
         for="lp.soyuz.interfaces.distributionsourcepackagerelease.IDistributionSourcePackageRelease"
         path_expression="version"
         attribute_to_parent="sourcepackage"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distributionsourcepackagerelease"
         classes="
             DistributionSourcePackageReleaseNavigation"/>
@@ -429,7 +429,7 @@
         for="lp.soyuz.interfaces.distroseriesbinarypackage.IDistroSeriesBinaryPackage"
         path_expression="string:+package/${name}"
         attribute_to_parent="distroseries"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroseriesbinarypackage"
         classes="
             DistroSeriesBinaryPackageNavigation"/>
@@ -462,7 +462,7 @@
             for="lp.soyuz.interfaces.distroarchseries.IDistroArchSeries"
             path_expression="architecturetag"
             attribute_to_parent="distroseries"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.soyuz.browser.distroarchseries"
             classes="
                 DistroArchSeriesNavigation"/>
@@ -650,7 +650,7 @@
         path_expression="string:package-sets"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.packageset"
         classes="PackagesetSetNavigation"
         />
@@ -669,7 +669,7 @@
         path_expression="string:+log/${id}"
         attribute_to_parent="package_upload"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.queue"
         classes="PackageUploadNavigation"
         />
@@ -712,7 +712,7 @@
         module="lp.soyuz.browser.livefs"
         classes="LiveFSNavigationMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.livefs"
         classes="LiveFSNavigation"
         />
@@ -761,7 +761,7 @@
         module="lp.soyuz.browser.livefsbuild"
         classes="LiveFSBuildContextMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.livefsbuild"
         classes="LiveFSBuildNavigation"
         />

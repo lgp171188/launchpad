@@ -244,10 +244,10 @@ The name begins with a 't', so the thing's value is THINGVIEW.
     <Thing 'THINGVIEW'>
 
 
-ZCML for browser:navigation
----------------------------
+ZCML for lp:navigation
+----------------------
 
-The zcml processor `browser:navigation` registers navigation classes.
+The zcml processor `lp:navigation` registers navigation classes.
 
     >>> class ThingSetView:
     ...     def __call__(self):
@@ -262,10 +262,12 @@ The zcml processor `browser:navigation` registers navigation classes.
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure
+    ...     xmlns:browser="http://namespaces.zope.org/browser"
+    ...     xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.browserpage" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:navigation
+    ...   <lp:navigation
     ...       module="lp.testing"
     ...       classes="ThingSetNavigation"
     ...       />

@@ -65,7 +65,7 @@
             for="lp.services.verification.interfaces.logintoken.ILoginToken"
             class="lp.services.verification.browser.logintoken.BugTrackerHandshakeView"
             permission="zope.Public"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.services.verification.browser.logintoken"
             classes="
                 LoginTokenSetNavigation"/>
