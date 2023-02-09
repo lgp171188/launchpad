@@ -595,6 +595,7 @@ class SourcePackageAssociationPortletView(LaunchpadFormView):
     custom_widget_upstream = CustomWidgetFactory(
         LaunchpadRadioWidget, orientation="vertical"
     )
+    next_url = None
     product_suggestions = None
     initial_focus_widget = None
     max_suggestions = 9

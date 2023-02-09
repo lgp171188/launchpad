@@ -207,12 +207,12 @@ class FileBugViewBase(LaunchpadFormView):
     """Base class for views related to filing a bug."""
 
     schema = IBug
-
     custom_widget_information_type = LaunchpadRadioWidgetWithDescription
     custom_widget_comment = CustomWidgetFactory(
         TextAreaWidget, cssClass="comment-text"
     )
     custom_widget_packagename = FileBugSourcePackageNameWidget
+    next_url = None
 
     extra_data_token = None
 
@@ -1350,6 +1350,7 @@ class OfficialBugTagsManageView(LaunchpadEditFormView):
 
     schema = IOfficialBugTagTargetPublic
     custom_widget_official_bug_tags = LargeBugTagsWidget
+    next_url = None
 
     label = "Manage official bug tags"
 

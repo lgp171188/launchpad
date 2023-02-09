@@ -75,6 +75,7 @@ class SpecificationDependencyRemoveView(LaunchpadFormView):
     schema = ISpecificationDependencyRemoval
     label = "Remove a dependency"
     field_names = ["dependency"]
+    next_url = None
     for_input = True
 
     @action("Continue", name="continue")

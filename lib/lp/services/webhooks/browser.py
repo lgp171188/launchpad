@@ -112,6 +112,7 @@ class WebhookAddView(LaunchpadFormView):
 
     schema = WebhookEditSchema
     custom_widget_event_types = LabeledMultiCheckBoxWidget
+    next_url = None
 
     @property
     def inside_breadcrumb(self):
@@ -184,6 +185,7 @@ class WebhookView(LaunchpadEditFormView):
 class WebhookDeleteView(LaunchpadFormView):
 
     schema = Interface
+    next_url = None
 
     page_title = label = "Delete webhook"
 

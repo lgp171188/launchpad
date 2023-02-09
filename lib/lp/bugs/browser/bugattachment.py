@@ -106,6 +106,8 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
 
     schema = IBugAttachmentEditForm
     field_names = ["title", "patch", "contenttype"]
+    next_url = None
+    cancel_url = None
 
     def __init__(self, context, request):
         LaunchpadFormView.__init__(self, context, request)
@@ -206,6 +208,8 @@ class BugAttachmentPatchConfirmationView(LaunchpadFormView):
     """
 
     schema = IBugAttachmentIsPatchConfirmationForm
+    next_url = None
+    cancel_url = None
 
     custom_widget_patch = LaunchpadBooleanRadioWidget
 

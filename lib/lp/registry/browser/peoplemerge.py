@@ -112,6 +112,7 @@ class ValidatingMergeView(LaunchpadFormView):
 class AdminMergeBaseView(ValidatingMergeView):
     """Base view for the pages where admins can merge people/teams."""
 
+    next_url = None
     page_title = "Merge Launchpad accounts"
     # Both subclasses share the same template so we need to define these
     # variables (which are used in the template) here rather than on
@@ -476,6 +477,7 @@ class RequestPeopleMergeView(ValidatingMergeView):
     label = "Merge Launchpad accounts"
     page_title = label
     schema = IRequestPeopleMerge
+    next_url = None
 
     @property
     def cancel_url(self):

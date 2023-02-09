@@ -478,8 +478,8 @@ class MilestoneAddView(MilestoneTagBase, LaunchpadFormView):
     schema = IMilestone
     field_names = ["name", "code_name", "dateexpected", "summary"]
     label = "Register a new milestone"
-
     custom_widget_dateexpected = DateWidget
+    next_url = None
 
     @action(_("Register Milestone"), name="register")
     def register_action(self, action, data):
@@ -516,8 +516,8 @@ class MilestoneEditView(MilestoneTagBase, LaunchpadEditFormView):
 
     schema = IMilestone
     label = "Modify milestone details"
-
     custom_widget_dateexpected = DateWidget
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -582,6 +582,7 @@ class MilestoneDeleteView(LaunchpadFormView, RegistryDeleteViewMixin):
 
     schema = IMilestone
     field_names = []
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -644,6 +645,7 @@ class MilestoneTagView(
     """A View for listing bugtasks and specification for milestone tags."""
 
     schema = ISearchMilestoneTagsForm
+    next_url = None
 
     def __init__(self, context, request):
         """See `LaunchpadView`.

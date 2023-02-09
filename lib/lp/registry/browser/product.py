@@ -2601,6 +2601,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         "owner",
     ]
     schema = IProduct
+    next_url = None
     step_name = "projectaddstep2"
     template = ViewPageTemplateFile("../templates/product-new.pt")
     page_title = ProjectAddStepOne.page_title

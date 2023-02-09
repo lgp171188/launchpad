@@ -403,6 +403,7 @@ class SprintDeleteView(LaunchpadFormView):
 
     schema = ISprint
     field_names = []  # type: List[str]
+    next_url = None
 
     @property
     def label(self):

@@ -309,6 +309,7 @@ class QuestionSetView(LaunchpadFormView):
 
     schema = IAnswersFrontPageSearchForm
     custom_widget_scope = ProjectScopeWidget
+    next_url = None
 
     page_title = "Launchpad Answers"
     label = "Questions and Answers"
@@ -964,6 +965,7 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
     """
 
     schema = IQuestionAddMessageForm
+    next_url = None
 
     # Do not autofocus the message widget.
     initial_focus_widget = None
@@ -1364,6 +1366,7 @@ class QuestionCreateFAQView(LinkFAQMixin, LaunchpadFormView):
     """View to create a new FAQ."""
 
     schema = IFAQ
+    next_url = None
     label = _("Create a new FAQ")
 
     @property

@@ -552,8 +552,8 @@ class GitRepositoryView(
 class GitRepositoryForkView(LaunchpadEditFormView):
 
     schema = Interface
-
     field_names = []
+    next_url = None
 
     def initialize(self):
         if not getFeatureFlag(GIT_REPOSITORY_FORK_ENABLED):
@@ -596,8 +596,8 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 class GitRepositoryRescanView(LaunchpadEditFormView):
 
     schema = Interface
-
     field_names = []
+    next_url = None
 
     @action("Rescan", name="rescan")
     def rescan(self, action, data):
@@ -1018,6 +1018,8 @@ class GitRulePatternField(UniqueField):
 
 class GitRepositoryPermissionsView(LaunchpadFormView):
     """A view to manage repository permissions."""
+
+    next_url = None
 
     heads_prefix = "refs/heads/"
     tags_prefix = "refs/tags/"
@@ -1552,6 +1554,7 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
     schema = IGitRepository
     field_names = []
+    next_url = None
 
     @property
     def page_title(self):

@@ -299,6 +299,8 @@ def log_oops(error, request):
 
 
 class CharmRecipeAuthorizeMixin:
+    next_url = None
+
     def requestAuthorization(self, recipe):
         try:
             self.next_url = CharmRecipeAuthorizeView.requestAuthorization(
@@ -629,6 +631,7 @@ class CharmRecipeDeleteView(BaseCharmRecipeEditView):
     page_title = "Delete"
 
     field_names = []
+    next_url = None
 
     @action("Delete charm recipe", name="delete")
     def delete_action(self, action, data):
@@ -644,6 +647,7 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
     def label(self):
         return "Request builds for %s" % self.context.name
 
+    next_url = None
     page_title = "Request builds"
 
     class schema(Interface):

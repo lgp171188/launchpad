@@ -42,6 +42,7 @@ class KarmaActionEditView(LaunchpadEditFormView):
 
     schema = IKarmaAction
     field_names = ["name", "category", "points", "title", "summary"]
+    next_url = None
 
     @property
     def label(self):

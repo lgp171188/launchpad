@@ -100,6 +100,7 @@ class DistroArchSeriesAddView(LaunchpadFormView):
 
     schema = DistroArchSeriesAddSchema
     field_names = ["architecturetag", "processor", "official"]
+    next_url = None
 
     @property
     def label(self):

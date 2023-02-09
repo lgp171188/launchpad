@@ -67,10 +67,15 @@ class LaunchpadFormView(LaunchpadView):
     field_names = None  # type: Optional[List[str]]
 
     # The next URL to redirect to on successful form submission
-    next_url = None  # type: Optional[str]
+    @property
+    def next_url(self) -> Optional[str]:
+        return None
+
     # The cancel URL is rendered as a Cancel link in the form
     # macro if set in a derived class.
-    cancel_url = None  # type: Optional[str]
+    @property
+    def cancel_url(self) -> Optional[str]:
+        return None
 
     # The name of the widget that will receive initial focus in the form.
     # By default, the first widget will receive focus.  Set this to None

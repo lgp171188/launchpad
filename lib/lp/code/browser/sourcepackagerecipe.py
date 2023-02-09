@@ -445,6 +445,8 @@ class SourcePackageRecipeRequestBuildsHtmlView(
 ):
     """Supports HTML form recipe build requests."""
 
+    next_url = None
+
     @property
     def title(self):
         return "Request builds for %s" % self.context.name
@@ -535,6 +537,8 @@ class SourcePackageRecipeRequestDailyBuildView(LaunchpadFormView):
 
     This view works for both ajax and html form requests.
     """
+
+    next_url = None
 
     # Attributes for the html version
     page_title = "Build now"
@@ -782,6 +786,7 @@ class SourcePackageRecipeAddView(
     title = label = "Create a new source package recipe"
 
     schema = ISourcePackageAddSchema
+    next_url = None
     custom_widget_distroseries = LabeledMultiCheckBoxWidget
     custom_widget_owner = RecipeOwnerWidget
     custom_widget_use_ppa = LaunchpadRadioWidget
@@ -959,6 +964,7 @@ class SourcePackageRecipeEditView(
     label = title
 
     schema = ISourcePackageEditSchema
+    next_url = None
     custom_widget_distroseries = LabeledMultiCheckBoxWidget
 
     def setUpFields(self):

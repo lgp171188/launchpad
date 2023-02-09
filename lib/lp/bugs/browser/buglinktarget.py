@@ -39,6 +39,7 @@ class BugLinkView(LaunchpadFormView):
     label = _("Link a bug report")
     schema = IBugLinkForm
     page_title = label
+    next_url = None
 
     focused_element_id = "bug"
 
@@ -139,6 +140,7 @@ class BugsUnlinkView(LaunchpadFormView):
     schema = IUnlinkBugsForm
     custom_widget_bugs = LabeledMultiCheckBoxWidget
     page_title = label
+    next_url = None
 
     @property
     def cancel_url(self):

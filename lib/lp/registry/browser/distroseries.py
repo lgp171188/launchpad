@@ -614,6 +614,7 @@ class DistroSeriesEditView(LaunchpadEditFormView, SeriesStatusMixin):
     schema = IDistroSeries
     field_names = ["display_name", "title", "summary", "description"]
     custom_widget_status = LaunchpadDropdownWidget
+    next_url = None
 
     @property
     def label(self):
@@ -672,6 +673,7 @@ class DistroSeriesAdminView(LaunchpadEditFormView, SeriesStatusMixin):
         "inherit_overrides_from_parents",
     ]
     custom_widget_status = LaunchpadDropdownWidget
+    next_url = None
 
     @property
     def label(self):
@@ -745,6 +747,7 @@ class DistroSeriesAddView(LaunchpadFormView):
         "display_name",
         "summary",
     ]
+    next_url = None
 
     help_links = {
         "name": "/+help-registry/distribution-add-series.html#codename",
@@ -952,6 +955,7 @@ class DistroSeriesDifferenceBaseView(
         header="Select person being sponsored",
         show_assign_me_button=False,
     )
+    next_url = None
 
     # Differences type to display. Can be overrided by sublasses.
     differences_type = DistroSeriesDifferenceType.DIFFERENT_VERSIONS

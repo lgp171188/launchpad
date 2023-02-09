@@ -25,6 +25,7 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
     """Browser view class for adding a bug comment/attachment."""
 
     schema = IBugMessageAddForm
+    next_url = None
     initial_focus_widget = None
 
     custom_widget_comment = CustomWidgetFactory(

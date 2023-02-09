@@ -419,6 +419,7 @@ class PollAddView(LaunchpadFormView):
         "dateopens",
         "datecloses",
     ]
+    next_url = None
     invariant_context = None
 
     page_title = "New poll"
@@ -459,6 +460,7 @@ class PollEditView(LaunchpadEditFormView):
         "dateopens",
         "datecloses",
     ]
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -479,6 +481,7 @@ class PollOptionEditView(LaunchpadEditFormView):
     page_title = "Edit option"
     field_names = ["name", "title"]
     custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -499,6 +502,7 @@ class PollOptionAddView(LaunchpadFormView):
     page_title = "New option"
     field_names = ["name", "title"]
     custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
+    next_url = None
 
     @property
     def cancel_url(self):
