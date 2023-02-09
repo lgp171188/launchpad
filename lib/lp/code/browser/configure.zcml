@@ -121,7 +121,7 @@
             name="+index"
             template="../templates/codeimport-machine-index.pt"
             permission="zope.Public"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.code.browser.codeimportmachine"
             classes="CodeImportMachineSetNavigation"/>
         <lp:url
@@ -142,7 +142,7 @@
         for="lp.code.interfaces.branchref.IBranchRef"
         path_expression="string:.bzr"
         attribute_to_parent="branch"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branchref"
         classes="BranchRefNavigation"/>
     <lp:url
@@ -159,7 +159,7 @@
         class="lp.code.browser.bazaar.BazaarApplicationView"
         name="+index"
         template="../templates/bazaar-index.pt" />
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branchmergeproposal"
         classes="BranchMergeProposalNavigation"/>
     <browser:defaultView
@@ -349,7 +349,7 @@
     <lp:url
         for="lp.code.interfaces.branch.IBranch"
         urldata="lp.code.browser.branch.BranchURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branch"
         classes="BranchNavigation"/>
     <browser:pages
@@ -557,7 +557,7 @@
         path_expression="string:comments/${id}"
         attribute_to_parent="branch_merge_proposal"
         rootsite="code"/>
-    <browser:navigation
+    <lp:navigation
         module=".codereviewcomment"
         classes="CodeReviewCommentNavigation" />
     <browser:defaultView
@@ -657,7 +657,7 @@
         attribute_to_parent="target"
         path_expression="string:+code-import"
         rootsite="code"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.codeimport"
         classes="CodeImportSetNavigation"/>
     <browser:defaultView
@@ -816,7 +816,7 @@
     <lp:url
         for="lp.code.interfaces.gitrepository.IGitRepository"
         urldata="lp.code.browser.gitrepository.GitRepositoryURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.gitrepository"
         classes="GitRepositoryNavigation"/>
     <lp:menus
@@ -982,7 +982,7 @@
         attribute_to_parent="repository"
         rootsite="code"/>
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.revisionstatus"
         classes="RevisionStatusArtifactNavigation"/>
 
@@ -1165,7 +1165,7 @@
         attribute_to_parent="branch_merge_proposal"
         rootsite="code" />
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.diff"
         classes="PreviewDiffNavigation"/>
 
@@ -1300,7 +1300,7 @@
         classes="SourcePackageRecipeBuildContextMenu"
         module="lp.code.browser.sourcepackagerecipebuild"/>
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.sourcepackagerecipebuild"
         classes="SourcePackageRecipeBuildNavigation" />
 
@@ -1433,7 +1433,7 @@
         <lp:menus
             module="lp.code.browser.cibuild"
             classes="CIBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.code.browser.cibuild"
             classes="CIBuildNavigation" />
         <browser:defaultView

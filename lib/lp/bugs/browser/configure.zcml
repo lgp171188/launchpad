@@ -164,7 +164,7 @@
             path_expression="string:comments/${index}"
             attribute_to_parent="bugtask"
             rootsite="bugs"/>
-          <browser:navigation
+          <lp:navigation
             module=".bugcomment"
             classes="BugCommentNavigation"
             />
@@ -235,7 +235,7 @@
     <browser:defaultView
         for="lp.bugs.interfaces.malone.IMaloneApplication"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.bugs.browser.malone"
         classes="
             MaloneApplicationNavigation"/>
@@ -461,7 +461,7 @@
             path_expression="string:+bug/${bug/id}"
             attribute_to_parent="target"
             rootsite="bugs"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.bugtask"
             classes="BugTaskNavigation"/>
         <browser:page
@@ -682,7 +682,7 @@
         name="+confirm-is-patch"
         permission="launchpad.AnyPerson"
         template="../templates/bug-attachment-confirm-is-patch.pt"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.bugs.browser.bugattachment"
         classes="
             BugAttachmentSetNavigation BugAttachmentFileNavigation"/>
@@ -697,7 +697,7 @@
             classes="
                 BugTrackerSetContextMenu
                 BugTrackerNavigationMenu"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.bugtracker"
             classes="
                 BugTrackerNavigation
@@ -866,7 +866,7 @@
             for="lp.bugs.interfaces.cve.ICveSet"
             path_expression="string:cve"
             parent_utility="lp.bugs.interfaces.malone.IMaloneApplication"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.cve"
             classes="
                 CveSetNavigation"/>
@@ -934,7 +934,7 @@
         <lp:url
             for="lp.bugs.interfaces.bug.IBug"
             urldata="lp.bugs.browser.bug.BugURL"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.bug"
             classes="
                 BugNavigation"/>
@@ -1011,7 +1011,7 @@
             class="
               lp.bugs.browser.bugsubscription.BugPortletSubscribersWithDetails"
             permission="launchpad.View"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.bug"
             classes="
                 BugSetNavigation"/>
@@ -1092,7 +1092,7 @@
         <browser:defaultView
             for="lp.bugs.interfaces.bugwatch.IBugWatchSet"
             name="+index"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.bugs.browser.bugwatch"
             classes="
                 BugWatchSetNavigation"/>
@@ -1121,7 +1121,7 @@
         for="lp.bugs.interfaces.structuralsubscription.IStructuralSubscription"
         path_expression="string:+subscription/${subscriber/name}"
         attribute_to_parent="target"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.bugs.browser.structuralsubscription"
         classes="StructuralSubscriptionNavigation"/>
 

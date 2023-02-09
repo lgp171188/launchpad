@@ -14,7 +14,7 @@
         path_expression="string:${name}"
         parent_utility="lp.buildmaster.interfaces.processor.IProcessorSet" />
 
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.processor"
         classes="ProcessorSetNavigation" />
     <lp:url for="lp.buildmaster.interfaces.processor.IProcessorSet"
@@ -41,7 +41,7 @@
     <browser:defaultView
         for="lp.buildmaster.interfaces.builder.IBuilderSet"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.builder"
         classes="
             BuilderSetNavigation"/>
@@ -62,7 +62,7 @@
     <browser:defaultView
         for="lp.buildmaster.interfaces.builder.IBuilder"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.builder"
         classes="
             BuilderNavigation"/>

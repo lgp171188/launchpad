@@ -38,7 +38,7 @@
         interface="lp.services.temporaryblobstorage.interfaces.ITemporaryStorageManager" />
   </lp:securedutility>
 
-  <browser:navigation
+  <lp:navigation
       module="lp.services.temporaryblobstorage.browser"
       classes="TemporaryBlobStorageNavigation"
       />

@@ -26,7 +26,7 @@
             classes="
                 SnapNavigationMenu
                 SnapContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snap"
             classes="SnapNavigation" />
         <browser:page
@@ -142,7 +142,7 @@
         <lp:menus
             module="lp.snappy.browser.snapbuild"
             classes="SnapBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snapbuild"
             classes="SnapBuildNavigation" />
         <browser:defaultView
@@ -185,7 +185,7 @@
             for="lp.snappy.interfaces.snappyseries.ISnappySeriesSet"
             path_expression="string:+snappy-series"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snappyseries"
             classes="SnappySeriesSetNavigation" />
         <lp:url
@@ -196,7 +196,7 @@
             for="lp.snappy.interfaces.snapbase.ISnapBaseSet"
             path_expression="string:+snap-bases"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snapbase"
             classes="
                 SnapBaseNavigation

@@ -27,7 +27,7 @@
         name="+index"
         />
 
-    <browser:navigation
+    <lp:navigation
         module="lp.services.feeds.browser"
         classes="FeedsNavigation"
         />

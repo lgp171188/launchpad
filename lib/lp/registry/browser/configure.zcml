@@ -93,7 +93,7 @@
         permission="zope.Public"
         template="../templates/teammembership-listing-simple.pt"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.distroseries"
         classes="
                  DistroSeriesNavigation"
@@ -228,7 +228,7 @@
         name="+listing-distroseries-extra"
         for="lp.registry.interfaces.distroseriesdifference.IDistroSeriesDifference"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.distroseriesdifference"
         classes="DistroSeriesDifferenceNavigation"
         />
@@ -355,7 +355,7 @@
         path_expression="string:${id}"
         parent_utility="lp.registry.interfaces.codeofconduct.ISignedCodeOfConductSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.codeofconduct"
         classes="
                  SignedCodeOfConductSetNavigation
@@ -406,7 +406,7 @@
           permission="zope.Public"
           />
     </facet>
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.project"
         classes="
                  ProjectNavigation"
@@ -491,7 +491,7 @@
         name="+index"
         for="lp.registry.interfaces.projectgroup.IProjectGroupSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.project"
         classes="
                  ProjectSetNavigation"
@@ -554,7 +554,7 @@
         for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
         urldata="lp.registry.browser.distributionsourcepackage.DistributionSourcePackageURL"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.distributionsourcepackage"
         classes="
                  DistributionSourcePackageNavigation"
@@ -622,7 +622,7 @@
         path_expression="string:+series/${name}"
         attribute_to_parent="oci_project"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.ociproject"
         classes="OCIProjectNavigation"
         />
@@ -714,7 +714,7 @@
         name="+index"
         for="lp.registry.interfaces.karma.IKarmaActionSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.karma"
         classes="
                  KarmaActionSetNavigation"
@@ -756,7 +756,7 @@
         name="+index"
         for="lp.registry.interfaces.poll.IPoll"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.poll"
         classes="
                  PollNavigation"
@@ -935,11 +935,11 @@
                  AnnouncementCreateNavigationMenu
                  AnnouncementEditNavigationMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.person"
         classes="PersonNavigation"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.team"
         classes="TeamNavigation"
         />
@@ -1450,7 +1450,7 @@
         name="+index"
         for="lp.registry.interfaces.person.IPersonSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.person"
         classes="
                  PersonSetNavigation"
@@ -1517,7 +1517,7 @@
           template="../templates/people-mergerequest-sent.pt"
           />
     </browser:pages>
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.milestone"
         classes="
                  MilestoneSetNavigation
@@ -1664,7 +1664,7 @@
         for="lp.registry.interfaces.product.IProduct"
         layer="lp.answers.publisher.AnswersLayer"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.product"
         classes="ProductNavigation"
         />
@@ -1866,7 +1866,7 @@
         permission="launchpad.Edit"
         template="../../app/templates/generic-edit.pt"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.nameblocklist"
         classes="NameBlocklistSetNavigation"
         />
@@ -1891,7 +1891,7 @@
         name="+index"
         for="lp.registry.interfaces.product.IProductSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.product"
         classes="
                  ProductSetNavigation
@@ -1949,7 +1949,7 @@
                  ProductSpecificationsMenu
                  "
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.productseries"
         classes="
                  ProductSeriesNavigation"
@@ -2116,7 +2116,7 @@
         for="lp.registry.interfaces.distribution.IDistribution"
         layer="lp.answers.publisher.AnswersLayer"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.distribution"
         classes="
                  DistributionNavigation"
@@ -2352,7 +2352,7 @@
         name="+index"
         for="lp.registry.interfaces.distribution.IDistributionSet"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.distribution"
         classes="
                  DistributionSetNavigation"
@@ -2400,7 +2400,7 @@
         name="+index"
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.sourcepackage"
         classes="
                  SourcePackageNavigation"
@@ -2451,7 +2451,7 @@
         classes="
                  SourcePackageOverviewMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.productrelease"
         classes="
                  ProductReleaseNavigation"/>
@@ -2637,7 +2637,7 @@
         path_expression="string:${distro_source_package/distribution/name}/+source/${distro_source_package/sourcepackagename/name}"
         attribute_to_parent="person"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.persondistributionsourcepackage"
         classes="
                  PersonDistributionSourcePackageNavigation"
@@ -2652,7 +2652,7 @@
         path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
         attribute_to_parent="person"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.personociproject"
         classes="PersonOCIProjectNavigation"
         />
@@ -2661,7 +2661,7 @@
         path_expression="product/name"
         attribute_to_parent="person"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.registry.browser.personproduct"
         classes="
                  PersonProductNavigation"

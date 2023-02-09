@@ -10,7 +10,7 @@
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <browser:navigation
+    <lp:navigation
         module="lp.blueprints.browser.sprint"
         classes="
             SprintNavigation"/>
@@ -143,7 +143,7 @@
     <browser:defaultView
         for="lp.blueprints.interfaces.sprint.ISprintSet"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.blueprints.browser.sprint"
         classes="
             SprintSetNavigation"/>
@@ -240,7 +240,7 @@
             classes="
                 SpecificationActionMenu
                 SpecificationContextMenu"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.blueprints.browser.specification"
             classes="
                 SpecificationNavigation"/>

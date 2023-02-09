@@ -16,7 +16,7 @@
     <browser:defaultView
         for="lp.translations.interfaces.translations.IRosettaApplication"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.translations.browser.translations"
         classes="
             RosettaApplicationNavigation"/>
@@ -91,7 +91,7 @@
             permission="launchpad.Edit"
             class="lp.translations.browser.translator.TranslatorRemoveView"
             template="../../app/templates/generic-edit.pt"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.translations.browser.translationimportqueue"
             classes="
                 TranslationImportQueueEntryNavigation
@@ -133,7 +133,7 @@
         path_expression="string:+lang/${language/code}"
         attribute_to_parent="distroseries"
         rootsite="translations"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.translations.browser.serieslanguage"
         classes="DistroSeriesLanguageNavigation"/>
     <browser:defaultView
@@ -152,7 +152,7 @@
         for="lp.translations.interfaces.distroserieslanguage.IDistroSeriesLanguage"
         template="../templates/serieslanguage-index.pt"
         class="lp.translations.browser.serieslanguage.DistroSeriesLanguageView"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.translations.browser.pofile"
             classes="
                 POFileNavigation"/>
@@ -220,7 +220,7 @@
         path_expression="string:+lang/${language/code}"
         attribute_to_parent="parent"
         rootsite="translations"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.translations.browser.serieslanguage"
         classes="
             ProductSeriesLanguageNavigation"/>
@@ -240,7 +240,7 @@
         for="lp.translations.interfaces.productserieslanguage.IProductSeriesLanguage"
         template="../templates/serieslanguage-index.pt"
         class="lp.translations.browser.serieslanguage.ProductSeriesLanguageView"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.translations.browser.language"
             classes="
                 LanguageSetNavigation"/>
@@ -300,7 +300,7 @@
             permission="launchpad.Admin"
             template="../../app/templates/generic-edit.pt"
             name="+add"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.translations.browser.potemplate"
             classes="
                 POTemplateNavigation
@@ -377,7 +377,7 @@
             permission="zope.Public"
             class="lp.translations.browser.potemplate.POTemplateSubsetView"
             attribute="__call__"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.translations.browser.translationgroup"
             classes="
                 TranslationGroupNavigation
