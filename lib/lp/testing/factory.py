@@ -3795,6 +3795,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         container=None,
         path=None,
         library_file=None,
+        date_superseded=None,
         scheduled_deletion_date=None,
     ):
         if archive is None:
@@ -3811,6 +3812,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             path=path,
             library_file=library_file,
         )
+        if date_superseded is not None:
+            removeSecurityProxy(archive_file).date_superseded = date_superseded
         if scheduled_deletion_date is not None:
             removeSecurityProxy(
                 archive_file

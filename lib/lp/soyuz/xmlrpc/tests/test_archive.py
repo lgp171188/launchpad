@@ -11,11 +11,11 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
-from lp.soyuz.interfaces.archivefile import IArchiveFileSet
 from lp.soyuz.xmlrpc.archive import ArchiveAPI
 from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
@@ -324,10 +324,13 @@ class TestArchiveAPI(TestCaseWithFactory):
 
     def test_translatePath_by_hash_checksum_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
+        now = get_transaction_timestamp(IStore(archive))
         self.factory.makeArchiveFile(
             archive=archive,
             container="release:jammy",
             path="dists/jammy/InRelease",
+            date_superseded=now,
+            scheduled_deletion_date=now + timedelta(days=1),
         )
         archive_file = self.factory.makeArchiveFile(
             archive=archive,
@@ -349,10 +352,13 @@ class TestArchiveAPI(TestCaseWithFactory):
 
     def test_translatePath_by_hash_checksum_found_private(self):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        now = get_transaction_timestamp(IStore(archive))
         self.factory.makeArchiveFile(
             archive=archive,
             container="release:jammy",
             path="dists/jammy/InRelease",
+            date_superseded=now,
+            scheduled_deletion_date=now + timedelta(days=1),
         )
         archive_file = self.factory.makeArchiveFile(
             archive=archive,
@@ -385,15 +391,18 @@ class TestArchiveAPI(TestCaseWithFactory):
 
     def test_translatePath_non_pool_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
+        now = get_transaction_timestamp(IStore(archive))
         self.factory.makeArchiveFile(archive=archive)
         path = "dists/focal/InRelease"
         archive_files = [
-            self.factory.makeArchiveFile(archive=archive, path=path)
-            for _ in range(2)
+            self.factory.makeArchiveFile(
+                archive=archive,
+                path=path,
+                date_superseded=now,
+                scheduled_deletion_date=now + timedelta(days=1),
+            ),
+            self.factory.makeArchiveFile(archive=archive, path=path),
         ]
-        getUtility(IArchiveFileSet).scheduleDeletion(
-            [archive_files[0]], timedelta(days=1)
-        )
         self.assertEqual(
             archive_files[1].library_file.getURL(),
             self.archive_api.translatePath(archive.reference, path),
@@ -409,15 +418,18 @@ class TestArchiveAPI(TestCaseWithFactory):
 
     def test_translatePath_non_pool_found_private(self):
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        now = get_transaction_timestamp(IStore(archive))
         self.factory.makeArchiveFile(archive=archive)
         path = "dists/focal/InRelease"
         archive_files = [
-            self.factory.makeArchiveFile(archive=archive, path=path)
-            for _ in range(2)
+            self.factory.makeArchiveFile(
+                archive=archive,
+                path=path,
+                date_superseded=now,
+                scheduled_deletion_date=now + timedelta(days=1),
+            ),
+            self.factory.makeArchiveFile(archive=archive, path=path),
         ]
-        getUtility(IArchiveFileSet).scheduleDeletion(
-            [archive_files[0]], timedelta(days=1)
-        )
         self.assertStartsWith(
             archive_files[1].library_file.getURL() + "?token=",
             self.archive_api.translatePath(archive.reference, path),
