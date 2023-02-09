@@ -4,7 +4,9 @@
 """{Describe your test suite here}.
 """
 
-__all__ = []
+__all__ = []  # type: List[str]
+
+from typing import List
 
 from lp.testing import person_logged_in
 from lp.testing.factory import LaunchpadObjectFactory
@@ -96,7 +98,7 @@ def example(request, data):
     # .extend.)
 
 
-@example.add_cleanup
+@example.add_cleanup  # type: ignore[no-redef]
 def example(request, data):
     # This is an example of a cleanup function, which will be called
     # at the end of the test.  You usually won't need one of these,

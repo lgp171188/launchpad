@@ -28,7 +28,9 @@ from lp.testing.matchers import (
 class ITestInterface(Interface):
     """A dummy interface for testing."""
 
-    def doFoo():
+    # XXX cjwatson 2023-02-03: mypy-zope should fix the need to override
+    # mypy here.
+    def doFoo():  # type: ignore[misc]
         """Dummy method for interface compliance testing."""
 
 

@@ -67,7 +67,7 @@ from datetime import datetime, timedelta
 from fnmatch import fnmatchcase
 from functools import partial
 from select import select
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 import fixtures
 import lp_sitecustomize
@@ -1079,8 +1079,8 @@ class AbstractYUITestCase(TestCase):
     # 30 seconds for the suite.
     suite_timeout = 30000
     # By default we do not restrict per-test or times.  yuixhr tests do.
-    incremental_timeout = None
-    initial_timeout = None
+    incremental_timeout = None  # type: Optional[int]
+    initial_timeout = None  # type: Optional[int]
     html_uri = None
     test_path = None
 

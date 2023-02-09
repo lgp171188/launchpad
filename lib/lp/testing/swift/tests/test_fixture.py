@@ -3,10 +3,11 @@
 
 """Testing the mock Swift test fixture."""
 
-__all__ = []
+__all__ = []  # type: List[str]
 
 from datetime import datetime
 from hashlib import md5
+from typing import List
 
 from requests.exceptions import ConnectionError
 from swiftclient import client as swiftclient

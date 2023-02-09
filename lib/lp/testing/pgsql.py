@@ -10,6 +10,7 @@ import os
 import random
 import sys
 import time
+from typing import List, Optional
 
 import psycopg2
 from breezy.errors import LockContention
@@ -92,7 +93,7 @@ class CursorWrapper:
     """
 
     real_cursor = None
-    last_executed_sql = []
+    last_executed_sql = []  # type: List[str]
     record_sql = False
 
     def __init__(self, real_cursor):
@@ -162,16 +163,16 @@ def uninstallFakeConnect():
 class PgTestSetup:
 
     # Shared:
-    connections = []
+    connections = []  # type: List[ConnectionWrapper]
     # Use a dynamically generated dbname:
     dynamic = object()
 
     template = "template1"
     # Needs to match configs/testrunner*/*:
     dbname = "launchpad_ftest"
-    dbuser = None
-    host = None
-    port = None
+    dbuser = None  # type: Optional[str]
+    host = None  # type: Optional[str]
+    port = None  # type: Optional[int]
 
     # Class attributes. With PostgreSQL 8.4, pg_shdepend bloats
     # hugely when we drop and create databases, because this
