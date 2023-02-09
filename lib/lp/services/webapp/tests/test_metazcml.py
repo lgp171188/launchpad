@@ -10,7 +10,7 @@ from lp.testing.fakemethod import FakeMethod
 class TestCallDirective(TestCase):
     def test_call(self):
         directive = """
-            <call callable="%(this)s.callable" />
+            <lp:call callable="%(this)s.callable" />
             """ % dict(
             this=this
         )
@@ -21,7 +21,9 @@ class TestCallDirective(TestCase):
 callable = FakeMethod()
 this = "lp.services.webapp.tests.test_metazcml"
 zcml_configure = """
-    <configure xmlns="http://namespaces.zope.org/zope">
+    <configure
+        xmlns="http://namespaces.zope.org/zope"
+        xmlns:lp="http://namespaces.canonical.com/lp">
       <include package="lp.services.webapp" file="meta.zcml" />
       %s
     </configure>
