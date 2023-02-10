@@ -74,6 +74,7 @@ from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePublishingMethod,
     ArchivePurpose,
+    ArchiveRepositoryFormat,
     ArchiveStatus,
     PackageCopyPolicy,
     PackagePublishingStatus,
@@ -5802,6 +5803,104 @@ class TestDisplayName(TestCaseWithFactory):
         self.assertEqual("launchpad.Edit", e.args[2])
         with person_logged_in(archive.owner):
             archive.displayname = "My testing packages"
+
+
+class TestAuthorizedSize(TestCaseWithFactory):
+    """Tests for Archive.authorized_size"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_editable(self):
+        archive = self.factory.makeArchive(name="test-ppa")
+        self.assertEqual(8192, archive.authorized_size)
+
+        # unprivileged person cannot edit `authorized_size`
+        login("no-priv@canonical.com")
+        self.assertRaises(
+            Unauthorized, setattr, archive, "authorized_size", 1234
+        )
+
+        # launchpad developers can edit `authorized_size`
+        with celebrity_logged_in("launchpad_developers"):
+            archive.authorized_size *= 2
+        self.assertEqual(16384, archive.authorized_size)
+
+
+class TestPrivate(TestCaseWithFactory):
+    """Tests for Archive.private"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_editable(self):
+        archive = self.factory.makeArchive(name="test-ppa")
+        self.assertEqual(False, archive.private)
+
+        # unprivileged person cannot edit `private`
+        login("no-priv@canonical.com")
+        self.assertRaises(Unauthorized, setattr, archive, "private", True)
+
+        # launchpad developers can edit `private`
+        with celebrity_logged_in("launchpad_developers"):
+            archive.private = True
+        self.assertEqual(True, archive.private)
+
+
+class TestPublishingMethod(TestCaseWithFactory):
+    """Tests for Archive.publishing_method"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_editable(self):
+        archive = self.factory.makeArchive(name="test-ppa")
+        self.assertEqual(
+            ArchivePublishingMethod.LOCAL, archive.publishing_method
+        )
+
+        # unprivileged person cannot edit `publishing_method`
+        login("no-priv@canonical.com")
+        self.assertRaises(
+            Unauthorized,
+            setattr,
+            archive,
+            "publishing_method",
+            ArchivePublishingMethod.ARTIFACTORY,
+        )
+
+        # launchpad developers can edit `publishing_method`
+        with celebrity_logged_in("launchpad_developers"):
+            archive.publishing_method = ArchivePublishingMethod.ARTIFACTORY
+        self.assertEqual(
+            ArchivePublishingMethod.ARTIFACTORY, archive.publishing_method
+        )
+
+
+class TestRepositoryFormat(TestCaseWithFactory):
+    """Tests for Archive.repository_format"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_editable(self):
+        archive = self.factory.makeArchive(name="test-ppa")
+        self.assertEqual(
+            ArchiveRepositoryFormat.DEBIAN, archive.repository_format
+        )
+
+        # unprivileged person cannot edit `repository_format`
+        login("no-priv@canonical.com")
+        self.assertRaises(
+            Unauthorized,
+            setattr,
+            archive,
+            "repository_format",
+            ArchiveRepositoryFormat.PYTHON,
+        )
+
+        # launchpad developers can edit `repository_format`
+        with celebrity_logged_in("launchpad_developers"):
+            archive.repository_format = ArchiveRepositoryFormat.PYTHON
+        self.assertEqual(
+            ArchiveRepositoryFormat.PYTHON, archive.repository_format
+        )
 
 
 class TestSigningKeyPropagation(TestCaseWithFactory):
