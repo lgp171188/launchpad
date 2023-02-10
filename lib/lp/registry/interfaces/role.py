@@ -55,7 +55,7 @@ class IPersonRoles(Interface):
     and IPerson.inTeam from permission checkers. May also be used in model
     or view code.
 
-    All person celebrities in ILaunchpadCelbrities must have a matching
+    All person celebrities in ILaunchpadCelebrities must have a matching
     in_ attribute here and vice versa.
     """
 
