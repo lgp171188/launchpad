@@ -1315,3 +1315,13 @@ class TestCloseAccount(TestCaseWithFactory):
         with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
+
+    def test_skips_codereviewvote_registrant(self):
+        vote = self.factory.makeCodeReviewVoteReference()
+        registrant = vote.registrant
+        registrant_account_id = registrant.account.id
+        registrant_id = registrant.id
+        script = self.makeScript([registrant.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(registrant_account_id, registrant_id)
