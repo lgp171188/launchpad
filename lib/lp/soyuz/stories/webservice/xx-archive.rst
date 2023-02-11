@@ -1433,7 +1433,7 @@ describes the maximum size, in MiB, allowed for the archive.
     1024
 
 Modifying the authorized_size attribute through the API is not allowed except
-for admins, commercial admins, and PPA admins.
+for admins, commercial admins, PPA admins, and Launchpad developers.
 
     >>> mark_archive["authorized_size"] = 4096
     >>> response = modify_archive(admin_webservice, mark_archive)
@@ -1448,7 +1448,7 @@ Attempting to modify this flag without the necessary permissions will fail.
     >>> print(modify_archive(user_webservice, mark_archive))
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'authorized_size', 'launchpad.Admin')
+    (<Archive at ...>, 'authorized_size', 'launchpad.Moderate')
 
 Private archives
 ~~~~~~~~~~~~~~~~
@@ -1643,7 +1643,7 @@ Modifying privacy
 ~~~~~~~~~~~~~~~~~
 
 Modifying the privacy flag through the API is not allowed except for
-admins, commercial admins, and PPA admins.
+admins, commercial admins, PPA admins, and Launchpad developers.
 
     >>> login("foo.bar@canonical.com")
     >>> pubpriv_archive_db = factory.makeArchive(
@@ -1657,7 +1657,7 @@ admins, commercial admins, and PPA admins.
     >>> print(modify_archive(user_webservice, pubpriv_archive))
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'private', 'launchpad.Admin')
+    (<Archive at ...>, 'private', 'launchpad.Moderate')
 
     >>> login("foo.bar@canonical.com")
     >>> ppa_admin = factory.makePerson(
