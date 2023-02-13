@@ -1000,18 +1000,22 @@ class IArchiveView(IHasBuildRecords):
         "this archive."
     )
 
-    publishing_method = Choice(
-        title=_("Publishing method"),
-        vocabulary=ArchivePublishingMethod,
-        required=True,
-        readonly=False,
+    publishing_method = exported(
+        Choice(
+            title=_("Publishing method"),
+            vocabulary=ArchivePublishingMethod,
+            required=True,
+            readonly=False,
+        )
     )
 
-    repository_format = Choice(
-        title=_("Repository format"),
-        vocabulary=ArchiveRepositoryFormat,
-        required=True,
-        readonly=False,
+    repository_format = exported(
+        Choice(
+            title=_("Repository format"),
+            vocabulary=ArchiveRepositoryFormat,
+            required=True,
+            readonly=False,
+        )
     )
 
     api_publish = exported(
