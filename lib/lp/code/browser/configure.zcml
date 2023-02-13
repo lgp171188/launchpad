@@ -6,14 +6,15 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
-    <browser:url
+    <lp:url
        for="lp.code.interfaces.branch.IBranchSet"
        path_expression="string:branches"
        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-    <browser:url
+    <lp:url
        for="lp.code.interfaces.gitrepository.IGitRepositorySet"
        path_expression="string:+git"
        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -95,7 +96,7 @@
       permission="zope.Public"
       />
 
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.codereviewvote.ICodeReviewVoteReference"
         path_expression="string:+review/${id}"
         attribute_to_parent="branch_merge_proposal"
@@ -106,7 +107,7 @@
         class="lp.code.browser.codereviewvote.CodeReviewVoteReassign"
         permission="launchpad.AnyPerson"
         template="../../app/templates/generic-edit.pt"/>
-        <browser:url
+        <lp:url
             for="lp.code.interfaces.codeimportmachine.ICodeImportMachine"
             path_expression="string:${hostname}"
             parent_utility="lp.code.interfaces.codeimportmachine.ICodeImportMachineSet"
@@ -120,10 +121,10 @@
             name="+index"
             template="../templates/codeimport-machine-index.pt"
             permission="zope.Public"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.code.browser.codeimportmachine"
             classes="CodeImportMachineSetNavigation"/>
-        <browser:url
+        <lp:url
             for="lp.code.interfaces.codeimportmachine.ICodeImportMachineSet"
             path_expression="string:+machines"
             parent_utility="lp.code.interfaces.codeimport.ICodeImportSet"
@@ -137,14 +138,14 @@
             name="+index"
             template="../templates/codeimport-machines.pt"
             permission="zope.Public"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.branchref.IBranchRef"
         path_expression="string:.bzr"
         attribute_to_parent="branch"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branchref"
         classes="BranchRefNavigation"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.codehosting.IBazaarApplication"
         path_expression="string:+code"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -158,7 +159,7 @@
         class="lp.code.browser.bazaar.BazaarApplicationView"
         name="+index"
         template="../templates/bazaar-index.pt" />
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branchmergeproposal"
         classes="BranchMergeProposalNavigation"/>
     <browser:defaultView
@@ -306,7 +307,7 @@
         class="lp.code.browser.branchmergeproposal.BranchMergeProposalAddVoteView"
         permission="launchpad.AnyPerson"
         template="../templates/branchmergeproposal-vote.pt"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.branchmergeproposal.IBranchMergeProposal"
         path_expression="string:+merge/${id}"
         attribute_to_parent="parent"
@@ -322,7 +323,7 @@
         permission="zope.Public"
         template="../templates/branchmergeproposal-macros.pt"
         class="lp.app.browser.launchpad.Macro"/>
-    <browser:menus
+    <lp:menus
         classes="
             BranchMergeProposalContextMenu
             BranchMergeProposalEditMenu
@@ -337,7 +338,7 @@
         class="lp.code.browser.branchsubscription.BranchSubscriptionEditView"
         permission="launchpad.Edit"
         template="../templates/branchsubscription-edit.pt"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.branchsubscription.IBranchSubscription"
         path_expression="string:+subscription/${person/name}"
         attribute_to_parent="branch"
@@ -345,10 +346,10 @@
     <browser:defaultView
         for="lp.code.interfaces.branch.IBranch"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.branch.IBranch"
         urldata="lp.code.browser.branch.BranchURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.branch"
         classes="BranchNavigation"/>
     <browser:pages
@@ -546,17 +547,17 @@
         name="+branch-listing"
         template="../templates/branch-listing.pt"
         permission="zope.Public"/>
-    <browser:menus
+    <lp:menus
         classes="
             BranchContextMenu
             BranchEditMenu"
         module="lp.code.browser.branch"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.codereviewcomment.ICodeReviewComment"
         path_expression="string:comments/${id}"
         attribute_to_parent="branch_merge_proposal"
         rootsite="code"/>
-    <browser:navigation
+    <lp:navigation
         module=".codereviewcomment"
         classes="CodeReviewCommentNavigation" />
     <browser:defaultView
@@ -617,7 +618,7 @@
         class="lp.code.browser.codereviewcomment.CodeReviewCommentAddView"
         permission="launchpad.AnyPerson"
         template="../templates/codereviewcomment-reply.pt"/>
-    <browser:menus
+    <lp:menus
         classes="CodeReviewCommentContextMenu"
         module="lp.code.browser.codereviewcomment"/>
         <browser:page
@@ -625,7 +626,7 @@
             name="+macros"
             permission="zope.Public"
             template="../templates/codeimport-macros.pt"/>
-        <browser:url
+        <lp:url
             for="lp.code.interfaces.codeimport.ICodeImportSet"
             path_expression="string:+code-imports"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -651,12 +652,12 @@
             name="+new-import"
             template="../templates/codeimport-new.pt"
             permission="launchpad.AnyPerson"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.codeimport.ICodeImport"
         attribute_to_parent="target"
         path_expression="string:+code-import"
         rootsite="code"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.codeimport"
         classes="CodeImportSetNavigation"/>
     <browser:defaultView
@@ -730,7 +731,7 @@
         name="+count-summary"
         template="../templates/branch-count-summary.pt"/>
 
-        <browser:menus
+        <lp:menus
             module="lp.code.browser.branchlisting"
             classes="
                 PersonBranchesMenu"/>
@@ -812,13 +813,13 @@
     <browser:defaultView
         for="lp.code.interfaces.gitrepository.IGitRepository"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.gitrepository.IGitRepository"
         urldata="lp.code.browser.gitrepository.GitRepositoryURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.gitrepository"
         classes="GitRepositoryNavigation"/>
-    <browser:menus
+    <lp:menus
         module="lp.code.browser.gitrepository"
         classes="
             GitRepositoryContextMenu
@@ -969,26 +970,26 @@
         factory="lp.code.browser.gitrepository.GitRepositoryBreadcrumb"
         permission="zope.Public"/>
 
-  <browser:url
+  <lp:url
         for="lp.code.interfaces.revisionstatus.IRevisionStatusReport"
         path_expression="string:+status/${id}"
         attribute_to_parent="git_repository"
         rootsite="code"/>
 
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.revisionstatus.IRevisionStatusArtifact"
         path_expression="string:+artifact/${id}"
         attribute_to_parent="repository"
         rootsite="code"/>
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.revisionstatus"
         classes="RevisionStatusArtifactNavigation"/>
 
     <browser:defaultView
         for="lp.code.interfaces.gitref.IGitRef"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.gitref.IGitRef"
         path_expression="string:+ref/${url_quoted_name}"
         attribute_to_parent="repository"
@@ -1041,7 +1042,7 @@
         permission="zope.Public"
         name="+dependent-merges"
         template="../templates/branchmergeproposal-generic-listing.pt"/>
-    <browser:menus
+    <lp:menus
         classes="GitRefContextMenu"
         module="lp.code.browser.gitref"/>
     <adapter
@@ -1059,7 +1060,7 @@
         permission="launchpad.Edit"
         name="+index"
         template="../templates/gitsubscription-edit.pt"/>
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.gitsubscription.IGitSubscription"
         path_expression="string:+subscription/${person/name}"
         attribute_to_parent="repository"
@@ -1119,7 +1120,7 @@
         template="../templates/gitrepository-listing.pt"
         permission="zope.Public"/>
 
-    <browser:menus
+    <lp:menus
         classes="ProductBranchesMenu"
         module="lp.code.browser.branchlisting"/>
 
@@ -1158,13 +1159,13 @@
         layer="lp.code.publisher.CodeLayer"
         name="+branches"/>
 
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.diff.IPreviewDiff"
         path_expression="string:+preview-diff/${id}"
         attribute_to_parent="branch_merge_proposal"
         rootsite="code" />
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.diff"
         classes="PreviewDiffNavigation"/>
 
@@ -1175,7 +1176,7 @@
         permission="launchpad.View"
         template="../templates/branchmergeproposal-diff.pt"/>
 
-    <browser:menus
+    <lp:menus
         module="lp.code.browser.branchlisting"
         classes="PersonProductBranchesMenu"/>
 
@@ -1285,21 +1286,21 @@
         name="fmt"
         />
 
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipe"
         attribute_to_parent="owner"
         path_expression="string:+recipe/${name}"
         rootsite="code" />
-    <browser:url
+    <lp:url
         for="lp.code.interfaces.sourcepackagerecipebuild.ISourcePackageRecipeBuild"
         attribute_to_parent="archive"
         path_expression="string:+recipebuild/${id}"
         />
-    <browser:menus
+    <lp:menus
         classes="SourcePackageRecipeBuildContextMenu"
         module="lp.code.browser.sourcepackagerecipebuild"/>
 
-    <browser:navigation
+    <lp:navigation
         module="lp.code.browser.sourcepackagerecipebuild"
         classes="SourcePackageRecipeBuildNavigation" />
 
@@ -1351,7 +1352,7 @@
             name="+rescore"
             template="../../app/templates/generic-edit.pt"
             permission="launchpad.Admin"/>
-        <browser:menus
+        <lp:menus
             classes="
                 SourcePackageRecipeNavigationMenu
                 SourcePackageRecipeContextMenu"
@@ -1425,14 +1426,14 @@
             factory="lp.code.browser.sourcepackagerecipe.SourcePackageRecipeBreadcrumb"
             permission="zope.Public"/>
 
-        <browser:url
+        <lp:url
             for="lp.code.interfaces.cibuild.ICIBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="git_repository"/>
-        <browser:menus
+        <lp:menus
             module="lp.code.browser.cibuild"
             classes="CIBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.code.browser.cibuild"
             classes="CIBuildNavigation" />
         <browser:defaultView

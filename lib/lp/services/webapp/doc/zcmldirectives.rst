@@ -6,7 +6,7 @@ We have a bunch of custom zcml directives in Launchpad.
 Canonical URLs
 --------------
 
-See canonical_url.rst for information and tests of the browser:url directive.
+See canonical_url.rst for information and tests of the lp:url directive.
 
 
 A zcml context for zcml directive unittests

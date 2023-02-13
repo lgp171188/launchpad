@@ -364,7 +364,7 @@ class Archive(SQLBase):
         SQLBase._init(self, *args, **kw)
 
         # Provide the additional marker interface depending on what type
-        # of archive this is.  See also the browser:url declarations in
+        # of archive this is.  See also the lp:url declarations in
         # zcml/archive.zcml.
         if self.is_ppa:
             alsoProvides(self, IPPA)

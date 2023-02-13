@@ -6,6 +6,7 @@
   xmlns="http://namespaces.zope.org/zope"
   xmlns:browser="http://namespaces.zope.org/browser"
   xmlns:i18n="http://namespaces.zope.org/i18n"
+  xmlns:lp="http://namespaces.canonical.com/lp"
   i18n_domain="launchpad">
 <facet facet="answers">
 
@@ -110,15 +111,15 @@
     class=".questiontarget.AskAQuestionButtonPortlet"
     permission="zope.Public"
     />
-  <browser:menus
+  <lp:menus
     module=".questiontarget"
     classes="QuestionCollectionAnswersMenu QuestionTargetAnswersMenu"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.faq"
     classes="FAQNavigationMenu"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.question"
     classes="
         QuestionEditMenu
@@ -130,14 +131,14 @@
     name="+index"
     />
 
-  <browser:url
+  <lp:url
     for="lp.answers.interfaces.question.IQuestion"
     path_expression="string:+question/${id}"
     attribute_to_parent="target"
     rootsite="answers"
     />
 
-  <browser:url
+  <lp:url
     for="lp.answers.interfaces.questionsubscription.IQuestionSubscription"
     path_expression="string:subscriptions/${person}"
     attribute_to_parent="question"
@@ -258,7 +259,7 @@
     template="../../app/templates/generic-edit.pt"
     />
 
-  <browser:url
+  <lp:url
     for="lp.answers.interfaces.question.IQuestionMessage"
     path_expression="string:messages/${display_index}"
     attribute_to_parent="question"
@@ -274,20 +275,20 @@
     />
 
   <!-- IQuestionSet -->
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionSetNavigation"
     />
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionNavigation"
     />
-  <browser:navigation
+  <lp:navigation
     module=".question"
     classes="QuestionMessageNavigation"
     />
 
-  <browser:url
+  <lp:url
     for="lp.answers.interfaces.questioncollection.IQuestionSet"
     path_expression="string:questions"
     parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -342,7 +343,7 @@
     template="../../app/templates/generic-edit.pt"
     />
 
-  <browser:url
+  <lp:url
     for="lp.answers.interfaces.faq.IFAQ"
     path_expression="string:+faq/${id}"
     attribute_to_parent="target"
@@ -489,7 +490,7 @@
     permission="zope.Public"
     template="../templates/person-answer-contact-for.pt"
     />
-  <browser:menus
+  <lp:menus
     module="lp.answers.browser.person"
     classes="PersonAnswersMenu"
     />

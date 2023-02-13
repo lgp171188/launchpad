@@ -6,17 +6,18 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
-    <browser:url
+    <lp:url
         for="lp.buildmaster.interfaces.processor.IProcessor"
         path_expression="string:${name}"
         parent_utility="lp.buildmaster.interfaces.processor.IProcessorSet" />
 
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.processor"
         classes="ProcessorSetNavigation" />
-    <browser:url for="lp.buildmaster.interfaces.processor.IProcessorSet"
+    <lp:url for="lp.buildmaster.interfaces.processor.IProcessorSet"
         path_expression="string:+processors"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
 
@@ -33,14 +34,14 @@
         permission="launchpad.View"
         template="../templates/buildfarmjob-current.pt"/>
 
-    <browser:url
+    <lp:url
         for="lp.buildmaster.interfaces.builder.IBuilderSet"
         path_expression="string:builders"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
     <browser:defaultView
         for="lp.buildmaster.interfaces.builder.IBuilderSet"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.builder"
         classes="
             BuilderSetNavigation"/>
@@ -61,11 +62,11 @@
     <browser:defaultView
         for="lp.buildmaster.interfaces.builder.IBuilder"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.buildmaster.browser.builder"
         classes="
             BuilderNavigation"/>
-    <browser:url
+    <lp:url
         for="lp.buildmaster.interfaces.builder.IBuilder"
         path_expression="name"
         parent_utility="lp.buildmaster.interfaces.builder.IBuilderSet"/>
@@ -94,10 +95,10 @@
         class="lp.buildmaster.browser.builder.BuilderEditView"
         permission="launchpad.Edit"
         template="../templates/builder-edit.pt"/>
-    <browser:menus
+    <lp:menus
         classes="BuilderSetOverviewMenu"
         module="lp.buildmaster.browser.builder"/>
-    <browser:menus
+    <lp:menus
         classes="BuilderOverviewMenu"
         module="lp.buildmaster.browser.builder"/>
 </configure>

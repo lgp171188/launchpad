@@ -28,7 +28,7 @@
         <allow interface="lp.services.auth.interfaces.IAccessTokenSet" />
     </lp:securedutility>
 
-    <browser:url
+    <lp:url
         for="lp.services.auth.interfaces.IAccessToken"
         path_expression="string:+access-token/${id}"
         attribute_to_parent="target" />

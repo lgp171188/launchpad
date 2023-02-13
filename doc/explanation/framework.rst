@@ -51,11 +51,10 @@ Many of the details here are handled by custom code in
 provides many application-specific hooks, and
 ``lp.services.webapp.publishing`` which defines much of Launchpad's
 traversal framework.  The URL structure is defined in various
-``configure.zcml`` files: ``browser:url`` tags are used to build up the
-canonical URL for an object, and ``browser:navigation`` tags register
-classes called as part of traversal to resolve the next step from each
-intermediate object in the URL (starting at
-``lp.app.browser.launchpad.LaunchpadRootNavigation``).
+``configure.zcml`` files: ``lp:url`` tags are used to build up the canonical
+URL for an object, and ``lp:navigation`` tags register classes called as
+part of traversal to resolve the next step from each intermediate object in
+the URL (starting at ``lp.app.browser.launchpad.LaunchpadRootNavigation``).
 
 Page templating
 ---------------

@@ -365,18 +365,18 @@
         <require
             permission="launchpad.Admin"
             interface="lp.soyuz.interfaces.archive.IArchiveAdmin"
-            set_attributes="authorized_size
-                            enabled_restricted_processors
+            set_attributes="enabled_restricted_processors
                             external_dependencies
                             name
                             permit_obsolete_series_uploads
-                            private
-                            publishing_method
-                            repository_format
                             require_virtualized"/>
         <require
             permission="launchpad.Moderate"
-            set_schema="lp.soyuz.interfaces.archive.IArchiveRestricted"/>
+            set_schema="lp.soyuz.interfaces.archive.IArchiveRestricted"
+            set_attributes="authorized_size
+                            private
+                            publishing_method
+                            repository_format"/>
         <require
             permission="launchpad.InternalScriptsOnly"
             set_attributes="dirty_suites distribution signing_key_owner
@@ -830,14 +830,14 @@
             interface="lp.soyuz.interfaces.binarypackagerelease.IBinaryPackageReleaseDownloadCount"/>
     </class>
 
-    <call
+    <lp:call
       callable="lp.archiveuploader.uploadpolicy.register_archive_upload_policy_adapters"
       />
 
     <!-- Although the policies defined in lp.archiveuploader.tests are only
          required by tests, they're used when testing scripts manually on
          dogfood/staging, so they're registered here. -->
-    <call
+    <lp:call
       callable="lp.archiveuploader.tests.register_archive_upload_policy_adapters"
       />
 

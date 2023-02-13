@@ -20,7 +20,7 @@ class TestNavigationDirective(TestCase):
         # By default all navigation classes are registered for
         # IDefaultBrowserLayer.
         directive = """
-            <browser:navigation
+            <lp:navigation
                 module="%(this)s" classes="ThingNavigation"/>
             """ % dict(
             this=this
@@ -35,7 +35,7 @@ class TestNavigationDirective(TestCase):
         # If we specify a layer when registering a navigation class, it will
         # only be available on that layer.
         directive = """
-            <browser:navigation
+            <lp:navigation
                 module="%(this)s" classes="OtherThingNavigation"
                 layer="%(this)s.IOtherLayer" />
             """ % dict(
@@ -59,9 +59,9 @@ class TestNavigationDirective(TestCase):
         # It is possible to have multiple navigation classes for a given
         # context class as long as they are registered for different layers.
         directive = """
-            <browser:navigation
+            <lp:navigation
                 module="%(this)s" classes="ThingNavigation"/>
-            <browser:navigation
+            <lp:navigation
                 module="%(this)s" classes="OtherThingNavigation"
                 layer="%(this)s.IOtherLayer" />
             """ % dict(
@@ -115,7 +115,7 @@ class OtherLayer:
 
 this = "lp.services.webapp.tests.test_navigation"
 zcml_configure = """
-    <configure xmlns:browser="http://namespaces.zope.org/browser">
+    <configure xmlns:lp="http://namespaces.canonical.com/lp">
       <include package="lp.services.webapp" file="meta.zcml" />
       %s
     </configure>

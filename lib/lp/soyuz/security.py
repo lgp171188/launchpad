@@ -400,12 +400,14 @@ class AppendArchive(AuthorizationBase):
 
 
 class ModerateArchive(AuthorizationBase):
-    """Restrict changing the build score on archives.
+    """Protect site-wide resources for archives.
 
     Buildd admins can change this, as a site-wide resource that requires
     arbitration, especially between distribution builds and builds in
     non-virtualized PPAs.  PPA/commercial admins can also change this since
-    it affects the relative priority of (private) PPAs.
+    it affects the relative priority of (private) PPAs.  Launchpad developers
+    can also change this, as they need to update PPA sizes, the privacy status,
+    or make adjustments for the publishing method or the repository format.
     """
 
     permission = "launchpad.Moderate"
@@ -414,9 +416,8 @@ class ModerateArchive(AuthorizationBase):
     def checkAuthenticated(self, user):
         return (
             user.in_buildd_admin
-            or user.in_ppa_admin
-            or user.in_commercial_admin
-            or user.in_admin
+            or user.in_launchpad_developers
+            or AdminArchive(self.obj).checkAuthenticated(user)
         )
 
 

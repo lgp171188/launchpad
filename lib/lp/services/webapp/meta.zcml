@@ -5,28 +5,28 @@
 <configure xmlns="http://namespaces.zope.org/meta">
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="url"
       schema="lp.services.webapp.metazcml.IURLDirective"
       handler="lp.services.webapp.metazcml.url"
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="menus"
       schema="lp.services.webapp.metazcml.IMenusDirective"
       handler="lp.services.webapp.metazcml.menus"
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="navigation"
       schema="lp.services.webapp.metazcml.INavigationDirective"
       handler="lp.services.webapp.metazcml.navigation"
       />
 
   <directive
-      namespace="http://namespaces.zope.org/zope"
+      namespace="http://namespaces.canonical.com/lp"
       name="call"
       schema="lp.services.webapp.metazcml.ICallDirective"
       handler="lp.services.webapp.metazcml.call"

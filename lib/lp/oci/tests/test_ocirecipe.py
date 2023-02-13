@@ -36,7 +36,6 @@ from lp.oci.interfaces.ocipushrule import (
 from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_BUILD_DISTRIBUTION,
-    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
@@ -275,12 +274,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
         logger = self.useFixture(FakeLogger())
-        with FeatureFixture(
-            {
-                OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                OCI_RECIPE_ALLOW_CREATE: "on",
-            }
-        ):
+        with FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}):
             recipe = self.factory.makeOCIRecipe()
             das = self.factory.makeDistroArchSeries()
             hook = self.factory.makeWebhook(
@@ -404,14 +398,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_requestBuildsFromJob_triggers_webhooks(self):
         # requestBuildsFromJob triggers webhooks, and the payload includes a
         # link to the build request.
-        self.useFixture(
-            FeatureFixture(
-                {
-                    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                    OCI_RECIPE_ALLOW_CREATE: "on",
-                }
-            )
-        )
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         recipe = removeSecurityProxy(
             self.factory.makeOCIRecipe(require_virtualized=False)
         )
@@ -507,12 +494,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
-        with FeatureFixture(
-            {
-                OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
-                OCI_RECIPE_ALLOW_CREATE: "on",
-            }
-        ):
+        with FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}):
             recipe = self.factory.makeOCIRecipe(registrant=owner, owner=owner)
             webhook = self.factory.makeWebhook(target=recipe)
         with person_logged_in(recipe.owner):

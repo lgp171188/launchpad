@@ -6,10 +6,11 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
 
-    <browser:navigation
+    <lp:navigation
         module="lp.blueprints.browser.sprint"
         classes="
             SprintNavigation"/>
@@ -20,7 +21,7 @@
         for="lp.blueprints.interfaces.sprint.ISprint"
         name="+specs"
         layer="lp.blueprints.publisher.BlueprintsLayer"/>
-    <browser:url
+    <lp:url
         for="lp.blueprints.interfaces.sprint.ISprint"
         path_expression="name"
         parent_utility="lp.blueprints.interfaces.sprint.ISprintSet"/>
@@ -135,14 +136,14 @@
             name="+sprints"
             template="../templates/hassprints-sprints.pt"/>
     </browser:pages>
-    <browser:url
+    <lp:url
         for="lp.blueprints.interfaces.sprint.ISprintSet"
         path_expression="string:sprints"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
     <browser:defaultView
         for="lp.blueprints.interfaces.sprint.ISprintSet"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.blueprints.browser.sprint"
         classes="
             SprintSetNavigation"/>
@@ -171,7 +172,7 @@
         class="lp.blueprints.browser.sprint.SprintAttendeesCsvExportView"
         permission="launchpad.AnyPerson"
         attribute="__call__"/>
-    <browser:menus
+    <lp:menus
         classes="
             SprintFacets
             SprintOverviewMenu
@@ -182,7 +183,7 @@
     <browser:defaultView
         for="lp.blueprints.interfaces.sprintspecification.ISprintSpecification"
         name="+decide"/>
-    <browser:url
+    <lp:url
         for="lp.blueprints.interfaces.sprintspecification.ISprintSpecification"
         path_expression="string:${sprint/name}"
         attribute_to_parent="specification"/>
@@ -199,7 +200,7 @@
         for="lp.blueprints.interfaces.sprintspecification.ISprintSpecification"
         permission="zope.Public"
         template="../templates/sprintspecification-icon-status.pt"/>
-    <browser:url
+    <lp:url
         for="lp.blueprints.interfaces.specificationsubscription.ISpecificationSubscription"
         path_expression="string:+subscription/${person/name}"
         attribute_to_parent="specification"/>
@@ -216,13 +217,13 @@
     <browser:defaultView
         for="lp.blueprints.interfaces.sprintattendance.ISprintAttendance"
         name="+edit"/>
-    <browser:url
+    <lp:url
         for="lp.blueprints.interfaces.sprintattendance.ISprintAttendance"
         path_expression="string:${attendee/name}"
         attribute_to_parent="sprint"/>
     <facet
         facet="specifications">
-        <browser:url
+        <lp:url
             for="lp.blueprints.interfaces.specificationbranch.ISpecificationBranch"
             urldata="lp.blueprints.browser.specificationbranch.SpecificationBranchURL"/>
         <browser:defaultView
@@ -234,19 +235,19 @@
             class="lp.blueprints.browser.specificationbranch.SpecificationBranchStatusView"
             permission="launchpad.AnyPerson"
             template="../templates/specificationbranch-status.pt"/>
-        <browser:menus
+        <lp:menus
             module="lp.blueprints.browser.specification"
             classes="
                 SpecificationActionMenu
                 SpecificationContextMenu"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.blueprints.browser.specification"
             classes="
                 SpecificationNavigation"/>
         <browser:defaultView
             for="lp.blueprints.interfaces.specification.ISpecification"
             name="+index"/>
-        <browser:url
+        <lp:url
             for="lp.blueprints.interfaces.specification.ISpecification"
             path_expression="string:+spec/${name}"
             attribute_to_parent="target"
@@ -471,7 +472,7 @@
             class="lp.blueprints.browser.specification.SpecificationLinkBranchView"
             template="../../app/templates/generic-edit.pt"
             permission="launchpad.AnyPerson"/>
-        <browser:url
+        <lp:url
             for="lp.blueprints.interfaces.specification.ISpecificationSet"
             path_expression="string:"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -619,7 +620,7 @@
         permission="launchpad.AnyPerson"
         template="../templates/addspec.pt" />
 
-    <browser:menus
+    <lp:menus
         module="lp.blueprints.browser.person"
         classes="PersonSpecsMenu"/>
     <browser:page

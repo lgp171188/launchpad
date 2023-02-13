@@ -6,9 +6,9 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
-    xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
-    <browser:url
+    <lp:url
       for="lp.soyuz.interfaces.binarypackagename.IBinaryPackageNameSet"
       path_expression="string:binarypackagenames"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -29,12 +29,12 @@
                 name="+record-details"
                 template="../templates/packagepublishing-details.pt"/>
         </browser:pages>
-        <browser:url
+        <lp:url
             for="lp.soyuz.interfaces.publishing.IBinaryPackagePublishingHistory"
             path_expression="string:+binarypub"
             attribute_to_parent="archive"
             urldata="lp.soyuz.browser.publishing.BinaryPublicationURL"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.binarypackagerelease"
         classes="
             BinaryPackageReleaseNavigation"/>
@@ -125,22 +125,22 @@
                 name="+listing-archive-detailed-selectable"
                 template="../templates/sourcepackagepublishinghistory-listing-archive-detailed.pt"/>
         </browser:pages>
-        <browser:url
+        <lp:url
             for="lp.soyuz.interfaces.publishing.ISourcePackagePublishingHistory"
             path_expression="string:+sourcepub"
             attribute_to_parent="archive"
             urldata="lp.soyuz.browser.publishing.SourcePublicationURL"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.soyuz.browser.publishing"
             classes="SourcePackagePublishingHistoryNavigation" />
     <browser:defaultView
         for="lp.soyuz.interfaces.distroarchseriesbinarypackagerelease.IDistroArchSeriesBinaryPackageRelease"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.distroarchseriesbinarypackagerelease.IDistroArchSeriesBinaryPackageRelease"
         path_expression="version"
         attribute_to_parent="distroarchseriesbinarypackage"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroarchseriesbinarypackagerelease"
         classes="
             DistroArchSeriesBinaryPackageReleaseNavigation"/>
@@ -158,11 +158,11 @@
             name="+portlet-details"
             template="../templates/distroarchseriesbinarypackagerelease-portlet-details.pt"/>
     </browser:pages>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilter"
         path_expression="string:+source-filter"
         attribute_to_parent="distroarchseries"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archive.IArchiveSet"
         path_expression="string:archives"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -170,15 +170,15 @@
     <browser:defaultView
         for="lp.soyuz.interfaces.archive.IArchive"
         name="+index"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.archive"
         classes="ArchiveNavigation" />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archive.IPPA"
         path_expression="string:+archive"
         attribute_to_parent="owner"
         urldata="lp.soyuz.browser.archive.PPAURL"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archive.IDistributionArchive"
         path_expression="string:+archive"
         attribute_to_parent="distribution"
@@ -272,18 +272,18 @@
             name="+subscriptions"
             template="../templates/archive-subscribers.pt"/>
     </browser:pages>
-    <browser:menus
+    <lp:menus
         classes="
             ArchiveNavigationMenu
             ArchiveIndexActionsMenu
             ArchivePackagesActionMenu"
         module="lp.soyuz.browser.archive"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archivepermission.IArchiveUploader"
         path_expression="string:+upload"
         attribute_to_parent="archive"
         urldata="lp.soyuz.browser.archivepermission.ArchivePermissionURL"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archivepermission.IArchiveQueueAdmin"
         path_expression="string:+queue-admin"
         attribute_to_parent="archive"
@@ -291,10 +291,10 @@
     <browser:defaultView
         for="lp.soyuz.interfaces.binarypackagebuild.IBinaryPackageBuild"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.binarypackagebuild.IBinaryPackageBuild"
         urldata="lp.soyuz.browser.build.BuildUrl"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.build"
         classes="
             BuildNavigation"/>
@@ -330,18 +330,18 @@
             name="+cancel"
             template="../../app/templates/generic-edit.pt"/>
     </browser:pages>
-    <browser:menus
+    <lp:menus
         classes="
             BuildContextMenu"
         module="lp.soyuz.browser.build"/>
     <browser:defaultView
         for="lp.soyuz.interfaces.distroarchseriesbinarypackage.IDistroArchSeriesBinaryPackage"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.distroarchseriesbinarypackage.IDistroArchSeriesBinaryPackage"
         path_expression="name"
         attribute_to_parent="distroarchseries"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroarchseriesbinarypackage"
         classes="
             DistroArchSeriesBinaryPackageNavigation"/>
@@ -362,11 +362,11 @@
             name="+portlet-releases"
             template="../templates/distroarchseriesbinarypackage-portlet-releases.pt"/>
     </browser:pages>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archivesubscriber.IArchiveSubscriber"
         path_expression="string:+subscriptions/${subscriber/name}"
         attribute_to_parent="archive"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archivesubscriber.IPersonalArchiveSubscription"
         path_expression="string:+archivesubscriptions/${archive/id}"
         attribute_to_parent="subscriber"/>
@@ -394,11 +394,11 @@
     <browser:defaultView
         for="lp.soyuz.interfaces.distributionsourcepackagerelease.IDistributionSourcePackageRelease"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.distributionsourcepackagerelease.IDistributionSourcePackageRelease"
         path_expression="version"
         attribute_to_parent="sourcepackage"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distributionsourcepackagerelease"
         classes="
             DistributionSourcePackageReleaseNavigation"/>
@@ -425,11 +425,11 @@
     <browser:defaultView
         for="lp.soyuz.interfaces.distroseriesbinarypackage.IDistroSeriesBinaryPackage"
         name="+index"/>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.distroseriesbinarypackage.IDistroSeriesBinaryPackage"
         path_expression="string:+package/${name}"
         attribute_to_parent="distroseries"/>
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.distroseriesbinarypackage"
         classes="
             DistroSeriesBinaryPackageNavigation"/>
@@ -454,15 +454,15 @@
         <browser:defaultView
             for="lp.soyuz.interfaces.distroarchseries.IDistroArchSeries"
             name="+index"/>
-        <browser:menus
+        <lp:menus
             module="lp.soyuz.browser.distroarchseries"
             classes="
                 DistroArchSeriesActionMenu"/>
-        <browser:url
+        <lp:url
             for="lp.soyuz.interfaces.distroarchseries.IDistroArchSeries"
             path_expression="architecturetag"
             attribute_to_parent="distroseries"/>
-        <browser:navigation
+        <lp:navigation
             module="lp.soyuz.browser.distroarchseries"
             classes="
                 DistroArchSeriesNavigation"/>
@@ -645,40 +645,40 @@
                 template="../templates/distroseries-portlet-latestuploads.pt"/>
         </browser:pages>
 
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.packageset.IPackagesetSet"
         path_expression="string:package-sets"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.packageset"
         classes="PackagesetSetNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.packageset.IPackageset"
         path_expression="string:${distroseries/distribution/name}/${distroseries/name}/${name}"
         parent_utility="lp.soyuz.interfaces.packageset.IPackagesetSet"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.queue.IPackageUpload"
         path_expression="string:+upload/${id}"
         attribute_to_parent="distroseries"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.queue.IPackageUploadLog"
         path_expression="string:+log/${id}"
         attribute_to_parent="package_upload"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.queue"
         classes="PackageUploadNavigation"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.archivedependency.IArchiveDependency"
         path_expression="string:+dependency/${dependency/id}"
         attribute_to_parent="parent"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.binarypackagerelease.IBinaryPackageReleaseDownloadCount"
         path_expression="string:+binaryhits/${binary_package_release/name}/${binary_package_release/version}/${binary_package_release/build/distro_arch_series/architecturetag}/${day}/${country_code}"
         attribute_to_parent="archive"
@@ -692,7 +692,7 @@
             template="../templates/packagerelationship-list.pt"
          />
     </browser:pages>
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.livefs.ILiveFS"
         path_expression="string:+livefs/${distro_series/distribution/name}/${distro_series/name}/${name}"
         attribute_to_parent="owner"
@@ -708,11 +708,11 @@
         name="+index"
         template="../templates/livefs-index.pt"
         />
-    <browser:menus
+    <lp:menus
         module="lp.soyuz.browser.livefs"
         classes="LiveFSNavigationMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.livefs"
         classes="LiveFSNavigation"
         />
@@ -747,21 +747,21 @@
         factory="lp.soyuz.browser.livefs.LiveFSBreadcrumb"
         permission="zope.Public"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.livefs.ILiveFSSet"
         path_expression="string:livefses"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
         />
-    <browser:url
+    <lp:url
         for="lp.soyuz.interfaces.livefsbuild.ILiveFSBuild"
         path_expression="string:+build/${id}"
         attribute_to_parent="livefs"
         />
-    <browser:menus
+    <lp:menus
         module="lp.soyuz.browser.livefsbuild"
         classes="LiveFSBuildContextMenu"
         />
-    <browser:navigation
+    <lp:navigation
         module="lp.soyuz.browser.livefsbuild"
         classes="LiveFSBuildNavigation"
         />

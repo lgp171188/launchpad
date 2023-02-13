@@ -234,7 +234,9 @@ class PrettyPrinter(pprint.PrettyPrinter):
 
     # Disable wrapping of long strings on Python >= 3.5, which is unhelpful
     # in doctests.  There seems to be no reasonable public API for this.
-    _dispatch = dict(pprint.PrettyPrinter._dispatch)
+    _dispatch = dict(
+        pprint.PrettyPrinter._dispatch  # type: ignore[attr-defined]
+    )
     del _dispatch[str.__repr__]
     del _dispatch[bytes.__repr__]
     del _dispatch[bytearray.__repr__]

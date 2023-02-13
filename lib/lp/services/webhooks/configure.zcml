@@ -70,15 +70,15 @@
         factory="lp.services.webhooks.payload.WebhookAbsoluteURL"
         />
 
-    <browser:url
+    <lp:url
        for="lp.services.webhooks.interfaces.IWebhook"
        path_expression="string:+webhook/${id}"
        attribute_to_parent="target"
        />
-    <browser:navigation
+    <lp:navigation
         module="lp.services.webhooks.browser" classes="WebhookNavigation" />
 
-    <browser:url
+    <lp:url
        for="lp.services.webhooks.interfaces.IWebhookDeliveryJob"
        path_expression="string:+delivery/${job_id}"
        attribute_to_parent="webhook"

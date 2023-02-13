@@ -1061,7 +1061,7 @@ class IArchiveView(IHasBuildRecords):
 
         In spite of getAllPublishedBinaries method, this method only returns
         distinct binary publications inside this Archive, i.e, it excludes
-        architecture-independent publication for other architetures than the
+        architecture-independent publication for other architectures than the
         nominatedarchindep. In few words it represents the binary files
         published in the archive disk pool.
 
@@ -1544,7 +1544,7 @@ class IArchiveView(IHasBuildRecords):
         This is necessary currently because the IArchive.failed_builds etc.
         counters are not in use.
 
-        The returned dictionary contains the follwoing keys and values:
+        The returned dictionary contains the following keys and values:
 
          * 'total': total number of builds (includes SUPERSEDED);
          * 'pending': number of builds in BUILDING or NEEDSBUILD state;
@@ -2177,7 +2177,7 @@ class IArchiveAppend(Interface):
     def newSubscription(
         subscriber, registrant, date_expires=None, description=None
     ):
-        """Create a new subscribtion to this archive.
+        """Create a new subscription to this archive.
 
         Create an `ArchiveSubscriber` record which allows an `IPerson` to
         access a private repository.
@@ -2245,7 +2245,7 @@ class IArchiveEdit(Interface):
     @export_factory_operation(Interface, [])
     @operation_for_version("beta")
     def newPackageUploader(person, source_package_name):
-        """Add permisson for a person to upload a package to this archive.
+        """Add permission for a person to upload a package to this archive.
 
         :param person: An `IPerson` whom should be given permission.
         :param source_package_name: An `ISourcePackageName` or textual package
@@ -2613,7 +2613,7 @@ class IArchiveEdit(Interface):
 
         :param names: An optional list of token names.
         :param as_dict: Optional boolean, controls whether the return value is
-            a list of dictionares or a list of full objects.
+            a list of dictionaries or a list of full objects.
 
         :return: A list of `ArchiveAuthToken` objects or a list of dictionaries
             where `token` is the secret and `archive_url` is the

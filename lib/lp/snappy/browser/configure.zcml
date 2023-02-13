@@ -6,10 +6,10 @@
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     xmlns:i18n="http://namespaces.zope.org/i18n"
-    xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+    xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
     <facet facet="overview">
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snap.ISnap"
             urldata="lp.snappy.browser.snap.SnapURL" />
         <browser:defaultView
@@ -21,12 +21,12 @@
             permission="launchpad.View"
             name="+index"
             template="../templates/snap-index.pt" />
-        <browser:menus
+        <lp:menus
             module="lp.snappy.browser.snap"
             classes="
                 SnapNavigationMenu
                 SnapContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snap"
             classes="SnapNavigation" />
         <browser:page
@@ -68,7 +68,7 @@
             permission="launchpad.AnyPerson"
             name="+addsubscriber"
             template="../../app/templates/generic-edit.pt"/>
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snapsubscription.ISnapSubscription"
             path_expression="string:+subscription/${person/name}"
             attribute_to_parent="snap"
@@ -127,22 +127,22 @@
             for="lp.snappy.interfaces.snap.ISnap"
             factory="lp.snappy.browser.snap.SnapBreadcrumb"
             permission="zope.Public" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snap.ISnapSet"
             path_expression="string:+snaps"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snap.ISnapBuildRequest"
             path_expression="string:+build-request/${id}"
             attribute_to_parent="snap" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snapbuild.ISnapBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="snap" />
-        <browser:menus
+        <lp:menus
             module="lp.snappy.browser.snapbuild"
             classes="SnapBuildContextMenu" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snapbuild"
             classes="SnapBuildNavigation" />
         <browser:defaultView
@@ -177,26 +177,26 @@
             for="lp.snappy.interfaces.snapbuild.ISnapBuild"
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snappyseries.ISnappySeries"
             path_expression="name"
             parent_utility="lp.snappy.interfaces.snappyseries.ISnappySeriesSet" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snappyseries.ISnappySeriesSet"
             path_expression="string:+snappy-series"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snappyseries"
             classes="SnappySeriesSetNavigation" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snapbase.ISnapBase"
             path_expression="name"
             parent_utility="lp.snappy.interfaces.snapbase.ISnapBaseSet" />
-        <browser:url
+        <lp:url
             for="lp.snappy.interfaces.snapbase.ISnapBaseSet"
             path_expression="string:+snap-bases"
             parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot" />
-        <browser:navigation
+        <lp:navigation
             module="lp.snappy.browser.snapbase"
             classes="
                 SnapBaseNavigation
