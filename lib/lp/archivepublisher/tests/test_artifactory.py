@@ -259,7 +259,12 @@ class TestArtifactoryPool(TestCase):
     def test_getArtifactPatterns_python(self):
         pool = self.makePool()
         self.assertEqual(
-            ["*.whl"], pool.getArtifactPatterns(ArchiveRepositoryFormat.PYTHON)
+            [
+                "*.tar.gz",
+                "*.whl",
+                "*.zip",
+            ],
+            pool.getArtifactPatterns(ArchiveRepositoryFormat.PYTHON),
         )
 
     def test_getArtifactPatterns_conda(self):
@@ -338,12 +343,26 @@ class TestArtifactoryPool(TestCase):
             pool=pool,
             source_name="bar",
             source_version="1.0",
+            filename="bar-1.0.tar.gz",
+            release_type=FakeReleaseType.SOURCE,
+            release_id=2,
+        ).addToPool()
+        ArtifactoryPoolTestingFile(
+            pool=pool,
+            source_name="bar",
+            source_version="1.0",
             filename="bar-1.0.whl",
             release_type=FakeReleaseType.BINARY,
             release_id=3,
         ).addToPool()
         self.assertEqual(
             {
+                PurePath("bar/1.0/bar-1.0.tar.gz"): {
+                    "launchpad.release-id": ["source:2"],
+                    "launchpad.source-name": ["bar"],
+                    "launchpad.source-version": ["1.0"],
+                    "soss.type": ["source"],
+                },
                 PurePath("bar/1.0/bar-1.0.whl"): {
                     "launchpad.release-id": ["binary:3"],
                     "launchpad.source-name": ["bar"],
