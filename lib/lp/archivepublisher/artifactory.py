@@ -584,6 +584,11 @@ class ArtifactoryPool:
         may be pushed for this repository format.  They do not match
         indexes.
         """
+        # XXX cjwatson 2023-02-13: The non-Debian patterns here must
+        # currently be kept in sync with the patterns matched by
+        # lp.soyuz.model.archivejob.CIBuildUploadJob._scan*.  This is
+        # cumbersome, and it would be helpful if we could somehow ensure
+        # that there's no drift.
         if repository_format == ArchiveRepositoryFormat.DEBIAN:
             return [
                 "*.ddeb",
@@ -594,7 +599,11 @@ class ArtifactoryPool:
                 "*.udeb",
             ]
         elif repository_format == ArchiveRepositoryFormat.PYTHON:
-            return ["*.whl"]
+            return [
+                "*.tar.gz",
+                "*.whl",
+                "*.zip",
+            ]
         elif repository_format == ArchiveRepositoryFormat.CONDA:
             return [
                 "*.tar.bz2",
