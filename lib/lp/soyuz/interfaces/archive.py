@@ -1000,6 +1000,8 @@ class IArchiveView(IHasBuildRecords):
         "this archive."
     )
 
+    # XXX jugmac00 2023-02-13: Move to IArchiveRestricted
+    # see https://code.launchpad.net/~jugmac00/launchpad/+git/launchpad/+merge/437207  # noqa: E501
     publishing_method = exported(
         Choice(
             title=_("Publishing method"),
