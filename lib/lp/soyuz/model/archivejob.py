@@ -417,6 +417,12 @@ class CIBuildUploadJob(ArchiveJobDerived):
     def target_channel(self):
         return self.metadata["target_channel"]
 
+    # XXX cjwatson 2023-02-13: The patterns in the various _scan* methods here
+    # must currently be kept in sync with the patterns matched by
+    # lp.archivepublisher.artifactory.ArtifactoryPool.getArtifactPatterns.
+    # This is cumbersome, and it would be helpful if we could somehow ensure
+    # that there's no drift.
+
     def _scanWheel(
         self, report: IRevisionStatusReport, paths: Iterable[Path]
     ) -> Dict[str, ArtifactMetadata]:
