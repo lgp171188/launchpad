@@ -172,7 +172,7 @@
         />
 
     <!-- Default favicon -->
-    <browser:favicon for="*" file="../../../canonical/launchpad/images/favicon.ico" />
+    <lp:favicon for="*" file="../../../canonical/launchpad/images/favicon.ico" />
 
     <!-- LaunchBag Utility -->
     <utility

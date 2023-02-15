@@ -47,7 +47,7 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="favicon"
       schema="lp.services.webapp.metazcml.IFaviconDirective"
       handler="lp.services.webapp.metazcml.favicon"
