@@ -40,7 +40,7 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="renamed-page"
       schema="lp.services.webapp.metazcml.IRenamedPageDirective"
       handler="lp.services.webapp.metazcml.renamed_page"
