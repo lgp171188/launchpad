@@ -19,7 +19,7 @@
        path_expression="string:+git"
        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-    <browser:feeds
+    <lp:feeds
         module="lp.code.feed.branch"
         classes="BranchFeed PersonBranchFeed ProductBranchFeed ProjectBranchFeed
                  PersonRevisionFeed ProductRevisionFeed ProjectRevisionFeed"
