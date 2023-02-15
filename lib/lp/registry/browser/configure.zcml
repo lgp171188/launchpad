@@ -393,7 +393,7 @@
           class="lp.registry.browser.project.ProjectAddQuestionView"
           permission="launchpad.AnyPerson"
           />
-      <browser:renamed-page
+      <lp:renamed-page
           name="+addticket"
           for="lp.registry.interfaces.projectgroup.IProjectGroup"
           new_name="+addquestion"
@@ -1135,17 +1135,17 @@
         permission="zope.Public"
         template="../templates/person-related-software-navlinks.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+related-software"
         new_name="+related-packages"
         for="lp.registry.interfaces.person.IPerson"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+packages"
         new_name="+related-packages"
         for="lp.registry.interfaces.person.IPerson"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+projects"
         new_name="+related-projects"
         for="lp.registry.interfaces.person.IPerson"
@@ -1767,7 +1767,7 @@
         permission="zope.Public"
         template="../templates/product-listing-detailed.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+distributions"
         for="lp.registry.interfaces.product.IProduct"
         new_name="+packages"
@@ -1931,7 +1931,7 @@
         permission="launchpad.AnyPerson"
         template="../templates/product-new.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+new-guided"
         new_name="+new"
         for="lp.registry.interfaces.product.IProductSet"
