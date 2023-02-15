@@ -33,7 +33,7 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="feeds"
       schema="lp.services.webapp.metazcml.IFeedsDirective"
       handler="lp.services.webapp.metazcml.feeds"

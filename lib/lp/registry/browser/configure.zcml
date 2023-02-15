@@ -29,7 +29,7 @@
       path_expression="string:projectgroups"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:feeds
+  <lp:feeds
       module="lp.registry.feed.announcement"
       classes="LaunchpadAnnouncementsFeed TargetAnnouncementsFeed"
       />
