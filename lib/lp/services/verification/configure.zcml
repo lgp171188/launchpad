@@ -5,7 +5,7 @@
     i18n_domain="launchpad">
     <include
         package=".browser"/>
-    <facet
+    <lp:facet
         facet="overview">
 
         <!-- LoginToken -->
@@ -30,5 +30,5 @@
             <allow
                 interface="lp.services.verification.interfaces.logintoken.ILoginTokenSet"/>
         </lp:securedutility>
-    </facet>
+    </lp:facet>
 </configure>

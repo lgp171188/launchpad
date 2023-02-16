@@ -150,7 +150,7 @@
       permission="zope.Public"
       />
 
-    <facet facet="overview">
+    <lp:facet facet="overview">
       <!-- Common menus -->
       <lp:menus
           module="lp.app.browser.launchpad"
@@ -266,7 +266,7 @@
           class="lp.app.browser.launchpad.LoginStatus"
           permission="zope.Public"
           />
-    </facet>
+    </lp:facet>
 
   <!-- Error pages -->
   <!-- System Errors -->

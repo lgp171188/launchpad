@@ -43,7 +43,7 @@
       path_expression="string:${name}"
       parent_utility="lp.app.interfaces.services.IServiceFactory"/>
 
-  <facet facet="overview">
+  <lp:facet facet="overview">
     <browser:page
         name="+grantee-table-view"
         for="lp.services.webapp.interfaces.IBatchNavigator"
@@ -385,7 +385,7 @@
         attribute_to_parent="person"
         rootsite="api"
         />
-    <facet
+    <lp:facet
         facet="answers">
       <browser:page
           name="+addquestion"
@@ -405,7 +405,7 @@
           class="lp.answers.browser.questiontarget.AskAQuestionButtonPortlet"
           permission="zope.Public"
           />
-    </facet>
+    </lp:facet>
     <lp:navigation
         module="lp.registry.browser.project"
         classes="
@@ -2683,7 +2683,7 @@
         rootsite="api"
         attribute_to_parent="owner"
         />
-  </facet>
+  </lp:facet>
   <adapter
       factory="lp.registry.browser.distroseriesdifference.get_message"
       provides="lp.services.messages.interfaces.message.IMessage"

@@ -5,9 +5,9 @@
 <configure
   xmlns="http://namespaces.zope.org/zope"
   xmlns:browser="http://namespaces.zope.org/browser"
-  xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
+  xmlns:lp="http://namespaces.canonical.com/lp"
   i18n_domain="launchpad">
-  <facet facet="overview">
+  <lp:facet facet="overview">
     <browser:page
         for="lp.services.webapp.interfaces.ILaunchpadApplication"
         name="+request-token"
@@ -26,5 +26,5 @@
         name="+access-token"
         class="lp.services.oauth.browser.OAuthAccessTokenView"
         permission="zope.Public" />
-  </facet>
+  </lp:facet>
 </configure>

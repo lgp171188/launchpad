@@ -27,7 +27,7 @@
 
   <include package=".widgets"/>
 
-  <facet facet="branches">
+  <lp:facet facet="branches">
 
   <browser:defaultView
       for="lp.registry.interfaces.product.IProductSet"
@@ -1469,6 +1469,6 @@
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
 
-    </facet>
+    </lp:facet>
 
 </configure>

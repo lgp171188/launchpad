@@ -84,7 +84,7 @@
       />
 
   <groupingDirective
-     namespace="http://namespaces.zope.org/zope"
+     namespace="http://namespaces.canonical.com/lp"
      name="facet"
      schema="lp.services.webapp.metazcml.IGroupingFacet"
      handler="lp.services.webapp.metazcml.GroupingFacet"
