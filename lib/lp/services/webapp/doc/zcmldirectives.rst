@@ -282,10 +282,11 @@ Next, a functional/integration test of the overridden directive.
     ...     """
     ... <configure xmlns="http://namespaces.zope.org/zope"
     ...            xmlns:browser="http://namespaces.zope.org/browser"
-    ...     package="lp.services">
+    ...            xmlns:lp="http://namespaces.canonical.com/lp"
+    ...            package="lp.services">
     ...   <include file="webapp/meta.zcml" />
     ...   <include file="webapp/meta-overrides.zcml" />
-    ...   <facet facet="whole-facet">
+    ...   <lp:facet facet="whole-facet">
     ...     <browser:page
     ...       for="lp.testing.IFoo"
     ...       name="+impliedfacet"
@@ -294,7 +295,7 @@ Next, a functional/integration test of the overridden directive.
     ...       attribute="__call__"
     ...       layer="lp.testing.IFooLayer"
     ...       />
-    ...   </facet>
+    ...   </lp:facet>
     ... </configure>
     ... """
     ... )

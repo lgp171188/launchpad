@@ -8,7 +8,7 @@
     xmlns:i18n="http://namespaces.zope.org/i18n"
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
-    <facet facet="overview">
+    <lp:facet facet="overview">
         <lp:url
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}/+recipe/${name}"
@@ -181,5 +181,5 @@
             path_expression="string:+subscription/${person/name}"
             attribute_to_parent="recipe"
             rootsite="code"/>
-    </facet>
+    </lp:facet>
 </configure>

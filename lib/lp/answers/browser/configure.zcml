@@ -8,7 +8,7 @@
   xmlns:i18n="http://namespaces.zope.org/i18n"
   xmlns:lp="http://namespaces.canonical.com/lp"
   i18n_domain="launchpad">
-<facet facet="answers">
+<lp:facet facet="answers">
 
   <!-- Because of Zope issue #754, defaultView still needs to
        be added for specific content object that also provides
@@ -500,6 +500,6 @@
     name="+restricted-membership"
     permission="zope.Public"
     />
-</facet>
+</lp:facet>
 
 </configure>
