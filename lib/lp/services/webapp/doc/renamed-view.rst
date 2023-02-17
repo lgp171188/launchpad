@@ -99,15 +99,15 @@ Registering from ZCML
 ---------------------
 
 Finally, it is possible to register RenamedView from ZCML. The
-browser:renamed-page is available for this purpose.
+lp:renamed-page directive is available for this purpose.
 
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:renamed-page
+    ...   <lp:renamed-page
     ...       for="lp.answers.interfaces.questiontarget.IQuestionTarget"
     ...       name="+old_tickets_page"
     ...       new_name="+questions"

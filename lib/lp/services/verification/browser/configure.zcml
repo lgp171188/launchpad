@@ -9,7 +9,7 @@
       path_expression="string:token"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-    <facet
+    <lp:facet
         facet="overview">
         <browser:defaultView
             for="lp.services.verification.interfaces.logintoken.ILoginToken"
@@ -69,5 +69,5 @@
             module="lp.services.verification.browser.logintoken"
             classes="
                 LoginTokenSetNavigation"/>
-    </facet>
+    </lp:facet>
 </configure>

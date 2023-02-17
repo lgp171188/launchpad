@@ -114,7 +114,7 @@ class LaunchpadAnnouncementsFeed(AnnouncementsFeedBase):
     # webapp/metazcml.py to provide a mapping from the supported
     # feed types to this class.  It is a more maintainable method than simply
     # listing each mapping in the zcml.  The only zcml change is to add this
-    # class to the list of classes in the `browser:feeds` stanza of
+    # class to the list of classes in the `lp:feeds` stanza of
     # lp/services/feeds/configure.zcml.
     usedfor = IFeedsApplication
 

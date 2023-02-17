@@ -19,7 +19,7 @@
        path_expression="string:+git"
        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-    <browser:feeds
+    <lp:feeds
         module="lp.code.feed.branch"
         classes="BranchFeed PersonBranchFeed ProductBranchFeed ProjectBranchFeed
                  PersonRevisionFeed ProductRevisionFeed ProjectRevisionFeed"
@@ -27,7 +27,7 @@
 
   <include package=".widgets"/>
 
-  <facet facet="branches">
+  <lp:facet facet="branches">
 
   <browser:defaultView
       for="lp.registry.interfaces.product.IProductSet"
@@ -745,17 +745,17 @@
             permission="zope.Public"
             name="+branches"
             template="../templates/person-branches.pt"/>
-        <browser:renamed-page
+        <lp:renamed-page
             for="lp.registry.interfaces.person.IPerson"
             name="+ownedbranches"
             new_name="+branches"
             rootsite="code"/>
-        <browser:renamed-page
+        <lp:renamed-page
             for="lp.registry.interfaces.person.IPerson"
             name="+registeredbranches"
             new_name="+branches"
             rootsite="code"/>
-        <browser:renamed-page
+        <lp:renamed-page
             for="lp.registry.interfaces.person.IPerson"
             name="+subscribedbranches"
             new_name="+branches"
@@ -786,7 +786,7 @@
         permission="zope.Public"
         name="+branches"
         template="../templates/product-branches.pt"/>
-    <browser:renamed-page
+    <lp:renamed-page
         for="lp.registry.interfaces.product.IProduct"
         name="+all-branches"
         new_name="+branches"
@@ -1192,17 +1192,17 @@
         name="+branches"
         template="../templates/person-branches.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         name="+ownedbranches"
         new_name="+branches"
         rootsite="code"/>
-    <browser:renamed-page
+    <lp:renamed-page
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         name="+registeredbranches"
         new_name="+branches"
         rootsite="code"/>
-    <browser:renamed-page
+    <lp:renamed-page
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         name="+subscribedbranches"
         new_name="+branches"
@@ -1469,6 +1469,6 @@
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
 
-    </facet>
+    </lp:facet>
 
 </configure>

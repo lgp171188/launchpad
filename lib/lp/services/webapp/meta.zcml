@@ -33,21 +33,21 @@
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="feeds"
       schema="lp.services.webapp.metazcml.IFeedsDirective"
       handler="lp.services.webapp.metazcml.feeds"
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="renamed-page"
       schema="lp.services.webapp.metazcml.IRenamedPageDirective"
       handler="lp.services.webapp.metazcml.renamed_page"
       />
 
   <directive
-      namespace="http://namespaces.zope.org/browser"
+      namespace="http://namespaces.canonical.com/lp"
       name="favicon"
       schema="lp.services.webapp.metazcml.IFaviconDirective"
       handler="lp.services.webapp.metazcml.favicon"
@@ -84,7 +84,7 @@
       />
 
   <groupingDirective
-     namespace="http://namespaces.zope.org/zope"
+     namespace="http://namespaces.canonical.com/lp"
      name="facet"
      schema="lp.services.webapp.metazcml.IGroupingFacet"
      handler="lp.services.webapp.metazcml.GroupingFacet"

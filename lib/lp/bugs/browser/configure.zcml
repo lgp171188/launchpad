@@ -9,11 +9,11 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     xmlns:xmlrpc="http://namespaces.zope.org/xmlrpc"
     i18n_domain="launchpad">
-    <browser:feeds
+    <lp:feeds
         module="lp.bugs.feed.bug"
         classes="BugFeed BugTargetBugsFeed PersonBugsFeed SearchBugsFeed"
         />
-    <facet
+    <lp:facet
         facet="bugs">
         <browser:page
             for="lp.bugs.interfaces.bugtarget.IHasBugs"
@@ -1166,7 +1166,7 @@
         template="../templates/bugs-listing-table-without-navlinks.pt"
         permission="zope.Public" />
 
-    </facet>
+    </lp:facet>
     <browser:defaultView
         for="lp.registry.interfaces.distribution.IDistribution"
         layer="lp.bugs.publisher.BugsLayer"

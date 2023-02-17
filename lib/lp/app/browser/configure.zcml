@@ -150,7 +150,7 @@
       permission="zope.Public"
       />
 
-    <facet facet="overview">
+    <lp:facet facet="overview">
       <!-- Common menus -->
       <lp:menus
           module="lp.app.browser.launchpad"
@@ -266,7 +266,7 @@
           class="lp.app.browser.launchpad.LoginStatus"
           permission="zope.Public"
           />
-    </facet>
+    </lp:facet>
 
   <!-- Error pages -->
   <!-- System Errors -->
@@ -997,7 +997,7 @@
       attribute="__call__"
       permission="zope.Public"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       name="+about"
       new_name="+tour/index"
@@ -1005,21 +1005,21 @@
       />
 
   <!-- Marketing material for Answers. -->
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.answers.publisher.AnswersLayer"
       name="+about"
       new_name="+tour/community-support"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.answers.publisher.AnswersLayer"
       name="+faq"
       new_name="+tour/community-support"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       name="+tour"
       new_name="+tour/community-support"
       rootsite="mainsite"
@@ -1028,21 +1028,21 @@
       />
 
   <!-- Marketing material for Blueprints. -->
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.blueprints.publisher.BlueprintsLayer"
       name="+about"
       new_name="+tour/feature-tracking"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.blueprints.publisher.BlueprintsLayer"
       name="+faq"
       new_name="+tour/feature-tracking"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       name="+tour"
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.blueprints.publisher.BlueprintsLayer"
@@ -1051,21 +1051,21 @@
       />
 
   <!-- Marketing material for Bugs. -->
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.bugs.publisher.BugsLayer"
       name="+about"
       new_name="+tour/bugs"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.bugs.publisher.BugsLayer"
       name="+faq"
       new_name="+tour/bugs"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       name="+tour"
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.bugs.publisher.BugsLayer"
@@ -1074,21 +1074,21 @@
       />
 
   <!-- Marketing material for Code. -->
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.code.publisher.CodeLayer"
       name="+about"
       new_name="+tour/branch-hosting-tracking"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.code.publisher.CodeLayer"
       name="+faq"
       new_name="+tour/branch-hosting-tracking"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       name="+tour"
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.code.publisher.CodeLayer"
@@ -1098,21 +1098,21 @@
 
 
   <!-- Marketing material for Translations. -->
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.translations.publisher.TranslationsLayer"
       name="+about"
       new_name="+tour/translation"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.translations.publisher.TranslationsLayer"
       name="+faq"
       new_name="+tour/translation"
       rootsite="mainsite"
       />
-  <browser:renamed-page
+  <lp:renamed-page
       name="+tour"
       for="lp.services.webapp.interfaces.ILaunchpadApplication"
       layer="lp.translations.publisher.TranslationsLayer"

@@ -1000,18 +1000,24 @@ class IArchiveView(IHasBuildRecords):
         "this archive."
     )
 
-    publishing_method = Choice(
-        title=_("Publishing method"),
-        vocabulary=ArchivePublishingMethod,
-        required=True,
-        readonly=False,
+    # XXX jugmac00 2023-02-13: Move to IArchiveRestricted
+    # see https://code.launchpad.net/~jugmac00/launchpad/+git/launchpad/+merge/437207  # noqa: E501
+    publishing_method = exported(
+        Choice(
+            title=_("Publishing method"),
+            vocabulary=ArchivePublishingMethod,
+            required=True,
+            readonly=False,
+        )
     )
 
-    repository_format = Choice(
-        title=_("Repository format"),
-        vocabulary=ArchiveRepositoryFormat,
-        required=True,
-        readonly=False,
+    repository_format = exported(
+        Choice(
+            title=_("Repository format"),
+            vocabulary=ArchiveRepositoryFormat,
+            required=True,
+            readonly=False,
+        )
     )
 
     api_publish = exported(

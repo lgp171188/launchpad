@@ -29,7 +29,7 @@
       path_expression="string:projectgroups"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-  <browser:feeds
+  <lp:feeds
       module="lp.registry.feed.announcement"
       classes="LaunchpadAnnouncementsFeed TargetAnnouncementsFeed"
       />
@@ -43,7 +43,7 @@
       path_expression="string:${name}"
       parent_utility="lp.app.interfaces.services.IServiceFactory"/>
 
-  <facet facet="overview">
+  <lp:facet facet="overview">
     <browser:page
         name="+grantee-table-view"
         for="lp.services.webapp.interfaces.IBatchNavigator"
@@ -385,7 +385,7 @@
         attribute_to_parent="person"
         rootsite="api"
         />
-    <facet
+    <lp:facet
         facet="answers">
       <browser:page
           name="+addquestion"
@@ -393,7 +393,7 @@
           class="lp.registry.browser.project.ProjectAddQuestionView"
           permission="launchpad.AnyPerson"
           />
-      <browser:renamed-page
+      <lp:renamed-page
           name="+addticket"
           for="lp.registry.interfaces.projectgroup.IProjectGroup"
           new_name="+addquestion"
@@ -405,7 +405,7 @@
           class="lp.answers.browser.questiontarget.AskAQuestionButtonPortlet"
           permission="zope.Public"
           />
-    </facet>
+    </lp:facet>
     <lp:navigation
         module="lp.registry.browser.project"
         classes="
@@ -1135,17 +1135,17 @@
         permission="zope.Public"
         template="../templates/person-related-software-navlinks.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+related-software"
         new_name="+related-packages"
         for="lp.registry.interfaces.person.IPerson"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+packages"
         new_name="+related-packages"
         for="lp.registry.interfaces.person.IPerson"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+projects"
         new_name="+related-projects"
         for="lp.registry.interfaces.person.IPerson"
@@ -1767,7 +1767,7 @@
         permission="zope.Public"
         template="../templates/product-listing-detailed.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+distributions"
         for="lp.registry.interfaces.product.IProduct"
         new_name="+packages"
@@ -1931,7 +1931,7 @@
         permission="launchpad.AnyPerson"
         template="../templates/product-new.pt"
         />
-    <browser:renamed-page
+    <lp:renamed-page
         name="+new-guided"
         new_name="+new"
         for="lp.registry.interfaces.product.IProductSet"
@@ -2683,7 +2683,7 @@
         rootsite="api"
         attribute_to_parent="owner"
         />
-  </facet>
+  </lp:facet>
   <adapter
       factory="lp.registry.browser.distroseriesdifference.get_message"
       provides="lp.services.messages.interfaces.message.IMessage"

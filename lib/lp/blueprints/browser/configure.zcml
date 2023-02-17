@@ -221,7 +221,7 @@
         for="lp.blueprints.interfaces.sprintattendance.ISprintAttendance"
         path_expression="string:${attendee/name}"
         attribute_to_parent="sprint"/>
-    <facet
+    <lp:facet
         facet="specifications">
         <lp:url
             for="lp.blueprints.interfaces.specificationbranch.ISpecificationBranch"
@@ -641,7 +641,7 @@
         permission="zope.Public"
         name="+upcomingwork"
         template="../templates/person-upcomingwork.pt"/>
-    </facet>
+    </lp:facet>
 
 
     <browser:defaultView

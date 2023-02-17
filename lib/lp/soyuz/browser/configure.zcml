@@ -13,7 +13,7 @@
       path_expression="string:binarypackagenames"
       parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
       />
-    <facet
+    <lp:facet
         facet="overview">
         <browser:pages
             for="lp.soyuz.interfaces.publishing.IBinaryPackagePublishingHistory"
@@ -796,5 +796,5 @@
         factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
         permission="zope.Public"
         />
-    </facet>
+    </lp:facet>
 </configure>

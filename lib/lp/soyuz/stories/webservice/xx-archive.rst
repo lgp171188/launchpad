@@ -29,8 +29,10 @@ We publish a subset of their attributes.
     owner_link: 'http://.../~cprov'
     private: False
     publish: True
+    publishing_method: 'Local'
     reference: '~cprov/ubuntu/ppa'
     relative_build_score: 0
+    repository_format: 'Debian'
     require_virtualized: True
     resource_type_link: 'http://.../#archive'
     self_link: 'http://.../~cprov/+archive/ubuntu/ppa'
@@ -62,8 +64,10 @@ For "devel" additional attributes are available.
       'http://.../~cprov/+archive/ubuntu/ppa/processors'
     publish: True
     publish_debug_symbols: False
+    publishing_method: 'Local'
     reference: '~cprov/ubuntu/ppa'
     relative_build_score: 0
+    repository_format: 'Debian'
     require_virtualized: True
     resource_type_link: 'http://.../#archive'
     self_link: 'http://.../~cprov/+archive/ubuntu/ppa'
@@ -143,8 +147,10 @@ The archive has the following attributes:
     owner_link: 'http://.../~ubuntu-team'
     private: False
     publish: True
+    publishing_method: 'Local'
     reference: 'ubuntutest'
     relative_build_score: 0
+    repository_format: 'Debian'
     require_virtualized: False
     resource_type_link: 'http://.../#archive'
     self_link: 'http://.../ubuntutest/+archive/primary'
@@ -1495,8 +1501,10 @@ the IArchive context, in this case only Celso has it.
     owner_link: 'http://.../~cprov'
     private: True
     publish: 'tag:launchpad.net:2008:redacted'
+    publishing_method: 'tag:launchpad.net:2008:redacted'
     reference: '~cprov/ubuntu/p3a'
     relative_build_score: 0
+    repository_format: 'tag:launchpad.net:2008:redacted'
     require_virtualized: 'tag:launchpad.net:2008:redacted'
     resource_type_link: 'http://.../#archive'
     self_link: 'http://.../~cprov/+archive/ubuntu/p3a'
@@ -1518,8 +1526,10 @@ the IArchive context, in this case only Celso has it.
     owner_link: 'http://.../~cprov'
     private: True
     publish: True
+    publishing_method: 'Local'
     reference: '~cprov/ubuntu/p3a'
     relative_build_score: 0
+    repository_format: 'Debian'
     require_virtualized: True
     resource_type_link: 'http://.../#archive'
     self_link: 'http://.../~cprov/+archive/ubuntu/p3a'

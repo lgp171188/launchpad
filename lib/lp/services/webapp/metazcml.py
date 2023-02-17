@@ -597,7 +597,7 @@ class pages(original_pages):
 
 
 class IRenamedPageDirective(Interface):
-    """Schema for the browser:renamed-page directive.
+    """Schema for the lp:renamed-page directive.
 
     Use this directive to do redirects instead of the classic way of putting a
     redirect method in a view, hooked in by a browser:page directive.

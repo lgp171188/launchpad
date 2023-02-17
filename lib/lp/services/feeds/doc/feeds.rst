@@ -19,18 +19,18 @@ Launchpad interface, we'll define one here.
     >>> from lp.services.feeds.tests.helper import IThing, Thing
 
 
-ZCML for browser:feeds
-----------------------
+ZCML for lp:feeds
+-----------------
 
-The zcml `browser:feeds` directive describes a feed view.
+The zcml `lp:feeds` directive describes a feed view.
 
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string(
     ...     """
-    ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ... <configure xmlns:lp="http://namespaces.canonical.com/lp">
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <browser:feeds
+    ...   <lp:feeds
     ...       module="lp.services.feeds.tests.helper"
     ...       classes="ThingFeedView"
     ...       />

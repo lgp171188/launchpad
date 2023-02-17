@@ -8,7 +8,7 @@
     xmlns:i18n="http://namespaces.zope.org/i18n"
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
-<facet facet="translations">
+<lp:facet facet="translations">
     <lp:url
         for="lp.translations.interfaces.translations.IRosettaApplication"
         path_expression="string:translations"
@@ -878,7 +878,7 @@
         class="lp.translations.browser.customlanguagecode.CustomLanguageCodeAddView"
         template="../templates/customlanguagecode-add.pt"
         permission="launchpad.TranslationsAdmin"/>
-</facet>
+</lp:facet>
 
 <!-- TranslationTemplateBuild -->
     <browser:defaultView
