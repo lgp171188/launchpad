@@ -1,4 +1,4 @@
-# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -2347,7 +2347,16 @@ class GitRepositorySet:
                 "Cannot set a default Git repository for a person, only "
                 "for a project or a package."
             )
-        if not check_permission("launchpad.Edit", target):
+        if not (
+            check_permission("launchpad.Edit", target)
+            or (
+                IDistributionSourcePackage.providedBy(target)
+                and getUtility(ILaunchBag).user
+                and getUtility(ILaunchBag).user.inTeam(
+                    target.distribution.code_admin
+                )
+            )
+        ):
             raise Unauthorized(
                 "You cannot set the default Git repository for %s."
                 % target.display_name

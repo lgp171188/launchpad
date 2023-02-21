@@ -36,6 +36,11 @@
       <dt>Security admins:</dt>
       <dd tal:content="structure view/security_admin_widget" />
     </dl>
+
+    <dl id="code-admins">
+      <dt>Code admins:</dt>
+      <dd tal:content="structure view/code_admin_widget" />
+    </dl>
   </div>
 
   <dl id="uploaders" style="clear:left">
