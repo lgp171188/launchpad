@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistribution."""
@@ -686,6 +686,16 @@ class IDistributionView(
                 value_type=Reference(schema=Interface),
             )
         )
+    )
+
+    code_admin = exported(
+        ReferenceChoice(
+            title=_("Code Administrator"),
+            description=_("The distribution source code administrator."),
+            required=False,
+            vocabulary="ValidPersonOrTeam",
+            schema=IPerson,
+        ),
     )
 
     def getVulnerabilitiesVisibleToUser(user):
