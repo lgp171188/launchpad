@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Distribution."""
@@ -955,6 +955,26 @@ class TestDistribution(TestCaseWithFactory):
                 CannotChangeInformationType, "Answers is enabled."
             ):
                 distribution.information_type = InformationType.PROPRIETARY
+
+    def test_set_code_admin_permissions(self):
+        distribution = self.factory.makeDistribution()
+        person = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        code_admin_team = self.factory.makeTeam(members=[person])
+
+        with person_logged_in(distribution.owner):
+            distribution.code_admin = code_admin_team
+            self.assertEqual(code_admin_team, distribution.code_admin)
+
+        with admin_logged_in():
+            distribution.code_admin = None
+            self.assertIsNone(distribution.code_admin)
+
+        with person_logged_in(person2), ExpectedException(Unauthorized):
+            distribution.code_admin = code_admin_team
+
+        with anonymous_logged_in(), ExpectedException(Unauthorized):
+            distribution.code_admin = code_admin_team
 
 
 class TestDistributionBugInformationTypes(TestCaseWithFactory):
@@ -2143,6 +2163,92 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
                     "security_admin_link": person_url,
                 }
             ),
+        )
+        self.assertEqual(401, response.status)
+
+    def test_distribution_code_admin_unset(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro_url = api_url(distro)
+
+        response = self.webservice.get(distro_url)
+        json_body = response.jsonBody()
+        self.assertEqual(200, response.status)
+        self.assertIsNone(json_body["code_admin_link"])
+
+    def test_distribution_code_admin_set(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            distro_url = api_url(distro)
+            person = self.factory.makePerson()
+            distro.code_admin = person
+            person_url = "http://api.launchpad.test/devel" + api_url(person)
+
+        response = self.webservice.get(distro_url)
+        json_body = response.jsonBody()
+        self.assertEqual(200, response.status)
+        self.assertEqual(
+            person_url,
+            json_body["code_admin_link"],
+        )
+
+    def test_admin_can_set_distribution_code_admin(self):
+        with admin_logged_in():
+            distro = self.factory.makeDistribution()
+            person = self.factory.makePerson()
+            person_url = "http://api.launchpad.test/devel" + api_url(person)
+            self.assertIsNone(distro.code_admin)
+            admin_user = getUtility(IPersonSet).getByEmail(
+                "admin@canonical.com"
+            )
+            distro_url = api_url(distro)
+
+        webservice = webservice_for_person(
+            admin_user,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+
+        response = webservice.patch(
+            distro_url,
+            "application/json",
+            json.dumps({"code_admin_link": person_url}),
+        )
+        self.assertEqual(209, response.status)
+        with admin_logged_in():
+            self.assertEqual(person, distro.code_admin)
+
+    def test_distribution_owner_can_set_code_admin(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            self.assertIsNone(distro.code_admin)
+            distro_url = api_url(distro)
+            person_url = "http://api.launchpad.test/devel" + api_url(
+                self.person
+            )
+
+        response = self.webservice.patch(
+            distro_url,
+            "application/json",
+            json.dumps({"code_admin_link": person_url}),
+        )
+        self.assertEqual(209, response.status)
+
+        with person_logged_in(self.person):
+            self.assertEqual(self.person, distro.code_admin)
+
+    def test_others_cannot_set_distribution_code_admin(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution()
+            distro_url = api_url(distro)
+            person_url = "http://api.launchpad.test/devel" + api_url(
+                self.person
+            )
+
+        response = self.webservice.patch(
+            distro_url,
+            "application/json",
+            json.dumps({"code_admin_link": person_url}),
         )
         self.assertEqual(401, response.status)
 

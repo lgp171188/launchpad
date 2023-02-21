@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for implementing distribution items."""
@@ -773,6 +773,13 @@ class Distribution(
         notNull=False,
         default=None,
     )
+    code_admin_id = Int(
+        name="code_admin",
+        validator=validate_public_person,
+        allow_none=True,
+        default=None,
+    )
+    code_admin = Reference(code_admin_id, "Person.id")
 
     @cachedproperty
     def main_archive(self):

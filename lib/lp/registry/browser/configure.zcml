@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -2338,6 +2338,13 @@
         name="+select-security-admins"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionChangeSecurityAdminView"
+        permission="launchpad.Edit"
+        template="../../app/templates/generic-edit.pt"
+        />
+    <browser:page
+        name="+select-code-admins"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionChangeCodeAdminView"
         permission="launchpad.Edit"
         template="../../app/templates/generic-edit.pt"
         />

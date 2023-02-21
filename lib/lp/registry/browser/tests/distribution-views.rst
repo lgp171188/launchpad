@@ -316,6 +316,56 @@ Only admins and owners can access the view.
     False
 
 
+Changing a distribution code administrator
+------------------------------------------
+
+The +select-code-admins view allows the owner or admin to change the
+code administrator.
+
+    >>> login("admin@canonical.com")
+    >>> view = create_view(distribution, "+select-code-admins")
+    >>> print(view.label)
+    Change the YoUbuntu code administrator
+
+    >>> print(view.page_title)
+    Change the YoUbuntu code administrator
+
+    >>> print(view.cancel_url)
+    http://launchpad.test/youbuntu
+
+The view accepts the code_admin field.
+
+    >>> print(distribution.code_admin)
+    None
+
+    >>> view.field_names
+    ['code_admin']
+
+    >>> form = {
+    ...     "field.code_admin": "no-priv",
+    ...     "field.actions.change": "Change",
+    ... }
+    >>> view = create_initialized_view(
+    ...     distribution, "+select-code-admins", form=form
+    ... )
+    >>> view.errors
+    []
+    >>> print(view.next_url)
+    http://launchpad.test/youbuntu
+
+    >>> print(distribution.code_admin.name)
+    no-priv
+
+Only admins and owners can access the view.
+
+    >>> check_permission("launchpad.Edit", view)
+    True
+
+    >>> login("no-priv@canonical.com")
+    >>> check_permission("launchpad.Edit", view)
+    False
+
+
 Changing a distribution members team
 ------------------------------------
 

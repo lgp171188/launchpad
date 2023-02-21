@@ -1,4 +1,4 @@
-# Copyright 2015-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -33,6 +33,7 @@ from testtools.matchers import (
     MatchesStructure,
     StartsWith,
 )
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
 from zope.security.interfaces import ForbiddenAttribute, Unauthorized
@@ -177,6 +178,7 @@ from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
     admin_logged_in,
+    anonymous_logged_in,
     api_url,
     celebrity_logged_in,
     login_person,
@@ -5058,6 +5060,37 @@ class TestGitRepositorySet(TestCaseWithFactory):
                     owner, target
                 ),
             )
+
+    def test_distribution_code_admin_calls_setDefaultRepository_for_dsp(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        dsp = self.factory.makeDistributionSourcePackage(
+            distribution=distribution
+        )
+        repository = self.factory.makeGitRepository(target=dsp)
+
+        with person_logged_in(distribution.owner):
+            distribution.code_admin = person
+
+        self.assertIsNone(self.repository_set.getDefaultRepository(dsp))
+
+        with person_logged_in(person):
+            self.repository_set.setDefaultRepository(dsp, repository)
+
+        self.assertEqual(
+            repository, self.repository_set.getDefaultRepository(dsp)
+        )
+
+    def test_unauthorized_users_cannot_call_setDefaultRepository_for_dsp(self):
+        person = self.factory.makePerson()
+        dsp = self.factory.makeDistributionSourcePackage()
+        repository = self.factory.makeGitRepository(target=dsp)
+
+        with anonymous_logged_in(), ExpectedException(Unauthorized):
+            self.repository_set.setDefaultRepository(dsp, repository)
+
+        with person_logged_in(person), ExpectedException(Unauthorized):
+            self.repository_set.setDefaultRepository(dsp, repository)
 
     def test_setDefaultRepositoryForOwner_replaces_old(self):
         # If another repository is already the target owner default,

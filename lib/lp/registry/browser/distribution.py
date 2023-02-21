@@ -1,4 +1,4 @@
-# Copyright 2009-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for distributions."""
@@ -9,6 +9,7 @@ __all__ = [
     "DistributionArchiveMirrorsRSSView",
     "DistributionArchiveMirrorsView",
     "DistributionArchivesView",
+    "DistributionChangeCodeAdminView",
     "DistributionChangeMembersView",
     "DistributionChangeMirrorAdminView",
     "DistributionChangeOCIProjectAdminView",
@@ -442,6 +443,7 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         "mirror_admin",
         "oci_project_admin",
         "security_admin",
+        "code_admin",
         "reassign",
         "addseries",
         "series",
@@ -542,6 +544,11 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
     def security_admin(self):
         text = "Change security admins"
         return Link("+select-security-admins", text, icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
+    def code_admin(self):
+        text = "Change code admins"
+        return Link("+select-code-admins", text, icon="edit")
 
     def search(self):
         text = "Search packages"
@@ -867,6 +874,26 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
             edit_view="+select-security-admins",
             null_display_value=empty_value,
             step_title="Select a new security administrator",
+        )
+
+    @property
+    def code_admin_widget(self):
+        if canWrite(self.context, "code_admin"):
+            empty_value = "Specify a code administrator"
+        else:
+            empty_value = "None"
+
+        return InlinePersonEditPickerWidget(
+            self.context,
+            IDistribution["code_admin"],
+            format_link(
+                self.context.code_admin,
+                empty_value=empty_value,
+            ),
+            header="Change the code administrator",
+            edit_view="+select-code-admins",
+            null_display_value=empty_value,
+            step_title="Select a new code administrator",
         )
 
     def linkedMilestonesForSeries(self, series):
@@ -1348,6 +1375,18 @@ class DistributionChangeSecurityAdminView(RegistryEditFormView):
         return "Change the %s security administrator" % (
             self.context.displayname
         )
+
+
+class DistributionChangeCodeAdminView(RegistryEditFormView):
+    """A view to change the code administrator."""
+
+    schema = IDistribution
+    field_names = ["code_admin"]
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return "Change the %s code administrator" % (self.context.displayname)
 
 
 class DistributionChangeMembersView(RegistryEditFormView):
