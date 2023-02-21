@@ -39,6 +39,24 @@ class IncompatibleArchitecturesStyleError(SnapArchitecturesParserError):
         )
 
 
+class AllConflictInBuildForError(SnapArchitecturesParserError):
+    """Error for when `build-for` contains `all` and another architecture."""
+
+    def __init__(self):
+        super().__init__(
+            "'build-for' contains both 'all' and another architecture name"
+        )
+
+
+class AllConflictInBuildOnError(SnapArchitecturesParserError):
+    """Error for when `build-on` contains `all` and another architecture."""
+
+    def __init__(self):
+        super().__init__(
+            "'build-on' contains both 'all' and another architecture name"
+        )
+
+
 class DuplicateBuildOnError(SnapArchitecturesParserError):
     """Error for when multiple `build-on`s include the same architecture."""
 
@@ -134,14 +152,21 @@ class SnapBuildInstance:
         :param supported_architectures: List of supported architectures,
             sorted by priority.
         """
+        build_on = architecture.build_on
+        # "all" indicates that the architecture doesn't matter.  Try to pick
+        # an appropriate architecture in this case.
+        # `Snap.requestBuildsFromJob` orders `supported_architectures` such
+        # that we can reasonably pick the first one if all else fails.
+        if "all" in build_on:
+            build_on = architecture.build_for
+            if "all" in build_on:
+                build_on = supported_architectures[0]
         try:
             self.architecture = next(
-                arch
-                for arch in supported_architectures
-                if arch in architecture.build_on
+                arch for arch in supported_architectures if arch in build_on
             )
         except StopIteration:
-            raise UnsupportedBuildOnError(architecture.build_on)
+            raise UnsupportedBuildOnError(build_on)
 
         self.target_architectures = architecture.build_for
         self.required = architecture.build_error != "ignore"
@@ -185,6 +210,12 @@ def determine_architectures_to_build(
         architectures = [
             SnapArchitecture(build_on=a) for a in supported_arches
         ]
+
+    for arch in architectures:
+        if "all" in arch.build_on and len(arch.build_on) > 1:
+            raise AllConflictInBuildOnError()
+        if "all" in arch.build_for and len(arch.build_for) > 1:
+            raise AllConflictInBuildForError()
 
     allow_duplicate_build_on = (
         snap_base

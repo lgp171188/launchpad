@@ -5,6 +5,8 @@ from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import HasLength
 
 from lp.snappy.adapters.buildarch import (
+    AllConflictInBuildForError,
+    AllConflictInBuildOnError,
     DuplicateBuildOnError,
     SnapArchitecture,
     SnapBuildInstance,
@@ -152,6 +154,28 @@ class TestSnapBuildInstance(WithScenarios, TestCase):
                 "expected_architecture": "amd64",
                 "expected_target_architectures": ["amd64"],
                 "expected_required": False,
+            },
+        ),
+        (
+            "build on all",
+            {
+                "architecture": SnapArchitecture(build_on=["all"]),
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_architecture": "amd64",
+                "expected_target_architectures": ["all"],
+                "expected_required": True,
+            },
+        ),
+        (
+            "build on all, build for i386",
+            {
+                "architecture": SnapArchitecture(
+                    build_on=["all"], build_for="i386"
+                ),
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_architecture": "i386",
+                "expected_target_architectures": ["i386"],
+                "expected_required": True,
             },
         ),
     ]
@@ -394,6 +418,24 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "required": True,
                     },
                 ],
+            },
+        ),
+        (
+            "build-on contains both all and another architecture",
+            {
+                "architectures": [{"build-on": ["all", "amd64"]}],
+                "supported_architectures": ["amd64"],
+                "expected_exception": AllConflictInBuildOnError,
+            },
+        ),
+        (
+            "build-for contains both all and another architecture",
+            {
+                "architectures": [
+                    {"build-on": "amd64", "build-for": ["amd64", "all"]}
+                ],
+                "supported_architectures": ["amd64"],
+                "expected_exception": AllConflictInBuildForError,
             },
         ),
         (
