@@ -114,6 +114,7 @@ from lp.soyuz.browser.sourceslist import SourcesListEntriesWidget
 from lp.soyuz.browser.widgets.archive import PPANameWidget
 from lp.soyuz.enums import (
     ArchivePermissionType,
+    ArchivePublishingMethod,
     ArchiveStatus,
     PackageCopyPolicy,
     PackagePublishingStatus,
@@ -2394,14 +2395,40 @@ class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
         """Validate the save action on ArchiveAdminView."""
         super().validate_save(action, data)
 
+        # XXX cjwatson 2023-02-22: This check duplicates
+        # Archive._validate_archive_privacy.  Can we avoid this and just
+        # catch exceptions somewhere?
         if data.get("private") != self.context.private:
             # The privacy is being switched.
             if not self.context.getPublishedSources().is_empty():
-                self.setFieldError(
-                    "private",
-                    "This archive already has published sources. It is "
-                    "not possible to switch the privacy.",
-                )
+                if (
+                    # For local publishing, we can't switch privacy after
+                    # anything has been published to it, because the publisher
+                    # uses different paths on disk for public and private
+                    # archives.
+                    self.context.publishing_method
+                    == ArchivePublishingMethod.LOCAL
+                    # Refuse to switch from private to public even for
+                    # non-local publishing, partly as a safety measure and
+                    # partly because the files in the archive would have to be
+                    # unrestricted and we don't have code to do that yet.
+                    #
+                    # Switching an archive from public to private should
+                    # ideally also restrict any files published only in that
+                    # archive.  However, that's quite complex because we'd
+                    # have to check whether the files are published anywhere
+                    # else, and nothing breaks if we leave the files alone.
+                    # It's not ideal that we might have files reachable from
+                    # the public librarian that are now only published in a
+                    # private archive, but since Launchpad won't give out any
+                    # links to those, it could be worse.
+                    or self.context.private
+                ):
+                    self.setFieldError(
+                        "private",
+                        "This archive already has published sources. It is "
+                        "not possible to switch the privacy.",
+                    )
 
         if self.owner_is_private_team and not data["private"]:
             self.setFieldError(
