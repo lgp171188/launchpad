@@ -81,8 +81,8 @@ class TestArchiveAdminView(TestCaseWithFactory):
         self.assertEqual(0, len(view.errors))
         self.assertFalse(view.context.private)
 
-    def test_set_private_with_packages(self):
-        # A PPA that does have packages cannot be privatised.
+    def test_set_private_with_packages_local(self):
+        # A local PPA that does have packages cannot be made private.
         self.publish_to_ppa(self.ppa)
         view = self.initialize_admin_view(self.ppa, {"field.private": "on"})
         self.assertEqual(1, len(view.errors))
@@ -92,9 +92,32 @@ class TestArchiveAdminView(TestCaseWithFactory):
             view.errors[0],
         )
 
-    def test_set_public_with_packages(self):
-        # A PPA that does have (or had) packages published is presented
-        # with a disabled 'private' field.
+    def test_set_public_with_packages_local(self):
+        # A local PPA that does have (or had) packages published cannot be
+        # made public.
+        self.ppa.private = True
+        self.publish_to_ppa(self.ppa)
+
+        view = self.initialize_admin_view(self.ppa, {"field.private": "off"})
+        self.assertEqual(1, len(view.errors))
+        self.assertEqual(
+            "This archive already has published sources. "
+            "It is not possible to switch the privacy.",
+            view.errors[0],
+        )
+
+    def test_set_private_with_packages_artifactory(self):
+        # An Artifactory PPA that does have packages can be made private.
+        self.ppa.publishing_method = ArchivePublishingMethod.ARTIFACTORY
+        self.publish_to_ppa(self.ppa)
+        view = self.initialize_admin_view(self.ppa, {"field.private": "on"})
+        self.assertEqual(0, len(view.errors))
+        self.assertTrue(view.context.private)
+
+    def test_set_public_with_packages_artifactory(self):
+        # An Artifactory PPA that does have (or had) packages published
+        # cannot be made public.
+        self.ppa.publishing_method = ArchivePublishingMethod.ARTIFACTORY
         self.ppa.private = True
         self.publish_to_ppa(self.ppa)
 
