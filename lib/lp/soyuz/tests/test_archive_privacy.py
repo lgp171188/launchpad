@@ -5,6 +5,7 @@
 
 from zope.security.interfaces import Unauthorized
 
+from lp.soyuz.enums import ArchivePublishingMethod
 from lp.soyuz.interfaces.archive import CannotSwitchPrivacy
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
@@ -77,7 +78,7 @@ class TestPrivacySwitching(TestCaseWithFactory):
         private_ppa.private = False
         self.assertFalse(private_ppa.private)
 
-    def test_switch_privacy_with_pubs_fails(self):
+    def test_switch_privacy_with_pubs_fails_local(self):
         # Changing the privacy is not possible when the archive already
         # has published sources.
         public_ppa = self.factory.makeArchive(private=False)
@@ -91,6 +92,34 @@ class TestPrivacySwitching(TestCaseWithFactory):
         self.assertRaises(
             CannotSwitchPrivacy, setattr, public_ppa, "private", True
         )
+
+        self.assertRaises(
+            CannotSwitchPrivacy, setattr, private_ppa, "private", False
+        )
+
+    def test_make_private_with_pubs_succeeds_artifactory(self):
+        # Making a public Artifactory archive private is fine even if the
+        # archive already has published sources.
+        public_ppa = self.factory.makeArchive(
+            private=False,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+        )
+        publisher = SoyuzTestPublisher()
+        publisher.prepareBreezyAutotest()
+        publisher.getPubSource(archive=public_ppa)
+
+        public_ppa.private = True
+        self.assertTrue(public_ppa.private)
+
+    def test_make_public_with_pubs_fails_artifactory(self):
+        # Making a public Artifactory archive private fails if the archive
+        # already has published sources.
+        private_ppa = self.factory.makeArchive(
+            private=True, publishing_method=ArchivePublishingMethod.ARTIFACTORY
+        )
+        publisher = SoyuzTestPublisher()
+        publisher.prepareBreezyAutotest()
+        publisher.getPubSource(archive=private_ppa)
 
         self.assertRaises(
             CannotSwitchPrivacy, setattr, private_ppa, "private", False
