@@ -201,6 +201,14 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
         :return: The corresponding `ILibraryFileAlias`.
         """
 
+    def getArtifacts():
+        """Return `IRevisionStatusArtifact`s produced by this build.
+
+        :return: A result set of `IRevisionStatusArtifact`s, ordered by
+            filename then artifact ID, with their associated
+            `ILibraryFileAlias`es preloaded.
+        """
+
     @export_read_operation()
     @operation_for_version("devel")
     def getFileUrls():

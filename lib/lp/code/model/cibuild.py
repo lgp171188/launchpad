@@ -9,7 +9,7 @@ __all__ = [
 
 from copy import copy
 from datetime import timedelta
-from operator import attrgetter, itemgetter
+from operator import itemgetter
 
 import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
@@ -49,12 +49,13 @@ from lp.code.interfaces.cibuild import (
 )
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.code.interfaces.revisionstatus import (
-    IRevisionStatusArtifactSet,
-    IRevisionStatusReportSet,
-)
+from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.gitref import GitRef
 from lp.code.model.lpcraft import load_configuration
+from lp.code.model.revisionstatus import (
+    RevisionStatusArtifact,
+    RevisionStatusReport,
+)
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageType
@@ -478,15 +479,25 @@ class CIBuild(PackageBuildMixin, StormBase):
 
         raise NotFoundError(filename)
 
-    def getFileUrls(self):
-        artifacts = getUtility(IRevisionStatusArtifactSet).findByCIBuild(self)
-        load_related(LibraryFileAlias, artifacts, ["library_file_id"])
-        artifacts = sorted(
-            artifacts, key=attrgetter("library_file.filename", "id")
+    def getArtifacts(self):
+        """See `ICIBuild`."""
+        artifacts = (
+            IStore(self)
+            .find(
+                (RevisionStatusArtifact, LibraryFileAlias),
+                RevisionStatusReport.ci_build == self,
+                RevisionStatusArtifact.report == RevisionStatusReport.id,
+                RevisionStatusArtifact.library_file == LibraryFileAlias.id,
+            )
+            .order_by(LibraryFileAlias.filename, RevisionStatusArtifact.id)
         )
+        return DecoratedResultSet(artifacts, result_decorator=itemgetter(0))
+
+    def getFileUrls(self):
+        """See `ICIBuild`."""
         return [
             ProxiedLibraryFileAlias(artifact.library_file, artifact).http_url
-            for artifact in artifacts
+            for artifact in self.getArtifacts()
         ]
 
     def verifySuccessfulUpload(self) -> bool:
