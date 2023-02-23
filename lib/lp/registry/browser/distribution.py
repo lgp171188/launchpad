@@ -809,7 +809,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def members_widget(self):
         if canWrite(self.context, "members"):
-            empty_value = " Specify the members team"
+            empty_value = "Specify the members team"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -825,7 +825,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def mirror_admin_widget(self):
         if canWrite(self.context, "mirror_admin"):
-            empty_value = " Specify a mirror administrator"
+            empty_value = "Specify a mirror administrator"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -841,7 +841,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def oci_project_admin_widget(self):
         if canWrite(self.context, "oci_project_admin"):
-            empty_value = " Specify an OCI project administrator"
+            empty_value = "Specify an OCI project administrator"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -859,7 +859,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def security_admin_widget(self):
         if canWrite(self.context, "security_admin"):
-            empty_value = " Specify a security administrator"
+            empty_value = "Specify a security administrator"
         else:
             empty_value = "None"
 
