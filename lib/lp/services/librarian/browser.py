@@ -149,3 +149,10 @@ class ProxiedLibraryFileAlias:
             url_path_quote(self.context.filename.encode("utf-8")),
         )
         return url
+
+    # XXX cjwatson 2023-02-23: For plain `LibraryFileAlias`, callers prefer
+    # to use `getURL` over `http_url`, because that returns an HTTPS URL
+    # where appropriate.  However, if you try to do that with a
+    # `ProxiedLibraryFileAlias`, it returns a URL pointing directly to the
+    # librarian rather than proxying via the webapp.  To avoid this gotcha,
+    # perhaps we should implement `getURL` here as well.

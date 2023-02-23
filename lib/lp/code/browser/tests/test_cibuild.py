@@ -11,6 +11,7 @@ from fixtures import FakeLogger
 from storm.locals import Store
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -23,12 +24,13 @@ from lp.testing import (
     login,
     person_logged_in,
 )
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tags_by_class,
 )
+from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForCIBuild(TestCaseWithFactory):
@@ -224,3 +226,50 @@ class TestCIBuildOperations(BrowserTestCase):
         build = self.makeBuildingRecipe()
         browser = self.getViewBrowser(build.builder, no_login=True)
         self.assertIn("tail of the log", browser.contents)
+
+
+class TestCIBuildView(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def test_files(self):
+        # CIBuildView.files returns all the associated files.
+        build = self.factory.makeCIBuild(status=BuildStatus.FULLYBUILT)
+        reports = [
+            build.getOrCreateRevisionStatusReport(job_id)
+            for job_id in ("build:0", "build:1")
+        ]
+        for report in reports:
+            # Deliberately use identical filenames for each artifact, since
+            # that's the hardest case.
+            removeSecurityProxy(report).attach(
+                "package.tar.gz", report.title.encode()
+            )
+        artifacts = build.getArtifacts()
+        self.assertContentEqual(
+            reports, {artifact.report for artifact in artifacts}
+        )
+        build_view = create_initialized_view(build, "+index")
+        self.assertEqual(
+            [
+                "%s/+files/%s"
+                % (canonical_url(artifact), artifact.library_file.filename)
+                for artifact in artifacts
+            ],
+            [lfa.http_url for lfa in build_view.files],
+        )
+        # Deleted files won't be included.
+        self.assertFalse(artifacts[1].library_file.deleted)
+        removeSecurityProxy(artifacts[1].library_file).content = None
+        self.assertTrue(artifacts[1].library_file.deleted)
+        build_view = create_initialized_view(build, "+index")
+        self.assertEqual(
+            [
+                "%s/+files/%s"
+                % (
+                    canonical_url(artifacts[0]),
+                    artifacts[0].library_file.filename,
+                )
+            ],
+            [lfa.http_url for lfa in build_view.files],
+        )

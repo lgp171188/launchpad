@@ -33,6 +33,10 @@
 
       </div> <!-- yui-g -->
 
+      <div id="files" class="portlet" tal:condition="view/has_files">
+        <div metal:use-macro="template/macros/files"/>
+      </div>
+
       <div id="buildlog" class="portlet"
            tal:condition="context/status/enumvalue:BUILDING">
         <div metal:use-macro="template/macros/buildlog"/>
@@ -160,6 +164,22 @@
       >
       <a tal:replace="structure link/fmt:link"/>
     </div>
+  </metal:macro>
+
+  <metal:macro define-macro="files">
+    <tal:comment replace="nothing">
+      Files section.
+    </tal:comment>
+    <h2>Built files</h2>
+    <p>Files resulting from this build:</p>
+    <ul>
+      <li tal:repeat="file view/files">
+        <a class="sprite download"
+           tal:content="file/filename"
+           tal:attributes="href file/http_url"/>
+        (<span tal:replace="file/content/filesize/fmt:bytes"/>)
+      </li>
+    </ul>
   </metal:macro>
 
   <metal:macro define-macro="buildlog">
