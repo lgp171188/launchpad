@@ -55,7 +55,7 @@ class TestRevisionFeed(TestCaseWithFactory):
 
     def _createFeed(self):
         """Create and return a RevisionListingFeed instance."""
-        # The FeedBase class determins the feed type by the end of the
+        # The FeedBase class determines the feed type by the end of the
         # requested URL, so forcing .atom here.
         return RevisionListingFeed(
             None,
@@ -105,7 +105,7 @@ class TestProductRevisionFeed(TestCaseWithFactory):
 
     def _createFeed(self, product):
         """Create and return a ProductRevisionFeed instance."""
-        # The FeedBase class determins the feed type by the end of the
+        # The FeedBase class determines the feed type by the end of the
         # requested URL, so forcing .atom here.
         return ProductRevisionFeed(
             product,

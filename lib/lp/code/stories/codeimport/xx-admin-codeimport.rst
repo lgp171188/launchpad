@@ -215,7 +215,7 @@ Git-to-Git imports,
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
-and imports targetting source packages.
+and imports targeting source packages.
 
     >>> import_browser.open(package_import_location + "/+edit-import")
     >>> import_browser.getControl(

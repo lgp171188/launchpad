@@ -122,7 +122,7 @@ class TestGetCodeEmailCommands(TestCase):
 
 
 class TestCodeHandler(TestCaseWithFactory):
-    """Test the code email hander."""
+    """Test the code email handler."""
 
     layer = ZopelessAppServerLayer
 

@@ -40,7 +40,7 @@ class IHasBranches(Interface):
     the objects that implement this interface.
     """
 
-    # In order to minimise dependancies the returns_collection is defined as
+    # In order to minimise dependencies the returns_collection is defined as
     # Interface here and defined fully in the circular imports file.
 
     @operation_parameters(
@@ -82,7 +82,7 @@ class IHasMergeProposals(Interface):
     the objects that implement this interface.
     """
 
-    # In order to minimise dependancies the returns_collection is defined as
+    # In order to minimise dependencies the returns_collection is defined as
     # Interface here and defined fully in the circular imports file.
 
     @operation_parameters(
@@ -113,7 +113,7 @@ class IHasRequestedReviews(Interface):
     for a particular person.
     """
 
-    # In order to minimise dependancies the returns_collection is defined as
+    # In order to minimise dependencies the returns_collection is defined as
     # Interface here and defined fully in the circular imports file.
 
     @operation_parameters(

@@ -760,7 +760,7 @@ class NoContextBranchListingView(BranchListingView):
 
 
 class RecentlyRegisteredBranchesView(NoContextBranchListingView):
-    """A batched view of branches orded by registration date."""
+    """A batched view of branches ordered by registration date."""
 
     page_title = "Recently registered branches"
 
@@ -775,7 +775,7 @@ class RecentlyRegisteredBranchesView(NoContextBranchListingView):
 
 
 class RecentlyImportedBranchesView(NoContextBranchListingView):
-    """A batched view of imported branches ordered by last modifed time."""
+    """A batched view of imported branches ordered by last modified time."""
 
     page_title = "Recently imported branches"
     extra_columns = ("product", "date_created")

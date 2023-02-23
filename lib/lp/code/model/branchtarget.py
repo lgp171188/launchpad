@@ -121,7 +121,7 @@ class PackageBranchTarget(_BaseBranchTarget):
 
     def areBranchesMergeable(self, other_target):
         """See `IBranchTarget`."""
-        # Branches are mergable into a PackageTarget if the source package
+        # Branches are mergeable into a PackageTarget if the source package
         # name is the same, or the branch is associated with the linked
         # product.
         if zope_isinstance(other_target, PackageBranchTarget):
@@ -344,7 +344,7 @@ class ProductBranchTarget(_BaseBranchTarget):
 
     def areBranchesMergeable(self, other_target):
         """See `IBranchTarget`."""
-        # Branches are mergable into a PackageTarget if the source package
+        # Branches are mergeable into a PackageTarget if the source package
         # name is the same, or the branch is associated with the linked
         # product.
         if zope_isinstance(other_target, ProductBranchTarget):

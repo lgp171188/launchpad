@@ -588,7 +588,7 @@ def _makeEditAction(label, status, text):
     :param status: If the code import has this as its review_status, don't
         show the button (always show the button if it is None).
     :param text: The text to go after 'The code import has been' in a
-        notifcation, if a change was made.
+        notification, if a change was made.
     """
     if status is not None:
 

@@ -243,9 +243,9 @@
     </tal:comment>
     <a tal:attributes="href python: branch.getCodebrowseUrlForRevision(rev_no.sequence)"
        tal:content="rev_no/sequence"
-       tal:condition="rev_no/branch/code_is_browseable">
+       tal:condition="rev_no/branch/code_is_browsable">
       1
-    </a><tal:revno condition="not: rev_no/branch/code_is_browseable"
+    </a><tal:revno condition="not: rev_no/branch/code_is_browsable"
                    replace="rev_no/sequence">1</tal:revno>.
     By
     <tal:revision-author define="revision_author rev_no/revision/revision_author">

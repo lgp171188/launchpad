@@ -278,7 +278,7 @@ class BranchContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):
     def browse_revisions(self):
         """Return a link to the branch's revisions on codebrowse."""
         text = "All revisions"
-        enabled = self.context.code_is_browseable
+        enabled = self.context.code_is_browsable
         url = self.context.getCodebrowseUrl("changes")
         return Link(url, text, enabled=enabled)
 
@@ -328,7 +328,7 @@ class BranchContextMenu(ContextMenu, HasRecipesMenuMixin, HasSnapsMenuMixin):
     def source(self):
         """Return a link to the branch's file listing on codebrowse."""
         text = "Browse the code"
-        enabled = self.context.code_is_browseable
+        enabled = self.context.code_is_browsable
         url = self.context.getCodebrowseUrl("files")
         return Link(url, text, icon="info", enabled=enabled)
 
@@ -838,7 +838,7 @@ class BranchEditFormView(LaunchpadEditFormView):
 
         if changed:
             # Notify the object has changed with the snapshot that was taken
-            # earler.
+            # earlier.
             field_names = [
                 form_field.__name__ for form_field in self.form_fields
             ]
@@ -1406,7 +1406,7 @@ class RegisterBranchMergeProposalView(LaunchpadFormView):
         # Make sure that the target branch is different from the context.
         if target_branch is None:
             # Skip the following tests.
-            # The existance of the target_branch is handled by the form
+            # The existence of the target_branch is handled by the form
             # machinery.
             pass
         elif source_branch == target_branch:

@@ -350,7 +350,7 @@ class TestRevisionGetBranch(TestCaseWithFactory):
         )
 
     def testGetBranchSourcePackage(self):
-        # Branches targetting source packages are not junk.
+        # Branches targeting source packages are not junk.
         b1 = self.factory.makePackageBranch()
         b1.createBranchRevision(1, self.revision)
         b2 = self.factory.makePersonalBranch(owner=self.author)

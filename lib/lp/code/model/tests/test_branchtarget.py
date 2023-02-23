@@ -519,7 +519,7 @@ class TestCheckDefaultStackedOnBranch(TestCaseWithFactory):
 
     def test_unmirrored(self):
         # `check_default_stacked_on` returns None if passed an unmirrored
-        # banch. This is because we don't want to stack things on unmirrored
+        # branch. This is because we don't want to stack things on unmirrored
         # branches.
         branch = self.factory.makeAnyBranch()
         self.assertIs(None, check_default_stacked_on(branch))

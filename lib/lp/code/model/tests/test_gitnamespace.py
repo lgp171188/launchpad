@@ -290,7 +290,7 @@ class NamespaceMixin:
     def test_validateMove_forbidden_owner(self):
         # If the mover isn't allowed to create repositories in the
         # namespace, then they aren't allowed to move repositories in there
-        # either, so validateMove wil raise a GitRepositoryCreatorNotOwner
+        # either, so validateMove will raise a GitRepositoryCreatorNotOwner
         # error.
         namespace = self.getNamespace()
         repository = self.factory.makeGitRepository()

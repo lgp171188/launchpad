@@ -24,7 +24,7 @@ class ReassignSchema(Interface):
 
 
 class CodeReviewVoteReassign(LaunchpadFormView):
-    """View for reassinging the reviewer for a requested review."""
+    """View for reassigning the reviewer for a requested review."""
 
     schema = ReassignSchema
 

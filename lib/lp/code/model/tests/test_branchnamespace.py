@@ -269,7 +269,7 @@ class NamespaceMixin:
     def test_validateMove_forbidden_owner(self):
         # If the mover isn't allowed to create branches in the namespace, then
         # they aren't allowed to move branches in there either, so
-        # validateMove wil raise a BranchCreatorNotOwner error.
+        # validateMove will raise a BranchCreatorNotOwner error.
         namespace = self.getNamespace()
         branch = self.factory.makeAnyBranch()
         mover = self.factory.makePerson()
@@ -1425,7 +1425,7 @@ class BaseValidateNewBranchMixin:
     layer = DatabaseFunctionalLayer
 
     def _getNamespace(self, owner):
-        # Return a namespace appropraite for the owner specified.
+        # Return a namespace appropriate for the owner specified.
         raise NotImplementedError(self._getNamespace)
 
     def test_registrant_not_owner(self):

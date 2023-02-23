@@ -58,7 +58,7 @@ class TestRevisionCacheAdaptation(TestCaseWithFactory):
         self.assertIsNot(None, cache)
 
     def test_distribution_source__package(self):
-        # A distribution source pakcage can be adapted to a revision cache.
+        # A distribution source package can be adapted to a revision cache.
         distro_source_package = self.factory.makeDistributionSourcePackage()
         cache = IRevisionCache(distro_source_package, None)
         self.assertIsNot(None, cache)
@@ -314,7 +314,7 @@ class TestRevisionCache(TestCaseWithFactory):
         return person, rev
 
     def test_authored_by_individual(self):
-        # Check that authoredBy appropriatly limits revisions to those
+        # Check that authoredBy appropriately limits revisions to those
         # authored by the individual specified.
         eric, rev1 = self.makePersonAndLinkedRevision()
         # Make a second revision by eric.
@@ -327,7 +327,7 @@ class TestRevisionCache(TestCaseWithFactory):
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
     def test_authored_by_team(self):
-        # Check that authoredBy appropriatly limits revisions to those
+        # Check that authoredBy appropriately limits revisions to those
         # authored by individuals of a team.  Since we want to add members to
         # the team, and don't want security checks, we remove the security
         # proxy from the team.

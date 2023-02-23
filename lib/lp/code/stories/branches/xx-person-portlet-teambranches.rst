@@ -1,7 +1,7 @@
 Person Team Branches Portlet
 ============================
 
-The purpose of this portlet is to indiciate that there are teams
+The purpose of this portlet is to indicate that there are teams
 that this person participates in that has branches.
 
 The portlet only appears when the persons teams actually have branches,

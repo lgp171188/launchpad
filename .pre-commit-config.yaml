@@ -21,6 +21,8 @@ repos:
     -   id: check-yaml
     -   id: debug-statements
         exclude: systemdocs\.py
+    -   id: file-contents-sorter
+        files: ^\.codespell-ignore
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
 -   repo: https://github.com/asottile/pyupgrade
@@ -83,6 +85,7 @@ repos:
     rev: v2.2.2
     hooks:
     -   id: codespell
+        args: ["-I", ".codespell-ignore"]
         files: ^(doc/.*\.rst|.*\.js)$
 -   repo: https://github.com/get-woke/woke
     rev: v0.19.0

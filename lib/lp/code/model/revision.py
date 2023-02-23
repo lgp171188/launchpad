@@ -742,7 +742,7 @@ class RevisionCache(StormBase):
         # Make the revision_author assignment first as traversing to the
         # revision_author of the revision does a query which causes a store
         # flush.  If an assignment has been done already, the RevisionCache
-        # object would have been implicitly added to the store, and failes
+        # object would have been implicitly added to the store, and fails
         # with an integrity check.
         self.revision_author = revision.revision_author
         self.revision = revision

@@ -84,13 +84,13 @@
          tal:define="config modules/lp.services.config/config;
                      dev_focus context/development_focus/branch">
       You can
-      <tal:browseable condition="dev_focus/code_is_browseable">
+      <tal:browsable condition="dev_focus/code_is_browsable">
         <a tal:attributes="href dev_focus/browse_source_url"
            >browse the source code</a> for the development focus branch or get a
-           copy of the branch</tal:browseable>
-      <tal:not-browseable condition="not: dev_focus/code_is_browseable">
+           copy of the branch</tal:browsable>
+      <tal:not-browsable condition="not: dev_focus/code_is_browsable">
         get a copy of the development focus branch
-      </tal:not-browseable>
+      </tal:not-browsable>
        using the command:<br/>
       <tt class="command">bzr branch <tal:project-name replace="dev_focus/bzr_identity"/></tt>
     </div>

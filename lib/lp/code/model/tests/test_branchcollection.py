@@ -82,7 +82,7 @@ class TestBranchCollectionAdaptation(TestCaseWithFactory):
         self.assertCollection(self.factory.makeSourcePackage())
 
     def test_distribution_source_package(self):
-        # A distribution source pakcage can be adapted to a branch collection.
+        # A distribution source package can be adapted to a branch collection.
         self.assertCollection(self.factory.makeDistributionSourcePackage())
 
 
@@ -832,7 +832,7 @@ class TestGenericBranchCollectionVisibleFilter(TestCaseWithFactory):
         )
 
     def test_private_teams_see_own_private_junk_branches(self):
-        # Private teams are given an acess grant to see their private +junk
+        # Private teams are given an access grant to see their private +junk
         # branches.
         team_owner = self.factory.makePerson()
         team = self.factory.makeTeam(

@@ -31,7 +31,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         # Eric needs to be logged in for the mail to be sent.
         login_person(eric)
         self.factory.makeProductCodeImport(
-            cvs_root=":pserver:anonymouse@cvs.example.com:/cvsroot",
+            cvs_root=":pserver:anon@cvs.example.com:/cvsroot",
             cvs_module="a_module",
             branch_name="import",
             product=fooix,
@@ -45,7 +45,7 @@ class TestNewCodeImports(TestCaseWithFactory):
             "A new CVS code import has been requested by Eric:\n"
             "    http://code.launchpad.test/~eric/fooix/import\n"
             "from\n"
-            "    :pserver:anonymouse@cvs.example.com:/cvsroot, a_module\n"
+            "    :pserver:anon@cvs.example.com:/cvsroot, a_module\n"
             "\n"
             "-- \nYou are getting this email because you are a member of the "
             "vcs-imports team.\n",
@@ -233,7 +233,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
 
     def test_cvs_to_bzr_import_same_details(self):
         code_import = self.factory.makeProductCodeImport(
-            cvs_root=":pserver:anonymouse@cvs.example.com:/cvsroot",
+            cvs_root=":pserver:anon@cvs.example.com:/cvsroot",
             cvs_module="a_module",
         )
         unique_name = code_import.target.unique_name
@@ -243,13 +243,13 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
         )
         transaction.commit()
         self.assertSameDetailsEmail(
-            "a_module from :pserver:anonymouse@cvs.example.com:/cvsroot",
+            "a_module from :pserver:anon@cvs.example.com:/cvsroot",
             unique_name,
         )
 
     def test_cvs_to_bzr_import_different_details(self):
         code_import = self.factory.makeProductCodeImport(
-            cvs_root=":pserver:anonymouse@cvs.example.com:/cvsroot",
+            cvs_root=":pserver:anon@cvs.example.com:/cvsroot",
             cvs_module="a_module",
         )
         unique_name = code_import.target.unique_name
@@ -257,8 +257,8 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
         code_import.updateFromData({"cvs_module": "another_module"}, user)
         transaction.commit()
         self.assertDifferentDetailsEmail(
-            "a_module from :pserver:anonymouse@cvs.example.com:/cvsroot",
-            "another_module from :pserver:anonymouse@cvs.example.com:/cvsroot",
+            "a_module from :pserver:anon@cvs.example.com:/cvsroot",
+            "another_module from :pserver:anon@cvs.example.com:/cvsroot",
             unique_name,
         )
 
