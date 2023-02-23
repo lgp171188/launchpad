@@ -83,7 +83,7 @@ repos:
     rev: v2.2.2
     hooks:
     -   id: codespell
-        files: ^doc/.*\.rst$
+        files: ^(doc/.*\.rst|.*\.js)$
 -   repo: https://github.com/get-woke/woke
     rev: v0.19.0
     hooks:
