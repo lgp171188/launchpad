@@ -58,6 +58,7 @@ class DistroSeriesLanguagePackView(LaunchpadEditFormView):
     """Browser view to manage used language packs."""
 
     schema = IDistroSeries
+    next_url = None
     label = "Language packs"
     page_title = "Language packs"
 

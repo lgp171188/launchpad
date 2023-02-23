@@ -712,6 +712,7 @@ class ProductSeriesDeleteView(RegistryDeleteViewMixin, LaunchpadEditFormView):
 
     schema = IProductSeries
     field_names = []
+    next_url = None
 
     @property
     def label(self):
@@ -846,6 +847,7 @@ class ProductSeriesReviewView(LaunchpadEditFormView):
     schema = IProductSeries
     field_names = ["product", "name"]
     custom_widget_name = CustomWidgetFactory(TextWidget, displayWidth=20)
+    next_url = None
 
     @property
     def label(self):

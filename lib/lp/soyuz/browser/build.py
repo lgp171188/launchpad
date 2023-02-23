@@ -342,6 +342,8 @@ class BuildRescoringView(LaunchpadFormView):
     """View class for build rescoring."""
 
     schema = IBuildRescoreForm
+    next_url = None
+    cancel_url = None
 
     @property
     def label(self):

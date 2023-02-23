@@ -182,6 +182,7 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
     page_title = label
     schema = IOAuthRequestToken
     field_names = []
+    next_url = None
     token = None
 
     @property

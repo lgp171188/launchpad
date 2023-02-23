@@ -1079,6 +1079,7 @@ class DistributionAddView(
     ]
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    next_url = None
 
     @property
     def page_title(self):
@@ -1254,11 +1255,11 @@ class DistributionAdminView(LaunchpadEditFormView):
         "redirect_default_traversal",
         "information_type",
     ]
-
     custom_widget_information_type = CustomWidgetFactory(
         LaunchpadRadioWidgetWithDescription,
         vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES),
     )
+    next_url = None
 
     @property
     def label(self):
@@ -1641,6 +1642,7 @@ class DistributionPublisherConfigView(LaunchpadFormView):
 
     schema = IPublisherConfig
     field_names = ["root_dir", "base_url", "copy_base_url"]
+    next_url = None
 
     @property
     def label(self):

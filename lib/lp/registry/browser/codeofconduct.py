@@ -179,6 +179,7 @@ class AffirmCodeOfConductView(LaunchpadFormView):
         )
 
     field_names = ["affirmed"]
+    next_url = None
 
     @property
     def page_title(self):
@@ -206,6 +207,7 @@ class SignedCodeOfConductAddView(LaunchpadFormView):
 
     schema = ISignedCodeOfConduct
     field_names = ["signedcode"]
+    next_url = None
 
     @property
     def page_title(self):

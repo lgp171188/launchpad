@@ -422,6 +422,7 @@ class BuilderSetAddView(LaunchpadFormView):
     """View class for adding new Builders."""
 
     schema = IBuilder
+    next_url = None
 
     label = "Register a new build machine"
 

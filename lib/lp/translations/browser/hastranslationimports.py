@@ -46,7 +46,6 @@ class HasTranslationImportsView(LaunchpadFormView):
 
     schema = IHasTranslationImports
     field_names = []
-
     custom_widget_filter_target = CustomWidgetFactory(
         DropdownWidget, cssClass="inlined-widget"
     )
@@ -59,6 +58,7 @@ class HasTranslationImportsView(LaunchpadFormView):
     custom_widget_status = CustomWidgetFactory(
         DropdownWidget, cssClass="inlined-widget"
     )
+    next_url = None
 
     translation_import_queue_macros = ViewPageTemplateFile(
         "../templates/translation-import-queue-macros.pt"

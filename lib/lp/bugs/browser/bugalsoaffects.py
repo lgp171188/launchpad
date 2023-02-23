@@ -207,6 +207,8 @@ class BugTaskCreationStep(AlsoAffectsStep):
     registered.
     """
 
+    next_url = None
+
     custom_widget_bug_url = CustomWidgetFactory(
         StrippedTextWidget, displayWidth=62
     )
@@ -820,6 +822,7 @@ class BugAlsoAffectsProductWithProductCreationView(
         StrippedTextWidget, displayWidth=62
     )
     custom_widget_existing_product = LaunchpadRadioWidget
+    next_url = None
     existing_products = None
     MAX_PRODUCTS_TO_DISPLAY = 10
     licenses = [License.DONT_KNOW]

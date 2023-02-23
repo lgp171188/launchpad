@@ -99,7 +99,6 @@ class ProductReleaseAddViewBase(LaunchpadFormView):
     """
 
     schema = IProductRelease
-
     custom_widget_datereleased = DateTimeWidget
     custom_widget_release_notes = CustomWidgetFactory(
         TextAreaWidget, height=7, width=62
@@ -107,6 +106,7 @@ class ProductReleaseAddViewBase(LaunchpadFormView):
     custom_widget_changelog = CustomWidgetFactory(
         TextAreaWidget, height=7, width=62
     )
+    next_url = None
 
     def _prependKeepMilestoneActiveField(self):
         keep_milestone_active_checkbox = FormFields(
@@ -235,7 +235,6 @@ class ProductReleaseEditView(LaunchpadEditFormView):
         "release_notes",
         "changelog",
     ]
-
     custom_widget_datereleased = DateTimeWidget
     custom_widget_release_notes = CustomWidgetFactory(
         TextAreaWidget, height=7, width=62
@@ -243,6 +242,7 @@ class ProductReleaseEditView(LaunchpadEditFormView):
     custom_widget_changelog = CustomWidgetFactory(
         TextAreaWidget, height=7, width=62
     )
+    next_url = None
 
     @property
     def label(self):
@@ -279,10 +279,10 @@ class ProductReleaseAddDownloadFileView(LaunchpadFormView):
     """A view for adding a file to an `IProductRelease`."""
 
     schema = IProductReleaseFileAddForm
-
     custom_widget_description = CustomWidgetFactory(
         TextWidget, displayWidth=60
     )
+    next_url = None
 
     @property
     def label(self):
@@ -365,6 +365,7 @@ class ProductReleaseDeleteView(LaunchpadFormView, RegistryDeleteViewMixin):
 
     schema = IProductRelease
     field_names = []
+    next_url = None
 
     @property
     def label(self):

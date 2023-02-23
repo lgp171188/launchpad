@@ -333,6 +333,7 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
     """The view to register new Git merge proposals."""
 
     schema = GitRefRegisterMergeProposalSchema
+    next_url = None
     for_input = True
 
     custom_widget_target_git_ref = CustomWidgetFactory(

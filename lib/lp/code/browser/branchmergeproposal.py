@@ -627,6 +627,7 @@ class BranchMergeProposalView(
     """A basic view used for the index page."""
 
     schema = ClaimButton
+    next_url = None
 
     def initialize(self):
         super().initialize()
@@ -887,8 +888,8 @@ class BranchMergeProposalView(
 
 class BranchMergeProposalRescanView(LaunchpadEditFormView):
     schema = Interface
-
     field_names = []
+    next_url = None
 
     @action("Rescan", name="rescan")
     def rescan(self, action, data):
@@ -1039,8 +1040,8 @@ class BranchMergeProposalVoteView(LaunchpadView):
 class BranchMergeProposalScheduleUpdateDiffView(LaunchpadEditFormView):
 
     schema = Interface
-
     field_names = []
+    next_url = None
 
     @action("Update", name="update")
     def update(self, action, data):
@@ -1118,6 +1119,9 @@ class MergeProposalEditView(
 ):
     """A base class for merge proposal edit views."""
 
+    next_url = None
+    cancel_url = None
+
     def initialize(self):
         # Record next_url and cancel url now
         self.next_url = canonical_url(self.context)
@@ -1143,6 +1147,8 @@ class BranchMergeProposalResubmitView(
     """The view to resubmit a proposal to merge."""
 
     schema = ResubmitSchema
+    next_url = None
+    cancel_url = None
     for_input = True
     page_title = label = "Resubmit proposal to merge"
 
@@ -1277,6 +1283,7 @@ class BranchMergeProposalDeleteView(MergeProposalEditView):
 
     schema = IBranchMergeProposal
     field_names = []
+    next_url = None
     page_title = label = "Delete proposal to merge branch"
 
     def initialize(self):

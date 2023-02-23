@@ -35,6 +35,7 @@ class FAQCreateView(LaunchpadFormView):
     schema = IFAQ
     label = _("Create a new FAQ")
     field_names = ["title", "keywords", "content"]
+    next_url = None
 
     custom_widget_keywords = TokensTextWidget
 

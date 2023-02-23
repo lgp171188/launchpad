@@ -746,6 +746,7 @@ class ManageAnswerContactView(UserSupportLanguagesMixin, LaunchpadFormView):
 
     label = page_title
     custom_widget_answer_contact_teams = LabeledMultiCheckBoxWidget
+    next_url = None
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""

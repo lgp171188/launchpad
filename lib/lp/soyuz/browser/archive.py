@@ -1180,6 +1180,7 @@ class ArchiveSourceSelectionFormView(ArchiveSourcePackageListViewBase):
     """Base class to implement a source selection widget for PPAs."""
 
     custom_widget_selected_sources = LabeledMultiCheckBoxWidget
+    next_url = None
 
     selectable_sources = True
 
@@ -1746,7 +1747,6 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
     """Archive dependencies view class."""
 
     schema = IArchiveEditDependenciesForm
-
     custom_widget_selected_dependencies = CustomWidgetFactory(
         PlainMultiCheckBoxWidget,
         cssClass="line-through-when-checked ppa-dependencies",
@@ -1757,6 +1757,8 @@ class ArchiveEditDependenciesView(ArchiveViewBase, LaunchpadFormView):
     custom_widget_primary_components = CustomWidgetFactory(
         LaunchpadRadioWidget, cssClass="highlight-selected"
     )
+    next_url = None
+    cancel_url = None
 
     label = "Edit PPA dependencies"
     page_title = label
@@ -2118,6 +2120,7 @@ class ArchiveActivateView(LaunchpadFormView):
     field_names = ("name", "displayname", "description")
     custom_widget_description = CustomWidgetFactory(TextAreaWidget, height=3)
     custom_widget_name = CustomWidgetFactory(PPANameWidget, label="URL")
+    next_url = None
     label = "Activate a Personal Package Archive"
     page_title = "Activate PPA"
 
@@ -2235,6 +2238,7 @@ class BaseArchiveEditView(LaunchpadEditFormView, ArchiveViewBase):
 
     schema = IArchive
     field_names = []
+    next_url = None
 
     @action(_("Save"), name="save", validator="validate_save")
     def save_action(self, action, data):

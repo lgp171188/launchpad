@@ -132,6 +132,7 @@ class ArchiveSubscribersView(LaunchpadFormView):
     custom_widget_subscriber = CustomWidgetFactory(
         PersonPickerWidget, header="Select the subscriber"
     )
+    next_url = None
 
     @property
     def label(self):

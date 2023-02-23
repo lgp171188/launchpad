@@ -111,6 +111,7 @@ class OCIProjectAddView(LaunchpadFormView):
 
     schema = IOCIProjectName
     field_names = ["name"]
+    next_url = None
 
     def initialize(self):
         if not getFeatureFlag(

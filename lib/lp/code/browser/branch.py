@@ -645,8 +645,8 @@ class BranchView(
 class BranchRescanView(LaunchpadEditFormView):
 
     schema = Interface
-
     field_names = []
+    next_url = None
 
     @action("Rescan", name="rescan")
     def rescan(self, action, data):
@@ -966,6 +966,7 @@ class BranchDeletionView(LaunchpadFormView):
 
     schema = IBranch
     field_names = []
+    next_url = None
 
     @property
     def page_title(self):
@@ -1301,6 +1302,7 @@ class RegisterBranchMergeProposalView(LaunchpadFormView):
     """The view to register new branch merge proposals."""
 
     schema = RegisterProposalSchema
+    next_url = None
     for_input = True
 
     custom_widget_target_branch = TargetBranchWidget

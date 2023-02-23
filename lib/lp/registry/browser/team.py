@@ -622,6 +622,7 @@ class TeamMailingListConfigurationView(MailingListTeamBaseView):
         TextAreaWidget, width=72, height=10
     )
     page_title = label
+    next_url = None
 
     def __init__(self, context, request):
         """Set feedback messages for users who want to edit the mailing list.
@@ -958,6 +959,7 @@ class TeamMailingListModerationView(MailingListTeamBaseView):
     """A view for moderating the held messages of a mailing list."""
 
     schema = Interface
+    next_url = None
     label = "Mailing list moderation"
 
     def __init__(self, context, request):
@@ -1070,7 +1072,6 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
     invariant_context = None
     page_title = "Register a new team in Launchpad"
     label = page_title
-
     custom_widget_teamowner = HiddenUserWidget
     custom_widget_renewal_policy = CustomWidgetFactory(
         LaunchpadRadioWidget, orientation="vertical"
@@ -1081,6 +1082,7 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
     custom_widget_defaultrenewalperiod = CustomWidgetFactory(
         IntWidget, widget_class="field subordinate"
     )
+    next_url = None
 
     def setUpFields(self):
         """See `LaunchpadViewForm`.
@@ -1165,6 +1167,7 @@ class SimpleTeamAddView(TeamAddView):
 
 class ProposedTeamMembersEditView(LaunchpadFormView):
     schema = Interface
+    next_url = None
     label = "Proposed team members"
 
     @action("Save changes", name="save")
@@ -2097,6 +2100,7 @@ class TeamAddMyTeamsView(LaunchpadFormView):
 
     page_title = "Propose/add one of your teams to another one"
     custom_widget_teams = LabeledMultiCheckBoxWidget
+    next_url = None
 
     def initialize(self):
         context = self.context

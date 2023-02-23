@@ -178,6 +178,7 @@ class DistributionMirrorDeleteView(LaunchpadFormView):
 
     schema = IDistributionMirror
     field_names = []
+    next_url = None
 
     @property
     def label(self):
@@ -231,6 +232,7 @@ class DistributionMirrorAddView(LaunchpadFormView):
         "content",
         "official_candidate",
     ]
+    next_url = None
     invariant_context = None
 
     @property
@@ -273,6 +275,7 @@ class DistributionMirrorReviewView(LaunchpadEditFormView):
 
     schema = IDistributionMirror
     field_names = ["status", "whiteboard"]
+    next_url = None
 
     @property
     def label(self):
@@ -316,6 +319,7 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
         "content",
         "official_candidate",
     ]
+    next_url = None
 
     @property
     def label(self):
@@ -342,6 +346,7 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
 
     schema = IDistributionMirror
     field_names = []
+    next_url = None
 
     @property
     def label(self):

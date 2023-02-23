@@ -131,6 +131,7 @@ class AnnouncementAddView(LaunchpadFormView):
     """A view for creating a new Announcement."""
 
     schema = AddAnnouncementForm
+    next_url = None
     label = "Make an announcement"
     page_title = label
 
@@ -162,6 +163,7 @@ class AnnouncementEditView(AnnouncementFormMixin, LaunchpadFormView):
     """A view which allows you to edit the announcement."""
 
     schema = AddAnnouncementForm
+    next_url = None
     field_names = [
         "title",
         "summary",
@@ -203,6 +205,7 @@ class AnnouncementRetargetView(AnnouncementFormMixin, LaunchpadFormView):
 
     schema = AnnouncementRetargetForm
     field_names = ["target"]
+    next_url = None
     page_title = "Move announcement"
 
     def validate(self, data):
@@ -242,6 +245,7 @@ class AnnouncementPublishView(AnnouncementFormMixin, LaunchpadFormView):
 
     schema = AddAnnouncementForm
     field_names = ["publication_date"]
+    next_url = None
     page_title = "Publish announcement"
 
     custom_widget_publication_date = AnnouncementDateWidget
@@ -257,6 +261,7 @@ class AnnouncementRetractView(AnnouncementFormMixin, LaunchpadFormView):
     """A view to unpublish an announcement."""
 
     schema = IAnnouncement
+    next_url = None
     page_title = "Retract announcement"
 
     @action(_("Retract"), name="retract")
@@ -269,6 +274,7 @@ class AnnouncementDeleteView(AnnouncementFormMixin, LaunchpadFormView):
     """A view to delete an annoucement."""
 
     schema = IAnnouncement
+    next_url = None
     page_title = "Delete announcement"
 
     @action(_("Delete"), name="delete", validator="validate_cancel")
