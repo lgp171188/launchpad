@@ -62,7 +62,7 @@ class DBTestCase(TestCase):
 
 
 @implementer(IMacaroonIssuer)
-class DummyMacaroonIssuer(MacaroonIssuerBase):
+class FakeMacaroonIssuer(MacaroonIssuerBase):
 
     identifier = "test"
     _root_secret = "test"
@@ -154,7 +154,7 @@ class TestLibrarianStuff(TestCase):
     @defer.inlineCallbacks
     def test_getAlias_with_macaroon(self):
         # Library.getAlias() uses the authserver to verify macaroons.
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
         )
@@ -173,7 +173,7 @@ class TestLibrarianStuff(TestCase):
     @defer.inlineCallbacks
     def test_getAlias_with_wrong_macaroon(self):
         # A macaroon for a different LFA doesn't work.
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
         )

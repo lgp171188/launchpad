@@ -35,7 +35,7 @@ class FindReleasesTestCase(TestCase):
     def test_findReleases(self):
         # test that the findReleases() method behaves as expected
 
-        class DummyProductReleaseFinder(ProductReleaseFinder):
+        class FakeProductReleaseFinder(ProductReleaseFinder):
             def __init__(self):
                 ProductReleaseFinder.__init__(self, None, None)
                 self.seen_products = []
@@ -49,7 +49,7 @@ class FindReleasesTestCase(TestCase):
             def handleProduct(self, product_name, filters):
                 self.seen_products.append((product_name, filters))
 
-        prf = DummyProductReleaseFinder()
+        prf = FakeProductReleaseFinder()
         prf.findReleases()
         self.assertEqual(len(prf.seen_products), 2)
         self.assertEqual(
@@ -171,7 +171,7 @@ class HandleProductTestCase(TestCase):
 
     def test_handleProduct(self):
         # test that handleProduct() correctly calls handleRelease()
-        class DummyProductReleaseFinder(ProductReleaseFinder):
+        class FakeProductReleaseFinder(ProductReleaseFinder):
             def __init__(self, ztm, log):
                 ProductReleaseFinder.__init__(self, ztm, log)
                 self.seen_releases = []
@@ -215,7 +215,7 @@ class HandleProductTestCase(TestCase):
                 fp.close()
 
         logging.basicConfig(level=logging.CRITICAL)
-        prf = DummyProductReleaseFinder(None, logging.getLogger())
+        prf = FakeProductReleaseFinder(None, logging.getLogger())
 
         filters = [
             FilterPattern(

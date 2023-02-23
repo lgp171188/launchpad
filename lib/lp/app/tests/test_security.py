@@ -37,13 +37,13 @@ class FakeSecurityAdapter(AuthorizationBase):
         self.checkUnauthenticated = FakeMethod()
 
 
-class IDummy(Interface):
+class IFake(Interface):
     """Marker interface to test forwarding."""
 
 
-@implementer(IDummy)
-class Dummy:
-    """An implementation of IDummy."""
+@implementer(IFake)
+class Fake:
+    """An implementation of IFake."""
 
 
 class TestAuthorizationBase(TestCaseWithFactory):
@@ -65,14 +65,14 @@ class TestAuthorizationBase(TestCaseWithFactory):
     def test_forwardCheckAuthenticated_object_changes(self):
         # Requesting a check for the same permission on a different object.
         permission = self.factory.getUniqueString()
-        next_adapter = registerFakeSecurityAdapter(IDummy, permission)
+        next_adapter = registerFakeSecurityAdapter(IFake, permission)
 
         adapter = FakeSecurityAdapter()
         adapter.permission = permission
         adapter.usedfor = None
         adapter.checkPermissionIsRegistered = FakeMethod(result=True)
 
-        adapter.forwardCheckAuthenticated(None, Dummy())
+        adapter.forwardCheckAuthenticated(None, Fake())
 
         self.assertVectorEqual(
             (1, adapter.checkPermissionIsRegistered.call_count),
@@ -82,11 +82,11 @@ class TestAuthorizationBase(TestCaseWithFactory):
     def test_forwardCheckAuthenticated_permission_changes(self):
         # Requesting a check for a different permission on the same object.
         next_permission = self.factory.getUniqueString()
-        next_adapter = registerFakeSecurityAdapter(IDummy, next_permission)
+        next_adapter = registerFakeSecurityAdapter(IFake, next_permission)
 
-        adapter = FakeSecurityAdapter(Dummy())
+        adapter = FakeSecurityAdapter(Fake())
         adapter.permission = self.factory.getUniqueString()
-        adapter.usedfor = IDummy
+        adapter.usedfor = IFake
         adapter.checkPermissionIsRegistered = FakeMethod(result=True)
 
         adapter.forwardCheckAuthenticated(None, permission=next_permission)
@@ -100,14 +100,14 @@ class TestAuthorizationBase(TestCaseWithFactory):
         # Requesting a check for a different permission and a different
         # object.
         next_permission = self.factory.getUniqueString()
-        next_adapter = registerFakeSecurityAdapter(IDummy, next_permission)
+        next_adapter = registerFakeSecurityAdapter(IFake, next_permission)
 
         adapter = FakeSecurityAdapter()
         adapter.permission = self.factory.getUniqueString()
         adapter.usedfor = None
         adapter.checkPermissionIsRegistered = FakeMethod(result=True)
 
-        adapter.forwardCheckAuthenticated(None, Dummy(), next_permission)
+        adapter.forwardCheckAuthenticated(None, Fake(), next_permission)
 
         self.assertVectorEqual(
             (1, adapter.checkPermissionIsRegistered.call_count),
@@ -118,10 +118,10 @@ class TestAuthorizationBase(TestCaseWithFactory):
         # If the requested forwarding adapter does not exist, return False.
         adapter = FakeSecurityAdapter()
         adapter.permission = self.factory.getUniqueString()
-        adapter.usedfor = IDummy
+        adapter.usedfor = IFake
         adapter.checkPermissionIsRegistered = FakeMethod(result=True)
 
-        self.assertFalse(adapter.forwardCheckAuthenticated(None, Dummy()))
+        self.assertFalse(adapter.forwardCheckAuthenticated(None, Fake()))
 
 
 class TestDelegatedAuthorization(TestCase):

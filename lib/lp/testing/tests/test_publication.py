@@ -132,7 +132,7 @@ class TestTestTraverse(TestCaseWithFactory):
         self.assertIsInstance(view, EntryResource)
 
 
-class DummyNavigation(Navigation):
+class FakeNavigation(Navigation):
     """A simple navigation class to test traversal."""
 
     def traverse(self, name):
@@ -149,22 +149,22 @@ class TestStepThrough(TestCaseWithFactory):
     layer = FunctionalLayer
 
     def traverse(self, request, name):
-        """Traverse to 'segments' using a 'DummyNavigation' object.
+        """Traverse to 'segments' using a 'FakeNavigation' object.
 
         Using the Zope traversal machinery, traverse to the path given by
         'segments'.
         """
-        traverser = DummyNavigation(object(), request)
+        traverser = FakeNavigation(object(), request)
         return traverser.publishTraverse(request, name)
 
     def test_normal_stepthrough(self):
         # The stepthrough is processed normally.
-        request = FakeLaunchpadRequest(["~dummy"], ["fred"])
+        request = FakeLaunchpadRequest(["~fake"], ["fred"])
         self.assertEqual("stepthrough-fred", self.traverse(request, "+step"))
 
     def test_ignored_stepthrough(self):
         # The stepthrough is ignored since the next path item is a zope
         # namespace.
-        request = FakeLaunchpadRequest(["~dummy"], ["++model++"])
+        request = FakeLaunchpadRequest(["~fake"], ["++model++"])
         self.assertEqual("+step", self.traverse(request, "+step"))
         self.assertEqual("++model++", request.stepstogo.peek())

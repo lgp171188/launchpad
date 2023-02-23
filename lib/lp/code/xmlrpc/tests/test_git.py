@@ -104,7 +104,7 @@ def _make_auth_params(
 
 
 @implementer(IMacaroonIssuer)
-class DummyMacaroonIssuer(MacaroonIssuerBase):
+class FakeMacaroonIssuer(MacaroonIssuerBase):
 
     identifier = "test"
     _root_secret = "test"
@@ -1358,7 +1358,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_confirm_git_repository_creation_user_mismatch(self):
         # confirmRepoCreation refuses macaroons in the case where the user
         # doesn't match what the issuer claims was verified.
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
 
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
@@ -1587,7 +1587,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_abort_git_repository_creation_user_mismatch(self):
         # confirmRepoCreation refuses macaroons in the case where the user
         # doesn't match what the issuer claims was verified.
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
 
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
@@ -2586,11 +2586,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
     def test_translatePath_user_mismatch(self):
         # translatePath refuses macaroons in the case where the user doesn't
-        # match what the issuer claims was verified.  (We use a dummy issuer
+        # match what the issuer claims was verified.  (We use a fake issuer
         # for this, since this is a stopgap check to defend against issuer
         # bugs; and we test read permissions since write permissions for
         # internal macaroons are restricted to particular named issuers.)
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
         )
@@ -2850,10 +2850,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_getMergeProposalURL_user_mismatch(self):
         # getMergeProposalURL refuses macaroons in the case where the
         # user doesn't match what the issuer claims was verified.  (We use a
-        # dummy issuer for this, since this is a stopgap check to defend
+        # fake issuer for this, since this is a stopgap check to defend
         # against issuer bugs)
 
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         # Claim to be the code-import-job issuer.  This is a bit weird, but
         # it gets us past the difficulty that only certain named issuers are
         # allowed to confer write permissions.
@@ -2951,7 +2951,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # A merge proposal URL from LP to Turnip is not returned for
         # code import job as there is no User at the other end.
 
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         # Claim to be the code-import-job issuer.  This is a bit weird, but
         # it gets us past the difficulty that only certain named issuers are
         # allowed to confer write permissions.
@@ -3231,10 +3231,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_notify_set_repack_data_user_mismatch(self):
         # notify refuses macaroons in the case where the
         # user doesn't match what the issuer claims was verified.  (We use a
-        # dummy issuer for this, since this is a stopgap check to defend
+        # fake issuer for this, since this is a stopgap check to defend
         # against issuer bugs)
 
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         # Claim to be the code-import-job issuer.  This is a bit weird, but
         # it gets us past the difficulty that only certain named issuers are
         # allowed to confer write permissions.
@@ -3581,11 +3581,11 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_authenticateWithPassword_user_mismatch(self):
         # authenticateWithPassword refuses macaroons in the case where the
         # user doesn't match what the issuer claims was verified.  (We use a
-        # dummy issuer for this, since this is a stopgap check to defend
+        # fake issuer for this, since this is a stopgap check to defend
         # against issuer bugs; and we test read permissions since write
         # permissions for internal macaroons are restricted to particular
         # named issuers.)
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         self.useFixture(
             ZopeUtilityFixture(issuer, IMacaroonIssuer, name="test")
         )
@@ -3982,9 +3982,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_checkRefPermissions_user_mismatch(self):
         # checkRefPermissions refuses macaroons in the case where the user
         # doesn't match what the issuer claims was verified.  (We use a
-        # dummy issuer for this, since this is a stopgap check to defend
+        # fake issuer for this, since this is a stopgap check to defend
         # against issuer bugs.)
-        issuer = DummyMacaroonIssuer()
+        issuer = FakeMacaroonIssuer()
         # Claim to be the code-import-job issuer.  This is a bit weird, but
         # it gets us past the difficulty that only certain named issuers are
         # allowed to confer write permissions.
