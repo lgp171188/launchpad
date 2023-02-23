@@ -299,8 +299,6 @@ def log_oops(error, request):
 
 
 class CharmRecipeAuthorizeMixin:
-    next_url = None
-
     def requestAuthorization(self, recipe):
         try:
             self.next_url = CharmRecipeAuthorizeView.requestAuthorization(
@@ -324,6 +322,8 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     custom_widget_git_ref = GitRefWidget
     custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
+
+    next_url = None
 
     @property
     def field_names(self):
@@ -419,6 +419,7 @@ class BaseCharmRecipeEditView(
 ):
 
     schema = ICharmRecipeEditSchema
+    next_url = None
 
     @property
     def cancel_url(self):
