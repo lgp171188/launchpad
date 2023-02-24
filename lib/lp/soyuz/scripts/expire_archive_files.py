@@ -13,6 +13,7 @@ from lp.services.librarian.model import LibraryFileAlias
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archivefile import ArchiveFile
 from lp.soyuz.model.files import BinaryPackageFile, SourcePackageReleaseFile
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
@@ -98,19 +99,67 @@ class ArchiveExpirer(LaunchpadCronScript):
             ),
         )
 
-    def _determineExpirables(self, num_days, binary):
+    def _determineExpirables(self, num_days, table):
+        """Return expirable LibraryFileAlias IDs based on a given table."""
         stay_of_execution = Cast("%d days" % num_days, "interval")
         archive_types = (ArchivePurpose.PPA, ArchivePurpose.PARTNER)
+        eligible_clauses = []
+        denied_clauses = []
 
         LFA = LibraryFileAlias
-        if binary:
-            xPF = BinaryPackageFile
-            xPPH = BinaryPackagePublishingHistory
-            xPR_join = xPF.binarypackagerelease == xPPH.binarypackagereleaseID
+        if table == BinaryPackageFile:
+            BPF = BinaryPackageFile
+            BPPH = BinaryPackagePublishingHistory
+            lfa_column = BPF.libraryfile_id
+            date_removed_column = BPPH.dateremoved
+            eligible_clauses.extend(
+                [
+                    BPF.libraryfile == LFA.id,
+                    BPF.binarypackagerelease == BPPH.binarypackagereleaseID,
+                    BPPH.archive == Archive.id,
+                ]
+            )
+            denied_clauses.extend(
+                [
+                    BPF.binarypackagerelease == BPPH.binarypackagereleaseID,
+                    BPPH.archive == Archive.id,
+                ]
+            )
+        elif table == SourcePackageReleaseFile:
+            SPRF = SourcePackageReleaseFile
+            SPPH = SourcePackagePublishingHistory
+            lfa_column = SPRF.libraryfile_id
+            date_removed_column = SPPH.dateremoved
+            eligible_clauses.extend(
+                [
+                    SPRF.libraryfile == LFA.id,
+                    SPRF.sourcepackagerelease == SPPH.sourcepackagereleaseID,
+                    SPPH.archive == Archive.id,
+                ]
+            )
+            denied_clauses.extend(
+                [
+                    SPRF.sourcepackagerelease == SPPH.sourcepackagereleaseID,
+                    SPPH.archive == Archive.id,
+                ]
+            )
+        elif table == ArchiveFile:
+            lfa_column = ArchiveFile.library_file_id
+            date_removed_column = ArchiveFile.date_removed
+            eligible_clauses.extend(
+                [
+                    ArchiveFile.library_file == LFA.id,
+                    ArchiveFile.date_removed < UTC_NOW - stay_of_execution,
+                    ArchiveFile.archive == Archive.id,
+                ]
+            )
+            # Unlike BPF and SPRF, ArchiveFile rows don't currently share
+            # LFAs (although they may share LFCs after deduplication).
+            # However, we still use denied_clauses to implement
+            # archive-based expiry exceptions.
+            denied_clauses.append(ArchiveFile.archive == Archive.id)
         else:
-            xPF = SourcePackageReleaseFile
-            xPPH = SourcePackagePublishingHistory
-            xPR_join = xPF.sourcepackagerelease == xPPH.sourcepackagereleaseID
+            raise AssertionError("Unknown table: %r" % table)
         full_archive_name = Concatenate(
             Person.name, Concatenate("/", Archive.name)
         )
@@ -121,19 +170,16 @@ class ArchiveExpirer(LaunchpadCronScript):
         eligible = Select(
             LFA.id,
             where=And(
-                xPF.libraryfile == LFA.id,
-                xPR_join,
-                xPPH.dateremoved < UTC_NOW - stay_of_execution,
-                xPPH.archive == Archive.id,
+                *eligible_clauses,
+                date_removed_column < UTC_NOW - stay_of_execution,
                 Archive.purpose.is_in(archive_types),
                 LFA.expires == None,
             ),
         )
         denied = Select(
-            xPF.libraryfile_id,
+            lfa_column,
             where=And(
-                xPR_join,
-                xPPH.archive == Archive.id,
+                *denied_clauses,
                 Archive.owner == Person.id,
                 Or(
                     And(
@@ -148,20 +194,12 @@ class ArchiveExpirer(LaunchpadCronScript):
                         Not(full_archive_name.is_in(self.always_expire)),
                     ),
                     Not(Archive.purpose.is_in(archive_types)),
-                    xPPH.dateremoved > UTC_NOW - stay_of_execution,
-                    xPPH.dateremoved == None,
+                    date_removed_column > UTC_NOW - stay_of_execution,
+                    date_removed_column == None,
                 ),
             ),
         )
         return list(self.store.execute(Except(eligible, denied)))
-
-    def determineSourceExpirables(self, num_days):
-        """Return expirable libraryfilealias IDs."""
-        return self._determineExpirables(num_days=num_days, binary=False)
-
-    def determineBinaryExpirables(self, num_days):
-        """Return expirable libraryfilealias IDs."""
-        return self._determineExpirables(num_days=num_days, binary=True)
 
     def main(self):
         self.logger.info("Starting the PPA binary expiration")
@@ -170,8 +208,13 @@ class ArchiveExpirer(LaunchpadCronScript):
 
         self.store = IStore(Archive)
 
-        lfa_ids = self.determineSourceExpirables(num_days)
-        lfa_ids.extend(self.determineBinaryExpirables(num_days))
+        lfa_ids = []
+        for table in (
+            BinaryPackageFile,
+            SourcePackageReleaseFile,
+            ArchiveFile,
+        ):
+            lfa_ids.extend(self._determineExpirables(num_days, table))
         batch_count = 0
         batch_limit = 500
         for id in lfa_ids:

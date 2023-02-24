@@ -251,22 +251,19 @@ class TestArchiveFile(TestCaseWithFactory):
             ),
         )
 
-    def test_delete(self):
+    def test_markDeleted(self):
         archive = self.factory.makeArchive()
         archive_files = [
             self.factory.makeArchiveFile(archive=archive) for _ in range(4)
         ]
-        expected_rows = [
-            (
-                archive_file.container,
-                archive_file.path,
-                archive_file.library_file.content.sha256,
-            )
-            for archive_file in archive_files[:2]
-        ]
         archive_file_set = getUtility(IArchiveFileSet)
-        rows = archive_file_set.delete(archive_files[:2])
-        self.assertContentEqual(expected_rows, rows)
+        archive_file_set.markDeleted(archive_files[:2])
+        flush_database_caches()
+        self.assertIsNotNone(archive_files[0].date_removed)
+        self.assertIsNotNone(archive_files[1].date_removed)
+        self.assertIsNone(archive_files[2].date_removed)
+        self.assertIsNone(archive_files[3].date_removed)
         self.assertContentEqual(
-            archive_files[2:], archive_file_set.getByArchive(archive)
+            archive_files[2:],
+            archive_file_set.getByArchive(archive, only_published=True),
         )

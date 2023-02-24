@@ -72,6 +72,15 @@ class IArchiveFile(Interface):
         readonly=False,
     )
 
+    date_removed = Datetime(
+        title=_(
+            "The date when this file was entirely removed from the published "
+            "archive."
+        ),
+        required=False,
+        readonly=False,
+    )
+
 
 class IArchiveFileSet(Interface):
     """Bulk operations on files in an archive."""
@@ -104,6 +113,7 @@ class IArchiveFileSet(Interface):
         path=None,
         sha256=None,
         condemned=None,
+        only_published=False,
         eager_load=False,
     ):
         """Get files in an archive.
@@ -119,6 +129,8 @@ class IArchiveFileSet(Interface):
             scheduled_deletion_date set; if False, return only files without
             a scheduled_deletion_date set; if None (the default), return
             both.
+        :param only_published: If True, return only files without a
+            `date_removed` set.
         :param eager_load: If True, preload related `LibraryFileAlias` and
             `LibraryFileContent` rows.
         :return: An iterable of matched files.
@@ -141,10 +153,12 @@ class IArchiveFileSet(Interface):
         :return: An iterable of matched container names.
         """
 
-    def delete(archive_files):
-        """Delete these archive files.
+    def markDeleted(archive_files):
+        """Mark these archive files as deleted.
+
+        This does not actually delete the rows from the database;
+        `lp.soyuz.scripts.expire_archive_files` will expire their
+        corresponding `LibraryFileAlias` rows as needed.
 
         :param archive_files: The `IArchiveFile`s to delete.
-        :return: An iterable of (container, path, sha256) for files that
-            were deleted.
         """

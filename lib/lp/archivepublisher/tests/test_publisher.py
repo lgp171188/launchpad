@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from fnmatch import fnmatch
 from functools import partial
 from textwrap import dedent
+from typing import Optional, Sequence, Tuple
 from unittest import mock
 
 import pytz
@@ -3066,7 +3067,24 @@ class TestUpdateByHash(TestPublisherBase):
                 superseded_at + timedelta(days=BY_HASH_STAY_OF_EXECUTION)
             )
 
-    def assertHasSuiteFiles(self, patterns, *properties):
+    def assertHasSuiteFiles(
+        self,
+        patterns: Sequence[str],
+        *properties: Tuple[str, Optional[int], Optional[int], Optional[int]]
+    ) -> None:
+        """Assert that the database records certain archive files.
+
+        :param patterns: A sequence of `fnmatch` patterns for files under
+            `dists/breezy-autotest/` that we're interested in.
+        :param properties: A sequence of (`path`, `created_at`,
+            `superseded_at`, `removed_at`) tuples.  Each must match one of
+            the `ArchiveFile` rows matching `patterns`; `path` is relative
+            to `dists/breezy-autotest/`, while the `*_at` properties are
+            either None (indicating that the corresponding `date_*` column
+            should be None) or an index into `self.times` (indicating that
+            the corresponding `date_*` column should equal that time).
+        """
+
         def is_interesting(path):
             return any(
                 fnmatch(path, "dists/breezy-autotest/%s" % pattern)
@@ -3081,7 +3099,12 @@ class TestUpdateByHash(TestPublisherBase):
             if is_interesting(archive_file.path)
         ]
         matchers = []
-        for path, created_at, superseded_at in properties:
+        for path, created_at, superseded_at, removed_at in properties:
+            created_at = None if created_at is None else self.times[created_at]
+            superseded_at = (
+                None if superseded_at is None else self.times[superseded_at]
+            )
+            removed_at = None if removed_at is None else self.times[removed_at]
             scheduled_deletion_date_matcher = (
                 self._makeScheduledDeletionDateMatcher(superseded_at)
             )
@@ -3091,6 +3114,7 @@ class TestUpdateByHash(TestPublisherBase):
                     date_created=Equals(created_at),
                     date_superseded=Equals(superseded_at),
                     scheduled_deletion_date=scheduled_deletion_date_matcher,
+                    date_removed=Equals(removed_at),
                 )
             )
         self.assertThat(files, MatchesSetwise(*matchers))
@@ -3280,8 +3304,8 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Contents-i386", self.times[0], None),
-            ("Release", self.times[0], None),
+            ("Contents-i386", 0, None, None),
+            ("Release", 0, None, None),
         )
         releases = [get_release_contents()]
         self.assertThat(
@@ -3297,10 +3321,10 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Contents-i386", self.times[0], None),
-            ("Contents-hppa", self.times[1], None),
-            ("Release", self.times[0], self.times[1]),
-            ("Release", self.times[1], None),
+            ("Contents-i386", 0, None, None),
+            ("Contents-hppa", 1, None, None),
+            ("Release", 0, 1, None),
+            ("Release", 1, None, None),
         )
         releases.append(get_release_contents())
         self.assertThat(
@@ -3315,11 +3339,11 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Contents-i386", self.times[0], self.times[2]),
-            ("Contents-hppa", self.times[1], None),
-            ("Release", self.times[0], self.times[1]),
-            ("Release", self.times[1], self.times[2]),
-            ("Release", self.times[2], None),
+            ("Contents-i386", 0, 2, None),
+            ("Contents-hppa", 1, None, None),
+            ("Release", 0, 1, None),
+            ("Release", 1, 2, None),
+            ("Release", 2, None, None),
         )
         releases.append(get_release_contents())
         self.assertThat(
@@ -3333,12 +3357,12 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Contents-i386", self.times[0], self.times[2]),
-            ("Contents-hppa", self.times[1], None),
-            ("Release", self.times[0], self.times[1]),
-            ("Release", self.times[1], self.times[2]),
-            ("Release", self.times[2], self.times[3]),
-            ("Release", self.times[3], None),
+            ("Contents-i386", 0, 2, None),
+            ("Contents-hppa", 1, None, None),
+            ("Release", 0, 1, None),
+            ("Release", 1, 2, None),
+            ("Release", 2, 3, None),
+            ("Release", 3, None, None),
         )
         releases.append(get_release_contents())
         self.assertThat(
@@ -3365,10 +3389,13 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Contents-hppa", self.times[1], self.times[4]),
-            ("Release", self.times[2], self.times[3]),
-            ("Release", self.times[3], self.times[4]),
-            ("Release", self.times[4], None),
+            ("Contents-i386", 0, 2, 4),
+            ("Contents-hppa", 1, 4, None),
+            ("Release", 0, 1, 4),
+            ("Release", 1, 2, 4),
+            ("Release", 2, 3, None),
+            ("Release", 3, 4, None),
+            ("Release", 4, None, None),
         )
         releases.append(get_release_contents())
         self.assertThat(
@@ -3393,8 +3420,14 @@ class TestUpdateByHash(TestPublisherBase):
         flush_database_caches()
         self.assertHasSuiteFiles(
             ("Contents-*", "Release"),
-            ("Release", self.times[4], self.times[5]),
-            ("Release", self.times[5], None),
+            ("Contents-i386", 0, 2, 4),
+            ("Contents-hppa", 1, 4, 5),
+            ("Release", 0, 1, 4),
+            ("Release", 1, 2, 4),
+            ("Release", 2, 3, 5),
+            ("Release", 3, 4, 5),
+            ("Release", 4, 5, None),
+            ("Release", 5, None, None),
         )
         releases.append(get_release_contents())
         self.assertThat(suite_path("by-hash"), ByHashHasContents(releases[4:]))
@@ -3430,7 +3463,7 @@ class TestUpdateByHash(TestPublisherBase):
                 main_contents.add(f.read())
         self.assertHasSuiteFiles(
             ("main/source/Sources",),
-            ("main/source/Sources", self.times[0], None),
+            ("main/source/Sources", 0, None, None),
         )
 
         # Add a source package so that Sources is non-empty.
@@ -3447,8 +3480,8 @@ class TestUpdateByHash(TestPublisherBase):
         )
         self.assertHasSuiteFiles(
             ("main/source/Sources",),
-            ("main/source/Sources", self.times[0], self.times[1]),
-            ("main/source/Sources", self.times[1], None),
+            ("main/source/Sources", 0, 1, None),
+            ("main/source/Sources", 1, None, None),
         )
 
         # Delete the source package so that Sources is empty again.  The
@@ -3464,9 +3497,9 @@ class TestUpdateByHash(TestPublisherBase):
         )
         self.assertHasSuiteFiles(
             ("main/source/Sources",),
-            ("main/source/Sources", self.times[0], self.times[1]),
-            ("main/source/Sources", self.times[1], self.times[2]),
-            ("main/source/Sources", self.times[2], None),
+            ("main/source/Sources", 0, 1, None),
+            ("main/source/Sources", 1, 2, None),
+            ("main/source/Sources", 2, None, None),
         )
 
         # Make the first empty Sources file ready to prune.  This doesn't
@@ -3484,8 +3517,9 @@ class TestUpdateByHash(TestPublisherBase):
         )
         self.assertHasSuiteFiles(
             ("main/source/Sources",),
-            ("main/source/Sources", self.times[1], self.times[2]),
-            ("main/source/Sources", self.times[2], None),
+            ("main/source/Sources", 0, 1, 3),
+            ("main/source/Sources", 1, 2, None),
+            ("main/source/Sources", 2, None, None),
         )
 
     def setUpPruneableSuite(self):
@@ -3515,7 +3549,10 @@ class TestUpdateByHash(TestPublisherBase):
             for name in ("Release", "Sources.gz", "Sources.bz2"):
                 with open(suite_path("main", "source", name), "rb") as f:
                     main_contents.append(f.read())
-            self.advanceTime(delta=timedelta(hours=6))
+            # Advance time between each publisher run.  We don't advance
+            # time after the last one, since we'll do that below.
+            if sourcename != "baz":
+                self.advanceTime(delta=timedelta(hours=6))
         transaction.commit()
 
         # We have two condemned sets of index files and one uncondemned set.
@@ -3523,16 +3560,16 @@ class TestUpdateByHash(TestPublisherBase):
         # that it doesn't change.
         self.assertHasSuiteFiles(
             ("main/source/*", "Release"),
-            ("main/source/Sources.gz", self.times[0], self.times[1]),
-            ("main/source/Sources.gz", self.times[1], self.times[2]),
-            ("main/source/Sources.gz", self.times[2], None),
-            ("main/source/Sources.bz2", self.times[0], self.times[1]),
-            ("main/source/Sources.bz2", self.times[1], self.times[2]),
-            ("main/source/Sources.bz2", self.times[2], None),
-            ("main/source/Release", self.times[0], None),
-            ("Release", self.times[0], self.times[1]),
-            ("Release", self.times[1], self.times[2]),
-            ("Release", self.times[2], None),
+            ("main/source/Sources.gz", 0, 1, None),
+            ("main/source/Sources.gz", 1, 2, None),
+            ("main/source/Sources.gz", 2, None, None),
+            ("main/source/Sources.bz2", 0, 1, None),
+            ("main/source/Sources.bz2", 1, 2, None),
+            ("main/source/Sources.bz2", 2, None, None),
+            ("main/source/Release", 0, None, None),
+            ("Release", 0, 1, None),
+            ("Release", 1, 2, None),
+            ("Release", 2, None, None),
         )
         self.assertThat(suite_path("by-hash"), ByHashHasContents(top_contents))
         self.assertThat(
@@ -3574,13 +3611,16 @@ class TestUpdateByHash(TestPublisherBase):
         # generated.
         self.assertHasSuiteFiles(
             ("main/source/*", "Release"),
-            ("main/source/Sources.gz", self.times[1], self.times[2]),
-            ("main/source/Sources.gz", self.times[2], None),
-            ("main/source/Sources.bz2", self.times[1], self.times[2]),
-            ("main/source/Sources.bz2", self.times[2], None),
-            ("main/source/Release", self.times[0], None),
-            ("Release", self.times[1], self.times[2]),
-            ("Release", self.times[2], None),
+            ("main/source/Sources.gz", 0, 1, 3),
+            ("main/source/Sources.gz", 1, 2, None),
+            ("main/source/Sources.gz", 2, None, None),
+            ("main/source/Sources.bz2", 0, 1, 3),
+            ("main/source/Sources.bz2", 1, 2, None),
+            ("main/source/Sources.bz2", 2, None, None),
+            ("main/source/Release", 0, None, None),
+            ("Release", 0, 1, 3),
+            ("Release", 1, 2, None),
+            ("Release", 2, None, None),
         )
         self.assertThat(suite_path("by-hash"), ByHashHasContents(top_contents))
         self.assertThat(
@@ -3615,13 +3655,16 @@ class TestUpdateByHash(TestPublisherBase):
         # generated.
         self.assertHasSuiteFiles(
             ("main/source/*", "Release"),
-            ("main/source/Sources.gz", self.times[1], self.times[2]),
-            ("main/source/Sources.gz", self.times[2], None),
-            ("main/source/Sources.bz2", self.times[1], self.times[2]),
-            ("main/source/Sources.bz2", self.times[2], None),
-            ("main/source/Release", self.times[0], None),
-            ("Release", self.times[1], self.times[2]),
-            ("Release", self.times[2], None),
+            ("main/source/Sources.gz", 0, 1, 3),
+            ("main/source/Sources.gz", 1, 2, None),
+            ("main/source/Sources.gz", 2, None, None),
+            ("main/source/Sources.bz2", 0, 1, 3),
+            ("main/source/Sources.bz2", 1, 2, None),
+            ("main/source/Sources.bz2", 2, None, None),
+            ("main/source/Release", 0, None, None),
+            ("Release", 0, 1, 3),
+            ("Release", 1, 2, None),
+            ("Release", 2, None, None),
         )
         self.assertThat(suite_path("by-hash"), ByHashHasContents(top_contents))
         self.assertThat(

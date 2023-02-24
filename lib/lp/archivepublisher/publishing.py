@@ -1274,17 +1274,19 @@ class Publisher:
         by_hashes = ByHashes(self._config.distsroot, self.log)
         existing_live_files = {}
         existing_nonlive_files = {}
-        keep_files = set()
         reapable_files = set()
 
         def strip_dists(path):
             assert path.startswith("dists/")
             return path[len("dists/") :]
 
-        # Record all files from the database.
+        # Record all published files from the database.
         db_now = get_transaction_timestamp(IStore(ArchiveFile))
         for db_file in archive_file_set.getByArchive(
-            self.archive, container=container, eager_load=True
+            self.archive,
+            container=container,
+            only_published=True,
+            eager_load=True,
         ):
             file_key = (
                 strip_dists(db_file.path),
@@ -1375,16 +1377,18 @@ class Publisher:
         # Remove any files from disk that aren't recorded in the database.
         by_hashes.prune()
 
-        # And remove expired ArchiveFiles from the DB now that we've pruned
-        # them and their directories from disk.
-        delete_files = reapable_files - keep_files
-        if delete_files:
-            for container, path, sha256 in archive_file_set.delete(
-                delete_files
-            ):
+        # And mark expired ArchiveFiles as deleted in the DB now that we've
+        # pruned them and their directories from disk.
+        if reapable_files:
+            archive_file_set.markDeleted(reapable_files)
+            for db_file in reapable_files:
                 self.log.debug(
-                    "by-hash: Deleted %s for %s in %s"
-                    % (sha256, path, container)
+                    "by-hash: Marked %s for %s in %s as deleted"
+                    % (
+                        db_file.library_file.content.sha256,
+                        db_file.path,
+                        db_file.container,
+                    )
                 )
 
     def _writeReleaseFile(self, suite, release_data):
