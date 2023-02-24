@@ -136,7 +136,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
 
     def test_karmacache_transferred_to_user_has_no_karma(self):
         # Verify that the merged user has no KarmaCache entries,
-        # and the karma total was transfered.
+        # and the karma total was transferred.
         self.cache_manager = getUtility(IKarmaCacheManager)
         product = self.factory.makeProduct()
         duplicate = self.factory.makePerson()

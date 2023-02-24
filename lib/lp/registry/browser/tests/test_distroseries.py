@@ -2263,7 +2263,7 @@ class TestDistroSeriesLocalDifferences(
             person, sp_name
         )
 
-        # The inital state is that 1.0-1 is not in the derived series.
+        # The initial state is that 1.0-1 is not in the derived series.
         pubs = derived_series.main_archive.getPublishedSources(
             name="my-src-name",
             version=versions["parent"],

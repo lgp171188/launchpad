@@ -226,7 +226,7 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
         self.assertEqual([team], self._vocabTermValues())
 
     def test_teams_of_anonymous(self):
-        # AllUserTeamsPariticipationVocabulary is empty for anoymous users.
+        # AllUserTeamsPariticipationVocabulary is empty for anonymous users.
         login(ANONYMOUS)
         self.assertEqual([], self._vocabTermValues())
 

@@ -615,7 +615,7 @@ class DistributionSourcePackageInDatabase(StormBase):
     # avoid database hits without causing consistency issues.
     _cache = ThreadLocalLRUCache(1000, 700)
     # Synchronize the mapping cache with transactions. The mapping is not
-    # especially useful after a tranaction completes because Storm invalidates
+    # especially useful after a transaction completes because Storm invalidates
     # its caches, and leaving the mapping cache in place causes difficult to
     # understand test interactions.
     transaction.manager.registerSynch(_cache)

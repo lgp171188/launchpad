@@ -117,8 +117,8 @@ class TestPersonNotificationManager(TestCaseWithFactory):
             datetime.now(pytz.timezone("UTC")) - age
         )
         self.manager.purgeNotifications()
-        notifcations = self.notification_set.getNotificationsToSend()
-        self.assertEqual(0, notifcations.count())
+        notifications = self.notification_set.getNotificationsToSend()
+        self.assertEqual(0, notifications.count())
 
     def test_purgeNotifications_extra(self):
         user = self.factory.makePerson()
@@ -127,5 +127,5 @@ class TestPersonNotificationManager(TestCaseWithFactory):
         )
         user.setPreferredEmail(None)
         self.manager.purgeNotifications(extra_notifications=[notification])
-        notifcations = self.notification_set.getNotificationsToSend()
-        self.assertEqual(0, notifcations.count())
+        notifications = self.notification_set.getNotificationsToSend()
+        self.assertEqual(0, notifications.count())

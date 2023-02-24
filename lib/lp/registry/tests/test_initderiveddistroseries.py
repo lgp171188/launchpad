@@ -142,11 +142,11 @@ class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
         # to InitializeDistroSeries to check for any pending builds.
         parent, parent_das = self.setupParent()
         # Create packageset p1 with a build.
-        p1, packageset1, unsed = self.createPackageInPackageset(
+        p1, packageset1, _ = self.createPackageInPackageset(
             parent, "p1", "packageset1", True
         )
         # Create packageset p2 without a build.
-        p2, packageset2, unsed = self.createPackageInPackageset(
+        p2, packageset2, _ = self.createPackageInPackageset(
             parent, "p2", "packageset2", False
         )
         child = self.factory.makeDistroSeries(

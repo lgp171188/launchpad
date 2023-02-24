@@ -215,7 +215,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
         # If there is no request, there is no reason to show a message in
         # the browser.
         product, user = self.make_product_user([License.GNU_GPL_V2])
-        # Using the proxied product leads to an exeception when
+        # Using the proxied product leads to an exception when
         # notification.display() below is called because the permission
         # checks product require an interaction.
         notification = LicenseNotification(removeSecurityProxy(product))

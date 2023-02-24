@@ -293,7 +293,7 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertEqual([], result)
 
     def test_findPerson__case_insensitive_email_address_search(self):
-        # A search for email addresses is case insensitve.
+        # A search for email addresses is case insensitive.
         person_one = self.factory.makePerson(
             name="baz", email="ONE@example.org"
         )
@@ -318,7 +318,7 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertEqual([], result)
 
     def test_findTeam__case_insensitive_email_address_search(self):
-        # A search for email addresses is case insensitve.
+        # A search for email addresses is case insensitive.
         team_one = self.factory.makeTeam(name="baz", email="ONE@example.org")
         team_two = self.factory.makeTeam(name="blah", email="TWO@example.com")
         result = list(self.person_set.findTeam("one@example.org"))

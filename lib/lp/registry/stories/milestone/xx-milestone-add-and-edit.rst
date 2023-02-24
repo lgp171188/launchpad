@@ -70,7 +70,7 @@ create a new milestone.
 Milestone bug subscriptions
 ---------------------------
 
-To receive email notifications about bugs pretaining to a milestone, we
+To receive email notifications about bugs pertaining to a milestone, we
 can create structural bug subscriptions.
 
     >>> user_browser.open("http://launchpad.test/firefox/+milestone/1.0")

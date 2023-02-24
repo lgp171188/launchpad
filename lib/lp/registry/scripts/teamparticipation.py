@@ -52,7 +52,7 @@ def report_progress(log, interval, results, what):
     :param log: A logger.
     :param interval: How many results to report progress about.
     :param results: An iterable of things.
-    :param what: A string descriping what the results are.
+    :param what: A string describing what the results are.
     """
     for num, result in zip(count(1), results):
         if num % interval == 0:

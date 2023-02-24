@@ -562,8 +562,8 @@ class MailingListSetTestCase(TestCaseWithFactory):
         self.assertContentEqual(team_names, result.keys())
 
     def test_getSenderAddresses_dict_values(self):
-        # getSenderAddresses() returns a dict of team namess with a list of
-        # all membera display names and email addresses.
+        # getSenderAddresses() returns a dict of team names with a list of
+        # all members' display names and email addresses.
         # {team_name: [(member_displayname, member_email) ...]}
         team1, member1 = self.factory.makeTeamWithMailingListSubscribers(
             "team1", auto_subscribe=False

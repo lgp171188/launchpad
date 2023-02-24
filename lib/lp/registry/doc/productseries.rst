@@ -375,7 +375,7 @@ rules are that:
 
  1. a "driver" can be set on either ProjectGroup, Product or ProductSeries
 
- 2. drivers are only actually relevant on a ProductSeries, because thats
+ 2. drivers are only actually relevant on a ProductSeries, because that's
     the granularity at which we track spec/bug targeting
 
  3. the important attribute is ".drivers" on a productseries, it is

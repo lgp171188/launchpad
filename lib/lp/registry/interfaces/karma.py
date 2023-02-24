@@ -211,7 +211,7 @@ class IKarmaTotalCache(Interface):
 
 
 class IKarmaCategory(Interface):
-    """A catgory of karma events."""
+    """A category of karma events."""
 
     id = Int(title=_("Database ID"), required=True, readonly=True)
     name = Attribute("The name of the category.")

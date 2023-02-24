@@ -618,7 +618,7 @@ it.
     >>> "Kubuntu announcement" in announcements(priv_browser.contents)
     True
 
-However, someone who is not an adminstrator on the target project will
+However, someone who is not an administrator on the target project will
 not be able to move it.
 
     >>> kamion_browser = setupBrowser(

@@ -201,7 +201,7 @@ class AnnouncementRetargetForm(Interface):
 
 
 class AnnouncementRetargetView(AnnouncementFormMixin, LaunchpadFormView):
-    """A view to move an annoucement to another project."""
+    """A view to move an announcement to another project."""
 
     schema = AnnouncementRetargetForm
     field_names = ["target"]
@@ -241,7 +241,7 @@ class AnnouncementRetargetView(AnnouncementFormMixin, LaunchpadFormView):
 
 
 class AnnouncementPublishView(AnnouncementFormMixin, LaunchpadFormView):
-    """A view to publish an annoucement."""
+    """A view to publish an announcement."""
 
     schema = AddAnnouncementForm
     field_names = ["publication_date"]
@@ -271,7 +271,7 @@ class AnnouncementRetractView(AnnouncementFormMixin, LaunchpadFormView):
 
 
 class AnnouncementDeleteView(AnnouncementFormMixin, LaunchpadFormView):
-    """A view to delete an annoucement."""
+    """A view to delete an announcement."""
 
     schema = IAnnouncement
     next_url = None

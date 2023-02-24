@@ -804,7 +804,7 @@ class TestTeamMembership(TestCaseWithFactory):
         )
 
     def test_membership_status_changes_are_immediately_flushed_to_db(self):
-        """Any changes to a membership status must be imediately flushed.
+        """Any changes to a membership status must be immediately flushed.
 
         Sometimes we may change multiple team memberships in the same
         transaction (e.g. when expiring memberships). If there are multiple

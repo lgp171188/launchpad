@@ -710,7 +710,7 @@ class TestSharingService(
 
         # Make existing grants to ensure sharePillarInformation handles those
         # cases correctly.
-        # First, a grant that is in the add set - it wil be retained.
+        # First, a grant that is in the add set - it will be retained.
         es_policy = getUtility(IAccessPolicySource).find(
             ((pillar, InformationType.PRIVATESECURITY),)
         )[0]

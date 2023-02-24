@@ -321,7 +321,7 @@ class MilestoneViewMixin:
 
     @cachedproperty
     def user_counts(self):
-        """The counts of the items assigned to the currrent user."""
+        """The counts of the items assigned to the current user."""
         all_assignments = []
         if self.user:
             for status_count in get_status_counts(

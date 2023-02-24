@@ -193,7 +193,7 @@ class ProductReleaseFinder:
     ):
         """Create a ProductRelease (if needed), and attach tarball"""
         product = getUtility(IProductSet).getByName(product_name)
-        # This can match a milestone on a differnt series than the
+        # This can match a milestone on a different series than the
         # one passed, since milestones (and their releases) are unique
         # to a product.
         milestone = product.getMilestone(release_name)

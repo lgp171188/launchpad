@@ -122,7 +122,7 @@ class MailingListAPITestCase(TestCaseWithFactory):
 
     def test_isRegisteredInLaunchpad_archive_address_is_false(self):
         # The Mailman archive address can never be owned by an Lp user
-        # because such a user would have acces to all lists.
+        # because such a user would have access to all lists.
         email = config.mailman.archive_address
         self.factory.makePerson(email=email)
         self.assertFalse(self.api.isRegisteredInLaunchpad(email))
@@ -374,7 +374,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         self.assertEqual(MailingListStatus.UPDATING, team_list.status)
 
     def test_reportStatus_modifying_success(self):
-        # Successfule modifications lead to ACTIVE lists.
+        # Successful modifications lead to ACTIVE lists.
         team = self.factory.makeTeam(name="team")
         team_list = self.factory.makeMailingList(team, team.teamowner)
         with person_logged_in(team.teamowner):
@@ -384,7 +384,7 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
         self.assertEqual(MailingListStatus.ACTIVE, team_list.status)
 
     def test_reportStatus_modifying_failure(self):
-        # Successfule modifications lead to ACTIVE lists.
+        # Successful modifications lead to ACTIVE lists.
         team = self.factory.makeTeam(name="team")
         team_list = self.factory.makeMailingList(team, team.teamowner)
         with person_logged_in(team.teamowner):

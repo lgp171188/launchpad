@@ -950,7 +950,7 @@ def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     # Team email addresses are not transferable.
     from_team.setContactAddress(None)
     # Memberships in the team are not transferable because there
-    # is a high probablity there will be a CyclicTeamMembershipError.
+    # is a high probability there will be a CyclicTeamMembershipError.
     comment = (
         "Deactivating all members as this team is being merged into %s."
         % to_team.name
@@ -958,7 +958,7 @@ def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     membershipset = getUtility(ITeamMembershipSet)
     membershipset.deactivateActiveMemberships(from_team, comment, reviewer)
     # Memberships in other teams are not transferable because there
-    # is a high probablity there will be a CyclicTeamMembershipError.
+    # is a high probability there will be a CyclicTeamMembershipError.
     all_super_teams = set(from_team.teams_participated_in)
     indirect_super_teams = set(from_team.teams_indirectly_participated_in)
     super_teams = all_super_teams - indirect_super_teams

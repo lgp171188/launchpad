@@ -411,10 +411,10 @@ class IProjectGroupPublic(
         """Get all products that can be edited by user."""
 
     def has_translatable():
-        """Return a boolean showing the existance of translatables products."""
+        """Return a boolean showing the existence of translatables products."""
 
     def has_branches():
-        """Return a boolean showing the existance of products with branches."""
+        """Return a boolean showing the existence of products with branches."""
 
     def hasProducts():
         """Returns True if a project has products associated with it, False

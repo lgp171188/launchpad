@@ -16,7 +16,7 @@ from lp.app.validators.name import name_validator
 
 
 class ISourcePackageName(Interface):
-    """Interface provied by a SourcePackageName.
+    """Interface provided by a SourcePackageName.
 
     This is a tiny table that allows multiple SourcePackage entities to share
     a single name.
@@ -55,7 +55,7 @@ class ISourcePackageNameSet(Interface):
         """return an iselectresults representing all package names"""
 
     def queryByName(name):
-        """Get a sourcepackagename by its name atttribute.
+        """Get a sourcepackagename by its name attribute.
 
         Returns the matching ISourcePackageName or None.
         """

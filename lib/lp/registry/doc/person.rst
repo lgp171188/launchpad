@@ -1465,7 +1465,7 @@ Now Celso is a bug contributor in Launchpad.
     >>> cprov.isBugContributor(user=foobar)
     True
 
-Celso is a bug contributer in the context of the `firefox` product.
+Celso is a bug contributor in the context of the `firefox` product.
 
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> cprov.isBugContributorInTarget(user=foobar, target=firefox)
@@ -1577,7 +1577,7 @@ be raised.
 Probationary users
 ------------------
 
-Users without karma have not demostrated their intentions and may not
+Users without karma have not demonstrated their intentions and may not
 have the same privileges as users who have made contributions. Users who
 have made recent contributions are not on probation.
 

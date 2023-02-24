@@ -575,7 +575,7 @@ class AdminByCommercialTeamOrAdminsOrPerson(AdminByCommercialTeamOrAdmins):
     usedfor = IPerson
 
     def checkAuthenticated(self, user):
-        """Users can manage their commericial data and admins can help."""
+        """Users can manage their commercial data and admins can help."""
         return self.obj.id == user.id or super().checkAuthenticated(user)
 
 

@@ -1366,7 +1366,7 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
         return dsd
 
     def test_getForDistroSeries_filters_by_spr_creator(self):
-        # Specifiying changed_by limits the DSDs returned to those where the
+        # Specifying changed_by limits the DSDs returned to those where the
         # associated SPR was created by the given user or team.
         megatron = self.factory.makePersonByName("Megatron")
         alderney = self.factory.makePersonByName("Alderney")
