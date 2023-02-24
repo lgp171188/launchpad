@@ -20,7 +20,7 @@ xx-pofile-translate-performance.rst
 
     >>> login(ANONYMOUS)
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
 

@@ -11,7 +11,7 @@ in the form's main language.
 
     >>> login(ANONYMOUS)
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
     >>> def get_alternative_languages_widget(browser):

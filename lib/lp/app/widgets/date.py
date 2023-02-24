@@ -405,7 +405,7 @@ class DateTimeWidget(TextWidget):
             return self.context.missing_value
         self._checkSupportedFormat(input)
         try:
-            year, month, day, hour, minute, second, dummy_tz = parse(input)
+            year, month, day, hour, minute, second, _ = parse(input)
             second, micro = divmod(second, 1.0)
             micro = round_half_up(micro * 1000000)
             dt = datetime(year, month, day, hour, minute, int(second), micro)
