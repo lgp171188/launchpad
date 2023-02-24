@@ -206,7 +206,7 @@ there's no way of knowing if the bug is confirmed or not.
     New
 
 If the 'wontfix' tag is present we map it to "Won't Fix". The 'wontfix'
-tag takes precedence over the confimed tags (help, confirmed, upstream,
+tag takes precedence over the confirmed tags (help, confirmed, upstream,
 fixed-upstream) since 'wontfix' is the state after confirmed. The 'wontfix'
 tag also takes precedence over the fix-committed tags (pending, fixed,
 fixed-in-experimental) since the malone status will correctly change to
