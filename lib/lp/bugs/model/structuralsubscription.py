@@ -750,7 +750,7 @@ def _get_structural_subscription_filter_id_query(
     # we can get the full set of what we need in subsuming or
     # subsequent SQL calls.
     # (Aside 1: We could in theory get all the fields we wanted with
-    # a hack--we could use an aggregrate function like max to get
+    # a hack--we could use an aggregate function like max to get
     # fields that we know will be unique--but Storm would not like
     # it.)
     # (Aside 2: IMO Postgres should allow getting other fields if

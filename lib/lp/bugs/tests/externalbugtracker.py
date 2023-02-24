@@ -1521,7 +1521,7 @@ class TestTracXMLRPCTransport(RequestsTransport):
                 for bug in bugs_to_return
             ]
         # At level 3, we return the full comment dicts along with the
-        # bug metadata. Tne comment dicts do not include the user field,
+        # bug metadata. The comment dicts do not include the user field,
         # however.
         elif level == LP_PLUGIN_FULL:
             bugs_to_return = [

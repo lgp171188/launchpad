@@ -858,7 +858,7 @@ class FileBugViewBase(LaunchpadFormView):
     default_bug_reported_acknowledgement = "Thank you for your bug report."
 
     def getAcknowledgementMessage(self, context):
-        """An acknowlegement message displayed to the user."""
+        """An acknowledgement message displayed to the user."""
         # If a given context does not have a custom message, we go up in the
         # "object hierarchy" until we find one. If no customized messages
         # exist for any context, a default message is returned.

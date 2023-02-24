@@ -448,7 +448,7 @@ class Mantis(ExternalBugTracker):
         ("assigned", BugTaskStatus.INPROGRESS),
         ("feedback", BugTaskStatus.INCOMPLETE),
         ("new", BugTaskStatus.NEW),
-        ("confirmed", "ackowledged", BugTaskStatus.CONFIRMED),
+        ("confirmed", "acknowledged", BugTaskStatus.CONFIRMED),
         (
             "resolved",
             "closed",

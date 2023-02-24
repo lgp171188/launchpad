@@ -397,7 +397,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
 
 
 class TestNotificationProcessingWithoutRecipients(TestCaseWithFactory):
-    """Adding notificatons without any recipients does not cause any harm.
+    """Adding notifications without any recipients does not cause any harm.
 
     In some cases, we may have attempts to send bug notifications for bugs
     that do not have any notification recipients.

@@ -2,7 +2,7 @@ Bug Reporting Guidelines and acknowledgement messages
 =====================================================
 
 Some helpful explanatory text - guidelines - can be set for
-distributions, product groups, products, and source packages, as wel
+distributions, product groups, products, and source packages, as well
 as an acknowledgement message that is displayed when a bug has been
 filed.
 
