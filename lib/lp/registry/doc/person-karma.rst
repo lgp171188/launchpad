@@ -39,7 +39,7 @@ assigned to a given person.
     >>> karma_helper = KarmaAssignedEventListener()
     >>> karma_helper.register_listener()
 
-    >>> dummy = salgado.assignKarma("specreviewed", product=firefox)
+    >>> _ = salgado.assignKarma("specreviewed", product=firefox)
     Karma added: action=specreviewed, product=firefox
 
     >>> karma_helper.unregister_listener()
@@ -82,11 +82,11 @@ karma.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> janitor = getUtility(ILaunchpadCelebrities).janitor
-    >>> dummy = janitor.assignKarma("specreviewed", product=firefox)
+    >>> _ = janitor.assignKarma("specreviewed", product=firefox)
     <BLANKLINE>
 
     >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
-    >>> dummy = janitor.assignKarma("specreviewed", product=firefox)
+    >>> _ = janitor.assignKarma("specreviewed", product=firefox)
     <BLANKLINE>
 
 

@@ -573,7 +573,7 @@ this way, though.  If there are too many products using a given bugtracker,
 we'll present only the ones whose name is similar to what the user entered.
 
     >>> flush_database_updates()
-    >>> dummy = form.pop("create_new")
+    >>> _ = form.pop("create_new")
     >>> form["field.name"] = "foo"
     >>> form["field.display_name"] = "Foo, the return"
     >>> form["field.summary"] = "Foo"
@@ -606,7 +606,7 @@ sense and could fail when the user didn't have the necessary rights on the
 project in question.
 
     >>> login("no-priv@canonical.com")
-    >>> dummy = form.pop("field.actions.continue")
+    >>> _ = form.pop("field.actions.continue")
     >>> form["field.existing_product"] = "foo-product"
     >>> form["field.actions.use_existing_product"] = 1
     >>> bugtask_one = getUtility(IBugSet).get(1).bugtasks[0]

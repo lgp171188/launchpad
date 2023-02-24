@@ -186,7 +186,7 @@ The same goes for approving a proposed member.
     # stub.test_emails
 
     >>> run_mail_jobs()
-    >>> dummy = pop_notifications()
+    >>> _ = pop_notifications()
 
     >>> setStatus(
     ...     daf_membership,
@@ -1063,7 +1063,7 @@ notification email contain subscription information.
     >>> team_one, list_one = factory.makeTeamAndMailingList(
     ...     "team-one", owner.name
     ... )
-    >>> dummy = pop_notifications()
+    >>> _ = pop_notifications()
     >>> member = factory.makePerson(
     ...     name="team-member", email="team-member@example.com"
     ... )

@@ -10,7 +10,7 @@ suggestions can be dismissed to keep them off the page.
 
     >>> login(ANONYMOUS)
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
 

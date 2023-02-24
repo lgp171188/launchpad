@@ -14,7 +14,7 @@ Imports that have failed more than the configured
     ...     product=product, branch_name="trunk", registrant=owner
     ... )
     >>> for i in range(config.codeimport.consecutive_failure_limit):
-    ...     dummy = make_finished_import(
+    ...     _ = make_finished_import(
     ...         code_import, CodeImportResultStatus.FAILURE, factory=factory
     ...     )
     ...

@@ -463,7 +463,7 @@ class ProberFactory(protocol.ClientFactory):
         # use it as the host we're going to connect to.
         proxy = config.launchpad.http_proxy
         if proxy:
-            scheme, host, port, dummy = _parse(proxy)
+            scheme, host, port, _ = _parse(proxy)
             path = url
 
         self.connect_scheme = scheme
@@ -1080,7 +1080,7 @@ def should_skip_host(host):
 
 def _parse(url, defaultPort=None):
     """Parse the given URL returning the scheme, host, port and path."""
-    scheme, host, path, dummy, dummy, dummy = urlparse(url)
+    scheme, host, path, _, _, _ = urlparse(url)
     if ":" in host:
         host, port = host.split(":")
         assert port.isdigit()

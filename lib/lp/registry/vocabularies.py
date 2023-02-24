@@ -1236,7 +1236,7 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         try:
-            productname, productseriesname, dummy = token.split("/", 2)
+            productname, productseriesname, _ = token.split("/", 2)
         except ValueError:
             raise LookupError(token)
 

@@ -475,7 +475,7 @@ these are actual people.  Sometimes, though, these should actually be
 teams, so we provide an easy way to turn one of these auto created
 entries into teams.
 
-    >>> not_a_person, dummy = personset.createPersonAndEmail(
+    >>> not_a_person, _ = personset.createPersonAndEmail(
     ...     "foo@random.com",
     ...     PersonCreationRationale.SOURCEPACKAGEIMPORT,
     ...     comment="when the ed package was imported into Ubuntu Feisty",
