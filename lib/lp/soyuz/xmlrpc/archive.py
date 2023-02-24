@@ -136,6 +136,8 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         if checksum_type != "SHA256":
             return None
 
+        # This implicitly includes a check that the associated LFA isn't
+        # deleted, by way of joining with LFC to check the checksum.
         archive_file = (
             getUtility(IArchiveFileSet)
             .getByArchive(
@@ -167,7 +169,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             )
             .one()
         )
-        if archive_file is None:
+        if archive_file is None or archive_file.library_file.deleted:
             return None
 
         log.info(
@@ -182,7 +184,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         self, archive_reference: str, archive, path: PurePath
     ) -> Optional[str]:
         lfa = archive.getPoolFileByPath(path)
-        if lfa is None:
+        if lfa is None or lfa.deleted:
             return None
 
         log.info(
@@ -220,20 +222,17 @@ class ArchiveAPI(LaunchpadXMLRPCView):
                 return url
 
         # Consider other non-pool files.
-        if path.parts[0] != "pool":
+        elif path.parts[0] != "pool":
             url = self._translatePathNonPool(archive_reference, archive, path)
             if url is not None:
                 return url
-            log.info("%s: %s not found", archive_reference, path.as_posix())
-            raise faults.NotFound(
-                message="'%s' not found in '%s'."
-                % (path.as_posix(), archive_reference)
-            )
 
         # Consider pool files.
-        url = self._translatePathPool(archive_reference, archive, path)
-        if url is not None:
-            return url
+        else:
+            url = self._translatePathPool(archive_reference, archive, path)
+            if url is not None:
+                return url
+
         log.info("%s: %s not found", archive_reference, path.as_posix())
         raise faults.NotFound(
             message="'%s' not found in '%s'."

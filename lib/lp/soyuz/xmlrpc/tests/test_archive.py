@@ -322,6 +322,26 @@ class TestArchiveAPI(TestCaseWithFactory):
             path,
         )
 
+    def test_translatePath_by_hash_checksum_expired(self):
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        archive_file = self.factory.makeArchiveFile(
+            archive=archive,
+            container="release:jammy",
+            path="dists/jammy/InRelease",
+        )
+        path = (
+            "dists/jammy/by-hash/SHA256/%s"
+            % archive_file.library_file.content.sha256
+        )
+        removeSecurityProxy(archive_file.library_file).content = None
+        self.assertNotFound(
+            "translatePath",
+            "'%s' not found in '%s'." % (path, archive.reference),
+            "%s: %s not found" % (archive.reference, path),
+            archive.reference,
+            path,
+        )
+
     def test_translatePath_by_hash_checksum_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         now = get_transaction_timestamp(IStore(archive))
@@ -387,6 +407,19 @@ class TestArchiveAPI(TestCaseWithFactory):
             "%s: nonexistent/path not found" % archive.reference,
             archive.reference,
             "nonexistent/path",
+        )
+
+    def test_translatePath_non_pool_expired(self):
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        path = "dists/focal/InRelease"
+        archive_file = self.factory.makeArchiveFile(archive=archive, path=path)
+        removeSecurityProxy(archive_file.library_file).content = None
+        self.assertNotFound(
+            "translatePath",
+            "'%s' not found in '%s'." % (path, archive.reference),
+            "%s: %s not found" % (archive.reference, path),
+            archive.reference,
+            path,
         )
 
     def test_translatePath_non_pool_found(self):
@@ -471,6 +504,36 @@ class TestArchiveAPI(TestCaseWithFactory):
             path,
         )
 
+    def test_translatePath_pool_source_expired(self):
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.tar.xz", db_only=True
+            ),
+        )
+        removeSecurityProxy(sprf.libraryfile).content = None
+        path = "pool/main/t/test-package/test-package_1.dsc"
+        self.assertNotFound(
+            "translatePath",
+            "'%s' not found in '%s'." % (path, archive.reference),
+            "%s: %s not found" % (archive.reference, path),
+            archive.reference,
+            path,
+        )
+
     def test_translatePath_pool_source_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         spph = self.factory.makeSourcePackagePublishingHistory(
@@ -542,6 +605,30 @@ class TestArchiveAPI(TestCaseWithFactory):
             sourcepackagename="test-package",
             component="main",
         )
+        path = "pool/main/t/test-package/test-package_1_amd64.deb"
+        self.assertNotFound(
+            "translatePath",
+            "'%s' not found in '%s'." % (path, archive.reference),
+            "%s: %s not found" % (archive.reference, path),
+            archive.reference,
+            path,
+        )
+
+    def test_translatePath_pool_binary_expired(self):
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        removeSecurityProxy(bpf.libraryfile).content = None
         path = "pool/main/t/test-package/test-package_1_amd64.deb"
         self.assertNotFound(
             "translatePath",
