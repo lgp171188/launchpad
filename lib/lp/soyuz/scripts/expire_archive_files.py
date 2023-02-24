@@ -153,6 +153,10 @@ class ArchiveExpirer(LaunchpadCronScript):
                     ArchiveFile.archive == Archive.id,
                 ]
             )
+            # Unlike BPF and SPRF, ArchiveFile rows don't currently share
+            # LFAs (although they may share LFCs after deduplication).
+            # However, we still use denied_clauses to implement
+            # archive-based expiry exceptions.
             denied_clauses.append(ArchiveFile.archive == Archive.id)
         else:
             raise AssertionError("Unknown table: %r" % table)
