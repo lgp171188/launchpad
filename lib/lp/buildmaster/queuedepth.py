@@ -119,7 +119,7 @@ def estimate_time_to_next_builder(bq, now=None):
         - *not* processor dependent: all builders with the matching
             virtualization setting should be considered.
 
-    :return: The estimated number of seconds untils a builder capable of
+    :return: The estimated number of seconds until a builder capable of
         running the head job becomes available.
     """
     head_job_platform = get_head_job_platform(bq)
@@ -292,7 +292,7 @@ def estimate_job_delay(bq, builder_stats):
             job_counts[platform] += job_count
 
     sum_of_delays = 0
-    # Now devide the delays based on a jobs/builders comparison.
+    # Now divide the delays based on a jobs/builders comparison.
     for platform, duration in delays.items():
         jobs = job_counts[platform]
         builders = builder_stats[platform]

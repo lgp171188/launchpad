@@ -227,7 +227,7 @@ class TestCodeImportCreation(TestCodeImportBase):
             self.assertRaises(AssertionError, create_func)
 
     def test_junk_code_import_rejected(self):
-        """You are not allowed to create code imports targetting +junk."""
+        """You are not allowed to create code imports targeting +junk."""
         registrant = self.factory.makePerson()
         self.assertRaises(
             AssertionError,
@@ -242,7 +242,7 @@ class TestCodeImportCreation(TestCodeImportBase):
         )
 
     def test_create_source_package_import(self):
-        """Test that we can create an import targetting a source package."""
+        """Test that we can create an import targeting a source package."""
         registrant = self.factory.makePerson()
         source_package = self.factory.makeSourcePackage()
         if self.target_rcs_type == TargetRevisionControlSystems.BZR:

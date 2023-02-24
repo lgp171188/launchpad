@@ -39,7 +39,7 @@ BranchJobType.IMPORT
 ....................
 
 The json data here would effectively store the text of the message.  Used
-primarily in the status changes on the import job itself.  Perhpas this should
+primarily in the status changes on the import job itself.  Perhaps this should
 be combined with the attribute type email and have a general preamble for the
 generated email.
 
@@ -68,7 +68,7 @@ and the initial reviewer if one was requested.
 BranchMergeProposalJobType.COMMENT
 ..................................
 
-The json data here refers to the identify of the commit message.
+The json data here refers to the identity of the commit message.
 
 BranchMergeProposalJobType.NEW_REVIEWER
 .......................................
@@ -80,5 +80,5 @@ BranchMergeProposalJobType.DIFF_GENERATION
 ..........................................
 
 The dynamic moving diff has been determined to be out of date, and a new diff
-needs to be generated.  This is processed by the merge analysis deamon.
+needs to be generated.  This is processed by the merge analysis daemon.
 

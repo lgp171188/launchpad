@@ -1568,7 +1568,7 @@ class BranchMergeProposalAddVoteView(LaunchpadFormView):
             )
             if vote_ref is not None:
                 # Claim this vote reference, i.e. say that the individual
-                # self. user is doing this review ond behalf of the 'reviewer'
+                # self.user is doing this review on behalf of the 'reviewer'
                 # team.
                 vote_ref.claimReview(self.user)
 

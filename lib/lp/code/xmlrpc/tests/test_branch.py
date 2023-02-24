@@ -28,10 +28,10 @@ class TestExpandURL(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def makeProdutWithTrunk(self):
+    def makeProductWithTrunk(self):
         """Make a new project with a trunk hosted branch."""
         product = self.factory.makeProduct()
-        # BranchType is only signficiant insofar as it is not a REMOTE branch.
+        # BranchType is only significant insofar as it is not a REMOTE branch.
         trunk = self.factory.makeProductBranch(
             branch_type=BranchType.HOSTED, product=product
         )
@@ -90,7 +90,7 @@ class TestExpandURL(TestCaseWithFactory):
         # containing a list of these URLs, with the faster and more featureful
         # URLs earlier in the list. We use a dict so we can easily add more
         # information in the future.
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
         urls = [
@@ -102,7 +102,7 @@ class TestExpandURL(TestCaseWithFactory):
     def test_resultDictForHotProduct(self):
         # If 'project-name' is in the config.codehosting.hot_products list,
         # lp:project-name will only resolve to the http url.
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         self.pushConfig("codehosting", hot_products=product.name)
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
@@ -113,7 +113,7 @@ class TestExpandURL(TestCaseWithFactory):
         # lp:product expands to the branch associated with development focus
         # of the product for the anonymous public access, just to the aliased
         # short name for bzr+ssh access.
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         lp_path = product.name
         self.assertResolves(lp_path, trunk.unique_name, lp_path)
 
@@ -121,7 +121,7 @@ class TestExpandURL(TestCaseWithFactory):
         # lp:product/development_focus expands to the branch associated with
         # development focus of the product for the anonymous public access,
         # just to the aliased short name for bzr+ssh access.
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         lp_path = "%s/%s" % (product.name, product.development_focus.name)
         self.assertResolves(lp_path, trunk.unique_name, lp_path)
 
@@ -169,7 +169,7 @@ class TestExpandURL(TestCaseWithFactory):
     def test_trunk_accessed_as_branch(self):
         # A branch that is the development focus for any product can also be
         # accessed through the branch's unique_name.
-        _ignored, trunk = self.makeProdutWithTrunk()
+        _ignored, trunk = self.makeProductWithTrunk()
         self.assertResolves(trunk.unique_name, trunk.unique_name)
 
     def test_mirrored_branch(self):
@@ -300,7 +300,7 @@ class TestExpandURL(TestCaseWithFactory):
     def test_trailing_slashes(self):
         # Trailing slashes are trimmed.
         # Trailing slashes on lp:product//
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         self.assertResolves(
             product.name + "/", trunk.unique_name, product.name
         )
@@ -341,7 +341,7 @@ class TestExpandURL(TestCaseWithFactory):
 
     def test_private_branch_as_development_focus(self):
         # We resolve private linked branches using the writable alias.
-        product, trunk = self.makeProdutWithTrunk()
+        product, trunk = self.makeProductWithTrunk()
         removeSecurityProxy(trunk).information_type = InformationType.USERDATA
         self.assertOnlyWritableResolves(product.name)
 

@@ -532,7 +532,7 @@ class TestBuilderData(SingleArchBuildsBase):
 
 
 class TestMinTimeToNextBuilder(SingleArchBuildsBase):
-    """Test estimated time-to-builder with builds targetting a single
+    """Test estimated time-to-builder with builds targeting a single
     processor."""
 
     def test_min_time_to_next_builder(self):
@@ -573,7 +573,7 @@ class TestMinTimeToNextBuilder(SingleArchBuildsBase):
 
         assign_to_builder(self, "gcc", 4)
         # Now that no builder is immediately available, the shortest
-        # remaing build time (based on the estimated duration) is returned:
+        # remaining build time (based on the estimated duration) is returned:
         #   300 seconds
         # This is equivalent to the 'gcc' job's estimated duration.
         check_mintime_to_builder(self, apg_job, 300)
@@ -768,7 +768,7 @@ class TestMinTimeToNextBuilderMulti(MultiArchBuildsBase):
 
         assign_to_builder(self, "bison", 3, "hppa")
         # Now that no builder is immediately available, the shortest
-        # remaing build time (based on the estimated duration) is returned:
+        # remaining build time (based on the estimated duration) is returned:
         #   660 seconds
         # This is equivalent to the 'bison' job's estimated duration.
         check_mintime_to_builder(self, apg_job, 660)

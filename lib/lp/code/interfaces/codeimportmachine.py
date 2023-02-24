@@ -47,7 +47,7 @@ class ICodeImportMachine(Interface):
     heartbeat = Datetime(
         title=_("Heartbeat"),
         description=_(
-            "When the controller deamon last recorded it was" " running."
+            "When the controller daemon last recorded it was running."
         ),
     )
 

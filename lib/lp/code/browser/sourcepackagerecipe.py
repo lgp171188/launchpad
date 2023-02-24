@@ -663,7 +663,7 @@ class ISourcePackageAddSchema(ISourcePackageEditSchema):
 
 
 class ErrorHandled(Exception):
-    """A field error occured and was handled."""
+    """A field error occurred and was handled."""
 
 
 class RecipeTextValidatorMixin:

@@ -354,7 +354,7 @@ Each `BuilderGroup` contains the following attributes:
  * number_of_available_builders: the number of builders available for
        this processor.
 
- * queue_size: the number of jobs wainting to be processed for one of
+ * queue_size: the number of jobs waiting to be processed for one of
    the builders in this group
 
  * duration: estimated time that will be used to build all jobs in

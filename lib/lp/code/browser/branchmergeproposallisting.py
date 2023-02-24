@@ -364,7 +364,7 @@ class ActiveReviewsView(BranchMergeProposalListingView):
                     else:
                         return self.ARE_DOING
                 # Since team reviews are always pending, and we've eliminated
-                # the case where the reviewer is ther person, then if
+                # the case where the reviewer is the person, then if
                 # the reviewer is in the reviewer team, it is a can do.
                 if reviewer.inTeam(vote.reviewer):
                     result = self.CAN_DO

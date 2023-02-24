@@ -51,7 +51,7 @@ class ICodeImportEvent(Interface):
         required=False,
         readonly=True,
         vocabulary="CodeImportMachine",
-        description=_("The import machine where this event occured." ""),
+        description=_("The import machine where this event occurred."),
     )
 
     def items():

@@ -707,7 +707,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         # Don't add a team reviewer to the recipients as they are only going
         # to get emails normally if they are subscribed to one of the
         # branches, and if they are subscribed, they'll be getting this email
-        # aleady.
+        # already.
         for review in self.votes:
             reviewer = review.reviewer
             pending = review.comment is None

@@ -336,7 +336,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     # The unique_name is maintined by a SQL trigger.
     unique_name = StringCol()
-    # Denormalised colums used primarily for sorting.
+    # Denormalised columns used primarily for sorting.
     owner_name = StringCol()
     target_suffix = StringCol()
 
@@ -793,7 +793,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         return stacked_on_branches
 
     @property
-    def code_is_browseable(self):
+    def code_is_browsable(self):
         """See `IBranch`."""
         return self.revision_count > 0 or self.last_mirrored != None
 
@@ -1327,7 +1327,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         if (revision_id != self.last_scanned_id) or (
             revision_count != self.revision_count
         ):
-            # If the date of the last revision is greated than the date last
+            # If the date of the last revision is greater than the date last
             # modified, then bring the date last modified forward to the last
             # revision date (as long as the revision date isn't in the
             # future).

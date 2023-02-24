@@ -4,7 +4,7 @@ Code Imports
 CodeImport objects model the process surrounding the code import
 service of Launchpad. A CodeImport object is created by a user
 requesting an import, the import source is then reviewed by privileged
-users. Then the code import servoce performs the initial import that
+users. Then the code import service performs the initial import that
 populates the import branch, and updates it regularly.
 
 We can import code from CVS or Subversion.
@@ -448,7 +448,7 @@ And a single Git import.
     >>> git_imports[0].rcs_type.name
     'GIT'
 
-Passing both paramters is combined as "and".
+Passing both parameters is combined as "and".
 
     >>> reviewed_git_imports = list(
     ...     code_import_set.search(
