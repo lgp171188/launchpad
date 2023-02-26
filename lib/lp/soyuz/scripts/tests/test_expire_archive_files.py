@@ -245,7 +245,8 @@ class ArchiveExpiryCommonTests:
         self.factory.makeArchiveFile(
             archive=self.archive,
             container="release:",
-            path="dists/%s/Release" % pkg4.distroseries.getSuite(pkg4.pocket),
+            path="dists/%s/Release"
+            % self.archive2.distribution.currentseries.getSuite(pkg4.pocket),
             library_file=af.library_file,
         )
 
@@ -290,7 +291,8 @@ class ArchiveExpiryCommonTests:
         self.factory.makeArchiveFile(
             archive=self.archive,
             container="release:",
-            path="dists/%s/Release" % pkg5.distroseries.getSuite(pkg5.pocket),
+            path="dists/%s/Release"
+            % self.archive2.distribution.currentseries.getSuite(pkg5.pocket),
             library_file=af.library_file,
             date_removed=self.under_threshold_date,
         )
