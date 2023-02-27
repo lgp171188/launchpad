@@ -884,6 +884,65 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
         self.assertEqual(("gpu",), build.builder_constraints)
 
+    def test_requestBuildsForRefs_missing_archs_previous_stages(self):
+        logger = BufferLogger()
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        series = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series, architecturetag="amd64"
+        )
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=series, architecturetag="arm64"
+        )
+        configuration = dedent(
+            """\
+            pipeline:
+                - build
+                - lint
+                - test
+
+            jobs:
+                build:
+                    matrix:
+                        - series: focal
+                          architectures: amd64
+                        - series: bionic
+                          architectures: arm64
+                        - series: focal
+                          architectures: arm64
+                    run: pyproject-build
+                lint:
+                    series: focal
+                    architectures: arm64
+                    run: echo hello world >output
+                test:
+                    series: focal
+                    architectures: amd64
+                    run: echo hello world >output
+            """
+        ).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ["refs/heads/master"]
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        self.useFixture(GitHostingFixture(commits=[encoded_commit_json]))
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(
+            repository, ref_paths, logger
+        )
+        self.assertEqual(
+            "ERROR Failed to request CI builds for %s: "
+            "Job test would run on amd64,but the previous job "
+            "lintin the same pipeline would not\n" % ref.commit_sha1,
+            logger.getLogBuffer(),
+        )
+
     def test_requestBuildsForRefs_triggers_builds(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         series = self.factory.makeDistroSeries(
@@ -960,6 +1019,200 @@ class TestCIBuildSet(TestCaseWithFactory):
                         ci_build=build,
                     )
                     for title in ("build:0", "build:1", "test:0")
+                )
+            ),
+        )
+
+    def test_requestBuildsForRefs_multiple_architectures(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        bionic = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="bionic",
+        )
+        focal = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="focal",
+        )
+        jammy = self.factory.makeDistroSeries(
+            distribution=ubuntu,
+            name="jammy",
+        )
+        for series in [bionic, focal, jammy]:
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=series, architecturetag="amd64"
+            )
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=series, architecturetag="arm64"
+            )
+        configuration = dedent(
+            """\
+            pipeline:
+                - build
+                - test
+
+            jobs:
+                build:
+                    series: focal
+                    architectures: [amd64, arm64]
+                    run: echo build
+                test:
+                    matrix:
+                        - series: bionic
+                          architectures: [amd64]
+                        - series: focal
+                          architectures: [amd64, arm64]
+                        - series: jammy
+                          architectures: [amd64, arm64]
+                    run: echo test
+            """
+        ).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ["refs/heads/master"]
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        self.useFixture(GitHostingFixture(commits=[encoded_commit_json]))
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(repository, ref_paths)
+
+        builds = getUtility(ICIBuildSet).findByGitRepository(repository)
+        reports = list(
+            getUtility(IRevisionStatusReportSet).findByRepository(repository)
+        )
+
+        jammy_test_arm64 = None
+        jammy_test_amd64 = None
+
+        self.assertEqual(7, len(reports))
+
+        for build in builds:
+            self.assertEqual(ref.commit_sha1, build.commit_sha1)
+
+            if build.distro_arch_series.distroseries.name == "jammy":
+                if build.distro_arch_series.architecturetag == "amd64":
+                    jammy_test_amd64 = build
+                else:
+                    jammy_test_arm64 = build
+
+        self.assertIsNot(None, jammy_test_arm64)
+        self.assertIsNot(None, jammy_test_amd64)
+
+        self.assertEqual(
+            [[("build", 0)], [("test", 1), ("test", 2)]],
+            jammy_test_arm64.stages,
+        )
+        self.assertEqual(
+            [[("build", 0)], [("test", 0), ("test", 1), ("test", 2)]],
+            jammy_test_amd64.stages,
+        )
+        self.assertThat(
+            reports,
+            MatchesSetwise(
+                *(
+                    MatchesStructure.byEquality(
+                        creator=repository.owner,
+                        title=title,
+                        git_repository=repository,
+                        commit_sha1=ref.commit_sha1,
+                        ci_build=build,
+                    )
+                    for title, build in [
+                        # amd
+                        ("build:0", jammy_test_amd64),
+                        ("test:0", jammy_test_amd64),
+                        ("test:1", jammy_test_amd64),
+                        ("test:2", jammy_test_amd64),
+                        # arm
+                        ("build:0", jammy_test_arm64),
+                        ("test:1", jammy_test_arm64),
+                        ("test:2", jammy_test_arm64),
+                    ]
+                )
+            ),
+        )
+
+    def test_requestBuildsForRefs_creates_correct_amount_of_builds(self):
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        focal = self.factory.makeDistroSeries(
+            distribution=ubuntu, name="focal", version="20.04"
+        )
+        jammy = self.factory.makeDistroSeries(
+            distribution=ubuntu, name="jammy", version="22.04"
+        )
+        for series in [focal, jammy]:
+            self.factory.makeBuildableDistroArchSeries(
+                distroseries=series, architecturetag="amd64"
+            )
+        configuration = dedent(
+            """\
+            pipeline:
+                - build
+                - test
+
+            jobs:
+                build:
+                    series: jammy
+                    architectures: amd64
+                    run: echo jammy
+                test:
+                    series: focal
+                    architectures: amd64
+                    run: echo focal
+            """
+        ).encode()
+        repository = self.factory.makeGitRepository()
+        ref_paths = ["refs/heads/master"]
+        [ref] = self.factory.makeGitRefs(repository, ref_paths)
+        encoded_commit_json = {
+            "sha1": ref.commit_sha1,
+            "blobs": {".launchpad.yaml": configuration},
+        }
+        self.useFixture(GitHostingFixture(commits=[encoded_commit_json]))
+
+        getUtility(ICIBuildSet).requestBuildsForRefs(repository, ref_paths)
+
+        builds = list(getUtility(ICIBuildSet).findByGitRepository(repository))
+        reports = list(
+            getUtility(IRevisionStatusReportSet).findByRepository(repository)
+        )
+        self.assertEqual(2, len(reports))
+
+        self.assertEqual(1, len(builds))
+
+        jammy_build = builds[0]
+
+        self.assertEqual(
+            "jammy", reports[0].ci_build.distro_arch_series.distroseries.name
+        )
+        self.assertEqual(
+            "jammy", reports[1].ci_build.distro_arch_series.distroseries.name
+        )
+
+        self.assertEqual([[("build", 0)], [("test", 0)]], jammy_build.stages)
+
+        # build:0 and test:0 are dispatched as part of the same build farm job
+        # in order that test:0 can wait for build:0 to succeed.
+        # The build farm job must have a single series for its outer container,
+        # so we pick jammy.
+        # `lpci` will create an inner jammy container for build:0 and
+        # an inner focal container for test:0.
+        self.assertThat(
+            reports,
+            MatchesSetwise(
+                *(
+                    MatchesStructure.byEquality(
+                        creator=repository.owner,
+                        title=title,
+                        git_repository=repository,
+                        commit_sha1=ref.commit_sha1,
+                        ci_build=build,
+                    )
+                    for title, build in [
+                        ("build:0", jammy_build),
+                        ("test:0", jammy_build),
+                    ]
                 )
             ),
         )
