@@ -63,7 +63,7 @@ class ICodeImportResult(Interface):
             "A partial log of the job for users to see. It is "
             "normally only recorded if the job failed in a step "
             "that interacts with the remote repository. If a job "
-            "was successful, or failed in a houskeeping step, the "
+            "was successful, or failed in a housekeeping step, the "
             "log file would not contain information useful to the "
             "user."
         ),

@@ -818,8 +818,8 @@ class IBranchView(
         :returns: A resultset of tuples for (BranchRevision, Revision)
         """
 
-    code_is_browseable = Attribute(
-        "Is the code in this branch accessable through codebrowse?"
+    code_is_browsable = Attribute(
+        "Is the code in this branch accessible through codebrowse?"
     )
 
     def getCodebrowseUrl(*extras):
@@ -1114,7 +1114,7 @@ class IBranchView(
             1. Ancestry set of bzr revision-ids.
             2. History list of bzr revision-ids. Similar to the result of
                breezy.Branch.revision_history().
-            3. Dictionnary mapping bzr bzr revision-ids to the database ids of
+            3. Dictionary mapping bzr bzr revision-ids to the database ids of
                the corresponding BranchRevision rows for this branch.
         """
 

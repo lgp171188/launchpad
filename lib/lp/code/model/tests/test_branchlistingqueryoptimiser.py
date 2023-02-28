@@ -78,7 +78,7 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
         self.assertSeriesBranches([alpha, beta, gamma])
 
     def test_multiple_series_for_single_branch(self):
-        """A single branch can be assiciated with multiple series.
+        """A single branch can be associated with multiple series.
 
         Make sure that all the associated series get returned.
         """

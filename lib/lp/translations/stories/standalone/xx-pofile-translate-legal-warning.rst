@@ -16,7 +16,7 @@ from the upstream project.
 
     >>> login(ANONYMOUS)
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
     >>> browser = setupBrowser(auth="Basic carlos@canonical.com:test")

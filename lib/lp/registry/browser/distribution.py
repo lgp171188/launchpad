@@ -737,17 +737,14 @@ class DistributionPackageSearchView(PackageSearchViewBase):
         for package_cache in self.exact_matches:
             package = package_cache.distributionsourcepackage
 
-            # In the absense of Python3.0's set comprehension, we
-            # create a list, convert the list to a set and back again:
-            distroseries_list = [
-                pubrec.distroseries.name
-                for pubrec in package.current_publishing_records
-                if pubrec.distroseries.active
-            ]
-            distroseries_list = list(set(distroseries_list))
-
             # Yay for alphabetical series names.
-            distroseries_list.sort()
+            distroseries_list = sorted(
+                {
+                    pubrec.distroseries.name
+                    for pubrec in package.current_publishing_records
+                    if pubrec.distroseries.active
+                }
+            )
             names[package.name] = ", ".join(distroseries_list)
 
         return names
@@ -809,7 +806,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def members_widget(self):
         if canWrite(self.context, "members"):
-            empty_value = " Specify the members team"
+            empty_value = "Specify the members team"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -825,7 +822,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def mirror_admin_widget(self):
         if canWrite(self.context, "mirror_admin"):
-            empty_value = " Specify a mirror administrator"
+            empty_value = "Specify a mirror administrator"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -841,7 +838,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def oci_project_admin_widget(self):
         if canWrite(self.context, "oci_project_admin"):
-            empty_value = " Specify an OCI project administrator"
+            empty_value = "Specify an OCI project administrator"
         else:
             empty_value = "None"
         return InlinePersonEditPickerWidget(
@@ -859,7 +856,7 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
     @property
     def security_admin_widget(self):
         if canWrite(self.context, "security_admin"):
-            empty_value = " Specify a security administrator"
+            empty_value = "Specify a security administrator"
         else:
             empty_value = "None"
 
@@ -1079,6 +1076,7 @@ class DistributionAddView(
     ]
     custom_widget_require_virtualized = CheckBoxWidget
     custom_widget_processors = LabeledMultiCheckBoxWidget
+    next_url = None
 
     @property
     def page_title(self):
@@ -1254,11 +1252,11 @@ class DistributionAdminView(LaunchpadEditFormView):
         "redirect_default_traversal",
         "information_type",
     ]
-
     custom_widget_information_type = CustomWidgetFactory(
         LaunchpadRadioWidgetWithDescription,
         vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES),
     )
+    next_url = None
 
     @property
     def label(self):
@@ -1641,6 +1639,7 @@ class DistributionPublisherConfigView(LaunchpadFormView):
 
     schema = IPublisherConfig
     field_names = ["root_dir", "base_url", "copy_base_url"]
+    next_url = None
 
     @property
     def label(self):

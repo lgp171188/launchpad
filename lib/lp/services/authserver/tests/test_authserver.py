@@ -136,7 +136,7 @@ class GetUserAndSSHKeysTests(TestCaseWithFactory):
 
 
 @implementer(IMacaroonIssuer)
-class DummyMacaroonIssuer(MacaroonIssuerBase):
+class FakeMacaroonIssuer(MacaroonIssuerBase):
 
     identifier = "test"
     issuable_via_authserver = True
@@ -169,7 +169,7 @@ class MacaroonTests(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.issuer = DummyMacaroonIssuer()
+        self.issuer = FakeMacaroonIssuer()
         self.useFixture(
             ZopeUtilityFixture(self.issuer, IMacaroonIssuer, name="test")
         )

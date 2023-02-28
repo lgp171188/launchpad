@@ -11,7 +11,7 @@ The suggestive-templates cache needs to be up to date.
 
     >>> login(ANONYMOUS)
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
     >>> logout()
 
 

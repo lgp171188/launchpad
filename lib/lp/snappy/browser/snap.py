@@ -399,6 +399,8 @@ def builds_and_requests_for_snap(snap):
 class SnapRequestBuildsView(LaunchpadFormView):
     """A view for requesting builds of a snap package."""
 
+    next_url = None
+
     @property
     def label(self):
         return "Request builds for %s" % self.context.name
@@ -527,6 +529,8 @@ def log_oops(error, request):
 
 
 class SnapAuthorizeMixin:
+    next_url = None
+
     def requestAuthorization(self, snap):
         try:
             self.next_url = SnapAuthorizeView.requestAuthorization(
@@ -552,6 +556,7 @@ class SnapAddView(
     page_title = label = "Create a new snap package"
 
     schema = ISnapEditSchema
+    next_url = None
 
     custom_widget_vcs = LaunchpadRadioWidget
     custom_widget_git_ref = CustomWidgetFactory(
@@ -770,6 +775,7 @@ class BaseSnapEditView(
 ):
 
     schema = ISnapEditSchema
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -1152,6 +1158,7 @@ class SnapDeleteView(BaseSnapEditView):
     page_title = "Delete"
 
     field_names = []
+    next_url = None
 
     @action("Delete snap package", name="delete")
     def delete_action(self, action, data):

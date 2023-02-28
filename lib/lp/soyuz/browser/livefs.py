@@ -227,6 +227,7 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
     schema = ILiveFSEditSchema
     field_names = ["owner", "name", "distro_series", "metadata"]
     custom_widget_distro_series = LaunchpadRadioWidget
+    next_url = None
 
     def initialize(self):
         """See `LaunchpadView`."""
@@ -281,6 +282,7 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
 class BaseLiveFSEditView(LaunchpadEditFormView):
 
     schema = ILiveFSEditSchema
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -383,6 +385,7 @@ class LiveFSDeleteView(BaseLiveFSEditView):
     label = title
 
     field_names = []
+    next_url = None
 
     @property
     def has_builds(self):

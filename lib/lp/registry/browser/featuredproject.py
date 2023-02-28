@@ -48,6 +48,7 @@ class FeaturedProjectsView(LaunchpadFormView):
 
     schema = FeaturedProjectForm
     custom_widget_remove = LabeledMultiCheckBoxWidget
+    next_url = None
 
     @action(_("Update featured project list"), name="update")
     def update_action(self, action, data):

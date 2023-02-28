@@ -2822,7 +2822,7 @@ class TestBranchMergeProposal(BrowserTestCase):
         self.assertThat(browser.contents, HTMLContains(body))
 
     def test_excessive_conversation_comments_no_redirect(self):
-        """An excessive comment does not force a redict on proposal page."""
+        """An excessive comment does not force a redirect on proposal page."""
         comment = self.factory.makeCodeReviewComment(body="x" * 10001)
         mp_url = canonical_url(comment.branch_merge_proposal)
         has_read_more = self.has_read_more(comment)

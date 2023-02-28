@@ -307,14 +307,14 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
         handler = MaloneHandler()
         with person_logged_in(project.owner):
             msg = self.factory.makeSignedMessage(
-                body="unsecure\n security yes\n affects fnord\n tag ajax",
-                subject="unsecure code",
+                body="insecure\n security yes\n affects fnord\n tag ajax",
+                subject="insecure code",
                 to_address="new@bugs.launchpad.test",
             )
             handler.process(msg, msg["To"])
         notification = self.getLatestBugNotification()
         bug = notification.bug
-        self.assertEqual("unsecure code", bug.title)
+        self.assertEqual("insecure code", bug.title)
         self.assertTrue(bug.security_related)
         self.assertEqual(["ajax"], bug.tags)
         self.assertEqual(1, len(bug.bugtasks))
@@ -354,14 +354,14 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
         handler = MaloneHandler()
         with person_logged_in(project.owner):
             msg = self.factory.makeSignedMessage(
-                body="unsecure\n informationtype userdata\n affects fnord",
-                subject="unsecure code",
+                body="insecure\n informationtype userdata\n affects fnord",
+                subject="insecure code",
                 to_address="new@bugs.launchpad.test",
             )
             handler.process(msg, msg["To"])
         notification = self.getLatestBugNotification()
         bug = notification.bug
-        self.assertEqual("unsecure code", bug.title)
+        self.assertEqual("insecure code", bug.title)
         self.assertEqual(InformationType.USERDATA, bug.information_type)
         self.assertEqual(1, len(bug.bugtasks))
         self.assertEqual(project, bug.bugtasks[0].target)

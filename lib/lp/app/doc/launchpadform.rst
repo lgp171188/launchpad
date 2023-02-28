@@ -396,6 +396,7 @@ Form Rendering
     >>> class RenderFormTest(LaunchpadFormView):
     ...     schema = IFormTest
     ...     field_names = ["displayname"]
+    ...     next_url = None
     ...
     ...     def template(self):
     ...         return "Content that comes from a ZCML registered template."

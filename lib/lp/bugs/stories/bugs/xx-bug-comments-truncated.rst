@@ -85,7 +85,7 @@ The whole comment is visible on this page:
          itemprop="commentText"><p>This would be a real killer feature.
       If there is already code
       to make it possible, why aren't there tons of press announcements
-      about the secuirty possibilities. Imagine - no more embarrassing
+      about the security possibilities. Imagine - no more embarrassing
       emails for ... disappear! I'm sure Redmond will switch over as soon as
       they hear about this. It's not a bug, it's a feature!</p></div>
     </div>

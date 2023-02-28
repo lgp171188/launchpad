@@ -790,6 +790,7 @@ class TestOOPSFormatter(TestCase):
     def _setDeveloper(self, value):
         """Override ILaunchBag.developer for testing purposes."""
         launch_bag = getUtility(ILaunchBag)
+        self.addCleanup(launch_bag.setDeveloper, launch_bag.developer)
         launch_bag.setDeveloper(value)
 
     def test_doesnt_linkify_for_non_developers(self):

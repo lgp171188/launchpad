@@ -403,6 +403,8 @@ class InvisibleCredentialsWidget(DisplayWidget):
 class OCIRecipeEditPushRulesView(LaunchpadFormView):
     """View for +ocirecipe-edit-push-rules.pt."""
 
+    next_url = None
+
     class schema(Interface):
         """Schema for editing push rules."""
 
@@ -794,6 +796,8 @@ class OCIRecipeEditPushRulesView(LaunchpadFormView):
 class OCIRecipeRequestBuildsView(LaunchpadFormView):
     """A view for requesting builds of an OCI recipe."""
 
+    next_url = None
+
     @property
     def label(self):
         return "Request builds for %s" % self.context.name
@@ -986,6 +990,7 @@ class OCIRecipeAddView(
         "build_daily",
     )
     custom_widget_git_ref = GitRefWidget
+    next_url = None
 
     def initialize(self):
         super().initialize()
@@ -1133,6 +1138,7 @@ class OCIRecipeAddView(
 class BaseOCIRecipeEditView(LaunchpadEditFormView):
 
     schema = IOCIRecipeEditSchema
+    next_url = None
 
     @property
     def private(self):
@@ -1345,6 +1351,7 @@ class OCIRecipeDeleteView(BaseOCIRecipeEditView):
     page_title = "Delete"
 
     field_names = ()
+    next_url = None
 
     @action("Delete OCI recipe", name="delete")
     def delete_action(self, action, data):

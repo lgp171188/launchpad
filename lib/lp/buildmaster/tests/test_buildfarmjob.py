@@ -92,7 +92,7 @@ class TestBuildFarmJob(TestBuildFarmJobBase, TestCaseWithFactory):
 
     def test_date_created(self):
         # date_created can be passed optionally when creating a
-        # bulid farm job to ensure we don't get identical timestamps
+        # build farm job to ensure we don't get identical timestamps
         # when transactions are committed.
         ten_years_ago = datetime.now(pytz.UTC) - timedelta(365 * 10)
         build_farm_job = getUtility(IBuildFarmJobSource).new(

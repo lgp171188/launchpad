@@ -1236,7 +1236,7 @@ class Distribution(
         assert (
             url is not None
         ), "A mirror must provide at least one HTTP/HTTPS/FTP URL."
-        dummy, host, dummy, dummy, dummy, dummy = urlparse(url)
+        host = urlparse(url).netloc
         name = sanitize_name("%s-%s" % (host, content.name.lower()))
 
         orig_name = name

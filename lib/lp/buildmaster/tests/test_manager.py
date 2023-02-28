@@ -1783,7 +1783,7 @@ class TestBuilddManagerScript(TestCaseWithFactory):
         self.useFixture(test_setup)
         # The process logs to the logfile.
         self.assertTrue(is_file_growing(logfilepath))
-        # No rotation occured.
+        # No rotation occurred.
         self.assertFalse(
             os.access(rotated_logfilepath, os.F_OK),
             "Twistd's log file was rotated by twistd.",

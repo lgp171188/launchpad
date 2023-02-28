@@ -16,8 +16,8 @@ class QuestionMakeBugView(LaunchpadFormView):
     """Browser class for adding a bug from a question."""
 
     schema = IBug
-
     field_names = ["title", "description"]
+    next_url = None
 
     def initialize(self):
         """Initialize the view when a Bug may be reported for the Question."""

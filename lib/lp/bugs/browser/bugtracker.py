@@ -112,6 +112,7 @@ class BugTrackerAddView(LaunchpadFormView):
         "summary",
         "contactdetails",
     ]
+    next_url = None
 
     def setUpWidgets(self, context=None):
         # We only show those bug tracker types for which there can be
@@ -251,7 +252,6 @@ BUG_TRACKER_ACTIVE_VOCABULARY = SimpleVocabulary.fromItems(
 class BugTrackerEditView(LaunchpadEditFormView):
 
     schema = IBugTracker
-
     custom_widget_summary = CustomWidgetFactory(
         TextAreaWidget, width=30, height=5
     )
@@ -259,6 +259,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
     custom_widget_active = CustomWidgetFactory(
         LaunchpadRadioWidget, orientation="vertical"
     )
+    next_url = None
 
     @property
     def page_title(self):

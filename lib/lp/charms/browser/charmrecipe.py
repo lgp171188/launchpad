@@ -323,6 +323,8 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
 
+    next_url = None
+
     @property
     def field_names(self):
         fields = ["owner", "name"]
@@ -417,6 +419,7 @@ class BaseCharmRecipeEditView(
 ):
 
     schema = ICharmRecipeEditSchema
+    next_url = None
 
     @property
     def cancel_url(self):
@@ -629,6 +632,7 @@ class CharmRecipeDeleteView(BaseCharmRecipeEditView):
     page_title = "Delete"
 
     field_names = []
+    next_url = None
 
     @action("Delete charm recipe", name="delete")
     def delete_action(self, action, data):
@@ -644,6 +648,7 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
     def label(self):
         return "Request builds for %s" % self.context.name
 
+    next_url = None
     page_title = "Request builds"
 
     class schema(Interface):

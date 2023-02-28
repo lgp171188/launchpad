@@ -867,6 +867,7 @@ class SpecificationEditView(LaunchpadEditFormView):
 
     schema = SpecificationEditSchema
     field_names = ["name", "title", "specurl", "summary", "whiteboard"]
+    next_url = None
     label = "Edit specification"
     custom_widget_summary = CustomWidgetFactory(TextAreaWidget, height=5)
     custom_widget_whiteboard = CustomWidgetFactory(TextAreaWidget, height=10)
@@ -1002,6 +1003,7 @@ class SpecificationGoalProposeView(LaunchpadEditFormView):
     label = "Target to a distribution series"
     field_names = ["distroseries", "whiteboard"]
     custom_widget_whiteboard = CustomWidgetFactory(TextAreaWidget, height=5)
+    next_url = None
 
     @property
     def initial_values(self):
@@ -1123,6 +1125,7 @@ class SpecificationRetargetingView(LaunchpadFormView):
 class SpecificationSupersedingView(LaunchpadFormView):
     schema = ISpecification
     field_names = ["superseded_by"]
+    next_url = None
     label = _("Mark blueprint superseded")
 
     @property
@@ -1386,6 +1389,7 @@ class SpecificationSprintAddView(LaunchpadFormView):
     schema = ISprintSpecification
     label = _("Propose specification for meeting agenda")
     field_names = ["sprint"]
+    next_url = None
     # ISprintSpecification.sprint is a read-only field, so we need to set
     # for_input to True here to ensure it's rendered as an input widget.
     for_input = True
@@ -1657,6 +1661,7 @@ class SpecificationLinkBranchView(LaunchpadFormView):
 class SpecificationSetView(AppFrontPageSearchView, HasSpecificationsView):
     """View for the Blueprints index page."""
 
+    next_url = None
     label = "Blueprints"
 
     @property

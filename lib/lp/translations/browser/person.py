@@ -454,6 +454,7 @@ class PersonTranslationRelicensingView(LaunchpadFormView):
         LaunchpadRadioWidget, orientation="vertical"
     )
     custom_widget_back_to = CustomWidgetFactory(TextWidget, visible=False)
+    next_url = None
 
     page_title = "Licensing"
 

@@ -250,7 +250,7 @@ class KarmaCacheUpdater(LaunchpadCronScript):
         # By calculating a scaling factor automatically, this slant will be
         # removed even as more events are added or scoring tweaked.
         points_per_category = {}
-        for dummy, category, dummy, dummy, points in results:
+        for _, category, _, _, points in results:
             if category not in points_per_category:
                 points_per_category[category] = 0
             points_per_category[category] += points

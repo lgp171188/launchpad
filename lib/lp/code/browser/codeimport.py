@@ -345,6 +345,7 @@ class CodeImportNewView(CodeImportBaseView, CodeImportNameValidationMixin):
     """The view to request a new code import."""
 
     schema = NewCodeImportForm
+    next_url = None
     for_input = True
 
     custom_widget_rcs_type = LaunchpadRadioWidget
@@ -587,7 +588,7 @@ def _makeEditAction(label, status, text):
     :param status: If the code import has this as its review_status, don't
         show the button (always show the button if it is None).
     :param text: The text to go after 'The code import has been' in a
-        notifcation, if a change was made.
+        notification, if a change was made.
     """
     if status is not None:
 
@@ -635,6 +636,8 @@ class CodeImportEditView(CodeImportBaseView):
     """
 
     schema = EditCodeImportForm
+    next_url = None
+    cancel_url = None
 
     # Need this to render the context to prepopulate the form fields.
     # Added here as the base class isn't LaunchpadEditFormView.

@@ -1722,7 +1722,7 @@ class TestBranchDeletionConsequences(TestCase):
         )
 
     def test_deleteMergeProposalDependent(self):
-        """break_links enables deleting merge proposal dependant branches."""
+        """break_links enables deleting merge proposal dependent branches."""
         merge_proposal1, merge_proposal2 = self.makeMergeProposals()
         merge_proposal1.prerequisite_branch.destroySelf(break_references=True)
         self.assertEqual(None, merge_proposal1.prerequisite_branch)
@@ -2262,7 +2262,7 @@ class TestLandingCandidates(TestCaseWithFactory):
 
 
 class BranchDateLastModified(TestCaseWithFactory):
-    """Exercies the situations where date_last_modifed is udpated."""
+    """Exercies the situations where date_last_modifed is updated."""
 
     layer = DatabaseFunctionalLayer
 
@@ -2319,7 +2319,7 @@ class BranchDateLastModified(TestCaseWithFactory):
 
     def test_updateScannedDetails_with_future_revision(self):
         # If updateScannedDetails is called with a revision with which has a
-        # revision date set in the future, UTC_NOW is used as the last modifed
+        # revision date set in the future, UTC_NOW is used as the last modified
         # time.  date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
         date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
         branch = self.factory.makeAnyBranch(date_created=date_created)
@@ -2352,7 +2352,7 @@ class TestBranchLifecycleStatus(TestCaseWithFactory):
             self.checkStatusAfterUpdate(state, state)
 
     def test_updateScannedDetails_inactive_branch(self):
-        # If a branch is inactive (merged or abandonded) and a new revision is
+        # If a branch is inactive (merged or abandoned) and a new revision is
         # scanned, the branch is moved to the development state.
         for state in (
             BranchLifecycleStatus.MERGED,
@@ -2597,16 +2597,16 @@ class TestCodebrowse(TestCaseWithFactory):
             branch.browse_source_url, branch.getCodebrowseUrl("files")
         )
 
-    def test_no_revisions_not_browseable(self):
-        # A branch with no revisions is not browseable.
+    def test_no_revisions_not_browsable(self):
+        # A branch with no revisions is not browsable.
         branch = self.factory.makeBranch()
-        self.assertFalse(branch.code_is_browseable)
+        self.assertFalse(branch.code_is_browsable)
 
-    def test_revisions_means_browseable(self):
-        # A branch that has revisions is browseable.
+    def test_revisions_means_browsable(self):
+        # A branch that has revisions is browsable.
         branch = self.factory.makeBranch()
         self.factory.makeRevisionsForBranch(branch, count=5)
-        self.assertTrue(branch.code_is_browseable)
+        self.assertTrue(branch.code_is_browsable)
 
 
 class TestBranchNamespace(TestCaseWithFactory):

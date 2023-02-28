@@ -150,7 +150,7 @@ location.
     >>> admin_browser.getControl("Title").value = "Tubaina"
     >>> admin_browser.getControl("URL").value = "http://tubaina.buildd"
 
-Additionaly, the administrator can select the processor corresponding
+Additionally, the administrator can select the processor corresponding
 to the builder.
 
     >>> admin_browser.getControl(name="field.processors").options

@@ -29,21 +29,21 @@ from lp.testing.layers import FunctionalLayer
 
 
 @implementer(IPerson)
-class DummyPerson:
+class FakePerson:
     is_valid_person = True
 
 
 @implementer(IAccount)
-class DummyAccount:
-    person = DummyPerson()
+class FakeAccount:
+    person = FakePerson()
 
 
-Bruce = LaunchpadPrincipal(42, "bruce", "Bruce", DummyAccount())
+Bruce = LaunchpadPrincipal(42, "bruce", "Bruce", FakeAccount())
 Bruce.person = Bruce.account.person
 
 
 @implementer(IPlacelessLoginSource)
-class DummyPlacelessLoginSource:
+class FakePlacelessLoginSource:
     def getPrincipalByLogin(self, id):
         return Bruce
 
@@ -62,7 +62,7 @@ class TestPlacelessAuth(TestCase):
         addCheckerPublic()
         self.useFixture(
             ZopeUtilityFixture(
-                DummyPlacelessLoginSource(), IPlacelessLoginSource
+                FakePlacelessLoginSource(), IPlacelessLoginSource
             )
         )
         self.useFixture(

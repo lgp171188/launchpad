@@ -64,8 +64,8 @@ taken into account. The trailing slash added to the URL has been
 ignored.
 
 Since the details have been changed, emails should have been sent out.
-Emails go out to the all the subscribers.  Now there are no subscribers
-so there whould be no emails.
+Emails go out to all the subscribers.  Now there are no subscribers
+so there should be no emails.
 
     >>> from zope.component import getUtility
     >>> from lp.code.interfaces.branchjob import IBranchModifiedMailJobSource

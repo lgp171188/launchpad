@@ -80,9 +80,9 @@ in downloads that may have been added for the product.
 Development focus branches
 ==========================
 
-If a development focus branch is set and browseable, the user is shown
+If a development focus branch is set and browsable, the user is shown
 a link to browse the code and a simple command line to get the branch.
-If the branch is not browseable (in this case, it has no revisions but
+If the branch is not browsable (in this case, it has no revisions but
 it could be private or remote), only the command to get the branch is
 shown.
 

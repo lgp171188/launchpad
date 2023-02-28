@@ -627,7 +627,7 @@ class TestCreateCommentNotifications(TestCaseWithFactory):
         self.assertEqual(result, events[0].object)
 
     def test_notify_on_nominate_suppressed_if_requested(self):
-        # Ensure that the notification is supressed if the notify listeners
+        # Ensure that the notification is suppressed if the notify listeners
         # parameger is set to False.
         merge_proposal = self.factory.makeBranchMergeProposal()
         commenter = self.factory.makePerson()

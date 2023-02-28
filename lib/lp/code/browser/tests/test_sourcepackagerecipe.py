@@ -775,7 +775,7 @@ class TestSourcePackageRecipeAddViewMixin:
 
     def test_create_new_ppa_duplicate(self):
         # If a new PPA is being created, and the user already has a ppa of the
-        # name specifed an error is shown.
+        # name specified, an error is shown.
         self.user = self.factory.makePerson(name="eric")
         # Make a PPA called 'ppa' using the default.
         with person_logged_in(self.user):

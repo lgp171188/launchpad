@@ -1286,7 +1286,7 @@ suggestions in Spanish.
     ... )
 
     >>> utility = getUtility(IPOTemplateSet)
-    >>> dummy = utility.populateSuggestivePOTemplatesCache()
+    >>> _ = utility.populateSuggestivePOTemplatesCache()
 
     >>> logout()
 

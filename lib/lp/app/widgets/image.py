@@ -156,7 +156,7 @@ class ImageChangeWidget(SimpleInputWidget):
             self._image.seek(0)
             content = self._image.read()
             filename = self._image.filename
-            type, dummy = guess_content_type(name=filename, body=content)
+            type, encoding = guess_content_type(name=filename, body=content)
 
             # This method may be called more than once in a single request. If
             # that's the case here we'll simply return the cached

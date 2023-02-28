@@ -1087,6 +1087,7 @@ class PersonDeactivateAccountView(LaunchpadFormView):
     custom_widget_comment = CustomWidgetFactory(
         TextAreaWidget, height=5, width=60
     )
+    next_url = None
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
@@ -2888,6 +2889,7 @@ class PersonEditEmailsView(LaunchpadFormView):
     """
 
     schema = IEmailAddress
+    next_url = None
 
     custom_widget_VALIDATED_SELECTED = CustomWidgetFactory(
         LaunchpadRadioWidget, orientation="vertical"
@@ -3275,6 +3277,7 @@ class PersonEditMailingListsView(LaunchpadFormView):
     """A view for editing a person's mailing list subscriptions."""
 
     schema = IEmailAddress
+    next_url = None
 
     custom_widget_mailing_list_auto_subscribe_policy = (
         LaunchpadRadioWidgetWithDescription
@@ -4004,6 +4007,7 @@ class PersonEditOCIRegistryCredentialsView(LaunchpadFormView):
         )
 
     schema = Interface
+    next_url = None
 
     def initialize(self):
         if not user_can_edit_credentials_for_owner(self.context, self.user):
@@ -4679,6 +4683,7 @@ class EmailToPersonView(LaunchpadFormView):
     schema = IEmailToPerson
     field_names = ["subject", "message"]
     custom_widget_subject = CustomWidgetFactory(TextWidget, displayWidth=60)
+    next_url = None
 
     def initialize(self):
         """See `ILaunchpadFormView`."""

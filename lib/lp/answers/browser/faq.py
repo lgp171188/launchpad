@@ -69,6 +69,7 @@ class FAQEditView(LaunchpadEditFormView):
     schema = IFAQ
     label = _("Edit FAQ")
     field_names = ["title", "keywords", "content"]
+    next_url = None
 
     @property
     def page_title(self):

@@ -3797,6 +3797,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         library_file=None,
         date_superseded=None,
         scheduled_deletion_date=None,
+        date_removed=None,
     ):
         if archive is None:
             archive = self.makeArchive()
@@ -3818,6 +3819,8 @@ class LaunchpadObjectFactory(ObjectFactory):
             removeSecurityProxy(
                 archive_file
             ).scheduled_deletion_date = scheduled_deletion_date
+        if date_removed is not None:
+            removeSecurityProxy(archive_file).date_removed = date_removed
         return archive_file
 
     def makeBuilder(

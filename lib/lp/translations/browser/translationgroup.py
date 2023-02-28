@@ -190,6 +190,7 @@ class TranslationGroupAddView(LaunchpadFormView):
 
     schema = ITranslationGroup
     field_names = ["name", "title", "summary", "translation_guide_url"]
+    next_url = None
     label = "Create a new translation group"
     page_title = label
 

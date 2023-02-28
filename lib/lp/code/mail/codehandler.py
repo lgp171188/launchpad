@@ -197,7 +197,7 @@ class AddReviewerEmailCommand(CodeReviewEmailCommand):
 
 
 class CodeEmailCommands(EmailCommandCollection):
-    """A colleciton of email commands for code."""
+    """A collection of email commands for code."""
 
     _commands = {
         "vote": VoteEmailCommand,

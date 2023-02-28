@@ -108,7 +108,7 @@ class TestZopeAdapterFixture(TestCase):
 
 
 @implementer(IMailDelivery)
-class DummyMailer:
+class FakeMailer:
 
     pass
 
@@ -121,7 +121,7 @@ class TestZopeUtilityFixture(TestCase):
         return getGlobalSiteManager().getUtility(IMailDelivery, "Mail")
 
     def test_fixture(self):
-        fake = DummyMailer()
+        fake = FakeMailer()
         # In BaseLayer there should be no mailer by default.
         self.assertRaises(ComponentLookupError, self.getMailer)
         with ZopeUtilityFixture(fake, IMailDelivery, "Mail"):
@@ -131,13 +131,13 @@ class TestZopeUtilityFixture(TestCase):
     def test_restores_previous_utility(self):
         # If there was a previous utility, ZopeUtilityFixture restores it on
         # cleanup.
-        original_fake = DummyMailer()
+        original_fake = FakeMailer()
         getGlobalSiteManager().registerUtility(
             original_fake, IMailDelivery, "Mail"
         )
         try:
             self.assertEqual(original_fake, self.getMailer())
-            fake = DummyMailer()
+            fake = FakeMailer()
             with ZopeUtilityFixture(fake, IMailDelivery, "Mail"):
                 self.assertEqual(fake, self.getMailer())
             self.assertEqual(original_fake, self.getMailer())
