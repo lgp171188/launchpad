@@ -62,7 +62,7 @@ class TestTransactionDecorators(unittest.TestCase):
 
         @write_transaction
         def no_op():
-            raise RuntimeError("an error occured")
+            raise RuntimeError("an error occurred")
 
         self.assertRaises(RuntimeError, no_op)
         self.assertIsNot(

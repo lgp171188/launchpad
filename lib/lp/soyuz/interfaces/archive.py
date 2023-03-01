@@ -1107,7 +1107,7 @@ class IArchiveView(IHasBuildRecords):
 
         Updates 'sources_cached' and 'binaries_cached' counters.
 
-        Also include owner 'name' and 'displayname' to avoid inpecting the
+        Also include owner 'name' and 'displayname' to avoid inspecting the
         Person table indexes while searching.
         """
 

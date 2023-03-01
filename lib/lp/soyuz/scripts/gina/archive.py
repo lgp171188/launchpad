@@ -52,7 +52,7 @@ class ArchiveFilesystemInfo:
         self, root, distroseries, component, arch=None, source_only=False
     ):
 
-        # Holds the distribution informations
+        # Holds the distribution information
         self.distroseries = distroseries
         self.component = component
         self.arch = arch

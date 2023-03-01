@@ -137,7 +137,7 @@ class DistroSeriesPackageCache(StormBase):
 
         'log' is required, it should be a logger object able to print
         DEBUG level messages.
-        'ztm' is the current trasaction manager used for partial commits
+        'ztm' is the current transaction manager used for partial commits
         (in full batches of 100 elements)
         """
         # get the set of published binarypackagereleases

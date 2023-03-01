@@ -82,7 +82,7 @@ class DecoratedResultSet:
         """Extract the plain and normal results from a sub-result.
 
         This gets slightly complicated when there are nested
-        DecoratedResultSets, as we have to propogate the plain result
+        DecoratedResultSets, as we have to propagate the plain result
         all the way up.
         """
         if not results:
@@ -101,7 +101,7 @@ class DecoratedResultSet:
 
     def decorate_single(self, result, row_index=None):
         """Decorate a result or return None if the result is itself None"""
-        # If we have a nested DecoratedResultSet we need to propogate
+        # If we have a nested DecoratedResultSet we need to propagate
         # the plain result.
         ([plain], [result]) = self._extract_plain_and_result([result])
 

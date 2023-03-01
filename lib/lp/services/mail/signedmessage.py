@@ -67,7 +67,7 @@ class SignedMessage(Message):
         signed_content = signature = None
         # Check for MIME/PGP signed message first.
         # See: RFC3156 - MIME Security with OpenPGP
-        # RFC3156 says that in order to be a complient signed message, there
+        # RFC3156 says that in order to be a compliant signed message, there
         # must be two and only two parts and that the second part must have
         # content_type 'application/pgp-signature'.
         if self.is_multipart():

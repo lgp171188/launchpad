@@ -168,7 +168,7 @@ class IArchiveSubscriberSetView(Interface):
         """
 
     def getBySubscriberWithActiveToken(subscriber, archive=None):
-        """Return all the subscriptions for a person with the correspending
+        """Return all the subscriptions for a person with the corresponding
         token for each subscription.
 
         :param subscriber: An `IPerson` for whom to return all

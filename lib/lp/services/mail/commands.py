@@ -21,8 +21,8 @@ from lp.services.mail.interfaces import EmailProcessingError
 def normalize_arguments(string_args):
     """Normalizes the string arguments.
 
-    The string_args argument is simply the argument string whitespace
-    splitted. Sometimes arguments may be quoted, though, so that they can
+    The string_args argument is simply the argument string split on
+    whitespace. Sometimes arguments may be quoted, though, so that they can
     contain space characters. For example "This is a long string".
 
     This function loops through all the argument and joins the quoted strings

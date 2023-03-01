@@ -480,7 +480,7 @@ class TestWorkItemsText(TestCase):
         milestone_2 = "2012.03"
         title_1 = "Work item for a milestone"
         title_2 = "Work item for a later milestone"
-        title_3 = "A work item preceeded by a blank line"
+        title_3 = "A work item preceded by a blank line"
         work_items_text = (
             "Work items for %s:\n%s: POSTPONED\n\nWork items for %s:\n%s: "
             "TODO\n\n%s: TODO"

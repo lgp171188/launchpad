@@ -39,7 +39,7 @@ class TestRemoveTree(TestCase):
         self.assertFalse(os.path.exists(nonexistent_tree))
 
     def test_raises_on_file(self):
-        # If remove_tree is pased a file, it raises an OSError.
+        # If remove_tree is passed a file, it raises an OSError.
         directory = tempfile.mkdtemp()
         filename = os.path.join(directory, "foo")
         fd = open(filename, "w")

@@ -230,13 +230,12 @@ class TestBulkPruner(TestCase):
         # The loop thinks there is more stuff to do.
         self.assertFalse(pruner.isDone())
 
-        # Run the loop to completion, removing the remaining targetted
-        # rows.
+        # Run the loop to completion, removing the remaining targeted rows.
         while not pruner.isDone():
             pruner(1000000)
         transaction.abort()
 
-        # Confirm we have removed all targetted rows.
+        # Confirm we have removed all targeted rows.
         self.assertEqual(self.store.find(BulkFoo, BulkFoo.id < 5).count(), 0)
 
         # Confirm we have the expected number of remaining rows.

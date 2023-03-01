@@ -1539,7 +1539,7 @@ class ProtocolErrorPublication(LaunchpadBrowserPublication):
         self.headers = headers
 
     def callObject(self, request, object):
-        """Raise an approprate exception for this protocol error."""
+        """Raise an appropriate exception for this protocol error."""
         if self.status == 404:
             raise NotFound(self, "", request)
         else:

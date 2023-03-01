@@ -151,7 +151,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
     def test_checkGzipEncoding(self):
         # Files that end in ".txt.gz" are treated special and are returned
-        # with an encoding of "gzip" or "x-gzip" to accomodate requirements of
+        # with an encoding of "gzip" or "x-gzip" to accommodate requirements of
         # displaying Ubuntu build logs in the browser.  The mimetype should be
         # "text/plain" for these files.
         client = LibrarianClient()

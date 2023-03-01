@@ -307,7 +307,7 @@ def swift_location(lfc_id):
 
     # Don't change this unless you are also going to rebuild the Swift
     # storage, as objects will no longer be found in the expected
-    # container. This value and the container prefix are deliberatly
+    # container. This value and the container prefix are deliberately
     # hard coded to avoid cockups with values specified in config files.
     # While the suggested number is 'under a million', the rare large files
     # will take up multiple slots so we choose a more conservative number.

@@ -466,7 +466,7 @@ class BuildRecordsView(LaunchpadView):
 
     page_title = "Builds"
 
-    # Currenly most build records views are interested in binaries
+    # Currently most build records views are interested in binaries
     # only, but subclasses can set this if desired.
     binary_only = True
 

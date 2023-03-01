@@ -301,7 +301,7 @@ class TestAcceptRejectQueueUploads(TestCaseWithFactory):
             self.assertStatus(package_upload_id, PackageUploadStatus.DONE)
 
     def test_proposed_admin_cannot_accept_release_upload(self):
-        # A person with queue admin access for proposed cannot necessarly
+        # A person with queue admin access for proposed cannot necessarily
         # accept uploads to the release pocket.
         login_person(self.proposed_queue_admin)
         self.assertFalse(

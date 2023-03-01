@@ -93,7 +93,7 @@ class ProcessMonitorProtocol(ProcessProtocolWithTwoStageKill):
     to report on what it is doing to some other entity: maybe it's a multistep
     task and you want to update a row in a database to reflect which step it
     is currently on.  This class provides a runNotification() method that
-    helps with this, taking a callable that performs this notfication, maybe
+    helps with this, taking a callable that performs this notification, maybe
     returning a deferred.
 
     Design decisions:
@@ -244,13 +244,13 @@ class ProcessMonitorProtocolWithTimeout(ProcessMonitorProtocol, TimeoutMixin):
 
 
 def run_process_with_timeout(args, timeout=5, clock=None):
-    """Run the given process with the specificed timeout.
+    """Run the given process with the specified timeout.
 
     :param args: tuple with the command-line arguments.
     :param timeout: command timeout in seconds, defaults to 5.
     :param clock: Passed to `ProcessMonitorProtocolWithTimeout.__init__`.
 
-    :return: a `Deferred` of the spawed process using
+    :return: a `Deferred` of the spawned process using
         `ProcessMonitorProtocolWithTimeout`
     """
     assert isinstance(args, tuple), "'args' must be a tuple."

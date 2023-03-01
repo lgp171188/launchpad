@@ -207,7 +207,7 @@ class DateTimeJSONEncoder(json.JSONEncoder):
 
 
 class ShadowedList:
-    """A (partial) sequence impementation which maintains two
+    """A (partial) sequence implementation which maintains two
     sequences: A publicly visible one and a "shadow" sequence.
 
     Background: StormRangeFactory.getSlice() returns a sequence
@@ -522,7 +522,7 @@ class StormRangeFactory:
         and PropertyColumn instances must not appear in the same
         expressions list.
 
-        memos are the memo values asociated with the columns in
+        memos are the memo values associated with the columns in
         expressions.
 
         Given a limits value of

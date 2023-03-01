@@ -663,7 +663,7 @@ class TestDiskLibrarianGarbageCollection(
         # Directories with invalid names in the storage area are
         # ignored. They are reported as warnings though.
 
-        # Not a hexidecimal number.
+        # Not a hexadecimal number.
         noisedir1_path = os.path.join(config.librarian_server.root, "zz")
 
         # Too long
