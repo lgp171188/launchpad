@@ -2,8 +2,8 @@ Poll preconditions
 ==================
 
 There's some preconditions that we need to meet to vote in polls and remove
-options from them, Not meeting these preconditions is a programming error and
-should be threated as so.
+options from them.  Not meeting these preconditions is a programming error and
+should be treated as such.
 
     >>> from zope.component import getUtility
     >>> from datetime import timedelta

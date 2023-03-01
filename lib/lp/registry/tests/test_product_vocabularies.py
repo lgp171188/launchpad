@@ -38,7 +38,7 @@ class TestProductVocabulary(TestCaseWithFactory):
         self.assertEqual(self.product, term.value)
 
     def test_getTermByToken(self):
-        # Tokens are case insentive because the product name is lowercase.
+        # Tokens are case insensitive because the product name is lowercase.
         term = self.vocabulary.getTermByToken("BedBUGs")
         self.assertEqual(self.product, term.value)
 

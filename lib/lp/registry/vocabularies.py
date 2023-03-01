@@ -1530,7 +1530,7 @@ class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
 
     @property
     def displayname(self):
-        """The vocabulary's display nane."""
+        """The vocabulary's display name."""
         return "Select a commercial project"
 
     @cachedproperty
@@ -1648,7 +1648,7 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
         try:
-            distroname, distroseriesname = token.split("/", 1)
+            distro_name, distro_series_name = token.split("/", 1)
         except ValueError:
             raise LookupError(token)
 
@@ -1657,8 +1657,8 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
             .find(
                 DistroSeries,
                 DistroSeries.distribution == Distribution.id,
-                Distribution.name == distroname,
-                DistroSeries.name == distroseriesname,
+                Distribution.name == distro_name,
+                DistroSeries.name == distro_series_name,
             )
             .one()
         )

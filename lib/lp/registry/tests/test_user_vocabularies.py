@@ -192,8 +192,8 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
     def _vocabTermValues(self):
         """Return the token values for the vocab."""
         # XXX Abel Deuring 2010-05-21, bug 583502: We cannot simply iterate
-        # over the items of AllUserTeamsPariticipationVocabulary, so
-        # so iterate over all Persons and check membership.
+        # over the items of AllUserTeamsParticipationVocabulary, so
+        # iterate over all Persons and check membership.
         vocabulary_registry = getVocabularyRegistry()
         vocab = vocabulary_registry.get(None, "AllUserTeamsParticipation")
         return [p for p in IStore(Person).find(Person) if p in vocab]
@@ -226,7 +226,7 @@ class TestAllUserTeamsParticipationVocabulary(TestCaseWithFactory):
         self.assertEqual([team], self._vocabTermValues())
 
     def test_teams_of_anonymous(self):
-        # AllUserTeamsPariticipationVocabulary is empty for anoymous users.
+        # AllUserTeamsParticipationVocabulary is empty for anonymous users.
         login(ANONYMOUS)
         self.assertEqual([], self._vocabTermValues())
 

@@ -594,7 +594,7 @@ class SourcePackageUrgency(DBEnumeratedType):
 
         This source package release does not contain any significant or
         important updates, it might be a cleanup or documentation update
-        fixing typos and speling errors, or simply a minor upstream
+        fixing typos and spelling errors, or simply a minor upstream
         update.
         """,
     )

@@ -97,7 +97,7 @@ class MockProcessTransport:
 class TestExecOnlySession(AvatarTestCase):
     """Tests for ExecOnlySession.
 
-    Conch delegates responsiblity for executing commands to an object that
+    Conch delegates responsibility for executing commands to an object that
     implements ISession. The smart server only needs to handle `execCommand`
     and a couple of other book-keeping methods. The methods that relate to
     running a shell or creating a pseudo-terminal raise NotImplementedErrors.

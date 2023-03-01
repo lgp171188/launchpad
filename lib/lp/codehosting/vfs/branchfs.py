@@ -271,7 +271,7 @@ class TransportDispatch:
     served read-write or read-only. It also knows how to serve .bzr control
     directories for products (to enable default stacking).
 
-    This is used for the rich codehosting VFS that we serve publically.
+    This is used for the rich codehosting VFS that we serve publicly.
     """
 
     def __init__(self, rw_transport):
@@ -608,7 +608,7 @@ class LaunchpadServer(_BaseLaunchpadServer):
             # though one might think that it would make sense to raise
             # NoSuchFile. Sadly, raising that makes the client do "clever"
             # things like say "Parent directory of
-            # bzr+ssh://bazaar.launchpad.test/~noone/firefox/branch does not
+            # bzr+ssh://bazaar.launchpad.test/~nobody/firefox/branch does not
             # exist. You may supply --create-prefix to create all leading
             # parent directories", which is just misleading.
             fault = trap_fault(

@@ -20,7 +20,7 @@ class Hose:
     """Hose.
 
     This class should be instantiated with a dictionary of url and glob pairs,
-    it will use a walker to recursively decend each URL and map each URL
+    it will use a walker to recursively descend each URL and map each URL
     to a file.
 
     It can be used as an iterator to yield (key, url) for each URL where

@@ -191,7 +191,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             "field.actions.register": "Register Milestone",
         }
         view = create_initialized_view(self.series, "+addmilestone", form=form)
-        # It's important to make sure no errors occured,
+        # It's important to make sure no errors occurred,
         # but also confirm that the milestone was created.
         self.assertEqual([], view.errors)
         self.assertEqual("1.1", self.product.milestones[0].name)

@@ -128,7 +128,7 @@ A mirror must have an ftp, HTTPS or http URL.
 
 The URL cannot contain a fragment.
 
-    >>> bad_form["field.http_base_url"] = "http://secret.me/#fragement"
+    >>> bad_form["field.http_base_url"] = "http://secret.me/#fragment"
     >>> view = create_initialized_view(ubuntu, "+newmirror", form=bad_form)
     >>> for error in view.errors:
     ...     print(error.args[2])
@@ -147,7 +147,7 @@ The URL cannot contain a query string.
 The HTTPS URL may not have an HTTP scheme.
 
     >>> bad_form["field.http_base_url"] = ""
-    >>> bad_form["field.https_base_url"] = "http://secret.me/#fragement"
+    >>> bad_form["field.https_base_url"] = "http://secret.me/#fragment"
     >>> view = create_initialized_view(ubuntu, "+newmirror", form=bad_form)
     >>> for error in view.errors:
     ...     print(error.args[2])
@@ -158,7 +158,7 @@ The HTTPS URL may not have an HTTP scheme.
 The HTTPS URL cannot contain a fragment.
 
     >>> bad_form["field.http_base_url"] = ""
-    >>> bad_form["field.https_base_url"] = "https://secret.me/#fragement"
+    >>> bad_form["field.https_base_url"] = "https://secret.me/#fragment"
     >>> view = create_initialized_view(ubuntu, "+newmirror", form=bad_form)
     >>> for error in view.errors:
     ...     print(error.args[2])

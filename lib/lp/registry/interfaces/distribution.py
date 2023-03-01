@@ -1289,7 +1289,7 @@ class IDistributionSet(Interface):
     def get(distributionid):
         """Return the IDistribution with the given distributionid."""
 
-    def getByName(distroname):
+    def getByName(name):
         """Return the IDistribution with the given name or None."""
 
     def new(

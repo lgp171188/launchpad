@@ -58,7 +58,7 @@ on the series' details.
     Binary packages: 4
 
 On series that have no source or binary packages, the portlet will
-change its text slightly to annouce this:
+change its text slightly to announce this:
 
     >>> anon_browser.open("http://launchpad.test/debian/sarge")
     >>> print(

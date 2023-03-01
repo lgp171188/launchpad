@@ -822,7 +822,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
         for name in attribute_names:
             # Not all attributes declared in configure.zcml to be
             # settable actually exist or are settable. Attempts to set
-            # them raise an AttributeError. Similary, the naive attempt
+            # them raise an AttributeError. Similarly, the naive attempt
             # to set an attribute to None may raise a NoneError
             #
             # Both errors can be ignored here: This method intends only
@@ -971,7 +971,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
 
     def test_access_for_user_with_policy_grant(self):
         # Users with a policy grant for the parent product can access
-        # properties requring the permission launchpad.LimitedView,
+        # properties requiring the permission launchpad.LimitedView,
         # launchpad.View or launchpad.AnyALlowedPerson of a series.
         user = self.factory.makePerson()
         with person_logged_in(self.proprietary_product_owner):
@@ -1008,7 +1008,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
                 self.assertAccessUnauthorized(names, self.proprietary_series)
 
             # They can change attributes requiring the permission
-            # launchpad.AnyAllowedPerson of a series for a provate project...
+            # launchpad.AnyAllowedPerson of a series for a private project...
             self.assertChangeAuthorized(
                 self.expected_set_permissions["launchpad.AnyAllowedPerson"],
                 self.proprietary_series,
@@ -1023,7 +1023,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
 
     def test_access_for_user_with_artifact_grant(self):
         # Users with an artifact grant related to the parent product
-        # can access properties requring the permission launchpad.LimitedView
+        # can access properties requiring the permission launchpad.LimitedView
         # of a series.
         user = self.factory.makePerson()
         with person_logged_in(self.proprietary_product_owner):

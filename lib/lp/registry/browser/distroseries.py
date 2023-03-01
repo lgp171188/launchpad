@@ -957,7 +957,7 @@ class DistroSeriesDifferenceBaseView(
     )
     next_url = None
 
-    # Differences type to display. Can be overrided by sublasses.
+    # Differences type to display. Can be overridden by subclasses.
     differences_type = DistroSeriesDifferenceType.DIFFERENT_VERSIONS
     show_parent = True
     show_parent_version = True

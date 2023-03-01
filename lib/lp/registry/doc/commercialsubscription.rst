@@ -31,7 +31,7 @@ Commercial subscriptions have zope.Public permissions for reading.
     >>> print(bzr.commercial_subscription.product.name)
     bzr
 
-For modification, launchpad.Commerical is required.  Anonymous users,
+For modification, launchpad.Commercial is required.  Anonymous users,
 regular users, and the project owner all are denied.
 
     >>> check_permission("launchpad.Commercial", bzr.commercial_subscription)
@@ -198,7 +198,7 @@ Product Licence Reviews
 
 The forReview() method allows searching for products whose licence needs to
 be reviewed. You can search by text in the Product table's full text index
-as well as the license_info field. The results are ordered by date ceated
+as well as the license_info field. The results are ordered by date created
 then display name.
 
     >>> from lp.services.database.sqlbase import flush_database_updates

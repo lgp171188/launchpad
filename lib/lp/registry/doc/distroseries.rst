@@ -818,7 +818,7 @@ Distributions have drivers, who are people that have permission to approve
 bugs and features for specific releases. The rules are that:
 
  1. a "driver" can be set on either Distribution or DistroSeries
- 2. drivers are only actually relevant on a DistroSeries, because thats the
+ 2. drivers are only actually relevant on a DistroSeries, because that's the
     granularity at which we track spec/bug targeting
  3. the important attribute is ".drivers" on a distroseries, it is
     calculated based on the combination of owners and drivers in the
@@ -898,8 +898,8 @@ driver. Here, we expect the driver to be the owner of the distribution
     mark
 
 
-Lastest Uploads
----------------
+Latest Uploads
+--------------
 
 IDistroSeries provides the 'getLatestUpload' method which returns a
 list of the last 5 (five) IDistributionSourcePackageRelease (IDSPR)

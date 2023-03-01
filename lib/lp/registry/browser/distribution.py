@@ -964,7 +964,7 @@ class DistributionPPASearchView(LaunchpadView):
             # This happens if someone hand-hacks the URL so that it has
             # more than one name_filter field.  We could do something
             # like form.getOne() so that the request would be rejected,
-            # but we can acutally do better and join the terms supplied
+            # but we can actually do better and join the terms supplied
             # instead.
             self.name_filter = " ".join(self.name_filter)
         self.show_inactive = self.request.get("show_inactive")
@@ -1195,7 +1195,7 @@ class DistributionEditView(
     def validate(self, data):
         """Constrain bug expiration to Launchpad Bugs tracker."""
         # enable_bug_expiration is disabled by JavaScript when official_malone
-        # is set False. The contraint is enforced here in case the JavaScript
+        # is set False. The constraint is enforced here in case the JavaScript
         # fails to load or activate.
         official_malone = data.get("official_malone", False)
         if not official_malone:

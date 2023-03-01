@@ -616,7 +616,7 @@ class DistroSeries(
         translatable messages, and the source package release's component.
         """
         # We join to SourcePackageName, ProductSeries, and Product to cache
-        # the objects that are implcitly needed to work with a
+        # the objects that are implicitly needed to work with a
         # Packaging object.
         joins, conditions = self._current_sourcepackage_joins_and_conditions
         # XXX: EdwinGrubbs 2010-07-29 bug=374777
@@ -664,7 +664,7 @@ class DistroSeries(
         """See getPrioritized*."""
         # Bugs and PO messages are heuristically scored. These queries
         # can easily timeout so filters and weights are used to create
-        # an acceptable prioritization of packages that is fast to excecute.
+        # an acceptable prioritization of packages that is fast to execute.
         return 0.5
 
     @property
@@ -675,7 +675,7 @@ class DistroSeries(
         """
         # Bugs and PO messages are heuristically scored. These queries
         # can easily timeout so filters and weights are used to create
-        # an acceptable prioritization of packages that is fast to excecute.
+        # an acceptable prioritization of packages that is fast to execute.
         po_message_weight = self._current_sourcepackage_po_weight
         message_score = """
             LEFT JOIN (

@@ -1637,7 +1637,7 @@ class IPersonViewRestricted(
         """Return the paths to all teams related to this person."""
 
     def isBugContributor(user):
-        """Is the person a contributer to bugs in Launchpad?
+        """Is the person a contributor to bugs in Launchpad?
 
         Return True if the user has any bugs assigned to them, either
         directly or by team participation.

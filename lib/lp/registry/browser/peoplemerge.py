@@ -1,7 +1,7 @@
 # Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""People Merge related wiew classes."""
+"""People Merge related view classes."""
 
 __all__ = [
     "AdminPeopleMergeView",
@@ -138,7 +138,7 @@ class AdminMergeBaseView(ValidatingMergeView):
 
     def render(self):
         # Subclasses may define other actions that they will render manually
-        # only in certain circunstances, so don't include them in the list of
+        # only in certain circumstances, so don't include them in the list of
         # actions to be rendered.
         self.actions = [self.merge_action]
         return super().render()

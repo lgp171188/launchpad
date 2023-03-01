@@ -68,7 +68,7 @@ can reach the +edit page.
     ['Active Development']
 
 Then we edit the information about the series. First we try to use a
-name already in use and an invalud release URL pattern:
+name already in use and an invalid release URL pattern:
 
     >>> browser.getControl("Name").value = "1.0"
     >>> browser.getControl(

@@ -111,7 +111,7 @@ class ObjectReassignmentView(LaunchpadFormView):
 
     @action("Change", name="change")
     def changeOwner(self, action, data):
-        """Change the owner of self.context to the one choosen by the user."""
+        """Change the owner of self.context to the one chosen by the user."""
         newOwner = data["owner"]
         oldOwner = getattr(self.context, self.ownerOrMaintainerAttr)
         setattr(self.context, self.ownerOrMaintainerAttr, newOwner)

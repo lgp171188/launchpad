@@ -459,7 +459,7 @@ class TestPersonIndexView(BrowserTestCase):
         )
 
     def test_description_widget(self):
-        # The view provides a widget to render ond edit the person description.
+        # The view provides a widget to render and edit the person description.
         person = self.factory.makePerson()
         view = create_initialized_view(person, "+index")
         self.assertIsInstance(view.description_widget, TextAreaEditorWidget)
@@ -1034,7 +1034,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         self.assertIn([added_email], to_addrs)
 
     def test_validate_token(self):
-        """Hitting +validateemail should actuall validate the email."""
+        """Hitting +validateemail should actually validate the email."""
         stub.test_emails = []
         added_email = self.factory.getUniqueEmailAddress()
         self.createAddEmailView(added_email)

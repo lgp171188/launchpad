@@ -168,7 +168,7 @@ A non-owner does not see that a commercial subscription is due.
     ... )
     None
 
-If the project qualifies for free hosting, tghe portlet is not displayed.
+If the project qualifies for free hosting, the portlet is not displayed.
 
     >>> firefox.licenses = [License.GNU_GPL_V2]
     >>> flush_database_updates()

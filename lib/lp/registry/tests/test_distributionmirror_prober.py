@@ -1011,8 +1011,8 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
 
     def test_unexpected_failures_are_logged_but_not_raised(self):
         # Errors which are not expected as logged using the
-        # prober's logger to make sure people see it while still alowing other
-        # mirrors to be probed.
+        # prober's logger to make sure people see it while still allowing
+        # other mirrors to be probed.
         logger = self.getLogger()
         callbacks = self.makeMirrorProberCallbacks()
         failure = callbacks.ensureOrDeleteMirrorCDImageSeries(

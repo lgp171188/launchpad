@@ -233,7 +233,7 @@ class TestPackagingEntryExists(PackagingUtilMixin, TestCaseWithFactory):
         )
 
     def test_packagingEntryExists_specific(self):
-        """Packaging entries are also specifc to both kinds of series."""
+        """Packaging entries are also specific to both kinds of series."""
         self.setUpPackaging()
         self.assertTrue(
             self.packaging_util.packagingEntryExists(

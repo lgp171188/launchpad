@@ -800,7 +800,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             )
 
     def test_package_diffs_hidden_to_unprivileged_user_if_not_available(self):
-        # No diff information is shown if pacakge diffs are not available and
+        # No diff information is shown if package diffs are not available and
         # the user does not have permission to request their creation.
         ds_diff = self.factory.makeDistroSeriesDifference(
             versions={

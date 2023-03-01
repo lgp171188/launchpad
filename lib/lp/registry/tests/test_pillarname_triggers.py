@@ -62,7 +62,7 @@ class PillarNameTriggersTestCase(unittest.TestCase):
         )
         self.assertTrue(is_in_sync("whatever"))
 
-        # Updating the Distribution.name will propogate changes to PillarName
+        # Updating the Distribution.name will propagate changes to PillarName
         cur.execute(
             """
             UPDATE Distribution SET name='whatever2' where name='whatever'
@@ -127,7 +127,7 @@ class PillarNameTriggersTestCase(unittest.TestCase):
         )
         self.assertTrue(is_in_sync("whatever"))
 
-        # Updating the Product.name will propogate changes to PillarName
+        # Updating the Product.name will propagate changes to PillarName
         cur.execute(
             """
             UPDATE Product SET name='whatever2' where name='whatever'
@@ -194,7 +194,7 @@ class PillarNameTriggersTestCase(unittest.TestCase):
         )
         self.assertTrue(is_in_sync("whatever"))
 
-        # Updating the ProjectGroup.name will propogate changes to PillarName
+        # Updating the ProjectGroup.name will propagate changes to PillarName
         cur.execute(
             """
             UPDATE Project SET name='whatever2' where name='whatever'

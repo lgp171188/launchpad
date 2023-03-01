@@ -656,7 +656,7 @@ class TestProduct(TestCaseWithFactory):
             )
 
     def test_checkInformationType_series_only_bugs(self):
-        # A product with bugtasks that are only targetted to a series can
+        # A product with bugtasks that are only targeted to a series can
         # not change information type.
         series = self.factory.makeProductSeries()
         bug = self.factory.makeBug(target=series.product)

@@ -683,9 +683,9 @@ class IDistributionMirror(Interface):
         all of this mirror's content objects (MirrorDistroArchSeries,
         MirrorDistroSeriesSource or MirrorCDImageDistroSeriess).
 
-        For RELEASE mirrors, the overall freshness is either UPTODATE, if the
-        mirror contains all ISO images that it should or UNKNOWN if it doesn't
-        contain one or more ISO images.
+        For RELEASE mirrors, the overall freshness is either UP (up to
+        date), if the mirror contains all ISO images that it should or
+        UNKNOWN if it doesn't contain one or more ISO images.
         """
 
     @export_read_operation()

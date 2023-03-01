@@ -52,7 +52,7 @@ class QuestionLinkedBugStatusChangeNotification(QuestionNotification):
     """Notification sent when a linked bug status is changed."""
 
     def initialize(self):
-        """Create a notifcation for a linked bug status change."""
+        """Create a notification for a linked bug status change."""
         assert IObjectModifiedEvent.providedBy(
             self.event
         ), "Should only be subscribed for IObjectModifiedEvent."

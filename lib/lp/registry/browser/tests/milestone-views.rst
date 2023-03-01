@@ -774,7 +774,7 @@ project owner or series driver.
     False
 
 Milestones with private bugs can be deleted. There is one caveate, the person
-deleting the milestone must have permssion to access the bug for it to be
+deleting the milestone must have permission to access the bug for it to be
 untargeted. It is possible for the owner or release manager to not have access
 to a private bug that was targeted to a milestone by a driver.
 

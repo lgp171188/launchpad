@@ -261,7 +261,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
             )
 
     def test_new_owner_override(self):
-        # In certain sitations, we might want to be able to create
+        # In certain situations, we might want to be able to create
         # credentials for other people
         registrant = self.factory.makePerson()
         other_person = self.factory.makePerson()

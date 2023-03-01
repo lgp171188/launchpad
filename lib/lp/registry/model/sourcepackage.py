@@ -127,7 +127,7 @@ class SourcePackageQuestionTargetMixin(QuestionTargetMixin):
 
     def getAnswerContactsForLanguage(self, language):
         """See `IQuestionTarget`."""
-        # Sourcepackages are supported by their distribtions too.
+        # Sourcepackages are supported by their distributions too.
         persons = set(self.distribution.getAnswerContactsForLanguage(language))
         persons.update(
             set(

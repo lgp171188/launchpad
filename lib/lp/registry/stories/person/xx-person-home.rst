@@ -182,7 +182,7 @@ yourself; others won't see it:
     >>> print(extract_text(find_tag_by_id(browser.contents, "ubuntu-coc")))
     Signed Ubuntu Code of Conduct: No
 
-You can grab certain bits of information programatically:
+You can grab certain bits of information programmatically:
 
     >>> print(extract_text(find_tag_by_id(browser.contents, "karma-total")))
     130

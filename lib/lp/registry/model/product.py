@@ -381,7 +381,7 @@ class Product(
     def date_next_suggest_packaging(self):
         """See `IProduct`
 
-        Returns None; exists only to maintain API compatability.
+        Returns None; exists only to maintain API compatibility.
         """
         return None
 
@@ -402,7 +402,7 @@ class Product(
     def date_next_suggest_packaging(self, value):
         """See `IProduct`
 
-        Ignores supplied value; exists only to maintain API compatability.
+        Ignores supplied value; exists only to maintain API compatibility.
         """
         pass
 

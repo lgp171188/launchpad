@@ -217,7 +217,7 @@ products are fully configured as translatable.
     >>> print(view.translations_usage.name)
     UNKNOWN
 
-If a product is translatable, translations is enabled in the involvment menu.
+If a product is translatable, translations is enabled in the involvement menu.
 
     >>> series = factory.makeProductSeries(product=product)
     >>> pot = factory.makePOTemplateAndPOFiles(

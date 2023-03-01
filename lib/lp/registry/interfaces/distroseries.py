@@ -375,7 +375,7 @@ class IDistroSeriesPublic(
             Interface,
             title=_(
                 "DistroArchSeries designed to build "
-                "architecture-independent packages whithin this "
+                "architecture-independent packages within this "
                 "distroseries context."
             ),
             default=None,
@@ -464,7 +464,7 @@ class IDistroSeriesPublic(
 
     last_delta_language_pack_exported = Object(
         title=_(
-            "Lastest exported language pack with updated translation files."
+            "Latest exported language pack with updated translation files."
         ),
         required=False,
         readonly=True,

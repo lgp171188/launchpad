@@ -200,7 +200,7 @@ distribution:
 Bugs targeted to multiple series
 ................................
 
-Setup this embarrasing story.
+Setup this embarrassing story.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> browser.open("http://bugs.launchpad.test/firefox/")
