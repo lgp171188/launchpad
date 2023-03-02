@@ -89,7 +89,7 @@ class IPackageDiffSet(Interface):
         """Retrieve a `PackageDiff` for the given id."""
 
     def getDiffsToReleases(sprs, preload_for_display=False):
-        """Return all diffs that targetting a set of source package releases.
+        """Return all diffs that targeting a set of source package releases.
 
         :param sprs: a sequence of `SourcePackageRelease` objects.
         :param preload_for_display: True if all the attributes needed for
@@ -101,7 +101,7 @@ class IPackageDiffSet(Interface):
         """
 
     def getDiffBetweenReleases(from_spr, to_spr):
-        """Return the diff that is targetted to the two SPRs.
+        """Return the diff that is targeted to the two SPRs.
 
         :param from_spr: a `SourcePackageRelease` object.
         :param to_spr:  a `SourcePackageRelease` object.

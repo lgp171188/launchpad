@@ -74,7 +74,7 @@ class InsecureCopyPolicy(BasicCopyPolicy):
 class MassSyncCopyPolicy(BasicCopyPolicy):
     """A policy for mass 'sync' copies.
 
-    Exists soley so the classic job runner processes autosyncs last.
+    Exists solely so the classic job runner processes autosyncs last.
     """
 
     enum_value = PackageCopyPolicy.MASS_SYNC

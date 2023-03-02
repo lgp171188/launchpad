@@ -35,7 +35,7 @@ class TestBinaryAndSourcePackageNameVocabulary(TestCaseWithFactory):
         self.assertEqual(self.bspn, term.value)
 
     def test_getTermByToken(self):
-        # Tokens are case insentive because the name is lowercase.
+        # Tokens are case insensitive because the name is lowercase.
         term = self.vocabulary.getTermByToken("BedBUGs")
         self.assertEqual(self.bspn, term.value)
 

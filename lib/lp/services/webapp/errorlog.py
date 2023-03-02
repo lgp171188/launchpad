@@ -499,7 +499,7 @@ class ScriptRequest(ErrorReportRequest):
     :param URL: initial value of the URL instance variable.
 
     :ivar URL: pointer to a representation of the resource for which the error
-        occured. Defaults to None.
+        occurred. Defaults to None.
     :ivar oopsid: the oopsid set by ErrorReportingUtility.raising. Initially
         set to None.
     """

@@ -660,7 +660,7 @@ class IPackageUploadBuild(Interface):
         Returns a list of the secure binary package publishing history
         objects in case it is of use to the caller. This may include records
         published into other distroarchseriess if this build contained arch
-        independant packages.
+        independent packages.
 
         If a logger is provided, information pertaining to the publishing
         process will be logged to it.

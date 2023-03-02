@@ -72,7 +72,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def test_getOrderValuesFor__one_sort_column(self):
         # StormRangeFactory.getOrderValuesFor() returns the values
-        # of the fields used in order_by expresssions for a given
+        # of the fields used in order_by expressions for a given
         # result row.
         resultset = self.makeStormResultSet()
         resultset.order_by(Person.id)
@@ -691,7 +691,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         return [str(elem) for elem in sequence]
 
     def test_ShadowedList__init(self):
-        # ShadowedList instances need two lists as constructor parametrs.
+        # ShadowedList instances need two lists as constructor parameters.
         list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         shadowed_list = ShadowedList(list1, list2)
@@ -710,7 +710,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         )
 
     def test_ShadowedList__len(self):
-        # The length of a ShadowedList ist the same as the list of
+        # The length of a ShadowedList is the same as the list of
         # the sequences it stores.
         list1 = list(range(3))
         list2 = self.makeStringSequence(list1)

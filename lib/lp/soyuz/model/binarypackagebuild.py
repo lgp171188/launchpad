@@ -558,7 +558,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         name, version, relation = self._parseDependencyToken(token)
 
         # There may be several published versions in the available
-        # archives and pockets. If any one of them satisifies our
+        # archives and pockets. If any one of them satisfies our
         # constraints, the dependency is satisfied.
         dep_candidates = self.archive.findDepCandidates(
             self.distro_arch_series,
@@ -1060,7 +1060,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         ]
 
         # XXX cprov 2006-09-25: It would be nice if we could encapsulate
-        # the chunk of code below (which deals with the optional paramenters)
+        # the chunk of code below (which deals with the optional parameters)
         # and share it with ISourcePackage.getBuildRecords()
 
         # exclude gina-generated and security (dak-made) builds
@@ -1440,7 +1440,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         # this series already has it set.
         need_arch_indep = not any(bpb.arch_indep for bpb in relevant_builds)
 
-        # Find the architectures for which the source chould end up with
+        # Find the architectures for which the source could end up with
         # new binaries. Exclude architectures not allowed in this
         # archive and architectures that have already built. Order by
         # Processor.id so determine_architectures_to_build is

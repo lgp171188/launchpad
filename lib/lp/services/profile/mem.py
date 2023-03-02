@@ -189,7 +189,8 @@ def readCounts(file, marker=None):
     """Reverse of printCounts().
 
     If marker is not None, this will return the counts as soon as a line
-    containging is encountered. Otherwise, it reads until the end of file.
+    consisting of it is encountered. Otherwise, it reads until the end of
+    file.
     """
     counts = []
     # We read one line at a time because we want the file pointer to

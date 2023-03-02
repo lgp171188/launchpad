@@ -10,7 +10,7 @@ from lp.services.job.interfaces.job import IJobSource, IRunnableJob
 
 
 class IPackageDiffJobSource(IJobSource):
-    """An interface for acquring IPackageDiffJobs."""
+    """An interface for acquiring IPackageDiffJobs."""
 
     def create(packagediff):
         """Create a new diff generation job for a package diff."""

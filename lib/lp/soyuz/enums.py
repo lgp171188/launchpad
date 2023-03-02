@@ -809,7 +809,7 @@ class PackageUploadStatus(DBEnumeratedType):
 
         An upload which reaches this state has, for some reason or another
         not passed the requirements (technical or human) for entry into the
-        DistroSeries it was targetting. As for the 'done' state, this state
+        DistroSeries it was targeting. As for the 'done' state, this state
         is present to allow logging tools to record the rejection and then
         clean up any subsequently unnecessary records.""",
     )

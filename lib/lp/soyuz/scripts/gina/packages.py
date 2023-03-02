@@ -3,7 +3,7 @@
 
 """Package information classes.
 
-This classes are responsable for fetch and hold the information inside
+These classes are responsible for fetching and holding the information inside
 the sources and binarypackages.
 """
 

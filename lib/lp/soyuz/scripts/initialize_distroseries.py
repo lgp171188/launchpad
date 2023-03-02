@@ -76,7 +76,7 @@ class InitializeDistroSeries:
         - first_derivation = False.
 
     Preconditions:
-      The distroseries must exist, and be completly unused, with no source
+      The distroseries must exist, and be completely unused, with no source
       or binary packages existing, as well as no distroarchseries set up.
       Section and component selections must be empty. It must not have any
       parent series.

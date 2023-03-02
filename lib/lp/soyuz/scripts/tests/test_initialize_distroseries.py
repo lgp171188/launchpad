@@ -186,7 +186,7 @@ class InitializationHelperTestCase(TestCaseWithFactory):
         self, distroseries, package_name, packageset_name, create_build=False
     ):
         # Helper method to create a package in a packageset in the given
-        # distroseries, optionaly creating the missing build for this source
+        # distroseries, optionally creating the missing build for this source
         # package.
         spn = self.factory.getOrMakeSourcePackageName(package_name)
         sourcepackagerelease = self.factory.makeSourcePackageRelease(
@@ -413,10 +413,10 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # Pending builds in a parent for source packages included in the
         # packagesets selected for the copy will make the queue check fail.
         parent, parent_das = self.setupParent()
-        p1, packageset1, unsed = self.createPackageInPackageset(
+        p1, packageset1, _ = self.createPackageInPackageset(
             parent, "p1", "packageset1", True
         )
-        p2, packageset2, unsed = self.createPackageInPackageset(
+        p2, packageset2, _ = self.createPackageInPackageset(
             parent, "p2", "packageset2", False
         )
 
@@ -1960,7 +1960,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         child = self.setUpSeriesWithPreviousSeries(
             previous_parents=[prev_parent1, prev_parent2]
         )
-        # The same parents can be explicitely set.
+        # The same parents can be explicitly set.
         ids = InitializeDistroSeries(child, [prev_parent2.id, prev_parent1.id])
 
         self.assertTrue(ids._has_same_parents_as_previous_series())

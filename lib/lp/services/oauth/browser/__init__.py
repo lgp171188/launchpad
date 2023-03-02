@@ -335,7 +335,7 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
             self.token is not None
             and self.token.consumer.is_integrated_desktop
         ):
-            # Nip problems in the bud by appling special rules about
+            # Nip problems in the bud by applying special rules about
             # what desktop integrations are allowed to do.
             if callback is not None:
                 # A desktop integration is not allowed to specify a callback.

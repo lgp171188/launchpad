@@ -107,7 +107,7 @@ class Library:
                 )
             else:
                 # The URL-encoding of the path may have changed somewhere
-                # along the line, so reencode it canonically. LFA.filename
+                # along the line, so re-encode it canonically. LFA.filename
                 # can't contain slashes, so they're safe to leave unencoded.
                 # And urllib.parse.quote erroneously excludes ~ from its
                 # safe set, while RFC 3986 says it should be unescaped and

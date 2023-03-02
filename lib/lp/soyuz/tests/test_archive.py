@@ -539,7 +539,7 @@ class TestArchiveEnableDisable(TestCaseWithFactory):
         self.assertRaises(AssertionError, removeSecurityProxy(archive).enable)
 
     def test_disableArchive(self):
-        # Disabling an archive should set all the Archive's pending bulds to
+        # Disabling an archive should set all the Archive's pending builds to
         # SUSPENDED.
         archive = self.factory.makeArchive(enabled=True)
         build = self.factory.makeBinaryPackageBuild(

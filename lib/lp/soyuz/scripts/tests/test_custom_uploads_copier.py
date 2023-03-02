@@ -341,7 +341,7 @@ class TestCustomUploadsCopier(TestCaseWithFactory, CommonTestHelpers):
         )
 
     def test_isObsolete_returns_False_if_target_has_older_equivalent(self):
-        # isObsolete returns False if the target has an equivlalent of
+        # isObsolete returns False if the target has an equivalent of
         # the upload in question, but it's older than the version the
         # source series has.
         source_series = self.factory.makeDistroSeries()

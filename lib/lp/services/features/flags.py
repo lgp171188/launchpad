@@ -125,7 +125,7 @@ flag_info = sorted(
             "space delimited",
             "Allows us to change the YUI version we run against, e.g. "
             "yui-3.4.",
-            "As speficied in versions.cfg",
+            "As specified in versions.cfg",
             "",
             "",
         ),

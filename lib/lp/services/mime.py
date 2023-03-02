@@ -27,7 +27,7 @@ def _patched_mimetypes_init(*args, **kwargs):
     # viewing .debdiff inline is the most common use-case.
     mimetypes.add_type("text/plain", ".debdiff")
 
-    # Add support for Launchpad's OWL decription of its RDF metadata.
+    # Add support for Launchpad's OWL description of its RDF metadata.
     mimetypes.add_type("application/rdf+xml", ".owl")
 
 

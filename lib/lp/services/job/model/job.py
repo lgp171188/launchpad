@@ -127,7 +127,7 @@ class Job(SQLBase):
     def createMultiple(self, store, num_jobs, requester=None):
         """Create multiple `Job`s at once.
 
-        :param store: `Store` to ceate the jobs in.
+        :param store: `Store` to create the jobs in.
         :param num_jobs: Number of `Job`s to create.
         :param request: The `IPerson` requesting the jobs.
         :return: An iterable of `Job.id` values for the new jobs.

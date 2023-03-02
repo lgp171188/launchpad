@@ -933,7 +933,7 @@ class TestOpenIDLogin(TestCaseWithFactory):
     def test_pape_extension_added_with_reauth_query(self):
         # We can signal that a request should be reauthenticated via
         # a reauth URL parameter, which should add PAPE extension's
-        # max_auth_age paramter.
+        # max_auth_age parameter.
         request = LaunchpadTestRequest(QUERY_STRING="reauth=1")
         request.processInputs()
         # This is a hack to make the request.getURL(1) call issued by the view

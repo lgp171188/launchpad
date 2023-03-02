@@ -457,7 +457,7 @@ class PackageClonerTests(TestCaseWithFactory):
         self.checkBuilds(copy_archive, [package_info])
 
     def testCreatesMultipleBuilds(self):
-        """Test that multiple processors result in mutiple builds."""
+        """Test that multiple processors result in multiple builds."""
         package_info = PackageInfo(
             "bzr", "2.1", status=PackagePublishingStatus.PUBLISHED
         )
