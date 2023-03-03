@@ -222,6 +222,7 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
     """Navigation methods for IArchive."""
 
     usedfor = IArchive
+    file_navigation_permission = "launchpad.SubscriberView"
 
     @stepthrough("+build")
     def traverse_build(self, name):
@@ -463,7 +464,7 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
         version = self.request.stepstogo.consume()
         filename = self.request.stepstogo.consume()
 
-        if not check_permission("launchpad.View", self.context):
+        if not check_permission("launchpad.SubscriberView", self.context):
             raise Unauthorized()
 
         library_file = self.context.getSourceFileByName(
