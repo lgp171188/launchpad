@@ -92,35 +92,35 @@ GNU Affero General Public License version 3 (see the file LICENSE).
           </tr>
         </script>
 
-        <script type="text/x-template" id="blacklist_html">
-            <div class="blacklist-options" style="float:left">
+        <script type="text/x-template" id="blocklist_html">
+            <div class="blocklist-options" style="float:left">
               <dl>
                 <dt>Ignored:</dt>
                 <dd>
                   <form>
                     <div>
                       <div class="value">
-                        <label for="field.blacklist_options.0">
+                        <label for="field.blocklist_options.0">
                           <input type="radio" value="NONE"
-                            name="field.blacklist_options"
-                            id="field.blacklist_options.0" checked="checked"
+                            name="field.blocklist_options"
+                            id="field.blocklist_options.0" checked="checked"
                             class="radioType">&nbsp;No</input>
                         </label><br>
-                        <label for="field.blacklist_options.1">
-                          <input type="radio" value="BLACKLISTED_ALWAYS"
-                           name="field.blacklist_options"
-                            id="field.blacklist_options.1" class="radioType">
+                        <label for="field.blocklist_options.1">
+                          <input type="radio" value="BLOCKLISTED_ALWAYS"
+                           name="field.blocklist_options"
+                            id="field.blocklist_options.1" class="radioType">
                             &nbsp;All versions</input>
                         </label><br>
-                        <label for="field.blacklist_options.2">
-                          <input type="radio" value="BLACKLISTED_CURRENT"
-                            name="field.blacklist_options"
-                            id="field.blacklist_options.2"
+                        <label for="field.blocklist_options.2">
+                          <input type="radio" value="BLOCKLISTED_CURRENT"
+                            name="field.blocklist_options"
+                            id="field.blocklist_options.2"
                             class="radioType">&nbsp;These versions</input>
                         </label>
                       </div>
                       <input type="hidden" value="1"
-                        name="field.blacklist_options-empty-marker" />
+                        name="field.blocklist_options-empty-marker" />
                     </div>
                   </form>
                 </dd>
@@ -128,7 +128,7 @@ GNU Affero General Public License version 3 (see the file LICENSE).
             </div>
        </script>
 
-       <script type="text/x-template" id="blacklist_extra_row">
+       <script type="text/x-template" id="blocklist_extra_row">
           <tr id="extra_row">
             <td>
               <div class="diff-extra-container">
@@ -156,7 +156,7 @@ GNU Affero General Public License version 3 (see the file LICENSE).
                 </dd>
                 </dl>
                 </div>
-                {blacklist_html}
+                {blocklist_html}
                 <div class="boardComment ">
                   <div class="boardCommentDetails">
                     <a class="sprite person" href="/~mark">Mark S.</a>
@@ -172,7 +172,7 @@ GNU Affero General Public License version 3 (see the file LICENSE).
             </td>
           </tr>
       </script>
-      <script type="text/x-template" id="blacklist_whole_table">
+      <script type="text/x-template" id="blocklist_whole_table">
           <table class="listing">
               <tbody>
                    {row}

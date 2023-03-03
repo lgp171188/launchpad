@@ -381,7 +381,7 @@ class DistroSeriesDifferenceStatus(DBEnumeratedType):
         """,
     )
 
-    BLACKLISTED_CURRENT = DBItem(
+    BLOCKLISTED_CURRENT = DBItem(
         2,
         """
         Blocklisted current version
@@ -391,7 +391,7 @@ class DistroSeriesDifferenceStatus(DBEnumeratedType):
         """,
     )
 
-    BLACKLISTED_ALWAYS = DBItem(
+    BLOCKLISTED_ALWAYS = DBItem(
         3,
         """
         Blocklisted always
