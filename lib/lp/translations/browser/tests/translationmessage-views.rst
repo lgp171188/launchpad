@@ -391,7 +391,7 @@ We are going to work with Evolution's evolution-2.2 template.
 For alternative suggestions we need two languages, the one being
 translated and other one providing suggestions. We will use Japanese
 as the language to get suggestions for because it has less plural forms
-than the other choosen language, Spanish.
+than the other chosen language, Spanish.
 
     # Japanese translation for this template doesn't exist yet in our
     # database, we need to create it first.
@@ -593,7 +593,7 @@ message).
     >>> subview.allow_diverging
     True
 
-A shared translation is not explicitely shown, since the current one is
+A shared translation is not explicitly shown, since the current one is
 the shared translation.
 
     >>> print(subview.shared_translationmessage)
@@ -611,7 +611,7 @@ When looking at the entire POFile, diverging is not allowed.
     >>> subview.allow_diverging
     False
 
-With a diverged translation, the shared translation is explicitely offered
+With a diverged translation, the shared translation is explicitly offered
 among one of the suggestions, and we are not offered to diverge the
 translation further, since it's already diverged.
 

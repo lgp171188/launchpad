@@ -3,7 +3,7 @@ Page Tests Helpers
 
 Page tests are used to test common use-cases about Launchpad. We use the
 zope.testbrowser component to write most of these tests. The pagetest
-doctest environement comes loaded with a bunch of predefined names that
+doctest environment comes loaded with a bunch of predefined names that
 makes writing page test easy.
 
     >>> from lp.testing.pages import setUpGlobs
@@ -70,7 +70,7 @@ standard error page.
 Using Raw HTTP Requests
 -----------------------
 
-Altough testbrowser is very convenient, sometimes more control over the
+Although testbrowser is very convenient, sometimes more control over the
 request is needed. For these cases, there is a function available under
 'http' that can be used to send raw HTTP request.
 

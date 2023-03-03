@@ -709,7 +709,7 @@ are unable to see it on Celso's profile page.
     Personal package archives
     PPA for Celso Providelo
 
-Celso himself can see the PPA, and it's linked so he can reenable it if
+Celso himself can see the PPA, and it's linked so he can re-enable it if
 required.
 
     >>> cprov_browser.open("http://launchpad.test/~cprov")
@@ -882,7 +882,7 @@ no longer "Delete packages", "Edit PPA dependencies", or "Change details".
     zope.testbrowser.browser.LinkNotFoundError
 
 Even if someone URL-hacks to the edit form, it's not possible to
-reenable the PPA or turn on publishing.
+re-enable the PPA or turn on publishing.
 
     >>> no_priv_browser.open(
     ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit"

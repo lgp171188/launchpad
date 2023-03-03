@@ -11,7 +11,7 @@ simple_mail can be used to send mail easily:
     ...     body="Content",
     ... )
 
-The mail get sent when the transaction gets commited:
+The mail get sent when the transaction gets committed:
 
     >>> import transaction
     >>> transaction.commit()
@@ -209,7 +209,7 @@ surrounded by quotes and quoted if necessary:
     ('Foo [Baz] " Bar', 'foo.bar@canonical.com')
 
 
-If we pass a unicode object to send_mail, it will try and covert it.  If a
+If we pass a unicode object to send_mail, it will try and convert it.  If a
 non-ASCII str object is passed, it will throw a UnicodeDecodeError.
 
     >>> simple_sendmail(

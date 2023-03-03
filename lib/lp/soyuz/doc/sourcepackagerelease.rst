@@ -137,7 +137,7 @@ IDistroSeries API:
 
 All the arguments to create an ISourcePackageRelease are obtained when
 processing a source upload, see more details in nascentupload.rst.
-Some of the 20 required arguments are foreign keys or DB contants:
+Some of the 20 required arguments are foreign keys or DB constants:
 
     >>> arg_name = getUtility(ISourcePackageNameSet)["pmount"]
     >>> arg_comp = getUtility(IComponentSet)["universe"]
@@ -151,12 +151,12 @@ Some of the 20 required arguments are foreign keys or DB contants:
     >>> arg_recipebuild = factory.makeSourcePackageRecipeBuild()
     >>> changelog = None
 
-The other argurments are strings:
+The other arguments are strings:
 
     >>> version = "0.0.99"
     >>> dsc = "smashed dsc..."
     >>> copyright = "smashed debian/copyright ..."
-    >>> changelog_entry = "contigous text...."
+    >>> changelog_entry = "contiguous text..."
     >>> archhintlist = "any"
     >>> builddepends = "cdbs, debhelper (>= 4.1.0), libsysfs-dev, libhal-dev"
     >>> builddependsindep = ""

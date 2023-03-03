@@ -22,7 +22,7 @@ Also, can combine the types of failure we allow to be retried:
  * -D: retry builds marked as MANUALDEPWAIT
  * -C: retry builds marked as CHROOTWAIT
 
-The available types can be combined acording the situation.
+The available types can be combined according to the situation.
 
 The script provides dry-run mode (-N).
 

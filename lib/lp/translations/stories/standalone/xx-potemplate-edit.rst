@@ -5,7 +5,7 @@ The POTemplate edit page allows editing a subset of potemplate
 attributes. Only product owners, Rosetta Experts or a Launchpad admin
 are able to use it.
 
-An unpriviledged user cannot reach this page.
+An unprivileged user cannot reach this page.
 
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> browser.open(
@@ -127,7 +127,7 @@ The visible fields can be changed and saved.
     >>> print(browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/evo
 
-The changed values will be stored and visible by accesing again the edit
+The changed values will be stored and visible by accessing again the edit
 page.
 
     >>> browser.open(
@@ -215,7 +215,7 @@ The edit page can be access from the templates list.
     >>> admin_browser.url == referrer
     True
 
-If you are accesing the edit page using a bookmark (in this case there
+If you are accessing the edit page using a bookmark (in this case there
 was no previous page in the navigation), you will be directed to the
 template index page.
 

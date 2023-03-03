@@ -16,7 +16,7 @@ First, we need some imports.
     ...     ISourcePackageNameSet,
     ... )
 
-All the tests will be submitted as comming from the No Privilege person.
+All the tests will be submitted as coming from the No Privilege person.
 
     >>> login("no-priv@canonical.com")
 
@@ -111,7 +111,7 @@ the entry should be linked with the IPOTemplate we are using.
 
 And for the path, we are going to use the filename we got from the upload form
 because it's a .po file instead of a .pot file and we need that information
-to differenciate different .po files associated with the context.
+to differentiate different .po files associated with the context.
 
     >>> print(entry.path)
     po/es.po

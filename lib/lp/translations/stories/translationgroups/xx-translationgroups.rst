@@ -559,7 +559,7 @@ grounds: owning the group, being a Rosetta expert, or being a Launchpad
 administrator.
 
 Jordi Mallach is a Rosetta administrator ("expert").  He does not own
-polyglot nor is he a Launchpad adminstrator.  That is enough to allow
+polyglot nor is he a Launchpad administrator.  That is enough to allow
 him to appoint a translator.
 
     >>> browser.addHeader("Authorization", "Basic jordi@ubuntu.com:test")
@@ -1195,7 +1195,7 @@ an error message back.
     ...
     Ignored your upload because you didn't select a file to upload.
 
-Uploading files with an unkown file format notifies the user that it
+Uploading files with an unknown file format notifies the user that it
 cannot be handled.
 
     >>> from io import BytesIO

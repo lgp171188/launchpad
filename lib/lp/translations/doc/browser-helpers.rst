@@ -86,7 +86,7 @@ TranslationConstants.TAB_CHAR_ESCAPED which renders them as below:
     >>> print(expand_rosetta_escapes("foo[tab]bar"))
     foo<code>\[tab]</code>bar
 
-Escaped ocurrences themselves get escaped.
+Escaped occurrences themselves get escaped.
 
     >>> print(expand_rosetta_escapes("foo\\[tab]bar"))
     foo\<code>\[tab]</code>bar

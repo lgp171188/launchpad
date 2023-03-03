@@ -22,7 +22,7 @@ evolution-2.2 POTemplate page.
     Template ...evolution-2.2... : Hoary (5.04) :
     Translations : evolution package : Ubuntu
 
-The owner of the template is diplayed.
+The owner of the template is displayed.
 
     >>> owner_display = find_tag_by_id(
     ...     anon_browser.contents, "potemplate-owner"

@@ -2,7 +2,7 @@ Distribution series translations
 ================================
 
 This page shows a list of PO templates contained within all source
-packages in a particular distibution series.
+packages in a particular distribution series.
 
 In this case, we're asking for the translation overview for Hoary.
 

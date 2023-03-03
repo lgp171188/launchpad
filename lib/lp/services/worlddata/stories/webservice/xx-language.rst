@@ -26,8 +26,8 @@ The language information from Launchpad can be queried using
     True
 
 
-Accesing all or visible languages through API
----------------------------------------------
+Accessing all or visible languages through API
+----------------------------------------------
 
 The list of all languages visible by default in Launchpad can by obtained
 at '/+languages'.

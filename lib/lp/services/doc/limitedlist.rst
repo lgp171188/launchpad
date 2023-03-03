@@ -101,7 +101,7 @@ length limit.
     >>> list_four
     <LimitedList(3, [2, 3, 4])>
 
-Similary, a LimitedList does not exceed it length limit, when we extend()
+Similarly, a LimitedList does not exceed its length limit when we extend()
 it.
 
     >>> list_five = LimitedList(3, [1])
