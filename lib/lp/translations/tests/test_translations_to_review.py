@@ -181,7 +181,7 @@ class TestReviewableProductTranslationFiles(
         ReviewTestMixin.setUpMixin(self, for_product=True)
 
     def test_getReviewableTranslationFiles_project_deactivated(self):
-        # Deactive project are excluded from the list.
+        # Deactivated projects are excluded from the list.
         from lp.testing import celebrity_logged_in
 
         with celebrity_logged_in("admin"):

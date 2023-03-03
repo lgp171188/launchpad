@@ -182,7 +182,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         )
         self.assertEqual(psl.messageCount(), 0)
 
-        # We explicitely ask for stats to be recalculated.
+        # We explicitly ask for stats to be recalculated.
         psl.recalculateCounts()
 
         self.assertPSLStatistics(
@@ -213,7 +213,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         self.setPOFileStatistics(pofile2, 1, 1, 1, 1, pofile2.date_changed)
 
         psl = self.productseries.productserieslanguages[0]
-        # We explicitely ask for stats to be recalculated.
+        # We explicitly ask for stats to be recalculated.
         psl.recalculateCounts()
 
         # Total is a sum of totals in both POTemplates (10+20).

@@ -59,9 +59,9 @@ class BrowsesWithQueryLimit(Matcher):
     def __init__(self, query_limit, user, view_name=None, **options):
         """Create a BrowsesWithQueryLimit checking for limit query_limit.
 
-        :param query_limit: The number of queries permited for the page.
+        :param query_limit: The number of queries permitted for the page.
         :param user: The user to use to render the page.
-        :param view_name: The name of the view to use to render tha page.
+        :param view_name: The name of the view to use to render the page.
         :param options: Additional options for view generation eg rootsite.
         """
         self.query_limit = query_limit
@@ -442,7 +442,7 @@ class MatchesTagText(Matcher):
         return "matches widget %r text" % self.tag_id
 
     def match(self, matchee):
-        # Here to avoid circular dependancies.
+        # Here to avoid circular dependencies.
         from lp.testing.pages import extract_text
 
         widgets = self.soup_content.find_all(id=self.tag_id)
@@ -467,7 +467,7 @@ class MatchesPickerText(Matcher):
         return "matches widget %r text" % self.widget_id
 
     def match(self, matchee):
-        # Here to avoid circular dependancies.
+        # Here to avoid circular dependencies.
         from lp.testing.pages import extract_text
 
         widgets = self.soup_content.find_all(id=self.widget_id)

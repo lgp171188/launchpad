@@ -576,7 +576,7 @@ class TestTemplatePrecedence(TestCaseWithFactory):
 
 
 class TestTranslationFoci(TestCaseWithFactory):
-    """Test the precedence rules for tranlation foci."""
+    """Test the precedence rules for translation foci."""
 
     layer = DatabaseFunctionalLayer
 

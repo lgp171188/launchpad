@@ -87,7 +87,7 @@ class TestQueryCount(TestCaseWithFactory):
 class TestPOFileTranslateViewInvalidFiltering(TestCaseWithFactory):
     """Test how POFile views reacts to malformed GET requests.
 
-    Since any number of parameters can be entered throug the URL, the view
+    Since any number of parameters can be entered through the URL, the view
     should be robust about them and not produce OOPSes. This is achieved by
     raising UnexpectedFormData which is communicated to the user instead of
     being recorded as an OOPS.

@@ -70,7 +70,7 @@ class TestPrivateXMLRPC(TestCase):
             self.assertStartsWith(result, "http://bugs.launchpad.test/bugs/")
 
     def test_internal_bugs_api(self):
-        """There is an interal bugs api, too, but that doesn't share the same
+        """There is an internal bugs api, too, but that doesn't share the same
         methods as those exposed publicly.
         """
         internal_api = self.get_private_proxy("bugs/")

@@ -30,7 +30,7 @@ def import_pofile_or_potemplate(
     :param pofile: if uploading a `POFile`, file to import to; None otherwise.
     :param potemplate: if uploading a `POTemplate`, file to import to; None
         otherwise.
-    :param by_maintainer: true if this file was uplaoded by the maintainer
+    :param by_maintainer: true if this file was uploaded by the maintainer
         of the project or package.
     :return: `TranslationImportQueueEntry` as added to the import queue.
     """

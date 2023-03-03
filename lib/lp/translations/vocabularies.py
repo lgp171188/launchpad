@@ -181,7 +181,7 @@ class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
     @property
     def _clauses(self):
         # We are interested on any full language pack or language pack
-        # that is a delta of the current base lanuage pack type,
+        # that is a delta of the current base language pack type,
         # except the ones already used.
         used_lang_packs = []
         if self.context.language_pack_base is not None:

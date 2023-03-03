@@ -1805,7 +1805,7 @@ class POFileToTranslationFileDataAdapter:
         header_nplurals = header.number_plural_forms
         database_nplurals = self._pofile.language.pluralforms
         # These checks are here to catch cases where the plural information
-        # from the header might be more acurate than what we have in the
+        # from the header might be more accurate than what we have in the
         # database. This is usually the case when the number of plural forms
         # has grown but not if it's the standard western form.
         # See bug 565294

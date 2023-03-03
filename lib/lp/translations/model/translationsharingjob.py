@@ -33,9 +33,9 @@ class TranslationSharingJobType(DBEnumeratedType):
     PACKAGING_MERGE = DBItem(
         0,
         """
-        Merge translations betweeen productseries and sourcepackage.
+        Merge translations between productseries and sourcepackage.
 
-        Merge translations betweeen productseries and sourcepackage.
+        Merge translations between productseries and sourcepackage.
         """,
     )
 
