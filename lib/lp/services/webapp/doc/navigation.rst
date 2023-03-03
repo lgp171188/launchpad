@@ -529,11 +529,11 @@ with the remainder of the URL and or query string.
     301
 
     >>> request.traversal_stack = ["LaunchpadMeeting"]
-    >>> request.query_string = "hilight=Time"
+    >>> request.query_string = "highlight=Time"
     >>> print(navigation5.publishTraverse(request, "+foo")())
     <BLANKLINE>
     >>> print(request.response.redirected_to)
-    http://wiki.canonical.com/LaunchpadMeeting?hilight=Time
+    http://wiki.canonical.com/LaunchpadMeeting?highlight=Time
     >>> print(request.response.status)
     303
 

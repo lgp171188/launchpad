@@ -218,7 +218,7 @@ normal way to do this.  Normally, we'd just say
 
   parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
 
-But, here, I want to test the variant of the zcml directive that specifes
+But, here, I want to test the variant of the zcml directive that specifies
 an adapter.
 
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot

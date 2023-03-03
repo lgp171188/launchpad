@@ -502,7 +502,7 @@ otherwise reject the method as invalid.
 
     >>> msg_bytes = b"""\
     ... From: foo.bar@canonical.com
-    ... Subject: I have no date! Oh teh noes!
+    ... Subject: I have no date! Oh no!
     ... Message-Id: <therearenofnords>
     ...
     ... In search of cheesy comestibles.

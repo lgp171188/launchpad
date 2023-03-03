@@ -2,7 +2,7 @@ gettext_po_exporter
 ===================
 
 To export translation files from Rosetta, the data must be displayed in po
-file fomrat which is a text file format.
+file format which is a text file format.
 
     >>> from lp.translations.interfaces.translations import (
     ...     TranslationConstants,

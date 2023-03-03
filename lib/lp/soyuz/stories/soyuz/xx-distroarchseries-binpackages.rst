@@ -158,7 +158,7 @@ Now reload the page to see the deleted file without the link.
     None
 
 Binary Packages with no files to present results in a clear statement
-intead of a empty section.
+instead of a empty section.
 
     >>> browser.open("http://launchpad.test/ubuntu/hoary/i386/pmount/0.1-1")
     >>> print(extract_text(find_tag_by_id(browser.contents, "files")))

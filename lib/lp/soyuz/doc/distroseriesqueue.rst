@@ -397,7 +397,7 @@ has a similar behaviour):
     1.0
 
 The upload admin can not accept both since we check unique
-(name, version) accross distribution:
+(name, version) across distribution:
 
     >>> dup_one.setAccepted()
     >>> dup_one.status == PackageUploadStatus.ACCEPTED

@@ -83,7 +83,7 @@ packages successfully (at least partially):
    * libcap, a source package which generates 3 binary packages, and
      whose version number contains an epoch. It is not in the Breezy
      Sources list, but some binaries are in the Packages file. However, these
-     binaries are unchaged in Breezy.
+     binaries are unchanged in Breezy.
    * ubuntu-meta, a source package that generates 3 binary packages in
      Hoary and 5 in breezy. However, its breezy version is /not/ listed in the
      Sources list, so the binary packages will need to discover it.
@@ -114,7 +114,7 @@ And two completely broken packages:
      Sources and Packages, though.
 
    * clearlooks, a source package with no binaries listed, and which has
-     a DSC file that refers to an inexistant tar.gz.
+     a DSC file that refers to a nonexistent tar.gz.
 
 Let's set up the filesystem:
 
@@ -238,7 +238,7 @@ Check that x11proto-damage has its Build-Depends-Indep value correctly set:
     >>> print(x11p.builddependsindep)
     debhelper (>= 4.0.0)
 
-Check if the changelog message was stored correcly:
+Check if the changelog message was stored correctly:
 
     >>> print(x11p.changelog_entry)
     ... # noqa
@@ -835,7 +835,7 @@ Commit the changes and run the importer script.
     >>> transaction.commit()
 
 There is now a number of source publications in PUBLISHED status for the
-targetted distroseries, 'lenny'.
+targeted distroseries, 'lenny'.
 
     >>> lenny_sources = SSPPH.select("distroseries = %s" % sqlvalues(lenny))
     >>> lenny_sources.count()

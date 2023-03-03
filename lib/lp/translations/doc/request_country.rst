@@ -6,7 +6,7 @@ Adapting a request to a country allows you to see where the request came from.
 
 Here's a dummy request. Zope adds the REMOTE_ADDR CGI environment variable
 for us. Upstream proxy servers (and tinkering users!) may also add
-X-Forwarded-For: headers. The X-Forwarded-For: header takes precidence
+X-Forwarded-For: headers. The X-Forwarded-For: header takes precedence
 if it is set.
 
     >>> from lp.services.webapp.servers import LaunchpadTestRequest

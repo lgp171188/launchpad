@@ -55,7 +55,7 @@ page. It's title briefly describes the build.
 In the page body readers can see 2 sections, 'Build status' and 'Build
 details'.
 
-Since builds respect a fixed workflow (pending -> buiding ->
+Since builds respect a fixed workflow (pending -> building ->
 built|failed), readers are mostly interested in their
 status. That's why this section comes first.
 
@@ -129,7 +129,7 @@ about 'Build scores' is available.
     >>> print(anon_browser.getLink("What's this").url)
     https://help.launchpad.net/Packaging/BuildScores
 
-Adminstrators can rescore pending builds in a separate form.
+Administrators can rescore pending builds in a separate form.
 
     >>> admin_browser.open(build_url)
     >>> admin_browser.getLink("Rescore build").click()
@@ -428,7 +428,7 @@ binary reference finally becomes a link to its corresponding page.
 PPA builds
 ==========
 
-Build records for PPAs contain all the features and aspects decribed
+Build records for PPAs contain all the features and aspects described
 above. The only difference is that source and binary package
 references are not linkified, since PPAs do not allow users to
 navigate to packages.

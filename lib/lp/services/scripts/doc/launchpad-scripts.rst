@@ -6,7 +6,7 @@ lp.services.scripts.base. This, along with the LaunchpadCronScript
 specialization, implement common behaviour for all Launchpad command
 line scripts.
 
-Scripts report their executution using the standard Python logging
+Scripts report their execution using the standard Python logging
 module, with command line arguments and logging setup provided by
 LaunchpadScript. Unhandled exceptions from scripts are automatically
 sent to the Python logging system. Cronscripts (scripts using

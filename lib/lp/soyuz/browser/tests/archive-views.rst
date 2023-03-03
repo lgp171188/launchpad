@@ -609,7 +609,7 @@ is a copy archive.
 ArchivePackageDeletionView
 ==========================
 
-We use ArchivePackageDeletionView to provide the mechnisms used to
+We use ArchivePackageDeletionView to provide the mechanisms used to
 delete packages from a PPA via the UI.
 
 This view is only accessible by users with 'launchpad.Edit' permission
@@ -664,7 +664,7 @@ filtered results.
     ...
     pmount 0.1-1 in warty
 
-The 'name_filter' is decoded as UTF-8 before futher processing. If it
+The 'name_filter' is decoded as UTF-8 before further processing. If it
 did not, the storm query compiler would raise an error, because it can
 only deal with unicode variables.
 
@@ -746,7 +746,7 @@ situation and ignore it. See bug #185922 for reference.
 ArchiveEditDependenciesView
 ===========================
 
-We use ArchiveEditDependenciesView to provide the mechnisms used to
+We use ArchiveEditDependenciesView to provide the mechanisms used to
 add and/or remove archive dependencies for a PPA via the UI.
 
 This view is only accessible by users with 'launchpad.Edit' permission
@@ -836,7 +836,7 @@ dependency. Each element has:
 
  * value: dependency IArchive,
  * token: dependency IArchive.owner,
- * title: link to the dependency IArchive in Launchpad redered as the
+ * title: link to the dependency IArchive in Launchpad rendered as the
           dependency title.
 
     >>> [dependency] = view.widgets.get("selected_dependencies").vocabulary

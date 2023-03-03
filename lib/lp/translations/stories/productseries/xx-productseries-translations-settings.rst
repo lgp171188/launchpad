@@ -92,7 +92,7 @@ The user is automatically redirected to the page they came from.
     >>> print_feedback_messages(browser.contents)
     The settings have been updated.
 
-If they look at the synchonization settings page again, they see that
+If they look at the synchronization settings page again, they see that
 the changes have been saved.
 
     >>> browser.getLink("Set up branch synchronization").click()

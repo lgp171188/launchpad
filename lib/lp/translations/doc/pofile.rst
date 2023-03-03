@@ -334,7 +334,7 @@ one is older than the one we have in the IPOFile object. We are using
 this method, for instance, to know if a new imported PO file should be
 ignored because we already have a newer one.
 
-This test is to be sure that the date comparation is working and that
+This test is to be sure that the date comparison is working and that
 two headers with the same date will always be set as newer, because lazy
 translators forget to update that field from time to time and sometimes,
 we were losing translations because we were ignoring those imports too.
@@ -866,7 +866,7 @@ common file format in-memory to convert from one file format to another.
 
 Getting the translation file data is just a matter of adapting the
 object to the ITranslationFileData interface. Since there are multiple
-adapters for differnt purposes, this adapter is named.
+adapters for different purposes, this adapter is named.
 
     >>> from zope.component import getAdapter
     >>> translation_file_data = getAdapter(

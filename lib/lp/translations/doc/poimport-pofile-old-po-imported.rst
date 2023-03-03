@@ -9,7 +9,7 @@ have a chance to fix it.
 
 We have to make an exception for files coming from upstream, though, because
 the user may not be able to get the file fixed upstream or the file is older
-because a user upload occured before the upstream file made it to Launchpad.
+because a user upload occurred before the upstream file made it to Launchpad.
 In either case we assume that the upstream file is OK and accept it for
 upload.
 
