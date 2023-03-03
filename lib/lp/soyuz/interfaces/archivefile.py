@@ -112,7 +112,8 @@ class IArchiveFileSet(Interface):
         container=None,
         path=None,
         sha256=None,
-        condemned=None,
+        live_at=None,
+        existed_at=None,
         only_published=False,
         eager_load=False,
     ):
@@ -125,14 +126,21 @@ class IArchiveFileSet(Interface):
             directory is this path.
         :param sha256: If not None, return only files with this SHA-256
             checksum.
-        :param condemned: If True, return only files with a
-            scheduled_deletion_date set; if False, return only files without
-            a scheduled_deletion_date set; if None (the default), return
-            both.
+        :param live_at: If not None, return only files that held their path
+            in the archive at this `datetime` (or
+            `lp.services.database.constants.UTC_NOW`).
+        :param existed_at: If not None, return only files that existed in
+            the archive at this `datetime` (or
+            `lp.services.database.constants.UTC_NOW`).  This includes files
+            that did not hold their path (e.g. `dists/jammy/InRelease`) and
+            that are merely still published in a `by-hash` directory; it
+            should normally be used together with `sha256`.
         :param only_published: If True, return only files without a
             `date_removed` set.
         :param eager_load: If True, preload related `LibraryFileAlias` and
             `LibraryFileContent` rows.
+        :raises IncompatibleArguments: if both `live_at` and `existed_at`
+            are specified.
         :return: An iterable of matched files.
         """
 

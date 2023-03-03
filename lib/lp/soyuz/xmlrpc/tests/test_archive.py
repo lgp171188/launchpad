@@ -3,8 +3,9 @@
 
 """Tests for the internal Soyuz archive API."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
+import pytz
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -398,6 +399,53 @@ class TestArchiveAPI(TestCaseWithFactory):
             % (archive.reference, path, archive_file.library_file.id)
         )
 
+    def test_translatePath_by_hash_live_at(self):
+        now = datetime.now(pytz.UTC)
+        archive = removeSecurityProxy(self.factory.makeArchive(private=True))
+        archive_file = self.factory.makeArchiveFile(
+            archive=archive,
+            container="release:jammy",
+            path="dists/jammy/InRelease",
+        )
+        naked_archive_file = removeSecurityProxy(archive_file)
+        naked_archive_file.date_created = now - timedelta(days=3)
+        naked_archive_file.date_superseded = now - timedelta(days=2)
+        naked_archive_file.date_removed = now - timedelta(days=1)
+        path = (
+            "dists/jammy/by-hash/SHA256/%s"
+            % archive_file.library_file.content.sha256
+        )
+        for days, expected in ((4, False), (3, True), (2, True), (1, False)):
+            self.logger = self.useFixture(FakeLogger())
+            live_at = now - timedelta(days=days)
+            if expected:
+                self.assertEqual(
+                    archive_file.library_file.getURL(),
+                    self.archive_api.translatePath(
+                        archive.reference, path, live_at=live_at
+                    ),
+                )
+                self.assertLogs(
+                    "%s: %s (by-hash) at %s -> LFA %d"
+                    % (
+                        archive.reference,
+                        path,
+                        live_at.isoformat(),
+                        archive_file.library_file.id,
+                    )
+                )
+            else:
+                self.assertNotFound(
+                    "translatePath",
+                    "'%s' not found in '%s' at %s."
+                    % (path, archive.reference, live_at.isoformat()),
+                    "%s: %s not found at %s"
+                    % (archive.reference, path, live_at.isoformat()),
+                    archive.reference,
+                    path,
+                    live_at=live_at,
+                )
+
     def test_translatePath_non_pool_not_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         self.factory.makeArchiveFile(archive=archive)
@@ -597,6 +645,56 @@ class TestArchiveAPI(TestCaseWithFactory):
             % (archive.reference, path, sprf.libraryfile.id)
         )
 
+    def test_translatePath_pool_source_live_at(self):
+        now = datetime.now(pytz.UTC)
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        removeSecurityProxy(spph).datepublished = now - timedelta(days=2)
+        removeSecurityProxy(spph).dateremoved = now - timedelta(days=1)
+        sprf = self.factory.makeSourcePackageReleaseFile(
+            sourcepackagerelease=spph.sourcepackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1.dsc", db_only=True
+            ),
+        )
+        IStore(sprf).flush()
+        path = "pool/main/t/test-package/test-package_1.dsc"
+        for days, expected in ((3, False), (2, True), (1, False)):
+            self.logger = self.useFixture(FakeLogger())
+            live_at = now - timedelta(days=days)
+            if expected:
+                self.assertEqual(
+                    sprf.libraryfile.getURL(),
+                    self.archive_api.translatePath(
+                        archive.reference, path, live_at=live_at
+                    ),
+                )
+                self.assertLogs(
+                    "%s: %s (pool) at %s -> LFA %d"
+                    % (
+                        archive.reference,
+                        path,
+                        live_at.isoformat(),
+                        sprf.libraryfile.id,
+                    )
+                )
+            else:
+                self.assertNotFound(
+                    "translatePath",
+                    "'%s' not found in '%s' at %s."
+                    % (path, archive.reference, live_at.isoformat()),
+                    "%s: %s not found at %s"
+                    % (archive.reference, path, live_at.isoformat()),
+                    archive.reference,
+                    path,
+                    live_at=live_at,
+                )
+
     def test_translatePath_pool_binary_not_found(self):
         archive = removeSecurityProxy(self.factory.makeArchive())
         self.factory.makeBinaryPackagePublishingHistory(
@@ -712,3 +810,53 @@ class TestArchiveAPI(TestCaseWithFactory):
             "%s: %s (pool) -> LFA %d"
             % (archive.reference, path, bpf.libraryfile.id)
         )
+
+    def test_translatePath_pool_binary_live_at(self):
+        now = datetime.now(pytz.UTC)
+        archive = removeSecurityProxy(self.factory.makeArchive())
+        bpph = self.factory.makeBinaryPackagePublishingHistory(
+            archive=archive,
+            status=PackagePublishingStatus.PUBLISHED,
+            sourcepackagename="test-package",
+            component="main",
+        )
+        removeSecurityProxy(bpph).datepublished = now - timedelta(days=2)
+        removeSecurityProxy(bpph).dateremoved = now - timedelta(days=1)
+        bpf = self.factory.makeBinaryPackageFile(
+            binarypackagerelease=bpph.binarypackagerelease,
+            library_file=self.factory.makeLibraryFileAlias(
+                filename="test-package_1_amd64.deb", db_only=True
+            ),
+        )
+        IStore(bpf).flush()
+        path = "pool/main/t/test-package/test-package_1_amd64.deb"
+        for days, expected in ((3, False), (2, True), (1, False)):
+            self.logger = self.useFixture(FakeLogger())
+            live_at = now - timedelta(days=days)
+            if expected:
+                self.assertEqual(
+                    bpf.libraryfile.getURL(),
+                    self.archive_api.translatePath(
+                        archive.reference, path, live_at=live_at
+                    ),
+                )
+                self.assertLogs(
+                    "%s: %s (pool) at %s -> LFA %d"
+                    % (
+                        archive.reference,
+                        path,
+                        live_at.isoformat(),
+                        bpf.libraryfile.id,
+                    )
+                )
+            else:
+                self.assertNotFound(
+                    "translatePath",
+                    "'%s' not found in '%s' at %s."
+                    % (path, archive.reference, live_at.isoformat()),
+                    "%s: %s not found at %s"
+                    % (archive.reference, path, live_at.isoformat()),
+                    archive.reference,
+                    path,
+                    live_at=live_at,
+                )
