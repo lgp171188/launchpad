@@ -346,7 +346,7 @@ class PersonTranslationView(LaunchpadView):
     ):
         """Add `new_targets` to `existing_targets` list.
 
-        This is for use in showing top-10 ists of translations a user
+        This is for use in showing top-10 lists of translations a user
         should help review or complete.
 
         :param existing_targets: Translation targets that are already

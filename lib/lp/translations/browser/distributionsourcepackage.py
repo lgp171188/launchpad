@@ -21,7 +21,7 @@ class DistributionSourcePackageView(LaunchpadView):
     def translation_focus(self):
         """Return the ISourcePackage where the translators should work.
 
-        If ther isn't a defined focus, we return latest series.
+        If there isn't a defined focus, we return latest series.
         """
         series = (
             self.context.distribution.translation_focus

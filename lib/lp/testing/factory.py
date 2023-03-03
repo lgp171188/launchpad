@@ -676,7 +676,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         del naked_person
 
         if selfgenerated_bugnotifications:
-            # Set it explicitely only when True because the default
+            # Set it explicitly only when True because the default
             # is False.
             person.selfgenerated_bugnotifications = True
 
@@ -2940,13 +2940,13 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
 
     def makePackageCodeImport(self, sourcepackage=None, **kwargs):
-        """Make a code import targetting a sourcepackage."""
+        """Make a code import targeting a sourcepackage."""
         if sourcepackage is None:
             sourcepackage = self.makeSourcePackage()
         return self.makeCodeImport(context=sourcepackage, **kwargs)
 
     def makeProductCodeImport(self, product=None, **kwargs):
-        """Make a code import targetting a product."""
+        """Make a code import targeting a product."""
         if product is None:
             product = self.makeProduct()
         return self.makeCodeImport(context=product, **kwargs)

@@ -189,7 +189,7 @@ class TarballFileStorageStrategy(StorageStrategy):
     empty = False
 
     def __init__(self, single_file_storage=None):
-        """Initialze empty storage strategy, or subsume single-file one."""
+        """Initialize empty storage strategy, or subsume single-file one."""
         self.buffer = tempfile.TemporaryFile()
         self.tar_writer = LaunchpadWriteTarFile(self.buffer)
         if single_file_storage is not None:

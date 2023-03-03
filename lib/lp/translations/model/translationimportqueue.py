@@ -112,7 +112,7 @@ def compose_approval_conflict_notice(domain, templates_count, sample):
     """Create a note to warn about an approval conflict.
 
     The note warns about the situation where one productseries, or source
-    package, or in some cases distroseries has multiple actice templates
+    package, or in some cases distroseries has multiple active templates
     with the same translation domain.
 
     :param domain: The domain that's causing trouble.

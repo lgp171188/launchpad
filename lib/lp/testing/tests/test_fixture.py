@@ -175,7 +175,7 @@ class TestPGBouncerFixtureWithCA(TestCase):
         with PGBouncerFixture() as pgbouncer:
             assert self.is_connected()
 
-            # pgbouncer is transparant. To confirm we are connecting via
+            # pgbouncer is transparent. To confirm we are connecting via
             # pgbouncer, we need to shut it down and confirm our
             # connections are dropped.
             pgbouncer.stop()
@@ -196,7 +196,7 @@ class TestPGBouncerFixtureWithCA(TestCase):
         with PGBouncerFixture() as pgbouncer:
             assert self.is_connected()
 
-            # pgbouncer is transparant. To confirm we are connecting via
+            # pgbouncer is transparent. To confirm we are connecting via
             # pgbouncer, we need to shut it down and confirm our
             # connections are dropped.
             pgbouncer.stop()

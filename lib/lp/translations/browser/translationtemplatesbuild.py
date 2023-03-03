@@ -21,7 +21,7 @@ class TranslationTemplatesBuildView(LaunchpadView):
     """View for `TranslationTemplatesBuild`."""
 
     def getTargets(self):
-        """`ProducSeries` that will consume the generated templates."""
+        """`ProductSeries` that will consume the generated templates."""
         utility = getUtility(IProductSeriesSet)
         return list(
             utility.findByTranslationsImportBranch(self.context.branch)
@@ -35,7 +35,7 @@ class TranslationTemplatesBuildView(LaunchpadView):
             formatter.approximatedate(),
         )
 
-    def initalize(self):
+    def initialize(self):
         """See `LaunchpadView`."""
         self.last_score = HARDCODED_TRANSLATIONTEMPLATESBUILD_SCORE
 

@@ -318,7 +318,7 @@ class LibrarianLayerTest(TestCase, TestWithFixtures):
 
 
 class LibrarianResetTestCase(TestCase):
-    """Our page tests need to run multple tests without destroying
+    """Our page tests need to run multiple tests without destroying
     the librarian database in between.
     """
 

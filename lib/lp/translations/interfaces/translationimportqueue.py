@@ -247,7 +247,7 @@ class ITranslationImportQueueEntry(Interface):
             "The IPOTemplate associated with this entry. If path"
             " notes a .pot file, it should be used as the place where this"
             " entry will be imported, if it's a .po file, it indicates the"
-            " template associated with tha translation."
+            " template associated with the translation."
         ),
         required=False,
     )

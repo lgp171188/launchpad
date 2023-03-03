@@ -215,7 +215,7 @@ class IPOTMsgSet(Interface):
         self.getExternallyUsedTranslationMessages for each language.
 
         :param suggested_languages: languages we want suggestions for.
-        :param used_languages: languges we want used messages for.
+        :param used_languages: languages we want used messages for.
         """
 
     def hasTranslationChangedInLaunchpad(potemplate, language):

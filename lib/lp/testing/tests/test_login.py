@@ -220,7 +220,7 @@ class TestLoginHelpers(TestCaseWithFactory):
         self.assertLoggedOut()
 
     def test_person_logged_in_restores_person_even_when_raises(self):
-        # Once outside of the person_logged_in context, the originially
+        # Once outside of the person_logged_in context, the originally
         # logged-in person is re-logged in.
         a = self.factory.makePerson()
         login_as(a)

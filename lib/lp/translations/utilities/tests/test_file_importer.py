@@ -531,7 +531,7 @@ class FileImporterTestCase(TestCaseWithFactory):
     def test_FileImporter_importFile_error(self):
         # Test that a validation error is handled correctly during import.
         # This is done by trying to store a translation (msgstr) with format
-        # spefifiers that do not match those in the msgid, as they should.
+        # specifiers that do not match those in the msgid, as they should.
         (pot_importer, po_importer) = self._createFileImporters(
             TEST_TEMPLATE_FOR_ERROR, TEST_TRANSLATION_FILE_WITH_ERROR, False
         )

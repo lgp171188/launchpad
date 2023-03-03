@@ -1114,7 +1114,7 @@ class TestShareIfPossible(TestCaseWithFactory):
         self.assertFalse(other_translation.is_current_ubuntu)
 
     def test_current_upstream_no_clash(self):
-        """If tranlation is current-upstream, and there's no clash, delete."""
+        """If translation is current-upstream, and there's no clash, delete."""
         translation, other_translation = self.makeUnsharedTranslation(
             is_current_upstream=True, clashing_upstream=False
         )
