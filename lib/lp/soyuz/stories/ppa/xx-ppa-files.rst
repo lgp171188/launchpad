@@ -27,8 +27,19 @@ Create a private PPA for no-priv.
     ...     owner=no_priv, private=True, name="p3a", distribution=ubuntu
     ... )
 
+Add a subscriber to this private PPA.
+
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> _ = login_person(no_priv)
+    >>> subscriber = factory.makePerson()
+    >>> subscriber_email = removeSecurityProxy(
+    ...     subscriber
+    ... ).preferredemail.email
+    >>> _ = no_priv_private_ppa.newSubscription(subscriber, no_priv)
+
 Initialize SoyuzTestPublisher.
 
+    >>> login("foo.bar@canonical.com")
     >>> test_publisher = SoyuzTestPublisher()
     >>> test_publisher.prepareBreezyAutotest()
     >>> test_publisher.addFakeChroots()
@@ -317,6 +328,25 @@ The 'No Privileges' user, the PPA owner, can download the DSC file.
     Location: https://...restricted.../test-pkg_1.0.dsc?token=...
     ...
 
+A subscriber can download the DSC file.
+
+    >>> print(
+    ...     http(
+    ...         r"""
+    ... GET %s HTTP/1.1
+    ... Authorization: Basic %s:test
+    ... """
+    ...         % (
+    ...             dsc_file_lp_url.replace("http://launchpad.test", ""),
+    ...             subscriber_email,
+    ...         )
+    ...     )
+    ... )
+    HTTP/1.1 303 See Other
+    ...
+    Location: https://...restricted.../test-pkg_1.0.dsc?token=...
+    ...
+
 Binary files are served via '+files' rather than '+sourcefiles'.
 
     >>> login("foo.bar@canonical.com")
@@ -336,6 +366,22 @@ Binary files are served via '+files' rather than '+sourcefiles'.
     ... Authorization: Basic no-priv@canonical.com:test
     ... """
     ...         % (deb_file_lp_url.replace("http://launchpad.test", ""))
+    ...     )
+    ... )
+    HTTP/1.1 303 See Other
+    ...
+    Location: https://...restricted.../test-bin_1.0_all.deb?token=...
+    ...
+    >>> print(
+    ...     http(
+    ...         r"""
+    ... GET %s HTTP/1.1
+    ... Authorization: Basic %s:test
+    ... """
+    ...         % (
+    ...             deb_file_lp_url.replace("http://launchpad.test", ""),
+    ...             subscriber_email,
+    ...         )
     ...     )
     ... )
     HTTP/1.1 303 See Other
@@ -465,7 +511,6 @@ immediately deleted in case of reported ToS violation.
     >>> from lp.services.database.interfaces import IPrimaryStore
     >>> login("foo.bar@canonical.com")
     >>> IPrimaryStore(Archive).commit()
-    >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(dsc_file).content = None
     >>> transaction.commit()
 
