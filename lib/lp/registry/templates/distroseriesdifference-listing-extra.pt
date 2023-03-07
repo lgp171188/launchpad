@@ -113,14 +113,14 @@
   </dl>
   </div>
   <div
-    tal:attributes="class view/blacklist_options_css_class"
+    tal:attributes="class view/blocklist_options_css_class"
     style="float:left">
     <dl>
       <dt>Ignored:</dt>
       <dd>
         <form>
           <tal:replace
-            replace="structure view/widgets/blacklist_options" />
+            replace="structure view/widgets/blocklist_options" />
         </form>
       </dd>
     </dl>

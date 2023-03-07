@@ -1258,7 +1258,7 @@ class DistroSeriesDifferenceBaseView(
         package_type_dsd_status = {
             NON_IGNORED: DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
             HIGHER_VERSION_THAN_PARENT: (
-                DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+                DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
             ),
             RESOLVED: DistroSeriesDifferenceStatus.RESOLVED,
             ALL: None,

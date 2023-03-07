@@ -788,7 +788,7 @@ class DistroSeriesDifference(StormBase):
         Check whether the status of this difference should be updated.
 
         :param manual: Boolean, True if this is a user-requested change.
-            This overrides auto-blacklisting.
+            This overrides auto-blocklisting.
         """
         # XXX 2011-05-20 bigjools bug=785657
         # This method needs updating to use some sort of state
@@ -809,9 +809,9 @@ class DistroSeriesDifference(StormBase):
                 self.source_version = new_source_version
                 updated = True
                 # If the derived version has change and the previous version
-                # was blacklisted, then we remove the blacklist now.
+                # was blocklisted, then we remove the blocklist now.
                 if self.status == (
-                    DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+                    DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
                 ):
                     self.status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         if self.parent_source_pub:
@@ -853,16 +853,16 @@ class DistroSeriesDifference(StormBase):
                 and not manual
             ):
                 # The child was updated with a higher version so it's
-                # auto-blacklisted.
+                # auto-blocklisted.
                 updated = True
-                self.status = DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+                self.status = DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         # If this difference was needing attention, or the current version
-        # was blacklisted and the versions now match we resolve it. Note:
-        # we don't resolve it if this difference was blacklisted for all
+        # was blocklisted and the versions now match we resolve it. Note:
+        # we don't resolve it if this difference was blocklisted for all
         # versions.
         elif self.status in (
             DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
         ):
             if (
                 apt_pkg.version_compare(
@@ -880,8 +880,8 @@ class DistroSeriesDifference(StormBase):
                 and not manual
             ):
                 # If the derived version is lower than the parent's, we
-                # ensure the diff status is blacklisted.
-                self.status = DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+                # ensure the diff status is blocklisted.
+                self.status = DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
 
         if self._updateBaseVersion():
             updated = True
@@ -961,9 +961,9 @@ class DistroSeriesDifference(StormBase):
     def blocklist(self, commenter, all=False, comment=None):
         """See `IDistroSeriesDifference`."""
         if all:
-            new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+            new_status = DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         else:
-            new_status = DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+            new_status = DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         new_comment = self._getCommentWithStatusChange(new_status, comment)
         dsd_comment = self.addComment(commenter, new_comment)
         self.status = new_status

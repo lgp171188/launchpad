@@ -296,7 +296,7 @@ class IDistroSeriesDifferencePublic(Interface):
         the same) then the status is updated to RESOLVED.
 
         :param manual: Boolean, True if this is a user-requested change.
-            This overrides auto-blacklisting.
+            This overrides auto-blocklisting.
         :return: True if the record was updated, False otherwise.
         """
 
@@ -464,5 +464,5 @@ class IDistroSeriesDifferenceSource(Interface):
         These are `DistroSeriesDifferences` where the parent has been
         updated and the child still has the old version, unchanged.
 
-        Blacklisted items are excluded.
+        Blocklisted items are excluded.
         """

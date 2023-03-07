@@ -1627,7 +1627,7 @@ class TestDistroSeriesLocalDifferences(
         return jobs[0]
 
     def test_higher_radio_mentions_parent(self):
-        # The user is shown an option to display only the blacklisted
+        # The user is shown an option to display only the blocklisted
         # package with a higher version than in the parent.
         derived_series, parent_series = self._createChildAndParent()
         self.factory.makeDistroSeriesDifference(
@@ -1700,8 +1700,8 @@ class TestDistroSeriesLocalDifferences(
             [diff2, diff1], unfiltered_view.cached_differences.batch
         )
 
-    def test_batch_non_blacklisted(self):
-        # The default filter is all non blacklisted differences.
+    def test_batch_non_blocklisted(self):
+        # The default filter is all non blocklisted differences.
         derived_series, parent_series = self._createChildAndParent()
         diff1 = self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
@@ -1713,7 +1713,7 @@ class TestDistroSeriesLocalDifferences(
         )
         self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
         )
 
         filtered_view = create_initialized_view(
@@ -1775,12 +1775,12 @@ class TestDistroSeriesLocalDifferences(
         derived_series, _ = self._createChildAndParent()
         blocklisted_diff_higher = self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
             versions={"base": "1.1", "parent": "1.3", "derived": "1.10"},
         )
         self.factory.makeDistroSeriesDifference(
             derived_series=derived_series,
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
             versions={"base": "1.1", "parent": "1.12", "derived": "1.10"},
         )
 
@@ -2566,11 +2566,11 @@ class DistroSeriesMissingPackageDiffsTestCase(TestCaseWithFactory):
         derived_series = dsp.derived_series
 
         missing_type = DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES
-        # Missing blacklisted diff.
+        # Missing blocklisted diff.
         self.factory.makeDistroSeriesDifference(
             difference_type=missing_type,
             derived_series=derived_series,
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
         )
 
         missing_diff = self.factory.makeDistroSeriesDifference(
@@ -2720,11 +2720,11 @@ class DistroSerieUniquePackageDiffsTestCase(
         derived_series, parent_series = self._createChildAndParent()
 
         missing_type = DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES
-        # Missing blacklisted diff.
+        # Missing blocklisted diff.
         self.factory.makeDistroSeriesDifference(
             difference_type=missing_type,
             derived_series=derived_series,
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
         )
 
         missing_diff = self.factory.makeDistroSeriesDifference(
