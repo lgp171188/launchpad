@@ -119,7 +119,7 @@ class BasicLoginPage(BrowserPage):
                 self.request.principal.id, self.request
             )
             return "Launchpad basic auth login page"
-        referer = self.request.getHeader("referer")  # Traditional w3c speling
+        referer = self.request.getHeader("referer")  # Traditional w3c spelling
         if referer and self.isSameHost(referer):
             self.request.response.redirect(referer)
         else:
@@ -554,7 +554,7 @@ def expireSessionCookie(
 
 def allowUnauthenticatedSession(request, duration=timedelta(minutes=10)):
     # As a rule, we do not want to send a cookie to an unauthenticated user,
-    # because it breaks cacheing; and we do not want to create a session for
+    # because it breaks caching; and we do not want to create a session for
     # an unauthenticated user, because it unnecessarily consumes valuable
     # database resources. We have an assertion to ensure this. However,
     # sometimes we want to break the rules. To do this, first we set the

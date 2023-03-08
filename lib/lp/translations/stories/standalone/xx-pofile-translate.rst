@@ -242,7 +242,7 @@ Missing plural forms information
 
 If the plural forms are not known for a language, users can not add
 new translations and are asked to help Launchpad Translations by providing
-the plural form informations.
+the plural form information.
 
 This notice is display when doing batch translations or translating a
 single message.

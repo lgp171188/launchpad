@@ -82,18 +82,18 @@ class DistroSeriesDifferenceNavigation(Navigation):
 class IDistroSeriesDifferenceForm(Interface):
     """An interface used in the browser only for displaying form elements."""
 
-    blacklist_options = Choice(
+    blocklist_options = Choice(
         vocabulary=SimpleVocabulary(
             (
                 SimpleTerm("NONE", "NONE", "No"),
                 SimpleTerm(
-                    DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
-                    DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS.name,
+                    DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
+                    DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS.name,
                     "All versions",
                 ),
                 SimpleTerm(
-                    DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
-                    DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT.name,
+                    DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
+                    DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT.name,
                     "These versions",
                 ),
             )
@@ -104,19 +104,19 @@ class IDistroSeriesDifferenceForm(Interface):
 @implementer(IConversation)
 class DistroSeriesDifferenceView(LaunchpadFormView):
     schema = IDistroSeriesDifferenceForm
-    custom_widget_blacklist_options = RadioWidget
+    custom_widget_blocklist_options = RadioWidget
 
     @property
     def initial_values(self):
-        """Ensure the correct radio button is checked for blacklisting."""
-        blacklisted_statuses = (
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
+        """Ensure the correct radio button is checked for blocklisting."""
+        blocklisted_statuses = (
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
+            DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
         )
-        if self.context.status in blacklisted_statuses:
-            return dict(blacklist_options=self.context.status)
+        if self.context.status in blocklisted_statuses:
+            return dict(blocklist_options=self.context.status)
 
-        return dict(blacklist_options="NONE")
+        return dict(blocklist_options="NONE")
 
     @property
     def binary_summaries(self):
@@ -156,8 +156,8 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         return self.request.is_ajax and self.can_request_diffs
 
     @cachedproperty
-    def enable_blacklist_options(self):
-        """Should we enable the blacklisting (ignore) radio widget options.
+    def enable_blocklist_options(self):
+        """Should we enable the blocklisting (ignore) radio widget options.
 
         Only enable the options if an editor requests via JS and the user
         is an archive admin.
@@ -167,15 +167,15 @@ class DistroSeriesDifferenceView(LaunchpadFormView):
         )
 
     @cachedproperty
-    def blacklist_options_css_class(self):
-        """The css class for the blacklist option slot.
-        'blacklist-options' if enabled.
-        'blacklist-options-disabled' if not enabled.
+    def blocklist_options_css_class(self):
+        """The css class for the blocklist option slot.
+        'blocklist-options' if enabled.
+        'blocklist-options-disabled' if not enabled.
         """
-        if self.enable_blacklist_options:
-            return "blacklist-options"
+        if self.enable_blocklist_options:
+            return "blocklist-options"
         else:
-            return "blacklist-options-disabled"
+            return "blocklist-options-disabled"
 
     @property
     def display_diffs(self):

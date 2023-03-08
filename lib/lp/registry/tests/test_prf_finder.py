@@ -359,7 +359,7 @@ class HandleReleaseTestCase(TestCase):
 
     @responses.activate
     def test_handleReleaseTwice_multiple_series(self):
-        # Series can have overlaping release file globs, but versions
+        # Series can have overlapping release file globs, but versions
         # are unique to a project. A file is uploaded to a release only
         # once, regardless of which series wants the upload.
         ztm = self.layer.txn

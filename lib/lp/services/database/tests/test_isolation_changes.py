@@ -101,8 +101,8 @@ class TestIsolation(unittest.TestCase):
         self.assertEqual(self.getCurrentIsolation(), "serializable")
 
     def test_script(self):
-        # Ensure that things work in stand alone scripts too, in case out
-        # test infrustructure is faking something.
+        # Ensure that things work in stand alone scripts too, in case our
+        # test infrastructure is faking something.
         script = os.path.join(os.path.dirname(__file__), "script_isolation.py")
         cmd = [sys.executable, script]
         process = Popen(

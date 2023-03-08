@@ -195,7 +195,7 @@ class POHeader:
 
     def _decode(self, text):
         if text is None or isinstance(text, str):
-            # There is noo need to do anything.
+            # There is no need to do anything.
             return text
         charset = self.charset
         try:

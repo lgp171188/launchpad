@@ -55,6 +55,8 @@ __all__ = [
 import http.client
 import re
 import typing
+from datetime import datetime
+from pathlib import PurePath
 from urllib.parse import urlparse
 
 from lazr.restful.declarations import (
@@ -792,12 +794,51 @@ class IArchiveSubscriberView(Interface):
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
 
-    def getPoolFileByPath(path):
+    def getFileByName(filename):
+        """Return the corresponding `ILibraryFileAlias` in this context.
+
+        The following file types (and extension) can be looked up in the
+        archive context:
+
+         * Source files: '.orig.tar.gz', 'tar.gz', '.diff.gz' and '.dsc';
+         * Binary files: '.deb' and '.udeb';
+         * Source changesfile: '_source.changes';
+         * Package diffs: '.diff.gz';
+
+        :param filename: exactly filename to be looked up.
+
+        :raises AssertionError if the given filename contains a unsupported
+            filename and/or extension, see the list above.
+        :raises NotFoundError if no file could not be found.
+
+        :return the corresponding `ILibraryFileAlias` is the file was found.
+        """
+
+    def getSourceFileByName(name, version, filename):
+        """Return the `ILibraryFileAlias` for a source name/version/filename.
+
+        This can be used to avoid ambiguities with `getFileByName` in
+        imported archives, where the upstream archive software may not
+        always have had robust historical filename uniqueness checks.
+
+        :param name: The name of the source package.
+        :param version: The version of the source package.
+        :param filename: The exact filename to look up.
+
+        :raises NotFoundError: if no matching file could be found.
+        :return: the corresponding `ILibraryFileAlias`.
+        """
+
+    def getPoolFileByPath(
+        path: PurePath, live_at: typing.Optional[datetime] = None
+    ):
         """Return the `ILibraryFileAlias` for a path in this archive's pool.
 
         :param path: A `PurePath` for where a source or binary package file
             is published in this archive's pool, e.g.
             "pool/main/p/package/package_1.dsc".
+        :param live_at: If not None, return only files that existed in the
+            archive at this `datetime`.
         :return: An `ILibraryFileAlias`, or None.
         """
 
@@ -1107,7 +1148,7 @@ class IArchiveView(IHasBuildRecords):
 
         Updates 'sources_cached' and 'binaries_cached' counters.
 
-        Also include owner 'name' and 'displayname' to avoid inpecting the
+        Also include owner 'name' and 'displayname' to avoid inspecting the
         Person table indexes while searching.
         """
 
@@ -1275,41 +1316,6 @@ class IArchiveView(IHasBuildRecords):
         (optionally restricted to a single 'distroseries').  If 'components'
         is empty or None and 'pocket' is None, check if 'person' has any
         queue admin permissions for this archive.
-        """
-
-    def getFileByName(filename):
-        """Return the corresponding `ILibraryFileAlias` in this context.
-
-        The following file types (and extension) can be looked up in the
-        archive context:
-
-         * Source files: '.orig.tar.gz', 'tar.gz', '.diff.gz' and '.dsc';
-         * Binary files: '.deb' and '.udeb';
-         * Source changesfile: '_source.changes';
-         * Package diffs: '.diff.gz';
-
-        :param filename: exactly filename to be looked up.
-
-        :raises AssertionError if the given filename contains a unsupported
-            filename and/or extension, see the list above.
-        :raises NotFoundError if no file could not be found.
-
-        :return the corresponding `ILibraryFileAlias` is the file was found.
-        """
-
-    def getSourceFileByName(name, version, filename):
-        """Return the `ILibraryFileAlias` for a source name/version/filename.
-
-        This can be used to avoid ambiguities with `getFileByName` in
-        imported archives, where the upstream archive software may not
-        always have had robust historical filename uniqueness checks.
-
-        :param name: The name of the source package.
-        :param version: The version of the source package.
-        :param filename: The exact filename to look up.
-
-        :raises NotFoundError: if no matching file could be found.
-        :return: the corresponding `ILibraryFileAlias`.
         """
 
     def getBinaryPackageRelease(name, version, archtag):

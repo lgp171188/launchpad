@@ -215,7 +215,7 @@ class SetCurrentTranslationTestMixin:
         self.assertTrue(tm is not None)
         if follows:
             # Even if the other side is supposed to follow this side,
-            # we ovverride the other only if the current side is Ubuntu.
+            # we override the other only if the current side is Ubuntu.
             expected_other = self.selectUpstreamTranslation(tm, tm_other)
         else:
             expected_other = tm_other

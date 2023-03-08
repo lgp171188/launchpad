@@ -3,8 +3,8 @@
 
 """Browser notification messages
 
-Provides an API for displaying arbitrary  notifications to users after
-an action has been performed, independant of what page the user
+Provides an API for displaying arbitrary notifications to users after
+an action has been performed, independent of what page the user
 ends up on after the action is done.
 
 Note that the current implementation is deliberately broken - the only way
@@ -47,9 +47,9 @@ class NotificationRequest:
 
 @implementer(INotificationResponse)
 class NotificationResponse:
-    """The NotificationResponse collects notifications to propogate to the
+    """The NotificationResponse collects notifications to propagate to the
     next page loaded. Notifications are stored in the session, with a key
-    propogated via the URL to load the correct messages in the next loaded
+    propagated via the URL to load the correct messages in the next loaded
     page.
 
     It needs to be mixed in with an IHTTPApplicationResponse so its redirect
@@ -77,7 +77,7 @@ class NotificationResponse:
         # Do some getattr sniffing so that the doctests in this module
         # still pass.  Doing this rather than improving the Mock classes
         # that the mixins are used with, as we'll be moving this hack to
-        # the sesions machinery in due course.
+        # the sessions machinery in due course.
         if not (
             getattr(request, "cookies", None)
             and getattr(response, "getCookie", None)
@@ -89,7 +89,7 @@ class NotificationResponse:
             try:
                 # Use notifications stored in the session.
                 self._notifications = session["notifications"]
-                # Remove them from the session so they don't propogate to
+                # Remove them from the session so they don't propagate to
                 # subsequent pages, unless redirect() is called which will
                 # push the notifications back into the session.
                 del session["notifications"]
@@ -203,7 +203,7 @@ class NotificationTestView1(LaunchpadView):
 
 
 class NotificationTestView2(NotificationTestView1):
-    """Redirect to another page, propogating some notification messages.
+    """Redirect to another page, propagating some notification messages.
 
     This is installed into the real instance, rather than added on the fly
     in the test suite, as this page is useful for adjusting the visual style

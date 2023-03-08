@@ -1600,7 +1600,7 @@ class DistroSnapshotTestCase(TestCaseWithFactory):
         self.distribution = self.factory.makeDistribution(name="boobuntu")
 
     def test_snapshot(self):
-        """Snapshots of distributions should not include marked attribues.
+        """Snapshots of distributions should not include marked attributes.
 
         Wrap an export with 'doNotSnapshot' to force the snapshot to not
         include that attribute.

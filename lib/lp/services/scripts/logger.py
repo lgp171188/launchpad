@@ -329,7 +329,7 @@ def logger(options=None, name=None):
     """Return a logging instance with standard setup.
 
     options should be the options as returned by an option parser that
-    has been initilized with logger_options(parser)
+    has been initialized with logger_options(parser)
 
     >>> from optparse import OptionParser
     >>> parser = OptionParser()
@@ -416,7 +416,7 @@ def _logger(
     hdlr.setFormatter(formatter)
     root_logger.addHandler(hdlr)
 
-    # Add an optional aditional log file.
+    # Add an optional additional log file.
     if log_file is not None:
         handler = WatchedFileHandler(log_file, encoding="UTF8")
         handler.setFormatter(formatter)

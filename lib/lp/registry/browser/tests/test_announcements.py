@@ -73,7 +73,7 @@ class TestAnnouncementPage(BrowserTestCase):
         :param context: HasAnnouncements subclass, that routes to an
                         announcements page.
         :param view_name: View name of the announcements.
-        :param user: Loggin with this user when showing the announcements page.
+        :param user: Login with this user when showing the announcements page.
         """
         # cleanup announcements from test data to make sure we are not
         # hiding new announcements because of pagination.

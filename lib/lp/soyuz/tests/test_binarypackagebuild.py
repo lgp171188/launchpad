@@ -87,7 +87,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         self.assertEqual(bq, self.build.buildqueue_record)
 
     def test_estimateDuration(self):
-        # Without previous builds, a negligable package size estimate is
+        # Without previous builds, a negligible package size estimate is
         # 300s.
         self.assertEqual(300, self.build.estimateDuration().seconds)
 
@@ -320,7 +320,7 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
         # dependencies. A build will not be retried unless the candidate
         # complies with the version restriction.
         # In this case, dep-bin 666 is available. >> 666 isn't
-        # satisified, but >= 666 is.
+        # satisfied, but >= 666 is.
         depwait_build = self._setupSimpleDepwaitContext()
         self.layer.txn.commit()
 

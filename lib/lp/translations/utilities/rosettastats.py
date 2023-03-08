@@ -31,25 +31,25 @@ class RosettaStats:
 
     def messageCount(self):
         """See IRosettaStats."""
-        # This method should be overrided by the objects that inherit from
+        # This method should be overridden by the objects that inherit from
         # this class
         return 0
 
     def currentCount(self, language=None):
         """See IRosettaStats."""
-        # This method should be overrided by the objects that inherit from
+        # This method should be overridden by the objects that inherit from
         # this class
         return 0
 
     def updatesCount(self, language=None):
         """See IRosettaStats."""
-        # This method should be overrided by the objects that inherit from
+        # This method should be overridden by the objects that inherit from
         # this class
         return 0
 
     def rosettaCount(self, language=None):
         """See IRosettaStats."""
-        # This method should be overrided by the objects that inherit from
+        # This method should be overridden by the objects that inherit from
         # this class
         return 0
 

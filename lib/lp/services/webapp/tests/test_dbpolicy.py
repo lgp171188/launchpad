@@ -430,11 +430,11 @@ class TestFastDowntimeRollout(TestCase):
         self.assertTrue(self.store_is_working(store))
 
         # After schema updates have been made to the primary, it is
-        # reenabled.
+        # re-enabled.
         self.pgbouncer_cur.execute("RESUME %s" % self.primary_dbname)
         self.pgbouncer_cur.execute("ENABLE %s" % self.primary_dbname)
 
-        # And the standbys taken down, and replication reenabled so the
+        # And the standbys taken down, and replication re-enabled so the
         # schema updates can replicate.
         self.pgbouncer_cur.execute("DISABLE %s" % self.standby_dbname)
         self.pgbouncer_cur.execute("KILL %s" % self.standby_dbname)
@@ -464,12 +464,12 @@ class TestFastDowntimeRollout(TestCase):
         self.assertTrue(self.store_is_working(store))
 
         # The original Store is busted though. You cannot reuse Stores
-        # across transaction bounderies because you might end up using
+        # across transaction boundaries because you might end up using
         # the wrong Store.
         self.assertFalse(self.store_is_working(original_store))
         transaction.abort()
 
-        # Once replication has caught up, the standby is reenabled.
+        # Once replication has caught up, the standby is re-enabled.
         self.pgbouncer_cur.execute("RESUME %s" % self.standby_dbname)
         self.pgbouncer_cur.execute("ENABLE %s" % self.standby_dbname)
 
@@ -508,11 +508,11 @@ class TestFastDowntimeRollout(TestCase):
         transaction.abort()
 
         # After schema updates have been made to the primary, it is
-        # reenabled.
+        # re-enabled.
         self.pgbouncer_cur.execute("RESUME %s" % self.primary_dbname)
         self.pgbouncer_cur.execute("ENABLE %s" % self.primary_dbname)
 
-        # And the standbys taken down, and replication reenabled so the
+        # And the standbys taken down, and replication re-enabled so the
         # schema updates can replicate.
         self.pgbouncer_cur.execute("DISABLE %s" % self.standby_dbname)
         self.pgbouncer_cur.execute("KILL %s" % self.standby_dbname)
@@ -538,7 +538,7 @@ class TestFastDowntimeRollout(TestCase):
         self.assertTrue(self.store_is_primary(standby_store))
         self.assertTrue(self.store_is_working(standby_store))
 
-        # Once replication has caught up, the standby is reenabled.
+        # Once replication has caught up, the standby is re-enabled.
         self.pgbouncer_cur.execute("RESUME %s" % self.standby_dbname)
         self.pgbouncer_cur.execute("ENABLE %s" % self.standby_dbname)
 

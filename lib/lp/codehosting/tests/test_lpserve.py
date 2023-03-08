@@ -97,8 +97,8 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
         process, transport = self.start_server_inet()
         # This will trigger an error, because the XML-RPC server is not
         # running, and any filesystem access tries to get at the XML-RPC
-        # server. If this *doesn'* raise, then the test is no longer valid and
-        # we need a new way of triggering errors in the smart server.
+        # server. If this *doesn't* raise, then the test is no longer valid
+        # and we need a new way of triggering errors in the smart server.
         self.assertRaises(
             errors.UnknownErrorFromSmartServer,
             transport.list_dir,

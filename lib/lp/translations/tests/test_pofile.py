@@ -1750,7 +1750,7 @@ class TestPOFileSet(TestCaseWithFactory):
         pofile1.date_changed = week_ago
 
         # Let's make sure the condition from the bug holds,
-        # since pofile2 is created implicitely with the makePOTemplate call.
+        # since pofile2 is created implicitly with the makePOTemplate call.
         self.assertTrue(pofile1.id < pofile2.id)
         pofiles = self.pofileset.getPOFilesTouchedSince(yesterday)
         self.assertContentEqual([pofile1, pofile2], pofiles)
@@ -2577,7 +2577,7 @@ class TestPOFile(TestCaseWithFactory):
         )
 
     def test_prepare_pomessage_error_message_sequence_is_invalid(self):
-        # The errordetails can be contructed when the sequnce is invalid.
+        # The errordetails can be constructed when the sequence is invalid.
         errors = [
             {
                 "potmsgset": self.factory.makePOTMsgSet(

@@ -322,7 +322,7 @@ class IPoll(Interface):
         This method can be used only if this poll is still open and if this is
         a Simple-style poll.
 
-        :option: The choosen option.
+        :option: The chosen option.
 
         :when: Optional argument used only by our tests, to test if the poll
                is/was/will be open at a specific date.
@@ -589,11 +589,11 @@ class IVote(Interface):
     )
 
     option = Int(
-        title=_("The PollOption choosen."), required=True, readonly=False
+        title=_("The PollOption chosen."), required=True, readonly=False
     )
 
     preference = Int(
-        title=_("The preference of the choosen PollOption"),
+        title=_("The preference of the chosen PollOption"),
         required=True,
         readonly=False,
     )
@@ -618,7 +618,7 @@ class IVoteSet(Interface):
         """Return the list of votes with the given token.
 
         For polls whose type is SIMPLE, this list will contain a single vote,
-        because in SIMPLE poll only one option can be choosen.
+        because in SIMPLE poll only one option can be chosen.
         """
 
     def getVotesByOption(option):

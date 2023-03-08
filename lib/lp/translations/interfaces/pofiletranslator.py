@@ -65,7 +65,7 @@ class IPOFileTranslatorSet(Interface):
         """
 
     def getForTemplate(potemplate):
-        """Retrieve `POFileTranslator` objects associated iwth `POTemplate`.
+        """Retrieve `POFileTranslator` objects associated with `POTemplate`.
 
         :param potemplate: `POTemplate` to look for.
         :return: Result set of `POFileTranslator` records associated with

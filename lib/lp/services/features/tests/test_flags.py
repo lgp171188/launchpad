@@ -75,7 +75,7 @@ class TestFeatureFlags(TestCase):
         # If only one scope matches, its name is returned.
         control, call_log = self.makeControllerInScopes(["default"])
         self.assertEqual("default", control.currentScope("ui.icing"))
-        # If two scopes match, the one with the higer priority is returned.
+        # If two scopes match, the one with the higher priority is returned.
         control, call_log = self.makeControllerInScopes(
             ["default", "beta_user"]
         )

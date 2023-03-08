@@ -97,7 +97,8 @@ class Packageset(StormBase):
     def _addSourcePackageNames(self, source_names, store):
         """Add the given source package names to the package set.
 
-        Souce package names already *directly* associated are ignored."""
+        Source package names already *directly* associated are ignored.
+        """
         query = """
             INSERT INTO packagesetsources(packageset, sourcepackagename) (
                 SELECT ? AS packageset, spn.id AS sourcepackagename

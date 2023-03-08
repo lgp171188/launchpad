@@ -78,10 +78,12 @@ class FileNavigationMixin:
     with the same filename (product files or bug attachments).
     """
 
+    file_navigation_permission = "launchpad.View"
+
     @stepthrough("+files")
     def traverse_files(self, filename):
         """Traverse on filename in the archive domain."""
-        if not check_permission("launchpad.View", self.context):
+        if not check_permission(self.file_navigation_permission, self.context):
             raise Unauthorized()
         library_file = self.context.getFileByName(filename)
 

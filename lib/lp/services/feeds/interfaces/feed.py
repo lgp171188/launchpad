@@ -93,7 +93,7 @@ class IFeed(Interface):
     # all time and domains.  That sounds harder than it really is.  To make
     # our IDs unique we follow the Tag ID standard proposed in RFC 4151 which
     # composes an ID using 'tag:' + domain + creation date + unique URL path.
-    # So an ID for a Jokosher announcment feed would look like:
+    # So an ID for a Jokosher announcement feed would look like:
     # tag:launchpad.net,2006-5-26:/jokosher/+announcements.
     feed_id = TextLine(
         title="ID for the feed.",

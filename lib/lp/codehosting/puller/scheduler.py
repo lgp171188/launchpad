@@ -283,7 +283,7 @@ class PullerMonitorProtocol(
         self.runNotification(mirrorFailed)
 
     def do_progressMade(self):
-        """Any progress resets the timout counter."""
+        """Any progress resets the timeout counter."""
         self.resetTimeout()
 
     def do_log(self, message):

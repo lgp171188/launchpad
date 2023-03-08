@@ -1028,7 +1028,7 @@ class Person(
                 *search_params, prejoins=prejoins
             )
         if len(kwargs) > 0:
-            # if keyword arguments are supplied, use the deault
+            # if keyword arguments are supplied, use the default
             # implementation in HasBugsBase.
             return HasBugsBase.searchTasks(
                 self, search_params, prejoins=prejoins, **kwargs
@@ -1380,7 +1380,7 @@ class Person(
     def is_probationary(self):
         """See `IPerson`.
 
-        Users without karma have not demostrated their intentions may not
+        Users without karma have not demonstrated their intentions may not
         have the same privileges as users who have made contributions.
         """
         return not self.is_team and self.karma == 0
@@ -1463,7 +1463,7 @@ class Person(
 
         if not team.is_team:
             # It is possible that this team is really a user since teams
-            # are users are often interchangable.
+            # are users are often interchangeable.
             return False
 
         if self._inTeam_cache is None:
@@ -3474,7 +3474,7 @@ class Person(
 
     @staticmethod
     def _is_ubuntu_coc_signer_condition():
-        """Generate a Storm Expr for determing the coc signing status."""
+        """Generate a Storm Expr for determining the coc signing status."""
         sigset = getUtility(ISignedCodeOfConductSet)
         lastdate = sigset.getLastAcceptedDate()
         return And(
@@ -4097,7 +4097,7 @@ class PersonSet:
         )
         if not dry_run:
             # ISSHKeySet does not restrict the same SSH key being added
-            # multiple times, so make sure we delte them all:
+            # multiple times, so make sure we delete them all:
             for key in keys:
                 key.destroySelf(send_notification=False)
 

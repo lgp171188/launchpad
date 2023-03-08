@@ -152,8 +152,8 @@ Retrieving only pending-acceptance PPAs
 ---------------------------------------
 
 'getPendingAcceptancePPAs' lookup will only return PPA which have
-Package Upload (queue) records in ACCEPTED state, it it used in
-'process-accepted' in '--ppa' mode to avoid quering all PPAs:
+Package Upload (queue) records in ACCEPTED state.  It is used in
+'process-accepted' in '--ppa' mode to avoid querying all PPAs:
 
 Nothing is pending-acceptance in sampledata:
 

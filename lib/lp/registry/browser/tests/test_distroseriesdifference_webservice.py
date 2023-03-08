@@ -51,13 +51,13 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
             ds_diff.parent_series,
         )
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT, ds_diff.status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT, ds_diff.status
         )
 
     def test_unblocklist(self):
         # The unblocklist method can be called by people with admin access.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         )
         archive_admin = self.factory.makeArchiveAdmin(
             archive=ds_diff.derived_series.main_archive
@@ -195,7 +195,7 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
     def test_exported_status(self):
         # The difference's status is exposed.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         )
         ws_diff = ws_object(
             self.factory.makeLaunchpadService(self.factory.makePerson()),

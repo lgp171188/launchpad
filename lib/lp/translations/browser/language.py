@@ -262,7 +262,7 @@ class LanguageView(TranslationsMixin, LaunchpadView):
             else:
                 translator_target = translator
 
-            # Add translator only if it was not previouly added as a
+            # Add translator only if it was not previously added as a
             # merged account
             if translator_target not in top_translators:
                 top_translators.append(translator_target)

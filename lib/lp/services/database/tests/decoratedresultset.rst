@@ -39,7 +39,7 @@ ResultSet:
 copy()
 ------
 
-The decorated copy method calls the orgininal result sets copy method
+The decorated copy method calls the original result sets copy method
 and then returns a new decorated result set composed of the new
 copy:
 

@@ -42,7 +42,7 @@ class MboxMailer:
             self.filename,
         )
         msg = email.message_from_string(message)
-        # Mimic what MTAs such as Postfix do in transfering the envelope
+        # Mimic what MTAs such as Postfix do in transferring the envelope
         # sender into the Return-Path header.  It's okay if the message has
         # multiple such headers.
         msg["Return-Path"] = fromaddr

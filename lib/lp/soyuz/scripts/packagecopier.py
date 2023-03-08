@@ -237,7 +237,7 @@ def check_copy_permissions(
 
 
 class CopyChecker:
-    """Check copy candiates.
+    """Check copy candidates.
 
     Allows the checker function to identify conflicting copy candidates
     within the copying batch.
@@ -588,7 +588,7 @@ def do_copy(
     raises `CannotCopy` if one or more copies could not be performed.
 
     When `CannotCopy` is raised, call sites are responsible for rolling
-    back the transaction.  Otherwise, performed copies will be commited.
+    back the transaction.  Otherwise, performed copies will be committed.
 
     Wrapper for `do_direct_copy`.
 

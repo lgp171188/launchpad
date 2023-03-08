@@ -219,7 +219,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
         to_mirror = self.makePullerWorker(
             source_branch.base, self.get_url("dest/stacked")
         )
-        # The branch can be mirrored without errors and the destionation
+        # The branch can be mirrored without errors and the destination
         # location is upgraded to match the source format.
         to_mirror.mirrorWithoutChecks()
         mirrored_branch = breezy.branch.Branch.open(to_mirror.dest)

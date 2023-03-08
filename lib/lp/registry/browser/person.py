@@ -2345,7 +2345,7 @@ class PersonCodeOfConductEditView(LaunchpadView):
 
         if sig_ids is not None:
             sCoC_util = getUtility(ISignedCodeOfConductSet)
-            # Verify that we have multiple entries to deactive.
+            # Verify that we have multiple entries to deactivate.
             if not isinstance(sig_ids, list):
                 sig_ids = [sig_ids]
             for sig_id in sig_ids:
@@ -2589,7 +2589,7 @@ class PersonGPGView(LaunchpadView):
 
     def claim_gpg(self):
         # XXX cprov 2005-04-01: As "Claim GPG key" takes a lot of time, we
-        # should process it throught the NotificationEngine.
+        # should process it through the NotificationEngine.
         gpghandler = getUtility(IGPGHandler)
         fingerprint = self.request.form.get("fingerprint")
         self.fingerprint = gpghandler.sanitizeFingerprint(fingerprint)
@@ -2625,7 +2625,7 @@ class PersonGPGView(LaunchpadView):
             )
             return
 
-        # verify if we have multiple entries to deactive
+        # verify if we have multiple entries to deactivate
         if not isinstance(key_fingerprints, list):
             key_fingerprints = [key_fingerprints]
 

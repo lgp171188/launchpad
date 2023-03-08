@@ -251,7 +251,7 @@ def seconds_since_epoch(dt):
 # See https://lists.ubuntu.com
 #     /mailman/private/launchpad-reviews/2007-June/006081.html
 
-# This verson of the re is more than 5x faster that the orginal
+# This version of the re is more than 5x faster that the original
 # version used in ftest/test_tales.testObfuscateEmail.
 re_email_address = re.compile(
     r"""

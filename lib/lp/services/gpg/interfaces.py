@@ -314,10 +314,10 @@ class IGPGHandler(Interface):
         Currently only passwordless, signo-only 1024-bit RSA keys are
         generated.
 
-        :param name: unicode to be included in the key paramenters, 'comment'
-            and 'email' will be empty. It's content will be encoded to
+        :param name: unicode to be included in the key parameters, 'comment'
+            and 'email' will be empty. Its content will be encoded to
             'utf-8' internally.
-        :raise AssertionError: if the key generation is not exaclty what
+        :raise AssertionError: if the key generation is not exactly what
             we expect.
 
         :return: a `PymeKey` object for the just-generated secret key.

@@ -21,8 +21,8 @@ domain which in turn is derived from the path itself.
 The name is used for matching instead of the translation domain because the
 domain may change when the source tree is updated to a new version as
 the developers may choose to include version information in the domain. This
-makes it possible to intall multiple versions of the same software on a
-system without having mo files clash. Evolution is a noteable example of
+makes it possible to install multiple versions of the same software on a
+system without having mo files clash. Evolution is a notable example of
 doing this.
 
 To be able to assess the context of a template file it should approve, the
@@ -39,10 +39,10 @@ the other hand it also knows about files that have no matching object. This
 will lead to one of four situations.
 
  1. All files are matched to POTemplate objects and vice versa so that no
-    file or oject is left unmatched. All subsequent approval requests can
+    file or object is left unmatched. All subsequent approval requests can
     safely be approved.
  2. All objects are matched to files but at least one file is left unmatched.
-    The matched files can safly be approved wereas the unmatched file
+    The matched files can safely be approved whereas the unmatched file
     triggers the creation of a new POTemplate object. If multiple files are
     unmatched, a POTemplate will be created for each.
  3. Some files *and* some objects are left unmatched. Only the matched files
@@ -73,7 +73,7 @@ the import queue.
     ... )
 
 The job initializes the approver with the list of template files in the tree,
-which has only one entry. This is situtation 2 (see above).
+which has only one entry. This is situation 2 (see above).
 
     >>> approver = TranslationBranchApprover(
     ...     ["foo.pot"], productseries=series
@@ -106,7 +106,7 @@ detects this new file on its next run and places it into the import queue
     ... )
 
 The job does know about all the template files in the tree and so it
-initializes the approver accordingly. This is situtation 2 again.
+initializes the approver accordingly. This is situation 2 again.
 
     >>> approver = TranslationBranchApprover(
     ...     ["foo.pot", "bar.pot"], productseries=series

@@ -762,7 +762,7 @@ class DatabaseLayer(BaseLayer):
             )
         # Reset/bring up the db - makes it available for either the next test,
         # or a subordinate layer which builds on the db. This wastes one setup
-        # per db layer teardown per run, but thats tolerable.
+        # per db layer teardown per run, but that's tolerable.
         cls._db_fixture.setUp()
 
     @classmethod

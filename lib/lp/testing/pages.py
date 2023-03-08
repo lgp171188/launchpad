@@ -1010,7 +1010,7 @@ def setUpGlobs(test):
     )
 
     test.globs["ANONYMOUS"] = ANONYMOUS
-    # If a unicode URL is opened by the test browswer, later navigation
+    # If a unicode URL is opened by the test browser, later navigation
     # raises ValueError exceptions in /usr/lib/python2.4/Cookie.py
     test.globs["canonical_url"] = safe_canonical_url
     test.globs["factory"] = LaunchpadObjectFactory()

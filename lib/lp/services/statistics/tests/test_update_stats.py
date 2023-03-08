@@ -247,7 +247,7 @@ class UpdateTranslationStatsTest(unittest.TestCase):
         # another transaction and thus it won't see the changes done on this
         # test unless we commit.
         # XXX CarlosPerelloMarin 2007-01-22 bug=3989:
-        # Unecessary flush_database_updates required.
+        # Unnecessary flush_database_updates required.
         from lp.services.database.sqlbase import flush_database_updates
 
         flush_database_updates()

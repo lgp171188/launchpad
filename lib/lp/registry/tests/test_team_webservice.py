@@ -68,7 +68,7 @@ class TeamObsoleteAPITestCase(TestCaseWithFactory):
 
     def test_newTeam_obsolete_subscription_policy(self):
         # The subscription_policy kwarg can be passed instead of
-        # membership_policy to suppport 1.0 API
+        # membership_policy to support 1.0 API
         owner = self.factory.makePerson()
         launchpad = launchpadlib_for("test", owner)
         team = launchpad.people.newTeam(

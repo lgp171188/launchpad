@@ -85,7 +85,7 @@ class IMailHandler(Interface):
         The 'log' is the logger to be used.
 
         Return False if to_address does not exist/is bad.
-        Return True if the mesage was processed, successfully or
+        Return True if the message was processed, successfully or
         unsuccessfully.  This includes user or input errors.
         Programming errors should cause exceptions to be raised.
         """

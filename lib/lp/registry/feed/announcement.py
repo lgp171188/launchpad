@@ -63,7 +63,7 @@ class AnnouncementsFeedBase(FeedBase):
         title = self._entryTitle(announcement)
         # The link_alternate for the entry is the human-readable alternate URL
         # for the entry.  For example:
-        # http://launchpad.net/ubuntu/+announcment/12
+        # http://launchpad.net/ubuntu/+announcement/12
         entry_link_alternate = "%s%s" % (
             canonical_url(announcement.target, rootsite=self.rootsite),
             "/+announcement/%d" % announcement.id,
@@ -79,7 +79,7 @@ class AnnouncementsFeedBase(FeedBase):
         )
         # The entry for an announcement has distinct dates for created,
         # updated, and published.  For some data, the created and published
-        # dates will be the same.  The announcements also only have a singe
+        # dates will be the same.  The announcements also only have a single
         # author.
 
         entry_id = "tag:launchpad.net,%s:/+announcement/%d" % (

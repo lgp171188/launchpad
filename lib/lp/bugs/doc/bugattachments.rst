@@ -286,7 +286,7 @@ attachment was added.
 
 Let's try uploading a file with some weird characters in them:
 
-    >>> filecontent.filename = "fo\xf6 bar"
+    >>> filecontent.filename = "foö bar"
     >>> add_request = LaunchpadTestRequest(
     ...     method="POST",
     ...     form={

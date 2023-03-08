@@ -104,7 +104,7 @@ check_authentication Mode
 Ask an Identity Provider if a message is valid. For dumb, stateless
 Consumers or when verifying an invalidate_handle response.
 
-If an association handle is stateful (genereted using the associate Mode),
+If an association handle is stateful (generated using the associate Mode),
 check_authentication will fail.
 
     >>> args = urlencode(

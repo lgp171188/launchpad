@@ -5,7 +5,7 @@ Template names can be derived from template paths. The name usually matches
 the translation domain but translation domains may contain characters that
 template names may not, most notably capital characters and underscores.
 
-The template utitlity module provides functions for these conversions. They
+The template utility module provides functions for these conversions. They
 also know how to detect xpi templates and generic template file names and
 derive translation domains from directory names, if possible.
 

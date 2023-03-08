@@ -350,7 +350,7 @@ class IProductSeriesView(
 
     def getPackagingInDistribution(distribution):
         """Return all the Packaging entries for this product series for the
-        given distribution. Note that this only returns EXPLICT packaging
+        given distribution. Note that this only returns EXPLICIT packaging
         entries, it does not look at distro series ancestry in the same way
         that IProductSeries.getPackage() does.
         """

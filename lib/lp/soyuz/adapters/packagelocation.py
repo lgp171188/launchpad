@@ -152,7 +152,7 @@ def build_package_location(
             )
     elif purpose == ArchivePurpose.PARTNER:
         assert person_name is None and archive_name is None, (
-            "person_name and archive_name shoudn't be passed for "
+            "person_name and archive_name shouldn't be passed for "
             "PARTNER archive."
         )
         archive = getUtility(IArchiveSet).getByDistroPurpose(
@@ -177,7 +177,7 @@ def build_package_location(
             )
     else:
         assert person_name is None and archive_name is None, (
-            "person_name and archive_name shoudn't be passed when purpose "
+            "person_name and archive_name shouldn't be passed when purpose "
             "is omitted."
         )
         archive = distribution.main_archive

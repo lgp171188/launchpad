@@ -1348,7 +1348,7 @@ private.
     PPA named myprivateppa for Celso Providelo
 
 'getLatestPPASourcePublicationsForDistribution' returns up to 5
-lastest source publications available for a given distribution ordered
+latest source publications available for a given distribution ordered
 by descending 'datecreated'.
 
     >>> latest_uploads = (

@@ -62,7 +62,7 @@ class TestSharingInfoMixin:
     def getAuthorizedUserForProductseries(self, productseries):
         """Get a user that has Edit rights on productseries.
 
-        If productseries is None, return an arbritrary user. Used by
+        If productseries is None, return an arbitrary user. Used by
         implementations of getAuthorizedUser.
         """
         logged_in_user = self.factory.makePerson()

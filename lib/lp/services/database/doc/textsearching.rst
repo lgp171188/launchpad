@@ -65,7 +65,7 @@ If a query contains multiple words, an AND query is performed:
     ... )
     Carlos Valdivia Yagüe
 
-This can also be explicity performed by joining the words with 'and':
+This can also be explicitly performed by joining the words with 'and':
 
     >>> runsql(
     ...     """
@@ -171,7 +171,7 @@ Boolean operations are allowed
     hi&!dad <=> 'hi' & !'dad'
 
 
-Brackets are allowed to specify precidence
+Brackets are allowed to specify precedence
 
     >>> ftq("(HI OR HELLO) AND mom")
     (hi|hello)&mom <=> ( 'hi' | 'hello' ) & 'mom'
@@ -673,7 +673,7 @@ on Ubuntu) - so we are disabling this and reworking from the ground up.
 nl_term_candidates()
 ~~~~~~~~~~~~~~~~~~~~
 
-To find the terms in a search phrase that are canditates for the search,
+To find the terms in a search phrase that are candidates for the search,
 we can use the nl_term_candidates() function. This function uses ftq()
 internally to removes stop words and other words that will be ignored
 by tsearch2. All words are also stemmed.
@@ -692,7 +692,7 @@ It returns an empty list when there is only stop-words in the query:
     >>> nl_term_candidates("how do I do this?")
     []
 
-Except for the hyphenation character, all non-word caracters are ignored:
+Except for the hyphenation character, all non-word characters are ignored:
 
     >>> for term in nl_term_candidates(
     ...     "Will the ''|'' character (inside a ''quoted'' string) " "work???"

@@ -780,7 +780,7 @@ class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
 
     def test_child_gets_newer(self):
         # When a new source is uploaded to the child distroseries, the DSD is
-        # updated and auto-blacklisted.
+        # updated and auto-blocklisted.
         dsp = self.makeDerivedDistroSeries()
         source_package_name = self.factory.makeSourcePackageName()
         self.createPublication(
@@ -805,11 +805,11 @@ class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
         )
         self.runJob(jobs[0])
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT, ds_diff[0].status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT, ds_diff[0].status
         )
         self.assertEqual("1.0-1", ds_diff[0].base_version)
 
-        # An additional upload should not change the blacklisted status.
+        # An additional upload should not change the blocklisted status.
         self.createPublication(
             source_package_name, ["2.0-0derived2", "1.0-1"], dsp.derived_series
         )
@@ -818,7 +818,7 @@ class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
         )
         self.runJob(jobs[0])
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT, ds_diff[0].status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT, ds_diff[0].status
         )
 
     def test_child_is_synced(self):

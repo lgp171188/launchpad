@@ -425,7 +425,7 @@ class SignedCodeOfConductSet:
         # XXX: cprov 2005-02-27:
         # FTI presents problems when query by incomplete names
         # and I'm not sure if the best solution here is to use
-        # trivial ILIKE query. Oppinion required on Review.
+        # trivial ILIKE query. Opinion required on Review.
 
         clauses = [SignedCodeOfConduct.owner == Person.id]
 

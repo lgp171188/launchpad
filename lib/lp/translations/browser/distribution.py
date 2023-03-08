@@ -88,7 +88,7 @@ class DistributionView(LaunchpadView):
     def translation_focus(self):
         """Return the IDistroSeries where the translators should work.
 
-        If ther isn't a defined focus, we return latest series.
+        If there isn't a defined focus, we return latest series.
         """
         if self.context.translation_focus is None:
             return self.context.currentseries

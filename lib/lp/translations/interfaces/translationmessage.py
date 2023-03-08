@@ -41,7 +41,7 @@ class RosettaTranslationOrigin(DBEnumeratedType):
         Source Control Management Source
 
         This translation sighting came from a PO File we
-        analysed in a source control managements sytem first.
+        analysed in a source control managements system first.
         """,
     )
 

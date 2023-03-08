@@ -86,7 +86,16 @@ repos:
     hooks:
     -   id: codespell
         args: ["-I", ".codespell-ignore"]
-        files: ^(doc/.*\.rst|.*\.js)$
+        files: ^(.*\.js|.*\.rst)$
+        exclude: |
+          (?x)^(
+            # URL-encoding of "foö".
+            lib/lp/bugs/doc/bugattachments\.rst
+            # Quoted-printable encoding.
+            |lib/lp/code/doc/branch-notifications\.rst
+            # Word truncated by stemming.
+            |lib/lp/services/database/doc/textsearching\.rst
+          )$
 -   repo: https://github.com/get-woke/woke
     rev: v0.19.0
     hooks:

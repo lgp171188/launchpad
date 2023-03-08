@@ -35,7 +35,7 @@ class TestModifiedBranchesLocations(TestCaseWithFactory):
 
 
 class TestModifiedBranchesLastModifiedEpoch(TestCase):
-    """Test the calculation of the last modifed date."""
+    """Test the calculation of the last modified date."""
 
     def test_no_args(self):
         # The script needs one of --since or --last-hours to be specified.
@@ -102,7 +102,7 @@ class TestModifiedBranchesStripPrefix(TestCase):
         self.assertEqual("/srv/", script.options.strip_prefix)
 
     def test_override(self):
-        # The default can be overrided with the --strip-prefix option.
+        # The default can be overridden with the --strip-prefix option.
         # Still need to pass in one of --since or --last-hours.
         script = ModifiedBranchesScript(
             "modified-branches",
@@ -143,7 +143,7 @@ class TestModifiedBranchesAppendSuffix(TestCase):
         self.assertEqual("/**", script.options.append_suffix)
 
     def test_override(self):
-        # The default can be overrided with the --append-suffix option.
+        # The default can be overridden with the --append-suffix option.
         # Still need to pass in one of --since or --last-hours.
         script = ModifiedBranchesScript(
             "modified-branches",

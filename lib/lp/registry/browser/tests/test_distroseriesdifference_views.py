@@ -178,23 +178,23 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         self.assertThat(view(), Not(binary_description_matcher))
 
     def test_show_edit_options_non_ajax(self):
-        # Blacklist options and "Add comment" are not shown for non-ajax
+        # Blocklist options and "Add comment" are not shown for non-ajax
         # requests.
         ds_diff = self.factory.makeDistroSeriesDifference()
 
-        # Without JS, even editors don't see blacklist options.
+        # Without JS, even editors don't see blocklist options.
         with person_logged_in(self.factory.makePerson()):
             view = create_initialized_view(
                 ds_diff, "+listing-distroseries-extra"
             )
         self.assertFalse(view.show_add_comment)
-        self.assertFalse(view.enable_blacklist_options)
+        self.assertFalse(view.enable_blocklist_options)
         self.assertEqual(
-            "blacklist-options-disabled", view.blacklist_options_css_class
+            "blocklist-options-disabled", view.blocklist_options_css_class
         )
 
     def test_show_edit_options_editor(self):
-        # The "Add comment" link is shown and the blacklist options are
+        # The "Add comment" link is shown and the blocklist options are
         # not enabled if requested by an editor via ajax.
         ds_diff = self.factory.makeDistroSeriesDifference()
 
@@ -204,13 +204,13 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
                 ds_diff, "+listing-distroseries-extra", request=request
             )
             self.assertTrue(view.show_add_comment)
-            self.assertFalse(view.enable_blacklist_options)
+            self.assertFalse(view.enable_blocklist_options)
             self.assertEqual(
-                "blacklist-options-disabled", view.blacklist_options_css_class
+                "blocklist-options-disabled", view.blocklist_options_css_class
             )
 
-    def test_enable_blacklist_options_for_archive_admin(self):
-        # To see the blacklist options enabled the user needs to be an
+    def test_enable_blocklist_options_for_archive_admin(self):
+        # To see the blocklist options enabled the user needs to be an
         # archive admin.
         ds_diff = self.factory.makeDistroSeriesDifference()
         archive_admin = self.factory.makeArchiveAdmin(
@@ -222,7 +222,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             view = create_initialized_view(
                 ds_diff, "+listing-distroseries-extra", request=request
             )
-            self.assertTrue(view.enable_blacklist_options)
+            self.assertTrue(view.enable_blocklist_options)
 
     def test_show_add_comment_non_editor(self):
         # Even with a JS request, non-editors do not see the 'add
@@ -610,8 +610,8 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             view = create_initialized_view(context, view_name, request=request)
             return view()
 
-    def test_blacklist_options(self):
-        # Blacklist options are presented to the users who are archive
+    def test_blocklist_options(self):
+        # Blocklist options are presented to the users who are archive
         # admins.
         ds_diff = self.factory.makeDistroSeriesDifference()
         archive_admin = self.factory.makeArchiveAdmin(
@@ -623,11 +623,11 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         soup = BeautifulSoup(view_content)
 
         self.assertEqual(
-            1, len(soup.find_all("div", {"class": "blacklist-options"}))
+            1, len(soup.find_all("div", {"class": "blocklist-options"}))
         )
 
-    def test_blacklist_options_disabled(self):
-        # Blacklist options are disabled to the users who are *not* archive
+    def test_blocklist_options_disabled(self):
+        # Blocklist options are disabled to the users who are *not* archive
         # admins.
         ds_diff = self.factory.makeDistroSeriesDifference()
         person = self.factory.makePerson()
@@ -638,37 +638,37 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
 
         self.assertEqual(
             1,
-            len(soup.find_all("div", {"class": "blacklist-options-disabled"})),
+            len(soup.find_all("div", {"class": "blocklist-options-disabled"})),
         )
 
-    def test_blacklist_options_initial_values_none(self):
+    def test_blocklist_options_initial_values_none(self):
         ds_diff = self.factory.makeDistroSeriesDifference()
         view = create_initialized_view(ds_diff, "+listing-distroseries-extra")
 
-        # If the difference is not currently blacklisted, 'NONE' is set
+        # If the difference is not currently blocklisted, 'NONE' is set
         # as the default value for the field.
-        self.assertEqual("NONE", view.initial_values.get("blacklist_options"))
+        self.assertEqual("NONE", view.initial_values.get("blocklist_options"))
 
-    def test_blacklist_options_initial_values_current(self):
+    def test_blocklist_options_initial_values_current(self):
         ds_diff = self.factory.makeDistroSeriesDifference(
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         )
         view = create_initialized_view(ds_diff, "+listing-distroseries-extra")
 
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
-            view.initial_values.get("blacklist_options"),
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
+            view.initial_values.get("blocklist_options"),
         )
 
-    def test_blacklist_options_initial_values_always(self):
+    def test_blocklist_options_initial_values_always(self):
         ds_diff = self.factory.makeDistroSeriesDifference(
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         )
         view = create_initialized_view(ds_diff, "+listing-distroseries-extra")
 
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
-            view.initial_values.get("blacklist_options"),
+            DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
+            view.initial_values.get("blocklist_options"),
         )
 
     def test_package_diff_request_link(self):
@@ -800,7 +800,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
             )
 
     def test_package_diffs_hidden_to_unprivileged_user_if_not_available(self):
-        # No diff information is shown if pacakge diffs are not available and
+        # No diff information is shown if package diffs are not available and
         # the user does not have permission to request their creation.
         ds_diff = self.factory.makeDistroSeriesDifference(
             versions={

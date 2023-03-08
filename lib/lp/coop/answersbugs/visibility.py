@@ -18,7 +18,7 @@ class TestMessageVisibilityMixin:
     html_comment_text = html_escape(comment_text)
 
     def makeHiddenMessage(self):
-        """To be overwridden by subclasses.
+        """To be overridden by subclasses.
 
         This method must create and return a message bearing object
         (e.g. bug or question) with a hidden message/comment.
@@ -26,7 +26,7 @@ class TestMessageVisibilityMixin:
         raise NotImplementedError
 
     def getView(self, context, user=None, no_login=False):
-        """To be overwridden by subclasses.
+        """To be overridden by subclasses.
 
         This method returns a view object rendered on the context
         obtained from makeHiddenMessage.
@@ -67,7 +67,7 @@ class TestHideMessageControlMixin:
     control_text = "mark-spam-1"
 
     def getContext(self, comment_owner=None):
-        """To be overwridden by subclasses.
+        """To be overridden by subclasses.
 
         This method must create and return a message bearing object
         (e.g. bug or question) with a hidden message/comment.
@@ -75,7 +75,7 @@ class TestHideMessageControlMixin:
         raise NotImplementedError
 
     def getView(self, context, user=None, no_login=False):
-        """To be overwridden by subclasses.
+        """To be overridden by subclasses.
 
         This method returns a view object rendered on the context
         obtained from makeHiddenMessage.

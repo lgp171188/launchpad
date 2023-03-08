@@ -87,7 +87,7 @@ class TestCaptureOops(TestCaseWithFactory):
         content = io.BytesIO()
         content.writelines(self.getDetails()["oops-0"].iter_bytes())
         content.seek(0)
-        # Safety net: ensure that no autocasts have occured even on Python 2.6
+        # Safety net: ensure that no autocasts have occurred even on Python 2.6
         # which is slightly better.
         self.assertIsInstance(content.getvalue(), bytes)
         # In tests it should be rfc822 for easy reading.

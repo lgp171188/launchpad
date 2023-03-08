@@ -7,7 +7,7 @@ found on the "Settings" page.
 
 Getting there
 -------------
-The maintainer of a product sees a menu option called "Reqeust Bazaar
+The maintainer of a product sees a menu option called "Request Bazaar
 import" that leads to the page to request such imports.
 
     >>> browser.addHeader("Authorization", "Basic test@canonical.com:test")

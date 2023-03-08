@@ -1,7 +1,7 @@
 Distro series packaging
 =======================
 
-The distro series packaging page is accssible to any user from the distro
+The distro series packaging page is accessible to any user from the distro
 series +index page.
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/hoary")

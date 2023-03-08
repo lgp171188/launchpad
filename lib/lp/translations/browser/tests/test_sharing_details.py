@@ -254,7 +254,7 @@ class TestSourcePackageTranslationSharingDetailsView(
 
     def test_is_configuration_complete__packaging_upstream_branch_set(self):
         # If the packaging link is set and if an upstream branch is
-        # configuerd but if the other conditions are not fulfilled,
+        # configured but if the other conditions are not fulfilled,
         # is_configuration_complete is False.
         self.configureSharing(set_upstream_branch=True)
         self.assertFalse(self.view.is_configuration_complete)

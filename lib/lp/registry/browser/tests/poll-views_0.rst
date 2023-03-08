@@ -72,7 +72,7 @@ Displaying results of condorcet polls
 
 Although condorcet polls are disabled now, everything is implemented and we're
 using a pairwise matrix to display the results. It's very trick to create this
-matrix on page templates, so the view provides a method wich return this
+matrix on page templates, so the view provides a method which return this
 matrix as a python list, with the necessary headers (the option's names).
 
     >>> poll_results = getMultiAdapter((poll, TestRequest()), name="+index")

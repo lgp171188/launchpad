@@ -351,7 +351,7 @@ class BuildSetStatus(EnumeratedType):
     # Until access to the name, title and description of exported types
     # is available through the API, set the title of these statuses
     # to match the name. This enables the result of API calls (which is
-    # currently the title) to be used programatically (for example, as a
+    # currently the title) to be used programmatically (for example, as a
     # css class name).
     NEEDSBUILD = Item(
         title="NEEDSBUILD",  # "Need building",

@@ -1174,7 +1174,7 @@ other PPA.
     otherppa
 
     # Copy the source into Celso's PPA, ensuring that the binaries
-    # are alse published there.
+    # are also published there.
     >>> source_pub_cprov = source_pub.copyTo(
     ...     source_pub.distroseries, source_pub.pocket, cprov.archive
     ... )
@@ -1589,7 +1589,7 @@ publications.
 
 The 'sourcepackagerelease' attribute from a decorated
 `ArchiveSourcePublication` object is also another decorated object,
-this way we can cache information refered to:
+this way we can cache information referred to:
 
  * upload_changesfile.
 

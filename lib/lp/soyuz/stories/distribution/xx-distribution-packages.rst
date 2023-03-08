@@ -451,7 +451,7 @@ release.
     /ubuntu/+source/alsa-utils/1.0.9a-4ubuntu1
 
 Following the header we get a body with the changelog in it.  Note that
-any email addreses in the changelog are obfuscated because we are not
+any email addresses in the changelog are obfuscated because we are not
 logged in (this prevents bots from harvesting email addresses).
 
     >>> first_body = find_tag_by_id(

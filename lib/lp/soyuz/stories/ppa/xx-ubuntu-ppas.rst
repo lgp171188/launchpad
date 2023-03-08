@@ -119,7 +119,7 @@ PPA supported architectures reflects what we have in sampledata.
     >>> print(find_tag_by_id(anon_browser.contents, "ppa_most_active"))
     None
 
-The 'search' form is also suppresed.
+The 'search' form is also suppressed.
 
     >>> anon_browser.getControl("Search", index=0).click()
     Traceback (most recent call last):

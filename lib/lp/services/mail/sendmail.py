@@ -354,7 +354,7 @@ def simple_sendmail_from_person(person, to_addrs, subject, body, headers=None):
 
 
 def get_addresses_from_header(email_header):
-    r"""Get the email addresses specificed in an email header.
+    r"""Get the email addresses specified in an email header.
 
     >>> get_addresses_from_header("one@example.com")
     ['one@example.com']

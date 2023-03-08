@@ -12,10 +12,11 @@ import os.path
 import re
 
 import pytz
-from storm.locals import DateTime, Int, Reference, Unicode
+from storm.locals import DateTime, Int, Or, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import IncompatibleArguments
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -119,7 +120,8 @@ class ArchiveFileSet:
         path=None,
         path_parent=None,
         sha256=None,
-        condemned=None,
+        live_at=None,
+        existed_at=None,
         only_published=False,
         eager_load=False,
     ):
@@ -145,11 +147,42 @@ class ArchiveFileSet:
                     LibraryFileContent.sha256 == sha256,
                 ]
             )
-        if condemned is not None:
-            if condemned:
-                clauses.append(ArchiveFile.scheduled_deletion_date != None)
-            else:
-                clauses.append(ArchiveFile.scheduled_deletion_date == None)
+
+        if live_at is not None and existed_at is not None:
+            raise IncompatibleArguments(
+                "You cannot specify both 'live_at' and 'existed_at'."
+            )
+        if live_at is not None:
+            clauses.extend(
+                [
+                    Or(
+                        # Rows predating the introduction of date_created
+                        # will have it set to null.
+                        ArchiveFile.date_created == None,
+                        ArchiveFile.date_created <= live_at,
+                    ),
+                    Or(
+                        ArchiveFile.date_superseded == None,
+                        ArchiveFile.date_superseded > live_at,
+                    ),
+                ]
+            )
+        elif existed_at is not None:
+            clauses.extend(
+                [
+                    Or(
+                        # Rows predating the introduction of date_created
+                        # will have it set to null.
+                        ArchiveFile.date_created == None,
+                        ArchiveFile.date_created <= existed_at,
+                    ),
+                    Or(
+                        ArchiveFile.date_removed == None,
+                        ArchiveFile.date_removed > existed_at,
+                    ),
+                ]
+            )
+
         if only_published:
             clauses.append(ArchiveFile.date_removed == None)
         archive_files = IStore(ArchiveFile).find(ArchiveFile, *clauses)

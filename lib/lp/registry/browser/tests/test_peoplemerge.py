@@ -405,7 +405,7 @@ class TestRequestPeopleMergeMultipleEmailsView(TestCaseWithFactory):
         self.assertTrue(message.endswith("Select again."))
 
     def test_removed_email(self):
-        # When the duplicate user deletes an email addres while the merge
+        # When the duplicate user deletes an email address while the merge
         # form is being complete, the view must abort and ask the user
         # to restart the merge request.
         form = {

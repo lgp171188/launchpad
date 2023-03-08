@@ -79,7 +79,7 @@ class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
     def test_none_cache_passed_at_init_counts_as_cached(self):
         # If the value None is passed as the constructor parameter
         # "cache", it is considered as a valid value.
-        # Accesing the property DistroSeriesBinaryPackage.cache
+        # Accessing the property DistroSeriesBinaryPackage.cache
         # later does not lead to the execution of an SQL query to
         # retrieve a DistroSeriesPackageCache record.
         binary_package = DistroSeriesBinaryPackage(

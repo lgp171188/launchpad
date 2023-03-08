@@ -852,7 +852,7 @@ class TestPOTMsgSetSuggestions(TestCaseWithFactory):
             ),
         )
         # Dismiss suggestions using an older timestamp fails if there is
-        # a newer curent translation.
+        # a newer current translation.
         self.assertRaises(
             TranslationConflict,
             self.potmsgset.dismissAllSuggestions,

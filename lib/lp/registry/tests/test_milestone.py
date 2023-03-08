@@ -209,7 +209,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         for name in attribute_names:
             # class Milestone does not implement all attributes defined by
             # class IMilestone. AttributeErrors caused by attempts to
-            # access these attribues are not relevant here: We simply
+            # access these attributes are not relevant here: We simply
             # want to be sure that no Unauthorized error is raised.
             try:
                 getattr(obj, name)
@@ -603,7 +603,7 @@ class MilestonesContainsPartialSpecifications(TestCaseWithFactory):
         )
 
     def test_milestones_on_project_group(self):
-        # A Project Group milestone contains all specifications targetted to
+        # A Project Group milestone contains all specifications targeted to
         # contained Projects for milestones of a certain name.
         projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(projectgroup=projectgroup)
@@ -787,7 +787,7 @@ class ProjectMilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         for name in attribute_names:
             # class Milestone does not implement all attributes defined by
             # class IMilestone. AttributeErrors caused by attempts to
-            # access these attribues are not relevant here: We simply
+            # access these attributes are not relevant here: We simply
             # want to be sure that no Unauthorized error is raised.
             try:
                 getattr(obj, name)

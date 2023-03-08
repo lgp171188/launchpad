@@ -414,7 +414,7 @@ class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
         return self.toTerm(objs[0])
 
     def search(self, query, vocab_filter=None):
-        """Return terms where query is a subtring of the name."""
+        """Return terms where query is a substring of the name."""
         if query:
             clause = CONTAINSSTRING(self._table.q.name, six.ensure_text(query))
             if self._filter:

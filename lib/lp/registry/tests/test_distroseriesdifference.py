@@ -252,7 +252,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
     def test_child_update_re_opens_difference(self):
         # The status of a resolved difference will updated to
-        # BLACKLISTED_CURRENT with child uploads.
+        # BLOCKLISTED_CURRENT with child uploads.
         ds_diff = self.factory.makeDistroSeriesDifference(
             source_package_name_str="foonew",
             versions=dict(parent="1.0", derived="1.0"),
@@ -269,7 +269,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertTrue(was_updated)
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT, ds_diff.status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT, ds_diff.status
         )
 
     def test_update_new_parent_version_doesnt_change_status(self):
@@ -326,8 +326,8 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             ds_diff.difference_type,
         )
 
-    def test_update_removes_version_blacklist(self):
-        # A blacklist on a version of a package is removed when a new
+    def test_update_removes_version_blocklist(self):
+        # A blocklist on a version of a package is removed when a new
         # version is uploaded to the derived series.
         ds_diff = self.factory.makeDistroSeriesDifference(
             source_package_name_str="foonew",
@@ -337,7 +337,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             difference_type=(
                 DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES
             ),
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
         )
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=ds_diff.source_package_name,
@@ -353,18 +353,18 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             DistroSeriesDifferenceStatus.NEEDS_ATTENTION, ds_diff.status
         )
 
-    def test_update_does_not_remove_permanent_blacklist(self):
-        # A permanent blacklist is not removed when a new version
+    def test_update_does_not_remove_permanent_blocklist(self):
+        # A permanent blocklist is not removed when a new version
         # is uploaded, even if it resolves the difference (as later
         # uploads could re-create a difference, and we want to keep
-        # the blacklist).
+        # the blocklist).
         ds_diff = self.factory.makeDistroSeriesDifference(
             source_package_name_str="foonew",
             versions={
                 "derived": "0.9",
                 "parent": "1.0",
             },
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
         )
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=ds_diff.source_package_name,
@@ -377,7 +377,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
         self.assertTrue(was_updated)
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS, ds_diff.status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS, ds_diff.status
         )
 
     def test_title(self):
@@ -486,7 +486,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         )
 
     def test_blocklist_unauthorised(self):
-        # If you're not an archive admin, you don't get to blacklist or
+        # If you're not an archive admin, you don't get to blocklist or
         # unblocklist.
         ds_diff = self.factory.makeDistroSeriesDifference()
         random_joe = self.factory.makePerson()
@@ -505,7 +505,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             ds_diff.blocklist(admin)
 
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT, ds_diff.status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT, ds_diff.status
         )
 
     def test_blocklist_all(self):
@@ -519,13 +519,13 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             ds_diff.blocklist(admin, all=True)
 
         self.assertEqual(
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS, ds_diff.status
+            DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS, ds_diff.status
         )
 
     def test_unblocklist(self):
         # Unblocklisting will return to NEEDS_ATTENTION by default.
         ds_diff = self.factory.makeDistroSeriesDifference(
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         )
         admin = self.factory.makeArchiveAdmin(
             ds_diff.derived_series.main_archive
@@ -545,7 +545,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
                 "derived": "0.9",
                 "parent": "1.0",
             },
-            status=DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
+            status=DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
         )
         self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=ds_diff.source_package_name,
@@ -565,7 +565,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
     def test_get_comment_with_status_change(self):
         # Test the new comment string created to describe a status
         # change.
-        old_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+        old_status = DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         new_status = DistroSeriesDifferenceStatus.NEEDS_ATTENTION
         new_comment = get_comment_with_status_change(
             old_status, new_status, "simple comment"
@@ -584,7 +584,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         )
 
     def test_unblocklist_creates_comment(self):
-        old_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+        old_status = DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         ds_diff = self.factory.makeDistroSeriesDifference(
             status=old_status, source_package_name_str="foo"
         )
@@ -613,7 +613,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             dsd_comment = ds_diff.blocklist(
                 admin, True, "Wait until version 2.1"
             )
-        new_status = DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS
+        new_status = DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS
         expected_comment = "Wait until version 2.1\n\nIgnored: %s => %s" % (
             old_status.title,
             new_status.title,
@@ -1205,7 +1205,7 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
         series = self.makeDerivedSeries()
         dsds = self.makeDifferencesForAllStatuses(series)
         dsd_source = getUtility(IDistroSeriesDifferenceSource)
-        wanted_status = DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT
+        wanted_status = DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT
         self.assertContentEqual(
             [dsds[wanted_status]],
             dsd_source.getForDistroSeries(series, status=wanted_status),
@@ -1216,7 +1216,7 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
         series = self.makeDerivedSeries()
         dsds = self.makeDifferencesForAllStatuses(series)
         wanted_statuses = (
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
             DistroSeriesDifferenceStatus.NEEDS_ATTENTION,
         )
         dsd_source = getUtility(IDistroSeriesDifferenceSource)
@@ -1366,7 +1366,7 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
         return dsd
 
     def test_getForDistroSeries_filters_by_spr_creator(self):
-        # Specifiying changed_by limits the DSDs returned to those where the
+        # Specifying changed_by limits the DSDs returned to those where the
         # associated SPR was created by the given user or team.
         megatron = self.factory.makePersonByName("Megatron")
         alderney = self.factory.makePersonByName("Alderney")
@@ -1433,8 +1433,8 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
 
     def test_getSimpleUpgrades_ignores_hidden_differences(self):
         invisible_statuses = [
-            DistroSeriesDifferenceStatus.BLACKLISTED_CURRENT,
-            DistroSeriesDifferenceStatus.BLACKLISTED_ALWAYS,
+            DistroSeriesDifferenceStatus.BLOCKLISTED_CURRENT,
+            DistroSeriesDifferenceStatus.BLOCKLISTED_ALWAYS,
             DistroSeriesDifferenceStatus.RESOLVED,
         ]
         dsd_source = getUtility(IDistroSeriesDifferenceSource)

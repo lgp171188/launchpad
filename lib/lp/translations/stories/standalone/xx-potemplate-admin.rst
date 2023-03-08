@@ -177,7 +177,7 @@ Administrators can disable and then make changes to a disabled template.
     >>> print(admin_browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-renamed
 
-Now we will reenable the template.
+Now we will re-enable the template.
 
     >>> admin_browser.open(
     ...     "http://translations.launchpad.test/evolution/trunk/+pots/"
