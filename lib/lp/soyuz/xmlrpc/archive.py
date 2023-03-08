@@ -11,8 +11,9 @@ import logging
 from datetime import datetime
 from pathlib import PurePath
 from typing import Optional, Union
-from xmlrpc.client import Fault
+from xmlrpc.client import DateTime, Fault
 
+import pytz
 from pymacaroons import Macaroon
 from zope.component import getUtility
 from zope.interface import implementer
@@ -282,9 +283,18 @@ class ArchiveAPI(LaunchpadXMLRPCView):
         self,
         archive_reference: str,
         path: str,
-        live_at: Optional[datetime] = None,
+        live_at: Optional[DateTime] = None,
     ) -> Union[str, Fault]:
         """See `IArchiveAPI`."""
+        if live_at is not None:
+            # XXX cjwatson 2023-03-08: Once
+            # https://github.com/zopefoundation/zope.publisher/issues/71 is
+            # fixed, we should tell it to unmarshal XML-RPC date/time values
+            # as standard datetimes directly rather than having to do this
+            # awkward conversion.
+            live_at = datetime.strptime(
+                str(live_at), "%Y%m%dT%H:%M:%S"
+            ).replace(tzinfo=pytz.UTC)
         # This thunk exists because you can't use a decorated function as
         # the implementation of a method exported over XML-RPC.
         return self._translatePath(archive_reference, PurePath(path), live_at)
