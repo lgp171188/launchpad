@@ -108,7 +108,7 @@ class TestLibrarianStuff(TestCase):
 
     def test_getAlias(self):
         # Library.getAlias() returns the LibrarayFileAlias for a given
-        # LibrarayFileAlias ID.
+        # LibraryFileAlias ID.
         library = db.Library(restricted=False)
         alias = library.getAlias(1, None, "/")
         self.assertEqual(1, alias.id)
@@ -135,15 +135,16 @@ class TestLibrarianStuff(TestCase):
         alias.content = None
         self.assertRaises(LookupError, library.getAlias, 1, None, "/")
 
-    def test_getAlias_content_wrong_library(self):
-        # Library.getAlias() raises a LookupError, if a restricted
-        # library looks up a unrestricted LibraryFileAlias and
-        # vice versa.
+    def test_getAlias_restricted_library_unrestricted_alias(self):
+        # Library.getAlias() allows looking up unrestricted
+        # LibraryFileAliases from a restricted library.
         restricted_library = db.Library(restricted=True)
-        self.assertRaises(
-            LookupError, restricted_library.getAlias, 1, None, "/"
-        )
+        alias = restricted_library.getAlias(1, None, "/")
+        self.assertEqual(1, alias.id)
 
+    def test_getAlias_unrestricted_library_restricted_alias(self):
+        # Library.getAlias() raises a LookupError if an unrestricted
+        # library looks up a restricted LibraryFileAlias.
         unrestricted_library = db.Library(restricted=False)
         alias = unrestricted_library.getAlias(1, None, "/")
         alias.restricted = True

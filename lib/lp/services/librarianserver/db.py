@@ -12,7 +12,7 @@ from urllib.parse import quote, unquote
 from xmlrpc.client import Fault
 
 from pymacaroons import Macaroon
-from storm.expr import SQL, And
+from storm.expr import SQL
 from twisted.internet import defer
 from twisted.internet import reactor as default_reactor
 from twisted.internet import threads
@@ -21,6 +21,7 @@ from twisted.web import xmlrpc
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import session_store
+from lp.services.database.stormexpr import IsFalse
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -128,13 +129,13 @@ class Library:
                 restricted = True
             else:
                 raise LookupError("Token stale/pruned/path mismatch")
-        alias = LibraryFileAlias.selectOne(
-            And(
-                LibraryFileAlias.id == aliasid,
-                LibraryFileAlias.contentID == LibraryFileContent.q.id,
-                LibraryFileAlias.restricted == restricted,
-            )
-        )
+        clauses = [
+            LibraryFileAlias.id == aliasid,
+            LibraryFileAlias.content == LibraryFileContent.id,
+        ]
+        if not restricted:
+            clauses.append(IsFalse(LibraryFileAlias.restricted))
+        alias = IStore(LibraryFileAlias).find(LibraryFileAlias, *clauses).one()
         if alias is None:
             raise LookupError("No file alias with LibraryFileContent")
         return alias
