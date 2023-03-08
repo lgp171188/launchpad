@@ -189,7 +189,6 @@ wheel-filename==1.1.0
 wrapt==1.12.1
 wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
-wsgiref==0.1.2
 z3c.pt==3.2.0
 z3c.ptcompat==2.2.0
 zipp==1.2.0
