@@ -75,7 +75,7 @@ from lp.testing import (
 from lp.testing.dbuser import dbuser
 from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import AppServerLayer, LaunchpadFunctionalLayer
-from lp.testing.xmlrpc import XMLRPCTestTransport
+from lp.testing.xmlrpc import MatchesFault, XMLRPCTestTransport
 from lp.xmlrpc import faults
 
 
@@ -133,33 +133,6 @@ class FakeMacaroonIssuer(MacaroonIssuerBase):
         if ok:
             verified.user = self._verified_user
         return ok
-
-
-class MatchesFault(MatchesStructure):
-    """Match an XML-RPC fault.
-
-    This can be given either::
-
-        - a subclass of LaunchpadFault (matches only the fault code)
-        - an instance of Fault (matches the fault code and the fault string
-          from this instance exactly)
-    """
-
-    def __init__(self, expected_fault):
-        fault_matchers = {}
-        if isinstance(expected_fault, type) and issubclass(
-            expected_fault, faults.LaunchpadFault
-        ):
-            fault_matchers["faultCode"] = Equals(expected_fault.error_code)
-        else:
-            fault_matchers["faultCode"] = Equals(expected_fault.faultCode)
-            fault_string = expected_fault.faultString
-            # XXX cjwatson 2019-09-27: InvalidBranchName.faultString is
-            # bytes, so we need this to handle that case.  Should it be?
-            if not isinstance(fault_string, str):
-                fault_string = fault_string.decode("UTF-8")
-            fault_matchers["faultString"] = Equals(fault_string)
-        super().__init__(**fault_matchers)
 
 
 class TestGitAPIMixin:
