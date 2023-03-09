@@ -1,9 +1,10 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tools for testing XML-RPC services."""
 
 __all__ = [
+    "MatchesFault",
     "XMLRPCTestTransport",
 ]
 
@@ -11,6 +12,7 @@ import http.client as http_client
 import io
 import xmlrpc.client
 
+from testtools.matchers import Equals, MatchesStructure
 from zope.security.management import endInteraction, queryInteraction
 
 from lp.services.webapp.interaction import (
@@ -18,6 +20,7 @@ from lp.services.webapp.interaction import (
     setupInteraction,
 )
 from lp.testing.pages import http
+from lp.xmlrpc import faults
 
 
 class _FakeSocket:
@@ -81,3 +84,30 @@ class XMLRPCTestTransport(xmlrpc.client.Transport):
         """Return our custom http() HTTPConnection."""
         host, self._extra_headers, x509 = self.get_host_info(host)
         return TestHTTPConnection(host)
+
+
+class MatchesFault(MatchesStructure):
+    """Match an XML-RPC fault.
+
+    This can be given either::
+
+        - a subclass of LaunchpadFault (matches only the fault code)
+        - an instance of Fault (matches the fault code and the fault string
+          from this instance exactly)
+    """
+
+    def __init__(self, expected_fault):
+        fault_matchers = {}
+        if isinstance(expected_fault, type) and issubclass(
+            expected_fault, faults.LaunchpadFault
+        ):
+            fault_matchers["faultCode"] = Equals(expected_fault.error_code)
+        else:
+            fault_matchers["faultCode"] = Equals(expected_fault.faultCode)
+            fault_string = expected_fault.faultString
+            # XXX cjwatson 2019-09-27: InvalidBranchName.faultString is
+            # bytes, so we need this to handle that case.  Should it be?
+            if not isinstance(fault_string, str):
+                fault_string = fault_string.decode("UTF-8")
+            fault_matchers["faultString"] = Equals(fault_string)
+        super().__init__(**fault_matchers)

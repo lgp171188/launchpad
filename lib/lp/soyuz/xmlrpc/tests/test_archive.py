@@ -1,9 +1,10 @@
-# Copyright 2017-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2017-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the internal Soyuz archive API."""
 
 from datetime import datetime, timedelta
+from xmlrpc.client import Fault, ServerProxy
 
 import pytz
 from fixtures import FakeLogger
@@ -17,10 +18,21 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.soyuz.enums import ArchiveRepositoryFormat, PackagePublishingStatus
 from lp.soyuz.interfaces.archive import NAMED_AUTH_TOKEN_FEATURE_FLAG
-from lp.soyuz.xmlrpc.archive import ArchiveAPI
 from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.xmlrpc import MatchesFault, XMLRPCTestTransport
 from lp.xmlrpc import faults
+
+
+def round_to_next_second(dt: datetime) -> datetime:
+    """Round a `datetime` up to the next second.
+
+    Some tests need this because XML-RPC does not preserve the microsecond
+    part of `datetime` objects.
+    """
+    if dt.microsecond:
+        dt = dt.replace(microsecond=0) + timedelta(seconds=1)
+    return dt
 
 
 class TestArchiveAPI(TestCaseWithFactory):
@@ -30,7 +42,11 @@ class TestArchiveAPI(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.useFixture(FeatureFixture({NAMED_AUTH_TOKEN_FEATURE_FLAG: "on"}))
-        self.archive_api = ArchiveAPI(None, None)
+        self.archive_api = ServerProxy(
+            "http://xmlrpc-private.launchpad.test:8087/archive",
+            transport=XMLRPCTestTransport(),
+            allow_none=True,
+        )
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )
@@ -41,14 +57,20 @@ class TestArchiveAPI(TestCaseWithFactory):
 
     def assertNotFound(self, func_name, message, log_message, *args, **kwargs):
         """Assert that a call returns NotFound."""
-        fault = getattr(self.archive_api, func_name)(*args, **kwargs)
-        self.assertEqual(faults.NotFound(message), fault)
+        fault = self.assertRaises(
+            Fault, getattr(self.archive_api, func_name), *args, **kwargs
+        )
+        self.assertThat(fault, MatchesFault(faults.NotFound(message)))
         self.assertLogs(log_message)
 
     def assertUnauthorized(self, func_name, log_message, *args, **kwargs):
         """Assert that a call returns Unauthorized."""
-        fault = getattr(self.archive_api, func_name)(*args, **kwargs)
-        self.assertEqual(faults.Unauthorized("Authorisation required."), fault)
+        fault = self.assertRaises(
+            Fault, getattr(self.archive_api, func_name), *args, **kwargs
+        )
+        self.assertThat(
+            fault, MatchesFault(faults.Unauthorized("Authorisation required."))
+        )
         self.assertLogs(log_message)
 
     def test_checkArchiveAuthToken_unknown_archive(self):
@@ -417,12 +439,12 @@ class TestArchiveAPI(TestCaseWithFactory):
         )
         for days, expected in ((4, False), (3, True), (2, True), (1, False)):
             self.logger = self.useFixture(FakeLogger())
-            live_at = now - timedelta(days=days)
+            live_at = round_to_next_second(now - timedelta(days=days))
             if expected:
                 self.assertEqual(
                     archive_file.library_file.getURL(),
                     self.archive_api.translatePath(
-                        archive.reference, path, live_at=live_at
+                        archive.reference, path, live_at
                     ),
                 )
                 self.assertLogs(
@@ -443,7 +465,7 @@ class TestArchiveAPI(TestCaseWithFactory):
                     % (archive.reference, path, live_at.isoformat()),
                     archive.reference,
                     path,
-                    live_at=live_at,
+                    live_at,
                 )
 
     def test_translatePath_non_pool_not_found(self):
@@ -666,12 +688,12 @@ class TestArchiveAPI(TestCaseWithFactory):
         path = "pool/main/t/test-package/test-package_1.dsc"
         for days, expected in ((3, False), (2, True), (1, False)):
             self.logger = self.useFixture(FakeLogger())
-            live_at = now - timedelta(days=days)
+            live_at = round_to_next_second(now - timedelta(days=days))
             if expected:
                 self.assertEqual(
                     sprf.libraryfile.getURL(),
                     self.archive_api.translatePath(
-                        archive.reference, path, live_at=live_at
+                        archive.reference, path, live_at
                     ),
                 )
                 self.assertLogs(
@@ -692,7 +714,7 @@ class TestArchiveAPI(TestCaseWithFactory):
                     % (archive.reference, path, live_at.isoformat()),
                     archive.reference,
                     path,
-                    live_at=live_at,
+                    live_at,
                 )
 
     def test_translatePath_pool_binary_not_found(self):
@@ -832,12 +854,12 @@ class TestArchiveAPI(TestCaseWithFactory):
         path = "pool/main/t/test-package/test-package_1_amd64.deb"
         for days, expected in ((3, False), (2, True), (1, False)):
             self.logger = self.useFixture(FakeLogger())
-            live_at = now - timedelta(days=days)
+            live_at = round_to_next_second(now - timedelta(days=days))
             if expected:
                 self.assertEqual(
                     bpf.libraryfile.getURL(),
                     self.archive_api.translatePath(
-                        archive.reference, path, live_at=live_at
+                        archive.reference, path, live_at
                     ),
                 )
                 self.assertLogs(
@@ -858,5 +880,5 @@ class TestArchiveAPI(TestCaseWithFactory):
                     % (archive.reference, path, live_at.isoformat()),
                     archive.reference,
                     path,
-                    live_at=live_at,
+                    live_at,
                 )
