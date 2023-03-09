@@ -29,7 +29,6 @@ from storm.exceptions import TimeoutError
 from storm.store import Store
 from storm.tracer import install_tracer
 from talisker.logs import logging_context
-from timeline.timeline import Timeline
 from zope.component import getUtility
 from zope.interface import alsoProvides, classImplements, implementer, provider
 from zope.security.proxy import removeSecurityProxy
@@ -52,6 +51,7 @@ from lp.services.log.loglevels import DEBUG2
 from lp.services.stacktrace import extract_stack, extract_tb, print_list
 from lp.services.timeline.requesttimeline import (
     get_request_timeline,
+    make_timeline,
     set_request_timeline,
 )
 from lp.services.timeout import set_default_timeout_function
@@ -134,25 +134,6 @@ class CommitLogger:
         action.finish()
 
 
-class FilteredTimeline(Timeline):
-    """A timeline that filters its actions.
-
-    This is useful for requests that are expected to log actions with very
-    large details (for example, large bulk SQL INSERT statements), where we
-    don't want the overhead of storing those in memory.
-    """
-
-    def __init__(self, actions=None, detail_filter=None, **kwargs):
-        super().__init__(actions=actions, **kwargs)
-        self.detail_filter = detail_filter
-
-    def start(self, category, detail, allow_nested=False):
-        """See `Timeline`."""
-        if self.detail_filter is not None:
-            detail = self.detail_filter(category, detail)
-        return super().start(category, detail)
-
-
 def set_request_started(
     starttime=None,
     request_statements=None,
@@ -187,19 +168,12 @@ def set_request_started(
         starttime = time()
     _local.request_start_time = starttime
     request = get_current_browser_request()
-    if detail_filter is not None:
-        timeline_factory = partial(
-            FilteredTimeline, detail_filter=detail_filter
-        )
-    else:
-        timeline_factory = Timeline
-    if request_statements is not None:
-        # Specify a specific sequence object for the timeline.
-        set_request_timeline(request, timeline_factory(request_statements))
-    else:
-        # Ensure a timeline is created, so that time offset for actions is
-        # reasonable.
-        set_request_timeline(request, timeline_factory())
+    # Ensure a timeline is created, so that time offset for actions is
+    # reasonable.
+    set_request_timeline(
+        request,
+        make_timeline(actions=request_statements, detail_filter=detail_filter),
+    )
     _local.current_statement_timeout = None
     _local.enable_timeout = enable_timeout
     _local.commit_logger = CommitLogger(transaction)
@@ -219,7 +193,7 @@ def clear_request_started():
     _local.sql_logging_start = None
     _local.sql_logging_tracebacks_if = None
     request = get_current_browser_request()
-    set_request_timeline(request, Timeline())
+    set_request_timeline(request, make_timeline())
     if getattr(_local, "commit_logger", None) is not None:
         transaction.manager.unregisterSynch(_local.commit_logger)
         del _local.commit_logger

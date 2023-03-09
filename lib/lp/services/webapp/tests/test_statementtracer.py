@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from lazr.restful.utils import get_current_browser_request
 
 from lp.services.osutils import override_environ
+from lp.services.tests.test_stacktrace import Supplement
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.webapp import adapter as da
 from lp.testing import (
@@ -461,3 +462,31 @@ class TestLoggingWithinRequest(TestCaseWithFactory):
                     self.connection, None, "SELECT * FROM one", (), Exception()
                 )
                 self.assertIsNone(self.connection._lp_statement_action)
+
+    def test_includes_traceback_supplement_and_info(self):
+        # The timeline records information from `__traceback_supplement__`
+        # and `__traceback_info__` in tracebacks.
+        tracer = da.LaunchpadStatementTracer()
+
+        def call():
+            __traceback_supplement__ = (
+                Supplement,
+                {"expression": "something"},
+            )
+            __traceback_info__ = "Extra information"
+            tracer.connection_raw_execute(
+                self.connection, None, "SELECT * FROM one", ()
+            )
+
+        with person_logged_in(self.person):
+            with StormStatementRecorder(tracebacks_if=True):
+                call()
+                timeline = get_request_timeline(get_current_browser_request())
+                self.assertRegex(
+                    timeline.actions[-1].backtrace,
+                    "\n"
+                    "  File .*, in call\n"
+                    "    .*\n"
+                    "   - Expression: something\n"
+                    "   - __traceback_info__: Extra information\n",
+                )
