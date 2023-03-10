@@ -5,19 +5,83 @@
 
 __all__ = [
     "get_request_timeline",
+    "make_timeline",
     "set_request_timeline",
     "temporary_request_timeline",
 ]
 
+import sys
 from contextlib import contextmanager
+from functools import partial
+from typing import Callable, MutableSequence, Optional
 
 from timeline import Timeline
+from timeline.timedaction import TimedAction
+from zope.exceptions.exceptionformatter import extract_stack
 
 # XXX RobertCollins 2010-09-01 bug=623199: Undesirable but pragmatic.
 # Because of this bug, rather than using request.annotations we have
 # to work in with the webapp.adapter request model, which is
 # different to that used by get_current_browser_request.
 from lp.services import webapp
+
+
+class FilteredTimeline(Timeline):
+    """A timeline that filters its actions.
+
+    This is useful for requests that are expected to log actions with very
+    large details (for example, large bulk SQL INSERT statements), where we
+    don't want the overhead of storing those in memory.
+    """
+
+    def __init__(self, actions=None, detail_filter=None, **kwargs):
+        super().__init__(actions=actions, **kwargs)
+        self.detail_filter = detail_filter
+
+    def start(self, category, detail, allow_nested=False):
+        """See `Timeline`."""
+        if self.detail_filter is not None:
+            detail = self.detail_filter(category, detail)
+        return super().start(category, detail)
+
+
+def format_stack():
+    """Format a stack like traceback.format_stack, but skip 2 frames.
+
+    This means the stack formatting frame isn't in the backtrace itself.
+
+    Also add supplemental information to the traceback using
+    `zope.exceptions.exceptionformatter`.
+    """
+    return extract_stack(f=sys._getframe(2))
+
+
+def make_timeline(
+    actions: Optional[MutableSequence[TimedAction]] = None,
+    detail_filter: Optional[Callable[[str, str], str]] = None,
+) -> Timeline:
+    """Make a new `Timeline`, configured appropriately for Launchpad.
+
+    :param actions: The sequence used to store the logged SQL statements.
+    :param detail_filter: An optional (category, detail) -> detail callable
+        that filters action details.  This may be used when some details are
+        expected to be very large.
+    """
+    if detail_filter is not None:
+        factory = partial(FilteredTimeline, detail_filter=detail_filter)
+    else:
+        factory = Timeline
+    # XXX cjwatson 2023-03-09: Ideally we'd pass `format_stack=format_stack`
+    # here so that we pick up traceback supplements.  Unfortunately, the act
+    # of formatting traceback supplements (e.g. TALESTracebackSupplement)
+    # often turns out to involve database access, and the effect of that is
+    # to recursively add a timeline action, which seems bad; it can also be
+    # problematic for the parts of a timeline that immediately follow the
+    # end of a transaction.  Blocking database access here just results in a
+    # traceback from the exception formatter, which isn't much better.
+    # Until we find some solution to this, we'll have to live with plain
+    # tracebacks.
+    return factory(actions=actions)
 
 
 def get_request_timeline(request):
@@ -34,9 +98,9 @@ def get_request_timeline(request):
     try:
         return webapp.adapter._local.request_timeline
     except AttributeError:
-        return set_request_timeline(request, Timeline())
+        return set_request_timeline(request, make_timeline())
     # Disabled code path: bug 623199, ideally we would use this code path.
-    return request.annotations.setdefault("timeline", Timeline())
+    return request.annotations.setdefault("timeline", make_timeline())
 
 
 def set_request_timeline(request, timeline):
@@ -64,7 +128,7 @@ def temporary_request_timeline(request):
     """
     old_timeline = get_request_timeline(request)
     try:
-        set_request_timeline(request, Timeline())
+        set_request_timeline(request, make_timeline())
         yield
     finally:
         set_request_timeline(request, old_timeline)
