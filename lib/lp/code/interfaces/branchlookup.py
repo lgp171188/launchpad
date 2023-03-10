@@ -44,7 +44,7 @@ class ILinkedBranchTraverser(Interface):
             product component of the path.
         :raises NoSuchProductSeries: If the series component doesn't match an
             existing series.
-        :raises NoSuchSourcePackageName: If the source packagae referred to
+        :raises NoSuchSourcePackageName: If the source package referred to
             does not exist.
 
         :return: One of
@@ -137,7 +137,7 @@ class IBranchLookup(Interface):
             product component of the path.
         :raises NoSuchDistroSeries: If the distro series component doesn't
             match an existing series.
-        :raises NoSuchSourcePackageName: If the source packagae referred to
+        :raises NoSuchSourcePackageName: If the source package referred to
             does not exist.
 
         :raises NoLinkedBranch: If the path refers to an existing thing that's
