@@ -72,7 +72,8 @@ page.
 
 
 Logged in users can only see it if they have launchpad.Edit on the
-pillar.
+pillar and have an old-enough (config.launchpad.min_legitimate_account_age)
+account with sufficient karma (config.launchpad.min_legitimate_karma).
 
     >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> nopriv_browser.open("http://launchpad.test/firefox")
@@ -86,6 +87,48 @@ pillar.
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
+
+    >>> from lp.testing.sampledata import ADMIN_EMAIL
+    >>> login(ADMIN_EMAIL)
+    >>> new_user = factory.makePerson(
+    ...     name="new", displayname="new", email="new@example.com"
+    ... )
+    >>> new_product = factory.makeProduct(
+    ...     name="new-product", owner=new_user, driver=new_user
+    ... )
+    >>> new_distribution = factory.makeDistribution(
+    ...     name="new-distribution", owner=new_user
+    ... )
+    >>> new_project = factory.makeProject(name="new-project", owner=new_user)
+    >>> logout()
+
+    >>> from lp.services.config import config
+    >>> legitimate_person_config = """
+    ...     [launchpad]
+    ...     min_legitimate_karma: 10
+    ...     min_legitimate_account_age: 7
+    ... """
+    >>> config.push("legitimate person", legitimate_person_config)
+
+    >>> new_user_browser = setupBrowser(auth="Basic new@example.com:test")
+    >>> new_user_browser.open("http://launchpad.test/new-product")
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+
+    >>> new_user_browser.open("http://launchpad.test/new-distribution")
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+
+    >>> new_user_browser.open("http://launchpad.test/new-project")
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+    >>> _ = config.pop("legitimate person")
 
     >>> priv_browser = setupBrowser(auth="Basic mark@example.com:test")
     >>> priv_browser.open("http://launchpad.test/ubuntu")

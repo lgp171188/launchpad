@@ -86,7 +86,10 @@ from lp.bugs.browser.structuralsubscription import (
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.registry.browser import RegistryEditFormView, add_subscribe_link
-from lp.registry.browser.announcement import HasAnnouncementsView
+from lp.registry.browser.announcement import (
+    HasAnnouncementsView,
+    current_user_can_announce,
+)
 from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
     RegistryCollectionActionMenuBase,
@@ -571,11 +574,13 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         text = "All milestones"
         return Link("+milestones", text, icon="info")
 
-    @enabled_with_permission("launchpad.Edit")
     def announce(self):
         text = "Make announcement"
         summary = "Publish an item of news for this project"
-        return Link("+announce", text, summary, icon="add")
+        link = Link("+announce", text, summary, icon="add")
+        if not current_user_can_announce(self.context):
+            link.enabled = False
+        return link
 
     def announcements(self):
         text = "Read all announcements"

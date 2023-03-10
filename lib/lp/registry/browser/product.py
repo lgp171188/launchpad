@@ -1,4 +1,4 @@
-# Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -127,7 +127,10 @@ from lp.code.interfaces.branchjob import IRosettaUploadJobSource
 from lp.code.interfaces.codeimport import ICodeImport, ICodeImportSet
 from lp.code.interfaces.gitrepository import IGitRepository, IGitRepositorySet
 from lp.registry.browser import BaseRdfView, add_subscribe_link
-from lp.registry.browser.announcement import HasAnnouncementsView
+from lp.registry.browser.announcement import (
+    HasAnnouncementsView,
+    current_user_can_announce,
+)
 from lp.registry.browser.branding import BrandingChangeView
 from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
@@ -602,11 +605,13 @@ class ProductOverviewMenu(
         text = "View milestones"
         return Link("+milestones", text, icon="info")
 
-    @enabled_with_permission("launchpad.Edit")
     def announce(self):
         text = "Make announcement"
         summary = "Publish an item of news for this project"
-        return Link("+announce", text, summary, icon="add")
+        link = Link("+announce", text, summary, icon="add")
+        if not current_user_can_announce(self.context):
+            link.enabled = False
+        return link
 
     def announcements(self):
         text = "Read all announcements"
