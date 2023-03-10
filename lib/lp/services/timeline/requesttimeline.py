@@ -71,7 +71,17 @@ def make_timeline(
         factory = partial(FilteredTimeline, detail_filter=detail_filter)
     else:
         factory = Timeline
-    return factory(actions=actions, format_stack=format_stack)
+    # XXX cjwatson 2023-03-09: Ideally we'd pass `format_stack=format_stack`
+    # here so that we pick up traceback supplements.  Unfortunately, the act
+    # of formatting traceback supplements (e.g. TALESTracebackSupplement)
+    # often turns out to involve database access, and the effect of that is
+    # to recursively add a timeline action, which seems bad; it can also be
+    # problematic for the parts of a timeline that immediately follow the
+    # end of a transaction.  Blocking database access here just results in a
+    # traceback from the exception formatter, which isn't much better.
+    # Until we find some solution to this, we'll have to live with plain
+    # tracebacks.
+    return factory(actions=actions)
 
 
 def get_request_timeline(request):
