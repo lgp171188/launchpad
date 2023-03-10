@@ -17,7 +17,7 @@ __all__ = [
     "DatetimeDisplayWidget",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytz
 from zope.browserpage import ViewPageTemplateFile
@@ -32,6 +32,7 @@ from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import DisplayWidget
 
 from lp.app.validators import LaunchpadValidationError
+from lp.services.compat import tzname
 from lp.services.utils import round_half_up
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
@@ -217,7 +218,13 @@ class DateTimeWidget(TextWidget):
     @property
     def time_zone_name(self):
         """The name of the widget time zone for display in the widget."""
-        return self.time_zone.zone
+        # XXX cjwatson 2023-03-09: In Python < 3.6, `timezone.utc.tzname`
+        # returns "UTC+00:00" rather than "UTC".  Drop this once we require
+        # Python >= 3.6.
+        if self.time_zone is timezone.utc:
+            return "UTC"
+        else:
+            return self.time_zone.tzname(None)
 
     def _align_date_constraints_with_time_zone(self):
         """Ensure that from_date and to_date use the widget time zone."""
@@ -225,14 +232,22 @@ class DateTimeWidget(TextWidget):
             if self.from_date.tzinfo is None:
                 # Timezone-naive constraint is interpreted as being in the
                 # widget time zone.
-                self.from_date = self.time_zone.localize(self.from_date)
+                if hasattr(self.time_zone, "localize"):  # pytz
+                    self.from_date = self.time_zone.localize(self.from_date)
+                else:
+                    self.from_date = self.from_date.replace(
+                        tzinfo=self.time_zone
+                    )
             else:
                 self.from_date = self.from_date.astimezone(self.time_zone)
         if isinstance(self.to_date, datetime):
             if self.to_date.tzinfo is None:
                 # Timezone-naive constraint is interpreted as being in the
                 # widget time zone.
-                self.to_date = self.time_zone.localize(self.to_date)
+                if hasattr(self.time_zone, "localize"):  # pytz
+                    self.to_date = self.time_zone.localize(self.to_date)
+                else:
+                    self.to_date = self.to_date.replace(tzinfo=self.time_zone)
             else:
                 self.to_date = self.to_date.astimezone(self.time_zone)
 
@@ -411,7 +426,10 @@ class DateTimeWidget(TextWidget):
             dt = datetime(year, month, day, hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError("Invalid date value", v)
-        return self.time_zone.localize(dt)
+        if hasattr(self.time_zone, "localize"):  # pytz
+            return self.time_zone.localize(dt)
+        else:
+            return dt.replace(tzinfo=self.time_zone)
 
     def _toFormValue(self, value):
         """Convert a date to its string representation.
@@ -621,4 +639,6 @@ class DatetimeDisplayWidget(DisplayWidget):
         if value == self.context.missing_value:
             return ""
         value = value.astimezone(time_zone)
-        return html_escape(value.strftime("%Y-%m-%d %H:%M:%S %Z"))
+        return html_escape(
+            "%s %s" % (value.strftime("%Y-%m-%d %H:%M:%S", tzname(value)))
+        )

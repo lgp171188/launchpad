@@ -55,6 +55,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
+from lp.services.compat import tzname
 from lp.services.utils import round_half_up
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.canonicalurl import nearest_adapter
@@ -1292,7 +1293,8 @@ class PersonFormatterAPI(ObjectFormatterAPI):
     def local_time(self):
         """Return the local time for this person."""
         time_zone = self._context.time_zone
-        return datetime.now(pytz.timezone(time_zone)).strftime("%T %Z")
+        dt = datetime.now(pytz.timezone(time_zone))
+        return "%s %s" % (dt.strftime("%T"), tzname(dt))
 
     def url(self, view_name=None, rootsite="mainsite"):
         """See `ObjectFormatterAPI`.
@@ -2383,7 +2385,7 @@ class DateTimeFormatterAPI:
     def time(self):
         if self._datetime.tzinfo:
             value = self._datetime.astimezone(getUtility(ILaunchBag).time_zone)
-            return value.strftime("%T %Z")
+            return "%s %s" % (value.strftime("%T"), tzname(value))
         else:
             return self._datetime.strftime("%T")
 
