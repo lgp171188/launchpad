@@ -1,18 +1,19 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Announcement views."""
 
 __all__ = [
     "AnnouncementAddView",
-    "AnnouncementRetargetView",
-    "AnnouncementPublishView",
-    "AnnouncementRetractView",
     "AnnouncementDeleteView",
     "AnnouncementEditView",
+    "AnnouncementPublishView",
+    "AnnouncementRetargetView",
+    "AnnouncementRetractView",
     "AnnouncementSetView",
-    "HasAnnouncementsView",
     "AnnouncementView",
+    "current_user_can_announce",
+    "HasAnnouncementsView",
 ]
 
 from zope.interface import Interface, implementer
@@ -39,6 +40,13 @@ from lp.services.webapp.menu import (
     enabled_with_permission,
 )
 from lp.services.webapp.publisher import LaunchpadView, canonical_url
+
+
+def current_user_can_announce(pillar):
+    """Can the current user make announcements for the pillar?"""
+    return check_permission("launchpad.Edit", pillar) and check_permission(
+        "launchpad.AnyLegitimatePerson", pillar
+    )
 
 
 class AnnouncementMenuMixin:
