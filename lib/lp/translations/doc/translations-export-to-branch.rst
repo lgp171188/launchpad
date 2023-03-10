@@ -206,9 +206,8 @@ Incremental exports
 If the script detects that POFiles have not been touched roughly since
 the time it last exported them, it won't export them again.
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> script.simulated_latest_commit = now
     >>> main_pofile.date_changed = now - timedelta(days=3)
     >>> module_pofile.date_changed = now - timedelta(days=4)

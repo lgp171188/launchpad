@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.store import Store
 from zope.component import getUtility
 
@@ -63,7 +62,7 @@ class PersonNotificationManager:
         retained_days = timedelta(
             days=int(config.person_notification.retained_days)
         )
-        time_limit = datetime.now(pytz.timezone("UTC")) - retained_days
+        time_limit = datetime.now(timezone.utc) - retained_days
         notification_set = getUtility(IPersonNotificationSet)
         to_delete = notification_set.getNotificationsOlderThan(time_limit)
         if to_delete.count():

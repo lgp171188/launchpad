@@ -9,10 +9,9 @@ through the possibilities should go here.
 """
 
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fixtures import FakeLogger
-from pytz import UTC
 from storm.locals import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -1082,7 +1081,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
             "there are no statuses without expiry ages.",
         )
 
-        years_ago = datetime.now(UTC) - timedelta(days=2000)
+        years_ago = datetime.now(timezone.utc) - timedelta(days=2000)
         entry = self._makeProductEntry()
         entry.potemplate = self.factory.makePOTemplate(
             productseries=entry.productseries

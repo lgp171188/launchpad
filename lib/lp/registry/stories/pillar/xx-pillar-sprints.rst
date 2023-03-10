@@ -4,12 +4,8 @@ Sprints relevant for pillars
 For Products, ProjectGroups and Distributions, we have a +sprints page which
 lists all events relevant to that pillar.
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
+    >>> from datetime import datetime, timedelta, timezone
     >>> import re
-    >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.product import IProductSet
@@ -25,7 +21,7 @@ lists all events relevant to that pillar.
     >>> futurista = factory.makeSprint(
     ...     name="futurista",
     ...     title="Future Mega Meeting",
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ...     time_starts=datetime.now(timezone.utc) + timedelta(days=1),
     ... )
     >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> firefox_spec = firefox.specifications(futurista.owner)[0]

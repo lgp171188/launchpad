@@ -228,17 +228,16 @@ And also a subscription for a Team:
 
 Explicitly set the date_created for testing purposes:
 
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> from zope.security.proxy import removeSecurityProxy
     >>> removeSecurityProxy(new_sub).date_created = datetime(
-    ...     2009, 2, 26, tzinfo=pytz.UTC
+    ...     2009, 2, 26, tzinfo=timezone.utc
     ... )
     >>> removeSecurityProxy(new_sub_to_mark_ppa).date_created = datetime(
-    ...     2009, 2, 22, tzinfo=pytz.UTC
+    ...     2009, 2, 22, tzinfo=timezone.utc
     ... )
     >>> removeSecurityProxy(new_team_sub_to_mark_ppa).date_created = datetime(
-    ...     2009, 2, 24, tzinfo=pytz.UTC
+    ...     2009, 2, 24, tzinfo=timezone.utc
     ... )
 
 Commit the new subscriptions to the database.

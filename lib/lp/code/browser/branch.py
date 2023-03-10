@@ -23,9 +23,8 @@ __all__ = [
 ]
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.fields import Reference
@@ -921,7 +920,7 @@ class BranchMirrorStatusView(LaunchpadFormView):
         """Is it likely that the branch is being mirrored in the next run of
         the puller?
         """
-        return self.context.next_mirror_time < datetime.now(pytz.UTC)
+        return self.context.next_mirror_time < datetime.now(timezone.utc)
 
     @property
     def mirror_disabled(self):

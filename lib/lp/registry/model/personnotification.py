@@ -8,9 +8,8 @@ __all__ = [
     "PersonNotificationSet",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.locals import DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
@@ -38,10 +37,13 @@ class PersonNotification(StormBase):
     person = Reference(person_id, "Person.id")
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc,
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
     )
     date_emailed = DateTime(
-        tzinfo=pytz.UTC, name="date_emailed", allow_none=True
+        tzinfo=timezone.utc, name="date_emailed", allow_none=True
     )
 
     body = Unicode(name="body", allow_none=False)
@@ -82,7 +84,7 @@ class PersonNotification(StormBase):
             logger.info("Sending notification to %r." % to_addresses)
         from_addr = config.canonical.bounce_address
         simple_sendmail(from_addr, to_addresses, self.subject, self.body)
-        self.date_emailed = datetime.now(pytz.timezone("UTC"))
+        self.date_emailed = datetime.now(timezone.utc)
 
     def destroySelf(self):
         """See `IPersonNotification`."""

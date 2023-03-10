@@ -6,10 +6,9 @@
 import json
 import re
 import textwrap
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-from pytz import UTC
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -207,7 +206,7 @@ def create_old_bug(
             bugtracker=external_bugtracker,
             remotebug="1234",
         )
-    date = datetime.now(UTC) - timedelta(days=days_old)
+    date = datetime.now(timezone.utc) - timedelta(days=days_old)
     removeSecurityProxy(bug).date_last_updated = date
     return bugtask
 
@@ -232,7 +231,9 @@ def summarize_bugtasks(bugtasks):
             % (
                 title,
                 bugtask in expirable_bugtasks,
-                (datetime.now(UTC) - bugtask.bug.date_last_updated).days,
+                (
+                    datetime.now(timezone.utc) - bugtask.bug.date_last_updated
+                ).days,
                 bugtask.status.title,
                 bugtask.assignee is not None,
                 bugtask.bug.duplicateof is not None,

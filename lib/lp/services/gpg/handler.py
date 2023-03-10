@@ -16,12 +16,11 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 from urllib.parse import urlencode
 
 import gpgme
-import pytz
 import requests
 from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
@@ -354,7 +353,7 @@ class GPGHandler:
         """Inject a key pair into the signing service."""
         secret_key = key.export()
         public_key = self.retrieveKey(key.fingerprint).export()
-        now = datetime.now().replace(tzinfo=pytz.UTC)
+        now = datetime.now().replace(tzinfo=timezone.utc)
         getUtility(ISigningKeySet).inject(
             SigningKeyType.OPENPGP,
             secret_key,

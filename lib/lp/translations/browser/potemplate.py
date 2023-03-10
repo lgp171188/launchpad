@@ -20,11 +20,10 @@ __all__ = [
     "BaseSeriesTemplatesView",
 ]
 
-import datetime
 import operator
 import os.path
+from datetime import datetime, timezone
 
-import pytz
 from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
 from storm.expr import And, Or
@@ -641,7 +640,7 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
             # field is changed because it is the only relevant field we
             # care about regarding the date of last update.
             naked_context = removeSecurityProxy(context)
-            naked_context.date_last_updated = datetime.datetime.now(pytz.UTC)
+            naked_context.date_last_updated = datetime.now(timezone.utc)
 
     def _validateTargetAndGetTemplates(self, data):
         """Return a POTemplateSubset corresponding to the chosen target."""

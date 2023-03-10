@@ -290,9 +290,10 @@ Now set the job as running.
 Set the started time to 2h 20m ago, and the approximate datetime
 should show this as 2 hours.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
-    >>> date_started = datetime.now(pytz.UTC) - timedelta(hours=2, minutes=20)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> date_started = datetime.now(timezone.utc) - timedelta(
+    ...     hours=2, minutes=20
+    ... )
     >>> code_import = make_running_import(
     ...     code_import,
     ...     date_started=date_started,
@@ -322,7 +323,7 @@ last import completed, and so in this case in about three hours.
 
     >>> login("david.allouche@canonical.com")
     >>> from lp.code.tests.codeimporthelpers import make_finished_import
-    >>> date_finished = datetime(2007, 9, 10, 12, tzinfo=pytz.UTC)
+    >>> date_finished = datetime(2007, 9, 10, 12, tzinfo=timezone.utc)
     >>> code_import = get_import_for_branch_name(
     ...     svn_import_branch_unique_name
     ... )

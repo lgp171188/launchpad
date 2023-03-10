@@ -4,10 +4,9 @@
 """Tests for `GitJob`s."""
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
-import pytz
 import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
@@ -146,7 +145,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
         job = GitRefScanJob.create(repository)
         paths = ("refs/heads/master", "refs/tags/1.0")
         author = repository.owner
-        author_date_start = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        author_date_start = datetime(2015, 1, 1, tzinfo=timezone.utc)
         author_date_gen = time_counter(author_date_start, timedelta(days=1))
         hosting_fixture = self.useFixture(
             GitHostingFixture(refs=self.makeFakeRefs(paths))

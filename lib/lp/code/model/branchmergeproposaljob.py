@@ -21,9 +21,8 @@ __all__ = [
 
 import json
 from contextlib import ExitStack
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import six
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
@@ -702,11 +701,11 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
                 job.status == JobStatus.RUNNING
                 or (
                     job.lease_expires is not None
-                    and job.lease_expires >= datetime.now(pytz.UTC)
+                    and job.lease_expires >= datetime.now(timezone.utc)
                 )
                 or (
                     job.scheduled_start is not None
-                    and job.scheduled_start > datetime.now(pytz.UTC)
+                    and job.scheduled_start > datetime.now(timezone.utc)
                 )
             ):
                 continue
@@ -721,7 +720,7 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
                     minutes = (
                         config.codehosting.update_preview_diff_ready_timeout
                     )
-                    cut_off_time = datetime.now(pytz.UTC) - timedelta(
+                    cut_off_time = datetime.now(timezone.utc) - timedelta(
                         minutes=minutes
                     )
                     if job.date_created > cut_off_time:

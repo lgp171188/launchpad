@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.batchnavigator.interfaces import IRangeFactory
 from storm.expr import Desc, compile
 from storm.store import EmptyResultSet
@@ -296,7 +295,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset.order_by(Person.datecreated, Person.name, Person.id)
         range_factory = StormRangeFactory(resultset, self.logError)
         valid_memo = [
-            datetime(2011, 7, 25, 11, 30, 30, 45, tzinfo=pytz.UTC),
+            datetime(2011, 7, 25, 11, 30, 30, 45, tzinfo=timezone.utc),
             "foo",
             1,
         ]
@@ -313,7 +312,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         valid_short_timestamp_json = '["2011-07-25T11:30:30"]'
         self.assertEqual(
-            [datetime(2011, 7, 25, 11, 30, 30, tzinfo=pytz.UTC)],
+            [datetime(2011, 7, 25, 11, 30, 30, tzinfo=timezone.utc)],
             range_factory.parseMemo(valid_short_timestamp_json),
         )
         self.assertEqual(0, len(self.error_messages))
@@ -327,7 +326,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         valid_long_timestamp_json = '["2011-07-25T11:30:30.123456"]'
         self.assertEqual(
-            [datetime(2011, 7, 25, 11, 30, 30, 123456, tzinfo=pytz.UTC)],
+            [datetime(2011, 7, 25, 11, 30, 30, 123456, tzinfo=timezone.utc)],
             range_factory.parseMemo(valid_long_timestamp_json),
         )
         self.assertEqual(0, len(self.error_messages))
@@ -341,7 +340,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         valid_long_timestamp_json = '["2011-07-25T11:30:30-01:00"]'
         self.assertEqual(
-            [datetime(2011, 7, 25, 12, 30, 30, tzinfo=pytz.UTC)],
+            [datetime(2011, 7, 25, 12, 30, 30, tzinfo=timezone.utc)],
             range_factory.parseMemo(valid_long_timestamp_json),
         )
         self.assertEqual(0, len(self.error_messages))
@@ -355,7 +354,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         valid_long_timestamp_json = '["2011-07-25T11:30:30.123456+01:00"]'
         self.assertEqual(
-            [datetime(2011, 7, 25, 10, 30, 30, 123456, tzinfo=pytz.UTC)],
+            [datetime(2011, 7, 25, 10, 30, 30, 123456, tzinfo=timezone.utc)],
             range_factory.parseMemo(valid_long_timestamp_json),
         )
         self.assertEqual(0, len(self.error_messages))
@@ -481,7 +480,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         ]
         limits = [
             1,
-            datetime(2011, 7, 25, 0, 0, 0, tzinfo=pytz.UTC),
+            datetime(2011, 7, 25, 0, 0, 0, tzinfo=timezone.utc),
             "foo",
             "bar",
         ]

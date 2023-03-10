@@ -1,9 +1,8 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import utc
 from twisted.internet import protocol
 from twisted.internet.threads import deferToThread
 from twisted.protocols import basic
@@ -194,7 +193,7 @@ class FileUploadProtocol(basic.LineReceiver):
             raise ProtocolViolation("Invalid File-Expires: " + value)
 
         self.newFile.expires = datetime.fromtimestamp(epoch).replace(
-            tzinfo=utc
+            tzinfo=timezone.utc
         )
 
     def header_database_name(self, value):

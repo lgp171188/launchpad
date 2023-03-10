@@ -108,7 +108,7 @@ to get the current time on the remote server.
     >>> test_transport.local_datetime = remote_time
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
-    datetime.datetime(2009, 8, 19, 17, 2, 2, tzinfo=<UTC>)
+    datetime.datetime(2009, 8, 19, 17, 2, 2, tzinfo=datetime.timezone.utc)
 
 If the remote system is in a different timezone, getCurrentDBTime() will
 convert its time to UTC before returning it.
@@ -117,7 +117,7 @@ convert its time to UTC before returning it.
     >>> test_transport.timezone = "CET"
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
-    datetime.datetime(2009, 8, 19, 16, 2, 2, tzinfo=<UTC>)
+    datetime.datetime(2009, 8, 19, 16, 2, 2, tzinfo=datetime.timezone.utc)
 
 This works whether the UTC offset is positive or negative.
 
@@ -125,7 +125,7 @@ This works whether the UTC offset is positive or negative.
     >>> test_transport.timezone = "US/Eastern"
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
-    datetime.datetime(2009, 8, 19, 22, 2, 2, tzinfo=<UTC>)
+    datetime.datetime(2009, 8, 19, 22, 2, 2, tzinfo=datetime.timezone.utc)
 
 Bugzilla >= 3.6 guarantees that db_time and web_time are in UTC, and
 Bugzilla >= 5.1.1 drops the web_time_utc flag.  We can cope with that.
@@ -133,7 +133,7 @@ Bugzilla >= 5.1.1 drops the web_time_utc flag.  We can cope with that.
     >>> test_transport.include_utc_time_fields = False
     >>> bugzilla.getCurrentDBTime()
     CALLED Bugzilla.time()
-    datetime.datetime(2009, 8, 19, 22, 2, 2, tzinfo=<UTC>)
+    datetime.datetime(2009, 8, 19, 22, 2, 2, tzinfo=datetime.timezone.utc)
 
 
 Initializing the bug database

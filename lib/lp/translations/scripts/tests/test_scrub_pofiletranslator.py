@@ -3,9 +3,8 @@
 
 """Test scrubbing of `POFileTranslator`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 
 from lp.services.database.constants import UTC_NOW
@@ -247,7 +246,7 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
 
     def test_get_contributions_uses_latest_contribution(self):
         pofile = self.factory.makePOFile()
-        today = datetime.now(pytz.UTC)
+        today = datetime.now(timezone.utc)
         yesterday = today - timedelta(1, 1, 1)
         old_tm = self.factory.makeSuggestion(
             pofile=pofile, date_created=yesterday

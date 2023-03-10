@@ -4,9 +4,8 @@
 """Test live filesystem build behaviour."""
 
 import os.path
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from testtools.matchers import MatchesListwise
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -191,7 +190,7 @@ class TestAsyncLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
     def test_extraBuildArgs(self):
         # extraBuildArgs returns a reasonable set of additional arguments.
         job = self.makeJob(
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
             metadata={"project": "distro", "subproject": "special"},
             with_builder=True,
         )

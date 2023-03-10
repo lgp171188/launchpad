@@ -7,17 +7,16 @@ __all__ = [
     "TranslationImportQueue",
 ]
 
-import datetime
 import logging
 import os.path
 import posixpath
 import re
 import tarfile
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from operator import attrgetter
 from textwrap import dedent
 
-import pytz
 from storm.expr import SQL, Alias, And, Func, Or, Select
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from zope.component import getUtility, queryAdapter
@@ -157,7 +156,10 @@ class TranslationImportQueueEntry(StormBase):
     )
     importer = Reference(importer_id, "Person.id")
     dateimported = DateTime(
-        tzinfo=pytz.UTC, name="dateimported", allow_none=False, default=DEFAULT
+        tzinfo=timezone.utc,
+        name="dateimported",
+        allow_none=False,
+        default=DEFAULT,
     )
     sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
@@ -183,7 +185,7 @@ class TranslationImportQueueEntry(StormBase):
         default=RosettaImportStatus.NEEDS_REVIEW,
     )
     date_status_changed = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         name="date_status_changed",
         allow_none=False,
         default=DEFAULT,
@@ -887,11 +889,10 @@ class TranslationImportQueueEntry(StormBase):
 
     def getElapsedTimeText(self):
         """See ITranslationImportQueue."""
-        UTC = pytz.timezone("UTC")
         # XXX: Carlos Perello Marin 2005-06-29: This code should be using the
         # solution defined by PresentingLengthsOfTime spec when it's
         # implemented.
-        elapsedtime = datetime.datetime.now(UTC) - self.dateimported
+        elapsedtime = datetime.now(timezone.utc) - self.dateimported
         elapsedtime_text = ""
         hours = elapsedtime.seconds // 3600
         minutes = (elapsedtime.seconds % 3600) // 60
@@ -1682,7 +1683,7 @@ class TranslationImportQueue:
         :param store: The Store to delete from.
         :return: Number of entries deleted.
         """
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         deletion_clauses = []
         for status, max_age in translation_import_queue_entry_age.items():
             cutoff = now - max_age
@@ -1696,7 +1697,7 @@ class TranslationImportQueue:
         # Also clean out Blocked PO files for Ubuntu that haven't been
         # touched for a year.  Keep blocked templates because they may
         # determine the blocking of future translation uploads.
-        blocked_cutoff = now - datetime.timedelta(days=365)
+        blocked_cutoff = now - timedelta(days=365)
         deletion_clauses.append(
             And(
                 TranslationImportQueueEntry.distroseries_id != None,

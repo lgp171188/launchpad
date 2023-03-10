@@ -17,10 +17,9 @@ import multiprocessing
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import iso8601
-import pytz
 import six
 import transaction
 from contrib.glock import GlobalLock, LockAlreadyAcquired
@@ -720,9 +719,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
                 lpsprc_record.upload_distroseries_id,
                 lpsprc_record.sourcepackagename_id,
             )
-            existing_records[key] = pytz.UTC.localize(
-                lpsprc_record.dateuploaded
-            )
+            existing_records[key] = lpsprc_record.dateuploaded
 
         # Gather account statuses for creators and maintainers.
         # Deactivating or closing an account removes its LPSPRC rows, and we
@@ -927,7 +924,7 @@ class RevisionCachePruner(TunableLoop):
 
     def isDone(self):
         """We are done when there are no old revisions to delete."""
-        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+        epoch = datetime.now(timezone.utc) - timedelta(days=30)
         store = IPrimaryStore(RevisionCache)
         results = store.find(
             RevisionCache, RevisionCache.revision_date < epoch

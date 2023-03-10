@@ -5,9 +5,8 @@
 Processes removals of packages that are scheduled for deletion.
 """
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.expr import Exists
 from storm.locals import And, ClassAlias, Not, Select
 
@@ -208,7 +207,7 @@ class DeathRow:
             publication_class, *clauses
         )
 
-        right_now = datetime.datetime.now(pytz.timezone("UTC"))
+        right_now = datetime.now(timezone.utc)
         for pub in all_publications:
             # Deny removal if any reference is still active.
             if pub.status not in inactive_publishing_status:

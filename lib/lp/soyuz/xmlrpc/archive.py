@@ -8,12 +8,11 @@ __all__ = [
 ]
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import PurePath
 from typing import Optional, Union
 from xmlrpc.client import DateTime, Fault
 
-import pytz
 from pymacaroons import Macaroon
 from zope.component import getUtility
 from zope.interface import implementer
@@ -294,7 +293,7 @@ class ArchiveAPI(LaunchpadXMLRPCView):
             # awkward conversion.
             live_at = datetime.strptime(
                 str(live_at), "%Y%m%dT%H:%M:%S"
-            ).replace(tzinfo=pytz.UTC)
+            ).replace(tzinfo=timezone.utc)
         # This thunk exists because you can't use a decorated function as
         # the implementation of a method exported over XML-RPC.
         return self._translatePath(archive_reference, PurePath(path), live_at)

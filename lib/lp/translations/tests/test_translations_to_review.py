@@ -3,10 +3,9 @@
 
 """Test the choice of "translations to review" for a user."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
-from pytz import UTC
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
@@ -31,7 +30,7 @@ class ReviewTestMixin:
         """
         # Set up a person, and a translation that this person is a
         # reviewer for and has contributed to.
-        self.base_time = datetime.now(UTC)
+        self.base_time = datetime.now(timezone.utc)
         self.person = self.factory.makePerson()
         self.translationgroup = self.factory.makeTranslationGroup(
             owner=self.factory.makePerson()

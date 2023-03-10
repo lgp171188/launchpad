@@ -3,10 +3,9 @@
 
 """Tests for +announcement views."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from lxml import html
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -43,7 +42,7 @@ class TestAnnouncement(TestCaseWithFactory):
     def test_announcement_info_with_publication_date(self):
         product = self.factory.makeProduct(displayname="Foo")
         announcer = self.factory.makePerson(displayname="Bar Baz")
-        announced = datetime(2007, 1, 12, tzinfo=utc)
+        announced = datetime(2007, 1, 12, tzinfo=timezone.utc)
         announcement = product.announce(
             announcer, "Hello World", publication_date=announced
         )
@@ -98,7 +97,7 @@ class TestAnnouncementPage(BrowserTestCase):
             real_user,
             "Some real announcement",
             "Yep, announced here",
-            publication_date=datetime.now(utc),
+            publication_date=datetime.now(timezone.utc),
         )
 
         second_product = self.factory.makeProduct(
@@ -108,7 +107,7 @@ class TestAnnouncementPage(BrowserTestCase):
             team,
             "Other real announcement",
             "Yep too, announced here",
-            publication_date=datetime.now(utc),
+            publication_date=datetime.now(timezone.utc),
         )
 
         inactive_product = self.factory.makeProduct(
@@ -118,7 +117,7 @@ class TestAnnouncementPage(BrowserTestCase):
             real_user,
             "Do not show inactive, please",
             "Nope, not here",
-            publication_date=datetime.now(utc),
+            publication_date=datetime.now(timezone.utc),
         )
         removeSecurityProxy(inactive_product).active = False
 

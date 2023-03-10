@@ -7,8 +7,7 @@ branches. You can either interact with the branches themselves using
 information about the branches and how they relate to the rest of
 the things on Launchpad.
 
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.code.enums import BranchLifecycleStatus, BranchType
     >>> from lazr.restful.marshallers import DateTimeFieldMarshaller
@@ -55,9 +54,9 @@ At the moment, it's not scheduled to be mirrored.
 But we can ask for it to be mirrored using the webservice:
 
     >>> branch_url = "/" + branch.unique_name
-    >>> start_time = datetime.now(pytz.UTC)
+    >>> start_time = datetime.now(timezone.utc)
     >>> response = webservice.named_post(branch_url, "requestMirror")
-    >>> end_time = datetime.now(pytz.UTC)
+    >>> end_time = datetime.now(timezone.utc)
     >>> new_mirror_time = get_as_datetime(response)
     >>> branch.next_mirror_time == new_mirror_time
     True
@@ -86,7 +85,7 @@ time goes on.
     ...     product=fooix,
     ...     name="trunk",
     ...     title="The Fooix Trunk",
-    ...     date_created=datetime(2009, 1, 1, tzinfo=pytz.UTC),
+    ...     date_created=datetime(2009, 1, 1, tzinfo=timezone.utc),
     ... )
     >>> feature_branch = factory.makeAnyBranch(
     ...     owner=eric,

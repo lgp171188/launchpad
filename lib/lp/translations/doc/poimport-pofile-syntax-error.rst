@@ -14,9 +14,7 @@ Here are some imports we need to get this test running.
     ...     ITranslationImportQueue,
     ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -74,7 +72,7 @@ syntax error.
     ... msgid "foo"
     ... msgstr blah"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
@@ -226,7 +224,7 @@ submits a translation with a nonsensical plurals definition.
     ... msgid "foo"
     ... msgstr "bar"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -279,7 +277,7 @@ forms.  He receives an email notifying him of a syntax error.
     ... msgid "foo"
     ... msgstr "bar"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -326,7 +324,7 @@ forms.  The same error is given.
     ... msgid "foo"
     ... msgstr "bar"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -391,7 +389,7 @@ to get that information corrected if need be.
     ... msgstr[5] "barorum %%d"
     ... msgstr[6] "barim %%d"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -463,7 +461,7 @@ plural forms, the file imports just fine.
     ... msgstr[4] "baros %%d"
     ... msgstr[5] "barorum %%d"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,

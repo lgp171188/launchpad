@@ -8,10 +8,9 @@ __all__ = [
     "CharmRecipeBuild",
 ]
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 from operator import attrgetter
 
-import pytz
 import six
 from storm.databases.postgres import JSON
 from storm.expr import Column, Table, With
@@ -106,16 +105,16 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
     virtualized = Bool(name="virtualized", allow_none=False)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_started = DateTime(
-        name="date_started", tzinfo=pytz.UTC, allow_none=True
+        name="date_started", tzinfo=timezone.utc, allow_none=True
     )
     date_finished = DateTime(
-        name="date_finished", tzinfo=pytz.UTC, allow_none=True
+        name="date_finished", tzinfo=timezone.utc, allow_none=True
     )
     date_first_dispatched = DateTime(
-        name="date_first_dispatched", tzinfo=pytz.UTC, allow_none=True
+        name="date_first_dispatched", tzinfo=timezone.utc, allow_none=True
     )
 
     builder_id = Int(name="builder", allow_none=True)

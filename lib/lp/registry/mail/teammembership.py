@@ -6,9 +6,8 @@ __all__ = [
 ]
 
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.app.browser.tales import DurationFormatterAPI
@@ -391,7 +390,9 @@ class TeamMembershipMailer(BaseMailer):
                 member, team, recipient
             )
 
-        formatter = DurationFormatterAPI(dateexpires - datetime.now(pytz.UTC))
+        formatter = DurationFormatterAPI(
+            dateexpires - datetime.now(timezone.utc)
+        )
         extra_params = {
             "how_to_renew": how_to_renew,
             "expiration_date": dateexpires.strftime("%Y-%m-%d"),

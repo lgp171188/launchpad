@@ -4,9 +4,8 @@
 import json
 import re
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import soupmatchers
 import transaction
 from fixtures import FakeLogger
@@ -931,7 +930,7 @@ class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
     def test_starter_set(self):
         user = self.factory.makePerson()
         blueprint = self.factory.makeBlueprint(owner=user)
-        when = datetime(2011, 1, 1, tzinfo=pytz.UTC)
+        when = datetime(2011, 1, 1, tzinfo=timezone.utc)
         with person_logged_in(user):
             blueprint.setImplementationStatus(
                 SpecificationImplementationStatus.STARTED, user
@@ -953,7 +952,7 @@ class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
     def test_completer_set(self):
         user = self.factory.makePerson()
         blueprint = self.factory.makeBlueprint(owner=user)
-        when = datetime(2011, 1, 1, tzinfo=pytz.UTC)
+        when = datetime(2011, 1, 1, tzinfo=timezone.utc)
         with person_logged_in(user):
             blueprint.setImplementationStatus(
                 SpecificationImplementationStatus.IMPLEMENTED, user

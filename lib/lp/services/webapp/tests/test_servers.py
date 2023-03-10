@@ -3,10 +3,9 @@
 
 import io
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE, DocTestSuite
 
-import pytz
 import transaction
 from lazr.restful.interfaces import (
     IServiceRootResource,
@@ -830,7 +829,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
         owner = self.factory.makePerson()
         secret, token = self.factory.makeAccessToken(
             owner=owner,
-            date_expires=datetime.now(pytz.UTC) - timedelta(days=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         transaction.commit()
 

@@ -101,8 +101,7 @@ is said to be overdue, and will be run as soon as possible.
 
 The CodeImportJob.isOverdue() method tells whether a job is overdue.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timezone
     >>> import_job = reviewed_import.import_job
 
     >>> from zope.security.proxy import removeSecurityProxy
@@ -114,14 +113,14 @@ The CodeImportJob.isOverdue() method tells whether a job is overdue.
 
 If date_due is in the future, then the job is not overdue.
 
-    >>> future_date = datetime(2100, 1, 1, tzinfo=UTC)
+    >>> future_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
     >>> set_date_due(import_job, future_date)
     >>> import_job.isOverdue()
     False
 
 If date_due is in the past, then the job is overdue.
 
-    >>> past_date = datetime(1900, 1, 1, tzinfo=UTC)
+    >>> past_date = datetime(1900, 1, 1, tzinfo=timezone.utc)
     >>> set_date_due(import_job, past_date)
     >>> import_job.isOverdue()
     True
@@ -187,10 +186,8 @@ Requesting a job run
 When a job is pending, users can request that it be run as soon as
 possible.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
     >>> pending_job = reviewed_import.import_job
-    >>> future_date = datetime(2100, 1, 1, tzinfo=UTC)
+    >>> future_date = datetime(2100, 1, 1, tzinfo=timezone.utc)
 
 ICodeImportJob does not expose date_due, so we must use removeSecurityProxy.
 
@@ -260,7 +257,7 @@ current transaction time, we force a date in the a past into this
 field now so that we can check that updateHeartbeat has an effect.
 
     >>> removeSecurityProxy(running_job).heartbeat = datetime(
-    ...     2007, 1, 1, 0, 0, 0, tzinfo=UTC
+    ...     2007, 1, 1, 0, 0, 0, tzinfo=timezone.utc
     ... )
     >>> new_events = NewEvents()
 

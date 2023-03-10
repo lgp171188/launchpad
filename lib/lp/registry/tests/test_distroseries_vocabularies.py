@@ -3,9 +3,8 @@
 
 """Tests for distroseries vocabularies in `lp.registry.vocabularies`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from testtools.matchers import Equals, Not
 from zope.component import getUtility
 from zope.schema.interfaces import ITokenizedTerm, IVocabularyFactory
@@ -171,7 +170,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
     def test_ordering(self):
         # The vocabulary is sorted by distribution display name then by the
         # date the distroseries was created, newest first.
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         two_days_ago = now - timedelta(2)
         six_days_ago = now - timedelta(7)
 

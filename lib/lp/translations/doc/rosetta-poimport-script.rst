@@ -9,9 +9,7 @@ PO import script
     ...     ITranslationImportQueue,
     ... )
     >>> from lp.services.config import config
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
 Login as an admin to be able to do changes to the import queue.
@@ -44,7 +42,7 @@ the sampledata.
     ... msgid "Foo %%s"
     ... msgstr "Bar"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
 
 We clean the import queue.

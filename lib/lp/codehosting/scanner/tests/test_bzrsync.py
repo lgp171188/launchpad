@@ -3,12 +3,11 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import datetime
 import os
 import random
 import time
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from breezy.revision import NULL_REVISION
 from breezy.revision import Revision as BzrRevision
 from breezy.tests import TestCaseWithTransport
@@ -439,8 +438,7 @@ class TestBzrSync(BzrSyncTestCase):
         )
         rev_1 = IStore(Revision).find(Revision, revision_id="rev-1").one()
         rev_2 = IStore(Revision).find(Revision, revision_id="rev-2").one()
-        UTC = pytz.timezone("UTC")
-        dt = datetime.datetime.fromtimestamp(1000000000.0, UTC)
+        dt = datetime.fromtimestamp(1000000000.0, timezone.utc)
         self.assertEqual(rev_1.revision_date, dt)
         self.assertEqual(rev_2.revision_date, dt)
 
@@ -668,9 +666,8 @@ class TestBzrSyncRevisions(BzrSyncTestCase):
         # timestamps.
 
         # Make a negative, fractional timestamp and equivalent datetime
-        UTC = pytz.timezone("UTC")
         old_timestamp = -0.5
-        old_date = datetime.datetime(1969, 12, 31, 23, 59, 59, 500000, UTC)
+        old_date = datetime(1969, 12, 31, 23, 59, 59, 500000, timezone.utc)
 
         # Fake revision with negative timestamp.
         fake_rev = BzrRevision(
@@ -781,9 +778,7 @@ class TestGenerateIncrementalDiffJob(BzrSyncTestCase):
         )
         self.db_branch.last_scanned_id = parent_id.decode()
         # Make sure that the merge proposal is created in the past.
-        date_created = datetime.datetime.now(pytz.UTC) - datetime.timedelta(
-            days=7
-        )
+        date_created = datetime.now(timezone.utc) - timedelta(days=7)
         bmp = self.factory.makeBranchMergeProposal(
             source_branch=self.db_branch, date_created=date_created
         )

@@ -3,10 +3,9 @@
 
 """Tests for the internal Soyuz archive API."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from xmlrpc.client import Fault, ServerProxy
 
-import pytz
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -422,7 +421,7 @@ class TestArchiveAPI(TestCaseWithFactory):
         )
 
     def test_translatePath_by_hash_live_at(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         archive = removeSecurityProxy(self.factory.makeArchive(private=True))
         archive_file = self.factory.makeArchiveFile(
             archive=archive,
@@ -668,7 +667,7 @@ class TestArchiveAPI(TestCaseWithFactory):
         )
 
     def test_translatePath_pool_source_live_at(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         archive = removeSecurityProxy(self.factory.makeArchive())
         spph = self.factory.makeSourcePackagePublishingHistory(
             archive=archive,
@@ -834,7 +833,7 @@ class TestArchiveAPI(TestCaseWithFactory):
         )
 
     def test_translatePath_pool_binary_live_at(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         archive = removeSecurityProxy(self.factory.makeArchive())
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             archive=archive,

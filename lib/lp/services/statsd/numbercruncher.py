@@ -6,9 +6,8 @@
 __all__ = ["NumberCruncher"]
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from storm.expr import Count, Sum
 from twisted.application import service
@@ -184,7 +183,8 @@ class NumberCruncher(service.Service):
                 CodeImportJob.state == CodeImportJobState.PENDING,
             ).count()
             overdue = store.find(
-                CodeImportJob, CodeImportJob.date_due < datetime.now(pytz.UTC)
+                CodeImportJob,
+                CodeImportJob.date_due < datetime.now(timezone.utc),
             ).count()
             self._sendGauge("codeimport.pending", pending)
             self._sendGauge("codeimport.overdue", overdue)

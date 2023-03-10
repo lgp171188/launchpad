@@ -20,7 +20,6 @@ import sys
 import webbrowser
 
 import transaction
-from pytz import utc
 from storm.expr import *  # noqa: F401,F403
 
 # Bring in useful bits of Storm.
@@ -45,7 +44,6 @@ from lp.testing.factory import LaunchpadObjectFactory
 
 # Silence unused name warnings
 (
-    utc,
     transaction,
     verifyObject,
     removeSecurityProxy,

@@ -222,12 +222,11 @@ all the 'private' information is exposed.
     >>> print(admin_view.context.failnotes)
     None
 
-    >>> import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> removeSecurityProxy(private_job).date_started = datetime.datetime.now(
-    ...     pytz.UTC
-    ... ) - datetime.timedelta(10)
+    >>> removeSecurityProxy(private_job).date_started = datetime.now(
+    ...     timezone.utc
+    ... ) - timedelta(10)
     >>> print(admin_view.current_build_duration)
     10 days...
 
@@ -393,12 +392,11 @@ The 'virtual' builder category is also available in BuilderSetView as a
 We change the sampledata to create a pending build in for the 386
 processor queue in the PPA category.
 
-    >>> import datetime
     >>> login("foo.bar@canonical.com")
     >>> any_failed_build = cprov.archive.getBuildRecords(
     ...     build_state=BuildStatus.FAILEDTOBUILD
     ... )[0]
-    >>> one_minute = datetime.timedelta(seconds=60)
+    >>> one_minute = timedelta(seconds=60)
     >>> any_failed_build.retry()
     >>> removeSecurityProxy(
     ...     any_failed_build.buildqueue_record

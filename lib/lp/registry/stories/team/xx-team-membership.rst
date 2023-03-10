@@ -76,7 +76,7 @@ Give up on change, nothing should have changed with Colin:
 Now revoke Colin's administrator status and make him expire in November
 next year -- successfully.
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> expire_date = datetime.utcnow() + timedelta(days=365)
 
     >>> browser.getControl(name="admin").value = ["no"]
@@ -234,7 +234,6 @@ Sample Person has both direct and indirect memberships, and expiry dates are
 shown where relevant.  We force an expiration date to be in the past in
 order to avoid this test failing at some point in the future.
 
-    >>> import pytz
     >>> from zope.security.proxy import removeSecurityProxy
 
     >>> login("admin@canonical.com")
@@ -242,7 +241,7 @@ order to avoid this test failing at some point in the future.
     >>> lp_users = personset.getByName("launchpad-users")
     >>> membership = teammembershipset.getByPersonAndTeam(name12, lp_users)
     >>> removeSecurityProxy(membership).dateexpires = datetime(
-    ...     2009, 1, 1, tzinfo=pytz.UTC
+    ...     2009, 1, 1, tzinfo=timezone.utc
     ... )
     >>> logout()
 

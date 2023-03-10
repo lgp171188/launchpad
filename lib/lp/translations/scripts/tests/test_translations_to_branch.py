@@ -3,11 +3,10 @@
 
 """Acceptance test for the translations-export-to-branch script."""
 
-import datetime
 import re
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 
-import pytz
 import transaction
 from breezy.errors import NotBranchError
 from testtools.matchers import MatchesRegex
@@ -340,9 +339,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
     def test_findChangedPOFiles(self):
         # Returns all POFiles changed in a productseries after a certain
         # date.
-        date_in_the_past = datetime.datetime.now(
-            pytz.UTC
-        ) - datetime.timedelta(1)
+        date_in_the_past = datetime.now(timezone.utc) - timedelta(1)
         pofile = self.factory.makePOFile()
 
         exporter = ExportTranslationsToBranch(test_args=[])
@@ -374,9 +371,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         # If a POFile has been changed before changed_since date,
         # it is not returned.
         pofile = self.factory.makePOFile()
-        date_in_the_future = datetime.datetime.now(
-            pytz.UTC
-        ) + datetime.timedelta(1)
+        date_in_the_future = datetime.now(timezone.utc) + timedelta(1)
 
         exporter = ExportTranslationsToBranch(test_args=[])
         self.assertEqual(
@@ -393,12 +388,8 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         # and template has been updated after it, POFile is still
         # considered changed and thus returned.
         pofile = self.factory.makePOFile()
-        date_in_the_future = datetime.datetime.now(
-            pytz.UTC
-        ) + datetime.timedelta(1)
-        date_in_the_far_future = datetime.datetime.now(
-            pytz.UTC
-        ) + datetime.timedelta(2)
+        date_in_the_future = datetime.now(timezone.utc) + timedelta(1)
+        date_in_the_far_future = datetime.now(timezone.utc) + timedelta(2)
         pofile.potemplate.date_last_updated = date_in_the_far_future
 
         exporter = ExportTranslationsToBranch(test_args=[])

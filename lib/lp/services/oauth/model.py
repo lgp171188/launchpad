@@ -12,9 +12,8 @@ __all__ = [
 
 import hashlib
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
@@ -73,7 +72,9 @@ class OAuthConsumer(OAuthBase, StormBase):
     __storm_table__ = "OAuthConsumer"
 
     id = Int(primary=True)
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
     disabled = Bool(allow_none=False, default=False)
     key = Unicode(allow_none=False)
     _secret = Unicode(name="secret", allow_none=True, default="")
@@ -209,8 +210,10 @@ class OAuthAccessToken(OAuthBase, StormBase):
     consumer = Reference(consumer_id, "OAuthConsumer.id")
     person_id = Int(name="person", allow_none=False)
     person = Reference(person_id, "Person.id")
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    date_expires = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    date_expires = DateTime(tzinfo=timezone.utc, allow_none=True, default=None)
     key = Unicode(allow_none=False)
     _secret = Unicode(name="secret", allow_none=True, default="")
 
@@ -271,7 +274,7 @@ class OAuthAccessToken(OAuthBase, StormBase):
 
     @property
     def is_expired(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         return self.date_expires is not None and self.date_expires <= now
 
     def isSecretValid(self, secret):
@@ -290,13 +293,17 @@ class OAuthRequestToken(OAuthBase, StormBase):
     consumer = Reference(consumer_id, "OAuthConsumer.id")
     person_id = Int(name="person", allow_none=True, default=None)
     person = Reference(person_id, "Person.id")
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    date_expires = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    date_expires = DateTime(tzinfo=timezone.utc, allow_none=True, default=None)
     key = Unicode(allow_none=False)
     _secret = Unicode(name="secret", allow_none=True, default="")
 
     permission = DBEnum(enum=OAuthPermission, allow_none=True, default=None)
-    date_reviewed = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_reviewed = DateTime(
+        tzinfo=timezone.utc, allow_none=True, default=None
+    )
 
     product_id = Int(name="product", allow_none=True, default=None)
     product = Reference(product_id, "Product.id")
@@ -353,7 +360,7 @@ class OAuthRequestToken(OAuthBase, StormBase):
 
     @property
     def is_expired(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         expires = self.date_created + timedelta(hours=REQUEST_TOKEN_VALIDITY)
         return expires <= now
 
@@ -372,7 +379,7 @@ class OAuthRequestToken(OAuthBase, StormBase):
                 "This request token has expired and can no longer be "
                 "reviewed."
             )
-        self.date_reviewed = datetime.now(pytz.UTC)
+        self.date_reviewed = datetime.now(timezone.utc)
         self.date_expires = date_expires
         self.person = user
         self.permission = permission

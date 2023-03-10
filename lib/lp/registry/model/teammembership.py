@@ -8,9 +8,8 @@ __all__ = [
     "TeamParticipation",
 ]
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.expr import Func
 from storm.info import ClassAlias
 from storm.store import Store
@@ -124,7 +123,7 @@ class TeamMembership(SQLBase):
         # cover the fencepost error when `date_limit` is
         # earlier than `self.dateexpires`, which happens later
         # in the same day.
-        date_limit = datetime.now(pytz.UTC) + timedelta(
+        date_limit = datetime.now(timezone.utc) + timedelta(
             days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
         return (
@@ -164,8 +163,9 @@ class TeamMembership(SQLBase):
         self._setExpirationDate(date, user)
 
     def _setExpirationDate(self, date, user):
-        UTC = pytz.timezone("UTC")
-        assert date is None or date.date() >= datetime.now(UTC).date(), (
+        assert (
+            date is None or date.date() >= datetime.now(timezone.utc).date()
+        ), (
             "The given expiration date must be None or be in the future: %s"
             % date.strftime("%Y-%m-%d")
         )
@@ -179,7 +179,7 @@ class TeamMembership(SQLBase):
                 "%s in team %s has no membership expiration date."
                 % (self.person.name, self.team.name)
             )
-        if self.dateexpires < datetime.now(pytz.timezone("UTC")):
+        if self.dateexpires < datetime.now(timezone.utc):
             # The membership has reached expiration. Silently return because
             # there is nothing to do. The member will have received emails
             # from previous calls by flag-expired-memberships.py
@@ -243,7 +243,7 @@ class TeamMembership(SQLBase):
         old_status = self.status
         self.status = status
 
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         if status in [proposed, invited]:
             self.proposed_by = user
             self.proponent_comment = comment
@@ -337,7 +337,7 @@ class TeamMembershipSet:
             person=person, team=team, status=status, dateexpires=dateexpires
         )
 
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         tm.proposed_by = user
         tm.date_proposed = now
         tm.proponent_comment = comment
@@ -368,7 +368,7 @@ class TeamMembershipSet:
     def getMembershipsToExpire(self, when=None):
         """See `ITeamMembershipSet`."""
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
         conditions = [
             TeamMembership.dateexpires <= when,
             TeamMembership.status.is_in(
@@ -379,7 +379,7 @@ class TeamMembershipSet:
 
     def getExpiringMembershipsToWarn(self):
         """See `ITeamMembershipSet`,"""
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         min_date_for_daily_warning = now + timedelta(days=7)
         memberships_to_warn = set(
             self.getMembershipsToExpire(min_date_for_daily_warning)
@@ -407,7 +407,7 @@ class TeamMembershipSet:
 
     def deactivateActiveMemberships(self, team, comment, reviewer):
         """See `ITeamMembershipSet`."""
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         cur = cursor()
         all_members = list(team.activemembers)
         cur.execute(

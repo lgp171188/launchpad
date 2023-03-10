@@ -15,9 +15,8 @@ __all__ = [
 ]
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import six
 from storm.locals import Bool, DateTime, Int, Not, Reference, Unicode
 from zope.component import getUtility
@@ -64,7 +63,7 @@ class CodeOfConductConf:
     # Set the datereleased to the date that 1.0 CoC was released,
     # preserving everyone's Ubuntu Code of Conduct signatory status.
     # https://launchpad.net/products/launchpad/+bug/48995
-    datereleased = datetime(2005, 4, 12, tzinfo=pytz.timezone("UTC"))
+    datereleased = datetime(2005, 4, 12, tzinfo=timezone.utc)
 
 
 @implementer(ICodeOfConduct)
@@ -184,7 +183,10 @@ class SignedCodeOfConduct(StormBase):
     signing_key_fingerprint = Unicode()
 
     datecreated = DateTime(
-        tzinfo=pytz.UTC, name="datecreated", allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc,
+        name="datecreated",
+        allow_none=False,
+        default=UTC_NOW,
     )
 
     recipient_id = Int(name="recipient", allow_none=True, default=None)

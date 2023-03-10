@@ -6,7 +6,7 @@ sampledata builder.
 
     >>> login("foo.bar@canonical.com")
 
-    >>> import datetime
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.buildmaster.interfaces.builder import IBuilderSet
@@ -31,7 +31,7 @@ sampledata builder.
     ...     bob_builder.currentjob
     ... )
     >>> in_progress_build = removeSecurityProxy(build2)
-    >>> one_minute = datetime.timedelta(seconds=60)
+    >>> one_minute = timedelta(seconds=60)
     >>> in_progress_build.buildqueue_record.estimated_duration = one_minute
 
     >>> logout()
@@ -159,12 +159,11 @@ messages.
     >>> login("foo.bar@canonical.com")
     >>> from lp.buildmaster.enums import BuildStatus
     >>> in_progress_build.buildqueue_record.reset()
-    >>> import pytz
-    >>> now = datetime.datetime.now(pytz.UTC)
+    >>> now = datetime.now(timezone.utc)
     >>> build.updateStatus(
     ...     BuildStatus.BUILDING,
     ...     builder=bob_builder,
-    ...     date_started=(now - datetime.timedelta(minutes=1)),
+    ...     date_started=(now - timedelta(minutes=1)),
     ... )
     >>> build.buildqueue_record.markAsBuilding(bob_builder)
     >>> build.buildqueue_record.logtail = "one line\nanother line"

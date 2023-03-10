@@ -3,10 +3,9 @@
 
 """Test snap package build features."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.request import urlopen
 
-import pytz
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 from testtools.matchers import (
@@ -240,7 +239,7 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_retry_resets_state(self):
         # Retrying a build resets most of the state attributes, but does
         # not modify the first dispatch time.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         build = self.factory.makeSnapBuild()
         build.updateStatus(BuildStatus.BUILDING, date_started=now)
         build.updateStatus(BuildStatus.FAILEDTOBUILD)
@@ -502,7 +501,7 @@ class TestSnapBuild(TestCaseWithFactory):
             requester=person,
             owner=person,
             distroarchseries=distroarchseries,
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
             status=BuildStatus.FAILEDTOBUILD,
             builder=self.factory.makeBuilder(name="bob"),
             duration=timedelta(minutes=10),
@@ -860,7 +859,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
         # The basic properties of a SnapBuild are sensible.
         db_build = self.factory.makeSnapBuild(
             requester=self.person,
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
         )
         build_url = api_url(db_build)
         logout()

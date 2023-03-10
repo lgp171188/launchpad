@@ -4,11 +4,10 @@
 """Test vocabulary adapters."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from urllib.parse import urlencode
 
-import pytz
 from zope.component import getSiteManager, getUtility
 from zope.formlib.interfaces import MissingInputError
 from zope.interface import implementer
@@ -132,7 +131,7 @@ class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
     def test_PersonPickerEntrySourceAdapter_user(self):
         # The person picker provides more information for users.
         person = self.factory.makePerson(email="snarf@eg.dom", name="snarf")
-        creation_date = datetime(2005, 1, 30, 0, 0, 0, 0, pytz.timezone("UTC"))
+        creation_date = datetime(2005, 1, 30, 0, 0, 0, 0, timezone.utc)
         removeSecurityProxy(person).datecreated = creation_date
         getUtility(IIrcIDSet).new(person, "eg.dom", "snarf")
         getUtility(IIrcIDSet).new(person, "ex.dom", "pting")
@@ -343,7 +342,7 @@ class TestProductPickerEntrySourceAdapter(TestCaseWithFactory):
     def test_provides_commercial_subscription_expired(self):
         product = self.factory.makeProduct(name="fnord")
         self.factory.makeCommercialSubscription(product)
-        then = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
+        then = datetime(2005, 6, 15, 0, 0, 0, 0, timezone.utc)
         with celebrity_logged_in("admin"):
             product.commercial_subscription.date_expires = then
         self.assertEqual(
@@ -497,7 +496,7 @@ class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
             distribution=distribution, status=SeriesStatus.CURRENT
         )
         self.factory.makeCommercialSubscription(distribution)
-        then = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
+        then = datetime(2005, 6, 15, 0, 0, 0, 0, timezone.utc)
         with celebrity_logged_in("admin"):
             distribution.commercial_subscription.date_expires = then
         self.assertEqual(
@@ -602,7 +601,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
             membership_policy=TeamMembershipPolicy.RESTRICTED,
         )
         person = self.factory.makePerson(name="xpting-person")
-        creation_date = datetime(2005, 1, 30, 0, 0, 0, 0, pytz.timezone("UTC"))
+        creation_date = datetime(2005, 1, 30, 0, 0, 0, 0, timezone.utc)
         removeSecurityProxy(person).datecreated = creation_date
         TestPersonVocabulary.test_persons.extend([team, person])
         product = self.factory.makeProduct(owner=team)

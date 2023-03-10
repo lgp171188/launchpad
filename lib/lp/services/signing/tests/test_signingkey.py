@@ -2,12 +2,11 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import base64
-from datetime import datetime
+from datetime import datetime, timezone
 
 import responses
 from fixtures.testcase import TestWithFixtures
 from nacl.public import PrivateKey
-from pytz import utc
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -98,7 +97,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
         priv_key = PrivateKey.generate()
         pub_key = priv_key.public_key
-        created_at = datetime(2020, 4, 16, 16, 35).replace(tzinfo=utc)
+        created_at = datetime(2020, 4, 16, 16, 35).replace(tzinfo=timezone.utc)
 
         key = SigningKey.inject(
             SigningKeyType.KMOD,
@@ -130,7 +129,7 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
         priv_key = PrivateKey.generate()
         pub_key = priv_key.public_key
-        created_at = datetime(2020, 4, 16, 16, 35).replace(tzinfo=utc)
+        created_at = datetime(2020, 4, 16, 16, 35).replace(tzinfo=timezone.utc)
 
         key = SigningKey.inject(
             SigningKeyType.KMOD,
@@ -374,7 +373,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         priv_key = PrivateKey.generate()
         pub_key = priv_key.public_key
 
-        now = datetime.now().replace(tzinfo=utc)
+        now = datetime.now().replace(tzinfo=timezone.utc)
         arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI,
             bytes(priv_key),
@@ -421,7 +420,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         priv_key = PrivateKey.generate()
         pub_key = priv_key.public_key
 
-        now = datetime.now().replace(tzinfo=utc)
+        now = datetime.now().replace(tzinfo=timezone.utc)
         arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI,
             bytes(priv_key),

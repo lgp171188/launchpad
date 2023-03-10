@@ -616,9 +616,8 @@ permissions) in case they want to retain that membership. This is done by
 the flag-expired-memberships cronscript, which uses
 ITeamMembership.sendExpirationWarningEmail to do its job.
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
-    >>> utc_now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> utc_now = datetime.now(timezone.utc)
 
 In the case of the beta-testers team, the email is sent only to the
 team's owner, who doesn't have the necessary rights to renew the
@@ -798,7 +797,7 @@ notification is sent to all team admins.
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
     ...     karl, mirror_admins
     ... )
-    >>> tomorrow = datetime.now(pytz.timezone("UTC")) + timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> print(karl_on_mirroradmins.status.title)
     Approved
 

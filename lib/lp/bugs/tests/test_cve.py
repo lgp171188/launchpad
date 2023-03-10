@@ -3,9 +3,8 @@
 
 """CVE related tests."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from testtools.matchers import MatchesStructure
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
@@ -171,7 +170,7 @@ class TestCve(TestCaseWithFactory):
         )
 
     def test_cveset_new_method_parameters(self):
-        today = datetime.now(tz=pytz.UTC)
+        today = datetime.now(tz=timezone.utc)
         cvss = {"nvd": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}
         cve = getUtility(ICveSet).new(
             sequence="2099-1234",

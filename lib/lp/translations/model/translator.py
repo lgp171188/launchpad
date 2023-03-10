@@ -3,7 +3,8 @@
 
 __all__ = ["Translator", "TranslatorSet"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Join, Reference, Store, Unicode
 from zope.interface import implementer
 
@@ -32,7 +33,9 @@ class Translator(StormBase):
         name="translator", validator=validate_public_person, allow_none=False
     )
     translator = Reference(translator_id, "Person.id")
-    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datecreated = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
     style_guide_url = Unicode(allow_none=True, default=None)
 
     def __init__(

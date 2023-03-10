@@ -507,9 +507,8 @@ comments.
     ...     return new_notifications
     ...
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
-    >>> now = datetime(2008, 9, 12, 15, 30, 45, tzinfo=pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime(2008, 9, 12, 15, 30, 45, tzinfo=timezone.utc)
     >>> with lp_dbuser():
     ...     test_bug = factory.makeBug(date_created=now)
     ...     bug_watch = factory.makeBugWatch("42", bug=test_bug)

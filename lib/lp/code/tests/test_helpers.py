@@ -3,9 +3,8 @@
 
 """Test the code test helpers found in helpers.py."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.code.interfaces.branchcollection import IAllBranches
@@ -22,7 +21,7 @@ class TestMakeProjectCloudData(TestCaseWithFactory):
 
     def test_single_project(self):
         # Make a single project with one commit from one person.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         commit_time = now - timedelta(days=2)
         make_project_cloud_data(
             self.factory,

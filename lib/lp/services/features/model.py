@@ -7,9 +7,8 @@ __all__ = [
     "getFeatureStore",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import six
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
@@ -64,7 +63,7 @@ class FeatureFlagChangelogEntry(StormBase):
     def __init__(self, diff, comment, person):
         super().__init__()
         self.diff = six.ensure_text(diff)
-        self.date_changed = datetime.now(pytz.timezone("UTC"))
+        self.date_changed = datetime.now(timezone.utc)
         self.comment = six.ensure_text(comment)
         self.person = person
 

@@ -191,7 +191,7 @@ and work with that.
     >>> test_transport.timezone = "CET"
     >>> test_transport.local_datetime = remote_time
     >>> bugzilla.getCurrentDBTime()
-    datetime.datetime(2008, 5, 16, 15, 53, 20, tzinfo=<UTC>)
+    datetime.datetime(2008, 5, 16, 15, 53, 20, tzinfo=datetime.timezone.utc)
 
 
 Initializing the remote bug database

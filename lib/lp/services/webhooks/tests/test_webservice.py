@@ -4,9 +4,8 @@
 """Tests for the webhook webservice objects."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import utc
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -319,7 +318,7 @@ class TestWebhookDelivery(TestCaseWithFactory):
             self.delivery.start()
             removeSecurityProxy(self.delivery).json_data[
                 "date_first_sent"
-            ] = datetime.now(utc).isoformat()
+            ] = datetime.now(timezone.utc).isoformat()
             self.delivery.fail()
         representation = self.webservice.get(
             self.delivery_url, api_version="devel"

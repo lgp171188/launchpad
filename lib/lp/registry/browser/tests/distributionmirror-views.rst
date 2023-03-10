@@ -242,9 +242,8 @@ changed.
     # but since this test could run at 23:59:59 of any given day we can only
     # reliably check that the timedelta from now to the date it was reviewed
     # is less than or equal to 1 day.
-    >>> import pytz
-    >>> from datetime import datetime
-    >>> utc_now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timezone
+    >>> utc_now = datetime.now(timezone.utc)
     >>> abs((mirror.date_reviewed.date() - utc_now.date()).days) <= 1
     True
 

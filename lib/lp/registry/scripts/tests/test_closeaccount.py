@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the close-account script."""
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import (
@@ -1168,7 +1167,7 @@ class TestCloseAccount(TestCaseWithFactory):
             account_id = person.account.id
 
             milestone = self.factory.makeMilestone(**milestone_target)
-            milestone.createProductRelease(person, datetime.now(pytz.UTC))
+            milestone.createProductRelease(person, datetime.now(timezone.utc))
             script = self.makeScript([person.name])
             with dbuser("launchpad"):
                 if not expected_to_be_removed:
@@ -1208,7 +1207,7 @@ class TestCloseAccount(TestCaseWithFactory):
 
             milestone = self.factory.makeMilestone(**milestone_target)
             product_release = milestone.createProductRelease(
-                milestone.product.owner, datetime.now(pytz.UTC)
+                milestone.product.owner, datetime.now(timezone.utc)
             )  # type: ProductRelease
             product_release.addReleaseFile(
                 "test.txt", b"test", "text/plain", person

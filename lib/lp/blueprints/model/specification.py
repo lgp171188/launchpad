@@ -11,8 +11,8 @@ __all__ = [
 ]
 
 import operator
+from datetime import timezone
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.objectdelta import ObjectDelta
 from storm.locals import (
@@ -207,7 +207,9 @@ class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
         name="owner", validator=validate_public_person, allow_none=False
     )
     owner = Reference(owner_id, "Person.id")
-    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datecreated = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
     product_id = Int(name="product", allow_none=True, default=None)
     product = Reference(product_id, "Product.id")
     productseries_id = Int(name="productseries", allow_none=True, default=None)
@@ -229,7 +231,7 @@ class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
     )
     goal_proposer = Reference(goal_proposer_id, "Person.id")
     date_goal_proposed = DateTime(
-        allow_none=True, default=None, tzinfo=pytz.UTC
+        allow_none=True, default=None, tzinfo=timezone.utc
     )
     goal_decider_id = Int(
         name="goal_decider",
@@ -239,7 +241,7 @@ class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
     )
     goal_decider = Reference(goal_decider_id, "Person.id")
     date_goal_decided = DateTime(
-        allow_none=True, default=None, tzinfo=pytz.UTC
+        allow_none=True, default=None, tzinfo=timezone.utc
     )
     milestone_id = Int(name="milestone", allow_none=True, default=None)
     milestone = Reference(milestone_id, "Milestone.id")
@@ -261,7 +263,9 @@ class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
         default=None,
     )
     completer = Reference(completer_id, "Person.id")
-    date_completed = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_completed = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
     starter_id = Int(
         name="starter",
         allow_none=True,
@@ -269,7 +273,7 @@ class Specification(StormBase, BugLinkTargetMixin, InformationTypeMixin):
         default=None,
     )
     starter = Reference(starter_id, "Person.id")
-    date_started = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_started = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
 
     # useful joins
     _subscriptions = ReferenceSet(

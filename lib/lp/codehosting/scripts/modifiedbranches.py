@@ -7,10 +7,9 @@ __all__ = ["ModifiedBranchesScript"]
 
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import strptime
 
-import pytz
 from zope.component import getUtility
 
 from lp.code.enums import BranchType
@@ -95,7 +94,7 @@ class ModifiedBranchesScript(LaunchpadScript):
             )
 
         # Make the datetime timezone aware.
-        return last_modified.replace(tzinfo=pytz.UTC)
+        return last_modified.replace(tzinfo=timezone.utc)
 
     def branch_location(self, branch):
         """Return the  branch path for the given branch."""

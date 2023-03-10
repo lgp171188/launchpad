@@ -8,9 +8,8 @@ __all__ = [
     "SpecificBuildFarmJobSourceMixin",
 ]
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.expr import Desc, LeftJoin, Or
 from storm.locals import DateTime, Int, Reference
 from storm.store import Store
@@ -62,11 +61,11 @@ class BuildFarmJob(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", allow_none=False, tzinfo=pytz.UTC
+        name="date_created", allow_none=False, tzinfo=timezone.utc
     )
 
     date_finished = DateTime(
-        name="date_finished", allow_none=True, tzinfo=pytz.UTC
+        name="date_finished", allow_none=True, tzinfo=timezone.utc
     )
 
     builder_id = Int(name="builder", allow_none=True)
@@ -238,7 +237,7 @@ class BuildFarmJobMixin:
         # If we're starting to build, set date_started and
         # date_first_dispatched if required.
         if self.date_started is None and status == BuildStatus.BUILDING:
-            self.date_started = date_started or datetime.datetime.now(pytz.UTC)
+            self.date_started = date_started or datetime.now(timezone.utc)
             if self.date_first_dispatched is None:
                 self.date_first_dispatched = self.date_started
 
@@ -259,7 +258,7 @@ class BuildFarmJobMixin:
             # the duration spent building locally.
             self.build_farm_job.date_finished = (
                 self.date_finished
-            ) = date_finished or datetime.datetime.now(pytz.UTC)
+            ) = date_finished or datetime.now(timezone.utc)
             self.emitMetric("finished", status=status.name)
 
     def gotFailure(self):

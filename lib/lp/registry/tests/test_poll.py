@@ -1,10 +1,9 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 from testtools.matchers import ContainsDict, Equals, MatchesListwise
 from zope.component import getUtility
 
@@ -34,10 +33,10 @@ class TestPoll(TestCaseWithFactory):
         team = self.factory.makeTeam(owner)
         poll = self.factory.makePoll(team, "name", "title", "proposition")
         # Force opening of poll so that we can vote.
-        poll.dateopens = datetime.now(pytz.UTC) - timedelta(minutes=2)
+        poll.dateopens = datetime.now(timezone.utc) - timedelta(minutes=2)
         poll.storeSimpleVote(owner, None)
         # Force closing of the poll so that we can call getWinners().
-        poll.datecloses = datetime.now(pytz.UTC)
+        poll.datecloses = datetime.now(timezone.utc)
         self.assertIsNone(poll.getWinners(), poll.getWinners())
 
 
@@ -73,7 +72,7 @@ class TestPollWebservice(TestCaseWithFactory):
         polls = []
         for team in teams:
             for offset in (-8, -1, 1):
-                dateopens = datetime.now(pytz.UTC) + timedelta(days=offset)
+                dateopens = datetime.now(timezone.utc) + timedelta(days=offset)
                 datecloses = dateopens + timedelta(days=7)
                 polls.append(
                     getUtility(IPollSet).new(

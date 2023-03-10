@@ -9,8 +9,8 @@ __all__ = [
 
 import io
 import os
+from datetime import timezone
 
-import pytz
 from storm.databases.postgres import JSON
 from storm.expr import Desc
 from storm.locals import And, DateTime, Int, Reference, Unicode
@@ -61,14 +61,14 @@ class RevisionStatusReport(StormBase):
     ci_build = Reference(ci_build_id, "CIBuild.id")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     date_started = DateTime(
-        name="date_started", tzinfo=pytz.UTC, allow_none=True
+        name="date_started", tzinfo=timezone.utc, allow_none=True
     )
     date_finished = DateTime(
-        name="date_finished", tzinfo=pytz.UTC, allow_none=True
+        name="date_finished", tzinfo=timezone.utc, allow_none=True
     )
 
     properties = JSON("properties", allow_none=True)
@@ -300,7 +300,7 @@ class RevisionStatusArtifact(StormBase):
     )
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=True
+        name="date_created", tzinfo=timezone.utc, allow_none=True
     )
 
     def __init__(

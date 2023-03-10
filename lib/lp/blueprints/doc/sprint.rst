@@ -3,11 +3,7 @@ Sprints / Meetings
 
 Sprints or meetings can be coordinated using Launchpad.
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility
     >>> from lp.blueprints.interfaces.sprint import ISprintSet
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -35,7 +31,7 @@ Make a new sprint and add some relevant specifications to it.
 
     >>> futurista = factory.makeSprint(
     ...     name="futurista",
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ...     time_starts=datetime.now(timezone.utc) + timedelta(days=1),
     ... )
     >>> firefox_spec = firefox.specifications(futurista.owner)[0]
     >>> _ = firefox_spec.linkSprint(futurista, futurista.owner)
@@ -250,8 +246,8 @@ Sprint attendance
 The sprint attend() method adds a user's attendance to a sprint.
 
     >>> person = factory.makePerson(name="mustard")
-    >>> time_starts = datetime(2005, 10, 7, 9, 0, 0, 0, pytz.UTC)
-    >>> time_ends = datetime(2005, 10, 17, 19, 5, 0, 0, pytz.UTC)
+    >>> time_starts = datetime(2005, 10, 7, 9, 0, 0, 0, timezone.utc)
+    >>> time_ends = datetime(2005, 10, 17, 19, 5, 0, 0, timezone.utc)
     >>> sprint_attendance = ubz.attend(person, time_starts, time_ends, True)
 
 The attend() method can update a user's attendance if there is already a
@@ -269,8 +265,8 @@ ISprintAttendance for the user.
     >>> print(sprint_attendance.is_physical)
     True
 
-    >>> time_starts = datetime(2005, 10, 8, 9, 0, 0, 0, pytz.UTC)
-    >>> time_ends = datetime(2005, 10, 16, 19, 5, 0, 0, pytz.UTC)
+    >>> time_starts = datetime(2005, 10, 8, 9, 0, 0, 0, timezone.utc)
+    >>> time_ends = datetime(2005, 10, 16, 19, 5, 0, 0, timezone.utc)
     >>> new_attendance = ubz.attend(person, time_starts, time_ends, False)
     >>> print(new_attendance.attendee.name)
     mustard

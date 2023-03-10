@@ -5,13 +5,12 @@
 
 import base64
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from textwrap import dedent
 from urllib.parse import urlsplit
 
 import iso8601
-import pytz
 import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
@@ -3066,7 +3065,7 @@ class TestSnapSet(TestCaseWithFactory):
                 archive=snap.auto_build_archive,
                 distroarchseries=das,
                 pocket=snap.auto_build_pocket,
-                date_created=(datetime.now(pytz.UTC) - timedelta(days=2)),
+                date_created=(datetime.now(timezone.utc) - timedelta(days=2)),
             )
         self.assertContentEqual([snap], SnapSet._findStaleSnaps())
 
@@ -3292,7 +3291,7 @@ class TestSnapSet(TestCaseWithFactory):
             snap=snap,
             archive=snap.auto_build_archive,
             distroarchseries=das,
-            date_created=datetime.now(pytz.UTC) - timedelta(days=1),
+            date_created=datetime.now(timezone.utc) - timedelta(days=1),
             status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=1),
         )
@@ -3309,7 +3308,7 @@ class TestSnapSet(TestCaseWithFactory):
                 snap=snap,
                 archive=snap.auto_build_archive,
                 distroarchseries=das,
-                date_created=datetime.now(pytz.UTC) - timediff,
+                date_created=datetime.now(timezone.utc) - timediff,
                 status=BuildStatus.FULLYBUILT,
                 duration=timedelta(minutes=1),
             )
@@ -3324,7 +3323,7 @@ class TestSnapSet(TestCaseWithFactory):
             requester=snap.owner,
             snap=snap,
             distroarchseries=das,
-            date_created=datetime.now(pytz.UTC) - timedelta(minutes=30),
+            date_created=datetime.now(timezone.utc) - timedelta(minutes=30),
             status=BuildStatus.FULLYBUILT,
             duration=timedelta(minutes=1),
         )

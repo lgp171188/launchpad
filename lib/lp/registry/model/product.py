@@ -11,11 +11,10 @@ __all__ = [
 ]
 
 
-import datetime
 import http.client
 import operator
+from datetime import datetime, time, timedelta, timezone
 
-import pytz
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.restful.declarations import error_status
 from storm.expr import (
@@ -768,7 +767,7 @@ class Product(
 
     @property
     def has_current_commercial_subscription(self):
-        now = datetime.datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         return (
             self.commercial_subscription
             and self.commercial_subscription.date_expires > now
@@ -815,10 +814,9 @@ class Product(
             return True
         else:
             warning_date = (
-                self.commercial_subscription.date_expires
-                - datetime.timedelta(30)
+                self.commercial_subscription.date_expires - timedelta(30)
             )
-            now = datetime.datetime.now(pytz.timezone("UTC"))
+            now = datetime.now(timezone.utc)
             if now > warning_date:
                 # The subscription is close to being expired.
                 return True
@@ -960,8 +958,8 @@ class Product(
         """Create a complementary commercial subscription for the product"""
         if not self.commercial_subscription:
             lp_janitor = getUtility(ILaunchpadCelebrities).janitor
-            now = datetime.datetime.now(pytz.UTC)
-            date_expires = now + datetime.timedelta(days=30)
+            now = datetime.now(timezone.utc)
+            date_expires = now + timedelta(days=30)
             sales_system_id = "complimentary-30-day-%s" % now
             whiteboard = (
                 "Complimentary 30 day subscription. -- Launchpad %s"
@@ -2048,29 +2046,27 @@ class ProductSet:
             The returned time will have a zero time component and be based on
             UTC.
             """
-            return datetime.datetime.combine(
-                date, datetime.time(tzinfo=pytz.UTC)
-            )
+            return datetime.combine(date, time(tzinfo=timezone.utc))
 
         if created_after is not None:
-            if not isinstance(created_after, datetime.datetime):
+            if not isinstance(created_after, datetime):
                 created_after = dateToDatetime(created_after)
-                created_after = datetime.datetime(
+                created_after = datetime(
                     created_after.year,
                     created_after.month,
                     created_after.day,
-                    tzinfo=pytz.utc,
+                    tzinfo=timezone.utc,
                 )
             conditions.append(Product.datecreated >= created_after)
 
         if created_before is not None:
-            if not isinstance(created_before, datetime.datetime):
+            if not isinstance(created_before, datetime):
                 created_before = dateToDatetime(created_before)
             conditions.append(Product.datecreated <= created_before)
 
         subscription_conditions = []
         if subscription_expires_after is not None:
-            if not isinstance(subscription_expires_after, datetime.datetime):
+            if not isinstance(subscription_expires_after, datetime):
                 subscription_expires_after = dateToDatetime(
                     subscription_expires_after
                 )
@@ -2080,7 +2076,7 @@ class ProductSet:
             )
 
         if subscription_expires_before is not None:
-            if not isinstance(subscription_expires_before, datetime.datetime):
+            if not isinstance(subscription_expires_before, datetime):
                 subscription_expires_before = dateToDatetime(
                     subscription_expires_before
                 )
@@ -2090,7 +2086,7 @@ class ProductSet:
             )
 
         if subscription_modified_after is not None:
-            if not isinstance(subscription_modified_after, datetime.datetime):
+            if not isinstance(subscription_modified_after, datetime):
                 subscription_modified_after = dateToDatetime(
                     subscription_modified_after
                 )
@@ -2099,7 +2095,7 @@ class ProductSet:
                 >= subscription_modified_after
             )
         if subscription_modified_before is not None:
-            if not isinstance(subscription_modified_before, datetime.datetime):
+            if not isinstance(subscription_modified_before, datetime):
                 subscription_modified_before = dateToDatetime(
                     subscription_modified_before
                 )

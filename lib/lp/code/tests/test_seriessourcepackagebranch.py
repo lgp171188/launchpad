@@ -3,9 +3,8 @@
 
 """Tests for ISeriesSourcePackageBranch."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from zope.component import getUtility
 
@@ -33,7 +32,7 @@ class TestSeriesSourcePackageBranch(TestCaseWithFactory):
         sourcepackagename = self.factory.makeSourcePackageName()
         registrant = self.factory.makePerson()
         branch = self.factory.makeAnyBranch()
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         sspb = SeriesSourcePackageBranchSet.new(
             distroseries,
             PackagePublishingPocket.RELEASE,

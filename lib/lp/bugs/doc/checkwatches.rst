@@ -19,12 +19,11 @@ checkwatches cronscript machinery directly.
 
 First, we create some bug watches to test with:
 
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.bugtracker import BugTrackerType
     >>> from lp.bugs.model.bugtracker import BugTracker
-    >>> from pytz import utc
     >>> from lp.bugs.scripts.checkwatches import CheckwatchesMaster
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> sample_person = getUtility(IPersonSet).getByEmail(
@@ -50,7 +49,7 @@ First, we create some bug watches to test with:
     ...     "1",
     ...     getUtility(ILaunchpadCelebrities).janitor,
     ... )
-    >>> example_bugwatch.next_check = datetime.now(utc)
+    >>> example_bugwatch.next_check = datetime.now(timezone.utc)
 
     >>> login("no-priv@canonical.com")
 
@@ -114,7 +113,7 @@ of the externalbugtracker module to ensure that it raises this error.
     ...
 
     >>> login(ANONYMOUS)
-    >>> example_bugwatch.next_check = datetime.now(utc)
+    >>> example_bugwatch.next_check = datetime.now(timezone.utc)
     >>> try:
     ...     externalbugtracker.get_external_bugtracker = (
     ...         broken_get_external_bugtracker
@@ -153,7 +152,7 @@ transaction if something goes wrong.
     ...         str(bug_id),
     ...         getUtility(ILaunchpadCelebrities).janitor,
     ...     )
-    ...     example_bugwatch.next_check = datetime.now(utc)
+    ...     example_bugwatch.next_check = datetime.now(timezone.utc)
     ...
 
 Since we know how many bugwatches example_bug has we will be able to see
@@ -292,7 +291,7 @@ made.
     ...             watches_to_update = bug_tracker.watches_needing_update[
     ...                 :batch_size
     ...             ]
-    ...             now = datetime.now(utc)
+    ...             now = datetime.now(timezone.utc)
     ...             for watch in watches_to_update:
     ...                 watch.lastchecked = now
     ...                 watch.next_check = None
@@ -337,7 +336,7 @@ We'll create a non-functioning ExternalBugtracker to demonstrate this.
     ...     ExternalBugTracker,
     ... )
 
-    >>> nowish = datetime.now(utc)
+    >>> nowish = datetime.now(timezone.utc)
     >>> @implementer(
     ...     ISupportsBackLinking,
     ...     ISupportsCommentImport,

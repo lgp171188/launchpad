@@ -647,15 +647,14 @@ When looking at a bug tracker page, a list of bug watches is displayed:
 
 Scheduling any of the watches will change their "Next check" column.
 
-    >>> from datetime import datetime
-    >>> from pytz import utc
+    >>> from datetime import datetime, timezone
     >>> from zope.security.proxy import removeSecurityProxy
 
     >>> login("foo.bar@canonical.com")
     >>> debbugs = getUtility(IBugTrackerSet).getByName("debbugs")
     >>> watch_15 = debbugs.watches[0]
     >>> removeSecurityProxy(watch_15).next_check = datetime(
-    ...     2010, 4, 9, 9, 50, 0, tzinfo=utc
+    ...     2010, 4, 9, 9, 50, 0, tzinfo=timezone.utc
     ... )
     >>> logout()
 

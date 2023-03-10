@@ -3,9 +3,8 @@
 
 """Tests for the BugSummary class and underlying database triggers."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -634,14 +633,18 @@ class TestBugSummary(TestCaseWithFactory):
 
         self.assertCount(0, product=product, has_patch=True)
 
-        removeSecurityProxy(bug).latest_patch_uploaded = datetime.now(tz=utc)
+        removeSecurityProxy(bug).latest_patch_uploaded = datetime.now(
+            tz=timezone.utc
+        )
 
         self.assertCount(1, product=product, has_patch=True)
 
     def test_removePatch(self):
         product = self.factory.makeProduct()
         bug = self.factory.makeBug(target=product)
-        removeSecurityProxy(bug).latest_patch_uploaded = datetime.now(tz=utc)
+        removeSecurityProxy(bug).latest_patch_uploaded = datetime.now(
+            tz=timezone.utc
+        )
 
         self.assertCount(1, product=product, has_patch=True)
         self.assertCount(0, product=product, has_patch=False)

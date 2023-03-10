@@ -6,9 +6,8 @@ __all__ = [
 ]
 
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from storm.expr import Count
 
 from lp.buildmaster.enums import BuildQueueStatus
@@ -132,7 +131,7 @@ def estimate_time_to_next_builder(bq, now=None):
 
     head_job_processor, head_job_virtualized = head_job_platform
 
-    now = now or datetime.now(utc)
+    now = now or datetime.now(timezone.utc)
     delay_query = """
         SELECT MIN(
             CASE WHEN
@@ -345,5 +344,7 @@ def estimate_job_start_time(bq, now=None):
 
     # A job will not get dispatched in less than 5 seconds no matter what.
     start_time = max(5, min_wait_time + sum_of_delays)
-    result = (now or datetime.now(utc)) + timedelta(seconds=start_time)
+    result = (now or datetime.now(timezone.utc)) + timedelta(
+        seconds=start_time
+    )
     return result

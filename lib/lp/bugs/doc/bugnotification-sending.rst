@@ -8,9 +8,8 @@ an email notification, and sent to the appropriate people.
 Before we start, let's ensure that there are no pending notifications to
 be sent:
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> ten_minutes_ago = now - timedelta(minutes=10)
     >>> from lp.bugs.interfaces.bugnotification import IBugNotificationSet
     >>> len(getUtility(IBugNotificationSet).getNotificationsToSend())
@@ -133,7 +132,7 @@ still None:
 Setting date_emailed to some date causes it not to be pending anymore:
 
     >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> notifications[0].date_emailed = datetime.now(pytz.timezone("UTC"))
+    >>> notifications[0].date_emailed = datetime.now(timezone.utc)
     >>> flush_database_updates()
     >>> pending_notifications = getUtility(
     ...     IBugNotificationSet
@@ -144,7 +143,7 @@ Setting date_emailed to some date causes it not to be pending anymore:
 Let's define a helper function to do that for all pending notifications:
 
     >>> def flush_notifications():
-    ...     utc_now = datetime.now(pytz.timezone("UTC"))
+    ...     utc_now = datetime.now(timezone.utc)
     ...     pending_notifications = getUtility(
     ...         IBugNotificationSet
     ...     ).getNotificationsToSend()
@@ -338,7 +337,7 @@ signature, and the signature marker has a trailing space.
 We send the notification only if the user hasn't done any other changes
 for the last 5 minutes:
 
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> now = datetime.now(timezone.utc)
     >>> for minutes_ago in reversed(range(10)):
     ...     bug_one.addChange(
     ...         BugInformationTypeChange(
@@ -1103,7 +1102,7 @@ them:
     1
 
     >>> for notification in notifications:
-    ...     notification.date_emailed = datetime.now(pytz.timezone("UTC"))
+    ...     notification.date_emailed = datetime.now(timezone.utc)
     ...
 
 

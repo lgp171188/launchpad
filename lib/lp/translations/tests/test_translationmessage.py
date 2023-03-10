@@ -3,9 +3,8 @@
 
 """Unit tests for `TranslationMessage`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import UTC
 from storm.locals import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -63,7 +62,7 @@ class TestTranslationMessage(TestCaseWithFactory):
     def test_markReviewed(self):
         message = self.factory.makeCurrentTranslationMessage()
         reviewer = self.factory.makePerson()
-        tomorrow = datetime.now(UTC) + timedelta(days=1)
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
 
         message.markReviewed(reviewer, tomorrow)
 
@@ -337,7 +336,7 @@ class TestApprove(TestCaseWithFactory):
         suggestion = self.factory.makeSuggestion(
             pofile=pofile, potmsgset=potmsgset
         )
-        old = datetime.now(UTC) - timedelta(days=1)
+        old = datetime.now(timezone.utc) - timedelta(days=1)
 
         self.assertRaises(
             TranslationConflict,
@@ -631,7 +630,7 @@ class TestAcceptFromUpstreamImportOnPackage(TestCaseWithFactory):
     def test_accept_detects_conflict(self):
         self._makeUbuntuMessage()
         suggestion = self._makeSuggestion()
-        old = datetime.now(UTC) - timedelta(days=1)
+        old = datetime.now(timezone.utc) - timedelta(days=1)
 
         self.assertRaises(
             TranslationConflict,

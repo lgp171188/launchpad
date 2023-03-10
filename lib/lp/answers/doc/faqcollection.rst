@@ -76,9 +76,8 @@ collection.
     ...     ),
     ... ]
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
 
     >>> faq_set = []
     >>> for owner, title, content, keywords in faq_specifications:

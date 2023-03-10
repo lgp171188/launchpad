@@ -49,15 +49,14 @@ Setup an event listener to help ensure karma is assigned when it should.
 Define a generator that always give a date higher than the previous one
 to order our messages.
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timedelta, timezone
     >>> def timegenerator(origin):
     ...     now = origin
     ...     while True:
     ...         now += timedelta(seconds=5)
     ...         yield now
     ...
-    >>> now = timegenerator(datetime.now(UTC))
+    >>> now = timegenerator(datetime.now(timezone.utc))
 
 
 Karma Actions

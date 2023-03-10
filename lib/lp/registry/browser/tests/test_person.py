@@ -4,12 +4,11 @@
 import doctest
 import email
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from textwrap import dedent
 from urllib.parse import urljoin
 
-import pytz
 import soupmatchers
 import transaction
 from fixtures import FakeLogger
@@ -1255,7 +1254,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
 
         membership_set = getUtility(ITeamMembershipSet)
         membership = membership_set.getByPersonAndTeam(self.user, team)
-        tomorrow = datetime.now(pytz.timezone("UTC")) + timedelta(days=1)
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
         with person_logged_in(self.user):
             membership.setExpirationDate(tomorrow, self.user)
         view = create_view(self.user, name="+participation")

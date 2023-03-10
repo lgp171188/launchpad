@@ -10,9 +10,8 @@ __all__ = [
 ]
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import six
 import transaction
 from lazr.delegates import delegate_to
@@ -184,7 +183,7 @@ class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
     @classmethod
     def _deserialiseDateTime(cls, dt_str):
         dt = datetime.strptime(dt_str, cls._time_format)
-        return dt.replace(tzinfo=pytz.UTC)
+        return dt.replace(tzinfo=timezone.utc)
 
 
 @implementer(IMembershipNotificationJob)

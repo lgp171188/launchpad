@@ -13,9 +13,10 @@ IMilestone.
     >>> owner = firefox_1_0.owner
     >>> ignored = login_person(owner)
     >>> milestone = firefox_1_0.newMilestone("1.0.9")
-    >>> from datetime import datetime
-    >>> from pytz import UTC
-    >>> firefox_109 = milestone.createProductRelease(owner, datetime.now(UTC))
+    >>> from datetime import datetime, timezone
+    >>> firefox_109 = milestone.createProductRelease(
+    ...     owner, datetime.now(timezone.utc)
+    ... )
     >>> from lp.registry.interfaces.productrelease import IProductRelease
     >>> verifyObject(IProductRelease, firefox_109)
     True
@@ -54,7 +55,7 @@ deleted.
 
     >>> milestone = firefox_1_0.newMilestone("1.0.10")
     >>> firefox_1010 = milestone.createProductRelease(
-    ...     owner, datetime.now(UTC)
+    ...     owner, datetime.now(timezone.utc)
     ... )
     >>> firefox_1010.addReleaseFile("test", b"test", "text/plain", owner)
     <ProductReleaseFile...

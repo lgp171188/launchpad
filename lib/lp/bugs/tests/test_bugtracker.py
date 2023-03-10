@@ -2,14 +2,13 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from doctest import ELLIPSIS, NORMALIZE_WHITESPACE, DocTestSuite
 from urllib.parse import urlencode
 
 import responses
 import transaction
 from lazr.lifecycle.snapshot import Snapshot
-from pytz import utc
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -92,7 +91,7 @@ class BugTrackerTestCase(TestCaseWithFactory):
         for i in range(5):
             self.factory.makeBugWatch(bugtracker=self.bug_tracker)
 
-        self.now = datetime.now(utc)
+        self.now = datetime.now(timezone.utc)
 
     def test_multi_product_constraints_observed(self):
         """BugTrackers for which multi_product=True should return None
@@ -168,7 +167,7 @@ class BugTrackerTestCase(TestCaseWithFactory):
         self.assertTrue(bug_tracker.watches_ready_to_check.is_empty())
         # If we set its next_check date, it will be ready.
         removeSecurityProxy(bug_watch).next_check = datetime.now(
-            utc
+            timezone.utc
         ) - timedelta(hours=1)
         self.assertTrue(1, bug_tracker.watches_ready_to_check.count())
         self.assertEqual(bug_watch, bug_tracker.watches_ready_to_check.one())

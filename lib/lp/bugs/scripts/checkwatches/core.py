@@ -19,12 +19,11 @@ import threading
 import time
 from contextlib import contextmanager
 from copy import copy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import chain, islice
 from typing import List
 from xmlrpc.client import ProtocolError
 
-import pytz
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.threads import deferToThreadPool
@@ -328,9 +327,7 @@ class CheckwatchesMaster(WorkingBase):
                 "Resetting %s bug watches for bug tracker '%s'"
                 % (bug_tracker.watches.count(), bug_tracker_name)
             )
-            bug_tracker.resetWatches(
-                new_next_check=datetime.now(pytz.timezone("UTC"))
-            )
+            bug_tracker.resetWatches(new_next_check=datetime.now(timezone.utc))
 
         # Loop over the bug watches in batches as specified by
         # batch_size until there are none left to update.
@@ -493,7 +490,7 @@ class CheckwatchesMaster(WorkingBase):
         # server's wrong about the time it'll mess up all our times when
         # we import things.
         if now is None:
-            now = datetime.now(pytz.timezone("UTC"))
+            now = datetime.now(timezone.utc)
 
         if (
             server_time is not None

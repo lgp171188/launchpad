@@ -3,9 +3,8 @@
 
 """Subscriber functions to update IBug.date_last_updated."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.lifecycle.interfaces import IObjectModifiedEvent
 from zope.security.proxy import removeSecurityProxy
 
@@ -28,4 +27,4 @@ def update_bug_date_last_updated(object, event):
             "Event handler expects object implementing IBug or IHasBug. "
             "Got: %s" % repr(object)
         )
-    removeSecurityProxy(bug).date_last_updated = datetime.now(pytz.UTC)
+    removeSecurityProxy(bug).date_last_updated = datetime.now(timezone.utc)

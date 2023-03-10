@@ -8,10 +8,9 @@ __all__ = [
 ]
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import transaction
-from pytz import utc
 from storm.locals import Store
 from zope.component import getUtility
 
@@ -226,7 +225,7 @@ class SyncSigningKeysScript(LaunchpadScript):
             with open(pub_key_path, "rb") as fd:
                 public_key = fd.read()
 
-            now = datetime.now().replace(tzinfo=utc)
+            now = datetime.now().replace(tzinfo=timezone.utc)
             description = "%s key for %s" % (key_type.name, archive.reference)
             return arch_signing_key_set.inject(
                 key_type,
@@ -267,7 +266,7 @@ class SyncSigningKeysScript(LaunchpadScript):
             )
         else:
             public_key = gpg_handler.retrieveKey(secret_key.fingerprint)
-            now = datetime.now().replace(tzinfo=utc)
+            now = datetime.now().replace(tzinfo=timezone.utc)
             return signing_key_set.inject(
                 SigningKeyType.OPENPGP,
                 secret_key.export(),

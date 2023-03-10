@@ -13,10 +13,10 @@ __all__ = [
 import re
 import xml.parsers.expat
 import xmlrpc.client
+from datetime import timezone
 from email.utils import parseaddr
 from http.client import BadStatusLine
 
-import pytz
 import requests
 from defusedxml import minidom
 from zope.component import getUtility
@@ -732,7 +732,7 @@ class BugzillaAPI(Bugzilla):
             # Bugzilla >= 5.1.1.  Times are always in UTC, so we can just
             # use db_time directly.
             server_utc_datetime = time_dict["db_time"]
-        return server_utc_datetime.replace(tzinfo=pytz.timezone("UTC"))
+        return server_utc_datetime.replace(tzinfo=timezone.utc)
 
     def _getActualBugId(self, bug_id):
         """Return the actual bug id for an alias or id."""
@@ -973,7 +973,7 @@ class BugzillaAPI(Bugzilla):
             owner=poster,
             subject="",
             content=comment["text"],
-            datecreated=comment["time"].replace(tzinfo=pytz.timezone("UTC")),
+            datecreated=comment["time"].replace(tzinfo=timezone.utc),
         )
 
     @ensure_no_transaction
@@ -1117,7 +1117,7 @@ class BugzillaLPPlugin(BugzillaAPI):
         # Return the UTC time sent by the server so that we don't have
         # to care about timezones.
         server_utc_time = time_dict["utc_time"]
-        return server_utc_time.replace(tzinfo=pytz.timezone("UTC"))
+        return server_utc_time.replace(tzinfo=timezone.utc)
 
     @ensure_no_transaction
     def getCommentIds(self, remote_bug_id):

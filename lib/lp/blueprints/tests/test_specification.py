@@ -3,9 +3,8 @@
 
 """Unit tests for Specification."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.store import Store
 from zope.component import getUtility, queryAdapter
 from zope.security.checker import CheckerPublic, getChecker
@@ -782,7 +781,7 @@ class TestSpecifications(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.date_created = datetime.now(pytz.utc)
+        self.date_created = datetime.now(timezone.utc)
 
     def makeSpec(
         self,

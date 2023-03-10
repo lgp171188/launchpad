@@ -7,7 +7,8 @@ __all__ = [
     "HasSprintsMixin",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import (
     Bool,
     DateTime,
@@ -81,10 +82,12 @@ class Sprint(StormBase, HasDriversMixin, HasSpecificationsMixin):
     mugshot_id = Int(name="mugshot", default=None)
     mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
     address = Unicode(allow_none=True, default=None)
-    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    datecreated = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
     time_zone = Unicode(allow_none=False)
-    time_starts = DateTime(tzinfo=pytz.UTC, allow_none=False)
-    time_ends = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    time_starts = DateTime(tzinfo=timezone.utc, allow_none=False)
+    time_ends = DateTime(tzinfo=timezone.utc, allow_none=False)
     is_physical = Bool(allow_none=False, default=True)
 
     def __init__(

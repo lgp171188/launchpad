@@ -46,7 +46,7 @@ consumer's request to access Launchpad on their behalf.
 When the client doesn't specify a duration, the resulting request
 token will have no expiration date set.
 
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> view, token = get_view_with_fresh_token({})
     >>> view.reviewToken(OAuthPermission.READ_PRIVATE, None)
     >>> print(token.date_expires)
@@ -55,13 +55,12 @@ token will have no expiration date set.
 When the client specifies a duration, the resulting request
 token will have an appropriate expiration date set.
 
-    >>> import pytz
     >>> from lp.services.oauth.browser import TemporaryIntegrations
     >>> view, token = get_view_with_fresh_token({})
     >>> view.reviewToken(
     ...     OAuthPermission.READ_PRIVATE, TemporaryIntegrations.HOUR
     ... )
-    >>> token.date_expires > datetime.now(pytz.timezone("UTC"))
+    >>> token.date_expires > datetime.now(timezone.utc)
     True
 
 When the consumer doesn't specify a context, the token will not have a

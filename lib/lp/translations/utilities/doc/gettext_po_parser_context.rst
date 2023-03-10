@@ -13,9 +13,7 @@ Helper imports
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.translations.model.potemplate import POTemplateSubset
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
 
 This is a function for importing a pofile or potemplate from a string,
 printing out the import status after import is done.
@@ -87,7 +85,7 @@ the same message in gettext, and we have to use msgctxt on one of them).
     ... msgstr[0] ""
     ... msgstr[1] ""
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode(
     ...     "UTF-8"
     ... )  # noqa
@@ -164,7 +162,7 @@ context differences fails.
     ... msgid "bar"
     ... msgstr ""
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode("UTF-8")
 
 Importing this file fails because of conflicting messages.
@@ -214,7 +212,7 @@ We can also import POFile with context messages.
     ... msgstr[1] "%%d translationes"
     ... msgstr[2] "%%d translations"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode(
     ...     "UTF-8"
     ... )  # noqa
@@ -389,7 +387,7 @@ not same.
     ... msgid "bar"
     ... msgstr ""
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode("UTF-8")
 
 This file can now be correctly imported:

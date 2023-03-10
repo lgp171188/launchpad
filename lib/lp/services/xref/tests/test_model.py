@@ -1,9 +1,8 @@
 # Copyright 2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from testtools.matchers import ContainsDict, Equals, MatchesDict
 from zope.component import getUtility
 
@@ -25,8 +24,8 @@ class TestXRefSet(TestCaseWithFactory):
 
     def test_create_sets_date_created(self):
         # date_created defaults to now, but can be overridden.
-        old = datetime.datetime.strptime("2005-01-01", "%Y-%m-%d").replace(
-            tzinfo=pytz.UTC
+        old = datetime.strptime("2005-01-01", "%Y-%m-%d").replace(
+            tzinfo=timezone.utc
         )
         now = get_transaction_timestamp(IStore(XRef))
         getUtility(IXRefSet).create(

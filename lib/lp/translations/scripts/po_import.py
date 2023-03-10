@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -159,7 +158,7 @@ class TranslationsImport(LaunchpadCronScript):
         """Import entries from the queue."""
         self.logger.debug("Starting the import process.")
 
-        self.deadline = datetime.now(pytz.UTC) + self.time_to_run
+        self.deadline = datetime.now(timezone.utc) + self.time_to_run
         translation_import_queue = getUtility(ITranslationImportQueue)
 
         # Get the list of each product or distroseries with pending imports.
@@ -175,7 +174,7 @@ class TranslationsImport(LaunchpadCronScript):
 
         have_work = True
 
-        while have_work and datetime.now(pytz.UTC) < self.deadline:
+        while have_work and datetime.now(timezone.utc) < self.deadline:
             have_work = False
 
             # For fairness, service all queues at least once; don't

@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -56,7 +55,7 @@ class TestGetBranchTips(TestCaseWithFactory):
             sourcepackage=source_package
         )
         registrant = self.factory.makePerson()
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         sourcepackagename = self.factory.makeSourcePackageName()
         SeriesSourcePackageBranchSet.new(
             series_1,

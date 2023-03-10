@@ -9,7 +9,8 @@ __all__ = [
     "FAQSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import And, Desc
 from storm.properties import DateTime, Int, Unicode
@@ -52,7 +53,9 @@ class FAQ(StormBase):
 
     content = Unicode(allow_none=True, default=None)
 
-    date_created = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
 
     last_updated_by_id = Int(
         name="last_updated_by",
@@ -63,7 +66,7 @@ class FAQ(StormBase):
     last_updated_by = Reference(last_updated_by_id, "Person.id")
 
     date_last_updated = DateTime(
-        allow_none=True, default=None, tzinfo=pytz.UTC
+        allow_none=True, default=None, tzinfo=timezone.utc
     )
 
     product_id = Int(name="product", allow_none=True, default=None)

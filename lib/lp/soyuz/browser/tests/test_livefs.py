@@ -4,9 +4,8 @@
 """Test live filesystem views."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
@@ -308,7 +307,7 @@ class TestLiveFSAdminView(BrowserTestCase):
             member_of=[getUtility(ILaunchpadCelebrities).ppa_admin]
         )
         login_person(self.person)
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         livefs = self.factory.makeLiveFS(
             registrant=self.person, date_created=date_created
         )
@@ -374,7 +373,7 @@ class TestLiveFSEditView(BrowserTestCase):
 
     def test_edit_livefs_sets_date_last_modified(self):
         # Editing a live filesystem sets the date_last_modified property.
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         livefs = self.factory.makeLiveFS(
             registrant=self.person, date_created=date_created
         )
@@ -520,7 +519,7 @@ class TestLiveFSView(BrowserTestCase):
         if archive is None:
             archive = self.ubuntu.main_archive
         if date_created is None:
-            date_created = datetime.now(pytz.UTC) - timedelta(hours=1)
+            date_created = datetime.now(timezone.utc) - timedelta(hours=1)
         return self.factory.makeLiveFSBuild(
             requester=self.person,
             livefs=livefs,
@@ -611,7 +610,7 @@ class TestLiveFSView(BrowserTestCase):
         livefs = self.makeLiveFS()
         # Create oldest builds first so that they sort properly by id.
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2000, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         builds = [
             self.makeBuild(livefs=livefs, date_created=next(date_gen))

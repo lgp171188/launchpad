@@ -3,9 +3,8 @@
 
 """Tests for the product view classes and templates."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.testbrowser.browser import LinkNotFoundError
 
@@ -274,7 +273,7 @@ class TestProductBranchSummaryView(ProductTestBase):
         self.factory.makePerson(email="cthulu@example.com")
         product, branch = self.makeProductAndDevelopmentFocusBranch()
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30), timedelta(days=1)
+            datetime.now(timezone.utc) - timedelta(days=30), timedelta(days=1)
         )
         self.factory.makeRevisionsForBranch(
             branch, author="cthulu@example.com", date_generator=date_generator
@@ -294,7 +293,7 @@ class TestProductBranchSummaryView(ProductTestBase):
             owner=fsm, information_type=InformationType.USERDATA
         )
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30), timedelta(days=1)
+            datetime.now(timezone.utc) - timedelta(days=30), timedelta(days=1)
         )
         login_person(fsm)
         self.factory.makeRevisionsForBranch(
@@ -326,7 +325,7 @@ class TestProductBranchSummaryView(ProductTestBase):
             owner=fsm, information_type=InformationType.USERDATA
         )
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30), timedelta(days=1)
+            datetime.now(timezone.utc) - timedelta(days=30), timedelta(days=1)
         )
         login_person(fsm)
         self.factory.makeRevisionsForBranch(

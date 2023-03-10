@@ -4,8 +4,8 @@
 __all__ = ["BugActivity", "BugActivitySet"]
 
 import re
+from datetime import timezone
 
-import pytz
 from storm.locals import DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.interface import implementer
@@ -42,7 +42,7 @@ class BugActivity(StormBase):
     bug_id = Int(name="bug", allow_none=False)
     bug = Reference(bug_id, "Bug.id")
 
-    datechanged = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    datechanged = DateTime(tzinfo=timezone.utc, allow_none=False)
 
     person_id = Int(name="person", allow_none=False, validator=validate_person)
     person = Reference(person_id, "Person.id")

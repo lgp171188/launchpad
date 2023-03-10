@@ -4,12 +4,11 @@
 """Tests for the source package recipe view classes and templates."""
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 
 import transaction
 from fixtures import FakeLogger
-from pytz import UTC
 from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -1014,7 +1013,7 @@ class TestSourcePackageRecipeEditViewMixin:
 
     def test_edit_recipe_sets_date_last_modified(self):
         """Editing a recipe sets the date_last_modified property."""
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         recipe = self.makeRecipe(date_created=date_created)
 
         login_person(self.chef)
@@ -1375,11 +1374,11 @@ class TestSourcePackageRecipeViewMixin:
         )
         build.updateStatus(
             BuildStatus.BUILDING,
-            date_started=datetime(2010, 3, 16, tzinfo=UTC),
+            date_started=datetime(2010, 3, 16, tzinfo=timezone.utc),
         )
         build.updateStatus(
             BuildStatus.FULLYBUILT,
-            date_finished=datetime(2010, 3, 16, tzinfo=UTC),
+            date_finished=datetime(2010, 3, 16, tzinfo=timezone.utc),
         )
         return build
 
@@ -1488,11 +1487,11 @@ class TestSourcePackageRecipeViewMixin:
         binary_build.queueBuild()
         binary_build.updateStatus(
             BuildStatus.BUILDING,
-            date_started=datetime(2010, 4, 16, tzinfo=UTC),
+            date_started=datetime(2010, 4, 16, tzinfo=timezone.utc),
         )
         binary_build.updateStatus(
             BuildStatus.FULLYBUILT,
-            date_finished=datetime(2010, 4, 16, tzinfo=UTC),
+            date_finished=datetime(2010, 4, 16, tzinfo=timezone.utc),
         )
         binary_build.setLog(self.factory.makeLibraryFileAlias())
 
@@ -1573,7 +1572,7 @@ class TestSourcePackageRecipeViewMixin:
         # We create builds in time ascending order (oldest first) since we
         # use id as the ordering attribute and lower ids mean created earlier.
         date_gen = time_counter(
-            datetime(2010, 3, 16, tzinfo=UTC), timedelta(days=1)
+            datetime(2010, 3, 16, tzinfo=timezone.utc), timedelta(days=1)
         )
         build1 = self.makeBuildJob(recipe, next(date_gen))
         build2 = self.makeBuildJob(recipe, next(date_gen))
@@ -2016,7 +2015,9 @@ class TestSourcePackageRecipeBuildViewMixin:
         view = SourcePackageRecipeBuildView(build, None)
         self.assertIs(None, view.eta)
         queue_entry = removeSecurityProxy(build.queueBuild())
-        queue_entry._now = lambda: datetime(1970, 1, 1, 0, 0, 0, 0, UTC)
+        queue_entry._now = lambda: datetime(
+            1970, 1, 1, 0, 0, 0, 0, timezone.utc
+        )
         self.factory.makeBuilder(
             processors=[queue_entry.processor], virtualized=True
         )
@@ -2064,7 +2065,8 @@ class TestSourcePackageRecipeBuildViewMixin:
         self.makeBinaryBuild(release, "itanic")
         build = release.source_package_recipe_build
         build.updateStatus(
-            BuildStatus.BUILDING, date_started=datetime(2009, 1, 1, tzinfo=UTC)
+            BuildStatus.BUILDING,
+            date_started=datetime(2009, 1, 1, tzinfo=timezone.utc),
         )
         build.updateStatus(
             BuildStatus.FULLYBUILT,

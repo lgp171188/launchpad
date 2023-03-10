@@ -5,10 +5,9 @@
 
 import logging
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 
-import pytz
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
@@ -261,7 +260,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
         # If we pretend that the last repack request was long enough ago,
         # then a third run requests another repack.
         removeSecurityProxy(repo).date_last_repacked = datetime.now(
-            pytz.UTC
+            timezone.utc
         ) - timedelta(minutes=config.codehosting.auto_repack_frequency + 1)
         self.runScript_with_Turnip(expected_count=1)
 

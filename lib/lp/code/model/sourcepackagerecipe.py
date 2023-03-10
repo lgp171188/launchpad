@@ -8,11 +8,10 @@ __all__ = [
 ]
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
 from lazr.delegates import delegate_to
-from pytz import utc
 from storm.expr import And, LeftJoin
 from storm.locals import (
     Bool,
@@ -235,7 +234,9 @@ class SourcePackageRecipe(StormBase):
 
     @staticmethod
     def findStaleDailyBuilds():
-        one_day_ago = datetime.now(utc) - timedelta(hours=23, minutes=50)
+        one_day_ago = datetime.now(timezone.utc) - timedelta(
+            hours=23, minutes=50
+        )
         joins = (
             SourcePackageRecipe,
             LeftJoin(

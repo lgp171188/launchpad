@@ -6,9 +6,8 @@
 import io
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import six
 from lazr.lifecycle.interfaces import IDoNotSnapshot
 from storm.store import Store
@@ -487,7 +486,7 @@ class TestBugDateLastUpdated(TestCaseWithFactory):
 
     def make_old_bug(self):
         bug = self.factory.makeBug()
-        one_year_ago = datetime.now(pytz.UTC) - timedelta(days=365)
+        one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
         removeSecurityProxy(bug).date_last_updated = one_year_ago
         owner = bug.owner
         with person_logged_in(owner):

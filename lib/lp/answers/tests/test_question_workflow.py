@@ -10,11 +10,10 @@ than necessary. This is tested here.
 """
 
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from lazr.lifecycle.interfaces import IObjectCreatedEvent, IObjectModifiedEvent
-from pytz import UTC
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 from zope.security.interfaces import Unauthorized
@@ -53,7 +52,7 @@ class BaseAnswerTrackerWorkflowTestCase(TestCase):
     def setUp(self):
         super().setUp()
 
-        self.now = datetime.now(UTC)
+        self.now = datetime.now(timezone.utc)
 
         # Login as the question owner.
         login("no-priv@canonical.com")

@@ -11,9 +11,9 @@ __all__ = [
 ]
 
 import http.client
+from datetime import timezone
 from itertools import chain
 
-import pytz
 from lazr.restful.declarations import error_status
 from storm.expr import SQL, Exists, Not, Select
 from storm.properties import Bool, DateTime, Int, Unicode
@@ -370,7 +370,7 @@ class BugSubscriptionFilterMute(StormBase):
     __storm_primary__ = "person_id", "filter_id"
 
     date_created = DateTime(
-        "date_created", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        "date_created", allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
 
 

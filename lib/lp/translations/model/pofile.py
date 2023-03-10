@@ -11,9 +11,8 @@ __all__ = [
     "POFileToTranslationFileDataAdapter",
 ]
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.expr import (
     SQL,
     And,
@@ -1380,7 +1379,6 @@ class PlaceholderPOFile(POFileMixIn):
         self.header = None
         self.fuzzyheader = False
         self.lasttranslator = None
-        UTC = pytz.timezone("UTC")
         self.date_changed = None
         self.lastparsed = None
 
@@ -1391,7 +1389,7 @@ class PlaceholderPOFile(POFileMixIn):
         self.owner = owner
 
         self.path = "unknown"
-        self.datecreated = datetime.datetime.now(UTC)
+        self.datecreated = datetime.now(timezone.utc)
         self.contributors = []
         self.from_sourcepackagename = None
         self.translation_messages = None
@@ -1862,8 +1860,7 @@ class POFileToTranslationFileDataAdapter:
         # later upload should change every translation in our database or
         # that we got a change between the export and the upload with
         # modifications.
-        UTC = pytz.timezone("UTC")
-        datetime_now = datetime.datetime.now(UTC)
+        datetime_now = datetime.now(timezone.utc)
         translation_header.launchpad_export_date = datetime_now
 
         return translation_header

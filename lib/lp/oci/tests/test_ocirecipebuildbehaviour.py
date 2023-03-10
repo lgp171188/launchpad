@@ -10,11 +10,10 @@ import shutil
 import tempfile
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
 import fixtures
-import pytz
 import six
 from fixtures import MockPatch
 from pymacaroons import Macaroon
@@ -1053,7 +1052,7 @@ class TestHandleStatusForOCIRecipeBuild(
             content=b"layer 2 retrieved from librarian",
         )
 
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         mock_datetime = self.useFixture(
             MockPatch("lp.buildmaster.model.buildfarmjobbehaviour.datetime")
         ).mock

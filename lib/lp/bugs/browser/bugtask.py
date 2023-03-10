@@ -28,7 +28,7 @@ __all__ = [
 import json
 import re
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import groupby
 from operator import attrgetter
 from typing import List
@@ -46,7 +46,6 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
 )
 from lazr.restful.utils import smartquote
-from pytz import utc
 from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import adapter, getAdapter, getMultiAdapter, getUtility
@@ -872,7 +871,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
 
         expire_after = timedelta(days=config.malone.days_before_expiration)
         expiration_date = self.context.bug.date_last_updated + expire_after
-        remaining_time = expiration_date - datetime.now(utc)
+        remaining_time = expiration_date - datetime.now(timezone.utc)
         return remaining_time.days
 
     @property

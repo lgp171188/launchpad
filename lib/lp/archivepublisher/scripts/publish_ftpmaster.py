@@ -10,9 +10,8 @@ __all__ = [
 import math
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import utc
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -256,7 +255,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         with open(marker_name, "w") as marker:
             marker.write(
                 "Indexes for %s were created on %s.\n"
-                % (suite, datetime.now(utc))
+                % (suite, datetime.now(timezone.utc))
             )
 
     def createIndexes(self, distribution, suites):

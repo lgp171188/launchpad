@@ -33,8 +33,7 @@ Verify interface.
 
 We also need some time and date functions to do translation updates.
 
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
 
 
 POTMsgSet.is_translation_credit and POTMsgSet.translation_credit_type
@@ -292,11 +291,11 @@ the given timestamp.
     >>> translationmessage.date_reviewed.isoformat()
     '2005-04-07T13:19:17.601068+00:00'
     >>> potmsgset.isTranslationNewerThan(
-    ...     pofile, datetime(2004, 11, 30, 7, 0, 0, tzinfo=pytz.UTC)
+    ...     pofile, datetime(2004, 11, 30, 7, 0, 0, tzinfo=timezone.utc)
     ... )
     True
     >>> potmsgset.isTranslationNewerThan(
-    ...     pofile, datetime(2006, 11, 30, 7, 0, 0, tzinfo=pytz.UTC)
+    ...     pofile, datetime(2006, 11, 30, 7, 0, 0, tzinfo=timezone.utc)
     ... )
     False
 

@@ -7,7 +7,8 @@ __all__ = [
     "OCIProjectSeries",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
@@ -37,7 +38,7 @@ class OCIProjectSeries(StormBase):
     summary = Unicode(name="summary", allow_none=False)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

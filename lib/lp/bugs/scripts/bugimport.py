@@ -13,14 +13,13 @@ __all__ = [
 ]
 
 import base64
-import datetime
 import io
 import logging
 import os
 import pickle
 import time
+from datetime import datetime, timezone
 
-import pytz
 import six
 from defusedxml import cElementTree
 from storm.store import Store
@@ -49,8 +48,6 @@ from lp.services.messages.interfaces.message import IMessageSet
 
 DEFAULT_LOGGER = logging.getLogger("lp.bugs.scripts.bugimport")
 
-UTC = pytz.timezone("UTC")
-
 
 class BugXMLSyntaxError(Exception):
     """A syntax error was detected in the input."""
@@ -63,7 +60,7 @@ def parse_date(datestr):
     year, month, day, hour, minute, second = time.strptime(
         datestr, "%Y-%m-%dT%H:%M:%SZ"
     )[:6]
-    return datetime.datetime(year, month, day, hour, minute, tzinfo=UTC)
+    return datetime(year, month, day, hour, minute, tzinfo=timezone.utc)
 
 
 def get_text(node):

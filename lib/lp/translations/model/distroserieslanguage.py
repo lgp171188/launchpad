@@ -9,10 +9,9 @@ __all__ = [
     "EmptyDistroSeriesLanguage",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import itemgetter
 
-import pytz
 from storm.expr import LeftJoin
 from storm.locals import DateTime, Desc, Int, Join, Reference
 from zope.interface import implementer
@@ -54,7 +53,7 @@ class DistroSeriesLanguage(StormBase, RosettaStats):
     unreviewed_count = Int(allow_none=False, default=0)
     contributorcount = Int(allow_none=False, default=0)
     dateupdated = DateTime(
-        name="dateupdated", tzinfo=pytz.UTC, default=DEFAULT
+        name="dateupdated", tzinfo=timezone.utc, default=DEFAULT
     )
 
     def __init__(self, distroseries, language):
@@ -176,7 +175,7 @@ class EmptyDistroSeriesLanguage(RosettaStats):
         self.language = language
         self.distroseries = distroseries
         self.messageCount = distroseries.messagecount
-        self.dateupdated = datetime.now(tz=pytz.timezone("UTC"))
+        self.dateupdated = datetime.now(tz=timezone.utc)
         self.contributor_count = 0
         self.title = "%s translations of %s %s" % (
             self.language.englishname,

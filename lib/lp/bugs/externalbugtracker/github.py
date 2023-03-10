@@ -12,9 +12,9 @@ __all__ = [
 import http.client
 import time
 from contextlib import contextmanager
+from datetime import timezone
 from urllib.parse import urlencode, urlunsplit
 
-import pytz
 import requests
 from zope.component import getUtility
 
@@ -155,7 +155,7 @@ class GitHub(ExternalBugTracker):
             return bugs
         params = [("state", "all")]
         if last_accessed is not None:
-            since = last_accessed.astimezone(pytz.UTC).strftime(
+            since = last_accessed.astimezone(timezone.utc).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
             params.append(("since", since))
@@ -211,7 +211,7 @@ class GitHub(ExternalBugTracker):
             headers = {}
         if last_accessed is not None:
             headers["If-Modified-Since"] = last_accessed.astimezone(
-                pytz.UTC
+                timezone.utc
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
         with getUtility(IGitHubRateLimit).checkLimit(
             url, self.timeout, token=self.credentials["token"]

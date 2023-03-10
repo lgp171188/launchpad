@@ -4,9 +4,8 @@
 import gzip
 import os
 import struct
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import six
 from contrib import apachelog
 from lazr.uri import URI, InvalidURIError
@@ -181,7 +180,7 @@ def create_or_update_parsedlog_entry(first_line, parsed_bytes):
         ParsedApacheLog(first_line, parsed_bytes)
     else:
         parsed_file.bytes_read = parsed_bytes
-        parsed_file.date_last_parsed = datetime.now(pytz.UTC)
+        parsed_file.date_last_parsed = datetime.now(timezone.utc)
 
 
 def get_day(date):

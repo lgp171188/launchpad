@@ -90,8 +90,7 @@ a user needs to pass the '--reset' option to the checkwatches cron script.
 First, lets add some bug watches to the Savannah bug tracker to
 demonstrate this.
 
-    >>> import pytz
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> from lp.testing.factory import LaunchpadObjectFactory
 
@@ -101,7 +100,7 @@ demonstrate this.
     ...     savannah = getUtility(IBugTrackerSet).getByName("savannah")
     ...     for i in range(5):
     ...         bug_watch = factory.makeBugWatch(bugtracker=savannah)
-    ...         bug_watch.lastchecked = datetime.now(pytz.timezone("UTC"))
+    ...         bug_watch.lastchecked = datetime.now(timezone.utc)
     ...
 
     >>> run_cronscript_with_args(["-vvt", "savannah", "--reset"])

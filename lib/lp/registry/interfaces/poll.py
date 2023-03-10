@@ -19,9 +19,8 @@ __all__ = [
 ]
 
 import http.client
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     collection_default_content,
@@ -233,11 +232,11 @@ class IPoll(Interface):
             raise Invalid(
                 "A poll cannot close at the time (or before) it opens."
             )
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         # Allow a bit of slack to account for time between form creation and
         # validation.
         twelve_hours_ahead = now + timedelta(hours=12) - timedelta(seconds=60)
-        start_date = poll.dateopens.astimezone(pytz.UTC)
+        start_date = poll.dateopens.astimezone(timezone.utc)
         if start_date < twelve_hours_ahead:
             raise Invalid(
                 "A poll cannot open less than 12 hours after it's created."

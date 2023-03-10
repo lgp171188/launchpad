@@ -21,7 +21,7 @@ import logging
 import os
 import sys
 from calendar import timegm
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from resource import RLIMIT_AS, getrlimit, setrlimit
 from signal import SIGHUP, signal
 from uuid import uuid4
@@ -31,7 +31,6 @@ from ampoule import child, main, pool
 from lazr.delegates import delegate_to
 from lazr.jobrunner.jobrunner import JobRunner as LazrJobRunner
 from lazr.jobrunner.jobrunner import LeaseHeld
-from pytz import utc
 from storm.exceptions import LostObjectError
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, succeed
@@ -303,7 +302,9 @@ class BaseRunnableJob(BaseRunnableJobSource):
     def queue(self, manage_transaction=False, abort_transaction=False):
         """See `IJob`."""
         if self.job.attempt_count > 0:
-            self.job.scheduled_start = datetime.now(utc) + self.retry_delay
+            self.job.scheduled_start = (
+                datetime.now(timezone.utc) + self.retry_delay
+            )
         # If we're aborting the transaction, we probably don't want to
         # start the task again
         if manage_transaction and abort_transaction:

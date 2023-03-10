@@ -1,10 +1,9 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
-from pytz import timezone
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -180,7 +179,7 @@ class TestTranslationSuggestions(TestCaseWithFactory):
         # If two suggestions are identical, the most recent one is used.
         text = "The application has exploded."
         suggested_dutch = "De applicatie is ontploft."
-        now = datetime.now(timezone("UTC"))
+        now = datetime.now(timezone.utc)
         before = now - timedelta(1, 1, 1)
 
         foomsg = self.factory.makePOTMsgSet(self.foo_template, text)

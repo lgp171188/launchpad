@@ -17,9 +17,8 @@ __all__ = [
     "OnlyVcsImportsAndAdmins",
 ]
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.interface import Interface
 
 from lp.app.security import AuthorizationBase
@@ -76,7 +75,7 @@ class AnyLegitimatePerson(AuthorizationBase):
 
     def _isOldEnough(self, user):
         return datetime.now(
-            pytz.UTC
+            timezone.utc
         ) - user.person.account.date_created >= timedelta(
             days=config.launchpad.min_legitimate_account_age
         )

@@ -5,9 +5,8 @@
 
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import responses
 import transaction
 from breezy import urlutils
@@ -177,8 +176,8 @@ class TestGitRefGetCommits(TestCaseWithFactory):
                 author.preferredemail.email for author in self.authors
             ]
         self.dates = [
-            datetime(2015, 1, 1, 0, 0, 0, tzinfo=pytz.UTC),
-            datetime(2015, 1, 2, 0, 0, 0, tzinfo=pytz.UTC),
+            datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            datetime(2015, 1, 2, 0, 0, 0, tzinfo=timezone.utc),
         ]
         self.sha1_tip = hashlib.sha1(b"tip").hexdigest()
         self.sha1_root = hashlib.sha1(b"root").hexdigest()

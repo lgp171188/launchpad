@@ -7,7 +7,8 @@ __all__ = [
     "BuilderSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.expr import Coalesce, Count, Sum
 from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
@@ -72,7 +73,7 @@ class Builder(StormBase):
         enum=BuilderCleanStatus, default=BuilderCleanStatus.DIRTY
     )
     vm_reset_protocol = DBEnum(enum=BuilderResetProtocol)
-    date_clean_status_changed = DateTime(tzinfo=pytz.UTC)
+    date_clean_status_changed = DateTime(tzinfo=timezone.utc)
 
     def __init__(
         self,

@@ -3,10 +3,9 @@
 
 """Unit tests for BranchView."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from textwrap import dedent
 
-import pytz
 from fixtures import FakeLogger
 from storm.store import Store
 from testtools.matchers import Equals
@@ -1051,7 +1050,7 @@ class TestBranchReviewerEditView(TestCaseWithFactory):
         # If the user has set the reviewer to be same and clicked on save,
         # then the underlying object hasn't really been changed, so the last
         # modified is not updated.
-        modified_date = datetime(2007, 1, 1, tzinfo=pytz.UTC)
+        modified_date = datetime(2007, 1, 1, tzinfo=timezone.utc)
         branch = self.factory.makeAnyBranch(date_created=modified_date)
         view = create_initialized_view(branch, "+reviewer")
         view.change_action.success({"reviewer": branch.owner})

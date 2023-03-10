@@ -6,10 +6,9 @@
 import base64
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 
-import pytz
 import responses
 import soupmatchers
 import transaction
@@ -589,7 +588,7 @@ class TestCharmRecipeAdminView(BaseTestCharmRecipeView):
             member_of=[getUtility(ILaunchpadCelebrities).ppa_admin]
         )
         login_person(self.person)
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person, date_created=date_created
         )
@@ -894,7 +893,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing a charm recipe sets the date_last_modified property.
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         recipe = self.factory.makeCharmRecipe(
             registrant=self.person, date_created=date_created
         )
@@ -1353,7 +1352,7 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         if recipe is None:
             recipe = self.makeCharmRecipe()
         if date_created is None:
-            date_created = datetime.now(pytz.UTC) - timedelta(hours=1)
+            date_created = datetime.now(timezone.utc) - timedelta(hours=1)
         build = self.factory.makeCharmRecipeBuild(
             requester=self.person,
             recipe=recipe,
@@ -1494,7 +1493,7 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
             request = recipe.requestBuilds(recipe.owner)
         job = removeSecurityProxy(removeSecurityProxy(request)._job)
         job.job._status = JobStatus.FAILED
-        job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
+        job.job.date_finished = datetime.now(timezone.utc) - timedelta(hours=1)
         job.error_message = "Boom"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             r"""\
@@ -1519,7 +1518,7 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
         recipe = self.makeCharmRecipe()
         # Create oldest builds first so that they sort properly by id.
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2000, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         builds = [
             self.makeBuild(recipe=recipe, date_created=next(date_gen))

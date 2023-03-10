@@ -5,7 +5,8 @@
 
 __all__ = ["QuestionReopening", "create_questionreopening"]
 
-import pytz
+from datetime import timezone
+
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.locals import DateTime, Int, Reference
 from zope.event import notify
@@ -31,7 +32,10 @@ class QuestionReopening(StormBase):
     question_id = Int(name="question", allow_none=False)
     question = Reference(question_id, "Question.id")
     datecreated = DateTime(
-        name="datecreated", allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+        name="datecreated",
+        allow_none=False,
+        default=DEFAULT,
+        tzinfo=timezone.utc,
     )
     reopener_id = Int(
         name="reopener", allow_none=False, validator=validate_public_person
@@ -44,7 +48,7 @@ class QuestionReopening(StormBase):
         validator=validate_public_person,
     )
     answerer = Reference(answerer_id, "Person.id")
-    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
     priorstate = DBEnum(
         name="priorstate", enum=QuestionStatus, allow_none=False
     )

@@ -919,11 +919,10 @@ Searching only for People based on their names or email addresses:
 The created_before and created_after arguments can be used to restrict
 the matches by the IPerson.datecreated value.
 
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
 
-    >>> created_after = datetime(2008, 6, 27, tzinfo=pytz.UTC)
-    >>> created_before = datetime(2008, 7, 1, tzinfo=pytz.UTC)
+    >>> created_after = datetime(2008, 6, 27, tzinfo=timezone.utc)
+    >>> created_before = datetime(2008, 7, 1, tzinfo=timezone.utc)
     >>> print_people(
     ...     personset.findPerson(
     ...         text="",

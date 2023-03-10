@@ -8,11 +8,10 @@ import re
 import shutil
 import stat
 import tarfile
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import call
 
 from fixtures import MockPatch, MonkeyPatch
-from pytz import utc
 from testtools.matchers import (
     Contains,
     Equals,
@@ -2639,7 +2638,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 private_key,
                 public_key,
                 "OPAL key for %s" % self.archive.reference,
-                now.replace(tzinfo=utc),
+                now.replace(tzinfo=timezone.utc),
             ),
             self.signing_service_client.inject.call_args[0],
         )

@@ -7,7 +7,8 @@ __all__ = [
     "ArchiveAuthToken",
 ]
 
-import pytz
+from datetime import timezone
+
 from lazr.uri import URI
 from storm.expr import LeftJoin
 from storm.locals import And, DateTime, Int, Join, Or, Reference, Unicode
@@ -42,11 +43,11 @@ class ArchiveAuthToken(StormBase):
     person = Reference(person_id, "Person.id")
 
     date_created = DateTime(
-        name="date_created", allow_none=False, tzinfo=pytz.UTC
+        name="date_created", allow_none=False, tzinfo=timezone.utc
     )
 
     date_deactivated = DateTime(
-        name="date_deactivated", allow_none=True, tzinfo=pytz.UTC
+        name="date_deactivated", allow_none=True, tzinfo=timezone.utc
     )
 
     token = Unicode(name="token", allow_none=False)

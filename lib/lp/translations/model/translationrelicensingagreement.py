@@ -5,7 +5,8 @@ __all__ = [
     "TranslationRelicensingAgreement",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import Bool, DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -34,7 +35,10 @@ class TranslationRelicensingAgreement(StormBase):
     )
 
     date_decided = DateTime(
-        name="date_decided", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        name="date_decided",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
 
     def __init__(self, person, allow_relicensing=True):

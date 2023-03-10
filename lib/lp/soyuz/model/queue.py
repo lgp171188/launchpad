@@ -12,10 +12,10 @@ __all__ = [
 ]
 
 from collections import defaultdict
+from datetime import timezone
 from itertools import chain
 from operator import attrgetter
 
-import pytz
 from storm.expr import Cast
 from storm.locals import (
     SQL,
@@ -137,7 +137,9 @@ class PackageUpload(StormBase):
         validator=validate_status,
     )
 
-    date_created = DateTime(allow_none=True, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=True, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     distroseries_id = Int(name="distroseries", allow_none=False)
     distroseries = Reference(distroseries_id, "DistroSeries.id")
@@ -1283,7 +1285,9 @@ class PackageUploadLog(StormBase):
     package_upload_id = Int(name="package_upload")
     package_upload = Reference(package_upload_id, PackageUpload.id)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     reviewer_id = Int(name="reviewer", allow_none=False)
     reviewer = Reference(reviewer_id, "Person.id")

@@ -65,11 +65,10 @@ checking at some future date.
 If we look at the bug watch on our bugtracker we can see that it has
 been scheduled for checking at some point in the future.
 
-    >>> from datetime import datetime
-    >>> from pytz import utc
+    >>> from datetime import datetime, timezone
 
     >>> login(ADMIN_EMAIL)
-    >>> print(bug_watch.next_check >= datetime.now(utc))
+    >>> print(bug_watch.next_check >= datetime.now(timezone.utc))
     True
 
 Should the bug watch be deleted the reschedule button will no longer

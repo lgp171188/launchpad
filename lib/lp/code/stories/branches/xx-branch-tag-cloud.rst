@@ -6,9 +6,8 @@ available bazaar branches is shown to the user.
 
     >>> login(ANONYMOUS)
     >>> from lp.code.tests.helpers import make_project_cloud_data
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
-    >>> now = datetime.now(pytz.UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> make_project_cloud_data(
     ...     factory,
     ...     [

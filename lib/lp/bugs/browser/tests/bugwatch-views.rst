@@ -90,7 +90,7 @@ about the activity.
     ...     pprint(activity_dict)
     ...
     {'completion_message': 'completed successfully',
-     'date': datetime.datetime(...tzinfo=<UTC>),
+     'date': datetime.datetime(...tzinfo=datetime.timezone.utc),
      'icon': '/@@/yes',
      'oops_id': None,
      'result_text': 'Synchronisation succeeded'}
@@ -111,12 +111,12 @@ different dates.
     ...     pprint(activity_dict)
     ...
     {'completion_message': "failed with error 'Bug Not Found'",
-     'date': datetime.datetime(...tzinfo=<UTC>),
+     'date': datetime.datetime(...tzinfo=datetime.timezone.utc),
      'icon': '/@@/no',
      'oops_id': None,
      'result_text': 'Bug Not Found'}
     {'completion_message': 'completed successfully',
-     'date': datetime.datetime(...tzinfo=<UTC>),
+     'date': datetime.datetime(...tzinfo=datetime.timezone.utc),
      'icon': '/@@/yes',
      'oops_id': None,
      'result_text': 'Synchronisation succeeded'}

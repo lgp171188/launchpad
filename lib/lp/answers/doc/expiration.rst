@@ -33,10 +33,9 @@ somebody are subject to expiration.
     # By default, all open and needs info question should expire. Make
     # sure that no new questions were recently added and will make this
     # test fails in the future.
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from storm.locals import Or
-    >>> interval = datetime.now(pytz.UTC) - timedelta(days=15)
+    >>> interval = datetime.now(timezone.utc) - timedelta(days=15)
     >>> IStore(Question).find(
     ...     Question,
     ...     Or(
@@ -49,9 +48,7 @@ somebody are subject to expiration.
     # We need to massage sample data a little. Since all expiration
     # candidates in sample data would expire, do a little activity on
     # some of these.
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> now = datetime.now(timezone.utc)
     >>> two_weeks_ago = now - timedelta(days=14)
     >>> a_month_ago = now - timedelta(days=31)
     >>> from lp.services.webapp.interfaces import ILaunchBag

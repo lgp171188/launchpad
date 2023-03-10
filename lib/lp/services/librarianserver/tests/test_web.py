@@ -5,12 +5,11 @@ import hashlib
 import http.client
 import os
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from gzip import GzipFile
 from io import BytesIO
 from urllib.parse import urlparse
 
-import pytz
 import requests
 import transaction
 from lazr.uri import URI
@@ -296,7 +295,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
             LibraryFileAlias, file_alias_id
         )
         file_alias.date_created = datetime(
-            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc
+            2001, 1, 30, 13, 45, 59, tzinfo=timezone.utc
         )
 
         # Commit so the file is available from the Librarian.
@@ -477,7 +476,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
             LibraryFileAlias, fileAlias
         )
         file_alias.date_created = datetime(
-            2001, 1, 30, 13, 45, 59, tzinfo=pytz.utc
+            2001, 1, 30, 13, 45, 59, tzinfo=timezone.utc
         )
         # Commit the update.
         self.commit()

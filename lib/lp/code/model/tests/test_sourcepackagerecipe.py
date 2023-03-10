@@ -4,12 +4,11 @@
 """Tests for the SourcePackageRecipe content type."""
 
 import textwrap
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
 from brzbuildrecipe.recipe import ForbiddenInstructionError
 from lazr.restfulclient.errors import BadRequest
-from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
@@ -697,7 +696,7 @@ class TestSourcePackageRecipeMixin:
         pending_build.queueBuild()
         past_build = self.factory.makeSourcePackageRecipeBuild(recipe=recipe)
         past_build.queueBuild()
-        removeSecurityProxy(past_build).datebuilt = datetime.now(UTC)
+        removeSecurityProxy(past_build).datebuilt = datetime.now(timezone.utc)
         with person_logged_in(recipe.owner):
             recipe.destroySelf()
         # Show no database constraints were violated
@@ -781,7 +780,7 @@ class TestSourcePackageRecipeMixin:
                 distroseries=series,
                 pocket=PackagePublishingPocket.RELEASE,
                 date_created=(
-                    datetime.now(UTC) - timedelta(hours=24, seconds=1)
+                    datetime.now(timezone.utc) - timedelta(hours=24, seconds=1)
                 ),
             )
         stale_recipes = SourcePackageRecipe.findStaleDailyBuilds()
@@ -1381,7 +1380,7 @@ class RecipeDateLastModified(TestCaseWithFactory):
 
     def setUp(self):
         TestCaseWithFactory.setUp(self, "test@canonical.com")
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         self.recipe = self.factory.makeSourcePackageRecipe(
             date_created=date_created
         )

@@ -21,10 +21,9 @@ import subprocess
 import tarfile
 import tempfile
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 
-from pytz import utc
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
@@ -510,7 +509,7 @@ class SigningUpload(CustomUpload):
         with open(public_key_file, "rb") as fd:
             public_key = fd.read()
 
-        now = datetime.now().replace(tzinfo=utc)
+        now = datetime.now().replace(tzinfo=timezone.utc)
         description = "%s key for %s" % (key_type.name, self.archive.reference)
         key_set.inject(
             key_type,

@@ -14,16 +14,13 @@ Let's add add change notification and see how it works:
 
     >>> login("test@canonical.com")
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.adapters.bugchange import BugInformationTypeChange
     >>> from lp.app.enums import InformationType
 
-    >>> ten_minutes_ago = datetime.now(pytz.timezone("UTC")) - timedelta(
-    ...     minutes=10
-    ... )
+    >>> ten_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=10)
     >>> sample_person = getUtility(ILaunchBag).user
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.addChange(
@@ -113,7 +110,7 @@ Refresh the dates, and create a new reply to ensure that the references
 are chained together properly:
 
     >>> for notification in notifications:
-    ...     notification.date_emailed = datetime.now(pytz.timezone("UTC"))
+    ...     notification.date_emailed = datetime.now(timezone.utc)
     ...
     >>> flush_database_updates()
 
@@ -159,7 +156,7 @@ References header.
     >>> from lp.services.database.interfaces import IStore
 
     >>> for notification in notifications:
-    ...     notification.date_emailed = datetime.now(pytz.timezone("UTC"))
+    ...     notification.date_emailed = datetime.now(timezone.utc)
     ...
     >>> flush_database_updates()
 

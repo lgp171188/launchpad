@@ -4,7 +4,7 @@ Distribution Mirrors
 A distribution mirror must always be associated with a single distribution, so
 to create a new mirror you should use the Distribution.newMirror method.
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility
     >>> from lp.services.librarian.interfaces import ILibraryFileAliasSet
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -358,9 +358,7 @@ probed as we don't care about it anyway.
     >>> mirrors = mirrorset.getMirrorsToProbe(
     ...     MirrorContent.ARCHIVE, ignore_last_probe=True
     ... )
-    >>> import pytz
-    >>> utc = pytz.timezone("UTC")
-    >>> now = datetime.now(utc)
+    >>> now = datetime.now(timezone.utc)
     >>> for mirror in mirrors:
     ...     last_probe = mirror.last_probe_record
     ...     last_probe_date = "NEVER"
@@ -624,7 +622,7 @@ checked if that mirror's last sync was in the last one or two days.
     ...     warty, PackagePublishingPocket.RELEASE, warty.components[0]
     ... )
 
-    >>> when = datetime(2005, 9, 17, tzinfo=utc)
+    >>> when = datetime(2005, 9, 17, tzinfo=timezone.utc)
     >>> urls = warty_mirror.getURLsToCheckUpdateness(when=when)
     >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa
@@ -675,8 +673,10 @@ so we need to skip that upload.
     ... )
     >>> warty_i386_mirror = removeSecurityProxy(warty_i386_mirror)
     >>> recent_freshness, threshold = warty_i386_mirror.freshness_times[0]
-    >>> start = datetime(2005, 6, 20, tzinfo=utc)
-    >>> end = datetime(2005, 6, 20, tzinfo=utc) + timedelta(hours=0.5)
+    >>> start = datetime(2005, 6, 20, tzinfo=timezone.utc)
+    >>> end = datetime(2005, 6, 20, tzinfo=timezone.utc) + timedelta(
+    ...     hours=0.5
+    ... )
     >>> time_interval = (start, end)
     >>> upload = warty_i386_mirror.getLatestPublishingEntry(
     ...     time_interval, deb_only=False
@@ -695,7 +695,7 @@ so we need to skip that upload.
     >>> print(bpf.filetype.title)
     UDEB Format
 
-    >>> when = datetime(2005, 6, 22, tzinfo=utc)
+    >>> when = datetime(2005, 6, 22, tzinfo=timezone.utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa
@@ -704,7 +704,7 @@ so we need to skip that upload.
     ONEWEEKBEHIND:
     http://foo.bar.com/pub/pool/main/m/mozilla-firefox/mozilla-firefox_0.9_i386.deb
 
-    >>> when = datetime(2005, 6, 20, 0, 1, tzinfo=utc)
+    >>> when = datetime(2005, 6, 20, 0, 1, tzinfo=timezone.utc)
     >>> urls = warty_i386_mirror.getURLsToCheckUpdateness(when=when)
     >>> for freshness, url in urls.items():
     ...     print("%s: %s" % (freshness.name, url))  # noqa

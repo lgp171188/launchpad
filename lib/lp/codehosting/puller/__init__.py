@@ -4,9 +4,8 @@
 __all__ = ["get_lock_id_for_branch_id", "mirror"]
 
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from twisted.internet import defer
 
 
@@ -17,8 +16,6 @@ def get_lock_id_for_branch_id(branch_id):
 
 from lp.codehosting.puller.scheduler import LockError  # noqa: E402
 
-UTC = pytz.timezone("UTC")
-
 
 def mirror(logger, manager):
     """Mirror all current branches that need to be mirrored."""
@@ -28,10 +25,10 @@ def mirror(logger, manager):
         logger.info("Could not acquire lock: %s", exception)
         return defer.succeed(0)
 
-    date_started = datetime.datetime.now(UTC)
+    date_started = datetime.now(timezone.utc)
 
     def recordSuccess(ignored):
-        date_completed = datetime.datetime.now(UTC)
+        date_completed = datetime.now(timezone.utc)
         return manager.recordActivity(date_started, date_completed)
 
     def unlock(passed_through):

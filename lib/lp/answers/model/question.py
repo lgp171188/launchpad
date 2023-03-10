@@ -13,10 +13,9 @@ __all__ = [
 ]
 
 import operator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import make_msgid
 
-import pytz
 from lazr.enum import DBItem, Item
 from lazr.lifecycle.event import ObjectCreatedEvent, ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -199,13 +198,17 @@ class Question(StormBase, BugLinkTargetMixin):
     answerer = Reference(answerer_id, "Person.id")
     answer_id = Int(name="answer", allow_none=True, default=None)
     answer = Reference(answer_id, "QuestionMessage.id")
-    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
-    datedue = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
-    datelastquery = DateTime(
-        allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+    datecreated = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
     )
-    datelastresponse = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
-    date_solved = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    datedue = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
+    datelastquery = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
+    datelastresponse = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
+    date_solved = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
     product_id = Int(name="product", allow_none=True, default=None)
     product = Reference(product_id, "Product.id")
     distribution_id = Int(name="distribution", allow_none=True, default=None)
@@ -853,7 +856,7 @@ class QuestionSet:
                 ),
             ),
         ]
-        expiry = datetime.now(pytz.UTC) - timedelta(
+        expiry = datetime.now(timezone.utc) - timedelta(
             days=days_before_expiration
         )
         return (
@@ -906,7 +909,7 @@ class QuestionSet:
         from lp.registry.model.distribution import Distribution
         from lp.registry.model.product import Product
 
-        time_cutoff = datetime.now(pytz.UTC) - timedelta(days=60)
+        time_cutoff = datetime.now(timezone.utc) - timedelta(days=60)
         question_count = Alias(Count())
 
         origin = (
@@ -1569,7 +1572,7 @@ class QuestionTargetMixin:
         )
         # Give the datelastresponse a current datetime, otherwise the
         # Launchpad Janitor would quickly expire questions made from old bugs.
-        question.datelastresponse = datetime.now(pytz.UTC)
+        question.datelastresponse = datetime.now(timezone.utc)
         # Directly create the BugLink so that users do not receive duplicate
         # messages about the bug.
         question.createBugLink(bug)

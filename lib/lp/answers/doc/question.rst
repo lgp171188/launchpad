@@ -112,9 +112,8 @@ The question status is 'Open'.
 
 The question has a creation time.
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> now - firefox_question.datecreated < timedelta(seconds=5)
     True
 

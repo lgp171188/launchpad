@@ -3,10 +3,9 @@
 
 """Tests for Git repository collections."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 from storm.expr import Asc, Desc
 from storm.store import EmptyResultSet, Store
 from testtools.matchers import Equals
@@ -241,14 +240,14 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         # returned.
         old_repository = self.factory.makeGitRepository()
         removeSecurityProxy(old_repository).date_last_modified = datetime(
-            2008, 1, 1, tzinfo=pytz.UTC
+            2008, 1, 1, tzinfo=timezone.utc
         )
         new_repository = self.factory.makeGitRepository()
         removeSecurityProxy(new_repository).date_last_modified = datetime(
-            2009, 1, 1, tzinfo=pytz.UTC
+            2009, 1, 1, tzinfo=timezone.utc
         )
         repositories = self.all_repositories.modifiedSince(
-            datetime(2008, 6, 1, tzinfo=pytz.UTC)
+            datetime(2008, 6, 1, tzinfo=timezone.utc)
         )
         self.assertEqual(
             [new_repository], list(repositories.getRepositories())
@@ -580,7 +579,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
         bmp2 = self.factory.makeBranchMergeProposalForGit(
             target_ref=target, source_ref=ref2
         )
-        old_date = datetime.now(pytz.UTC) - timedelta(hours=1)
+        old_date = datetime.now(timezone.utc) - timedelta(hours=1)
         self.factory.makePreviewDiff(
             merge_proposal=bmp1, date_created=old_date
         )

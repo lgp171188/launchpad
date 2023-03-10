@@ -7,8 +7,8 @@ __all__ = [
 ]
 
 import operator
+from datetime import timezone
 
-import pytz
 from storm.expr import Desc, Join, LeftJoin
 from storm.properties import DateTime, Int, Unicode
 from storm.references import Reference, ReferenceSet
@@ -46,7 +46,9 @@ class TranslationGroup(StormBase):
     name = Unicode(allow_none=False)
     title = Unicode(allow_none=False)
     summary = Unicode(allow_none=False)
-    datecreated = DateTime(allow_none=False, default=DEFAULT, tzinfo=pytz.UTC)
+    datecreated = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
     owner_id = Int(
         name="owner", validator=validate_public_person, allow_none=False
     )

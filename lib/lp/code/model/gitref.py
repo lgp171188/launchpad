@@ -9,10 +9,10 @@ __all__ = [
 ]
 
 import re
+from datetime import timezone
 from functools import partial
 from urllib.parse import quote, quote_plus, urlsplit
 
-import pytz
 import requests
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import And, Or
@@ -615,13 +615,13 @@ class GitRef(GitRefMixin, StormBase):
     author_id = Int(name="author", allow_none=True)
     author = Reference(author_id, "RevisionAuthor.id")
     author_date = DateTime(
-        name="author_date", tzinfo=pytz.UTC, allow_none=True
+        name="author_date", tzinfo=timezone.utc, allow_none=True
     )
 
     committer_id = Int(name="committer", allow_none=True)
     committer = Reference(committer_id, "RevisionAuthor.id")
     committer_date = DateTime(
-        name="committer_date", tzinfo=pytz.UTC, allow_none=True
+        name="committer_date", tzinfo=timezone.utc, allow_none=True
     )
 
     commit_message = Unicode(name="commit_message", allow_none=True)

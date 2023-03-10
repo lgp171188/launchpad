@@ -67,8 +67,7 @@ If we change the next_check date of the watch its will be shown in the
 Next check column.
 
     >>> from zope.component import getUtility
-    >>> from datetime import datetime
-    >>> from pytz import utc
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.security.proxy import removeSecurityProxy
 
     >>> from lp.testing import login, logout
@@ -77,7 +76,7 @@ Next check column.
     >>> login("foo.bar@canonical.com")
     >>> watch = getUtility(IBugWatchSet).get(2)
     >>> removeSecurityProxy(watch).next_check = datetime(
-    ...     2010, 4, 8, 16, 7, tzinfo=utc
+    ...     2010, 4, 8, 16, 7, tzinfo=timezone.utc
     ... )
     >>> logout()
 
@@ -273,11 +272,9 @@ the watch has failed > 60% of the time. This is because the most recent
 check succeeded, so there's no point in allowing users to reschedule the
 watch for checking.
 
-    >>> from datetime import timedelta
-
     >>> login("foo.bar@canonical.com")
     >>> removeSecurityProxy(bug_watch).next_check = datetime.now(
-    ...     utc
+    ...     timezone.utc
     ... ) + timedelta(days=7)
     >>> bug_watch.addActivity()
     >>> logout()
@@ -299,7 +296,9 @@ watch" button on the watch's page.
     >>> from lp.testing.sampledata import ADMIN_EMAIL
     >>> login(ADMIN_EMAIL)
     >>> bug_watch = factory.makeBugWatch()
-    >>> removeSecurityProxy(bug_watch).lastchecked = datetime.now(utc)
+    >>> removeSecurityProxy(bug_watch).lastchecked = datetime.now(
+    ...     timezone.utc
+    ... )
     >>> watch_url = "http://bugs.launchpad.test/bugs/%s/+watch/%s" % (
     ...     bug_watch.bug.id,
     ...     bug_watch.id,

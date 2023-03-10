@@ -751,8 +751,7 @@ for a bug, ordered by date.
 
 First, some set-up.
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.bugs.adapters.bugchange import (
     ...     BugLocked,
     ...     BugLockReasonSet,
@@ -762,9 +761,7 @@ First, some set-up.
     ...     BugUnlocked,
     ... )
     >>> from lp.bugs.enums import BugLockStatus
-    >>> nowish = datetime(
-    ...     2009, 3, 26, 21, 37, 45, tzinfo=pytz.timezone("UTC")
-    ... )
+    >>> nowish = datetime(2009, 3, 26, 21, 37, 45, tzinfo=timezone.utc)
 
     >>> login("foo.bar@canonical.com")
     >>> product = factory.makeProduct(name="testproduct")

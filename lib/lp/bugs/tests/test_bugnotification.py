@@ -3,9 +3,8 @@
 
 """Tests related to bug notifications."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from storm.store import Store
 from zope.component import getUtility
@@ -578,7 +577,7 @@ class TestGetDeferredNotifications(TestCaseWithFactory):
             "subject",
             "a comment.",
             bug.owner,
-            datecreated=datetime.now(pytz.UTC),
+            datecreated=datetime.now(timezone.utc),
         )
         self.bns.addNotification(
             bug, False, message, empty_recipients, None, deferred=True

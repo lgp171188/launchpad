@@ -4,11 +4,10 @@
 import os
 import shutil
 import subprocess
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import mock
 
 import gpgme
-import pytz
 import responses
 import six
 from fixtures import Fixture, MockPatch
@@ -493,7 +492,7 @@ class TestGPGHandler(TestCase):
                         "Launchpad PPA for Celso "
                         "\xe1\xe9\xed\xf3\xfa Providelo"
                     ),
-                    Equals(now.replace(tzinfo=pytz.UTC)),
+                    Equals(now.replace(tzinfo=timezone.utc)),
                 ]
             ),
         )

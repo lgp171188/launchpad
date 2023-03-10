@@ -3,9 +3,8 @@
 
 """Tests for `POTMsgSet.clearCurrentTranslation`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import UTC
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -240,7 +239,7 @@ class ScenarioMixin:
             potmsgset=potmsgset, pofile=pofile, translations=[]
         )
 
-        old_review_date = datetime.now(UTC) - timedelta(days=7)
+        old_review_date = datetime.now(timezone.utc) - timedelta(days=7)
         old_reviewer = self.factory.makePerson()
         blank.markReviewed(old_reviewer, timestamp=old_review_date)
 
@@ -264,7 +263,7 @@ class ScenarioMixin:
         current_message = self.factory.makeCurrentTranslationMessage(
             pofile=pofile
         )
-        old = datetime.now(UTC) - timedelta(days=7)
+        old = datetime.now(timezone.utc) - timedelta(days=7)
 
         self.assertRaises(
             TranslationConflict,

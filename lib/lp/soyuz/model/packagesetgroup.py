@@ -5,7 +5,8 @@ __all__ = [
     "PackagesetGroup",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -21,7 +22,7 @@ class PackagesetGroup(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", allow_none=False, tzinfo=pytz.UTC
+        name="date_created", allow_none=False, tzinfo=timezone.utc
     )
 
     owner_id = Int(name="owner", allow_none=False)

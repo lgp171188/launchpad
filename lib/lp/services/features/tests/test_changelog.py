@@ -3,9 +3,7 @@
 
 """Tests for feature flag change log."""
 
-from datetime import datetime
-
-import pytz
+from datetime import datetime, timezone
 
 from lp.services.features.changelog import ChangeLog
 from lp.services.features.model import FeatureFlagChangelogEntry
@@ -26,11 +24,11 @@ class TestFeatureFlagChangelogEntry(TestCaseWithFactory):
     def test_FeatureFlagChangelogEntry_creation(self):
         # A FeatureFlagChangelogEntry has a diff and a date of change.
         person = self.factory.makePerson()
-        before = datetime.now(pytz.timezone("UTC"))
+        before = datetime.now(timezone.utc)
         feature_flag_change = FeatureFlagChangelogEntry(
             diff, "comment", person
         )
-        after = datetime.now(pytz.timezone("UTC"))
+        after = datetime.now(timezone.utc)
         self.assertEqual(diff, feature_flag_change.diff)
         self.assertEqual("comment", feature_flag_change.comment)
         self.assertEqual(person, feature_flag_change.person)

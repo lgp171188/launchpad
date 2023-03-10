@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.formlib import form
 from zope.formlib.interfaces import InputErrors
 from zope.formlib.widget import CustomWidgetFactory
@@ -43,7 +42,6 @@ class TeamMembershipEditView(LaunchpadView):
         expiration_field = fields["expirationdate"]
         expiration_field.custom_widget = CustomWidgetFactory(DateWidget)
         expires = self.context.dateexpires
-        UTC = pytz.timezone("UTC")
         if self.isExpired():
             # For expired members, we will present the team's default
             # renewal date.
@@ -52,7 +50,7 @@ class TeamMembershipEditView(LaunchpadView):
             # For members who were deactivated, we present by default
             # their original expiration date, or, if that has passed, or
             # never set, the team's default renewal date.
-            if expires is None or expires < datetime.now(UTC):
+            if expires is None or expires < datetime.now(timezone.utc):
                 expires = self.context.team.defaultrenewedexpirationdate
         if expires is not None:
             # We get a datetime from the database, but we want to use a
@@ -69,7 +67,7 @@ class TeamMembershipEditView(LaunchpadView):
         )
         self.expiration_widget = self.widgets["expirationdate"]
         # Set the acceptable date range for expiration.
-        self.expiration_widget.from_date = datetime.now(UTC).date()
+        self.expiration_widget.from_date = datetime.now(timezone.utc).date()
         # Disable the date widget if there is no current or required
         # expiration
         if not expires:
@@ -332,9 +330,8 @@ class TeamMembershipEditView(LaunchpadView):
 
         # We used a date picker, so we have a date. What we want is a
         # datetime in UTC
-        UTC = pytz.timezone("UTC")
         expires = datetime(
-            expires.year, expires.month, expires.day, tzinfo=UTC
+            expires.year, expires.month, expires.day, tzinfo=timezone.utc
         )
         return expires
 

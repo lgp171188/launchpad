@@ -21,7 +21,7 @@ import sys
 import uuid
 import warnings
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.encoders import encode_base64
 from email.message import Message as EmailMessage
 from email.mime.multipart import MIMEMultipart
@@ -32,14 +32,12 @@ from io import BytesIO
 from itertools import count
 from textwrap import dedent
 
-import pytz
 import six
 from breezy.revision import Revision as BzrRevision
 from brzbuildrecipe.recipe import BaseRecipeBranch
 from cryptography.utils import int_to_bytes
 from launchpadlib.launchpad import Launchpad
 from lazr.jobrunner.jobrunner import SuspendJobException
-from pytz import UTC
 from twisted.conch.ssh.common import MP, NS
 from twisted.conch.test import keydata
 from twisted.python.util import mergeFunctionMetadata
@@ -464,7 +462,7 @@ class ObjectFactory(metaclass=AutoDecorateMetaClass):
         Each date returned by this function will more recent (or further into
         the future) than the previous one.
         """
-        epoch = datetime(2009, 1, 1, tzinfo=pytz.UTC)
+        epoch = datetime(2009, 1, 1, tzinfo=timezone.utc)
         return epoch + timedelta(minutes=self.getUniqueInteger())
 
 
@@ -872,7 +870,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         self, team, name, title, proposition, poll_type=PollAlgorithm.SIMPLE
     ):
         """Create a new poll which starts tomorrow and lasts for a week."""
-        dateopens = datetime.now(pytz.UTC) + timedelta(days=1)
+        dateopens = datetime.now(timezone.utc) + timedelta(days=1)
         datecloses = dateopens + timedelta(days=7)
         return getUtility(IPollSet).new(
             team,
@@ -1020,7 +1018,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             )
         with person_logged_in(milestone.productseries.product.owner):
             release = milestone.createProductRelease(
-                milestone.product.owner, datetime.now(pytz.UTC)
+                milestone.product.owner, datetime.now(timezone.utc)
             )
         return release
 
@@ -1234,7 +1232,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueUnicode("name")
         if time_starts is None:
-            time_starts = datetime(2009, 1, 1, tzinfo=pytz.UTC)
+            time_starts = datetime(2009, 1, 1, tzinfo=timezone.utc)
         time_ends = time_starts + timedelta(days=1)
         time_zone = "UTC"
         summary = self.getUniqueUnicode("summary")
@@ -1967,7 +1965,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         elif IPerson.providedBy(author):
             author = removeSecurityProxy(author).preferredemail.email
         if revision_date is None:
-            revision_date = datetime.now(pytz.UTC)
+            revision_date = datetime.now(timezone.utc)
         if parent_ids is None:
             parent_ids = []
         if rev_id is None:
@@ -2001,7 +1999,8 @@ class LaunchpadObjectFactory(ObjectFactory):
         """
         if date_generator is None:
             date_generator = time_counter(
-                datetime(2007, 1, 1, tzinfo=pytz.UTC), delta=timedelta(days=1)
+                datetime(2007, 1, 1, tzinfo=timezone.utc),
+                delta=timedelta(days=1),
             )
         sequence = branch.revision_count
         parent = branch.getTipRevision()
@@ -2530,9 +2529,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
         if bug_task is not None:
             bug_task.bugwatch = bug_watch
-        removeSecurityProxy(bug_watch).next_check = datetime.now(
-            pytz.timezone("UTC")
-        )
+        removeSecurityProxy(bug_watch).next_check = datetime.now(timezone.utc)
         return bug_watch
 
     def makeBugComment(
@@ -2836,7 +2833,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         ):
             # This is to satisfy a DB constraint of obsolete specs.
             naked_spec.completer = owner
-            naked_spec.date_completed = datetime.now(pytz.UTC)
+            naked_spec.date_completed = datetime.now(timezone.utc)
         naked_spec.specurl = specurl
         naked_spec.milestone = milestone
         if goal is not None:
@@ -3211,7 +3208,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if datecreated is None:
-            datecreated = datetime.now(UTC)
+            datecreated = datetime.now(timezone.utc)
         rfc822msgid = self.makeUniqueRFC822MsgId()
         message = Message(
             rfc822msgid=rfc822msgid,
@@ -6019,12 +6016,12 @@ class LaunchpadObjectFactory(ObjectFactory):
                 "The pillar under test already has a CommercialSubscription."
             )
         if expired:
-            expiry = datetime.now(pytz.UTC) - timedelta(days=1)
+            expiry = datetime.now(timezone.utc) - timedelta(days=1)
         else:
-            expiry = datetime.now(pytz.UTC) + timedelta(days=30)
+            expiry = datetime.now(timezone.utc) + timedelta(days=30)
         commercial_subscription = CommercialSubscription(
             pillar=pillar,
-            date_starts=datetime.now(pytz.UTC) - timedelta(days=90),
+            date_starts=datetime.now(timezone.utc) - timedelta(days=90),
             date_expires=expiry,
             registrant=pillar.owner,
             purchaser=pillar.owner,

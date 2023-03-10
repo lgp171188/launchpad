@@ -4,10 +4,9 @@
 """Test charm package build features."""
 
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.request import urlopen
 
-import pytz
 from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from pymacaroons import Macaroon
@@ -197,7 +196,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
     def test_retry_resets_state(self):
         # Retrying a build resets most of the state attributes, but does
         # not modify the first dispatch time.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         build = self.factory.makeCharmRecipeBuild()
         build.updateStatus(BuildStatus.BUILDING, date_started=now)
         build.updateStatus(BuildStatus.FAILEDTOBUILD)
@@ -896,7 +895,7 @@ class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
         # The basic properties of a charm recipe build are sensible.
         db_build = self.factory.makeCharmRecipeBuild(
             requester=self.person,
-            date_created=datetime(2021, 9, 15, 16, 21, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2021, 9, 15, 16, 21, 0, tzinfo=timezone.utc),
         )
         build_url = api_url(db_build)
         logout()

@@ -1,10 +1,9 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -40,7 +39,7 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
     def _gen_now(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         while True:
             yield now
             now += timedelta(milliseconds=1)
@@ -381,7 +380,7 @@ class TestResetTranslations(TestCaseWithFactory):
         widget_id_base = msgset_id_lang + "_translation_0_"
 
         form = {
-            "lock_timestamp": datetime.now(pytz.utc).isoformat(),
+            "lock_timestamp": datetime.now(timezone.utc).isoformat(),
             "alt": None,
             msgset_id: None,
             widget_id_base + "radiobutton": widget_id_base + "new",
@@ -457,14 +456,15 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
         )
         request = LaunchpadTestRequest(SERVER_URL=url, form=form)
         view = CurrentTranslationMessagePageView(message, request)
-        view.lock_timestamp = datetime.now(pytz.utc)
+        view.lock_timestamp = datetime.now(timezone.utc)
         return view
 
     def test_extractLockTimestamp(self):
         view = self._makeView()
         view.request.form["lock_timestamp"] = "2010-01-01 00:00:00 UTC"
         self.assertEqual(
-            datetime(2010, 1, 1, tzinfo=pytz.utc), view._extractLockTimestamp()
+            datetime(2010, 1, 1, tzinfo=timezone.utc),
+            view._extractLockTimestamp(),
         )
 
     def test_extractLockTimestamp_returns_None_by_default(self):

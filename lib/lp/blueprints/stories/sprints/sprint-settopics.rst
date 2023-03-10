@@ -1,16 +1,12 @@
 Any logged in user can propose specs to be discussed in a sprint.
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
 
     >>> login("test@canonical.com")
     >>> _ = factory.makeSprint(
     ...     name="uds-guacamole",
     ...     title="Ubuntu DevSummit Guacamole",
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ...     time_starts=datetime.now(timezone.utc) + timedelta(days=1),
     ... )
     >>> transaction.commit()
     >>> logout()

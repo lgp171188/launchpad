@@ -32,10 +32,9 @@ import copy
 import random
 import re
 import weakref
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 import six
 import transaction
 from lazr.delegates import delegate_to
@@ -1285,7 +1284,8 @@ class Person(
             )
             .find(
                 Person,
-                CommercialSubscription.date_expires > datetime.now(pytz.UTC),
+                CommercialSubscription.date_expires
+                > datetime.now(timezone.utc),
                 Person.id == self.id,
             )
         )
@@ -2983,7 +2983,7 @@ class Person(
         """See `IPerson`."""
         days = self.defaultmembershipperiod
         if days:
-            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
+            return datetime.now(timezone.utc) + timedelta(days)
         else:
             return None
 
@@ -2992,7 +2992,7 @@ class Person(
         """See `IPerson`."""
         days = self.defaultrenewalperiod
         if days:
-            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
+            return datetime.now(timezone.utc) + timedelta(days)
         else:
             return None
 

@@ -8,8 +8,7 @@ like the 'Gnome Team' and the 'Ubuntu Team'. These teams often have leaders
 whose ellection depends on the vote of all members, and this is one of the
 reasons why we teams can have polls attached to them.
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.testing import login
@@ -27,7 +26,7 @@ reasons why we teams can have polls attached to them.
     >>> member4 = getUtility(IPersonSet).getByName("name16")
     >>> member5 = getUtility(IPersonSet).getByName("limi")
     >>> nonmember = getUtility(IPersonSet).getByName("justdave")
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> now = datetime.now(timezone.utc)
     >>> onesec = timedelta(seconds=1)
 
 We need to login with one of the administrators of the team named
@@ -39,7 +38,7 @@ a given team (in our case, the 'Ubuntu Team')
     >>> pollsubset = IPollSubset(team)
 
 Now we create a new poll on this team.
-    >>> opendate = datetime(2005, 1, 1, tzinfo=pytz.timezone("UTC"))
+    >>> opendate = datetime(2005, 1, 1, tzinfo=timezone.utc)
     >>> closedate = opendate + timedelta(weeks=2)
     >>> title = "2005 Leader's Elections"
     >>> proposition = "Who's going to be the next leader?"

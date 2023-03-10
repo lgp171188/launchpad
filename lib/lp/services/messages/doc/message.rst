@@ -497,8 +497,7 @@ parameter to fromEmail(). This is optional, and defaults to None, but it
 allows us to deal with those situations where fromEmail() would
 otherwise reject the method as invalid.
 
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
 
     >>> msg_bytes = b"""\
     ... From: foo.bar@canonical.com
@@ -508,13 +507,11 @@ otherwise reject the method as invalid.
     ... In search of cheesy comestibles.
     ... """
 
-    >>> date_created = datetime(
-    ...     2008, 7, 9, 14, 27, 40, tzinfo=pytz.timezone("UTC")
-    ... )
+    >>> date_created = datetime(2008, 7, 9, 14, 27, 40, tzinfo=timezone.utc)
     >>> msg = msgset.fromEmail(msg_bytes, date_created=date_created)
 
     >>> msg.datecreated
-    datetime.datetime(2008, 7, 9, 14, 27, 40, tzinfo=<UTC>)
+    datetime.datetime(2008, 7, 9, 14, 27, 40, tzinfo=datetime.timezone.utc)
 
 But, we make sure that we don't create a message with a date that is
 futuristic:
@@ -529,7 +526,7 @@ futuristic:
     ... Moo
     ... """
     ... )
-    >>> msg.datecreated > datetime.now(tz=pytz.timezone("UTC"))
+    >>> msg.datecreated > datetime.now(tz=timezone.utc)
     False
 
 And similarly, we will consider any message that claims to be older than
@@ -545,7 +542,7 @@ And similarly, we will consider any message that claims to be older than
     ... Moo
     ... """
     ... )
-    >>> thedistantpast = datetime(1990, 1, 1, tzinfo=pytz.timezone("UTC"))
+    >>> thedistantpast = datetime(1990, 1, 1, tzinfo=timezone.utc)
     >>> msg.datecreated < thedistantpast
     False
 

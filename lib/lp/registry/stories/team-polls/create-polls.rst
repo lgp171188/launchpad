@@ -100,15 +100,13 @@ We're redirected to the newly created poll page.
 
 Create a new poll that starts tomorrow and will last for ten years.
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
 
-    >>> tomorrow = (datetime.now(pytz.UTC) + timedelta(days=1)).isoformat()
+    >>> tomorrow = (
+    ...     datetime.now(timezone.utc) + timedelta(days=1)
+    ... ).isoformat()
     >>> ten_years_from_now = (
-    ...     datetime.now(pytz.UTC) + timedelta(days=3560)
+    ...     datetime.now(timezone.utc) + timedelta(days=3560)
     ... ).isoformat()
     >>> team_admin_browser.open("http://launchpad.test/~ubuntu-team/+newpoll")
     >>> team_admin_browser.getControl(

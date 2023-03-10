@@ -3,10 +3,9 @@
 
 """Test snap package listings."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 
-import pytz
 import soupmatchers
 from testtools.matchers import MatchesAll, Not
 from zope.security.proxy import removeSecurityProxy
@@ -566,7 +565,7 @@ class TestSnapListing(BrowserTestCase):
     def test_branch_batches_snaps(self):
         branch = self.factory.makeAnyBranch()
         create_snap = partial(self.factory.makeSnap, branch=branch)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(branch, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -580,7 +579,7 @@ class TestSnapListing(BrowserTestCase):
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         create_snap = partial(self.factory.makeSnap, git_ref=ref)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(repository, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -593,7 +592,7 @@ class TestSnapListing(BrowserTestCase):
     def test_git_ref_batches_snaps(self):
         [ref] = self.factory.makeGitRefs()
         create_snap = partial(self.factory.makeSnap, git_ref=ref)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(ref, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -608,7 +607,7 @@ class TestSnapListing(BrowserTestCase):
         create_snap = partial(
             self.factory.makeSnap, registrant=owner, owner=owner
         )
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(owner, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -622,7 +621,7 @@ class TestSnapListing(BrowserTestCase):
         project = self.factory.makeProduct()
         branch = self.factory.makeProductBranch(product=project)
         create_snap = partial(self.factory.makeSnap, branch=branch)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeSnapsAndMatchers(create_snap, 3, now)
         self.assertBatches(project, link_matchers, False, 0, 3)
         link_matchers.extend(

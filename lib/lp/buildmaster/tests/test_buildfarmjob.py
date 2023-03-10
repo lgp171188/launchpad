@@ -3,10 +3,9 @@
 
 """Tests for `IBuildFarmJob`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Type
 
-import pytz
 from storm.store import Store
 from testtools.matchers import GreaterThan
 from zope.component import getUtility
@@ -94,7 +93,7 @@ class TestBuildFarmJob(TestBuildFarmJobBase, TestCaseWithFactory):
         # date_created can be passed optionally when creating a
         # build farm job to ensure we don't get identical timestamps
         # when transactions are committed.
-        ten_years_ago = datetime.now(pytz.UTC) - timedelta(365 * 10)
+        ten_years_ago = datetime.now(timezone.utc) - timedelta(365 * 10)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             job_type=BuildFarmJobType.PACKAGEBUILD, date_created=ten_years_ago
         )
@@ -129,7 +128,7 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
     def test_duration_set(self):
         # If both start and finished are defined, the duration will be
         # returned.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         duration = timedelta(1)
         self.build_farm_job.updateStatus(
             BuildStatus.BUILDING, date_started=now
@@ -323,15 +322,15 @@ class TestBuildFarmJobSet(TestBuildFarmJobBase, TestCaseWithFactory):
         # Results are returned with the oldest build last.
         build_1 = self.makeBuildFarmJob(
             builder=self.builder,
-            date_finished=datetime(2008, 10, 10, tzinfo=pytz.UTC),
+            date_finished=datetime(2008, 10, 10, tzinfo=timezone.utc),
         )
         build_2 = self.makeBuildFarmJob(
             builder=self.builder,
-            date_finished=datetime(2008, 11, 10, tzinfo=pytz.UTC),
+            date_finished=datetime(2008, 11, 10, tzinfo=timezone.utc),
         )
         build_3 = self.makeBuildFarmJob(
             builder=self.builder,
-            date_finished=datetime(2008, 9, 10, tzinfo=pytz.UTC),
+            date_finished=datetime(2008, 9, 10, tzinfo=timezone.utc),
         )
 
         result = self.build_farm_job_set.getBuildsForBuilder(self.builder)

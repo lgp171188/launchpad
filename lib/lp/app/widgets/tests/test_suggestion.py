@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import doctest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from testtools.matchers import DocTestMatches
 from zope.component import getUtility, provideUtility
 from zope.interface import implementer
@@ -147,7 +146,7 @@ class TestTargetBranchWidget(TestCaseWithFactory):
     def makeBranchAndOldMergeProposal(self, timedelta):
         """Make an old merge proposal and a branch with the same target."""
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime.now(utc) - timedelta
+            date_created=datetime.now(timezone.utc) - timedelta
         )
         login_person(bmp.registrant)
         target = bmp.target_branch
@@ -201,7 +200,7 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
     def makeRefAndOldMergeProposal(self, timedelta):
         """Make an old merge proposal and a ref with the same target."""
         bmp = self.factory.makeBranchMergeProposalForGit(
-            date_created=datetime.now(utc) - timedelta
+            date_created=datetime.now(timezone.utc) - timedelta
         )
         login_person(bmp.registrant)
         target = bmp.merge_target
@@ -230,7 +229,7 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
         bmp = self.factory.makeBranchMergeProposalForGit(
             source_ref=this_source,
             target_ref=this_target,
-            date_created=datetime.now(utc) - timedelta(days=1),
+            date_created=datetime.now(timezone.utc) - timedelta(days=1),
         )
         other_source, other_target = self.factory.makeGitRefs(
             owner=owner,
@@ -240,7 +239,7 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
         self.factory.makeBranchMergeProposalForGit(
             source_ref=other_source,
             target_ref=other_target,
-            date_created=datetime.now(utc) - timedelta(days=1),
+            date_created=datetime.now(timezone.utc) - timedelta(days=1),
         )
         login_person(bmp.registrant)
         [source] = self.factory.makeGitRefs(repository=this_target.repository)
@@ -278,7 +277,7 @@ class TestTargetGitRepositoryWidget(TestCaseWithFactory):
         bmp = self.factory.makeBranchMergeProposalForGit(
             source_ref=source,
             target_ref=target,
-            date_created=datetime.now(utc) - timedelta(days=1),
+            date_created=datetime.now(timezone.utc) - timedelta(days=1),
         )
         login_person(bmp.registrant)
         widget = make_target_git_repository_widget(source)

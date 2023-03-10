@@ -8,10 +8,9 @@ __all__ = [
 ]
 
 from copy import copy
-from datetime import timedelta
+from datetime import timedelta, timezone
 from operator import itemgetter
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import Bool, DateTime, Desc, Int, Reference, Store, Unicode
@@ -189,16 +188,16 @@ class CIBuild(PackageBuildMixin, StormBase):
     builder_constraints = JSON(name="builder_constraints", allow_none=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_started = DateTime(
-        name="date_started", tzinfo=pytz.UTC, allow_none=True
+        name="date_started", tzinfo=timezone.utc, allow_none=True
     )
     date_finished = DateTime(
-        name="date_finished", tzinfo=pytz.UTC, allow_none=True
+        name="date_finished", tzinfo=timezone.utc, allow_none=True
     )
     date_first_dispatched = DateTime(
-        name="date_first_dispatched", tzinfo=pytz.UTC, allow_none=True
+        name="date_first_dispatched", tzinfo=timezone.utc, allow_none=True
     )
 
     builder_id = Int(name="builder", allow_none=True)

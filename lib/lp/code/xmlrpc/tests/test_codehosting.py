@@ -3,11 +3,10 @@
 
 """Tests for the internal codehosting API."""
 
-import datetime
 import os
 import threading
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from breezy import controldir
 from breezy.urlutils import escape
@@ -62,8 +61,6 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
 )
 from lp.xmlrpc import faults
-
-UTC = pytz.timezone("UTC")
 
 
 def get_logged_in_username(requester=None):
@@ -285,8 +282,8 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
 
     def test_recordSuccess(self):
         # recordSuccess must insert the given data into ScriptActivity.
-        started = datetime.datetime(2007, 7, 5, 19, 32, 1, tzinfo=UTC)
-        completed = datetime.datetime(2007, 7, 5, 19, 34, 24, tzinfo=UTC)
+        started = datetime(2007, 7, 5, 19, 32, 1, tzinfo=timezone.utc)
+        completed = datetime(2007, 7, 5, 19, 34, 24, tzinfo=timezone.utc)
         started_tuple = tuple(started.utctimetuple())
         completed_tuple = tuple(completed.utctimetuple())
         success = self.codehosting_api.recordSuccess(

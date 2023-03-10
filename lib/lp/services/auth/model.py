@@ -9,9 +9,8 @@ __all__ = [
 ]
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.databases.postgres import JSON
 from storm.expr import SQL, And, Cast, Or, Select, Update
 from storm.locals import DateTime, Int, Reference, Unicode
@@ -38,7 +37,7 @@ class AccessToken(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     _token_sha256 = Unicode(name="token_sha256", allow_none=False)
@@ -54,10 +53,10 @@ class AccessToken(StormBase):
     _scopes = JSON(name="scopes", allow_none=False)
 
     date_last_used = DateTime(
-        name="date_last_used", tzinfo=pytz.UTC, allow_none=True
+        name="date_last_used", tzinfo=timezone.utc, allow_none=True
     )
     date_expires = DateTime(
-        name="date_expires", tzinfo=pytz.UTC, allow_none=True
+        name="date_expires", tzinfo=timezone.utc, allow_none=True
     )
 
     revoked_by_id = Int(name="revoked_by", allow_none=True)
@@ -129,7 +128,7 @@ class AccessToken(StormBase):
 
     @property
     def is_expired(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         return self.date_expires is not None and self.date_expires <= now
 
     def revoke(self, revoked_by):

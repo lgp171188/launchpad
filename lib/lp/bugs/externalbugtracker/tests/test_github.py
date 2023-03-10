@@ -4,10 +4,9 @@
 """Tests for the GitHub Issues BugTracker."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import parse_qs, urlsplit, urlunsplit
 
-import pytz
 import responses
 import transaction
 from testtools import ExpectedException
@@ -279,7 +278,7 @@ class TestGitHub(TestCase):
         _add_rate_limit_response("api.github.com")
         self._addIssuesResponse()
         tracker = GitHub("https://github.com/user/repository/issues")
-        since = datetime(2015, 1, 1, 12, 0, 0, tzinfo=pytz.UTC)
+        since = datetime(2015, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
         self.assertEqual(
             {bug["number"]: bug for bug in self.sample_bugs[:2]},
             tracker.getRemoteBugBatch(["1", "2"], last_accessed=since),

@@ -7,10 +7,9 @@ import doctest
 import hashlib
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from difflib import diff_bytes, unified_diff
 
-import pytz
 import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -1522,7 +1521,7 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
-        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        author_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
         sha1s = [
             hashlib.sha1(("commit %d" % i).encode()).hexdigest()
             for i in range(count)
@@ -1723,9 +1722,9 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertEqual([bug.default_bugtask], view.linked_bugtasks)
 
     def makeRevisionGroups(self):
-        review_date = datetime(2009, 9, 10, tzinfo=pytz.UTC)
+        review_date = datetime(2009, 9, 10, tzinfo=timezone.utc)
         bmp = self.factory.makeBranchMergeProposal(date_created=review_date)
-        first_commit = datetime(2009, 9, 9, tzinfo=pytz.UTC)
+        first_commit = datetime(2009, 9, 9, tzinfo=timezone.utc)
         add_revision_to_branch(self.factory, bmp.source_branch, first_commit)
         login_person(bmp.registrant)
         bmp.requestReview(review_date)
@@ -1760,7 +1759,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_CodeReviewNewRevisions_implements_interface_bzr(self):
         # The browser helper class implements its interface.
-        review_date = datetime(2009, 9, 10, tzinfo=pytz.UTC)
+        review_date = datetime(2009, 9, 10, tzinfo=timezone.utc)
         revision_date = review_date + timedelta(days=1)
         bmp = self.factory.makeBranchMergeProposal(date_created=review_date)
         add_revision_to_branch(self.factory, bmp.source_branch, revision_date)
@@ -1772,7 +1771,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
     def test_CodeReviewNewRevisions_implements_interface_git(self):
         # The browser helper class implements its interface.
-        review_date = datetime(2009, 9, 10, tzinfo=pytz.UTC)
+        review_date = datetime(2009, 9, 10, tzinfo=timezone.utc)
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
@@ -1866,7 +1865,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         bmp = self.factory.makeBranchMergeProposalForGit()
         owner = bmp.source_git_repository.owner
         sha1 = hashlib.sha1(b"0").hexdigest()
-        commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        commit_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
         report1 = self.factory.makeRevisionStatusReport(
             user=owner,
             git_repository=bmp.source_git_repository,
@@ -1948,7 +1947,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         # SHA-1 and can ask the repository for its unmerged commits.
         bmp = self.factory.makeBranchMergeProposalForGit()
         sha1 = hashlib.sha1(b"0").hexdigest()
-        commit_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        commit_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
         self.useFixture(
             GitHostingFixture(
                 log=[
@@ -2732,7 +2731,7 @@ class TestBranchMergeCandidateView(TestCaseWithFactory):
         bmp.approveBranch(
             owner,
             "some-rev",
-            datetime(year=2008, month=9, day=10, tzinfo=pytz.UTC),
+            datetime(year=2008, month=9, day=10, tzinfo=timezone.utc),
         )
         view = create_initialized_view(bmp, "+link-summary")
         self.assertEqual("Eric on 2008-09-10", view.status_title)
@@ -2747,7 +2746,7 @@ class TestBranchMergeCandidateView(TestCaseWithFactory):
         bmp.rejectBranch(
             owner,
             "some-rev",
-            datetime(year=2008, month=9, day=10, tzinfo=pytz.UTC),
+            datetime(year=2008, month=9, day=10, tzinfo=timezone.utc),
         )
         view = create_initialized_view(bmp, "+link-summary")
         self.assertEqual("Eric on 2008-09-10", view.status_title)
@@ -2986,12 +2985,12 @@ class TestLatestProposalsForEachBranchMixin:
         # If each proposal targets a different branch, each will be returned.
         bmp1 = self._makeBranchMergeProposal(
             date_created=(
-                datetime(year=2008, month=9, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=9, day=10, tzinfo=timezone.utc)
             )
         )
         bmp2 = self._makeBranchMergeProposal(
             date_created=(
-                datetime(year=2008, month=10, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=10, day=10, tzinfo=timezone.utc)
             )
         )
         self.assertEqual(
@@ -3002,12 +3001,12 @@ class TestLatestProposalsForEachBranchMixin:
         # If the proposal is not visible to the user, they are not returned.
         bmp1 = self._makeBranchMergeProposal(
             date_created=(
-                datetime(year=2008, month=9, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=9, day=10, tzinfo=timezone.utc)
             )
         )
         bmp2 = self._makeBranchMergeProposal(
             date_created=(
-                datetime(year=2008, month=10, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=10, day=10, tzinfo=timezone.utc)
             )
         )
         self._setBranchInvisible(bmp2.merge_source)
@@ -3020,13 +3019,13 @@ class TestLatestProposalsForEachBranchMixin:
         # returned.
         bmp1 = self._makeBranchMergeProposal(
             date_created=(
-                datetime(year=2008, month=9, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=9, day=10, tzinfo=timezone.utc)
             )
         )
         bmp2 = self._makeBranchMergeProposal(
             merge_target=bmp1.merge_target,
             date_created=(
-                datetime(year=2008, month=10, day=10, tzinfo=pytz.UTC)
+                datetime(year=2008, month=10, day=10, tzinfo=timezone.utc)
             ),
         )
         self.assertEqual(

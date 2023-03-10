@@ -3,9 +3,8 @@
 
 """Tests for the revision feeds."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import UTC
 from zope.component import getUtility
 
 from lp.code.feed.branch import (
@@ -27,7 +26,7 @@ class TestRevisionFeedId(TestCaseWithFactory):
     def test_format(self):
         # The id contains the iso format of the date part of the revision
         # date, and the revision id.
-        revision_date = datetime(2009, 7, 21, 12, tzinfo=UTC)
+        revision_date = datetime(2009, 7, 21, 12, tzinfo=timezone.utc)
         revision = self.factory.makeRevision(
             revision_date=revision_date, rev_id="test_revision_id"
         )

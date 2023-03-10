@@ -7,9 +7,8 @@ __all__ = [
 
 import json
 import math
-from datetime import timedelta
+from datetime import timedelta, timezone
 
-import pytz
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import Cast
@@ -84,10 +83,10 @@ class LiveFS(StormBase, WebhookTargetMixin):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

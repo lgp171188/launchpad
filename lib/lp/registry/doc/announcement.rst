@@ -10,8 +10,7 @@ specified date or until manually approved. Announcements can be retracted
 after publishing, and they can be deleted, permanently.
 
     >>> from zope.component import getUtility
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.services.utils import utc_now
     >>> NOW = utc_now()
     >>> FUTURE = NOW + timedelta(days=10)
@@ -54,7 +53,7 @@ published:
     ...         "http://www.mail-archive.com/announce@apache.org/msg00369.html"
     ...     ),
     ...     publication_date=datetime(
-    ...         2007, 7, 12, 11, 17, 39, tzinfo=pytz.utc
+    ...         2007, 7, 12, 11, 17, 39, tzinfo=timezone.utc
     ...     ),
     ... )
 
@@ -83,7 +82,9 @@ Announcements can also be made on an IProduct:
     ...     summary="""We just finished an excellent series of discussions on
     ...  performance at ApacheCon, and there is a summary of our current plans
     ...  available online. Please feel free to review and comment!""",
-    ...     publication_date=datetime(2006, 6, 30, 9, 0, 0, tzinfo=pytz.utc),
+    ...     publication_date=datetime(
+    ...         2006, 6, 30, 9, 0, 0, tzinfo=timezone.utc
+    ...     ),
     ... )
 
 
@@ -124,7 +125,9 @@ And finally, we can make announcements on an IDistribution, too:
     ...  have pushed Kubuntu 7.10 to mirrors and published the final packages
     ...  in the archive. Go ahead and fire up your Torrent client for the
     ...  latest in KDE goodness!""",
-    ...     publication_date=datetime(2007, 11, 3, 7, 0, 0, tzinfo=pytz.utc),
+    ...     publication_date=datetime(
+    ...         2007, 11, 3, 7, 0, 0, tzinfo=timezone.utc
+    ...     ),
     ... )
 
 Let's flush these to the database.
@@ -260,7 +263,7 @@ Announcements which have been retracted can be published again:
     >>> apache_asia.published
     False
     >>> apache_asia.setPublicationDate(
-    ...     datetime(2007, 11, 11, 7, 0, 0, tzinfo=pytz.utc)
+    ...     datetime(2007, 11, 11, 7, 0, 0, tzinfo=timezone.utc)
     ... )
     >>> apache_asia.published
     True

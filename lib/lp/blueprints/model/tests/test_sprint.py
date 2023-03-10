@@ -3,9 +3,8 @@
 
 """Unit test for sprints."""
 
-import datetime
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -33,7 +32,7 @@ class TestSpecifications(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.date_decided = datetime.datetime.now(utc)
+        self.date_decided = datetime.now(timezone.utc)
 
     def makeSpec(
         self,
@@ -66,9 +65,9 @@ class TestSpecifications(TestCaseWithFactory):
         elif not proposed:
             link.acceptBy(sprint.owner)
         if not proposed:
-            date_decided = self.date_decided + datetime.timedelta(date_decided)
+            date_decided = self.date_decided + timedelta(date_decided)
             naked_link.date_decided = date_decided
-        date_created = self.date_decided + datetime.timedelta(date_created)
+        date_created = self.date_decided + timedelta(date_created)
         naked_link.date_created = date_created
         return blueprint
 

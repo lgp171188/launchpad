@@ -3,9 +3,8 @@
 
 """Unit tests for translation import queue views."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import timezone
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -166,10 +165,11 @@ class TestTranslationImportQueueEntryView(WithScenarios, TestCaseWithFactory):
 
         # If there is a difference, there's a human-readable
         # description.
-        UTC = timezone("UTC")
-        entry.dateimported = datetime(year=2005, month=11, day=29, tzinfo=UTC)
+        entry.dateimported = datetime(
+            year=2005, month=11, day=29, tzinfo=timezone.utc
+        )
         entry.date_status_changed = datetime(
-            year=2007, month=8, day=14, tzinfo=UTC
+            year=2007, month=8, day=14, tzinfo=timezone.utc
         )
         self.assertEqual(
             "Last changed on 2007-08-14.", view.status_change_date

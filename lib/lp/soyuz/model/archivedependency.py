@@ -5,7 +5,8 @@
 
 __all__ = ["ArchiveDependency"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
@@ -29,7 +30,10 @@ class ArchiveDependency(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+        name="date_created",
+        tzinfo=timezone.utc,
+        allow_none=False,
+        default=UTC_NOW,
     )
 
     archive_id = Int(name="archive", allow_none=True)

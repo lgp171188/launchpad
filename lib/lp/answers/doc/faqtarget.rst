@@ -82,9 +82,8 @@ accepts an optional date_created attribute (which defaults to the
 current time), and an optional keywords parameter used to initialize the
 FAQ's keywords.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timezone
+    >>> now = datetime.now(timezone.utc)
 
     >>> faq = target.newFAQ(
     ...     no_priv,

@@ -6,14 +6,13 @@ __all__ = [
 ]
 
 
-import datetime
 import io
 import json
 import operator
 import re
+from datetime import datetime, timezone
 
 import apt_pkg
-import pytz
 import six
 from debian.changelog import (
     Changelog,
@@ -246,7 +245,7 @@ class SourcePackageRelease(SQLBase):
     @property
     def age(self):
         """See ISourcePackageRelease."""
-        now = datetime.datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         return now - self.dateuploaded
 
     def failed_builds(self):

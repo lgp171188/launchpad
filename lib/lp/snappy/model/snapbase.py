@@ -7,9 +7,9 @@ __all__ = [
     "SnapBase",
 ]
 
+from datetime import timezone
 from typing import Dict, Optional
 
-import pytz
 from lazr.enum import Item
 from storm.databases.postgres import JSON as PgJSON
 from storm.locals import JSON, Bool, DateTime, Int, Reference, Store, Unicode
@@ -49,7 +49,7 @@ class SnapBase(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

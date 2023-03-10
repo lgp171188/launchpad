@@ -4,7 +4,7 @@
 """Tests for running jobs via Celery."""
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import sleep
 from unittest import mock
 
@@ -12,7 +12,6 @@ import iso8601
 import transaction
 from lazr.delegates import delegate_to
 from lazr.jobrunner.celerytask import drain_queues
-from pytz import UTC
 from testtools.matchers import (
     GreaterThan,
     HasLength,
@@ -85,7 +84,7 @@ class TestJobWithRetryError(TestJob):
         if self.job.attempt_count == 1:
             # First test without a conflicting lease. The job should be
             # rescheduled for 5 seconds (retry_delay) in the future.
-            self.job.lease_expires = datetime.now(UTC)
+            self.job.lease_expires = datetime.now(timezone.utc)
             raise RetryException
         elif self.job.attempt_count == 2:
             # The retry delay is 5 seconds, but the lease is for nearly 10
@@ -122,7 +121,7 @@ class TestJobsViaCelery(TestCaseWithFactory):
         self.useFixture(
             FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
         )
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         job_past = TestJob(scheduled_start=now - timedelta(seconds=60))
         job_past.celeryRunOnCommit()
         self.assertTrue(job_past.is_runnable)
@@ -167,7 +166,7 @@ class TestJobsViaCelery(TestCaseWithFactory):
         # Set scheduled_start on the job to ensure that retry delays
         # override it.
         job = TestJobWithRetryError(
-            scheduled_start=datetime.now(UTC) + timedelta(seconds=1)
+            scheduled_start=datetime.now(timezone.utc) + timedelta(seconds=1)
         )
         job.celeryRunOnCommit()
         transaction.commit()

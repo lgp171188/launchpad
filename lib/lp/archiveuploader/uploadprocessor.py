@@ -48,9 +48,8 @@ above, failed being worst).
 import os
 import shutil
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -224,12 +223,12 @@ class UploadProcessor:
                 set_request_started(enable_timeout=False)
                 try:
                     handler = UploadHandler.forProcessor(self, fsroot, upload)
-                    date_started = datetime.now(pytz.UTC)
+                    date_started = datetime.now(timezone.utc)
                 except CannotGetBuild as e:
                     self.log.warning(e)
                 else:
                     handler.process()
-                    date_completed = datetime.now(pytz.UTC)
+                    date_completed = datetime.now(timezone.utc)
                     upload_duration = (
                         date_completed - date_started
                     ).total_seconds() * 1000

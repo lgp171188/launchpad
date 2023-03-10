@@ -3,7 +3,8 @@
 
 __all__ = ["BugSubscription"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -36,7 +37,9 @@ class BugSubscription(StormBase):
         allow_none=False,
     )
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     subscribed_by_id = Int(
         "subscribed_by", allow_none=False, validator=validate_person

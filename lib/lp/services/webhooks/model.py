@@ -11,7 +11,7 @@ __all__ = [
 import ipaddress
 import re
 import socket
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 
 import iso8601
@@ -19,7 +19,6 @@ import psutil
 import transaction
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
-from pytz import utc
 from storm.expr import Desc
 from storm.properties import JSON, Bool, DateTime, Int, Unicode
 from storm.references import Reference
@@ -95,8 +94,8 @@ class Webhook(StormBase):
 
     registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
-    date_created = DateTime(tzinfo=utc, allow_none=False)
-    date_last_modified = DateTime(tzinfo=utc, allow_none=False)
+    date_created = DateTime(tzinfo=timezone.utc, allow_none=False)
+    date_last_modified = DateTime(tzinfo=timezone.utc, allow_none=False)
 
     delivery_url = Unicode(allow_none=False)
     active = Bool(default=True, allow_none=False)
@@ -567,7 +566,9 @@ class WebhookDeliveryJob(WebhookJobDerived):
 
     @property
     def _time_since_first_attempt(self):
-        return datetime.now(utc) - (self.date_first_sent or self.date_created)
+        return datetime.now(timezone.utc) - (
+            self.date_first_sent or self.date_created
+        )
 
     def retry(self, reset=False):
         """See `IWebhookDeliveryJob`."""
@@ -641,7 +642,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
                     del result[direction][attr]
         updated_data = self.json_data
         updated_data["result"] = result
-        updated_data["date_sent"] = datetime.now(utc).isoformat()
+        updated_data["date_sent"] = datetime.now(timezone.utc).isoformat()
         if "date_first_sent" not in updated_data:
             updated_data["date_first_sent"] = updated_data["date_sent"]
         self.json_data = updated_data

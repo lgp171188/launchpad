@@ -3,9 +3,9 @@
 
 import os
 import re
+from datetime import timezone
 
 import defusedxml.cElementTree as ET
-import pytz
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -55,7 +55,7 @@ class UtilsTestCase(TestCase):
         self.assertEqual(dt.hour, 8)
         self.assertEqual(dt.minute, 0)
         self.assertEqual(dt.second, 0)
-        self.assertEqual(dt.tzinfo, pytz.timezone("UTC"))
+        self.assertEqual(dt.tzinfo, timezone.utc)
 
     def test_get_text(self):
         # Test that the get_text() helper can correctly return the

@@ -3,9 +3,8 @@
 
 """Tests relating to the revision cache."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -98,7 +97,7 @@ class TestRevisionCache(TestCaseWithFactory):
     def test_revision_ordering(self):
         # Revisions are returned most recent first.
         tc = time_counter(
-            origin=datetime.now(pytz.UTC) - timedelta(days=15),
+            origin=datetime.now(timezone.utc) - timedelta(days=15),
             delta=timedelta(days=1),
         )
         # Make four cached revisions spanning 15, 14, 13 and 12 days ago.
@@ -132,7 +131,7 @@ class TestRevisionCache(TestCaseWithFactory):
         # Only revisions in the last 30 days are returned, even if the
         # revision cache table hasn't been trimmed lately.
         tc = time_counter(
-            origin=datetime.now(pytz.UTC) - timedelta(days=27),
+            origin=datetime.now(timezone.utc) - timedelta(days=27),
             delta=timedelta(days=-2),
         )
         # Make four cached revisions spanning 33, 31, 29, and 27 days ago.

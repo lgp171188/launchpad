@@ -5,10 +5,9 @@ import bz2
 import pickle
 import re
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import TestLoader
 
-import pytz
 import transaction
 from fixtures import TempDir
 from testtools.content import text_content
@@ -111,7 +110,7 @@ class TestTeamMembershipSetScripts(TestCaseWithFactory):
         teammembership = membershipset.getByPersonAndTeam(person, team)
 
         # Set expiration time to now
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         removeSecurityProxy(teammembership).dateexpires = now
 
         janitor = getUtility(ILaunchpadCelebrities).janitor
@@ -167,7 +166,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         )
         self.assertEqual(ubuntu_team.teamowner, membership.proposed_by)
         self.assertEqual(membership.proponent_comment, "I like her")
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         self.assertTrue(membership.date_proposed <= now)
         self.assertTrue(membership.datejoined <= now)
         self.assertEqual(ubuntu_team.teamowner, membership.reviewed_by)
@@ -192,7 +191,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         )
         self.assertEqual(marilize, membership.proposed_by)
         self.assertEqual(membership.proponent_comment, "I'd like to join")
-        self.assertTrue(membership.date_proposed <= datetime.now(pytz.UTC))
+        self.assertTrue(membership.date_proposed <= datetime.now(timezone.utc))
         self.assertEqual(membership.reviewed_by, None)
         self.assertEqual(membership.acknowledged_by, None)
 
@@ -225,7 +224,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         # Now we need to cheat and set the expiration date of both memberships
         # manually because otherwise we would only be allowed to set an
         # expiration date in the future.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         sample_person_on_motu = removeSecurityProxy(
             self.membershipset.getByPersonAndTeam(sample_person, motu)
         )
@@ -282,7 +281,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         self.assertEqual([], list(member.teams_participated_in))
 
     def test_getMembershipsExpiringOnDates(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         datetime1 = now + timedelta(days=1)
         datetime2 = now + timedelta(days=2)
         datetime3 = now + timedelta(days=3)
@@ -305,7 +304,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
 
     def test_getExpiringMembershipsToWarn(self):
         team = self.factory.makeTeam(name="super")
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         login_celebrity("admin")
 
         memberships = [
@@ -871,7 +870,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             )
             self.assertEqual(tm.proposed_by, self.foobar)
             self.assertEqual(tm.proponent_comment, "Did it 'cause I can")
-            self.assertTrue(tm.date_proposed <= datetime.now(pytz.UTC))
+            self.assertTrue(tm.date_proposed <= datetime.now(timezone.utc))
             # Destroy the membership so that we can create another in a
             # different state.
             tm.destroySelf()
@@ -901,7 +900,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             tm.setStatus(status, self.foobar, "Did it 'cause I can")
             self.assertEqual(tm.acknowledged_by, self.foobar)
             self.assertEqual(tm.acknowledger_comment, "Did it 'cause I can")
-            self.assertTrue(tm.date_acknowledged <= datetime.now(pytz.UTC))
+            self.assertTrue(tm.date_acknowledged <= datetime.now(timezone.utc))
             # Destroy the membership so that we can create another in a
             # different state.
             tm.destroySelf()
@@ -938,7 +937,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
                 tm.setStatus(new_status, self.foobar, "Did it 'cause I can")
                 self.assertEqual(tm.reviewed_by, self.foobar)
                 self.assertEqual(tm.reviewer_comment, "Did it 'cause I can")
-                self.assertTrue(tm.date_reviewed <= datetime.now(pytz.UTC))
+                self.assertTrue(tm.date_reviewed <= datetime.now(timezone.utc))
 
                 # Destroy the membership so that we can create another in a
                 # different state.
@@ -957,7 +956,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             tm.datejoined, "There can be no datejoined at this point."
         )
         tm.setStatus(TeamMembershipStatus.APPROVED, self.foobar)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         self.assertTrue(tm.datejoined <= now)
 
         # We now set the status to deactivated and change datejoined to a
@@ -1293,7 +1292,7 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
 
     def test_message_sent_for_future_expiration(self):
         # An email is sent to the user whose membership will expire.
-        tomorrow = datetime.now(pytz.UTC) + timedelta(days=1)
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
         removeSecurityProxy(self.tm).dateexpires = tomorrow
         self.tm.sendExpirationWarningEmail()
         notifications = self.runMailJobs()
@@ -1306,7 +1305,7 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
 
     def test_no_message_sent_for_expired_memberships(self):
         # Members whose membership has expired do not get a message.
-        yesterday = datetime.now(pytz.UTC) - timedelta(days=1)
+        yesterday = datetime.now(timezone.utc) - timedelta(days=1)
         removeSecurityProxy(self.tm).dateexpires = yesterday
         self.tm.sendExpirationWarningEmail()
         notifications = self.runMailJobs()
@@ -1317,7 +1316,7 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
         with person_logged_in(self.member):
             self.member.deactivate("Goodbye.")
         IStore(self.member).flush()
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         removeSecurityProxy(self.tm).dateexpires = now + timedelta(days=1)
         self.tm.sendExpirationWarningEmail()
         notifications = self.runMailJobs()

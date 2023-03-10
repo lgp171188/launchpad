@@ -13,9 +13,9 @@ import resource
 import shutil
 import subprocess
 import tempfile
+from datetime import timezone
 from functools import partial
 
-import pytz
 from storm.locals import DateTime, Desc, Int, Reference
 from storm.store import EmptyResultSet
 from zope.component import getUtility
@@ -124,7 +124,7 @@ class PackageDiff(StormBase):
     id = Int(primary=True)
 
     date_requested = DateTime(
-        allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
 
     requester_id = Int(name="requester", allow_none=True)
@@ -136,7 +136,9 @@ class PackageDiff(StormBase):
     to_source_id = Int(name="to_source", allow_none=False)
     to_source = Reference(to_source_id, "SourcePackageRelease.id")
 
-    date_fulfilled = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_fulfilled = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
 
     diff_content_id = Int(name="diff_content", allow_none=True, default=None)
     diff_content = Reference(diff_content_id, "LibraryFileAlias.id")

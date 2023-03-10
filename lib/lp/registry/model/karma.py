@@ -13,7 +13,8 @@ __all__ = [
     "KarmaContextMixin",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Desc, Int, Reference, ReferenceSet, Unicode
 from zope.interface import implementer
 
@@ -66,7 +67,10 @@ class Karma(StormBase):
     sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
     datecreated = DateTime(
-        name="datecreated", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        name="datecreated",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
 
     def __init__(

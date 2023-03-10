@@ -9,8 +9,8 @@ __all__ = [
     "CodeImportEventToken",
 ]
 
+from datetime import timezone
 
-import pytz
 from lazr.enum import DBItem
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
@@ -41,7 +41,9 @@ class CodeImportEvent(StormBase):
 
     id = Int(primary=True)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
 
     event_type = DBEnum(
         name="entry_type", enum=CodeImportEventType, allow_none=False

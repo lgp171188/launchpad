@@ -3,9 +3,8 @@
 
 """Tests for the stats number cruncher daemon."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import Equals, MatchesListwise, MatchesSetwise, Not
@@ -399,7 +398,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
             archive=archive, status=PackagePublishingStatus.PUBLISHED
         )
         bpph.binarypackagerelease.build.updateStatus(
-            BuildStatus.BUILDING, date_started=datetime.now(pytz.UTC)
+            BuildStatus.BUILDING, date_started=datetime.now(timezone.utc)
         )
         bpph.binarypackagerelease.build.updateStatus(BuildStatus.FULLYBUILT)
         clock = task.Clock()

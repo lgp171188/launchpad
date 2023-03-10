@@ -12,9 +12,8 @@ __all__ = [
     "MirrorCDImageDistroSeries",
 ]
 
-from datetime import MINYEAR, datetime, timedelta
+from datetime import MINYEAR, datetime, timedelta, timezone
 
-import pytz
 from storm.expr import Cast, Coalesce, LeftJoin
 from storm.locals import (
     And,
@@ -116,8 +115,10 @@ class DistributionMirror(StormBase):
         default=MirrorStatus.PENDING_REVIEW,
         enum=MirrorStatus,
     )
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    date_reviewed = DateTime(tzinfo=pytz.UTC, default=None)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    date_reviewed = DateTime(tzinfo=timezone.utc, default=None)
     whiteboard = Unicode(allow_none=True, default=None)
     country_dns_mirror = Bool(allow_none=False, default=False)
 
@@ -845,9 +846,9 @@ class _MirrorSeriesMixIn:
     def getURLsToCheckUpdateness(self, when=None):
         """See IMirrorDistroSeriesSource or IMirrorDistroArchSeries."""
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
 
-        start = datetime(MINYEAR, 1, 1, tzinfo=pytz.timezone("UTC"))
+        start = datetime(MINYEAR, 1, 1, tzinfo=timezone.utc)
         time_interval = (start, when)
         latest_upload = self.getLatestPublishingEntry(time_interval)
         if latest_upload is None:
@@ -1123,7 +1124,9 @@ class MirrorProbeRecord(StormBase):
     )
     log_file_id = Int(name="log_file", allow_none=False)
     log_file = Reference(log_file_id, "LibraryFileAlias.id")
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     def __init__(self, distribution_mirror, log_file):
         self.distribution_mirror = distribution_mirror

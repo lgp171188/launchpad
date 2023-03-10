@@ -49,17 +49,15 @@ Setup `SoyuzTestPublisher` for creating publications for Ubuntu/hoary.
 Build a 'past' and a 'future' timestamps to be used as
 'scheduleddeletiondate'.
 
-    >>> import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
 
-    >>> UTC = pytz.timezone("UTC")
-    >>> this_year = datetime.datetime.now().year
+    >>> this_year = datetime.now().year
 
-    >>> past_date = datetime.datetime(
-    ...     year=this_year - 2, month=1, day=1, tzinfo=UTC
+    >>> past_date = datetime(
+    ...     year=this_year - 2, month=1, day=1, tzinfo=timezone.utc
     ... )
-    >>> future_date = datetime.datetime(
-    ...     year=this_year + 2, month=1, day=1, tzinfo=UTC
+    >>> future_date = datetime(
+    ...     year=this_year + 2, month=1, day=1, tzinfo=timezone.utc
     ... )
 
 Create source publications in various statuses that are all ready to

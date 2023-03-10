@@ -5,10 +5,9 @@
 
 import hashlib
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from textwrap import dedent
 
-import pytz
 import soupmatchers
 from fixtures import FakeLogger
 from storm.store import Store
@@ -951,7 +950,7 @@ class TestGitRefView(BrowserTestCase):
         with admin_logged_in():
             author_emails = [author.preferredemail.email for author in authors]
         dates = [
-            datetime(2015, 1, day + 1, tzinfo=pytz.UTC) for day in range(5)
+            datetime(2015, 1, day + 1, tzinfo=timezone.utc) for day in range(5)
         ]
         return [
             {

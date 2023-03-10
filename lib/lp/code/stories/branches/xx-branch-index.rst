@@ -3,10 +3,9 @@ Branch Details
 
 Imports used later in the document:
 
-    >>> import pytz
     >>> from zope.component import getUtility
     >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.code.enums import BranchType
     >>> from lp.code.bzr import BranchFormat, RepositoryFormat
     >>> from lp.code.interfaces.branchlookup import IBranchLookup
@@ -239,7 +238,7 @@ it has been mirrored:
     ...     title="Disabled branch",
     ... )
     >>> branch.last_mirrored = datetime(
-    ...     year=2007, month=10, day=1, tzinfo=pytz.timezone("UTC")
+    ...     year=2007, month=10, day=1, tzinfo=timezone.utc
     ... )
     >>> branch.next_mirror_time = None
     >>> flush_database_updates()

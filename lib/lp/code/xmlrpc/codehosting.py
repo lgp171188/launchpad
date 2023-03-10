@@ -10,9 +10,8 @@ __all__ = [
 ]
 
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 import six
 import transaction
 from breezy.urlutils import escape, unescape
@@ -63,14 +62,12 @@ from lp.services.webapp.interaction import setupInteractionForPerson
 from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
 
-UTC = pytz.timezone("UTC")
-
 
 def datetime_from_tuple(time_tuple):
     """Create a datetime from a sequence that quacks like time.struct_time.
 
     The tm_isdst is (index 8) is ignored. The created datetime uses
-    tzinfo=UTC.
+    tzinfo=timezone.utc.
     """
     [
         year,
@@ -83,8 +80,8 @@ def datetime_from_tuple(time_tuple):
         unused,
         unused,
     ] = time_tuple
-    return datetime.datetime(
-        year, month, day, hour, minute, second, tzinfo=UTC
+    return datetime(
+        year, month, day, hour, minute, second, tzinfo=timezone.utc
     )
 
 

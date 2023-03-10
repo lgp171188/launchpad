@@ -3,9 +3,8 @@
 
 """Tests for CodeReviewInlineComment{,Draft,Set}"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import UTC
 from zope.component import getUtility
 
 from lp.code.interfaces.codereviewinlinecomment import (
@@ -148,7 +147,7 @@ class TestCodeReviewInlineComment(TestCaseWithFactory):
             previewdiff=previewdiff, person=person, comment=comment
         )
         old_comment = self.factory.makeCodeReviewComment(
-            date_created=datetime(2001, 1, 1, 12, tzinfo=UTC)
+            date_created=datetime(2001, 1, 1, 12, tzinfo=timezone.utc)
         )
         self.makeCodeReviewInlineComment(
             previewdiff=previewdiff,

@@ -24,9 +24,7 @@ Here are some imports we need to get this test running.
     ...     ITranslationImportQueue,
     ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -78,7 +76,7 @@ First, we do a valid import.
     ... msgid "foo"
     ... msgstr "blah"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(
@@ -135,7 +133,7 @@ field with a date older than a previous .po import.
     ... msgid "foo"
     ... msgstr "blah"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> by_maintainer = False
     >>> entry = translation_import_queue.addOrUpdateEntry(

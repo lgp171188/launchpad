@@ -7,7 +7,8 @@ __all__ = [
     "DistroArchSeriesFilter",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -52,10 +53,10 @@ class DistroArchSeriesFilter(StormBase):
     creator = Reference(creator_id, "Person.id")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     def __init__(

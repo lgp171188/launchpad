@@ -9,11 +9,10 @@ __all__ = [
     "TranslationActivityView",
 ]
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import islice
 from urllib.parse import urlencode
 
-import pytz
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
@@ -205,7 +204,7 @@ class PersonTranslationView(LaunchpadView):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         # Down-to-the-second detail isn't important so the hope is that this
         # will result in faster queries (cache effects).
         today = now.replace(minute=0, second=0, microsecond=0)

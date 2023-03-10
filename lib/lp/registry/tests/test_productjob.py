@@ -3,9 +3,8 @@
 
 """Tests for ProductJobs."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -80,7 +79,7 @@ class CommercialHelpers:
 
     def make_test_products(self):
         products = {}
-        now = datetime.now(pytz.utc)
+        now = datetime.now(timezone.utc)
         products["approved"] = self.factory.makeProduct(licenses=[License.MIT])
         products["expired"] = self.make_expiring_product(now - timedelta(1))
         products["expired_with_job"] = self.make_expiring_product(
@@ -290,7 +289,7 @@ class ProductJobDerivedTestCase(TestCaseWithFactory):
 
     def test_find_date_since(self):
         # Find all the jobs for a product since a date regardless of job_type.
-        now = datetime.now(pytz.utc)
+        now = datetime.now(timezone.utc)
         seven_days_ago = now - timedelta(7)
         thirty_days_ago = now - timedelta(30)
         product = self.factory.makeProduct()

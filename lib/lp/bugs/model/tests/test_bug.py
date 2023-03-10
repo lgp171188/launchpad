@@ -1,10 +1,9 @@
 # Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from lazr.lifecycle.event import ObjectCreatedEvent
-from pytz import UTC
 from storm.store import Store
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
@@ -1095,7 +1094,7 @@ class TestBugActivityMethods(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.now = datetime.now(UTC)
+        self.now = datetime.now(timezone.utc)
 
     def _makeActivityForBug(self, bug, activity_ages):
         with person_logged_in(bug.owner):

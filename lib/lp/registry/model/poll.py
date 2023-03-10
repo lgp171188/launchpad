@@ -12,9 +12,8 @@ __all__ = [
     "VoteCastSet",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.locals import (
     And,
     Bool,
@@ -74,9 +73,13 @@ class Poll(StormBase):
 
     title = Unicode(name="title", allow_none=False)
 
-    dateopens = DateTime(tzinfo=pytz.UTC, name="dateopens", allow_none=False)
+    dateopens = DateTime(
+        tzinfo=timezone.utc, name="dateopens", allow_none=False
+    )
 
-    datecloses = DateTime(tzinfo=pytz.UTC, name="datecloses", allow_none=False)
+    datecloses = DateTime(
+        tzinfo=timezone.utc, name="datecloses", allow_none=False
+    )
 
     proposition = Unicode(name="proposition", allow_none=False)
 
@@ -120,29 +123,29 @@ class Poll(StormBase):
     def isOpen(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
         return self.datecloses >= when and self.dateopens <= when
 
     @property
     def closesIn(self):
         """See IPoll."""
-        return self.datecloses - datetime.now(pytz.timezone("UTC"))
+        return self.datecloses - datetime.now(timezone.utc)
 
     @property
     def opensIn(self):
         """See IPoll."""
-        return self.dateopens - datetime.now(pytz.timezone("UTC"))
+        return self.dateopens - datetime.now(timezone.utc)
 
     def isClosed(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
         return self.datecloses <= when
 
     def isNotYetOpened(self, when=None):
         """See IPoll."""
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
         return self.dateopens > when
 
     def getAllOptions(self):
@@ -369,7 +372,7 @@ class PollSet:
         if status is None:
             status = PollStatus.ALL
         if when is None:
-            when = datetime.now(pytz.timezone("UTC"))
+            when = datetime.now(timezone.utc)
 
         status = set(status)
         status_clauses = []

@@ -14,9 +14,9 @@ __all__ = [
 ]
 
 from collections import defaultdict
+from datetime import timezone
 from itertools import product
 
-import pytz
 from storm.expr import SQL, And, In, Or, Select
 from storm.properties import DateTime, Int
 from storm.references import Reference
@@ -396,7 +396,7 @@ class AccessArtifactGrant(StormBase):
     grantee = Reference(grantee_id, "Person.id")
     grantor_id = Int(name="grantor")
     grantor = Reference(grantor_id, "Person.id")
-    date_created = DateTime(tzinfo=pytz.UTC)
+    date_created = DateTime(tzinfo=timezone.utc)
 
     @property
     def concrete_artifact(self):
@@ -456,7 +456,7 @@ class AccessPolicyGrant(StormBase):
     grantee = Reference(grantee_id, "Person.id")
     grantor_id = Int(name="grantor")
     grantor = Reference(grantor_id, "Person.id")
-    date_created = DateTime(tzinfo=pytz.UTC)
+    date_created = DateTime(tzinfo=timezone.utc)
 
     @classmethod
     def grant(cls, grants):

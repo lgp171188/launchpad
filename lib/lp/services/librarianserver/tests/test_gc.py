@@ -10,11 +10,10 @@ import os
 import shutil
 import tempfile
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from subprocess import PIPE, STDOUT, Popen
 from urllib.parse import urljoin
 
-import pytz
 import requests
 import transaction
 from fixtures import MockPatchObject
@@ -452,7 +451,7 @@ class TestLibrarianGarbageCollectionBase:
             return org_time() + 24 * 60 * 60 + 1
 
         def tomorrow_utcnow():
-            return datetime.now(pytz.UTC) + timedelta(days=1, seconds=1)
+            return datetime.now(timezone.utc) + timedelta(days=1, seconds=1)
 
         try:
             librariangc.time = tomorrow_time

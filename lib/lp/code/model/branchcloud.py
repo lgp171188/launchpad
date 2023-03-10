@@ -8,9 +8,8 @@ __all__ = [
 ]
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.expr import Alias, Func
 from storm.locals import Count, Desc, Max, Not
 from zope.interface import provider
@@ -32,7 +31,7 @@ class BranchCloud:
             "distinct", RevisionCache.revision_author_id
         )
         commits = Alias(Count(RevisionCache.revision_id))
-        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+        epoch = datetime.now(timezone.utc) - timedelta(days=30)
         # It doesn't matter if this query is even a whole day out of date, so
         # use the standby store.
         result = IStandbyStore(RevisionCache).find(

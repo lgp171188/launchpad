@@ -6,11 +6,10 @@
 import itertools
 import os
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 
 from fixtures import TempDir
-from pytz import UTC
 from testtools.matchers import Equals, GreaterThan, LessThan, MatchesAny
 
 from lp.services.utils import (
@@ -318,15 +317,15 @@ class TestUTCNow(TestCase):
         # utc_now() returns a timezone-aware timestamp with the timezone of
         # UTC.
         now = utc_now()
-        self.assertEqual(now.tzinfo, UTC)
+        self.assertEqual(now.tzinfo, timezone.utc)
 
     def test_time_is_now(self):
         # utc_now() returns a timestamp which is now.
         LessThanOrEqual = lambda x: MatchesAny(LessThan(x), Equals(x))
         GreaterThanOrEqual = lambda x: MatchesAny(GreaterThan(x), Equals(x))
-        old_now = datetime.utcnow().replace(tzinfo=UTC)
+        old_now = datetime.utcnow().replace(tzinfo=timezone.utc)
         now = utc_now()
-        new_now = datetime.utcnow().replace(tzinfo=UTC)
+        new_now = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.assertThat(now, GreaterThanOrEqual(old_now))
         self.assertThat(now, LessThanOrEqual(new_now))
 
@@ -335,11 +334,11 @@ class TestSecondsSinceEpoch(TestCase):
     """Tests for `seconds_since_epoch`."""
 
     def test_epoch(self):
-        epoch = datetime.fromtimestamp(0, tz=UTC)
+        epoch = datetime.fromtimestamp(0, tz=timezone.utc)
         self.assertEqual(0, seconds_since_epoch(epoch))
 
     def test_start_of_2018(self):
-        dt = datetime(2018, 1, 1, tzinfo=UTC)
+        dt = datetime(2018, 1, 1, tzinfo=timezone.utc)
         self.assertEqual(1514764800, seconds_since_epoch(dt))
 
 

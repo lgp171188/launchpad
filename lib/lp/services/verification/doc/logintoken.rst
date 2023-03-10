@@ -115,13 +115,12 @@ efficient, tokens which have already been consumed will not be updated
 token so that we can force its date_consumed attribute to something of
 our own making.
 
-    >>> import pytz
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
 
     >>> token = removeSecurityProxy(token)
     >>> token.date_consumed = datetime(
-    ...     2009, 1, 1, 16, 56, 59, tzinfo=pytz.timezone("UTC")
+    ...     2009, 1, 1, 16, 56, 59, tzinfo=timezone.utc
     ... )
 
     >>> token3 = getUtility(ILoginTokenSet).new(

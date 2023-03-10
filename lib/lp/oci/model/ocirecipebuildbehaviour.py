@@ -13,10 +13,9 @@ __all__ = [
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Generator
 
-import pytz
 from twisted.internet import defer
 from zope.component import getUtility
 from zope.interface import implementer
@@ -224,7 +223,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 if oci_file:
                     librarian_file = oci_file.library_file
                     unsecure_file = removeSecurityProxy(oci_file)
-                    unsecure_file.date_last_used = datetime.now(pytz.UTC)
+                    unsecure_file.date_last_used = datetime.now(timezone.utc)
                 # If it doesn't, we need to download it
                 else:
                     files.add(layer_filename)

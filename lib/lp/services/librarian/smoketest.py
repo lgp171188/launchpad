@@ -6,12 +6,11 @@
 """Perform simple librarian operations to verify the current configuration.
 """
 
-import datetime
 import io
 import sys
+from datetime import datetime, timedelta, timezone
 from urllib.request import urlopen
 
-import pytz
 import transaction
 from zope.component import getUtility
 
@@ -19,11 +18,11 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 
 FILE_SIZE = 1024
 FILE_DATA = b"x" * FILE_SIZE
-FILE_LIFETIME = datetime.timedelta(hours=1)
+FILE_LIFETIME = timedelta(hours=1)
 
 
 def store_file(client):
-    expiry_date = datetime.datetime.now(pytz.UTC) + FILE_LIFETIME
+    expiry_date = datetime.now(timezone.utc) + FILE_LIFETIME
     file_id = client.addFile(
         "smoke-test-file",
         FILE_SIZE,

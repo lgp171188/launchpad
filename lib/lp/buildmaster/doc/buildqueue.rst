@@ -48,7 +48,8 @@ The timestamp of when the job was dispatched is provided as datetime
 instances:
 
     >>> bq.date_started
-    datetime.datetime(2005, 6, 15, 9, 20, 12, 820778, tzinfo=<UTC>)
+    datetime.datetime(2005, 6, 15, 9, 20, 12, 820778,
+        tzinfo=datetime.timezone.utc)
 
 Check Builder foreign key, which indicated which builder 'is processing'
 the job in question:

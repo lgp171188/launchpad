@@ -92,9 +92,8 @@ able to renew it himself.
 See lib/lp/registry/stories/team/xx-team-membership.rst for an explanation
 of the expiry._control.attrs TestBrowser voodoo.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> day_after_tomorrow = now + timedelta(days=2)
 
     >>> team_admin_browser = setupBrowser(auth="Basic mark@example.com:test")

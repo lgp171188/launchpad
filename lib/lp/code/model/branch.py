@@ -8,10 +8,9 @@ __all__ = [
 ]
 
 import operator
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 
-import pytz
 from breezy import urlutils
 from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import open_only_scheme
@@ -1548,9 +1547,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         ):
             # No mirror was requested since we started mirroring.
             increment = getUtility(IBranchPuller).MIRROR_TIME_INCREMENT
-            self.next_mirror_time = (
-                datetime.now(pytz.timezone("UTC")) + increment
-            )
+            self.next_mirror_time = datetime.now(timezone.utc) + increment
         if isinstance(last_revision_id, bytes):
             last_revision_id = last_revision_id.decode("ASCII")
         self.last_mirrored_id = last_revision_id
@@ -1577,7 +1574,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             and self.mirror_failures < max_failures
         ):
             self.next_mirror_time = datetime.now(
-                pytz.timezone("UTC")
+                timezone.utc
             ) + increment * 2 ** (self.mirror_failures - 1)
 
     def _deleteBranchSubscriptions(self):

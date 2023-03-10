@@ -3,8 +3,6 @@
 
 """A recipe for building Open Container Initiative images."""
 
-from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
-
 __all__ = [
     "get_ocirecipe_privacy_filter",
     "OCIRecipe",
@@ -12,8 +10,8 @@ __all__ = [
     "OCIRecipeSet",
 ]
 
+from datetime import timezone
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.expr import SQL, And, Coalesce, Desc, Exists, Join, Not, Or, Select
@@ -109,6 +107,7 @@ from lp.services.job.model.job import Job
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
+from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
@@ -128,10 +127,10 @@ class OCIRecipe(StormBase, WebhookTargetMixin):
 
     id = Int(primary=True)
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

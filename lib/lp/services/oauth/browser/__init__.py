@@ -9,9 +9,8 @@ __all__ = [
 ]
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from lazr.restful import HTTPResource
 from zope.component import getUtility
 from zope.formlib.form import Action, Actions, expandPrefix
@@ -395,9 +394,7 @@ class OAuthAuthorizeTokenView(LaunchpadFormView, JSONTokenMixin):
         duration_seconds = TemporaryIntegrations.DURATION.get(duration)
         if duration_seconds is not None:
             duration_delta = timedelta(seconds=duration_seconds)
-            expiration_date = (
-                datetime.now(pytz.timezone("UTC")) + duration_delta
-            )
+            expiration_date = datetime.now(timezone.utc) + duration_delta
         else:
             expiration_date = None
         try:

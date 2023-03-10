@@ -10,7 +10,6 @@ __all__ = [
     "SilentLaunchpadScriptFailure",
 ]
 
-import datetime
 import io
 import logging
 import os.path
@@ -18,11 +17,11 @@ import sys
 from configparser import ConfigParser
 from contextlib import contextmanager
 from cProfile import Profile
+from datetime import datetime, timedelta, timezone
 from optparse import OptionParser
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 
-import pytz
 import requests
 import transaction
 from contrib.glock import GlobalLock, LockAlreadyAcquired
@@ -45,7 +44,6 @@ from lp.services.webapp.errorlog import globalErrorUtility
 from lp.services.webapp.interaction import ANONYMOUS, setupInteractionByEmail
 
 LOCK_PATH = "/var/lock/"
-UTC = pytz.UTC
 
 
 class LaunchpadScriptFailure(Exception):
@@ -309,7 +307,7 @@ class LaunchpadScript:
         # Should be called directly by scripts that actually need it.
         set_immediate_mail_delivery(True)
 
-        date_started = datetime.datetime.now(UTC)
+        date_started = datetime.now(timezone.utc)
         profiler = None
         if self.options.profile:
             profiler = Profile()
@@ -327,7 +325,7 @@ class LaunchpadScript:
         except SilentLaunchpadScriptFailure as e:
             sys.exit(e.exit_status)
         else:
-            date_completed = datetime.datetime.now(UTC)
+            date_completed = datetime.now(timezone.utc)
             self.record_activity(date_started, date_completed)
         finally:
             install_feature_controller(original_feature_controller)
@@ -418,7 +416,7 @@ class LaunchpadCronScript(LaunchpadScript):
                 # can be distinguished from real completions.  Avoid
                 # touching the database here, since that could be
                 # problematic during schema updates.
-                emit_script_activity_metric(self.name, datetime.timedelta(0))
+                emit_script_activity_metric(self.name, timedelta(0))
                 sys.exit(0)
 
         super()._init_db(isolation)

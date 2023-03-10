@@ -7,9 +7,9 @@ __all__ = [
     "ArchiveSubscriber",
 ]
 
+from datetime import timezone
 from operator import itemgetter
 
-import pytz
 from storm.expr import And, Desc, Join, LeftJoin
 from storm.locals import DateTime, Int, Reference, Store, Unicode
 from storm.store import EmptyResultSet
@@ -53,7 +53,7 @@ class ArchiveSubscriber(StormBase):
     registrant = Reference(registrant_id, "Person.id")
 
     date_created = DateTime(
-        name="date_created", allow_none=False, tzinfo=pytz.UTC
+        name="date_created", allow_none=False, tzinfo=timezone.utc
     )
 
     subscriber_id = Int(
@@ -62,7 +62,7 @@ class ArchiveSubscriber(StormBase):
     subscriber = Reference(subscriber_id, "Person.id")
 
     date_expires = DateTime(
-        name="date_expires", allow_none=True, tzinfo=pytz.UTC
+        name="date_expires", allow_none=True, tzinfo=timezone.utc
     )
 
     status = DBEnum(
@@ -72,7 +72,7 @@ class ArchiveSubscriber(StormBase):
     description = Unicode(name="description", allow_none=True)
 
     date_cancelled = DateTime(
-        name="date_cancelled", allow_none=True, tzinfo=pytz.UTC
+        name="date_cancelled", allow_none=True, tzinfo=timezone.utc
     )
 
     cancelled_by_id = Int(name="cancelled_by", allow_none=True)

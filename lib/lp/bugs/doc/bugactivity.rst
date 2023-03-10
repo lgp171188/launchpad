@@ -281,15 +281,12 @@ BugActivityItem
 BugActivityItem implements the stuff that BugActivity doesn't need to
 know about.
 
-    >>> import pytz
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.bugs.browser.bugtask import BugActivityItem
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.bugs.interfaces.bugactivity import IBugActivitySet
 
-    >>> nowish = datetime(
-    ...     2009, 3, 26, 16, 40, 31, tzinfo=pytz.timezone("UTC")
-    ... )
+    >>> nowish = datetime(2009, 3, 26, 16, 40, 31, tzinfo=timezone.utc)
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> activity = getUtility(IBugActivitySet).new(
     ...     bug=bug_one,

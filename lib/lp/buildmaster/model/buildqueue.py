@@ -8,11 +8,10 @@ __all__ = [
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import groupby
 from operator import attrgetter
 
-import pytz
 from storm.expr import SQL, Cast, Coalesce, Desc, Exists, Or
 from storm.properties import Bool, DateTime, Int, TimeDelta, Unicode
 from storm.references import Reference
@@ -89,7 +88,7 @@ class BuildQueue(StormBase):
     _build_farm_job_id = Int(name="build_farm_job")
     _build_farm_job = Reference(_build_farm_job_id, "BuildFarmJob.id")
     status = DBEnum(enum=BuildQueueStatus, default=BuildQueueStatus.WAITING)
-    date_started = DateTime(tzinfo=pytz.UTC)
+    date_started = DateTime(tzinfo=timezone.utc)
 
     builder_id = Int(name="builder", default=None)
     builder = Reference(builder_id, "Builder.id")
@@ -237,7 +236,7 @@ class BuildQueue(StormBase):
     @staticmethod
     def _now():
         """Return current time (UTC).  Overridable for test purposes."""
-        return datetime.now(pytz.utc)
+        return datetime.now(timezone.utc)
 
 
 @implementer(IBuildQueueSet)

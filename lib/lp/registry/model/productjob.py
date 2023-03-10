@@ -12,11 +12,10 @@ __all__ = [
 ]
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import six
 from lazr.delegates import delegate_to
-from pytz import utc
 from storm.expr import And, Not, Select
 from storm.locals import Int, Reference, Unicode
 from zope.component import getUtility
@@ -426,7 +425,7 @@ class SevenDayCommercialExpirationJob(
 
     @staticmethod
     def _get_expiration_dates():
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         in_seven_days = now + timedelta(days=7)
         seven_days_ago = now - timedelta(days=7)
         return now, in_seven_days, seven_days_ago
@@ -443,7 +442,7 @@ class ThirtyDayCommercialExpirationJob(
 
     @staticmethod
     def _get_expiration_dates():
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         # Avoid overlay with the seven day notification.
         in_twenty_three_days = now + timedelta(days=7)
         in_thirty_days = now + timedelta(days=30)
@@ -465,7 +464,7 @@ class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
 
     @staticmethod
     def _get_expiration_dates():
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         ten_years_ago = now - timedelta(days=3650)
         thirty_days_ago = now - timedelta(days=30)
         return ten_years_ago, now, thirty_days_ago

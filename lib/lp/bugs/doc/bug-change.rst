@@ -3,9 +3,8 @@ Tracking changes to a bug
 
 The base class for BugChanges doesn't actually implement anything.
 
-    >>> import pytz
     >>> from lp.testing import verifyObject
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.bugs.adapters.bugchange import BugChangeBase
     >>> from lp.bugs.interfaces.bugchange import IBugChange
 
@@ -16,7 +15,7 @@ The base class for BugChanges doesn't actually implement anything.
     ...     name="ford-prefect", displayname="Ford Prefect"
     ... )
 
-    >>> nowish = datetime(2009, 3, 13, 10, 9, tzinfo=pytz.timezone("UTC"))
+    >>> nowish = datetime(2009, 3, 13, 10, 9, tzinfo=timezone.utc)
     >>> base_instance = BugChangeBase(when=nowish, person=example_person)
     >>> verifyObject(IBugChange, base_instance)
     True

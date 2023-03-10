@@ -3,9 +3,8 @@
 
 """Tests for BugNotificationBuilder email construction."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.security.interfaces import Unauthorized
 
 from lp.bugs.mail.bugnotificationbuilder import BugNotificationBuilder
@@ -27,7 +26,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
 
     def test_build_filters_empty(self):
         """Filters are added."""
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         message = self.builder.build(
             "from", self.bug.owner, "body", "subject", utc_now, filters=[]
         )
@@ -35,7 +34,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
 
     def test_build_filters_single(self):
         """Filters are added."""
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         message = self.builder.build(
             "from",
             self.bug.owner,
@@ -50,7 +49,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
 
     def test_build_filters_multiple(self):
         """Filters are added."""
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         message = self.builder.build(
             "from",
             self.bug.owner,
@@ -65,7 +64,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
         )
 
     def test_mails_contain_notification_type_header(self):
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         message = self.builder.build(
             "from", self.bug.owner, "body", "subject", utc_now, filters=[]
         )
@@ -76,7 +75,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
     def test_mails_no_expanded_footer(self):
         # Recipients without expanded_notification_footers do not receive an
         # expanded footer on messages.
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         message = self.builder.build(
             "from", self.bug.owner, "body", "subject", utc_now, filters=[]
         )
@@ -87,7 +86,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
     def test_mails_append_expanded_footer(self):
         # Recipients with expanded_notification_footers receive an expanded
         # footer on messages.
-        utc_now = datetime.now(pytz.UTC)
+        utc_now = datetime.now(timezone.utc)
         with person_logged_in(self.bug.owner):
             self.bug.owner.expanded_notification_footers = True
         message = self.builder.build(
@@ -113,7 +112,7 @@ class TestBugNotificationBuilder(TestCaseWithFactory):
                 private_team,
                 "expanded_notification_footers",
             )
-            utc_now = datetime.now(pytz.UTC)
+            utc_now = datetime.now(timezone.utc)
             message = self.builder.build(
                 "from", private_team, "body", "subject", utc_now, filters=[]
             )

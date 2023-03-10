@@ -3,10 +3,9 @@
 
 """tales.py doctests."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from lxml import html
-from pytz import utc
 from zope.component import getAdapter, getUtility
 from zope.traversing.interfaces import IPathAdapter, TraversalError
 
@@ -418,8 +417,8 @@ class TestDateTimeFormatterAPI(TestCase):
         """Test that year delta gives reasonable values."""
 
         def assert_delta(expected, old, new):
-            old = datetime(*old, tzinfo=utc)
-            new = datetime(*new, tzinfo=utc)
+            old = datetime(*old, tzinfo=timezone.utc)
+            new = datetime(*new, tzinfo=timezone.utc)
             delta = DateTimeFormatterAPI._yearDelta(old, new)
             self.assertEqual(expected, delta)
 
@@ -431,7 +430,7 @@ class TestDateTimeFormatterAPI(TestCase):
 
     def getDurationsince(self, delta):
         """Return the durationsince for a given delta."""
-        creation = datetime(2000, 1, 1, tzinfo=utc)
+        creation = datetime(2000, 1, 1, tzinfo=timezone.utc)
         formatter = DateTimeFormatterAPI(creation)
         formatter._now = lambda: creation + delta
         return formatter.durationsince()

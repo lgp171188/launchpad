@@ -13,9 +13,8 @@ __all__ = [
     "DistributionMirrorBreadcrumb",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.event import notify
 from zope.interface import implementer
 from zope.lifecycleevent import ObjectCreatedEvent
@@ -297,7 +296,7 @@ class DistributionMirrorReviewView(LaunchpadEditFormView):
         context = self.context
         if data["status"] != context.status:
             context.reviewer = self.user
-            context.date_reviewed = datetime.now(pytz.timezone("UTC"))
+            context.date_reviewed = datetime.now(timezone.utc)
         self.updateContextFromData(data)
         self.next_url = canonical_url(context)
 

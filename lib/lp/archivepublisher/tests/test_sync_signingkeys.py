@@ -8,13 +8,12 @@ __all__ = [
 ]
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from textwrap import dedent
 from unittest import mock
 
 import transaction
 from fixtures import MockPatch, TempDir
-from pytz import utc
 from testtools.content import text_content
 from testtools.matchers import (
     ContainsAll,
@@ -587,7 +586,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 b"Private key content",
                 b"Public key content",
                 "UEFI key for %s" % archive.reference,
-                now.replace(tzinfo=utc),
+                now.replace(tzinfo=timezone.utc),
             ),
             signing_service_client.inject.call_args[0],
         )
@@ -620,7 +619,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 b"Private key content",
                 b"Public key content",
                 "UEFI key for %s" % archive.reference,
-                now.replace(tzinfo=utc),
+                now.replace(tzinfo=timezone.utc),
             ),
             signing_service_client.inject.call_args[0],
         )
@@ -716,7 +715,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                     b"Private key content",
                     b"Public key content",
                     "UEFI key for %s" % archive.reference,
-                    now.replace(tzinfo=utc),
+                    now.replace(tzinfo=timezone.utc),
                 )
             ],
             signing_service_client.inject.call_args,
@@ -765,7 +764,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                 public_key=StartsWith(
                     b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n"
                 ),
-                date_created=Equals(now.replace(tzinfo=utc)),
+                date_created=Equals(now.replace(tzinfo=timezone.utc)),
             ),
         )
         with open(secret_key_path, "rb") as f:
@@ -779,7 +778,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
                     Equals(secret_key_bytes),
                     StartsWith(b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n"),
                     Equals("Launchpad PPA for Celso áéíóú Providelo"),
-                    Equals(now.replace(tzinfo=utc)),
+                    Equals(now.replace(tzinfo=timezone.utc)),
                 ]
             ),
         )

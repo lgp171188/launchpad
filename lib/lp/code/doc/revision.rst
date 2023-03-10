@@ -68,9 +68,8 @@ on the Arch revision id.
 The revision_date is the commit date recorded by the revision control system,
 while the date_created is the time when the database record was created.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
-    >>> date = datetime(2005, 3, 8, 12, 0, tzinfo=UTC)
+    >>> from datetime import datetime, timezone
+    >>> date = datetime(2005, 3, 8, 12, 0, tzinfo=timezone.utc)
     >>> revision_1 = Revision(
     ...     log_body=log_body_1,
     ...     revision_author=author,

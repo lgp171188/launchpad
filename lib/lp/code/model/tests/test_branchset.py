@@ -3,9 +3,8 @@
 
 """Tests for BranchSet."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from testtools.matchers import LessThan
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -67,11 +66,11 @@ class TestBranchSet(TestCaseWithFactory):
             removeSecurityProxy(branch).unscan(rescan=False)
         branches = [self.factory.makeProductBranch() for _ in range(5)]
         modified_dates = [
-            datetime(2010, 1, 1, tzinfo=pytz.UTC),
-            datetime(2015, 1, 1, tzinfo=pytz.UTC),
-            datetime(2014, 1, 1, tzinfo=pytz.UTC),
-            datetime(2020, 1, 1, tzinfo=pytz.UTC),
-            datetime(2019, 1, 1, tzinfo=pytz.UTC),
+            datetime(2010, 1, 1, tzinfo=timezone.utc),
+            datetime(2015, 1, 1, tzinfo=timezone.utc),
+            datetime(2014, 1, 1, tzinfo=timezone.utc),
+            datetime(2020, 1, 1, tzinfo=timezone.utc),
+            datetime(2019, 1, 1, tzinfo=timezone.utc),
         ]
         for branch, modified_date in zip(branches, modified_dates):
             self.factory.makeRevisionsForBranch(branch)
@@ -94,7 +93,9 @@ class TestBranchSet(TestCaseWithFactory):
                 getUtility(IBranchSet).getBranches(
                     branches[0].owner,
                     order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
-                    modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC),
+                    modified_since_date=datetime(
+                        2014, 12, 1, tzinfo=timezone.utc
+                    ),
                 )
             ),
         )

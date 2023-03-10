@@ -59,11 +59,11 @@ to be last modified in the past.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> def reset_bug_modified_date(bug, days_ago):
-    ...     from datetime import datetime, timedelta
-    ...     import pytz
+    ...     from datetime import datetime, timedelta, timezone
     ...
-    ...     UTC = pytz.timezone("UTC")
-    ...     date_modified = datetime.now(UTC) - timedelta(days=days_ago)
+    ...     date_modified = datetime.now(timezone.utc) - timedelta(
+    ...         days=days_ago
+    ...     )
     ...     removeSecurityProxy(bug).date_last_updated = date_modified
     ...
 

@@ -7,8 +7,8 @@ __all__ = [
 ]
 
 import operator
+from datetime import timezone
 
-import pytz
 from storm.databases.postgres import JSON
 from storm.locals import DateTime, Desc, Int, ReferenceSet, Store, Unicode
 from zope.component import getUtility
@@ -48,14 +48,18 @@ class Cve(StormBase, BugLinkTargetMixin):
     sequence = Unicode(allow_none=False)
     status = DBEnum(name="status", enum=CveStatus, allow_none=False)
     description = Unicode(allow_none=False)
-    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    datemodified = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    datecreated = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    datemodified = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     references = ReferenceSet(
         id, "CveReference.cve_id", order_by="CveReference.id"
     )
 
-    date_made_public = DateTime(tzinfo=pytz.UTC, allow_none=True)
+    date_made_public = DateTime(tzinfo=timezone.utc, allow_none=True)
     discovered_by = Unicode(allow_none=True)
     _cvss = JSON(name="cvss", allow_none=True)
 

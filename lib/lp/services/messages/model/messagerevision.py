@@ -8,7 +8,8 @@ __all__ = [
     "MessageRevisionChunk",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
@@ -37,10 +38,10 @@ class MessageRevision(StormBase):
     revision = Int(name="revision", allow_none=False)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_deleted = DateTime(
-        name="date_deleted", tzinfo=pytz.UTC, allow_none=True
+        name="date_deleted", tzinfo=timezone.utc, allow_none=True
     )
 
     def __init__(self, message, revision, date_created, date_deleted=None):

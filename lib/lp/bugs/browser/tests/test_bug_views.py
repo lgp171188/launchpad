@@ -5,9 +5,8 @@
 
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from soupmatchers import HTMLContains, Tag, Within
 from storm.store import Store
 from testtools.matchers import Contains, Equals, MatchesAll, Not
@@ -964,7 +963,7 @@ class TestBugActivityView(TestCaseWithFactory):
         # Bug:+activity doesn't make O(n) queries based on the amount of
         # activity.
         bug = self.factory.makeBug()
-        ten_minutes_ago = datetime.now(pytz.UTC) - timedelta(minutes=10)
+        ten_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=10)
         with person_logged_in(bug.owner):
             attachment = self.factory.makeBugAttachment(bug=bug)
             for i in range(10):

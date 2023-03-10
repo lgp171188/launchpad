@@ -3192,11 +3192,9 @@ we'll create a new bug on firefox and link it to a remote bug.
     >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
 
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> import pytz
-    >>> creation_date = datetime(
-    ...     2008, 4, 12, 10, 12, 12, tzinfo=pytz.timezone("UTC")
-    ... )
+    >>> creation_date = datetime(2008, 4, 12, 10, 12, 12, tzinfo=timezone.utc)
 
 We create the initial bug message separately from the bug itself so that
 we can ensure that its datecreated field is set correctly. This is
