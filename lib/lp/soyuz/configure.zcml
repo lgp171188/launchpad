@@ -137,6 +137,8 @@
                 signing_key
                 signing_key_fingerprint
                 signing_key_owner
+                signing_key_keyserver_url
+                signing_key_display_name
                 archive
                 sources
                 sourceFileUrls

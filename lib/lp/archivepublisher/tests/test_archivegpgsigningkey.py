@@ -380,12 +380,17 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
             displayname="Celso \xe1\xe9\xed\xf3\xfa Providelo"
         )
         archive = self.factory.makeArchive(owner=owner)
+        self.assertIsNone(archive.signing_key_display_name)
         yield IArchiveGPGSigningKey(archive).generateSigningKey(
             log=logger, async_keyserver=True
         )
         # The key is stored in the database.
         self.assertIsNotNone(archive.signing_key_owner)
         self.assertIsNotNone(archive.signing_key_fingerprint)
+        self.assertEqual(
+            "1024R/0D57E99656BEFB0897606EE9A022DD1F5001B46D",
+            archive.signing_key_display_name,
+        )
         # The key is stored as a GPGKey, not a SigningKey.
         self.assertIsNotNone(
             getUtility(IGPGKeySet).getByFingerprint(
@@ -421,6 +426,8 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         )
         default_ppa = self.factory.makeArchive(owner=owner)
         another_ppa = self.factory.makeArchive(owner=owner)
+        self.assertIsNone(default_ppa.signing_key_display_name)
+        self.assertIsNone(another_ppa.signing_key_display_name)
         yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
             log=logger, async_keyserver=True
         )
@@ -430,6 +437,9 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
                 signing_key=Not(Is(None)),
                 signing_key_owner=Not(Is(None)),
                 signing_key_fingerprint=Not(Is(None)),
+                signing_key_display_name=Equals(
+                    "1024R/0D57E99656BEFB0897606EE9A022DD1F5001B46D"
+                ),
             ),
         )
         self.assertIsNotNone(
@@ -448,6 +458,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
                 signing_key=default_ppa.signing_key,
                 signing_key_owner=default_ppa.signing_key_owner,
                 signing_key_fingerprint=default_ppa.signing_key_fingerprint,
+                signing_key_display_name=default_ppa.signing_key_display_name,
             ),
         )
 
@@ -469,12 +480,17 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         }
         logger = BufferLogger()
         archive = self.factory.makeArchive()
+        self.assertIsNone(archive.signing_key_display_name)
         yield IArchiveGPGSigningKey(archive).generateSigningKey(
             log=logger, async_keyserver=True
         )
         # The key is stored in the database.
         self.assertIsNotNone(archive.signing_key_owner)
         self.assertIsNotNone(archive.signing_key_fingerprint)
+        self.assertEqual(
+            "4096R/33C0A61893A5DC5EB325B29E415A12CAC2F30234",
+            archive.signing_key_display_name,
+        )
         # The key is stored as a SigningKey, not a GPGKey.
         self.assertIsNone(
             getUtility(IGPGKeySet).getByFingerprint(
@@ -516,6 +532,8 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         logger = BufferLogger()
         default_ppa = self.factory.makeArchive()
         another_ppa = self.factory.makeArchive(owner=default_ppa.owner)
+        self.assertIsNone(default_ppa.signing_key_display_name)
+        self.assertIsNone(another_ppa.signing_key_display_name)
         yield IArchiveGPGSigningKey(another_ppa).generateSigningKey(
             log=logger, async_keyserver=True
         )
@@ -525,6 +543,9 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
                 signing_key=Is(None),
                 signing_key_owner=Not(Is(None)),
                 signing_key_fingerprint=Not(Is(None)),
+                signing_key_display_name=Equals(
+                    "4096R/33C0A61893A5DC5EB325B29E415A12CAC2F30234"
+                ),
             ),
         )
         self.assertIsNone(
@@ -543,6 +564,9 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
                 signing_key_owner=Equals(default_ppa.signing_key_owner),
                 signing_key_fingerprint=Equals(
                     default_ppa.signing_key_fingerprint
+                ),
+                signing_key_display_name=Equals(
+                    default_ppa.signing_key_display_name
                 ),
             ),
         )

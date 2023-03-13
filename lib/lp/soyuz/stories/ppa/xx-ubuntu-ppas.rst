@@ -655,6 +655,48 @@ And further down, next to the key id, we link to that same pop-up help:
     >>> print(anon_browser.getLink("What is this?").url)
     http://launchpad.test/+help-soyuz/ppa-sources-list.html
 
+Try the same again, but this time using the signing service.
+
+    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+    >>> from lp.services.propertycache import get_property_cache
+    >>> from lp.services.signing.enums import SigningKeyType
+    >>> from lp.testing.gpgkeys import test_pubkey_from_email
+
+    >>> login("foo.bar@canonical.com")
+    >>> test_key = test_pubkey_from_email("test@canonical.com")
+    >>> signing_key = factory.makeSigningKey(
+    ...     SigningKeyType.OPENPGP,
+    ...     fingerprint="A419AE861E88BC9E04B9C26FBA2B9389DFD20543",
+    ...     public_key=test_key,
+    ... )
+    >>> removeSecurityProxy(no_priv.archive).signing_key_owner = getUtility(
+    ...     ILaunchpadCelebrities
+    ... ).ppa_key_guard
+    >>> removeSecurityProxy(
+    ...     no_priv.archive
+    ... ).signing_key_fingerprint = signing_key.fingerprint
+    >>> del get_property_cache(no_priv.archive).signing_key
+    >>> del get_property_cache(no_priv.archive).signing_key_display_name
+    >>> logout()
+
+    >>> anon_browser.reload()
+
+    >>> signing_key_section = find_tag_by_id(
+    ...     anon_browser.contents, "signing-key"
+    ... )
+
+    >>> print(extract_text(signing_key_section))
+    Signing key: 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543
+                 (What is this?)
+    Fingerprint: A419AE861E88BC9E04B9C26FBA2B9389DFD20543
+
+    >>> print(
+    ...     anon_browser.getLink(
+    ...         "1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+    ...     ).url
+    ... )  # noqa
+    https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=index&search=0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543
+
 
 Single-publication PPAs
 -----------------------

@@ -37,11 +37,10 @@
       </p>
       <tal:entries replace="structure view/sources_list_entries" />
       <div id="signing-key"
-           tal:define="signing_key context/archive/signing_key"
-           tal:condition="signing_key">
+           tal:condition="context/archive/signing_key_fingerprint">
         <p>This repository is signed with
-          <a tal:attributes="href signing_key/keyserverURL">
-            <code tal:content="signing_key/displayname">
+          <a tal:attributes="href context/archive/signing_key_keyserver_url">
+            <code tal:content="context/archive/signing_key_display_name">
               1024R/23456789
             </code></a> OpenPGP key.
         </p>

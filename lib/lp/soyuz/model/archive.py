@@ -11,6 +11,7 @@ __all__ = [
     "validate_ppa",
 ]
 
+import logging
 import re
 import typing
 from datetime import datetime
@@ -98,6 +99,8 @@ from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import ISigningKeySet
 from lp.services.tokens import create_token
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
@@ -420,6 +423,40 @@ class Archive(SQLBase):
             # serialised as JSON, so instead rely on ASCII-armouring
             # producing something that we can decode as text.
             return key_data.decode("UTF-8")
+
+    @property
+    def signing_key_keyserver_url(self):
+        if self.signing_key_fingerprint is not None:
+            return getUtility(IGPGHandler).getURLForKeyInServer(
+                self.signing_key_fingerprint, public=True
+            )
+
+    @cachedproperty
+    def signing_key_display_name(self):
+        if self.signing_key is not None:
+            # Signing key is stored as a GPGKey.
+            return self.signing_key.displayname
+        elif self.signing_key_fingerprint is not None:
+            signing_key = getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, self.signing_key_fingerprint
+            )
+            if signing_key is not None:
+                # Signing key is stored on the signing service.
+                try:
+                    pyme_key = getUtility(IGPGHandler).importPublicKey(
+                        signing_key.public_key
+                    )
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        "Failed to import public key %s from SigningKey",
+                        self.signing_key_fingerprint,
+                    )
+                else:
+                    return "%s%s/%s" % (
+                        pyme_key.keysize,
+                        pyme_key.algorithm.title,
+                        pyme_key.fingerprint,
+                    )
 
     @property
     def is_ppa(self):

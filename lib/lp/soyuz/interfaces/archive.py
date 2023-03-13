@@ -535,6 +535,12 @@ class IArchiveSubscriberView(Interface):
     signing_key = Object(
         title=_("Repository signing key."), required=False, schema=IGPGKey
     )
+    signing_key_keyserver_url = TextLine(
+        title=_("Keyserver URL for archive signing key."), required=False
+    )
+    signing_key_display_name = TextLine(
+        title=_("Display name for archive signing key."), required=False
+    )
 
     @export_read_operation()
     @operation_for_version("devel")

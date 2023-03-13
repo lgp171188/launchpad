@@ -275,6 +275,7 @@ class ArchiveGPGSigningKey(SignableArchive):
                     default_ppa.signing_key_fingerprint
                 )
                 del get_property_cache(self.archive).signing_key
+                del get_property_cache(self.archive).signing_key_display_name
 
             if default_ppa.signing_key_fingerprint is None:
                 d = IArchiveGPGSigningKey(default_ppa).generateSigningKey(
@@ -368,6 +369,7 @@ class ArchiveGPGSigningKey(SignableArchive):
         self.archive.signing_key_owner = key_owner
         self.archive.signing_key_fingerprint = key.fingerprint
         del get_property_cache(self.archive).signing_key
+        del get_property_cache(self.archive).signing_key_display_name
 
     def _setupSigningKey(self, signing_key, async_keyserver=False):
         """Mandatory setup for signing keys.
