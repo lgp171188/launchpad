@@ -5,8 +5,6 @@ APP_NAME := launchpad
 
 BUILDDIR := $(CURDIR)/dist
 TMPDIR := $(CURDIR)/tmp
-CHARM_LAYERS_DIR := $(TMPDIR)/deps/ols-layers/layer
-CHARM_INTERFACES_DIR := $(TMPDIR)/deps/ols-layers/interface
 
 CHARM_SERIES ?= 20.04
 ARCH := $(shell dpkg --print-architecture)
@@ -28,23 +26,13 @@ help: ## display this help message
 $(BUILDDIR) $(TMPDIR):
 	@mkdir -p $@
 
-# We have to clone our dependencies by hand rather than letting charmcraft
-# do it, since some of them are in private repositories and charmcraft
-# doesn't have suitable credentials.
-CHARM_DEPS := $(CHARM_LAYERS_DIR)/.done $(CHARM_INTERFACES_DIR)/.done
-$(CHARM_DEPS): $(CURDIR)/dependencies.txt | $(TMPDIR)
-	@echo "Fetching dependencies..."
-	@mkdir -p $(TMPDIR)/deps
-	@cd $(TMPDIR)/deps && codetree $<
-	@touch $(CHARM_DEPS)
-
 build: ## build all the charms
 build: $(foreach charm,$(CHARMS),build-$(charm))
 
 build-launchpad-appserver: ## build the launchpad-appserver charm
 build-launchpad-appserver: dist/$(call charm_file,launchpad-appserver)
 
-dist/%_ubuntu-$(CHARM_SERIES)-$(ARCH).charm: $(CHARM_DEPS) | $(BUILDDIR)
+dist/%_ubuntu-$(CHARM_SERIES)-$(ARCH).charm: $(BUILDDIR)
 	echo "Building $*..."
 	rm -rf $*/tmp
 	cp -a tmp $*/tmp
@@ -58,7 +46,6 @@ clean: $(foreach charm,$(CHARMS),clean-$(charm))
 	@find . -name \*.pyc -delete
 	@find . -depth -name '__pycache__' -exec rm -rf '{}' \;
 	@rm -f bundle.yaml
-	@rm -f layer/*/codetree-collect-info.yaml
 	@rm -rf $(BUILDDIR) $(TMPDIR)
 
 clean-%:
