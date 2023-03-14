@@ -1270,8 +1270,8 @@ class Product(
             if package.has_current_translation_templates
         }
 
-        # Sort packages by distroseries.name and package.name
-        return sorted(packages, key=lambda p: (p.distroseries.name, p.name))
+        # Sort packages by distroseries.version and package.name
+        return sorted(packages, key=lambda p: (p.distroseries.version, p.name))
 
     @property
     def translatable_series(self):
