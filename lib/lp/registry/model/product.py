@@ -1271,7 +1271,11 @@ class Product(
         }
 
         # Sort packages by distroseries.version and package.name
-        return sorted(packages, key=lambda p: (p.distroseries.version, p.name))
+        return sorted(
+            packages,
+            key=lambda p: (p.distroseries.version, p.name),
+            reverse=True,
+        )
 
     @property
     def translatable_series(self):
