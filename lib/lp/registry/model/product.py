@@ -1270,10 +1270,10 @@ class Product(
             if package.has_current_translation_templates
         }
 
-        # Sort packages by distroseries.version and package.name
+        # Sort packages by distroseries.version
         return sorted(
             packages,
-            key=lambda p: (p.distroseries.version, p.name),
+            key=lambda p: (p.distroseries.version),
             reverse=True,
         )
 
