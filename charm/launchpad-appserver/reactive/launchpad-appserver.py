@@ -1,6 +1,7 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import shlex
 import subprocess
 from multiprocessing import cpu_count
 
@@ -161,7 +162,7 @@ def nrpe_available(nrpe):
             "-p",
             str(config["port_main"]),
             "-l",
-            "--regex=%s" % healthy_regex,
+            "--regex=%s" % shlex.quote(healthy_regex),
         ],
         name="check_launchpad_appserver",
         description="Launchpad appserver",
