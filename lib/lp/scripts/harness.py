@@ -117,9 +117,6 @@ def python():
 
 
 def ipython():
-    from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+    from IPython import start_ipython
 
-    app = TerminalIPythonApp.instance()
-    app.initialize(argv=[])
-    app.shell.user_ns.update(_get_locals())
-    app.start()
+    start_ipython(argv=[], user_ns=_get_locals())
