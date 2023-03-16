@@ -53,6 +53,7 @@ eggtestinfo==0.3
 enum34==1.1.6
 fastimport==0.9.8
 feedparser==5.2.1
+flit-core==3.3.0
 FormEncode==1.3.1
 futures==3.3.0
 geoip2==2.9.0
@@ -177,6 +178,7 @@ testresources==0.2.7
 testscenarios==0.4
 testtools==2.5.0
 timeline==0.0.7
+toml==0.10.2
 traitlets==4.3.3
 transaction==3.0.1
 treq==18.6.0
