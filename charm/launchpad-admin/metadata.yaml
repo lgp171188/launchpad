@@ -1,0 +1,21 @@
+name: launchpad-admin
+display-name: launchpad-admin
+summary: Launchpad administrative tools
+maintainer: Colin Watson <cjwatson@canonical.com>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm provides administrative tools for use with a Launchpad
+  deployment.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false
+requires:
+  db-admin:
+    interface: pgsql
+  session-db:
+    interface: pgsql

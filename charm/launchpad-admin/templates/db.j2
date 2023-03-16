@@ -1,0 +1,10 @@
+#! /bin/sh
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+# Part of the launchpad-admin Juju charm.
+
+set -e
+
+psql '{{ db_primary }}'
+

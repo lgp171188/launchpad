@@ -1,0 +1,21 @@
+includes:
+  - layer:launchpad-base
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - postgresql-client
+  ols:
+    # This charm is intended mainly for interactive use, so it's more
+    # convenient to just use the `ubuntu` user.
+    user: ubuntu
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles: launchpad_main
+      db-admin:
+        name: launchpad_dev
+      session-db:
+        name: session_dev
+        roles: session
