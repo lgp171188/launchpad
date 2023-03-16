@@ -6,7 +6,7 @@ deployment.
 You will need the following relations:
 
     juju relate launchpad-admin:db postgresql:db
-    juju relate launchpad-admin:db-admin postgresql:db
+    juju relate launchpad-admin:db-admin postgresql:db-admin
     juju relate launchpad-admin:session-db postgresql:db
     juju relate launchpad-admin rabbitmq-server
 
