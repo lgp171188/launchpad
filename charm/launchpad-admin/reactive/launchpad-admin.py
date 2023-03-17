@@ -16,6 +16,12 @@ from ols import base, postgres
 from psycopg2.extensions import make_dsn, parse_dsn
 
 
+def any_dbname(dsn):
+    parsed_dsn = parse_dsn(dsn)
+    parsed_dsn["dbname"] = "*"
+    return make_dsn(**parsed_dsn)
+
+
 def strip_password(dsn):
     parsed_dsn = parse_dsn(dsn)
     parsed_dsn.pop("password", None)
@@ -34,7 +40,9 @@ def configure(db, db_admin, session_db):
     db_primary, _ = postgres.get_db_uris(db)
     db_admin_primary, _ = postgres.get_db_uris(db_admin)
     session_db_primary, _ = postgres.get_db_uris(session_db)
-    update_pgpass(db_admin_primary)
+    # We assume that this admin user works for any database on this host,
+    # which seems to be true in practice.
+    update_pgpass(any_dbname(db_admin_primary))
     update_pgpass(session_db_primary)
     config["db_primary"] = strip_password(db_primary)
     config["db_admin_primary"] = strip_password(db_admin_primary)
