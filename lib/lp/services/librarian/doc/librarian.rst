@@ -274,14 +274,13 @@ If we abort the transaction, it is still in there
 
 You can also set the expiry date on the file this way too:
 
-    >>> from datetime import date, datetime
-    >>> from pytz import utc
+    >>> from datetime import date, datetime, timezone
     >>> url = client.remoteAddFile(
     ...     "text.txt",
     ...     len(data),
     ...     io.BytesIO(data),
     ...     "text/plain",
-    ...     expires=datetime(2005, 9, 1, 12, 0, 0, tzinfo=utc),
+    ...     expires=datetime(2005, 9, 1, 12, 0, 0, tzinfo=timezone.utc),
     ... )
     >>> transaction.abort()
 
@@ -774,7 +773,7 @@ The .last_downloaded property gives us the time delta from today to the
 day that file was last downloaded, or None if it's never been
 downloaded.
 
-    >>> today = datetime.now(utc).date()
+    >>> today = datetime.now(timezone.utc).date()
     >>> public_file.last_downloaded == today - last_downloaded_date
     True
 

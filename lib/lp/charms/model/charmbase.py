@@ -7,7 +7,8 @@ __all__ = [
     "CharmBase",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.databases.postgres import JSON
 from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
@@ -33,7 +34,7 @@ class CharmBase(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

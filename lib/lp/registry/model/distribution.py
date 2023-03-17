@@ -10,10 +10,9 @@ __all__ = [
 
 import itertools
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 
-import pytz
 from storm.expr import (
     SQL,
     And,
@@ -561,7 +560,7 @@ class Distribution(
 
     @property
     def has_current_commercial_subscription(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         return (
             self.commercial_subscription
             and self.commercial_subscription.date_expires > now
@@ -585,7 +584,7 @@ class Distribution(
             warning_date = (
                 self.commercial_subscription.date_expires - timedelta(30)
             )
-            now = datetime.now(pytz.UTC)
+            now = datetime.now(timezone.utc)
             if now > warning_date:
                 # The subscription is close to being expired.
                 return True
@@ -597,7 +596,7 @@ class Distribution(
         """Create a complementary commercial subscription for the distro."""
         if not self.commercial_subscription:
             lp_janitor = getUtility(ILaunchpadCelebrities).janitor
-            now = datetime.now(pytz.UTC)
+            now = datetime.now(timezone.utc)
             date_expires = now + timedelta(days=30)
             sales_system_id = "complimentary-30-day-%s" % now
             whiteboard = (

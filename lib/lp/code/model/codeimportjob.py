@@ -9,9 +9,8 @@ __all__ = [
     "CodeImportJobWorkflow",
 ]
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 
-import pytz
 from storm.expr import Cast
 from storm.locals import DateTime, Desc, Int, Reference, Store, Unicode
 from zope.component import getUtility
@@ -63,7 +62,9 @@ class CodeImportJob(StormBase):
 
     id = Int(primary=True)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     code_import_id = Int(name="code_import", allow_none=False)
     code_import = Reference(code_import_id, "CodeImport.id")
@@ -71,7 +72,7 @@ class CodeImportJob(StormBase):
     machine_id = Int(name="machine", allow_none=True, default=None)
     machine = Reference(machine_id, "CodeImportMachine.id")
 
-    date_due = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    date_due = DateTime(tzinfo=timezone.utc, allow_none=False)
 
     state = DBEnum(
         enum=CodeImportJobState,
@@ -89,11 +90,11 @@ class CodeImportJob(StormBase):
 
     ordering = Int(allow_none=True, default=None)
 
-    heartbeat = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    heartbeat = DateTime(tzinfo=timezone.utc, allow_none=True, default=None)
 
     logtail = Unicode(allow_none=True, default=None)
 
-    date_started = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_started = DateTime(tzinfo=timezone.utc, allow_none=True, default=None)
 
     def __init__(self, code_import, date_due):
         super().__init__()

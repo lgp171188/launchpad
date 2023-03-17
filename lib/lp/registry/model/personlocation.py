@@ -13,7 +13,8 @@ __all__ = [
     "PersonLocation",
 ]
 
-import pytz
+from datetime import timezone
+
 import six
 from storm.locals import Bool, DateTime, Float, Int, Reference, Unicode
 from zope.interface import implementer
@@ -34,7 +35,10 @@ class PersonLocation(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc,
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
     )
 
     person_id = Int(name="person", allow_none=False)
@@ -52,7 +56,7 @@ class PersonLocation(StormBase):
     last_modified_by = Reference(last_modified_by_id, "Person.id")
 
     date_last_modified = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         name="date_last_modified",
         allow_none=False,
         default=UTC_NOW,

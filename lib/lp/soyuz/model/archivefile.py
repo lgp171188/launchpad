@@ -10,8 +10,8 @@ __all__ = [
 
 import os.path
 import re
+from datetime import timezone
 
-import pytz
 from storm.locals import DateTime, Int, Or, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -57,22 +57,22 @@ class ArchiveFile(StormBase):
 
     date_created = DateTime(
         name="date_created",
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         # XXX cjwatson 2018-04-17: Should be allow_none=False, but we need
         # to backfill existing rows first.
         allow_none=True,
     )
 
     date_superseded = DateTime(
-        name="date_superseded", tzinfo=pytz.UTC, allow_none=True
+        name="date_superseded", tzinfo=timezone.utc, allow_none=True
     )
 
     scheduled_deletion_date = DateTime(
-        name="scheduled_deletion_date", tzinfo=pytz.UTC, allow_none=True
+        name="scheduled_deletion_date", tzinfo=timezone.utc, allow_none=True
     )
 
     date_removed = DateTime(
-        name="date_removed", tzinfo=pytz.UTC, allow_none=True
+        name="date_removed", tzinfo=timezone.utc, allow_none=True
     )
 
     def __init__(self, archive, container, path, library_file):

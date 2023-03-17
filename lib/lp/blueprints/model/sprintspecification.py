@@ -3,7 +3,8 @@
 
 __all__ = ["SprintSpecification"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
@@ -37,7 +38,9 @@ class SprintSpecification(StormBase):
         name="registrant", validator=validate_public_person, allow_none=False
     )
     registrant = Reference(registrant_id, "Person.id")
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
     decider_id = Int(
         name="decider",
         validator=validate_public_person,
@@ -45,7 +48,7 @@ class SprintSpecification(StormBase):
         default=None,
     )
     decider = Reference(decider_id, "Person.id")
-    date_decided = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_decided = DateTime(tzinfo=timezone.utc, allow_none=True, default=None)
 
     def __init__(self, sprint, specification, registrant):
         super().__init__()

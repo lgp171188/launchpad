@@ -7,11 +7,10 @@ __all__ = [
     "is_identical_translation",
 ]
 
-import datetime
 import posixpath
+from datetime import datetime, timezone
 from operator import attrgetter
 
-import pytz
 import six
 import transaction
 from storm.exceptions import TimeoutError
@@ -695,8 +694,7 @@ class POTFileImporter(FileImporter):
             self.potemplate.header = (
                 self.translation_file.header.getRawContent()
             )
-        UTC = pytz.timezone("UTC")
-        self.potemplate.date_last_updated = datetime.datetime.now(UTC)
+        self.potemplate.date_last_updated = datetime.now(timezone.utc)
 
         # By default translation template uploads are done only by
         # editors.

@@ -16,13 +16,12 @@ __all__ = [
 ]
 
 
-import datetime
 import re
 from collections import defaultdict
+from datetime import datetime, timezone
 from itertools import chain, repeat
 from operator import attrgetter, itemgetter
 
-import pytz
 from lazr.lifecycle.event import ObjectDeletedEvent
 from storm.expr import (
     SQL,
@@ -535,62 +534,64 @@ class BugTask(StormBase):
     bugwatch = Reference(bugwatch_id, "BugWatch.id")
 
     date_assigned = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
-    datecreated = DateTime(tzinfo=pytz.UTC, allow_none=True, default=UTC_NOW)
+    datecreated = DateTime(
+        tzinfo=timezone.utc, allow_none=True, default=UTC_NOW
+    )
     date_confirmed = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_inprogress = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_closed = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_incomplete = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_left_new = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_triaged = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_fix_committed = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_fix_released = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
     )
     date_left_closed = DateTime(
-        tzinfo=pytz.UTC,
+        tzinfo=timezone.utc,
         allow_none=True,
         default=None,
         validator=validate_conjoined_attribute,
@@ -683,7 +684,7 @@ class BugTask(StormBase):
     @property
     def age(self):
         """See `IBugTask`."""
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         return now - self.datecreated
 
@@ -1073,7 +1074,7 @@ class BugTask(StormBase):
             return
 
         if when is None:
-            when = datetime.datetime.now(pytz.UTC)
+            when = datetime.now(timezone.utc)
 
         # Record the date of the particular kinds of transitions into
         # certain states.
@@ -1221,7 +1222,7 @@ class BugTask(StormBase):
         if not self.assignee and assignee:
             # The task is going from not having an assignee to having
             # one, so record when this happened
-            self.date_assigned = datetime.datetime.now(pytz.UTC)
+            self.date_assigned = datetime.now(timezone.utc)
 
         self.assignee = assignee
 

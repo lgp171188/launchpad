@@ -16,8 +16,7 @@ AnswerTrackerHandler.
     # have microseconds resolution. This means that it would be possible
     # for a message created using the DB API before one created by
     # the email interface to sort after.
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timedelta, timezone
     >>> def now_generator(now_ref):
     ...     now = now_ref
     ...     while True:
@@ -27,7 +26,7 @@ AnswerTrackerHandler.
 
     # We are using a date in the past because MessageSet disallows the
     # creation of email message with a future date.
-    >>> now = now_generator(datetime.now(UTC) - timedelta(hours=24))
+    >>> now = now_generator(datetime.now(timezone.utc) - timedelta(hours=24))
 
     # Define a helper function to send email to the Answer Tracker handler.
     >>> from lp.answers.mail.handler import AnswerTrackerHandler

@@ -3,13 +3,12 @@
 
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 import soupmatchers
 import transaction
 from lazr.restful.interfaces import IJSONRequestCache
-from pytz import UTC
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import LessThan, Not
 from zope.component import getMultiAdapter, getUtility
@@ -175,7 +174,7 @@ class TestBugTaskView(TestCaseWithFactory):
         def add_activity(what, old=None, new=None, message=None):
             getUtility(IBugActivitySet).new(
                 bug,
-                datetime.now(UTC),
+                datetime.now(timezone.utc),
                 bug.owner,
                 whatchanged=what,
                 oldvalue=old,
@@ -205,7 +204,7 @@ class TestBugTaskView(TestCaseWithFactory):
 
         def add_activity(what, who):
             getUtility(IBugActivitySet).new(
-                task.bug, datetime.now(UTC), who, whatchanged=what
+                task.bug, datetime.now(timezone.utc), who, whatchanged=what
             )
 
         recorder1, recorder2 = record_two_runs(
@@ -709,7 +708,9 @@ class TestBugTasksTableView(TestCaseWithFactory):
             version="2.0",
             component=component,
             sourcepackagename=spn,
-            date_uploaded=datetime(2008, 7, 18, 10, 20, 30, tzinfo=UTC),
+            date_uploaded=datetime(
+                2008, 7, 18, 10, 20, 30, tzinfo=timezone.utc
+            ),
             maintainer=maintainer,
             spr_creator=creator,
         )
@@ -738,7 +739,9 @@ class TestBugTasksTableView(TestCaseWithFactory):
             version="2.0",
             component=component,
             sourcepackagename=spn,
-            date_uploaded=datetime(2008, 7, 18, 10, 20, 30, tzinfo=UTC),
+            date_uploaded=datetime(
+                2008, 7, 18, 10, 20, 30, tzinfo=timezone.utc
+            ),
             maintainer=maintainer,
             spr_creator=creator,
         )
@@ -767,7 +770,9 @@ class TestBugTasksTableView(TestCaseWithFactory):
             version="2.0",
             component=component,
             sourcepackagename=spn,
-            date_uploaded=datetime(2008, 7, 18, 10, 20, 30, tzinfo=UTC),
+            date_uploaded=datetime(
+                2008, 7, 18, 10, 20, 30, tzinfo=timezone.utc
+            ),
             maintainer=maintainer,
             spr_creator=creator,
         )
@@ -3085,7 +3090,7 @@ class TestBugTaskListingItem(TestCaseWithFactory):
         """Model contains bug age."""
         owner, item = make_bug_task_listing_item(self.factory)
         bug = removeSecurityProxy(item.bug)
-        bug.datecreated = datetime.now(UTC) - timedelta(3, 0, 0)
+        bug.datecreated = datetime.now(timezone.utc) - timedelta(3, 0, 0)
         with person_logged_in(owner):
             self.assertEqual("3 days old", item.model["age"])
 
@@ -3114,8 +3119,8 @@ class TestBugTaskListingItem(TestCaseWithFactory):
         owner, item = make_bug_task_listing_item(self.factory)
         with person_logged_in(owner):
             bug = removeSecurityProxy(item.bug)
-            bug.date_last_updated = datetime(2001, 1, 1, tzinfo=UTC)
-            bug.date_last_message = datetime(2000, 1, 1, tzinfo=UTC)
+            bug.date_last_updated = datetime(2001, 1, 1, tzinfo=timezone.utc)
+            bug.date_last_message = datetime(2000, 1, 1, tzinfo=timezone.utc)
             self.assertEqual("on 2001-01-01", item.model["last_updated"])
 
     def test_model_last_updated_date_last_message(self):
@@ -3123,8 +3128,8 @@ class TestBugTaskListingItem(TestCaseWithFactory):
         owner, item = make_bug_task_listing_item(self.factory)
         with person_logged_in(owner):
             bug = removeSecurityProxy(item.bug)
-            bug.date_last_updated = datetime(2000, 1, 1, tzinfo=UTC)
-            bug.date_last_message = datetime(2001, 1, 1, tzinfo=UTC)
+            bug.date_last_updated = datetime(2000, 1, 1, tzinfo=timezone.utc)
+            bug.date_last_message = datetime(2001, 1, 1, tzinfo=timezone.utc)
             self.assertEqual("on 2001-01-01", item.model["last_updated"])
 
 

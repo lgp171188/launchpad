@@ -7,16 +7,15 @@ __all__ = [
     "reset_all_branch_last_modified",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.testing import celebrity_logged_in
 
 
-def reset_all_branch_last_modified(last_modified=datetime.now(pytz.UTC)):
+def reset_all_branch_last_modified(last_modified=datetime.now(timezone.utc)):
     """Reset the date_last_modifed value on all the branches.
 
     DO NOT use this in a non-pagetest.

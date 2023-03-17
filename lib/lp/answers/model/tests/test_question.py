@@ -1,9 +1,8 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -115,7 +114,7 @@ class TestQuestionSet(TestCaseWithFactory):
     def test_expiredQuestions(self):
         question = self.factory.makeQuestion()
         removeSecurityProxy(question).datelastquery = datetime.now(
-            pytz.UTC
+            timezone.utc
         ) - timedelta(days=5)
 
         question_set = getUtility(IQuestionSet)

@@ -8,13 +8,12 @@ of the module functionality; here we just aim to test that the script
 processes its arguments and handles dry-run correctly.
 """
 
-import datetime
 import os
 import shutil
 import subprocess
+from datetime import datetime, timezone
 from tempfile import mkdtemp
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -148,8 +147,8 @@ class TestProcessDeathRow(TestCaseWithFactory):
         for pubrec in pubrecs:
             pubrec.status = PackagePublishingStatus.SUPERSEDED
             pubrec.dateremoved = None
-            pubrec.scheduleddeletiondate = datetime.datetime(
-                1999, 1, 1, tzinfo=pytz.UTC
+            pubrec.scheduleddeletiondate = datetime(
+                1999, 1, 1, tzinfo=timezone.utc
             )
             pubrec_ids.append(pubrec.id)
         return pubrec_ids
@@ -169,7 +168,7 @@ class TestProcessDeathRow(TestCaseWithFactory):
     def probeRemoved(self, pubrec_ids):
         """Check if all source publishing records were removed."""
         store = IStore(SourcePackagePublishingHistory)
-        right_now = datetime.datetime.now(pytz.timezone("UTC"))
+        right_now = datetime.now(timezone.utc)
         for pubrec_id in pubrec_ids:
             spph = store.get(SourcePackagePublishingHistory, pubrec_id)
             self.assertTrue(

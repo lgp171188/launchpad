@@ -6,10 +6,9 @@
 import hashlib
 import uuid
 import xmlrpc.client
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import quote
 
-import pytz
 import six
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
@@ -3161,7 +3160,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertEqual(repository, job.repository)
 
     def assertSetsRepackData(self, repo, auth_params):
-        start_time = datetime.now(pytz.UTC)
+        start_time = datetime.now(timezone.utc)
         self.assertIsNone(
             self.assertDoesNotFault(
                 None,
@@ -3171,7 +3170,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 auth_params,
             )
         )
-        end_time = datetime.now(pytz.UTC)
+        end_time = datetime.now(timezone.utc)
         naked_repo = removeSecurityProxy(repo)
         self.assertEqual(5, naked_repo.loose_object_count)
         self.assertEqual(2, naked_repo.pack_count)
@@ -3638,7 +3637,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         requester = self.factory.makePerson()
         secret, _ = self.factory.makeAccessToken(
             owner=requester,
-            date_expires=datetime.now(pytz.UTC) - timedelta(days=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         self.assertFault(
             faults.Unauthorized,
@@ -4058,7 +4057,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         )
 
     def assertUpdatesRepackStats(self, repo):
-        start_time = datetime.now(pytz.UTC)
+        start_time = datetime.now(timezone.utc)
         self.assertIsNone(
             self.assertDoesNotFault(
                 None,
@@ -4067,7 +4066,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 {"loose_object_count": 5, "pack_count": 2},
             )
         )
-        end_time = datetime.now(pytz.UTC)
+        end_time = datetime.now(timezone.utc)
         naked_repo = removeSecurityProxy(repo)
         self.assertEqual(5, naked_repo.loose_object_count)
         self.assertEqual(2, naked_repo.pack_count)

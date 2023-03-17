@@ -8,11 +8,10 @@ __all__ = [
 ]
 
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 import transaction
 from pymacaroons import Macaroon
-from pytz import UTC
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.publisher.xmlrpc import TestRequest
@@ -656,8 +655,10 @@ class TestCodeImportJobWorkflowNewJob(TestCaseWithFactory, AssertFailureMixin):
             code_import=code_import,
             machine=machine,
             status=FAILURE,
-            date_job_started=datetime(2000, 1, 1, 12, 0, 0, tzinfo=UTC),
-            date_created=datetime(2000, 1, 1, 12, 5, 0, tzinfo=UTC),
+            date_job_started=datetime(
+                2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+            ),
+            date_created=datetime(2000, 1, 1, 12, 5, 0, tzinfo=timezone.utc),
         )
         # Create a CodeImportResult that started a shorter time ago than the
         # effective update interval of the code import. This is the most
@@ -699,8 +700,10 @@ class TestCodeImportJobWorkflowNewJob(TestCaseWithFactory, AssertFailureMixin):
             code_import=code_import,
             machine=machine,
             status=FAILURE,
-            date_job_started=datetime(2000, 1, 1, 12, 0, 0, tzinfo=UTC),
-            date_created=datetime(2000, 1, 1, 12, 5, 0, tzinfo=UTC),
+            date_job_started=datetime(
+                2000, 1, 1, 12, 0, 0, tzinfo=timezone.utc
+            ),
+            date_created=datetime(2000, 1, 1, 12, 5, 0, tzinfo=timezone.utc),
         )
         # When we create the job, its date due must be set to UTC_NOW.
         self.assertSqlAttributeEqualsDate(
@@ -831,7 +834,7 @@ class TestCodeImportJobWorkflowRequestJob(
         # Set date_due in the future. ICodeImportJob does not allow setting
         # date_due, so we must use removeSecurityProxy.
         removeSecurityProxy(pending_job).date_due = datetime(
-            2100, 1, 1, tzinfo=UTC
+            2100, 1, 1, tzinfo=timezone.utc
         )
         # requestJob sets both requesting_user and date_due.
         new_events = NewEvents()
@@ -855,7 +858,7 @@ class TestCodeImportJobWorkflowRequestJob(
         person = self.factory.makePerson()
         # Set date_due in the past. ICodeImportJob does not allow setting
         # date_due, so we must use removeSecurityProxy.
-        past_date = datetime(1900, 1, 1, tzinfo=UTC)
+        past_date = datetime(1900, 1, 1, tzinfo=timezone.utc)
         removeSecurityProxy(pending_job).date_due = past_date
         # requestJob only sets requesting_user.
         new_events = NewEvents()
@@ -1175,7 +1178,7 @@ class TestCodeImportJobWorkflowFinishJob(
         self.assertFinishJobPassesThroughJobField(
             "date_started",
             "date_job_started",
-            datetime(2008, 1, 1, tzinfo=UTC),
+            datetime(2008, 1, 1, tzinfo=timezone.utc),
         )
         unchecked_result_fields.remove("date_job_started")
 

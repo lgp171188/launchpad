@@ -32,10 +32,9 @@ __all__ = [
 
 import json
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import unquote
 
-import pytz
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import smartquote
@@ -1420,7 +1419,7 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
         # cover the fencepost error when `date_limit` is
         # earlier than `self.dateexpires`, which happens later
         # in the same day.
-        date_limit = datetime.now(pytz.UTC) + timedelta(
+        date_limit = datetime.now(timezone.utc) + timedelta(
             days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
         if context.status not in (admin, approved):
@@ -1457,7 +1456,7 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
 
     @property
     def time_before_expiration(self):
-        return self.context.dateexpires - datetime.now(pytz.timezone("UTC"))
+        return self.context.dateexpires - datetime.now(timezone.utc)
 
     @property
     def next_url(self):

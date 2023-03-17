@@ -21,10 +21,9 @@ that only the fooix branches are shown.
 
     >>> login(ANONYMOUS)
     >>> from lp.testing import time_counter
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> date_generator = time_counter(
-    ...     datetime(2007, 12, 1, tzinfo=pytz.UTC), timedelta(days=1)
+    ...     datetime(2007, 12, 1, tzinfo=timezone.utc), timedelta(days=1)
     ... )
     >>> branch = factory.makeProductBranch(
     ...     owner=eric,

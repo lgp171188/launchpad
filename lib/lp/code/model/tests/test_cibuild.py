@@ -4,12 +4,11 @@
 """Test CI builds."""
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 from unittest.mock import Mock
 from urllib.request import urlopen
 
-import pytz
 from fixtures import MockPatchObject
 from pymacaroons import Macaroon
 from storm.locals import Store
@@ -228,7 +227,7 @@ class TestCIBuild(TestCaseWithFactory):
     def test_retry_resets_state(self):
         # Retrying a build resets most of the state attributes, but does
         # not modify the first dispatch time.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         build = self.factory.makeCIBuild()
         build.updateStatus(BuildStatus.BUILDING, date_started=now)
         build.updateStatus(BuildStatus.FAILEDTOBUILD)
@@ -538,7 +537,7 @@ class TestCIBuild(TestCaseWithFactory):
             git_repository=git_repository,
             commit_sha1="a39b604dcf9124d61cf94a1f9fffab638ee9a0cd",
             distro_arch_series=distroarchseries,
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
             status=BuildStatus.FAILEDTOBUILD,
             builder=self.factory.makeBuilder(name="bob"),
             duration=timedelta(minutes=10),

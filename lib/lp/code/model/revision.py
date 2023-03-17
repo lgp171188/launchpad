@@ -11,10 +11,9 @@ __all__ = [
 ]
 
 import email
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import itemgetter
 
-import pytz
 from breezy.revision import NULL_REVISION
 from storm.expr import And, Asc, Desc, Join, Or, Select
 from storm.locals import (
@@ -64,7 +63,10 @@ class Revision(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", allow_none=False, default=DEFAULT, tzinfo=pytz.UTC
+        name="date_created",
+        allow_none=False,
+        default=DEFAULT,
+        tzinfo=timezone.utc,
     )
     log_body = Unicode(name="log_body", allow_none=False)
 
@@ -73,7 +75,7 @@ class Revision(StormBase):
 
     revision_id = Unicode(name="revision_id", allow_none=False)
     revision_date = DateTime(
-        name="revision_date", allow_none=True, tzinfo=pytz.UTC
+        name="revision_date", allow_none=True, tzinfo=timezone.utc
     )
 
     karma_allocated = Bool(
@@ -382,9 +384,8 @@ class RevisionSet:
         """
         # Work around Python bug #1646728.
         # See https://launchpad.net/bugs/81544.
-        UTC = pytz.timezone("UTC")
         int_timestamp = int(timestamp)
-        revision_date = datetime.fromtimestamp(int_timestamp, tz=UTC)
+        revision_date = datetime.fromtimestamp(int_timestamp, tz=timezone.utc)
         revision_date += timedelta(seconds=timestamp - int_timestamp)
         return revision_date
 
@@ -693,7 +694,7 @@ class RevisionSet:
         # Storm doesn't handle remove a limited result set:
         #    FeatureError: Can't remove a sliced result set
         store = IPrimaryStore(RevisionCache)
-        epoch = datetime.now(tz=pytz.UTC) - timedelta(days=30)
+        epoch = datetime.now(tz=timezone.utc) - timedelta(days=30)
         subquery = Select(
             [RevisionCache.id],
             RevisionCache.revision_date < epoch,
@@ -704,7 +705,7 @@ class RevisionSet:
 
 def revision_time_limit(day_limit):
     """The storm fragment to limit the revision_date field of the Revision."""
-    now = datetime.now(pytz.UTC)
+    now = datetime.now(timezone.utc)
     earliest = now - timedelta(days=day_limit)
 
     return And(
@@ -725,7 +726,7 @@ class RevisionCache(StormBase):
     revision_author_id = Int(name="revision_author", allow_none=False)
     revision_author = Reference(revision_author_id, "RevisionAuthor.id")
 
-    revision_date = DateTime(allow_none=False, tzinfo=pytz.UTC)
+    revision_date = DateTime(allow_none=False, tzinfo=timezone.utc)
 
     product_id = Int(name="product", allow_none=True)
     product = Reference(product_id, "Product.id")

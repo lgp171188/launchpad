@@ -5,7 +5,8 @@
 
 __all__ = ["QuestionSubscription"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -31,7 +32,9 @@ class QuestionSubscription(StormBase):
     )
     person = Reference(person_id, "Person.id")
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     def __init__(self, question, person):
         self.question = question

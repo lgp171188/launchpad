@@ -4,9 +4,8 @@
 """Webservice unit tests related to Launchpad Questions."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from testtools.matchers import EndsWith
 
 from lp.answers.enums import QuestionStatus
@@ -331,7 +330,7 @@ class TestQuestionSetWebService(TestCaseWithFactory):
 
     def test_searchQuestions(self):
         date_gen = time_counter(
-            datetime(2015, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2015, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         created = [
             self.factory.makeQuestion(title="foo", datecreated=next(date_gen))

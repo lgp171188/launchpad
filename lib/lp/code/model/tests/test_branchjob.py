@@ -3,12 +3,11 @@
 
 """Tests for BranchJobs."""
 
-import datetime
 import os
 import shutil
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import pytz
 import transaction
 from breezy import errors as bzr_errors
 from breezy.branch import Branch
@@ -638,7 +637,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         """
         self.useBzrBranches(direct_database=True)
         target_branch, tree = self.create_branch_and_tree("tree")
-        the_past = datetime.datetime(2009, 1, 1, tzinfo=pytz.UTC)
+        the_past = datetime(2009, 1, 1, tzinfo=timezone.utc)
         old_proposal = self.factory.makeBranchMergeProposal(
             target_branch=target_branch,
             date_created=the_past,
@@ -1439,7 +1438,7 @@ class TestReclaimBranchSpaceJob(TestCaseWithFactory):
             self.factory.getUniqueInteger()
         )
         self.assertEqual(
-            datetime.timedelta(days=7),
+            timedelta(days=7),
             job.job.scheduled_start - job.job.date_created,
         )
 

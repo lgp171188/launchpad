@@ -11,9 +11,8 @@ __all__ = [
     "traverse_archive_subscription_for_subscriber",
 ]
 
-import datetime
+from datetime import date, datetime, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory
@@ -212,7 +211,7 @@ class ArchiveSubscribersView(LaunchpadFormView):
                 )
 
         if date_expires:
-            if date_expires < datetime.date.today():
+            if date_expires < date.today():
                 self.setFieldError(
                     "date_expires", "The expiry date must be in the future."
                 )
@@ -224,11 +223,11 @@ class ArchiveSubscribersView(LaunchpadFormView):
         # need to convert the value into a datetime with UTC:
         date_expires = data["date_expires"]
         if date_expires:
-            date_expires = datetime.datetime(
+            date_expires = datetime(
                 date_expires.year,
                 date_expires.month,
                 date_expires.day,
-                tzinfo=pytz.timezone("UTC"),
+                tzinfo=timezone.utc,
             )
         self.context.newSubscription(
             data["subscriber"],
@@ -279,7 +278,7 @@ class ArchiveSubscriptionEditView(LaunchpadEditFormView):
         date_expires = data.get("date_expires")
 
         if date_expires:
-            if date_expires < datetime.date.today():
+            if date_expires < date.today():
                 self.setFieldError(
                     "date_expires", "The expiry date must be in the future."
                 )
@@ -292,11 +291,11 @@ class ArchiveSubscriptionEditView(LaunchpadEditFormView):
         date_expires = data["date_expires"]
 
         if date_expires:
-            data["date_expires"] = datetime.datetime(
+            data["date_expires"] = datetime(
                 date_expires.year,
                 date_expires.month,
                 date_expires.day,
-                tzinfo=pytz.timezone("UTC"),
+                tzinfo=timezone.utc,
             )
 
         self.updateContextFromData(data)

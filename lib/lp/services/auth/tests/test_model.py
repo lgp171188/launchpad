@@ -6,9 +6,8 @@
 import hashlib
 import os
 import signal
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import Is, MatchesStructure
@@ -76,7 +75,7 @@ class TestAccessToken(TestCaseWithFactory):
         owner = self.factory.makePerson()
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
-        recent = datetime.now(pytz.UTC) - timedelta(minutes=1)
+        recent = datetime.now(timezone.utc) - timedelta(minutes=1)
         removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
@@ -88,7 +87,7 @@ class TestAccessToken(TestCaseWithFactory):
         owner = self.factory.makePerson()
         _, token = self.factory.makeAccessToken(owner=owner)
         login_person(owner)
-        recent = datetime.now(pytz.UTC) - timedelta(hours=1)
+        recent = datetime.now(timezone.utc) - timedelta(hours=1)
         removeSecurityProxy(token).date_last_used = recent
         transaction.commit()
         token.updateLastUsed()
@@ -145,7 +144,7 @@ class TestAccessToken(TestCaseWithFactory):
         _, current_token = self.factory.makeAccessToken(owner=owner)
         _, expired_token = self.factory.makeAccessToken(
             owner=owner,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(minutes=1),
         )
         self.assertFalse(current_token.is_expired)
         self.assertTrue(expired_token.is_expired)
@@ -287,11 +286,11 @@ class TestAccessTokenSet(TestCaseWithFactory):
         _, current_token = self.factory.makeAccessToken(target=target)
         _, expires_soon_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1),
+            date_expires=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         _, expired_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(minutes=1),
         )
         self.assertContentEqual(
             [current_token, expires_soon_token],
@@ -371,11 +370,11 @@ class TestAccessTokenSet(TestCaseWithFactory):
         _, current_token = self.factory.makeAccessToken(target=target)
         _, expires_soon_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) + timedelta(hours=1),
+            date_expires=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         _, expired_token = self.factory.makeAccessToken(
             target=target,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(minutes=1),
         )
         self.assertEqual(
             current_token,
@@ -435,7 +434,7 @@ class TestAccessTokenTargetBase:
                 owner=self.owner,
                 description="Expired",
                 target=self.target,
-                date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+                date_expires=datetime.now(timezone.utc) - timedelta(minutes=1),
             )
         response = self.webservice.named_get(
             self.target_url, "getAccessTokens", api_version="devel"

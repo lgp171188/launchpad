@@ -6,14 +6,13 @@
 import doctest
 import http.client
 import os.path
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import PurePath
 from urllib.parse import urlsplit
 
 import responses
 import transaction
 from aptsources.sourceslist import SourceEntry
-from pytz import UTC
 from storm.store import Store
 from testtools.matchers import (
     AfterPreprocessing,
@@ -1710,7 +1709,9 @@ class TestArchiveTokens(TestCaseWithFactory):
         token2 = self.private_ppa.getNamedAuthToken("name2")
 
         # Revoke token1.
-        deactivation_time_1 = datetime.now(UTC) - timedelta(seconds=90)
+        deactivation_time_1 = datetime.now(timezone.utc) - timedelta(
+            seconds=90
+        )
         token1.date_deactivated = deactivation_time_1
 
         # Revoke all tokens, including token1.
@@ -3375,7 +3376,7 @@ class TestGetPoolFileByPath(TestCaseWithFactory):
         )
 
     def test_source_live_at(self):
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         archive = self.factory.makeArchive()
         spph_1 = self.factory.makeSourcePackagePublishingHistory(
             archive=archive,
@@ -3526,7 +3527,7 @@ class TestGetPoolFileByPath(TestCaseWithFactory):
         )
 
     def test_binary_live_at(self):
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         archive = self.factory.makeArchive()
         bpph_1 = self.factory.makeBinaryPackagePublishingHistory(
             archive=archive,
@@ -3706,7 +3707,9 @@ class TestGetPublishedSources(TestCaseWithFactory):
                 name="ice", distroseries=breezy_autotest
             ).count(),
         )
-        mid_2007 = datetime(year=2007, month=7, day=9, hour=14, tzinfo=UTC)
+        mid_2007 = datetime(
+            year=2007, month=7, day=9, hour=14, tzinfo=timezone.utc
+        )
         self.assertEqual(
             0,
             cprov_archive.getPublishedSources(

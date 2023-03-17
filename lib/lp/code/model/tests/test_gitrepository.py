@@ -6,11 +6,10 @@
 import email
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from textwrap import dedent
 
-import pytz
 import transaction
 from breezy import urlutils
 from fixtures import MockPatch
@@ -208,8 +207,8 @@ class TestParseGitCommits(TestCaseWithFactory):
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
-        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
-        committer_date = datetime(2015, 1, 2, tzinfo=pytz.UTC)
+        author_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
+        committer_date = datetime(2015, 1, 2, tzinfo=timezone.utc)
         commits = [
             {
                 "sha1": master_sha1,
@@ -257,7 +256,7 @@ class TestParseGitCommits(TestCaseWithFactory):
 
     def test_invalid_author_address(self):
         master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
-        author_date = datetime(2022, 1, 1, tzinfo=pytz.UTC)
+        author_date = datetime(2022, 1, 1, tzinfo=timezone.utc)
         commits = [
             {
                 "sha1": master_sha1,
@@ -298,7 +297,7 @@ class TestParseGitCommits(TestCaseWithFactory):
 
     def test_invalid_committer_address(self):
         master_sha1 = hashlib.sha1(b"refs/heads/master").hexdigest()
-        author_date = datetime(2022, 1, 1, tzinfo=pytz.UTC)
+        author_date = datetime(2022, 1, 1, tzinfo=timezone.utc)
         commits = [
             {
                 "sha1": master_sha1,
@@ -1404,7 +1403,7 @@ class TestGitRepositoryDeletion(TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(target=self.repository)
         _, expired_token = self.factory.makeAccessToken(
             target=self.repository,
-            date_expires=datetime.now(pytz.UTC) - timedelta(minutes=1),
+            date_expires=datetime.now(timezone.utc) - timedelta(minutes=1),
         )
         other_repository = self.factory.makeGitRepository()
         _, other_token = self.factory.makeAccessToken(target=other_repository)
@@ -1766,7 +1765,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
         # When a GitRepository receives an object modified event, the last
         # modified date is set to UTC_NOW.
         repository = self.factory.makeGitRepository(
-            date_created=datetime(2015, 2, 4, 17, 42, 0, tzinfo=pytz.UTC)
+            date_created=datetime(2015, 2, 4, 17, 42, 0, tzinfo=timezone.utc)
         )
         with notify_modified(
             removeSecurityProxy(repository), ["name"], user=repository.owner
@@ -1779,7 +1778,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
     def test_create_ref_sets_date_last_modified(self):
         self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository(
-            date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2015, 6, 1, tzinfo=timezone.utc)
         )
         [ref] = self.factory.makeGitRefs(repository=repository)
         new_refs_info = {
@@ -1796,7 +1795,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
     def test_update_ref_sets_date_last_modified(self):
         self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository(
-            date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2015, 6, 1, tzinfo=timezone.utc)
         )
         [ref] = self.factory.makeGitRefs(repository=repository)
         new_refs_info = {
@@ -1812,7 +1811,7 @@ class TestGitRepositoryModifications(TestCaseWithFactory):
 
     def test_remove_ref_sets_date_last_modified(self):
         repository = self.factory.makeGitRepository(
-            date_created=datetime(2015, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2015, 6, 1, tzinfo=timezone.utc)
         )
         [ref] = self.factory.makeGitRefs(repository=repository)
         repository.removeRefs({ref.path})
@@ -2439,7 +2438,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         )
         naked_master.author_id = naked_master.committer_id = author.id
         naked_master.author_date = naked_master.committer_date = datetime.now(
-            pytz.UTC
+            timezone.utc
         )
         naked_master.commit_message = "message"
         self.useFixture(
@@ -2495,8 +2494,8 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
-        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
-        committer_date = datetime(2015, 1, 2, tzinfo=pytz.UTC)
+        author_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
+        committer_date = datetime(2015, 1, 2, tzinfo=timezone.utc)
         hosting_fixture = self.useFixture(
             GitHostingFixture(
                 commits=[
@@ -2587,7 +2586,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         author = self.factory.makePerson()
         with person_logged_in(author):
             author_email = author.preferredemail.email
-        author_date = datetime(2015, 1, 1, tzinfo=pytz.UTC)
+        author_date = datetime(2015, 1, 1, tzinfo=timezone.utc)
         hosting_fixture = self.useFixture(
             GitHostingFixture(
                 commits=[
@@ -3341,7 +3340,7 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
         self.assertEqual(repository, job.repository)
 
     def test_getLatestScanJob(self):
-        complete_date = datetime.now(pytz.UTC)
+        complete_date = datetime.now(timezone.utc)
 
         repository = self.factory.makeGitRepository()
         failed_job = GitRefScanJob.create(repository)
@@ -3359,7 +3358,7 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
         self.assertIsNone(result)
 
     def test_getLatestScanJob_correct_branch(self):
-        complete_date = datetime.now(pytz.UTC)
+        complete_date = datetime.now(timezone.utc)
 
         main_repository = self.factory.makeGitRepository()
         second_repository = self.factory.makeGitRepository()
@@ -4874,11 +4873,11 @@ class TestGitRepositorySet(TestCaseWithFactory):
         # We can get a collection of all repositories with a given sort order.
         repositories = [self.factory.makeGitRepository() for _ in range(5)]
         modified_dates = [
-            datetime(2010, 1, 1, tzinfo=pytz.UTC),
-            datetime(2015, 1, 1, tzinfo=pytz.UTC),
-            datetime(2014, 1, 1, tzinfo=pytz.UTC),
-            datetime(2020, 1, 1, tzinfo=pytz.UTC),
-            datetime(2019, 1, 1, tzinfo=pytz.UTC),
+            datetime(2010, 1, 1, tzinfo=timezone.utc),
+            datetime(2015, 1, 1, tzinfo=timezone.utc),
+            datetime(2014, 1, 1, tzinfo=timezone.utc),
+            datetime(2020, 1, 1, tzinfo=timezone.utc),
+            datetime(2019, 1, 1, tzinfo=timezone.utc),
         ]
         for repository, modified_date in zip(repositories, modified_dates):
             removeSecurityProxy(repository).date_last_modified = modified_date
@@ -4906,7 +4905,9 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 self.repository_set.getRepositories(
                     repositories[0].owner,
                     order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
-                    modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC),
+                    modified_since_date=datetime(
+                        2014, 12, 1, tzinfo=timezone.utc
+                    ),
                 )
             ),
         )
@@ -6596,7 +6597,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel",
         )
-        date_expires = datetime.now(pytz.UTC) + timedelta(days=30)
+        date_expires = datetime.now(timezone.utc) + timedelta(days=30)
         response = webservice.named_post(
             repository_url,
             "issueAccessToken",

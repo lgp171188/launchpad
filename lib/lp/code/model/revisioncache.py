@@ -7,9 +7,8 @@ __all__ = [
     "GenericRevisionCollection",
 ]
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.expr import SQL, Desc, Func
 from zope.interface import implementer
 
@@ -28,7 +27,7 @@ class GenericRevisionCollection:
     def __init__(self, store=None, filter_expressions=None):
         self._store = store
         if filter_expressions is None:
-            epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+            epoch = datetime.now(timezone.utc) - timedelta(days=30)
             filter_expressions = [RevisionCache.revision_date >= epoch]
         self._filter_expressions = filter_expressions
 

@@ -2,12 +2,10 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from lazr.jobrunner.jobrunner import LeaseHeld
-from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals
 
@@ -250,7 +248,7 @@ class TestJob(TestCaseWithFactory):
         """is_runnable is false when the job is scheduled in the future."""
         job = Job(
             _status=JobStatus.WAITING,
-            scheduled_start=datetime.now(UTC) + timedelta(seconds=60),
+            scheduled_start=datetime.now(timezone.utc) + timedelta(seconds=60),
         )
         self.assertFalse(job.is_runnable)
 
@@ -258,7 +256,7 @@ class TestJob(TestCaseWithFactory):
         """is_runnable is true when the job is scheduled in the past."""
         job = Job(
             _status=JobStatus.WAITING,
-            scheduled_start=datetime.now(UTC) - timedelta(seconds=60),
+            scheduled_start=datetime.now(timezone.utc) - timedelta(seconds=60),
         )
         self.assertTrue(job.is_runnable)
 
@@ -405,7 +403,7 @@ class TestReadiness(TestCase):
     def test_ready_jobs_lease_expired(self):
         """Job.ready_jobs should include jobs with expired leases."""
         preexisting = self._sampleData()
-        UNIX_EPOCH = datetime.fromtimestamp(0, pytz.timezone("UTC"))
+        UNIX_EPOCH = datetime.fromtimestamp(0, timezone.utc)
         job = Job(lease_expires=UNIX_EPOCH)
         self.assertEqual(
             preexisting + [(job.id,)],
@@ -415,9 +413,7 @@ class TestReadiness(TestCase):
     def test_ready_jobs_lease_in_future(self):
         """Job.ready_jobs should not include jobs with active leases."""
         preexisting = self._sampleData()
-        future = datetime.fromtimestamp(
-            time.time() + 1000, pytz.timezone("UTC")
-        )
+        future = datetime.fromtimestamp(time.time() + 1000, timezone.utc)
         job = Job(lease_expires=future)
         self.assertEqual(
             preexisting, list(Store.of(job).execute(Job.ready_jobs))
@@ -428,9 +424,7 @@ class TestReadiness(TestCase):
         future.
         """
         preexisting = self._sampleData()
-        future = datetime.fromtimestamp(
-            time.time() + 1000, pytz.timezone("UTC")
-        )
+        future = datetime.fromtimestamp(time.time() + 1000, timezone.utc)
         job = Job(scheduled_start=future)
         self.assertEqual(
             preexisting, list(Store.of(job).execute(Job.ready_jobs))

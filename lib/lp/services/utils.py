@@ -35,12 +35,11 @@ import os
 import pickle
 import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import islice, tee
 from textwrap import dedent
 from types import FunctionType
 
-import pytz
 from lazr.enum import BaseItem
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
@@ -229,10 +228,10 @@ def traceback_info(info):
 
 def utc_now():
     """Return a timezone-aware timestamp for the current time."""
-    return datetime.now(tz=pytz.UTC)
+    return datetime.now(tz=timezone.utc)
 
 
-_epoch = datetime.fromtimestamp(0, tz=pytz.UTC)
+_epoch = datetime.fromtimestamp(0, tz=timezone.utc)
 
 
 def seconds_since_epoch(dt):

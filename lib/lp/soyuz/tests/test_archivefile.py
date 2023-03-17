@@ -4,9 +4,8 @@
 """ArchiveFile tests."""
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import AfterPreprocessing, Equals, Is, MatchesStructure
@@ -169,7 +168,7 @@ class TestArchiveFile(TestCaseWithFactory):
         )
 
     def test_getByArchive_both_live_at_and_existed_at(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         archive = self.factory.makeArchive()
         self.assertRaisesWithContent(
             IncompatibleArguments,

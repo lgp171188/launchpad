@@ -3,7 +3,8 @@
 
 __all__ = ["TranslatedLanguageMixin"]
 
-import pytz
+from datetime import timezone
+
 from storm.expr import Coalesce, Desc, Max, Sum
 from zope.interface import implementer
 
@@ -147,7 +148,7 @@ class TranslatedLanguageMixin:
         # We have to add a timezone to the otherwise naive-datetime object
         # (because we've gotten it using Max() aggregate function).
         if date_changed is not None:
-            date_changed = date_changed.replace(tzinfo=pytz.UTC)
+            date_changed = date_changed.replace(tzinfo=timezone.utc)
         self.last_changed_date = date_changed
 
     last_changed_date = None

@@ -9,8 +9,7 @@ communicate this.
 
 First we import the classes required to test the view:
 
-    >>> from datetime import datetime
-    >>> from pytz import timezone
+    >>> from datetime import datetime, timezone
     >>> from zope.component import getUtility, getMultiAdapter
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.blueprints.browser.sprint import SprintMeetingExportView
@@ -85,8 +84,8 @@ assigned).
 This is because sample person has not registered as an attendee of the
 sprint.  If we add them as an attendee, then they will be available:
 
-    >>> time_starts = datetime(2005, 10, 8, 7, 0, 0, tzinfo=timezone("UTC"))
-    >>> time_ends = datetime(2005, 11, 17, 20, 0, 0, tzinfo=timezone("UTC"))
+    >>> time_starts = datetime(2005, 10, 8, 7, 0, 0, tzinfo=timezone.utc)
+    >>> time_ends = datetime(2005, 11, 17, 20, 0, 0, tzinfo=timezone.utc)
     >>> ignored = login_person(sampleperson)
     >>> ubz.attend(sampleperson, time_starts, time_ends, True)
     <...SprintAttendance ...>

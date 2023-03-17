@@ -3,9 +3,7 @@
 
 """Tests of the oopsreferences core."""
 
-from datetime import datetime, timedelta
-
-from pytz import utc
+from datetime import datetime, timedelta, timezone
 
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.services.database.interfaces import IStore
@@ -26,7 +24,7 @@ class TestOopsReferences(TestCaseWithFactory):
         oopsid = "OOPS-abcdef1234"
         MessageSet().fromText("foo", "foo %s bar" % oopsid)
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid}, referenced_oops(now - day, now, "product=1", {})
@@ -40,7 +38,7 @@ class TestOopsReferences(TestCaseWithFactory):
         self.factory.makeEmailMessage()
         MessageSet().fromText("Crash with %s" % oopsid, "body")
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid}, referenced_oops(now - day, now, "product=1", {})
@@ -55,7 +53,7 @@ class TestOopsReferences(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             bug.title = "Crash with %s" % oopsid
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid}, referenced_oops(now - day, now, "product=1", {})
@@ -70,7 +68,7 @@ class TestOopsReferences(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             bug.description = "Crash with %s" % oopsid
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid}, referenced_oops(now - day, now, "product=1", {})
@@ -83,7 +81,7 @@ class TestOopsReferences(TestCaseWithFactory):
         oopsid = "OOPS-abcdef1234"
         question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
@@ -108,7 +106,7 @@ class TestOopsReferences(TestCaseWithFactory):
         oopsid = "OOPS-abcdef1234"
         question = self.factory.makeQuestion(title="Crash with %s" % oopsid)
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.store.flush()
         self.assertEqual(
@@ -127,7 +125,7 @@ class TestOopsReferences(TestCaseWithFactory):
             description="Crash with %s" % oopsid
         )
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
@@ -154,7 +152,7 @@ class TestOopsReferences(TestCaseWithFactory):
         with person_logged_in(question.owner):
             question.whiteboard = "Crash with %s" % oopsid
             self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
@@ -182,7 +180,7 @@ class TestOopsReferences(TestCaseWithFactory):
         with person_logged_in(question.owner):
             question.whiteboard = "Crash with %s" % oopsid
             self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid},
@@ -223,7 +221,7 @@ class TestOopsReferences(TestCaseWithFactory):
                 % oopsid_new
             )
         self.store.flush()
-        now = datetime.now(tz=utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             {oopsid_old, oopsid_new},

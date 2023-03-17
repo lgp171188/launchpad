@@ -1,10 +1,9 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 
-import pytz
 import transaction
 from storm.locals import Store
 from testtools.matchers import MatchesAll
@@ -799,7 +798,7 @@ class TestProduct(TestCaseWithFactory):
         self.useContext(person_logged_in(owner))
 
         # The Product now has a complimentary commercial subscription.
-        new_expires_date = datetime.now(pytz.timezone("UTC")) - timedelta(1)
+        new_expires_date = datetime.now(timezone.utc) - timedelta(1)
         naked_subscription = removeSecurityProxy(
             product.commercial_subscription
         )
@@ -1909,7 +1908,7 @@ class ProductLicensingTestCase(TestCaseWithFactory):
             cs = product.commercial_subscription
             self.assertIsNotNone(cs)
             self.assertIn("complimentary-30-day", cs.sales_system_id)
-            now = datetime.now(pytz.UTC)
+            now = datetime.now(timezone.utc)
             self.assertTrue(now >= cs.date_starts)
             future_30_days = now + timedelta(days=30)
             self.assertTrue(future_30_days >= cs.date_expires)
@@ -1939,7 +1938,7 @@ class ProductLicensingTestCase(TestCaseWithFactory):
             cs = product.commercial_subscription
             self.assertIsNotNone(cs)
             self.assertIn("complimentary-30-day", cs.sales_system_id)
-            now = datetime.now(pytz.UTC)
+            now = datetime.now(timezone.utc)
             self.assertTrue(now >= cs.date_starts)
             future_30_days = now + timedelta(days=30)
             self.assertTrue(future_30_days >= cs.date_expires)
@@ -2289,7 +2288,7 @@ class TestSpecifications(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.date_created = datetime.now(pytz.utc)
+        self.date_created = datetime.now(timezone.utc)
 
     def makeSpec(
         self,
@@ -2543,7 +2542,7 @@ class TestWebService(WebServiceTestCase):
         product = question.product
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)
-        now = datetime.now(tz=pytz.utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             [oopsid],
@@ -2564,7 +2563,7 @@ class TestWebService(WebServiceTestCase):
         product = self.factory.makeProduct()
         transaction.commit()
         ws_product = self.wsObject(product, product.owner)
-        now = datetime.now(tz=pytz.utc)
+        now = datetime.now(tz=timezone.utc)
         day = timedelta(days=1)
         self.assertEqual(
             [],

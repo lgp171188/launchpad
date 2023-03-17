@@ -9,9 +9,8 @@ __all__ = [
 ]
 
 import http.client
+from datetime import timezone
 from urllib.parse import quote, quote_plus, urlunsplit
-
-import pytz
 
 from lp.bugs.externalbugtracker import (
     BugTrackerConnectError,
@@ -88,7 +87,7 @@ class GitLab(ExternalBugTracker):
             return bugs
         params = []
         if last_accessed is not None:
-            since = last_accessed.astimezone(pytz.UTC).strftime(
+            since = last_accessed.astimezone(timezone.utc).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
             params.append(("updated_after", since))
@@ -148,7 +147,7 @@ class GitLab(ExternalBugTracker):
             headers = {}
         if last_accessed is not None:
             headers["If-Modified-Since"] = last_accessed.astimezone(
-                pytz.UTC
+                timezone.utc
             ).strftime("%a, %d %b %Y %H:%M:%S GMT")
         token = self.credentials["token"]
         if token is not None:

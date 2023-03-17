@@ -185,7 +185,7 @@ around with the TZ environment variable.
     ...
     Using XML-RPC to generate token.
     Successfully validated the token.
-    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=<UTC>)
+    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=datetime.timezone.utc)
 
 An authorization request was automatically sent, since the method needed
 authentication. Because the cookie is now set, other calls won't cause
@@ -194,7 +194,7 @@ an authorization request.
     >>> test_transport.auth_cookie
     Cookie(version=0, name=...'trac_auth'...)
     >>> trac.getCurrentDBTime()
-    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=<UTC>)
+    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=datetime.timezone.utc)
 
 If the cookie gets expired, an authorization request is automatically
 sent again.
@@ -205,7 +205,7 @@ sent again.
     ...
     Using XML-RPC to generate token.
     Successfully validated the token.
-    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=<UTC>)
+    datetime.datetime(2008, 4, 9, 2, 2, 1, tzinfo=datetime.timezone.utc)
 
 
 Getting modified bugs

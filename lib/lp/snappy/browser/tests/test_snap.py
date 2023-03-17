@@ -5,10 +5,9 @@
 
 import json
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit
 
-import pytz
 import responses
 import soupmatchers
 import transaction
@@ -940,7 +939,7 @@ class TestSnapAdminView(BaseTestSnapView):
             member_of=[getUtility(ILaunchpadCelebrities).ppa_admin]
         )
         login_person(self.person)
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         snap = self.factory.makeSnap(
             registrant=self.person, date_created=date_created
         )
@@ -1161,7 +1160,7 @@ class TestSnapEditView(BaseTestSnapView):
 
     def test_edit_snap_sets_date_last_modified(self):
         # Editing a snap package sets the date_last_modified property.
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         snap = self.factory.makeSnap(
             registrant=self.person, date_created=date_created
         )
@@ -1984,7 +1983,7 @@ class TestSnapView(BaseTestSnapView):
         if archive is None:
             archive = self.ubuntu.main_archive
         if date_created is None:
-            date_created = datetime.now(pytz.UTC) - timedelta(hours=1)
+            date_created = datetime.now(timezone.utc) - timedelta(hours=1)
         return self.factory.makeSnapBuild(
             requester=self.person,
             snap=snap,
@@ -2313,7 +2312,7 @@ class TestSnapView(BaseTestSnapView):
             )
         job = removeSecurityProxy(removeSecurityProxy(request)._job)
         job.job._status = JobStatus.FAILED
-        job.job.date_finished = datetime.now(pytz.UTC) - timedelta(hours=1)
+        job.job.date_finished = datetime.now(timezone.utc) - timedelta(hours=1)
         job.error_message = "Boom"
         self.assertTextMatchesExpressionIgnoreWhitespace(
             r"""\
@@ -2419,7 +2418,7 @@ class TestSnapView(BaseTestSnapView):
         snap = self.makeSnap()
         # Create oldest builds first so that they sort properly by id.
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2000, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         builds = [
             self.makeBuild(snap=snap, date_created=next(date_gen))
@@ -2445,7 +2444,7 @@ class TestSnapView(BaseTestSnapView):
         # builds.
         snap = self.makeSnap()
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2000, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         builds = [
             self.makeBuild(snap=snap, date_created=next(date_gen))

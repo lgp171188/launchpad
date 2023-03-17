@@ -3,10 +3,9 @@
 
 """Tests for merge_people."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import attrgetter
 
-import pytz
 import transaction
 from testtools.matchers import (
     Equals,
@@ -177,7 +176,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         # Verify that the oldest datecreated is merged.
         person = self.factory.makePerson()
         duplicate = self.factory.makePerson()
-        oldest_date = datetime(2005, 11, 25, 0, 0, 0, 0, pytz.timezone("UTC"))
+        oldest_date = datetime(2005, 11, 25, 0, 0, 0, 0, timezone.utc)
         removeSecurityProxy(duplicate).datecreated = oldest_date
         self._do_premerge(duplicate, person)
         login_person(person)

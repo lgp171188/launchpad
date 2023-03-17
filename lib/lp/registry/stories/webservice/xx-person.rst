@@ -368,9 +368,8 @@ To change its expiration date, use setExpirationDate(date).
     >>> print(salgado_landscape["date_expires"])
     None
 
-    >>> import pytz
-    >>> from datetime import datetime
-    >>> someday = datetime(2058, 8, 1, tzinfo=pytz.UTC)
+    >>> from datetime import datetime, timezone
+    >>> someday = datetime(2058, 8, 1, tzinfo=timezone.utc)
     >>> print(
     ...     webservice.named_post(
     ...         salgado_landscape["self_link"],

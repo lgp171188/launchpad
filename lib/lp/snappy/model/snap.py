@@ -9,11 +9,10 @@ __all__ = [
 import base64
 import typing as t
 from collections import OrderedDict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from urllib.parse import urlsplit
 
-import pytz
 import six
 import yaml
 from breezy import urlutils
@@ -288,10 +287,10 @@ class Snap(StormBase, WebhookTargetMixin):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)
@@ -1936,7 +1935,7 @@ class SnapSet:
     @staticmethod
     def _findStaleSnaps():
         """See `ISnapSet`."""
-        threshold_date = datetime.now(pytz.UTC) - timedelta(
+        threshold_date = datetime.now(timezone.utc) - timedelta(
             minutes=config.snappy.auto_build_frequency
         )
         origin = [

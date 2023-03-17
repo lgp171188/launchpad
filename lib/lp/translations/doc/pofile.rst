@@ -3,8 +3,7 @@ POFile
 
 Get evolution template for Ubuntu Hoary
 
-    >>> import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> from zope.component import getUtility
     >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distribution import IDistributionSet
@@ -25,7 +24,6 @@ Get evolution template for Ubuntu Hoary
     ...     distroseries=series, sourcepackagename=sourcepackagename
     ... )
     >>> potemplate = potemplatesubset["evolution-2.2"]
-    >>> UTC = pytz.timezone("UTC")
 
 Get Xhosa translation
 
@@ -354,8 +352,8 @@ First, with the same date, we don't consider it older.
 
 Now, we can see how we detect that it's older with an older date.
 
-    >>> header.translation_revision_date = datetime.datetime(
-    ...     2005, 8, 18, 13, 21, tzinfo=UTC
+    >>> header.translation_revision_date = datetime(
+    ...     2005, 8, 18, 13, 21, tzinfo=timezone.utc
     ... )
     >>> pofile.isTranslationRevisionDateOlder(header)
     True
@@ -584,7 +582,7 @@ Is time to create it.  We need some extra privileges here.
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
     >>> translations = {0: ""}
     >>> is_current_upstream = False
-    >>> lock_timestamp = datetime.datetime.now(UTC)
+    >>> lock_timestamp = datetime.now(timezone.utc)
     >>> translation_message = factory.makeCurrentTranslationMessage(
     ...     pofile_sr,
     ...     potmsgset,

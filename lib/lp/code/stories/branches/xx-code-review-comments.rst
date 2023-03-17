@@ -175,9 +175,8 @@ shown as part of the conversation at the time they were pushed to Launchpad.
     >>> login("admin@canonical.com")
     >>> from lp.code.tests.helpers import add_revision_to_branch
     >>> bmp = factory.makeBranchMergeProposal()
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
-    >>> review_date = datetime(2009, 9, 10, tzinfo=pytz.UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> review_date = datetime(2009, 9, 10, tzinfo=timezone.utc)
     >>> bmp.requestReview(review_date)
     >>> revision_date = review_date + timedelta(days=1)
     >>> for date in range(2):

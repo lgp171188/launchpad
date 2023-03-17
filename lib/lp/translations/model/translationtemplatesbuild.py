@@ -9,9 +9,8 @@ __all__ = [
 ]
 
 import logging
-from datetime import timedelta
+from datetime import timedelta, timezone
 
-import pytz
 from storm.locals import Bool, DateTime, Int, Reference
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -64,12 +63,12 @@ class TranslationTemplatesBuild(
     virtualized = Bool(name="virtualized")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
-    date_started = DateTime(name="date_started", tzinfo=pytz.UTC)
-    date_finished = DateTime(name="date_finished", tzinfo=pytz.UTC)
+    date_started = DateTime(name="date_started", tzinfo=timezone.utc)
+    date_finished = DateTime(name="date_finished", tzinfo=timezone.utc)
     date_first_dispatched = DateTime(
-        name="date_first_dispatched", tzinfo=pytz.UTC
+        name="date_first_dispatched", tzinfo=timezone.utc
     )
 
     builder_id = Int(name="builder")

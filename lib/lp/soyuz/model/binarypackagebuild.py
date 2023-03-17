@@ -11,12 +11,11 @@ __all__ = [
     "SCORE_BY_URGENCY",
 ]
 
-import datetime
 import warnings
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter, itemgetter
 
 import apt_pkg
-import pytz
 import six
 from debian.deb822 import PkgRelation
 from storm.expr import And, Desc, Exists, Join, LeftJoin, Or, Select
@@ -175,12 +174,12 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     virtualized = Bool(name="virtualized")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
-    date_started = DateTime(name="date_started", tzinfo=pytz.UTC)
-    date_finished = DateTime(name="date_finished", tzinfo=pytz.UTC)
+    date_started = DateTime(name="date_started", tzinfo=timezone.utc)
+    date_finished = DateTime(name="date_finished", tzinfo=timezone.utc)
     date_first_dispatched = DateTime(
-        name="date_first_dispatched", tzinfo=pytz.UTC
+        name="date_first_dispatched", tzinfo=timezone.utc
     )
 
     builder_id = Int(name="builder")
@@ -723,7 +722,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             # No historic build times and no package size available,
             # assume a build time of 5 minutes.
             estimate = 5
-        return datetime.timedelta(minutes=estimate)
+        return timedelta(minutes=estimate)
 
     def addBuildInfo(self, buildinfo):
         """See `IBinaryPackageBuild`."""
@@ -833,7 +832,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         # the transaction, avoid several row with same datecreated.
         if arch_indep is None:
             arch_indep = distro_arch_series.isNominatedArchIndep
-        date_created = datetime.datetime.now(pytz.timezone("UTC"))
+        date_created = datetime.now(timezone.utc)
         # Create the BuildFarmJob for the new BinaryPackageBuild.
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             BinaryPackageBuild.job_type, status, date_created, builder, archive

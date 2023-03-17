@@ -3,10 +3,9 @@
 
 """Test charm recipe listings."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 
-import pytz
 import soupmatchers
 from testtools.matchers import MatchesAll, Not
 from zope.security.proxy import removeSecurityProxy
@@ -264,7 +263,7 @@ class TestCharmRecipeListing(BrowserTestCase):
         repository = self.factory.makeGitRepository()
         [ref] = self.factory.makeGitRefs(repository=repository)
         create_recipe = partial(self.factory.makeCharmRecipe, git_ref=ref)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeCharmRecipesAndMatchers(create_recipe, 3, now)
         self.assertBatches(repository, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -277,7 +276,7 @@ class TestCharmRecipeListing(BrowserTestCase):
     def test_git_ref_batches_recipes(self):
         [ref] = self.factory.makeGitRefs()
         create_recipe = partial(self.factory.makeCharmRecipe, git_ref=ref)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeCharmRecipesAndMatchers(create_recipe, 3, now)
         self.assertBatches(ref, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -292,7 +291,7 @@ class TestCharmRecipeListing(BrowserTestCase):
         create_recipe = partial(
             self.factory.makeCharmRecipe, registrant=owner, owner=owner
         )
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeCharmRecipesAndMatchers(create_recipe, 3, now)
         self.assertBatches(owner, link_matchers, False, 0, 3)
         link_matchers.extend(
@@ -306,7 +305,7 @@ class TestCharmRecipeListing(BrowserTestCase):
         project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs(target=project)
         create_recipe = partial(self.factory.makeCharmRecipe, git_ref=ref)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         link_matchers = self.makeCharmRecipesAndMatchers(create_recipe, 3, now)
         self.assertBatches(project, link_matchers, False, 0, 3)
         link_matchers.extend(

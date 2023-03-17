@@ -22,12 +22,12 @@ import http.client
 import operator
 import re
 from collections.abc import Iterable, Set
+from datetime import timezone
 from email.utils import make_msgid
 from functools import wraps
 from io import BytesIO
 from itertools import chain
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.declarations import error_status
@@ -3477,7 +3477,7 @@ class BugMute(StormBase):
     __storm_primary__ = "person_id", "bug_id"
 
     date_created = DateTime(
-        "date_created", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        "date_created", allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
 
 

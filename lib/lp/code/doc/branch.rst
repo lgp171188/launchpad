@@ -186,10 +186,9 @@ branches.
 Now we create a few branches that we pretend were updated in a definite
 order.
 
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> from lp.testing import time_counter
-    >>> import pytz
-    >>> today = datetime.now(pytz.timezone("UTC"))
+    >>> today = datetime.now(timezone.utc)
     >>> product = factory.makeProduct(name="product")
     >>> user = factory.makePerson(name="user")
     >>> time_generator = time_counter()

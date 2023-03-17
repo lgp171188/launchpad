@@ -10,13 +10,12 @@ import io
 import logging
 import re
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from textwrap import dedent
 
 import transaction
 from psycopg2 import IntegrityError
-from pytz import UTC
 from storm.exceptions import LostObjectError
 from storm.expr import SQL, In, Min, Not
 from storm.locals import Int
@@ -266,7 +265,7 @@ class TestSessionPruner(TestCase):
         nuke_all_sessions()
         self.addCleanup(nuke_all_sessions)
 
-        recent = datetime.now(UTC)
+        recent = datetime.now(timezone.utc)
         yesterday = recent - timedelta(days=1)
         ancient = recent - timedelta(days=61)
 
@@ -370,7 +369,7 @@ class TestSessionPruner(TestCase):
             "ancient_unauth",
         }
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
 
         # Make some duplicate logins from a few days ago.
         # Only the most recent 6 will be kept. Oldest is 'old dupe 9',
@@ -506,7 +505,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         )
 
     def test_CodeImportResultPruner(self):
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         store = IPrimaryStore(CodeImportResult)
 
         results_to_keep_count = config.codeimport.consecutive_failure_limit - 1
@@ -561,12 +560,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertTrue(
             store.find(Min(CodeImportResult.date_created))
             .one()
-            .replace(tzinfo=UTC)
+            .replace(tzinfo=timezone.utc)
             >= now - timedelta(days=30)
         )
 
     def test_CodeImportEventPruner(self):
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         store = IPrimaryStore(CodeImportResult)
 
         switch_dbuser("testadmin")
@@ -595,7 +594,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertTrue(
             store.find(Min(CodeImportEvent.date_created))
             .one()
-            .replace(tzinfo=UTC)
+            .replace(tzinfo=timezone.utc)
             >= now - timedelta(days=30)
         )
 
@@ -655,7 +654,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
     def test_PreviewDiffPruner(self):
         switch_dbuser("testadmin")
         mp1 = self.factory.makeBranchMergeProposal()
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         self.factory.makePreviewDiff(
             merge_proposal=mp1, date_created=now - timedelta(hours=2)
         )
@@ -676,7 +675,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # are not removed.
         switch_dbuser("testadmin")
         mp1 = self.factory.makeBranchMergeProposal()
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         mp1_diff_comment = self.factory.makePreviewDiff(
             merge_proposal=mp1, date_created=now - timedelta(hours=2)
         )
@@ -753,7 +752,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.factory.makePerson(name="test-unlinked-person-new")
         person_old = self.factory.makePerson(name="test-unlinked-person-old")
         removeSecurityProxy(person_old).datecreated = datetime(
-            2008, 1, 1, tzinfo=UTC
+            2008, 1, 1, tzinfo=timezone.utc
         )
 
         # Normally, the garbage collector will do nothing because the
@@ -1127,7 +1126,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         switch_dbuser("testadmin")
         store = IPrimaryStore(GitRepository)
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         recently = now - timedelta(minutes=2)
         long_ago = now - timedelta(minutes=65)
 
@@ -1238,7 +1237,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             TimeLimitedToken(
                 path="sample path",
                 token=b"foo",
-                created=datetime(2008, 1, 1, tzinfo=UTC),
+                created=datetime(2008, 1, 1, tzinfo=timezone.utc),
             )
         )
         store.add(TimeLimitedToken(path="sample path", token=b"bar")),
@@ -1407,7 +1406,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # each worker.
         switch_dbuser("testadmin")
         bug = self.factory.makeBug()
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         cutoff = now - timedelta(days=1)
         old_update = now - timedelta(days=2)
         naked_bug = removeSecurityProxy(bug)
@@ -1640,7 +1639,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[0],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 1, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 1, tzinfo=timezone.utc),
         )
         self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr1
@@ -1650,7 +1649,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[1],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 2, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 2, tzinfo=timezone.utc),
         )
         self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr2
@@ -1660,7 +1659,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[0],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 3, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 3, tzinfo=timezone.utc),
         )
         self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr3
@@ -1670,7 +1669,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[1],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 4, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 4, tzinfo=timezone.utc),
         )
         self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr4
@@ -1680,7 +1679,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[2],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 5, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 5, tzinfo=timezone.utc),
         )
         spph_1 = self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr5
@@ -1718,9 +1717,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
                         MatchesStructure(
                             creator=Equals(spr.creator),
                             maintainer_id=Is(None),
-                            dateuploaded=AfterPreprocessing(
-                                UTC.localize, Equals(spr.dateuploaded)
-                            ),
+                            dateuploaded=Equals(spr.dateuploaded),
                         )
                         for spr in sprs
                     ]
@@ -1740,9 +1737,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
                         MatchesStructure(
                             maintainer=Equals(spr.maintainer),
                             creator_id=Is(None),
-                            dateuploaded=AfterPreprocessing(
-                                UTC.localize, Equals(spr.dateuploaded)
-                            ),
+                            dateuploaded=Equals(spr.dateuploaded),
                         )
                         for spr in sprs
                     ]
@@ -1769,7 +1764,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             maintainer=maintainers[1],
             distroseries=distroseries,
             sourcepackagename=spn,
-            date_uploaded=datetime(2010, 12, 5, tzinfo=UTC),
+            date_uploaded=datetime(2010, 12, 5, tzinfo=timezone.utc),
         )
         spph_2 = self.factory.makeSourcePackagePublishingHistory(
             status=PackagePublishingStatus.PUBLISHED, sourcepackagerelease=spr6
@@ -1804,7 +1799,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # `interval` days ago.  If `keep_binary_files_days` is given, set
         # that on the test LiveFS.  If `base_image` is True, install the
         # test LiveFS file as a base image for its DAS.
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         switch_dbuser("testadmin")
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
         store = IPrimaryStore(LiveFSFile)
@@ -1919,7 +1914,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # remove snap files named each of `filenames` with a store upload
         # job of status `job_status` that finished more than `interval` days
         # ago.
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         switch_dbuser("testadmin")
         store = IPrimaryStore(SnapFile)
 
@@ -1992,7 +1987,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             ppa.newSubscription(self.factory.makePerson(), ppa.owner)
             for _ in range(2)
         ]
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         subs[0].date_expires = now - timedelta(minutes=3)
         self.assertEqual(ArchiveSubscriberStatus.CURRENT, subs[0].status)
         subs[1].date_expires = now + timedelta(minutes=3)
@@ -2242,7 +2237,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # Artifacts for report2 are newer than 90 days and
         # we expect them to survive the garbo job.
         switch_dbuser("testadmin")
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         report1 = removeSecurityProxy(self.factory.makeRevisionStatusReport())
         report2 = self.factory.makeRevisionStatusReport()
         report1.date_created = now - timedelta(days=120)
@@ -2494,7 +2489,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_ArchiveFileDatePopulator(self):
         switch_dbuser("testadmin")
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         archive_files = [self.factory.makeArchiveFile() for _ in range(2)]
         removeSecurityProxy(
             archive_files[1]
@@ -2530,7 +2525,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         removeSecurityProxy(
             archive_files[1]
-        ).scheduled_deletion_date = datetime.now(UTC) + timedelta(days=1)
+        ).scheduled_deletion_date = datetime.now(timezone.utc) + timedelta(
+            days=1
+        )
         self.assertIsNone(archive_files[1].date_superseded)
 
         self.assertIsNone(archive_files[2].date_superseded)
@@ -2550,7 +2547,7 @@ class TestGarboTasks(TestCaseWithFactory):
 
     def test_LoginTokenPruner(self):
         store = IPrimaryStore(LoginToken)
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         switch_dbuser("testadmin")
 
         # It is configured as a daily task.

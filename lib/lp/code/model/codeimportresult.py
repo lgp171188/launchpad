@@ -5,7 +5,8 @@
 
 __all__ = ["CodeImportResult", "CodeImportResultSet"]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
@@ -29,7 +30,9 @@ class CodeImportResult(StormBase):
 
     id = Int(primary=True)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     code_import_id = Int(name="code_import", allow_none=False)
     code_import = Reference(code_import_id, "CodeImport.id")
@@ -52,7 +55,7 @@ class CodeImportResult(StormBase):
 
     status = DBEnum(enum=CodeImportResultStatus, allow_none=False)
 
-    date_job_started = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    date_job_started = DateTime(tzinfo=timezone.utc, allow_none=False)
 
     def __init__(
         self,

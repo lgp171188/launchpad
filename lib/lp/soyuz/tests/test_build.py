@@ -1,9 +1,8 @@
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from zope.component import getUtility
 
@@ -47,7 +46,7 @@ class TestBuild(TestCaseWithFactory):
             self.builder = self.factory.makeBuilder(
                 processors=[self.processor]
             )
-        self.now = datetime.now(pytz.UTC)
+        self.now = datetime.now(timezone.utc)
 
     def test_title(self):
         # A build has a title which describes the context source version and
@@ -114,10 +113,12 @@ class TestBuild(TestCaseWithFactory):
         self.assertTrue(build.was_built)
         self.assertEqual(PackageUploadStatus.DONE, build.package_upload.status)
         self.assertEqual(
-            datetime(2008, 1, 1, 0, 0, 0, tzinfo=pytz.UTC), build.date_started
+            datetime(2008, 1, 1, 0, 0, 0, tzinfo=timezone.utc),
+            build.date_started,
         )
         self.assertEqual(
-            datetime(2008, 1, 1, 0, 5, 0, tzinfo=pytz.UTC), build.date_finished
+            datetime(2008, 1, 1, 0, 5, 0, tzinfo=timezone.utc),
+            build.date_finished,
         )
         self.assertEqual(timedelta(minutes=5), build.duration)
         expected_buildlog = "buildlog_%s-%s-%s.%s_%s_FULLYBUILT.txt.gz" % (

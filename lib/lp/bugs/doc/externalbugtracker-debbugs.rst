@@ -106,10 +106,9 @@ That's because the check for whether a bug watch needs to be updated
 looks at its next_check field, which is None by default. Updating the
 bug watches should solve that problem.
 
-    >>> from datetime import datetime
-    >>> from pytz import utc
+    >>> from datetime import datetime, timezone
     >>> for watch in debbugs.watches:
-    ...     watch.next_check = datetime.now(utc)
+    ...     watch.next_check = datetime.now(timezone.utc)
     ...
 
     >>> bug_watches = list(debbugs.watches_needing_update)
@@ -595,7 +594,7 @@ correct date.
 
     >>> test_message["date"] = "Mon, 14 Jul 2008 21:10:10 +0100"
     >>> external_debbugs._getDateForComment(test_message)
-    datetime.datetime(2008, 7, 14, 20, 10, 10, tzinfo=<UTC>)
+    datetime.datetime(2008, 7, 14, 20, 10, 10, tzinfo=datetime.timezone.utc)
 
 If we add a Received header that isn't related to the domain of the
 current instance, the Date header will still have precedence.
@@ -604,7 +603,7 @@ current instance, the Date header will still have precedence.
     ...     "received"
     ... ] = "by thiswontwork.com; Tue, 15 Jul 2008 09:12:11 +0100"
     >>> external_debbugs._getDateForComment(test_message)
-    datetime.datetime(2008, 7, 14, 20, 10, 10, tzinfo=<UTC>)
+    datetime.datetime(2008, 7, 14, 20, 10, 10, tzinfo=datetime.timezone.utc)
 
 If there's a Received header that references the correct domain, the
 date in that header will take precedence.
@@ -613,7 +612,7 @@ date in that header will take precedence.
     ...     "received"
     ... ] = "by example.com; Tue, 15 Jul 2008 10:20:11 +0100"
     >>> external_debbugs._getDateForComment(test_message)
-    datetime.datetime(2008, 7, 15, 9, 20, 11, tzinfo=<UTC>)
+    datetime.datetime(2008, 7, 15, 9, 20, 11, tzinfo=datetime.timezone.utc)
 
 
 Pushing comments to DebBugs

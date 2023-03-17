@@ -8,7 +8,8 @@ __all__ = [
     "LanguagePackSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -33,7 +34,7 @@ class LanguagePack(StormBase):
     file = Reference(file_id, "LibraryFileAlias.id")
 
     date_exported = DateTime(
-        tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
     )
 
     distroseries_id = Int(name="distroseries", allow_none=False)

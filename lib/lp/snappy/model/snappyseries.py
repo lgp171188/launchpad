@@ -9,7 +9,8 @@ __all__ = [
     "SnappySeries",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import Bool, DateTime, Desc, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
@@ -38,7 +39,7 @@ class SnappySeries(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

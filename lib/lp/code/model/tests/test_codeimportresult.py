@@ -3,9 +3,8 @@
 
 """Tests for CodeImportResult."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import UTC
 from testtools.matchers import LessThan
 
 from lp.code.interfaces.codeimportresult import ICodeImportResult
@@ -27,7 +26,7 @@ class TestCodeImportResult(TestCaseWithFactory):
         # commit, so it won't be the same as UTC_NOW.
         self.assertThat(
             result.date_created,
-            LessThan(datetime.utcnow().replace(tzinfo=UTC)),
+            LessThan(datetime.utcnow().replace(tzinfo=timezone.utc)),
         )
         self.assertEqual(result.date_created, result.date_job_finished)
 

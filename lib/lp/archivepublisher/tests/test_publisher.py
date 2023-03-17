@@ -13,14 +13,13 @@ import stat
 import tempfile
 import time
 from collections import OrderedDict, defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
 from functools import partial
 from textwrap import dedent
 from typing import Optional, Sequence, Tuple
 from unittest import mock
 
-import pytz
 import six
 import transaction
 from debian.deb822 import Release
@@ -1491,7 +1490,7 @@ class TestPublisher(TestPublisherBase):
         self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
         archive_file = self.factory.makeArchiveFile(archive=archive)
         self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         removeSecurityProxy(
             archive_file
         ).scheduled_deletion_date = now + timedelta(hours=12)
@@ -3017,7 +3016,7 @@ class TestUpdateByHash(TestPublisherBase):
 
     def setUpMockTime(self):
         """Start simulating the advance of time in the publisher."""
-        self.times = [datetime.now(pytz.UTC)]
+        self.times = [datetime.now(timezone.utc)]
         mock_datetime = mock.patch("lp.archivepublisher.publishing.datetime")
         mocked_datetime = mock_datetime.start()
         self.addCleanup(mock_datetime.stop)

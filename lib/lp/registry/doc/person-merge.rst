@@ -435,15 +435,14 @@ people.  Note, though, that when merging teams, its polls will not be
 carried over to the remaining team.  Team memberships, on the other
 hand, are carried over just like when merging people.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.registry.interfaces.poll import IPollSubset, PollSecrecy
     >>> test_team = personset.newTeam(sample, "test-team", "Test team")
     >>> launchpad_devs = personset.getByName("launchpad")
     >>> ignored = launchpad_devs.addMember(
     ...     test_team, reviewer=launchpad_devs.teamowner, force_team_add=True
     ... )
-    >>> today = datetime.now(pytz.timezone("UTC"))
+    >>> today = datetime.now(timezone.utc)
     >>> tomorrow = today + timedelta(days=1)
     >>> poll = IPollSubset(test_team).new(
     ...     "test-poll",

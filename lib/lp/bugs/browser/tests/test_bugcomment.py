@@ -3,10 +3,9 @@
 
 """Tests for the bugcomment module."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import count
 
-from pytz import utc
 from soupmatchers import HTMLContains, Tag
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -80,7 +79,7 @@ class TestGroupCommentsWithActivities(TestCase):
 
     def setUp(self):
         super().setUp()
-        self.now = datetime.now(utc)
+        self.now = datetime.now(timezone.utc)
         self.time_index = (
             (self.now + timedelta(minutes=counter), counter)
             for counter in count(1)

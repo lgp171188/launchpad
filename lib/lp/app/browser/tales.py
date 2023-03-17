@@ -7,7 +7,7 @@ import math
 import os.path
 import sys
 from bisect import bisect
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import formatdate, mktime_tz
 from textwrap import dedent
 from urllib.parse import quote
@@ -2379,7 +2379,7 @@ class DateTimeFormatterAPI:
                 datetimeobject.year,
                 datetimeobject.month,
                 datetimeobject.day,
-                tzinfo=pytz.timezone("UTC"),
+                tzinfo=timezone.utc,
             )
 
     def time(self):
@@ -2399,7 +2399,7 @@ class DateTimeFormatterAPI:
         # This method exists to be overridden in tests.
         if self._datetime.tzinfo:
             # datetime is offset-aware
-            return datetime.now(pytz.timezone("UTC"))
+            return datetime.now(timezone.utc)
         else:
             # datetime is offset-naive
             return datetime.utcnow()

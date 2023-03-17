@@ -2,10 +2,9 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 from storm.expr import Or
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
@@ -366,7 +365,7 @@ class OnceTests:
             self.bugtasks[2].transitionToStatus(
                 BugTaskStatus.FIXRELEASED, self.owner
             )
-        utc_now = datetime.now(pytz.timezone("UTC"))
+        utc_now = datetime.now(timezone.utc)
         self.assertTrue(utc_now >= self.bugtasks[2].date_closed)
         params = self.getBugTaskSearchParams(
             user=None, date_closed=greater_than(utc_now - timedelta(days=1))

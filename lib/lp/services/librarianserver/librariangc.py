@@ -9,11 +9,10 @@ import os
 import re
 import sys
 from contextlib import ExitStack
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from time import time
 
 import iso8601
-import pytz
 from swiftclient import client as swiftclient
 from zope.interface import implementer
 
@@ -62,7 +61,7 @@ def file_exists(content_id):
 
 def _utcnow():
     # Wrapper that is replaced in the test suite.
-    return datetime.now(pytz.UTC)
+    return datetime.now(timezone.utc)
 
 
 def open_stream(content_id):
@@ -118,7 +117,7 @@ def confirm_no_clock_skew(con):
     cur = con.cursor()
     try:
         cur.execute("SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'")
-        db_now = cur.fetchone()[0].replace(tzinfo=pytz.UTC)
+        db_now = cur.fetchone()[0].replace(tzinfo=timezone.utc)
     finally:
         cur.close()
     local_now = _utcnow()

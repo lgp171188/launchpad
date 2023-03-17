@@ -11,14 +11,13 @@ __all__ = [
 import email
 import logging
 from collections import OrderedDict, defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
 from functools import partial
 from itertools import chain, groupby
 from operator import attrgetter
 from urllib.parse import quote_plus, urlsplit, urlunsplit
 
-import pytz
 import six
 from breezy import urlutils
 from lazr.enum import DBItem
@@ -192,7 +191,7 @@ def parse_git_commits(commits):
         if author is not None:
             if "time" in author:
                 info["author_date"] = datetime.fromtimestamp(
-                    author["time"], tz=pytz.UTC
+                    author["time"], tz=timezone.utc
                 )
             if "name" in author and "email" in author:
                 try:
@@ -211,7 +210,7 @@ def parse_git_commits(commits):
         if committer is not None:
             if "time" in committer:
                 info["committer_date"] = datetime.fromtimestamp(
-                    committer["time"], tz=pytz.UTC
+                    committer["time"], tz=timezone.utc
                 )
             if "name" in committer and "email" in committer:
                 try:
@@ -266,10 +265,10 @@ class GitRepository(
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     repository_type = DBEnum(
@@ -318,10 +317,10 @@ class GitRepository(
     pack_count = Int(name="pack_count", allow_none=True)
 
     date_last_repacked = DateTime(
-        name="date_last_repacked", tzinfo=pytz.UTC, allow_none=True
+        name="date_last_repacked", tzinfo=timezone.utc, allow_none=True
     )
     date_last_scanned = DateTime(
-        name="date_last_scanned", tzinfo=pytz.UTC, allow_none=True
+        name="date_last_scanned", tzinfo=timezone.utc, allow_none=True
     )
 
     builder_constraints = ImmutablePgJSON(
@@ -2552,7 +2551,7 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
         try:
             expires = datetime.strptime(
                 caveat_value, self._timestamp_format
-            ).replace(tzinfo=pytz.UTC)
+            ).replace(tzinfo=timezone.utc)
         except ValueError:
             return False
         store = IStore(GitRepository)

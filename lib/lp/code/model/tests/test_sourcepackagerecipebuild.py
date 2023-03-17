@@ -3,10 +3,9 @@
 
 """Tests for source package builds."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
-from pytz import utc
 from storm.locals import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -307,7 +306,8 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
             requester=recipe.owner,
             distroseries=series,
             pocket=PackagePublishingPocket.RELEASE,
-            date_created=datetime.now(utc) - timedelta(hours=24, seconds=1),
+            date_created=datetime.now(timezone.utc)
+            - timedelta(hours=24, seconds=1),
         )
         removeSecurityProxy(recipe).is_stale = True
 
@@ -373,7 +373,8 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
             requester=recipe.owner,
             distroseries=list(recipe.distroseries)[0],
             pocket=PackagePublishingPocket.RELEASE,
-            date_created=datetime.now(utc) - timedelta(hours=24, seconds=1),
+            date_created=datetime.now(timezone.utc)
+            - timedelta(hours=24, seconds=1),
             status=BuildStatus.FULLYBUILT,
         )
         daily_builds = SourcePackageRecipeBuild.makeDailyBuilds()
@@ -394,7 +395,7 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
                 requester=recipe.owner,
                 distroseries=list(recipe.distroseries)[0],
                 pocket=PackagePublishingPocket.RELEASE,
-                date_created=datetime.now(utc) - timediff,
+                date_created=datetime.now(timezone.utc) - timediff,
                 status=BuildStatus.FULLYBUILT,
             )
         daily_builds = SourcePackageRecipeBuild.makeDailyBuilds()
@@ -413,7 +414,7 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
             requester=recipe.owner,
             distroseries=list(recipe.distroseries)[0],
             pocket=PackagePublishingPocket.RELEASE,
-            date_created=datetime.now(utc) - timedelta(hours=8),
+            date_created=datetime.now(timezone.utc) - timedelta(hours=8),
             status=BuildStatus.FULLYBUILT,
         )
         daily_builds = SourcePackageRecipeBuild.makeDailyBuilds()

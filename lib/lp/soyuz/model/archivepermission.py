@@ -8,9 +8,9 @@ __all__ = [
     "ArchivePermissionSet",
 ]
 
+from datetime import timezone
 from operator import attrgetter
 
-import pytz
 from lazr.enum import DBItem
 from storm.expr import Exists
 from storm.locals import (
@@ -63,7 +63,10 @@ class ArchivePermission(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc,
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
     )
 
     archive_id = Int(name="archive", allow_none=False)

@@ -5,11 +5,10 @@
 
 import base64
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 
 import iso8601
-import pytz
 import responses
 import transaction
 from fixtures import FakeLogger
@@ -1603,7 +1602,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
             )
             removeSecurityProxy(
                 removeSecurityProxy(build_request)._job
-            ).job.date_created = datetime.now(pytz.UTC) - timedelta(days=2)
+            ).job.date_created = datetime.now(timezone.utc) - timedelta(days=2)
         self.assertContentEqual([recipe], CharmRecipeSet._findStaleRecipes())
 
     def test_makeAutoBuilds(self):
@@ -1761,7 +1760,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         # If a previous build request is not recent and the recipe is stale,
         # ICharmRecipeSet.makeAutoBuilds requests builds.
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
-        one_day_ago = datetime.now(pytz.UTC) - timedelta(days=1)
+        one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
         build_request = self.factory.makeCharmRecipeBuildRequest(
             recipe=recipe, requester=recipe.owner
         )
@@ -1785,7 +1784,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         # request builds.
         recipe = self.factory.makeCharmRecipe(auto_build=True, is_stale=True)
         for timediff in timedelta(days=1), timedelta(minutes=30):
-            date_created = datetime.now(pytz.UTC) - timediff
+            date_created = datetime.now(timezone.utc) - timediff
             build_request = self.factory.makeCharmRecipeBuildRequest(
                 recipe=recipe, requester=recipe.owner
             )

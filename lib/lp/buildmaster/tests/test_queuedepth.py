@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test BuildQueue start time estimation."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -29,7 +28,7 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 def check_mintime_to_builder(test, bq, min_time):
     """Test the estimated time until a builder becomes available."""
-    time_stamp = bq.date_started or datetime.now(utc)
+    time_stamp = bq.date_started or datetime.now(timezone.utc)
     delay = estimate_time_to_next_builder(
         removeSecurityProxy(bq), now=time_stamp
     )
@@ -43,9 +42,9 @@ def check_mintime_to_builder(test, bq, min_time):
 def set_remaining_time_for_running_job(bq, remainder):
     """Set remaining running time for job."""
     offset = bq.estimated_duration.seconds - remainder
-    removeSecurityProxy(bq).date_started = datetime.now(utc) - timedelta(
-        seconds=offset
-    )
+    removeSecurityProxy(bq).date_started = datetime.now(
+        timezone.utc
+    ) - timedelta(seconds=offset)
 
 
 def check_delay_for_job(test, the_job, delay):
@@ -70,7 +69,7 @@ def builders_for_job(job):
 
 
 def check_estimate(test, job, delay_in_seconds):
-    time_stamp = job.date_started or datetime.now(utc)
+    time_stamp = job.date_started or datetime.now(timezone.utc)
     estimate = job.getEstimatedJobStartTime(now=time_stamp)
     if delay_in_seconds is None:
         test.assertEqual(

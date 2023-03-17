@@ -1263,9 +1263,8 @@ raised, though.
 
     # Must login in order to edit the token.
     >>> login("salgado@ubuntu.com")
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> access_token.date_expires = now - timedelta(days=1)
     >>> form2 = form.copy()
     >>> form2["oauth_nonce"] = "1764572616e48616d6d65724c61686"

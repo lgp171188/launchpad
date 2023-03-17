@@ -6,11 +6,10 @@
 """Test `remove_translations` and the `RemoveTranslations` script."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from optparse import OptionParser, OptionValueError
 from unittest import TestLoader
 
-import pytz
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -446,10 +445,10 @@ class TestRemoveTranslations(TestCase):
         )
         # Manually force creation date to something in the past
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, 14, 30, 15, tzinfo=pytz.UTC
+            2015, 5, 12, 14, 30, 15, tzinfo=timezone.utc
         )
         removeSecurityProxy(new_de_message).date_created = datetime(
-            2015, 5, 12, 19, 38, 21, tzinfo=pytz.UTC
+            2015, 5, 12, 19, 38, 21, tzinfo=timezone.utc
         )
 
         # This will restore invariant by deleting both messages created
@@ -467,10 +466,10 @@ class TestRemoveTranslations(TestCase):
             submitter=carlos,
         )
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, 3, 45, 33, tzinfo=pytz.UTC
+            2015, 5, 12, 3, 45, 33, tzinfo=timezone.utc
         )
         removeSecurityProxy(new_de_message).date_created = datetime(
-            2015, 5, 12, 4, 56, 32, tzinfo=pytz.UTC
+            2015, 5, 12, 4, 56, 32, tzinfo=timezone.utc
         )
         removeSecurityProxy(new_de_message).submitter = mark
 
@@ -499,7 +498,7 @@ class TestRemoveTranslations(TestCase):
         )
         # Manually force creation date to something in the past
         removeSecurityProxy(new_nl_message).date_created = datetime(
-            2015, 5, 12, 16, 42, 23, tzinfo=pytz.UTC
+            2015, 5, 12, 16, 42, 23, tzinfo=timezone.utc
         )
 
         rowcount = self._removeMessages(

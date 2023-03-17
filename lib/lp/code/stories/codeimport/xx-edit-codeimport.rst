@@ -102,9 +102,8 @@ imports.
     ...     make_finished_import,
     ...     get_import_for_branch_name,
     ... )
-    >>> from datetime import datetime
-    >>> import pytz
-    >>> date_finished = datetime(2007, 9, 10, 12, tzinfo=pytz.UTC)
+    >>> from datetime import datetime, timezone
+    >>> date_finished = datetime(2007, 9, 10, 12, tzinfo=timezone.utc)
     >>> code_import = get_import_for_branch_name(
     ...     svn_import_branch_unique_name
     ... )

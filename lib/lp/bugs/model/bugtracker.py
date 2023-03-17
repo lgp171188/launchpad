@@ -10,13 +10,12 @@ __all__ = [
     "BugTrackerSet",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from operator import itemgetter
 from urllib.parse import quote, urlsplit, urlunsplit
 
 from lazr.uri import URI
-from pytz import timezone
 from storm.expr import Count, Desc, Not, Or
 from storm.locals import SQL, Bool, Int, Reference, ReferenceSet, Unicode
 from storm.store import Store
@@ -579,7 +578,7 @@ class BugTracker(StormBase):
             BugWatch,
             BugWatch.bugtracker == self,
             Not(BugWatch.next_check == None),
-            BugWatch.next_check <= datetime.now(timezone("UTC")),
+            BugWatch.next_check <= datetime.now(timezone.utc),
         )
 
     @property

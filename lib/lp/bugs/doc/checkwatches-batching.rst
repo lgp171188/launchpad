@@ -77,8 +77,7 @@ For bug watches that have been checked before, the remote system is
 asked which of a list of bugs have been modified since a given date.
 
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> from datetime import datetime
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timezone
 
     >>> class QueryableRemoteSystem:
     ...     sync_comments = False
@@ -93,7 +92,7 @@ asked which of a list of bugs have been modified since a given date.
     ...
 
     >>> remote = QueryableRemoteSystem()
-    >>> now = datetime(2010, 1, 13, 16, 52, tzinfo=UTC)
+    >>> now = datetime(2010, 1, 13, 16, 52, tzinfo=timezone.utc)
 
 When there are no bug watches to check, the result is empty, and the
 remote system is not queried.

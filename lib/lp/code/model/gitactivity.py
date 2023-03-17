@@ -7,7 +7,8 @@ __all__ = [
     "GitActivity",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import JSON, DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -34,7 +35,7 @@ class GitActivity(StormBase):
     repository = Reference(repository_id, "GitRepository.id")
 
     date_changed = DateTime(
-        name="date_changed", tzinfo=pytz.UTC, allow_none=False
+        name="date_changed", tzinfo=timezone.utc, allow_none=False
     )
 
     changer_id = Int(

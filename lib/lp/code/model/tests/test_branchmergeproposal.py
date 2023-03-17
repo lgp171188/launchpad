@@ -4,7 +4,7 @@
 """Tests for BranchMergeProposals."""
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from difflib import unified_diff
 from unittest import TestCase
 
@@ -12,7 +12,6 @@ import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
-from pytz import UTC
 from storm.locals import Store
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import (
@@ -569,7 +568,7 @@ class TestBranchMergeProposalRequestReview(TestCaseWithFactory):
         return source_branch.addLandingTarget(
             source_branch.owner,
             target_branch,
-            date_created=datetime(2000, 1, 1, 12, tzinfo=UTC),
+            date_created=datetime(2000, 1, 1, 12, tzinfo=timezone.utc),
             needs_review=needs_review,
         )
 
@@ -2618,7 +2617,7 @@ class TestScheduleDiffUpdates(TestCaseWithFactory):
         self.assertIsInstance(job, UpdatePreviewDiffJob)
 
     def test_getLatestDiffUpdateJob(self):
-        complete_date = datetime.now(UTC)
+        complete_date = datetime.now(timezone.utc)
 
         bmp = self.factory.makeBranchMergeProposal()
         failed_job = removeSecurityProxy(bmp.getLatestDiffUpdateJob())
@@ -2631,7 +2630,7 @@ class TestScheduleDiffUpdates(TestCaseWithFactory):
         self.assertEqual(failed_job.job_id, result.job_id)
 
     def test_ggetLatestDiffUpdateJob_correct_branch(self):
-        complete_date = datetime.now(UTC)
+        complete_date = datetime.now(timezone.utc)
 
         main_bmp = self.factory.makeBranchMergeProposal()
         second_bmp = self.factory.makeBranchMergeProposal()
@@ -2738,7 +2737,7 @@ class TestGetRevisionsSinceReviewStart(TestCaseWithFactory):
     def test_getRevisionsSinceReviewStart_groups(self):
         # Revisions that were scanned at the same time have the same
         # date_created.  These revisions are grouped together.
-        review_date = datetime(2009, 9, 10, tzinfo=UTC)
+        review_date = datetime(2009, 9, 10, tzinfo=timezone.utc)
         bmp = self.factory.makeBranchMergeProposal(date_created=review_date)
         with person_logged_in(bmp.registrant):
             bmp.requestReview(review_date)

@@ -8,7 +8,8 @@ __all__ = [
     "SpecificationBranchSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
@@ -31,7 +32,10 @@ class SpecificationBranch(StormBase):
     id = Int(primary=True)
 
     datecreated = DateTime(
-        name="datecreated", tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+        name="datecreated",
+        tzinfo=timezone.utc,
+        allow_none=False,
+        default=UTC_NOW,
     )
     specification_id = Int(name="specification", allow_none=False)
     specification = Reference(specification_id, "Specification.id")

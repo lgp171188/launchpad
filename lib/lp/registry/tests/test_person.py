@@ -2,9 +2,8 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.utils import smartquote
 from storm.locals import Desc
@@ -918,7 +917,7 @@ class TestPersonStates(TestCaseWithFactory):
         self.guadamen = person_set.getByName("guadamen")
         product_set = getUtility(IProductSet)
         self.bzr = product_set.getByName("bzr")
-        self.now = datetime.now(pytz.UTC)
+        self.now = datetime.now(timezone.utc)
 
     def test_canDeactivate_private_projects(self):
         """A user owning non-public products cannot be deactivated."""
@@ -2101,7 +2100,7 @@ class TestSpecifications(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.date_created = datetime.now(pytz.utc)
+        self.date_created = datetime.now(timezone.utc)
 
     def makeSpec(
         self,

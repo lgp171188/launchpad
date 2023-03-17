@@ -1,10 +1,9 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 
-import pytz
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -719,7 +718,7 @@ class TestPOTMsgSetSuggestions(TestCaseWithFactory):
         naked_tm.date_reviewed = self.now()
 
     def gen_now(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         while True:
             yield now
             now += timedelta(milliseconds=1)
@@ -978,7 +977,7 @@ class TestPOTMsgSetResetTranslation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def gen_now(self):
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         while True:
             yield now
             now += timedelta(milliseconds=1)
@@ -1674,7 +1673,7 @@ class TestSetCurrentTranslation(TestCaseWithFactory):
         origin = RosettaTranslationOrigin.ROSETTAWEB
 
         # A translator bases a change on a page view from 5 minutes ago.
-        lock_timestamp = datetime.now(pytz.UTC) - timedelta(minutes=5)
+        lock_timestamp = datetime.now(timezone.utc) - timedelta(minutes=5)
 
         # Meanwhile someone else changes the same message's translation.
         self.factory.makeCurrentTranslationMessage(
@@ -1955,7 +1954,7 @@ class TestCheckForConflict(TestCaseWithFactory):
         # that as conflict-free.
         potemplate = self.factory.makePOTemplate()
         potmsgset = self.factory.makePOTMsgSet(potemplate)
-        old = datetime.now(pytz.UTC) - timedelta(days=366)
+        old = datetime.now(timezone.utc) - timedelta(days=366)
 
         removeSecurityProxy(potmsgset)._checkForConflict(None, old)
 

@@ -4,10 +4,9 @@
 """Unit tests for methods of CodeImport and CodeImportSet."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import partial
 
-import pytz
 from storm.store import Store
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
@@ -575,7 +574,7 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
         # The results query will order the results by job started time, with
         # the most recent import first.
         when = time_counter(
-            origin=datetime(2007, 9, 9, 12, tzinfo=pytz.UTC),
+            origin=datetime(2007, 9, 9, 12, tzinfo=timezone.utc),
             delta=timedelta(days=1),
         )
         first = self.factory.makeCodeImportResult(
@@ -599,7 +598,7 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
         # order (this wouldn't really happen) but it shows that the id of the
         # import result isn't used to sort by.
         when = time_counter(
-            origin=datetime(2007, 9, 11, 12, tzinfo=pytz.UTC),
+            origin=datetime(2007, 9, 11, 12, tzinfo=timezone.utc),
             delta=timedelta(days=-1),
         )
         first = self.factory.makeCodeImportResult(

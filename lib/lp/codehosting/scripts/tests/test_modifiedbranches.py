@@ -4,9 +4,7 @@
 """Test the modified branches script."""
 
 import os
-from datetime import datetime
-
-import pytz
+from datetime import datetime, timezone
 
 from lp.code.enums import BranchType
 from lp.codehosting.scripts.modifiedbranches import ModifiedBranchesScript
@@ -61,7 +59,7 @@ class TestModifiedBranchesLastModifiedEpoch(TestCase):
             "modified-branches", test_args=["--since=2009-03-02"]
         )
         self.assertEqual(
-            datetime(2009, 3, 2, tzinfo=pytz.UTC),
+            datetime(2009, 3, 2, tzinfo=timezone.utc),
             script.get_last_modified_epoch(),
         )
 
@@ -82,10 +80,10 @@ class TestModifiedBranchesLastModifiedEpoch(TestCase):
         )
         # Override the script's now_timestamp to have a definitive test.
         # 3pm on the first of January.
-        script.now_timestamp = datetime(2009, 1, 1, 15, tzinfo=pytz.UTC)
+        script.now_timestamp = datetime(2009, 1, 1, 15, tzinfo=timezone.utc)
         # The last modified should be 3am on the same day.
         self.assertEqual(
-            datetime(2009, 1, 1, 3, tzinfo=pytz.UTC),
+            datetime(2009, 1, 1, 3, tzinfo=timezone.utc),
             script.get_last_modified_epoch(),
         )
 

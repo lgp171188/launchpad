@@ -12,10 +12,9 @@ __all__ = [
     "NEVER_EXPIRES",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from lazr.restful.fields import Reference
-from pytz import utc
 from zope.interface import Attribute, Interface
 from zope.schema import Bool, Choice, Date, Datetime, Int, TextLine
 
@@ -26,7 +25,7 @@ from lp.services.librarian.interfaces.client import (
 
 # Set the expires attribute to this constant to flag a file that
 # should never be removed from the Librarian.
-NEVER_EXPIRES = datetime(2038, 1, 1, 0, 0, 0, tzinfo=utc)
+NEVER_EXPIRES = datetime(2038, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
 
 class ILibraryFileAlias(Interface):

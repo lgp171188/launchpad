@@ -8,7 +8,8 @@ __all__ = [
     "LaunchpadStatisticSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -48,7 +49,9 @@ class LaunchpadStatistic(StormBase):
 
     name = Unicode(allow_none=False)
     value = Int(allow_none=False)
-    dateupdated = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    dateupdated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     def __init__(self, name, value):
         super().__init__()

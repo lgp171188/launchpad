@@ -17,10 +17,8 @@ Helper imports
     ...     TranslationFileFormat,
     ... )
     >>> from lp.translations.model.potemplate import POTemplateSubset
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
-    >>> ISO_FORMATTED_DATE = datetime.datetime.now(UTC).isoformat()
+    >>> from datetime import datetime, timezone
+    >>> ISO_FORMATTED_DATE = datetime.now(timezone.utc).isoformat()
 
 To ease the pain of importing many files during testing, we use this
 helper function to import either a PO file or a PO template from the

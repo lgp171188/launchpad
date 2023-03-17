@@ -219,13 +219,14 @@ token to a fixed value:
     ...     1
     ... ].encode("ASCII")
 
-    >>> import datetime, hashlib, pytz
+    >>> from datetime import datetime, timezone
+    >>> import hashlib
     >>> from lp.services.verification.model.logintoken import LoginToken
     >>> logintoken = LoginToken.selectOneBy(
     ...     _token=hashlib.sha256(token_value).hexdigest()
     ... )
-    >>> logintoken.date_created = datetime.datetime(
-    ...     2005, 4, 1, 12, 0, 0, tzinfo=pytz.timezone("UTC")
+    >>> logintoken.date_created = datetime(
+    ...     2005, 4, 1, 12, 0, 0, tzinfo=timezone.utc
     ... )
     >>> logintoken.sync()
 

@@ -19,14 +19,13 @@ __all__ = [
 
 import http.client
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from io import BytesIO
 from urllib.parse import quote, urlencode
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
-from pytz import timezone
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields
@@ -1471,7 +1470,7 @@ class BugsPatchesView(LaunchpadView):
 
     def patchAge(self, patch):
         """Return a timedelta object for the age of a patch attachment."""
-        now = datetime.now(timezone("UTC"))
+        now = datetime.now(timezone.utc)
         return now - patch.message.datecreated
 
 

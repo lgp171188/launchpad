@@ -3,11 +3,10 @@
 
 """Tests for `CommandSpawner`."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fcntl import F_GETFL, fcntl
 from os import O_NONBLOCK, fdopen, pipe
 
-from pytz import utc
 from testtools.matchers import LessThan
 
 from lp.services.command_spawner import (
@@ -243,28 +242,28 @@ class TestCommandSpawnerAcceptance(TestCase):
 
     def test_communicate_returns_after_event(self):
         spawner = self._makeSpawner()
-        before = datetime.now(utc)
+        before = datetime.now(timezone.utc)
         spawner.start(["/bin/sleep", "10"])
         spawner.start("/bin/pwd")
         spawner.communicate()
-        after = datetime.now(utc)
+        after = datetime.now(timezone.utc)
         self.assertThat(after - before, LessThan(timedelta(seconds=10)))
 
     def test_kill_terminates_processes(self):
         spawner = self._makeSpawner()
         spawner.start(["/bin/sleep", "10"])
         spawner.start(["/bin/sleep", "10"])
-        before = datetime.now(utc)
+        before = datetime.now(timezone.utc)
         spawner.kill()
         spawner.complete()
-        after = datetime.now(utc)
+        after = datetime.now(timezone.utc)
         self.assertThat(after - before, LessThan(timedelta(seconds=10)))
 
     def test_start_does_not_block(self):
         spawner = self._makeSpawner()
-        before = datetime.now(utc)
+        before = datetime.now(timezone.utc)
         spawner.start(["/bin/sleep", "10"])
-        after = datetime.now(utc)
+        after = datetime.now(timezone.utc)
         self.assertThat(after - before, LessThan(timedelta(seconds=10)))
 
     def test_subprocesses_run_in_parallel(self):
@@ -275,9 +274,9 @@ class TestCommandSpawnerAcceptance(TestCase):
         for counter in range(processes):
             spawner.start(["/bin/sleep", str(seconds)])
 
-        before = datetime.now(utc)
+        before = datetime.now(timezone.utc)
         spawner.complete()
-        after = datetime.now(utc)
+        after = datetime.now(timezone.utc)
 
         sequential_time = timedelta(seconds=(seconds * processes))
         self.assertThat(after - before, LessThan(sequential_time))

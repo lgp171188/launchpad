@@ -47,10 +47,9 @@ it.
 Then create a result object.
 
     >>> from lp.testing import time_counter
-    >>> from pytz import UTC
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> time_source = time_counter(
-    ...     datetime(2008, 1, 1, tzinfo=UTC), timedelta(days=1)
+    ...     datetime(2008, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
     ... )
     >>> odin = factory.makeCodeImportMachine(hostname="odin")
     >>> from lp.code.enums import CodeImportResultStatus

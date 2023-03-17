@@ -48,10 +48,10 @@ set.
     []
 
     >>> ubz.time_starts
-    datetime.datetime(2005, 10, 7, 23, 30, tzinfo=<UTC>)
+    datetime.datetime(2005, 10, 7, 23, 30, tzinfo=datetime.timezone.utc)
 
     >>> ubz.time_ends
-    datetime.datetime(2005, 11, 17, 0, 11, tzinfo=<UTC>)
+    datetime.datetime(2005, 11, 17, 0, 11, tzinfo=datetime.timezone.utc)
 
     >>> login("test@canonical.com")
 

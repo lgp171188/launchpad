@@ -8,10 +8,9 @@ import os
 import re
 import tempfile
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
-import pytz
 import requests
 from zope.component import getUtility
 
@@ -205,7 +204,7 @@ class ProductReleaseFinder:
         release = milestone.product_release
         if release is None:
             release = milestone.createProductRelease(
-                owner=product.owner, datereleased=datetime.now(pytz.UTC)
+                owner=product.owner, datereleased=datetime.now(timezone.utc)
             )
             self.log.info(
                 "Created new release %s for %s/%s",

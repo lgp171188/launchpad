@@ -4,9 +4,8 @@
 """Tests for branch merge proposal jobs."""
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -374,7 +373,7 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         bmp = self.createExampleBzrMerge()[0]
         job = UpdatePreviewDiffJob.create(bmp)
         job.acquireLease()
-        expiry_delta = job.lease_expires - datetime.now(pytz.UTC)
+        expiry_delta = job.lease_expires - datetime.now(timezone.utc)
         self.assertTrue(500 <= expiry_delta.seconds, expiry_delta)
 
     def assertCorrectPreviewDiffDelivery(self, bmp, delivery, logger):
@@ -489,7 +488,7 @@ class TestGenerateIncrementalDiffJob(DiffTestCase):
         job = GenerateIncrementalDiffJob.create(bmp, "old", "new")
         with dbuser("merge-proposal-jobs"):
             job.acquireLease()
-        expiry_delta = job.lease_expires - datetime.now(pytz.UTC)
+        expiry_delta = job.lease_expires - datetime.now(timezone.utc)
         self.assertTrue(500 <= expiry_delta.seconds, expiry_delta)
 
 
@@ -532,7 +531,7 @@ class TestBranchMergeProposalJobSource(TestCaseWithFactory):
             ),
         )
         minutes = config.codehosting.update_preview_diff_ready_timeout + 1
-        a_while_ago = datetime.now(pytz.UTC) - timedelta(minutes=minutes)
+        a_while_ago = datetime.now(timezone.utc) - timedelta(minutes=minutes)
         bmp_jobs.set(date_created=a_while_ago)
         [job] = self.job_source.iterReady()
         self.assertEqual(job.branch_merge_proposal, bmp)

@@ -313,7 +313,7 @@ values of the product milestones.
     >>> print(gnome.getMilestone("1.1").dateexpected)
     None
 
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> applets_1_1.dateexpected = datetime(2007, 4, 2)
     >>> print(gnome.getMilestone("1.1").dateexpected)
     2007-04-02 00:00:00
@@ -514,11 +514,10 @@ specifications targeted to it.
 If a milestone has a product release associated with it though, it can
 not be deleted.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
-
     >>> milestone = ff_onedotzero.newMilestone("1.0.11")
-    >>> release = milestone.createProductRelease(owner, datetime.now(UTC))
+    >>> release = milestone.createProductRelease(
+    ...     owner, datetime.now(timezone.utc)
+    ... )
     >>> milestone.destroySelf()
     Traceback (most recent call last):
     ...
@@ -587,7 +586,9 @@ event is signaled for each changed bug task.
     >>> triaged_bugtask = factory.makeBugTask(target=upstream_firefox)
     >>> triaged_bugtask.transitionToMilestone(milestone, owner)
     >>> triaged_bugtask.transitionToStatus(BugTaskStatus.TRIAGED, owner)
-    >>> release = milestone.createProductRelease(owner, datetime.now(UTC))
+    >>> release = milestone.createProductRelease(
+    ...     owner, datetime.now(timezone.utc)
+    ... )
     >>> bugtask_event_listener = ZopeEventHandlerFixture(
     ...     print_event, (IBugTask, IObjectModifiedEvent)
     ... )

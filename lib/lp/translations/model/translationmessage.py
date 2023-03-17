@@ -9,9 +9,8 @@ __all__ = [
     "TranslationMessageSet",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.expr import And
 from storm.locals import SQL, Int, Reference
 from storm.store import Store
@@ -44,8 +43,6 @@ from lp.translations.interfaces.translationmessage import (
 )
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.potranslation import POTranslation
-
-UTC = pytz.timezone("UTC")
 
 
 def make_plurals_fragment(fragment, separator):
@@ -150,7 +147,7 @@ class PlaceholderTranslationMessage(TranslationMessageMixIn):
         self.potemplate = pofile.potemplate
         self.language = pofile.language
         self.potmsgset = potmsgset
-        self.date_created = datetime.now(UTC)
+        self.date_created = datetime.now(timezone.utc)
         self.submitter = None
         self.date_reviewed = None
         self.reviewer = None

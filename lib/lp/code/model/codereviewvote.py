@@ -7,7 +7,8 @@ __all__ = [
     "CodeReviewVoteReference",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
@@ -34,7 +35,9 @@ class CodeReviewVoteReference(StormBase):
     branch_merge_proposal = Reference(
         branch_merge_proposal_id, "BranchMergeProposal.id"
     )
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
     registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
     reviewer_id = Int(name="reviewer", allow_none=False)

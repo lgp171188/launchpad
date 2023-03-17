@@ -6,9 +6,9 @@ __all__ = [
     "XRefSet",
 ]
 
+from datetime import timezone
 from itertools import groupby
 
-import pytz
 from storm.expr import And, Or
 from storm.properties import JSON, DateTime, Int, Unicode
 from storm.references import Reference
@@ -45,7 +45,7 @@ class XRef(StormBase):
     from_id_int = Int()  # For efficient joins.
     creator_id = Int(name="creator")
     creator = Reference(creator_id, "Person.id")
-    date_created = DateTime(name="date_created", tzinfo=pytz.UTC)
+    date_created = DateTime(name="date_created", tzinfo=timezone.utc)
     metadata = JSON()
 
 

@@ -143,8 +143,7 @@ We'll set the bug's heat to 0 first to demonstrate this.
 
     >>> removeSecurityProxy(bug).heat = 0
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import timezone
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.services.utils import utc_now
 
     >>> from lp.bugs.adapters.bugchange import BugDescriptionChange
@@ -174,7 +173,7 @@ out of date.
     >>> from lp.bugs.model.bug import Bug
     >>> from lp.services.database.interfaces import IStore
     >>> IStore(Bug).find(Bug).set(
-    ...     heat_last_updated=datetime.now(timezone("UTC"))
+    ...     heat_last_updated=datetime.now(timezone.utc)
     ... )
 
 If we call getBugsWithOutdatedHeat() now, the set that is returned will
@@ -182,7 +181,7 @@ be empty because all the bugs have been recently updated.
 getBugsWithOutdatedHeat() takes a single parameter, cutoff, which is the
 oldest a bug's heat can be before it gets included in the returned set.
 
-    >>> yesterday = datetime.now(timezone("UTC")) - timedelta(days=1)
+    >>> yesterday = datetime.now(timezone.utc) - timedelta(days=1)
     >>> getUtility(IBugSet).getBugsWithOutdatedHeat(yesterday).count()
     0
 
@@ -193,9 +192,9 @@ getBugsWithOutdatedHeat().
     >>> old_heat_bug = factory.makeBug()
     >>> naked_bug = removeSecurityProxy(old_heat_bug)
     >>> naked_bug.heat = 0
-    >>> naked_bug.heat_last_updated = datetime.now(
-    ...     timezone("UTC")
-    ... ) - timedelta(days=2)
+    >>> naked_bug.heat_last_updated = datetime.now(timezone.utc) - timedelta(
+    ...     days=2
+    ... )
 
     >>> outdated_bugs = getUtility(IBugSet).getBugsWithOutdatedHeat(yesterday)
     >>> outdated_bugs.count()

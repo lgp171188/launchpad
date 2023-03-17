@@ -3,16 +3,15 @@
 
 """Test native publication workflow for Soyuz. """
 
-import datetime
 import io
 import operator
 import os
 import shutil
 import tempfile
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from unittest import mock
 
-import pytz
 import transaction
 from storm.store import Store
 from testtools.matchers import Equals
@@ -588,8 +587,8 @@ class SoyuzTestPublisher:
         binarypackagerelease.addFile(alias)
 
         # Adjust the build record in way it looks complete.
-        date_finished = datetime.datetime(2008, 1, 1, 0, 5, 0, tzinfo=pytz.UTC)
-        date_started = date_finished - datetime.timedelta(minutes=5)
+        date_finished = datetime(2008, 1, 1, 0, 5, 0, tzinfo=timezone.utc)
+        date_started = date_finished - timedelta(minutes=5)
         build.updateStatus(
             BuildStatus.BUILDING,
             date_started=date_started,
@@ -846,8 +845,7 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
         Optionally the user can pass a 'lag' which will be added to 'now'
         before comparing.
         """
-        UTC = pytz.timezone("UTC")
-        limit = datetime.datetime.now(UTC)
+        limit = datetime.now(timezone.utc)
         if lag is not None:
             limit = limit + lag
         self.assertTrue(date < limit, "%s >= %s" % (date, limit))
@@ -1620,9 +1618,7 @@ class TestSourceDomination(TestNativePublishingBase):
 
         # Manually set a date in the past, so we can confirm that
         # the second supersede() fails properly.
-        source.datesuperseded = datetime.datetime(
-            2006, 12, 25, tzinfo=pytz.timezone("UTC")
-        )
+        source.datesuperseded = datetime(2006, 12, 25, tzinfo=timezone.utc)
         super_date = source.datesuperseded
 
         self.assertRaises(AssertionError, source.supersede, super_source)
@@ -1660,9 +1656,7 @@ class TestBinaryDomination(TestNativePublishingBase):
 
         # Manually set a date in the past, so we can confirm that
         # the second supersede() fails properly.
-        bin.datesuperseded = datetime.datetime(
-            2006, 12, 25, tzinfo=pytz.timezone("UTC")
-        )
+        bin.datesuperseded = datetime(2006, 12, 25, tzinfo=timezone.utc)
         super_date = bin.datesuperseded
 
         self.assertRaises(AssertionError, bin.supersede, super_bin)
@@ -1683,9 +1677,7 @@ class TestBinaryDomination(TestNativePublishingBase):
 
         # Manually set a date in the past, so we can confirm that
         # the second supersede() skips properly.
-        bin.datesuperseded = datetime.datetime(
-            2006, 12, 25, tzinfo=pytz.timezone("UTC")
-        )
+        bin.datesuperseded = datetime(2006, 12, 25, tzinfo=timezone.utc)
         super_date = bin.datesuperseded
 
         bin.supersede(super_bin)

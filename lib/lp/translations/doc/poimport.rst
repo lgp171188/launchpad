@@ -15,9 +15,7 @@ Here are some imports we need to get this test running.
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue,
     ... )
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
 We need this for the Librarian to work properly.
@@ -91,7 +89,7 @@ This is the file that'll get imported.
     ... msgid "translator-credits"
     ... msgstr ""
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()  # noqa
 
 We sometimes saw deadlocks as POFile statistics were updated after
@@ -124,10 +122,7 @@ The entry gets approved, so it can be imported.
 
     >>> entry.setStatus(RosettaImportStatus.APPROVED, rosetta_experts)
 
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
-    >>> saved_date = datetime.datetime.now(UTC)
+    >>> saved_date = datetime.now(timezone.utc)
 
 Now, we tell the PO template to import from the file data it has.
 
@@ -272,7 +267,7 @@ validation errors.
     ... msgstr[2] "Welsh power! %%d"
     ... msgstr[3] "We have four! %%d"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()  # noqa
 
 This is the dbschema that controls the validation of a translation.
@@ -474,7 +469,7 @@ For example, here's a gettext PO file with two headers.
     ... msgid "a"
     ... msgstr "b"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()  # noqa
     >>> eo_pofile = potemplate.newPOFile("eo")
     >>> warning_entry = translation_import_queue.addOrUpdateEntry(
@@ -546,7 +541,7 @@ and adds another one.
     ... msgid "translator-credits"
     ... msgstr "helpful@example.com"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -718,7 +713,7 @@ We'll import a POFile with 3 plural forms into this POFile:
     ... msgstr[1] "Second form %%d"
     ... msgstr[2] "Third form %%d"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()  # noqa
 
 We now import this POFile as this language's translation for the source

@@ -3,9 +3,8 @@
 
 """Test the Git reference vocabularies."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from testtools.matchers import MatchesStructure
 from zope.schema.vocabulary import SimpleTerm
 from zope.security.proxy import removeSecurityProxy
@@ -122,7 +121,7 @@ class TestGitRefVocabulary(TestCaseWithFactory):
         removeSecurityProxy(
             ref_master.repository
         )._default_branch = ref_master.path
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         removeSecurityProxy(ref_master_old).committer_date = now - timedelta(
             days=1
         )
@@ -240,7 +239,7 @@ class TestGitBranchVocabulary(TestCaseWithFactory):
         removeSecurityProxy(
             ref_master.repository
         )._default_branch = ref_master.path
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         removeSecurityProxy(ref_master_old).committer_date = now - timedelta(
             days=1
         )

@@ -9,10 +9,9 @@ import cgi
 import csv
 import time
 import xmlrpc.client
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import parseaddr
 
-import pytz
 import requests
 from requests.cookies import RequestsCookieJar
 from zope.component import getUtility
@@ -411,7 +410,7 @@ class TracLPPlugin(Trac):
         # Return the UTC time, so we don't have to care about the time
         # zone for now.
         trac_time = datetime.utcfromtimestamp(utc_time)
-        return trac_time.replace(tzinfo=pytz.timezone("UTC"))
+        return trac_time.replace(tzinfo=timezone.utc)
 
     @ensure_no_transaction
     @needs_authentication
@@ -486,7 +485,7 @@ class TracLPPlugin(Trac):
         comment = bug["comments"][comment_id]
 
         comment_datecreated = datetime.fromtimestamp(
-            comment["timestamp"], pytz.timezone("UTC")
+            comment["timestamp"], timezone.utc
         )
         message = getUtility(IMessageSet).fromText(
             subject="",

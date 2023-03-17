@@ -67,14 +67,13 @@ or if the licence has been reviewed and been manually approved.
 
 The commercial subscription is about to expire here.
 
-    >>> from datetime import date, datetime, timedelta
-    >>> from pytz import UTC
+    >>> from datetime import date, datetime, timedelta, timezone
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.product import License
     >>> login("foo.bar@canonical.com")
     >>> bzr.licenses = [License.OTHER_PROPRIETARY]
     >>> subscription = removeSecurityProxy(bzr.commercial_subscription)
-    >>> subscription.date_expires = datetime.now(UTC) + timedelta(29)
+    >>> subscription.date_expires = datetime.now(timezone.utc) + timedelta(29)
     >>> bzr.qualifies_for_free_hosting
     False
     >>> bzr.commercial_subscription_is_due
@@ -87,7 +86,7 @@ The commercial subscription is about to expire here.
 The subscription will not expire for more than 30 days so a new
 subscription is not due yet.
 
-    >>> subscription.date_expires = datetime.now(UTC) + timedelta(31)
+    >>> subscription.date_expires = datetime.now(timezone.utc) + timedelta(31)
     >>> bzr.commercial_subscription_is_due
     False
 
@@ -202,7 +201,6 @@ as well as the license_info field. The results are ordered by date created
 then display name.
 
     >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> from datetime import timedelta
     >>> bzr.licenses = [License.GNU_GPL_V2, License.ECLIPSE]
     >>> flush_database_updates()
     >>> for product in product_set.forReview(

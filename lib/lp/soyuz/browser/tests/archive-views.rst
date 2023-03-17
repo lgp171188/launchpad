@@ -384,11 +384,10 @@ If we update the datecreated for some of the publishing records, those
 created within the last 30 days will be included in the count, but
 others will not.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.services.database.constants import UTC_NOW
-    >>> thirtyone_days_ago = datetime.now(tz=pytz.UTC) - timedelta(31)
+    >>> thirtyone_days_ago = datetime.now(tz=timezone.utc) - timedelta(31)
     >>> login("foo.bar@canonical.com")
     >>> removeSecurityProxy(view.filtered_sources[0]).datecreated = UTC_NOW
     >>> removeSecurityProxy(view.filtered_sources[1]).datecreated = UTC_NOW

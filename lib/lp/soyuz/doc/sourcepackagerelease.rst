@@ -23,7 +23,8 @@ Let's get one from the database:
     >>> print(spr.version)
     0.1-1
     >>> spr.dateuploaded
-    datetime.datetime(2005, 3, 24, 20, 59, 31, 439579, tzinfo=<UTC>)
+    datetime.datetime(2005, 3, 24, 20, 59, 31, 439579,
+        tzinfo=datetime.timezone.utc)
 
 published_archives returns a set of all the archives that this
 SourcePackageRelease is published in.
@@ -45,9 +46,8 @@ It returns a timedelta object:
 
 Check if the result match the locally calculated one:
 
-    >>> import datetime
-    >>> import pytz
-    >>> local_now = datetime.datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> local_now = datetime.now(timezone.utc)
 
     >>> expected_age = local_now - spr.dateuploaded
     >>> spr.age.days == expected_age.days
@@ -56,7 +56,7 @@ Check if the result match the locally calculated one:
 Modify dateuploaded to a certain number of days in the past and check
 if the 'age' result looks sane:
 
-    >>> spr.dateuploaded = local_now - datetime.timedelta(days=10)
+    >>> spr.dateuploaded = local_now - timedelta(days=10)
     >>> spr.age.days == 10
     True
 

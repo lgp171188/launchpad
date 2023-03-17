@@ -1,10 +1,9 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import datetime
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 
-import pytz
 import transaction
 from testtools.content import text_content
 from testtools.matchers import (
@@ -990,8 +989,7 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         )
 
         # Set the expiration date of one of the testing binary files.
-        utc = pytz.timezone("UTC")
-        old_date = datetime.datetime(1970, 1, 1, tzinfo=utc)
+        old_date = datetime(1970, 1, 1, tzinfo=timezone.utc)
         a_binary_file = binaries[0].binarypackagerelease.files[0]
         a_binary_file.libraryfile.expires = old_date
 
@@ -1030,8 +1028,7 @@ class CopyCheckerTestCase(TestCaseWithFactory):
         series = source.distroseries
         pocket = source.pocket
 
-        utc = pytz.timezone("UTC")
-        expire = datetime.datetime.now(utc) + datetime.timedelta(days=365)
+        expire = datetime.now(timezone.utc) + timedelta(days=365)
 
         a_source_file = source.sourcepackagerelease.files[0]
         a_source_file.libraryfile.expires = expire

@@ -3,11 +3,10 @@
 
 """Test live filesystem build features."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
-import pytz
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 from testtools.matchers import (
@@ -363,7 +362,7 @@ class TestLiveFSBuild(TestCaseWithFactory):
             requester=person,
             owner=person,
             distroarchseries=distroarchseries,
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
             status=BuildStatus.FAILEDTOBUILD,
             builder=self.factory.makeBuilder(name="bob"),
             duration=timedelta(minutes=10),
@@ -488,7 +487,7 @@ class TestLiveFSBuildWebservice(TestCaseWithFactory):
             requester=self.person,
             unique_key="foo",
             metadata_override={"image_format": "plain"},
-            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=pytz.UTC),
+            date_created=datetime(2014, 4, 25, 10, 38, 0, tzinfo=timezone.utc),
         )
         build_url = api_url(db_build)
         logout()

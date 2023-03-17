@@ -7,10 +7,9 @@ __all__ = [
     "HasTranslationImportsView",
 ]
 
-import datetime
 import json
+from datetime import datetime, timezone
 
-import pytz
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
@@ -275,8 +274,7 @@ class HasTranslationImportsView(LaunchpadFormView):
                 entry.setStatus(new_status, self.user)
 
             # Update the date_status_change field.
-            UTC = pytz.timezone("UTC")
-            entry.date_status_changed = datetime.datetime.now(UTC)
+            entry.date_status_changed = datetime.now(timezone.utc)
 
         if number_of_changes == 0:
             self.request.response.addWarningNotification(

@@ -1046,12 +1046,10 @@ To edit this field, we need to have Edit permissions.
 
 Let's change the field with a date 2 days, 13 hours and 5 minutes ago.
 
-    >>> import pytz
-    >>> import datetime
-    >>> UTC = pytz.timezone("UTC")
-    >>> delta = datetime.timedelta(days=2, hours=13, minutes=5)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> delta = timedelta(days=2, hours=13, minutes=5)
     >>> entry = removeSecurityProxy(entry)
-    >>> entry.dateimported = datetime.datetime.now(UTC) - delta
+    >>> entry.dateimported = datetime.now(timezone.utc) - delta
 
 And this method gets the right text.
 
@@ -1552,8 +1550,8 @@ days.
 
 Such requests are deleted after a few days.
 
-    >>> delta = datetime.timedelta(days=4)
-    >>> entry.date_status_changed = datetime.datetime.now(UTC) - delta
+    >>> delta = timedelta(days=4)
+    >>> entry.date_status_changed = datetime.now(timezone.utc) - delta
     >>> flush_database_updates()
     >>> translationimportqueue.cleanUpQueue()
     1

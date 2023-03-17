@@ -5,7 +5,8 @@
 
 __all__ = ["OCIRecipeSubscription"]
 
-import pytz
+from datetime import timezone
+
 from storm.properties import DateTime, Int
 from storm.references import Reference
 from zope.interface import implementer
@@ -31,7 +32,9 @@ class OCIRecipeSubscription(StormBase):
     recipe_id = Int("recipe", allow_none=False)
     recipe = Reference(recipe_id, "OCIRecipe.id")
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     subscribed_by_id = Int(
         "subscribed_by", allow_none=False, validator=validate_person

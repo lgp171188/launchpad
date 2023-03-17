@@ -13,10 +13,10 @@ __all__ = [
 
 import collections
 import operator
+from datetime import timezone
 from socket import getfqdn
 from string import Template
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import Func
 from storm.info import ClassAlias
@@ -111,7 +111,9 @@ class MessageApproval(StormBase):
     posted_message_id = Int(name="posted_message", allow_none=False)
     posted_message = Reference(posted_message_id, "LibraryFileAlias.id")
 
-    posted_date = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    posted_date = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     mailing_list_id = Int(name="mailing_list", allow_none=False)
     mailing_list = Reference(mailing_list_id, "MailingList.id")
@@ -127,7 +129,7 @@ class MessageApproval(StormBase):
     )
     disposed_by = Reference(disposed_by_id, "Person.id")
 
-    disposal_date = DateTime(tzinfo=pytz.UTC, default=None)
+    disposal_date = DateTime(tzinfo=timezone.utc, default=None)
 
     def __init__(
         self, message, posted_by, posted_message, posted_date, mailing_list
@@ -200,7 +202,7 @@ class MailingList(StormBase):
     registrant = Reference(registrant_id, "Person.id")
 
     date_registered = DateTime(
-        tzinfo=pytz.UTC, allow_none=False, default=DEFAULT
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
     )
 
     reviewer_id = Int(
@@ -208,9 +210,13 @@ class MailingList(StormBase):
     )
     reviewer = Reference(reviewer_id, "Person.id")
 
-    date_reviewed = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_reviewed = DateTime(
+        tzinfo=timezone.utc, allow_none=True, default=None
+    )
 
-    date_activated = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+    date_activated = DateTime(
+        tzinfo=timezone.utc, allow_none=True, default=None
+    )
 
     status = DBEnum(
         enum=MailingListStatus,
@@ -835,7 +841,9 @@ class MailingListSubscription(StormBase):
     mailing_list_id = Int(name="mailing_list", allow_none=False)
     mailing_list = Reference(mailing_list_id, "MailingList.id")
 
-    date_joined = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_joined = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     email_address_id = Int(name="email_address")
     email_address = Reference(email_address_id, "EmailAddress.id")
