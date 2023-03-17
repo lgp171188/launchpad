@@ -256,6 +256,45 @@ class TestProduct(TestCaseWithFactory):
             [series.name for series in product.getVersionSortedSeries()],
         )
 
+    def test_translatable_packages_order(self):
+        # The product translatable packages should be ordered
+        # by Version(distroseries.version) and package.name in
+        # descending order.
+        productseries = self.factory.makeProductSeries()
+        zesty = self.factory.makeUbuntuDistroSeries(
+            version="17.04", name="zesty"
+        )
+        artful = self.factory.makeUbuntuDistroSeries(
+            version="17.10", name="artful"
+        )
+        spns = [
+            self.factory.makeSourcePackageName("package-%d" % i)
+            for i in range(2)
+        ]
+
+        for distroseries in zesty, artful:
+            for spn in spns:
+                self.factory.makePackagingLink(
+                    productseries=productseries,
+                    sourcepackagename=spn,
+                    distroseries=distroseries,
+                )
+                self.factory.makePOTemplate(
+                    distroseries=distroseries, sourcepackagename=spn
+                )
+        self.assertEqual(
+            [
+                ("artful", "package-0"),
+                ("artful", "package-1"),
+                ("zesty", "package-0"),
+                ("zesty", "package-1"),
+            ],
+            [
+                (p.distroseries.name, p.name)
+                for p in productseries.product.translatable_packages
+            ],
+        )
+
     def test_getVersionSortedSeries_with_specific_statuses(self):
         # The obsolete series should be included in the results if
         # statuses=[SeriesStatus.OBSOLETE]. The development focus will

@@ -920,7 +920,8 @@ class IProductView(
 
     translatable_packages = Attribute(
         "A list of the source packages for this product that can be "
-        "translated sorted by distroseries.version"
+        "translated sorted by distroseries.version (descending order) "
+        "and package.name (ascending order)."
     )
 
     translatable_series = Attribute(
