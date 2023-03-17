@@ -16,6 +16,7 @@ from charms.launchpad.base import (
 )
 from charms.reactive import (
     clear_flag,
+    endpoint_from_flag,
     helpers,
     set_flag,
     set_state,
@@ -97,7 +98,9 @@ def config_files():
     "memcache.available",
 )
 @when_not("service.configured")
-def configure(session_db, memcache):
+def configure():
+    session_db = endpoint_from_flag("session-db.master.available")
+    memcache = endpoint_from_flag("memcache.available")
     config = get_service_config()
     session_db_primary, _ = postgres.get_db_uris(session_db)
     # XXX cjwatson 2022-09-23: Mangle the connection string into a form
@@ -149,7 +152,8 @@ def check_is_running():
 
 @when("nrpe-external-master.available", "service.configured")
 @when_not("launchpad.appserver.nrpe-external-master.published")
-def nrpe_available(nrpe):
+def nrpe_available():
+    nrpe = endpoint_from_flag("nrpe-external-master.available")
     config = hookenv.config()
     healthy_regex = (
         r"(\/\+icing\/rev[0-9a-f]+\/).*(Is your project registered yet\?)"
