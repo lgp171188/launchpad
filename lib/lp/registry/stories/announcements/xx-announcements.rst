@@ -116,8 +116,22 @@ account with sufficient karma (config.launchpad.min_legitimate_karma).
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
+    >>> new_user_browser.open(
+    ...     "http://launchpad.test/new-product/+announcements"
+    ... )
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
 
     >>> new_user_browser.open("http://launchpad.test/new-distribution")
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+    >>> new_user_browser.open(
+    ...     "http://launchpad.test/new-distribution/+announcements"
+    ... )
     >>> new_user_browser.getLink("Make announcement")
     Traceback (most recent call last):
     ...
@@ -128,13 +142,43 @@ account with sufficient karma (config.launchpad.min_legitimate_karma).
     Traceback (most recent call last):
     ...
     zope.testbrowser.browser.LinkNotFoundError
-    >>> _ = config.pop("legitimate person")
+    >>> new_user_browser.open(
+    ...     "http://launchpad.test/new-project/+announcements"
+    ... )
+    >>> new_user_browser.getLink("Make announcement")
+    Traceback (most recent call last):
+    ...
+    zope.testbrowser.browser.LinkNotFoundError
+
+Only the users who can view the 'Make announcement' link can access the
+'Add announcement' form.
+
+    >>> new_user_browser.open("http://launchpad.test/new-product/+announce")
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized
+
+    >>> new_user_browser.open("http://launchpad.test/new-project/+announce")
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized
+
+    >>> new_user_browser.open(
+    ...     "http://launchpad.test/new-distribution/+announce"
+    ... )
+    Traceback (most recent call last):
+    ...
+    zope.security.interfaces.Unauthorized
 
     >>> priv_browser = setupBrowser(auth="Basic mark@example.com:test")
     >>> priv_browser.open("http://launchpad.test/ubuntu")
     >>> link = priv_browser.getLink("Make announcement")
     >>> print(link.text)
     Make announcement
+    >>> link.click()
+    >>> print(priv_browser.url)
+    http://launchpad.test/ubuntu/+announce
+    >>> priv_browser.goBack()
 
     >>> priv_browser.getLink("Read all announcements").click()
     >>> link = priv_browser.getLink("Make announcement")
@@ -150,7 +194,11 @@ account with sufficient karma (config.launchpad.min_legitimate_karma).
     >>> link = priv_browser.getLink("Make announcement")
     >>> print(link.text)
     Make announcement
+    >>> link.click()
+    >>> print(priv_browser.url)
+    http://launchpad.test/firefox/+announce
 
+    >>> _ = config.pop("legitimate person")
 
 Following the action link takes you to a form where you can make the
 announcement:
