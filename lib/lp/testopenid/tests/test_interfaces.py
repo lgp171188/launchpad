@@ -6,13 +6,13 @@
 from zope.component import getUtility
 
 from lp.testing import TestCaseWithFactory, verifyObject
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import FunctionalLayer
 from lp.testopenid.interfaces.server import ITestOpenIDApplication
 
 
 class TestInterfaces(TestCaseWithFactory):
 
-    layer = DatabaseFunctionalLayer
+    layer = FunctionalLayer
 
     def test_ITestOpenIDApplication_implementation(self):
         test_open_app = getUtility(ITestOpenIDApplication)
