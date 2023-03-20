@@ -56,6 +56,7 @@ from lp.app.errors import NotFoundError, ServiceUsageForbidden
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.services import IService
 from lp.app.model.launchpad import InformationTypeMixin
+from lp.archivepublisher.debversion import Version
 from lp.blueprints.enums import SpecificationFilter
 from lp.blueprints.model.specification import (
     SPECIFICATION_POLICY_ALLOWED_TYPES,
@@ -1268,8 +1269,14 @@ class Product(
             if package.has_current_translation_templates
         }
 
-        # Sort packages by distroseries.name and package.name
-        return sorted(packages, key=lambda p: (p.distroseries.name, p.name))
+        # Sort packages by distroseries.version (descending order)
+        # and package.name (ascending order)
+        sorted_by_names = sorted(packages, key=lambda p: p.name)
+        return sorted(
+            sorted_by_names,
+            key=lambda p: Version(p.distroseries.version),
+            reverse=True,
+        )
 
     @property
     def translatable_series(self):
