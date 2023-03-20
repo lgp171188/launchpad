@@ -13,3 +13,4 @@ Explanation
    architecture
    pip
    favicon
+   charms
