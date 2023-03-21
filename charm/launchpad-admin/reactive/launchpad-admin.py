@@ -11,7 +11,7 @@ from charms.launchpad.base import (
     strip_dsn_authentication,
     update_pgpass,
 )
-from charms.reactive import set_state, when, when_not
+from charms.reactive import endpoint_from_flag, set_state, when, when_not
 from ols import base, postgres
 from psycopg2.extensions import make_dsn, parse_dsn
 
@@ -35,7 +35,10 @@ def strip_password(dsn):
     "session-db.master.available",
 )
 @when_not("service_configured")
-def configure(db, db_admin, session_db):
+def configure():
+    db = endpoint_from_flag("db.master.available")
+    db_admin = endpoint_from_flag("db-admin.master.available")
+    session_db = endpoint_from_flag("session-db.master.available")
     config = get_service_config()
     db_primary, _ = postgres.get_db_uris(db)
     db_admin_primary, _ = postgres.get_db_uris(db_admin)
