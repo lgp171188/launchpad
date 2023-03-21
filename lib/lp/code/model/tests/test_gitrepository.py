@@ -4802,14 +4802,14 @@ class TestGitRepositorySet(TestCaseWithFactory):
         verifyObject(IGitRepositorySet, self.repository_set)
 
     def test_getByID(self):
-        # getByID returns a repository matching the id that it's given.
+        # getByID returns a repository matching the ID that it's given.
         a = self.factory.makeGitRepository()
         self.factory.makeGitRepository()
         repository = self.repository_set.getByID(a.owner, a.id)
         self.assertEqual(a, repository)
 
     def test_getByID_not_found(self):
-        # If a repository cannot be found for a given id, then getById returns
+        # If a repository cannot be found for a given ID, then getByID returns
         # None.
         a = self.factory.makeGitRepository()
         self.factory.makeGitRepository()
