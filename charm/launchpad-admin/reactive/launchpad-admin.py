@@ -41,14 +41,18 @@ def configure():
     session_db = endpoint_from_flag("session-db.master.available")
     config = get_service_config()
     db_primary, _ = postgres.get_db_uris(db)
-    db_admin_primary, _ = postgres.get_db_uris(db_admin)
+    db_admin_primary, db_admin_standby = postgres.get_db_uris(db_admin)
     session_db_primary, _ = postgres.get_db_uris(session_db)
     # We assume that this admin user works for any database on this host,
     # which seems to be true in practice.
-    update_pgpass(any_dbname(db_admin_primary))
+    for dsn in [db_admin_primary] + db_admin_standby:
+        update_pgpass(any_dbname(dsn))
     update_pgpass(session_db_primary)
     config["db_primary"] = strip_password(db_primary)
     config["db_admin_primary"] = strip_password(db_admin_primary)
+    config["db_admin_standby"] = ",".join(
+        strip_password(dsn) for dsn in db_admin_standby
+    )
     config["db_session_primary"] = strip_password(session_db_primary)
     config["db_session"] = strip_dsn_authentication(session_db_primary)
     config["db_session_user"] = parse_dsn(session_db_primary)["user"]
