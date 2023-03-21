@@ -18,6 +18,8 @@ from charms.reactive import (
     clear_flag,
     endpoint_from_flag,
     helpers,
+    hook,
+    remove_state,
     set_flag,
     set_state,
     when,
@@ -148,6 +150,11 @@ def configure():
 @when("service.configured")
 def check_is_running():
     hookenv.status_set("active", "Ready")
+
+
+@hook("{requires:memcache}-relation-{joined,changed,broken,departed}")
+def memcache_relation_changed(memcache):
+    remove_state("service.configured")
 
 
 @when("nrpe-external-master.available", "service.configured")
