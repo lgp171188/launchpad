@@ -1357,12 +1357,12 @@ class IGitRepositorySet(Interface):
         """
 
     @call_with(user=REQUEST_USER)
-    @operation_parameters(id=Int(title=_("Repository id"), required=True))
+    @operation_parameters(id=Int(title=_("Repository ID"), required=True))
     @operation_returns_entry(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
     def getByID(user, id):
-        """Find a repository by its id.
+        """Find a repository by its ID.
 
         Return None if no match was found.
         """
