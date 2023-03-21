@@ -1356,6 +1356,17 @@ class IGitRepositorySet(Interface):
         :param with_hosting: Create the repository on the hosting service.
         """
 
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(id=Int(title=_("Repository id"), required=True))
+    @operation_returns_entry(IGitRepository)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getByID(user, id):
+        """Find a repository by its id.
+
+        Return None if no match was found.
+        """
+
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @call_with(user=REQUEST_USER)
     @operation_parameters(

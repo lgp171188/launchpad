@@ -4801,6 +4801,39 @@ class TestGitRepositorySet(TestCaseWithFactory):
         # GitRepositorySet instances provide IGitRepositorySet.
         verifyObject(IGitRepositorySet, self.repository_set)
 
+    def test_getByID(self):
+        # getByID returns a repository matching the id that it's given.
+        a = self.factory.makeGitRepository()
+        self.factory.makeGitRepository()
+        repository = self.repository_set.getByID(a.owner, a.id)
+        self.assertEqual(a, repository)
+
+    def test_getByID_not_found(self):
+        # If a repository cannot be found for a given id, then getById returns
+        # None.
+        a = self.factory.makeGitRepository()
+        self.factory.makeGitRepository()
+        repository = self.repository_set.getByID(a.owner, -1)
+        self.assertIsNone(repository)
+
+    def test_getByID_inaccessible(self):
+        # If the given user cannot view the matched repository, then
+        # getByID returns None.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=owner, information_type=InformationType.USERDATA
+        )
+        with person_logged_in(owner):
+            repository_id = repository.id
+        self.assertEqual(
+            repository, self.repository_set.getByID(owner, repository_id)
+        )
+        self.assertIsNone(
+            self.repository_set.getByID(
+                self.factory.makePerson(), repository_id
+            )
+        )
+
     def test_getByPath(self):
         # getByPath returns a repository matching the path that it's given.
         a = self.factory.makeGitRepository()
