@@ -8,10 +8,29 @@ options:
     description: >
       Cognitive Services subscription key for the Bing Custom Search API.
     default:
+  csrf_secret:
+    type: string
+    description: >
+      Secret used to create CSRF tokens.  Currently only used in Candid
+      interactions.
+    default:
   devmode:
     type: boolean
     description: Is this server running in dev mode?
     default: true
+  git_macaroon_secret_key:
+    type: string
+    description: >
+      Secret key for Git access tokens issued to Launchpad users.  Any
+      random string of a reasonable size (64 characters) is ok.
+    default:
+  internal_macaroon_secret_key:
+    type: string
+    description: >
+      Secret key for macaroons used to grant permissions to various internal
+      components of Launchpad.  Any random string of a reasonable size (64
+      characters) is ok.
+    default:
   mailman_archive_url_template:
     type: string
     description: Template expanded to form URLs for Launchpad list archives.
