@@ -2231,6 +2231,17 @@ class GitRepositorySet:
             clone_from_repository=clone_from_repository,
         )
 
+    def getByID(self, user, id):
+        """See `IGitRepositorySet`."""
+        repository = getUtility(IGitLookup).get(id)
+        if repository is None:
+            return None
+        # removeSecurityProxy is safe here since we're explicitly performing
+        # a permission check.
+        if removeSecurityProxy(repository).visibleByUser(user):
+            return repository
+        return None
+
     def getByPath(self, user, path):
         """See `IGitRepositorySet`."""
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
