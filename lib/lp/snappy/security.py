@@ -38,7 +38,10 @@ class EditSnap(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin
+            user.isOwner(self.obj)
+            or user.in_commercial_admin
+            or user.in_admin
+            or user.in_registry_experts
         )
 
 
