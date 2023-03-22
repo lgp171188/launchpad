@@ -1,0 +1,49 @@
+#! /bin/sh
+#
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+set -e
+
+TO=/srv/bugs-mirror.debian.org
+FROM=bugs-mirror.debian.org
+
+umask 002
+mkdir -p "$TO"
+
+HOSTNAME=$(hostname -f)
+LOCK="$TO/Mirror-Update-in-Progress-$HOSTNAME"
+
+# Check to see if another sync is in progress
+if lockfile -! -l 43200 -r 0 "$LOCK"; then
+    echo "$HOSTNAME is unable to start rsync, lock file exists" >&2
+    exit 1
+fi
+cleanup () {
+    rm -f "$LOCK"
+}
+trap cleanup EXIT
+
+cd "$TO"
+
+# Current bugs
+rsync -rtlHv --delete --stats \
+      --exclude "Mirror-Update-in-Progress-$HOSTNAME" \
+      --exclude "-*.log" \
+      $FROM::bts-spool-db/ db-h/
+
+# Index
+rsync -rtlHv --delete --stats \
+      --exclude "Mirror-Update-in-Progress-$HOSTNAME" \
+      --exclude '*.idx' --exclude '*.idx-new' \
+      $FROM::bts-spool-index/ index/
+
+# Archived bugs
+rsync -rtlHv --delete --stats \
+      --exclude "Mirror-Update-in-Progress-$HOSTNAME" \
+      $FROM::bts-spool-archive/ archive/
+
+mkdir -p "$TO/trace"
+date -u > "$TO/trace/$HOSTNAME"
+
+rm -f "$LOCK"
