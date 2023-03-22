@@ -868,6 +868,7 @@ class Person(
         if filter.intersection(roles) == set():
             filter.update(roles)
         role_clauses = []
+        id_clauses = []
         if SpecificationFilter.CREATOR in filter:
             role_clauses.append(Specification.owner == self)
         if SpecificationFilter.ASSIGNEE in filter:
@@ -877,7 +878,7 @@ class Person(
         if SpecificationFilter.APPROVER in filter:
             role_clauses.append(Specification._approver == self)
         if SpecificationFilter.SUBSCRIBER in filter:
-            role_clauses.append(
+            id_clauses.append(
                 Specification.id.is_in(
                     Select(
                         SpecificationSubscription.specification_id,
@@ -910,6 +911,7 @@ class Person(
             need_people=need_people,
             need_branches=need_branches,
             need_workitems=need_workitems,
+            base_id_clauses=id_clauses,
         )
 
     # XXX: Tom Berger 2008-04-14 bug=191799:
