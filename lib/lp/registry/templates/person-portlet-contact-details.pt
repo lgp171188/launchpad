@@ -142,7 +142,7 @@
         <tal:keys repeat="key view/gpg_keys">
           <a tal:attributes="href key/keyserverURL"
              tal:omit-tag="not: request/lp:person">
-            <span style="word-wrap: anywhere" content="key/fingerprint"
+            <span style="word-wrap: anywhere" tal:content="key/fingerprint"
               /></a><span tal:condition="not: repeat/key/end">,</span>
         </tal:keys>
         <div tal:condition="not: view/gpg_keys">

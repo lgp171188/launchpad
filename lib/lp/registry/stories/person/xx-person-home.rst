@@ -129,9 +129,11 @@ authenticated users can see the key fingerprint with a link to the keyserver.
     <a href="https://keyserver...
 
     >>> anon_browser.open("http://launchpad.test/~name16")
-    >>> print(find_tag_by_id(anon_browser.contents, "pgp-keys"))
+    >>> print(find_tag_by_id(anon_browser.contents, "pgp-keys"))  # noqa
     <dl...
-    <dd> ABCDEF0123456789ABCDDCBA0000111112345678...
+    <dd>
+    <span style="word-wrap: anywhere">ABCDEF0123456789ABCDDCBA0000111112345678</span>
+    ...
 
 
 Languages
