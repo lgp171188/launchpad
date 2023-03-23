@@ -8,6 +8,7 @@ from multiprocessing import cpu_count
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import (
     config_file_path,
+    configure_cron,
     configure_lazr,
     get_service_config,
     lazr_config_files,
@@ -130,6 +131,7 @@ def configure():
     )
     configure_gunicorn(config)
     configure_logrotate(config)
+    configure_cron(config, "crontab.j2")
 
     restart_type = None
     if helpers.any_file_changed(
