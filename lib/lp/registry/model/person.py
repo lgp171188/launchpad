@@ -887,7 +887,7 @@ class Person(
                 )
             )
 
-        clauses = [Or(*role_clauses)]
+        clauses = [Or(*role_clauses)] if role_clauses else None
         if SpecificationFilter.COMPLETE not in filter:
             if (
                 in_progress
