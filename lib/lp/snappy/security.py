@@ -32,16 +32,24 @@ class ViewSnap(AuthorizationBase):
         return self.obj.visibleByUser(None)
 
 
+class DeleteSnap(AuthorizationBase):
+    permission = "launchpad.Delete"
+    usedfor = ISnap
+
+    def checkAuthenticated(self, user):
+        return (
+            EditSnap(self.obj).checkAuthenticated(user)
+            or user.in_registry_experts
+        )
+
+
 class EditSnap(AuthorizationBase):
     permission = "launchpad.Edit"
     usedfor = ISnap
 
     def checkAuthenticated(self, user):
         return (
-            user.isOwner(self.obj)
-            or user.in_commercial_admin
-            or user.in_admin
-            or user.in_registry_experts
+            user.isOwner(self.obj) or user.in_commercial_admin or user.in_admin
         )
 
 

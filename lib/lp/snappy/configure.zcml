@@ -29,6 +29,9 @@
         <require
             permission="launchpad.Admin"
             set_schema="lp.snappy.interfaces.snap.ISnapAdminAttributes" />
+        <require
+            permission="launchpad.Delete"
+            interface="lp.snappy.interfaces.snap.ISnapDelete" />
     </class>
     <subscriber
         for="lp.snappy.interfaces.snap.ISnap zope.lifecycleevent.interfaces.IObjectModifiedEvent"
