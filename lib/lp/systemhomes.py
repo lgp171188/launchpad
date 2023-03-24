@@ -357,4 +357,5 @@ class WebServiceApplication(ServiceRootResource):
 
 @implementer(ITestOpenIDApplication)
 class TestOpenIDApplication:
-    pass
+
+    title = "TestOpenIDApplication"
