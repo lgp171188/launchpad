@@ -4,13 +4,12 @@
 """Tests for BugWatchSet."""
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from urllib.parse import urlunsplit
 
 import transaction
 from lazr.lifecycle.snapshot import Snapshot
-from pytz import utc
 from storm.store import Store
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from zope.component import getUtility
@@ -734,9 +733,9 @@ class TestBugWatchResetting(TestCaseWithFactory):
         self.bug_watch = self.factory.makeBugWatch()
         naked = removeSecurityProxy(self.bug_watch)
         naked.last_error_type = BugWatchActivityStatus.BUG_NOT_FOUND
-        naked.lastchanged = datetime.now(utc) - timedelta(days=1)
-        naked.lastchecked = datetime.now(utc) - timedelta(days=1)
-        naked.next_check = datetime.now(utc) + timedelta(days=7)
+        naked.lastchanged = datetime.now(timezone.utc) - timedelta(days=1)
+        naked.lastchecked = datetime.now(timezone.utc) - timedelta(days=1)
+        naked.next_check = datetime.now(timezone.utc) + timedelta(days=7)
         naked.remote_importance = "IMPORTANT"
         naked.remotestatus = "FIXED"
         self.default_bug_watch_fields = [

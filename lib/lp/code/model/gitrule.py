@@ -9,8 +9,8 @@ __all__ = [
 ]
 
 from collections import OrderedDict, defaultdict
+from datetime import timezone
 
-import pytz
 from lazr.enum import DBItem
 from lazr.restful.interfaces import IFieldMarshaller, IJSONPublishable
 from lazr.restful.utils import get_current_browser_request
@@ -78,10 +78,10 @@ class GitRule(StormBase):
     creator = Reference(creator_id, "Person.id")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     def __init__(
@@ -299,10 +299,10 @@ class GitRuleGrant(StormBase, GitRuleGrantMixin):
     grantor = Reference(grantor_id, "Person.id")
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     def __init__(

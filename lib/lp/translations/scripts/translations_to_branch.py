@@ -7,13 +7,12 @@ __all__ = ["ExportTranslationsToBranch"]
 
 
 import os.path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
 import lp.codehosting  # noqa: F401  # isort: split
 
-import pytz
 from breezy.errors import NotBranchError
 from breezy.revision import NULL_REVISION
 from storm.expr import And, Join
@@ -86,7 +85,7 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         branch = source.translations_branch
         jobsource = getUtility(IRosettaUploadJobSource)
         unfinished_jobs = jobsource.findUnfinishedJobs(
-            branch, since=datetime.now(pytz.UTC) - timedelta(days=1)
+            branch, since=datetime.now(timezone.utc) - timedelta(days=1)
         )
 
         if unfinished_jobs.any():
@@ -120,11 +119,13 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
         # The bzr timestamp is a float representing UTC-based seconds
         # since the epoch.  It stores the timezone as well, but we can
         # ignore it here.
-        return datetime.fromtimestamp(revision.timestamp, pytz.UTC)
+        return datetime.fromtimestamp(revision.timestamp, timezone.utc)
 
     def _getLatestTranslationsCommit(self, branch):
         """Get date of last translations commit to `branch`, if any."""
-        cutoff_date = datetime.now(pytz.UTC) - self.previous_commit_cutoff_age
+        cutoff_date = (
+            datetime.now(timezone.utc) - self.previous_commit_cutoff_age
+        )
 
         revno, current_rev = branch.last_revision_info()
         repository = branch.repository

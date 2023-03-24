@@ -4,9 +4,8 @@
 """Tests for IPoll views."""
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from fixtures import FakeLogger
 
 from lp.registry.interfaces.poll import CannotCreatePoll, PollAlgorithm
@@ -65,7 +64,7 @@ class TestPollAddView(BrowserTestCase):
         self.useFixture(FakeLogger())
         new_person = self.factory.makePerson()
         team = self.factory.makeTeam(owner=new_person)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         browser = self.getViewBrowser(
             team, view_name="+newpoll", user=new_person
         )
@@ -88,7 +87,7 @@ class TestPollAddView(BrowserTestCase):
         # A user with some kind of track record can create polls.
         person = self.factory.makePerson(karma=10)
         team = self.factory.makeTeam(owner=person)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         browser = self.getViewBrowser(team, view_name="+newpoll", user=person)
         browser.getControl("The unique name of this poll").value = "colour"
         browser.getControl("The title of this poll").value = "Favourite Colour"

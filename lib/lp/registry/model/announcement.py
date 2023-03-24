@@ -10,7 +10,8 @@ __all__ = [
     "MakesAnnouncements",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.expr import And, LeftJoin, Or, Select
 from storm.properties import Bool, DateTime, Int, Unicode
 from storm.references import Reference
@@ -39,10 +40,14 @@ class Announcement(StormBase):
 
     id = Int(primary=True)
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
-    date_announced = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
+    date_announced = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
     date_last_modified = DateTime(
-        name="date_updated", allow_none=True, default=None, tzinfo=pytz.UTC
+        name="date_updated", allow_none=True, default=None, tzinfo=timezone.utc
     )
 
     registrant_id = Int(

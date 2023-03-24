@@ -6,14 +6,13 @@
 import logging
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 from time import sleep
 
 import transaction
 from lazr.jobrunner.jobrunner import LeaseHeld, SuspendJobException
 from lazr.restful.utils import get_current_browser_request
-from pytz import UTC
 from storm.locals import Bool, Int, Reference
 from testtools.matchers import GreaterThan, LessThan, MatchesAll, MatchesRegex
 from testtools.testcase import ExpectedException
@@ -408,7 +407,7 @@ class TestJobRunner(StatsMixin, TestCaseWithFactory):
         self.addCleanup(lambda: self.addDetail("log", logger.content))
         runner.runJob(job, None)
         self.assertEqual(JobStatus.WAITING, job.status)
-        expected_delay = datetime.now(UTC) + timedelta(minutes=10)
+        expected_delay = datetime.now(timezone.utc) + timedelta(minutes=10)
         self.assertThat(
             job.scheduled_start,
             MatchesAll(

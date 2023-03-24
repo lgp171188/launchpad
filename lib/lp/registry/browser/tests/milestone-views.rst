@@ -707,11 +707,12 @@ The view will delete the dependent product release and release files if
 they exist. It will also untarget bugtasks and specifications from the
 milestone.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timezone
 
     >>> milestone = firefox_1_0.newMilestone("1.0.11")
-    >>> release = milestone.createProductRelease(owner, datetime.now(UTC))
+    >>> release = milestone.createProductRelease(
+    ...     owner, datetime.now(timezone.utc)
+    ... )
     >>> release_file = release.addReleaseFile(
     ...     "test", b"test", "text/plain", owner, description="test file"
     ... )

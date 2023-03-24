@@ -236,13 +236,12 @@ Then some recent questions are created on a number of projects.
 
 A question is created just before the time limit on Launchpad.
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timedelta, timezone
     >>> question = launchpad.newQuestion(
     ...     no_priv,
     ...     "Launchpad question",
     ...     "A question",
-    ...     datecreated=datetime.now(UTC) - timedelta(days=61),
+    ...     datecreated=datetime.now(timezone.utc) - timedelta(days=61),
     ... )
     >>> login(ANONYMOUS)
 

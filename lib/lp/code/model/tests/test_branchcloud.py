@@ -3,9 +3,8 @@
 
 """Tests for IBranchCloud provider."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from storm.locals import Store
 from zope.component import getUtility
@@ -42,7 +41,7 @@ class TestBranchCloud(TestCaseWithFactory):
             # type that it is aggregating, the last commit time is not
             # timezone-aware.  Whack the UTC timezone on it here for
             # easier comparing in the tests.
-            return value.replace(tzinfo=pytz.UTC)
+            return value.replace(tzinfo=timezone.utc)
 
         return [
             (name, commits, authors, add_utc(last_commit))
@@ -63,7 +62,7 @@ class TestBranchCloud(TestCaseWithFactory):
         if last_commit_date is None:
             # By default we create revisions that are within the last 30 days.
             date_generator = time_counter(
-                datetime.now(pytz.UTC) - timedelta(days=25), delta
+                datetime.now(timezone.utc) - timedelta(days=25), delta
             )
         else:
             start_date = last_commit_date - delta * (revision_count - 1)
@@ -101,7 +100,7 @@ class TestBranchCloud(TestCaseWithFactory):
 
     def test_revisions_counted(self):
         # getProductsWithInfo includes products that public revisions.
-        last_commit_date = datetime.now(pytz.UTC) - timedelta(days=5)
+        last_commit_date = datetime.now(timezone.utc) - timedelta(days=5)
         product = self.factory.makeProduct()
         self.makeBranch(product=product, last_commit_date=last_commit_date)
         self.assertEqual(
@@ -114,7 +113,7 @@ class TestBranchCloud(TestCaseWithFactory):
         # over 30 days old, we don't count them.
         product = self.factory.makeProduct()
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=33),
+            datetime.now(timezone.utc) - timedelta(days=33),
             delta=timedelta(days=2),
         )
         store = Store.of(product)

@@ -6,13 +6,12 @@ document discusses the API of external bug trackers. To learn more about
 bug watches, the object that represents the link between a Malone bug
 and an external bug, see bugwatch.rst.
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.bugs.interfaces.bugtracker import IBugTrackerSet
     >>> bugtracker_set = getUtility(IBugTrackerSet)
     >>> mozilla_bugzilla = bugtracker_set.getByName("mozilla.org")
-    >>> now = datetime.now(pytz.UTC)
+    >>> now = datetime.now(timezone.utc)
 
     >>> def print_watches(bugtracker):
     ...     watches = sorted(

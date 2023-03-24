@@ -15,10 +15,9 @@ __all__ = [
 ]
 
 import operator
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from itertools import groupby
 
-import pytz
 from lazr.restful.utils import smartquote
 from zope.component import getUtility
 from zope.event import notify
@@ -166,7 +165,7 @@ class CleanInfoMixin:
 
     @cachedproperty
     def _now(self):
-        return datetime.now(pytz.UTC)
+        return datetime.now(timezone.utc)
 
     def getCleanInfo(self, builder):
         duration = self._now - builder.date_clean_status_changed

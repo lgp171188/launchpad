@@ -7,9 +7,8 @@ __all__ = [
 ]
 
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.restful.utils import get_current_browser_request
 from zope.security.proxy import removeSecurityProxy
 
@@ -136,7 +135,7 @@ class LicenseNotification:
     def _formatDate(now=None):
         """Return the date formatted for messages."""
         if now is None:
-            now = datetime.now(tz=pytz.UTC)
+            now = datetime.now(tz=timezone.utc)
         return now.strftime("%Y-%m-%d")
 
     def _addLicenseChangeToReviewWhiteboard(self):

@@ -11,11 +11,10 @@ __all__ = [
 ]
 
 
-import datetime
 import time
 from calendar import timegm
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from lazr.jobrunner.jobrunner import LeaseHeld
 from storm.expr import And, Or, Select
@@ -30,8 +29,6 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import StringCol
 from lp.services.job.interfaces.job import IJob, JobStatus, JobType
-
-UTC = pytz.timezone("UTC")
 
 
 class InvalidTransition(Exception):
@@ -121,7 +118,7 @@ class Job(SQLBase):
             return False
         if self.scheduled_start is None:
             return True
-        return self.scheduled_start <= datetime.datetime.now(UTC)
+        return self.scheduled_start <= datetime.now(timezone.utc)
 
     @classmethod
     def createMultiple(self, store, num_jobs, requester=None):
@@ -142,10 +139,10 @@ class Job(SQLBase):
         """See `IJob`."""
         if (
             self.lease_expires is not None
-            and self.lease_expires >= datetime.datetime.now(UTC)
+            and self.lease_expires >= datetime.now(timezone.utc)
         ):
             raise LeaseHeld
-        expiry = datetime.datetime.fromtimestamp(time.time() + duration, UTC)
+        expiry = datetime.fromtimestamp(time.time() + duration, timezone.utc)
         self.lease_expires = expiry
 
     def getTimeout(self):
@@ -160,7 +157,7 @@ class Job(SQLBase):
     def start(self, manage_transaction=False):
         """See `IJob`."""
         self._set_status(JobStatus.RUNNING)
-        self.date_started = datetime.datetime.now(UTC)
+        self.date_started = datetime.now(timezone.utc)
         self.date_finished = None
         self.attempt_count += 1
         if manage_transaction:
@@ -172,7 +169,7 @@ class Job(SQLBase):
         if manage_transaction:
             transaction.commit()
         self._set_status(JobStatus.COMPLETED)
-        self.date_finished = datetime.datetime.now(UTC)
+        self.date_finished = datetime.now(timezone.utc)
         if manage_transaction:
             transaction.commit()
 
@@ -181,7 +178,7 @@ class Job(SQLBase):
         if manage_transaction:
             transaction.abort()
         self._set_status(JobStatus.FAILED)
-        self.date_finished = datetime.datetime.now(UTC)
+        self.date_finished = datetime.now(timezone.utc)
         if manage_transaction:
             transaction.commit()
 
@@ -199,7 +196,7 @@ class Job(SQLBase):
             transaction.commit()
         if self.status != JobStatus.WAITING:
             self._set_status(JobStatus.WAITING)
-        self.date_finished = datetime.datetime.now(UTC)
+        self.date_finished = datetime.now(timezone.utc)
         # Release the lease to allow short retry delays to be effective.
         self.lease_expires = None
         if add_commit_hook is not None:

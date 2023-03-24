@@ -3,6 +3,8 @@
 
 """Tests related to bug nominations."""
 
+from datetime import timezone
+
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -42,7 +44,7 @@ class BugNominationTestCase(TestCaseWithFactory):
         self.assertIsNone(nomination.productseries)
         self.assertEqual(BugNominationStatus.PROPOSED, nomination.status)
         self.assertIsNone(nomination.date_decided)
-        self.assertEqual("UTC", nomination.date_created.tzname())
+        self.assertIs(timezone.utc, nomination.date_created.tzinfo)
 
     def test_target_distroseries(self):
         # The target property returns the distroseries if it is not None.

@@ -5,15 +5,13 @@ The SprintAttendance object links a person to a sprint. It records additional
 information about the attendance. The start and end date-times are required
 and they must be UTC
 
-    >>> import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> from lp.blueprints.model.sprintattendance import SprintAttendance
 
     >>> sprint = factory.makeSprint(title="lunarbase")
     >>> person = factory.makePerson(name="scarlet")
-    >>> UTC = pytz.timezone("UTC")
-    >>> time_starts = datetime.datetime(2019, 6, 21, 0, 0, 0, 0, UTC)
-    >>> time_ends = datetime.datetime(2019, 7, 4, 0, 0, 0, 0, UTC)
+    >>> time_starts = datetime(2019, 6, 21, 0, 0, 0, 0, timezone.utc)
+    >>> time_ends = datetime(2019, 7, 4, 0, 0, 0, 0, timezone.utc)
     >>> sprint_attendance = SprintAttendance(sprint=sprint, attendee=person)
     >>> sprint_attendance.time_starts = time_starts
     >>> sprint_attendance.time_ends = time_ends

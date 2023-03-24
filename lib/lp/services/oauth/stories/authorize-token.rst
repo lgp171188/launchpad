@@ -304,10 +304,9 @@ the success message is printed.
 If the token has expired, we notify the user, and inhibit the callback.
 
     >>> token = request_token_for(consumer)
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.security.proxy import removeSecurityProxy
-    >>> date_created = datetime.now(UTC) - timedelta(hours=3)
+    >>> date_created = datetime.now(timezone.utc) - timedelta(hours=3)
     >>> removeSecurityProxy(token).date_created = date_created
     >>> params = dict(
     ...     oauth_token=token.key, oauth_callback="http://example.com/oauth"

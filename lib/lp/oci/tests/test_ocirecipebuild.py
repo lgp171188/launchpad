@@ -3,10 +3,9 @@
 
 """Tests for OCI image building recipe functionality."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.request import urlopen
 
-import pytz
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 from testtools.matchers import (
@@ -212,7 +211,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_retry_resets_state(self):
         # Retrying a build resets most of the state attributes, but does
         # not modify the first dispatch time.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         build = self.factory.makeOCIRecipeBuild()
         build.updateStatus(BuildStatus.BUILDING, date_started=now)
         build.updateStatus(BuildStatus.FAILEDTOBUILD)

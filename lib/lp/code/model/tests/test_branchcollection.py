@@ -3,10 +3,9 @@
 
 """Tests for branch collections."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 from storm.expr import Asc, Desc
 from storm.store import EmptyResultSet, Store
 from testtools.matchers import Equals
@@ -640,11 +639,15 @@ class TestBranchCollectionFilters(TestCaseWithFactory):
     def test_modifiedSince(self):
         # Only branches modified since the time specified will be returned.
         old_branch = self.factory.makeAnyBranch()
-        old_branch.date_last_modified = datetime(2008, 1, 1, tzinfo=pytz.UTC)
+        old_branch.date_last_modified = datetime(
+            2008, 1, 1, tzinfo=timezone.utc
+        )
         new_branch = self.factory.makeAnyBranch()
-        new_branch.date_last_modified = datetime(2009, 1, 1, tzinfo=pytz.UTC)
+        new_branch.date_last_modified = datetime(
+            2009, 1, 1, tzinfo=timezone.utc
+        )
         branches = self.all_branches.modifiedSince(
-            datetime(2008, 6, 1, tzinfo=pytz.UTC)
+            datetime(2008, 6, 1, tzinfo=timezone.utc)
         )
         self.assertEqual([new_branch], list(branches.getBranches()))
 
@@ -652,14 +655,14 @@ class TestBranchCollectionFilters(TestCaseWithFactory):
         # Only branches scanned since the time specified will be returned.
         old_branch = self.factory.makeAnyBranch()
         removeSecurityProxy(old_branch).last_scanned = datetime(
-            2008, 1, 1, tzinfo=pytz.UTC
+            2008, 1, 1, tzinfo=timezone.utc
         )
         new_branch = self.factory.makeAnyBranch()
         removeSecurityProxy(new_branch).last_scanned = datetime(
-            2009, 1, 1, tzinfo=pytz.UTC
+            2009, 1, 1, tzinfo=timezone.utc
         )
         branches = self.all_branches.scannedSince(
-            datetime(2008, 6, 1, tzinfo=pytz.UTC)
+            datetime(2008, 6, 1, tzinfo=timezone.utc)
         )
         self.assertEqual([new_branch], list(branches.getBranches()))
 
@@ -1041,7 +1044,7 @@ class TestBranchMergeProposals(TestCaseWithFactory):
         bmp2 = self.factory.makeBranchMergeProposal(
             target_branch=target, source_branch=branch2
         )
-        old_date = datetime.now(pytz.UTC) - timedelta(hours=1)
+        old_date = datetime.now(timezone.utc) - timedelta(hours=1)
         self.factory.makePreviewDiff(
             merge_proposal=bmp1, date_created=old_date
         )

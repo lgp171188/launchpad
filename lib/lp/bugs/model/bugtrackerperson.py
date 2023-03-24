@@ -7,7 +7,8 @@ __all__ = [
     "BugTrackerPerson",
 ]
 
-import pytz
+from datetime import timezone
+
 import six
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
@@ -33,7 +34,10 @@ class BugTrackerPerson(StormBase):
     name = Unicode(allow_none=False)
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name="date_created", allow_none=False, default=UTC_NOW
+        tzinfo=timezone.utc,
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
     )
 
     def __init__(self, name, bugtracker, person):

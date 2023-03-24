@@ -9,10 +9,9 @@ __all__ = [
 ]
 
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter, itemgetter
 
-import pytz
 import yaml
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
@@ -220,10 +219,10 @@ class CharmRecipe(StormBase, WebhookTargetMixin):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)
@@ -1187,7 +1186,7 @@ class CharmRecipeSet:
     @staticmethod
     def _findStaleRecipes():
         """Find recipes that need to be rebuilt."""
-        threshold_date = datetime.now(pytz.UTC) - timedelta(
+        threshold_date = datetime.now(timezone.utc) - timedelta(
             minutes=config.charms.auto_build_frequency
         )
         stale_clauses = [

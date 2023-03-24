@@ -3,9 +3,8 @@
 
 """`TranslationTemplatesBuild` view tests."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -26,7 +25,7 @@ from lp.translations.interfaces.translationtemplatesbuild import (
 
 def now():
     """Now."""
-    return datetime.now(utc)
+    return datetime.now(timezone.utc)
 
 
 class TestTranslationTemplatesBuild(TestCaseWithFactory):

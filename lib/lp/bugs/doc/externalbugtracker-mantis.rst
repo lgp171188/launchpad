@@ -207,10 +207,9 @@ now no bug watches are in need of updating:
 If the status isn't different, the lastchanged attribute doesn't get
 updated:
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> bug_watch = sorted(example_bug_tracker.watches, key=getid)[0]
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> now = datetime.now(timezone.utc)
     >>> bug_watch.lastchanged = now - timedelta(weeks=2)
     >>> bug_watch.lastchecked = bug_watch.lastchanged
     >>> old_last_changed = bug_watch.lastchanged

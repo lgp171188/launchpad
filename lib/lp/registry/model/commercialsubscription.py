@@ -5,9 +5,8 @@
 
 __all__ = ["CommercialSubscription"]
 
-import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.locals import DateTime, Int, Reference, Store, Unicode
 from zope.interface import implementer
 
@@ -35,12 +34,18 @@ class CommercialSubscription(StormBase):
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    date_last_modified = DateTime(
-        tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
     )
-    date_starts = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
-    date_expires = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    date_last_modified = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    date_starts = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
+    date_expires = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=UTC_NOW
+    )
 
     registrant_id = Int(
         name="registrant", allow_none=False, validator=validate_public_person
@@ -90,7 +95,7 @@ class CommercialSubscription(StormBase):
     @property
     def is_active(self):
         """See `ICommercialSubscription`"""
-        now = datetime.datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         return self.date_starts < now < self.date_expires
 
     def delete(self):

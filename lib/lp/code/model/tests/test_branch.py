@@ -3,14 +3,13 @@
 
 """Tests for Branches."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
 from breezy.branch import Branch
 from breezy.bzr.bzrdir import BzrDir
 from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import BadUrl
-from pytz import UTC
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testscenarios import WithScenarios, load_tests_apply_scenarios
@@ -374,7 +373,7 @@ class TestBranchWriteJobViaCelery(TestCaseWithFactory):
         job = store.find(
             BranchJob, BranchJob.job_type == BranchJobType.RECLAIM_BRANCH_SPACE
         ).one()
-        job.job.scheduled_start = datetime.now(UTC)
+        job.job.scheduled_start = datetime.now(timezone.utc)
         with block_on_job():
             transaction.commit()
         self.assertThat(branch_path, Not(PathExists()))
@@ -2276,7 +2275,7 @@ class BranchDateLastModified(TestCaseWithFactory):
 
     def test_bugBranchLinkUpdates(self):
         """Linking a branch to a bug updates the last modified time."""
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         branch = self.factory.makeAnyBranch(date_created=date_created)
         self.assertEqual(branch.date_last_modified, date_created)
 
@@ -2298,7 +2297,7 @@ class BranchDateLastModified(TestCaseWithFactory):
         # If updateScannedDetails is called with a null revision, it
         # effectively means that there is an empty branch, so we can't use the
         # revision date, so we set the last modified time to UTC_NOW.
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         branch = self.factory.makeAnyBranch(date_created=date_created)
         branch.updateScannedDetails(None, 0)
         self.assertSqlAttributeEqualsDate(
@@ -2310,9 +2309,9 @@ class BranchDateLastModified(TestCaseWithFactory):
         # revision date set in the past (the usual case), the last modified
         # time of the branch is set to be the date from the Bazaar revision
         # (Revision.revision_date).
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         branch = self.factory.makeAnyBranch(date_created=date_created)
-        revision_date = datetime(2005, 2, 2, 12, tzinfo=UTC)
+        revision_date = datetime(2005, 2, 2, 12, tzinfo=timezone.utc)
         revision = self.factory.makeRevision(revision_date=revision_date)
         branch.updateScannedDetails(revision, 1)
         self.assertEqual(revision_date, branch.date_last_modified)
@@ -2320,10 +2319,10 @@ class BranchDateLastModified(TestCaseWithFactory):
     def test_updateScannedDetails_with_future_revision(self):
         # If updateScannedDetails is called with a revision with which has a
         # revision date set in the future, UTC_NOW is used as the last modified
-        # time.  date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
-        date_created = datetime(2000, 1, 1, 12, tzinfo=UTC)
+        # time.  date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
+        date_created = datetime(2000, 1, 1, 12, tzinfo=timezone.utc)
         branch = self.factory.makeAnyBranch(date_created=date_created)
-        revision_date = datetime.now(UTC) + timedelta(days=1000)
+        revision_date = datetime.now(timezone.utc) + timedelta(days=1000)
         revision = self.factory.makeRevision(revision_date=revision_date)
         branch.updateScannedDetails(revision, 1)
         self.assertSqlAttributeEqualsDate(
@@ -3566,7 +3565,7 @@ class TestBranchGetMainlineBranchRevisions(TestCaseWithFactory):
     def test_start_date(self):
         # Revisions created before the start date are not returned.
         branch = self.factory.makeAnyBranch()
-        epoch = datetime(2009, 9, 10, tzinfo=UTC)
+        epoch = datetime(2009, 9, 10, tzinfo=timezone.utc)
         # Add some revisions before the epoch.
         add_revision_to_branch(self.factory, branch, epoch - timedelta(days=1))
         new = add_revision_to_branch(
@@ -3579,7 +3578,7 @@ class TestBranchGetMainlineBranchRevisions(TestCaseWithFactory):
     def test_end_date(self):
         # Revisions created after the end date are not returned.
         branch = self.factory.makeAnyBranch()
-        epoch = datetime(2009, 9, 10, tzinfo=UTC)
+        epoch = datetime(2009, 9, 10, tzinfo=timezone.utc)
         end_date = epoch + timedelta(days=2)
         in_range = add_revision_to_branch(
             self.factory, branch, end_date - timedelta(days=1)
@@ -3595,7 +3594,7 @@ class TestBranchGetMainlineBranchRevisions(TestCaseWithFactory):
     def test_newest_first(self):
         # If oldest_first is False, the newest are returned first.
         branch = self.factory.makeAnyBranch()
-        epoch = datetime(2009, 9, 10, tzinfo=UTC)
+        epoch = datetime(2009, 9, 10, tzinfo=timezone.utc)
         old = add_revision_to_branch(
             self.factory, branch, epoch + timedelta(days=1)
         )
@@ -3609,7 +3608,7 @@ class TestBranchGetMainlineBranchRevisions(TestCaseWithFactory):
     def test_oldest_first(self):
         # If oldest_first is True, the oldest are returned first.
         branch = self.factory.makeAnyBranch()
-        epoch = datetime(2009, 9, 10, tzinfo=UTC)
+        epoch = datetime(2009, 9, 10, tzinfo=timezone.utc)
         old = add_revision_to_branch(
             self.factory, branch, epoch + timedelta(days=1)
         )
@@ -3623,7 +3622,7 @@ class TestBranchGetMainlineBranchRevisions(TestCaseWithFactory):
     def test_only_mainline_revisions(self):
         # Only mainline revisions are returned.
         branch = self.factory.makeAnyBranch()
-        epoch = datetime(2009, 9, 10, tzinfo=UTC)
+        epoch = datetime(2009, 9, 10, tzinfo=timezone.utc)
         old = add_revision_to_branch(
             self.factory, branch, epoch + timedelta(days=1)
         )
@@ -3795,7 +3794,7 @@ class TestBranchUnscan(TestCaseWithFactory):
             branch.unscan()
 
     def test_getLatestScanJob(self):
-        complete_date = datetime.now(UTC)
+        complete_date = datetime.now(timezone.utc)
 
         branch = self.factory.makeAnyBranch()
         failed_job = BranchScanJob.create(branch)
@@ -3813,7 +3812,7 @@ class TestBranchUnscan(TestCaseWithFactory):
         self.assertIsNone(result)
 
     def test_getLatestScanJob_correct_branch(self):
-        complete_date = datetime.now(UTC)
+        complete_date = datetime.now(timezone.utc)
 
         main_branch = self.factory.makeAnyBranch()
         second_branch = self.factory.makeAnyBranch()

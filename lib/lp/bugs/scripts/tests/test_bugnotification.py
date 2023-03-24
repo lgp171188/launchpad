@@ -4,11 +4,10 @@
 
 import re
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from smtplib import SMTPException
 from typing import Any, List, Optional, Type
 
-import pytz
 from fixtures import FakeLogger
 from testtools.matchers import MatchesRegex, Not
 from transaction import commit
@@ -241,7 +240,7 @@ class TestGetEmailNotifications(TestCase):
         super().setUp()
         switch_dbuser(config.malone.bugnotification_dbuser)
         sample_person = getUtility(IPersonSet).getByEmail("test@canonical.com")
-        self.now = datetime.now(pytz.timezone("UTC"))
+        self.now = datetime.now(timezone.utc)
 
         # A normal comment notification for bug 1
         msg = getUtility(IMessageSet).fromText(
@@ -700,7 +699,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
         commit()
         login("test@canonical.com")
         switch_dbuser(config.malone.bugnotification_dbuser)
-        self.now = datetime.now(pytz.UTC)
+        self.now = datetime.now(timezone.utc)
         self.ten_minutes_ago = self.now - timedelta(minutes=10)
         self.notification_set = getUtility(IBugNotificationSet)
         for notification in self.notification_set.getNotificationsToSend():
@@ -1401,7 +1400,9 @@ class TestDeferredNotifications(TestCaseWithFactory):
         # Ensure there are no outstanding notifications.
         for notification in self.notification_set.getNotificationsToSend():
             notification.destroySelf()
-        self.ten_minutes_ago = datetime.now(pytz.UTC) - timedelta(minutes=10)
+        self.ten_minutes_ago = datetime.now(timezone.utc) - timedelta(
+            minutes=10
+        )
 
     def _make_deferred_notification(self):
         bug = self.factory.makeBug()
@@ -1455,7 +1456,9 @@ class TestSendBugNotifications(TestCaseWithFactory):
         # Ensure there are no outstanding notifications.
         for notification in self.notification_set.getNotificationsToSend():
             notification.destroySelf()
-        self.ten_minutes_ago = datetime.now(pytz.UTC) - timedelta(minutes=10)
+        self.ten_minutes_ago = datetime.now(timezone.utc) - timedelta(
+            minutes=10
+        )
 
     def test_oops_on_failed_delivery(self):
         # If one notification fails to send, it logs an OOPS and doesn't get

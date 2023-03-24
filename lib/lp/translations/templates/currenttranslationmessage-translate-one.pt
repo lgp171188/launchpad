@@ -92,7 +92,7 @@
     <span class="sprite info" title="Developer's note to translators"></span>
   </th>
   <td>
-    <pre class="lesser" tal:content="view/source_comment">
+    <pre class="lesser" tal:content="view/source_comment" style="white-space: pre-wrap;">
       This refers to the content type.
     </pre>
   </td>

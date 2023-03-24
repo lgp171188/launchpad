@@ -4,9 +4,8 @@
 """Test the PersonNotification classes."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -113,9 +112,7 @@ class TestPersonNotificationManager(TestCaseWithFactory):
         )
         age = timedelta(days=int(config.person_notification.retained_days) + 1)
         naked_notification = removeSecurityProxy(notification)
-        naked_notification.date_created = (
-            datetime.now(pytz.timezone("UTC")) - age
-        )
+        naked_notification.date_created = datetime.now(timezone.utc) - age
         self.manager.purgeNotifications()
         notifications = self.notification_set.getNotificationsToSend()
         self.assertEqual(0, notifications.count())

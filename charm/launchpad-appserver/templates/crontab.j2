@@ -1,0 +1,7 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

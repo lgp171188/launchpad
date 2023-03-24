@@ -9,14 +9,13 @@ __all__ = [
 ]
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlunsplit
 
 import six
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
-from pytz import utc
 from storm.expr import Desc, Not
 from storm.locals import DateTime, Int, Reference, Unicode
 from storm.store import Store
@@ -105,15 +104,17 @@ class BugWatch(StormBase):
     remotebug = Unicode(allow_none=False)
     remotestatus = Unicode(allow_none=True, default=None)
     remote_importance = Unicode(allow_none=True, default=None)
-    lastchanged = DateTime(allow_none=True, default=None, tzinfo=utc)
-    lastchecked = DateTime(allow_none=True, default=None, tzinfo=utc)
+    lastchanged = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
+    lastchecked = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
     last_error_type = DBEnum(enum=BugWatchActivityStatus, default=None)
-    datecreated = DateTime(allow_none=False, default=UTC_NOW, tzinfo=utc)
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
     owner_id = Int(
         name="owner", validator=validate_public_person, allow_none=False
     )
     owner = Reference(owner_id, "Person.id")
-    next_check = DateTime(tzinfo=utc)
+    next_check = DateTime(tzinfo=timezone.utc)
 
     def __init__(
         self,
@@ -341,7 +342,7 @@ class BugWatch(StormBase):
     def can_be_rescheduled(self):
         """See `IBugWatch`."""
         if self.next_check is not None and self.next_check <= datetime.now(
-            utc
+            timezone.utc
         ):
             # If the watch is already scheduled for a time in the past
             # (or for right now) it can't be rescheduled, since it
@@ -840,7 +841,7 @@ class BugWatchActivity(StormBase):
     id = Int(primary=True)
     bug_watch_id = Int(name="bug_watch")
     bug_watch = Reference(bug_watch_id, BugWatch.id)
-    activity_date = DateTime(allow_none=False, tzinfo=utc)
+    activity_date = DateTime(allow_none=False, tzinfo=timezone.utc)
     result = DBEnum(enum=BugWatchActivityStatus, allow_none=True)
     message = Unicode()
     oops_id = Unicode()

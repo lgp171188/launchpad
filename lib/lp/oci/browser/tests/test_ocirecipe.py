@@ -3,11 +3,10 @@
 
 """Test OCI recipe views."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from urllib.parse import quote
 
-import pytz
 import soupmatchers
 from fixtures import FakeLogger
 from storm.locals import Store
@@ -683,7 +682,7 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
             member_of=[getUtility(ILaunchpadCelebrities).ppa_admin]
         )
         login_person(self.person)
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, date_created=date_created
         )
@@ -902,7 +901,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
     def test_edit_recipe_sets_date_last_modified(self):
         # Editing an OCI recipe sets the date_last_modified property.
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         recipe = self.factory.makeOCIRecipe(
             registrant=self.person, date_created=date_created
         )
@@ -1481,7 +1480,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         if recipe is None:
             recipe = self.makeOCIRecipe()
         if date_created is None:
-            date_created = datetime.now(pytz.UTC) - timedelta(hours=1)
+            date_created = datetime.now(timezone.utc) - timedelta(hours=1)
         return self.factory.makeOCIRecipeBuild(
             requester=self.person,
             recipe=recipe,
@@ -2083,7 +2082,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
         recipe = self.makeOCIRecipe()
         # Create oldest builds first so that they sort properly by id.
         date_gen = time_counter(
-            datetime(2000, 1, 1, tzinfo=pytz.UTC), timedelta(days=1)
+            datetime(2000, 1, 1, tzinfo=timezone.utc), timedelta(days=1)
         )
         builds = [
             self.makeBuild(recipe=recipe, date_created=next(date_gen))

@@ -1,12 +1,14 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import shlex
 import subprocess
 from multiprocessing import cpu_count
 
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import (
     config_file_path,
+    configure_cron,
     configure_lazr,
     get_service_config,
     lazr_config_files,
@@ -15,7 +17,10 @@ from charms.launchpad.base import (
 )
 from charms.reactive import (
     clear_flag,
+    endpoint_from_flag,
     helpers,
+    hook,
+    remove_state,
     set_flag,
     set_state,
     when,
@@ -96,7 +101,9 @@ def config_files():
     "memcache.available",
 )
 @when_not("service.configured")
-def configure(session_db, memcache):
+def configure():
+    session_db = endpoint_from_flag("session-db.master.available")
+    memcache = endpoint_from_flag("memcache.available")
     config = get_service_config()
     session_db_primary, _ = postgres.get_db_uris(session_db)
     # XXX cjwatson 2022-09-23: Mangle the connection string into a form
@@ -124,6 +131,7 @@ def configure(session_db, memcache):
     )
     configure_gunicorn(config)
     configure_logrotate(config)
+    configure_cron(config, "crontab.j2")
 
     restart_type = None
     if helpers.any_file_changed(
@@ -146,9 +154,15 @@ def check_is_running():
     hookenv.status_set("active", "Ready")
 
 
+@hook("{requires:memcache}-relation-{joined,changed,broken,departed}")
+def memcache_relation_changed(memcache):
+    remove_state("service.configured")
+
+
 @when("nrpe-external-master.available", "service.configured")
 @when_not("launchpad.appserver.nrpe-external-master.published")
-def nrpe_available(nrpe):
+def nrpe_available():
+    nrpe = endpoint_from_flag("nrpe-external-master.available")
     config = hookenv.config()
     healthy_regex = (
         r"(\/\+icing\/rev[0-9a-f]+\/).*(Is your project registered yet\?)"
@@ -161,7 +175,7 @@ def nrpe_available(nrpe):
             "-p",
             str(config["port_main"]),
             "-l",
-            "--regex=%s" % healthy_regex,
+            "--regex=%s" % shlex.quote(healthy_regex),
         ],
         name="check_launchpad_appserver",
         description="Launchpad appserver",

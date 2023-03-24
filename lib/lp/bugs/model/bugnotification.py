@@ -10,9 +10,8 @@ __all__ = [
     "BugNotificationSet",
 ]
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from storm.expr import In, Join, LeftJoin
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from storm.store import Store
@@ -59,7 +58,7 @@ class BugNotification(StormBase):
     bug = Reference(bug_id, "Bug.id")
 
     is_comment = Bool(allow_none=False)
-    date_emailed = DateTime(tzinfo=pytz.UTC, allow_none=True)
+    date_emailed = DateTime(tzinfo=timezone.utc, allow_none=True)
     status = DBEnum(
         name="status",
         enum=BugNotificationStatus,
@@ -141,7 +140,7 @@ class BugNotificationSet:
         interval = timedelta(
             minutes=int(config.malone.bugnotification_interval)
         )
-        time_limit = datetime.now(pytz.UTC) - interval
+        time_limit = datetime.now(timezone.utc) - interval
         last_omitted_notification = None
         pending_notifications = []
         people_ids = set()

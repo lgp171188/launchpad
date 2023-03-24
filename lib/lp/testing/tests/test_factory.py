@@ -3,9 +3,8 @@
 
 """Tests for the Launchpad object factory."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from testtools.matchers import StartsWith
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -150,14 +149,14 @@ class TestFactory(TestCaseWithFactory):
         self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)
 
     def test_makeBinaryPackagePublishingHistory_uses_dateremoved(self):
-        dateremoved = datetime.now(pytz.UTC)
+        dateremoved = datetime.now(timezone.utc)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             dateremoved=dateremoved
         )
         self.assertEqual(dateremoved, bpph.dateremoved)
 
     def test_makeBinaryPackagePublishingHistory_scheduleddeletiondate(self):
-        scheduleddeletiondate = datetime.now(pytz.UTC)
+        scheduleddeletiondate = datetime.now(timezone.utc)
         bpph = self.factory.makeBinaryPackagePublishingHistory(
             scheduleddeletiondate=scheduleddeletiondate
         )
@@ -326,7 +325,7 @@ class TestFactory(TestCaseWithFactory):
         self.assertEqual(110, bpr.installedsize)
 
     def test_makeBinaryPackageName_uses_date_created(self):
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         bpr = self.factory.makeBinaryPackageRelease(date_created=date_created)
         self.assertEqual(date_created, bpr.datecreated)
 
@@ -499,21 +498,21 @@ class TestFactory(TestCaseWithFactory):
         self.assertEqual(PackagePublishingStatus.PUBLISHED, spph.status)
 
     def test_makeSourcePackagePublishingHistory_uses_date_uploaded(self):
-        date_uploaded = datetime.now(pytz.UTC)
+        date_uploaded = datetime.now(timezone.utc)
         spph = self.factory.makeSourcePackagePublishingHistory(
             date_uploaded=date_uploaded
         )
         self.assertEqual(date_uploaded, spph.datecreated)
 
     def test_makeSourcePackagePublishingHistory_uses_dateremoved(self):
-        dateremoved = datetime.now(pytz.UTC)
+        dateremoved = datetime.now(timezone.utc)
         spph = self.factory.makeSourcePackagePublishingHistory(
             dateremoved=dateremoved
         )
         self.assertEqual(dateremoved, spph.dateremoved)
 
     def test_makeSourcePackagePublishingHistory_scheduleddeletiondate(self):
-        scheduleddeletiondate = datetime.now(pytz.UTC)
+        scheduleddeletiondate = datetime.now(timezone.utc)
         spph = self.factory.makeSourcePackagePublishingHistory(
             scheduleddeletiondate=scheduleddeletiondate
         )

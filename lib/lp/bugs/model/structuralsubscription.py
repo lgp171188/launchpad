@@ -12,8 +12,8 @@ __all__ = [
 ]
 
 from collections import defaultdict
+from datetime import timezone
 
-import pytz
 from storm.expr import (
     SQL,
     And,
@@ -121,10 +121,13 @@ class StructuralSubscription(StormBase):
     subscribed_by = Reference(subscribed_byID, "Person.id")
 
     date_created = DateTime(
-        "date_created", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        "date_created", allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
     date_last_updated = DateTime(
-        "date_last_updated", allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC
+        "date_last_updated",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
 
     def __init__(self, subscriber, subscribed_by, **kwargs):

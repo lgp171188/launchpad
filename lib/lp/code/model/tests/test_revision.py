@@ -4,11 +4,10 @@
 """Tests for Revisions."""
 
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import TestCase
 
 import psycopg2
-import pytz
 from storm.store import Store
 from testtools.matchers import Equals
 from zope.component import getUtility
@@ -42,7 +41,7 @@ class TestRevisionCreationDate(TestCaseWithFactory):
 
     def test_new_past_revision_date(self):
         # A revision created with a revision date in the past works fine.
-        past_date = datetime(2009, 1, 1, tzinfo=pytz.UTC)
+        past_date = datetime(2009, 1, 1, tzinfo=timezone.utc)
         revision = RevisionSet().new(
             "rev_id", "log body", past_date, "author", [], {}
         )
@@ -51,7 +50,7 @@ class TestRevisionCreationDate(TestCaseWithFactory):
     def test_new_future_revision_date(self):
         # A revision with a future date gets the revision date set to
         # date_created.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         future_date = now + timedelta(days=1)
         revision = RevisionSet().new(
             "rev_id", "log body", future_date, "author", [], {}
@@ -101,7 +100,7 @@ class TestRevisionKarma(TestCaseWithFactory):
         author = self.factory.makePerson()
         rev = self.factory.makeRevision(
             author=author.preferredemail.email,
-            revision_date=datetime.now(pytz.UTC) - timedelta(days=5),
+            revision_date=datetime.now(timezone.utc) - timedelta(days=5),
         )
         branch = self.factory.makeProductBranch()
         branch.createBranchRevision(1, rev)
@@ -156,7 +155,7 @@ class TestRevisionKarma(TestCaseWithFactory):
         author = self.factory.makePerson()
         rev = self.factory.makeRevision(
             author=author,
-            revision_date=datetime.now(pytz.UTC) + timedelta(days=5),
+            revision_date=datetime.now(timezone.utc) + timedelta(days=5),
         )
         branch = self.factory.makeProductBranch()
         karma = rev.allocateKarma(branch)
@@ -244,7 +243,8 @@ class TestRevisionSet(TestCaseWithFactory):
         )
         self.assertEqual(bzr_revisions[0].message, rev_1.log_body)
         self.assertEqual(
-            datetime(1970, 1, 1, 0, 0, tzinfo=pytz.UTC), rev_1.revision_date
+            datetime(1970, 1, 1, 0, 0, tzinfo=timezone.utc),
+            rev_1.revision_date,
         )
         self.assertEqual([], rev_1.parents)
         # Revision properties starting with 'deb-pristine-delta' aren't
@@ -371,7 +371,7 @@ class GetPublicRevisionsTestCase(TestCaseWithFactory):
         # Since the tests order by date, but also limit to the last 30
         # days, we want a time counter that starts 10 days ago.
         self.date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=10),
+            datetime.now(timezone.utc) - timedelta(days=10),
             delta=timedelta(days=1),
         )
 
@@ -452,7 +452,7 @@ class RevisionTestMixin:
     def testRevisionDateRange(self):
         # Revisions where the revision_date is older than the day_limit are
         # not returned.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         day_limit = 5
         # Make the first revision earlier than our day limit.
         rev1 = self._makeRevision(
@@ -612,7 +612,7 @@ class TestGetRecentRevisionsForProduct(GetPublicRevisionsTestCase):
     def testRevisionDateRange(self):
         # Revisions where the revision_date is older than the day_limit are
         # not returned.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         day_limit = 5
         # Make the first revision earlier than our day limit.
         rev1 = self._makeRevision(
@@ -694,18 +694,18 @@ class TestTipRevisionsForBranches(TestCase):
         # timestampToDatetime should convert a negative, fractional timestamp
         # into a valid, sane datetime object.
         revision_set = removeSecurityProxy(getUtility(IRevisionSet))
-        UTC = pytz.timezone("UTC")
         timestamp = -0.5
         date = revision_set._timestampToDatetime(timestamp)
-        self.assertEqual(date, datetime(1969, 12, 31, 23, 59, 59, 500000, UTC))
+        self.assertEqual(
+            date, datetime(1969, 12, 31, 23, 59, 59, 500000, timezone.utc)
+        )
 
     def test_timestampToDatetime(self):
         # timestampTODatetime should convert a regular timestamp into a valid,
         # sane datetime object.
         revision_set = removeSecurityProxy(getUtility(IRevisionSet))
-        UTC = pytz.timezone("UTC")
         timestamp = time.time()
-        date = datetime.fromtimestamp(timestamp, tz=UTC)
+        date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
         self.assertEqual(date, revision_set._timestampToDatetime(timestamp))
 
 
@@ -797,7 +797,7 @@ class TestUpdateRevisionCacheForBranch(RevisionCacheTestCase):
         # Revisions older than the 30 day epoch are not added to the cache.
 
         # Start 33 days ago.
-        epoch = datetime.now(pytz.UTC) - timedelta(days=30)
+        epoch = datetime.now(timezone.utc) - timedelta(days=30)
         date_generator = time_counter(
             epoch - timedelta(days=3), delta=timedelta(days=2)
         )
@@ -818,7 +818,7 @@ class TestUpdateRevisionCacheForBranch(RevisionCacheTestCase):
         # If there are already revisions in the cache for the branch, updating
         # the branch again will only add the new revisions.
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=29),
+            datetime.now(timezone.utc) - timedelta(days=29),
             delta=timedelta(days=1),
         )
         # Initially add in 4 revisions.
@@ -982,7 +982,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
     def test_old_revisions_removed(self):
         # Revisions older than 30 days are removed.
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=33),
+            datetime.now(timezone.utc) - timedelta(days=33),
             delta=timedelta(days=2),
         )
         for i in range(4):
@@ -997,7 +997,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
     def test_pruning_limit(self):
         # The prune will only remove at most the parameter rows.
         date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=33),
+            datetime.now(timezone.utc) - timedelta(days=33),
             delta=timedelta(days=2),
         )
         for i in range(4):

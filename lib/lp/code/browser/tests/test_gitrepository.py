@@ -6,12 +6,11 @@
 import base64
 import doctest
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from operator import attrgetter
 from textwrap import dedent
 
-import pytz
 import soupmatchers
 import transaction
 from fixtures import FakeLogger
@@ -994,7 +993,7 @@ class TestGitRepositoryBranches(BrowserTestCase):
         # The number of queries is constant in the number of refs.
         person = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=person)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         def create_ref():
             with person_logged_in(person):
@@ -1063,7 +1062,7 @@ class TestGitRepositoryEditReviewerView(TestCaseWithFactory):
         # If the user has set the reviewer to be same and clicked on save,
         # then the underlying object hasn't really been changed, so the last
         # modified is not updated.
-        modified_date = datetime(2007, 1, 1, tzinfo=pytz.UTC)
+        modified_date = datetime(2007, 1, 1, tzinfo=timezone.utc)
         repository = self.factory.makeGitRepository(date_created=modified_date)
         view = create_initialized_view(repository, "+reviewer")
         view.change_action.success({"reviewer": repository.owner})

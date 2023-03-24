@@ -10,9 +10,8 @@ or more nominations.
 
 __all__ = ["BugNomination", "BugNominationSet"]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.properties import DateTime, Int
 from storm.references import Reference
 from zope.component import getUtility
@@ -58,8 +57,10 @@ class BugNomination(StormBase):
     )
     decider = Reference(decider_id, "Person.id")
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
-    date_decided = DateTime(allow_none=True, default=None, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
+    date_decided = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
 
     distroseries_id = Int(name="distroseries", allow_none=True, default=None)
     distroseries = Reference(distroseries_id, "DistroSeries.id")
@@ -109,7 +110,7 @@ class BugNomination(StormBase):
             return
         self.status = BugNominationStatus.APPROVED
         self.decider = approver
-        self.date_decided = datetime.now(pytz.timezone("UTC"))
+        self.date_decided = datetime.now(timezone.utc)
         targets = []
         if self.distroseries:
             # Figure out which packages are affected in this distro for
@@ -141,7 +142,7 @@ class BugNomination(StormBase):
             )
         self.status = BugNominationStatus.DECLINED
         self.decider = decliner
-        self.date_decided = datetime.now(pytz.timezone("UTC"))
+        self.date_decided = datetime.now(timezone.utc)
 
     def isProposed(self):
         """See IBugNomination."""

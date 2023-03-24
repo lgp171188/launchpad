@@ -3,10 +3,9 @@
 
 """Tests for Distribution."""
 
-import datetime
 import json
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import soupmatchers
 from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
@@ -895,9 +894,7 @@ class TestDistribution(TestCaseWithFactory):
         self.useContext(person_logged_in(owner))
 
         # The Distribution now has a complimentary commercial subscription.
-        new_expires_date = datetime.datetime.now(
-            pytz.UTC
-        ) - datetime.timedelta(1)
+        new_expires_date = datetime.now(timezone.utc) - timedelta(1)
         naked_subscription = removeSecurityProxy(
             distribution.commercial_subscription
         )
@@ -1920,8 +1917,8 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             )
             distro_url = api_url(distro)
 
-        now = datetime.datetime.now(tz=pytz.utc)
-        day = datetime.timedelta(days=1)
+        now = datetime.now(tz=timezone.utc)
+        day = timedelta(days=1)
 
         yesterday_response = self.webservice.named_get(
             distro_url,
@@ -1947,8 +1944,8 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             self.factory.makeQuestion(title="Crash with %s" % oopsid)
             distro = self.factory.makeDistribution()
             distro_url = api_url(distro)
-        now = datetime.datetime.now(tz=pytz.utc)
-        day = datetime.timedelta(days=1)
+        now = datetime.now(tz=timezone.utc)
+        day = timedelta(days=1)
 
         empty_response = self.webservice.named_get(
             distro_url,
@@ -2360,7 +2357,7 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         owner = distribution.owner
         cve = self.factory.makeCVE(sequence="2022-1234")
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         with person_logged_in(owner):
             # The distribution owner can create a new vulnerability in
@@ -2461,7 +2458,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         distribution = self.factory.makeDistribution()
         person = distribution.owner
         cve = self.factory.makeCVE("2022-1234")
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         vulnerability = removeSecurityProxy(
             self.factory.makeVulnerability(
                 distribution,
@@ -2542,7 +2539,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         distribution = self.factory.makeDistribution(owner=person)
         cve = self.factory.makeCVE("2022-1234")
         another_cve = self.factory.makeCVE("2022-1235")
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         first_vulnerability = removeSecurityProxy(
             self.factory.makeVulnerability(
@@ -2773,7 +2770,7 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
         distribution_url = api_base + api_url(distribution)
         owner_url = api_base + api_url(owner)
         cve_url = api_base + api_url(cve)
-        now = datetime.datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         self.assertEqual(0, distribution.vulnerabilities.count())
 

@@ -40,7 +40,7 @@ downloaded and the date of the last download on that table as well.
 
     # Manually update the download counter for that file above so that we can
     # test it.
-    >>> from datetime import date, datetime
+    >>> from datetime import date, datetime, timezone
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> lfa = LibraryFileAlias.selectOne(
     ...     LibraryFileAlias.q.filename == "firefox_0.9.2.orig.tar.gz"
@@ -59,8 +59,7 @@ When a file has been downloaded on the present day, all we can say is that
 it's been downloaded "today".  That's because we don't have the time it was
 downloaded, so we can't say it was downloaded a few minutes/hours ago.
 
-    >>> import pytz
-    >>> lfa.updateDownloadCount(datetime.now(pytz.utc).date(), None, 4356)
+    >>> lfa.updateDownloadCount(datetime.now(timezone.utc).date(), None, 4356)
     >>> anon_browser.reload()
     >>> print(
     ...     extract_text(find_tag_by_id(anon_browser.contents, "downloads"))

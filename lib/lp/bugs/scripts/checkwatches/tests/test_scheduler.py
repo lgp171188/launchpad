@@ -3,10 +3,9 @@
 
 """XXX: Module docstring goes here."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import transaction
-from pytz import utc
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -27,7 +26,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         # We'll make sure that all the other bug watches look like
         # they've been scheduled so that only our watch gets scheduled.
         for watch in getUtility(IBugWatchSet).search():
-            removeSecurityProxy(watch).next_check = datetime.now(utc)
+            removeSecurityProxy(watch).next_check = datetime.now(timezone.utc)
         self.bug_watch = removeSecurityProxy(self.factory.makeBugWatch())
         self.scheduler = BugWatchScheduler(BufferLogger())
         transaction.commit()
@@ -39,12 +38,14 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         self.scheduler(1)
 
         self.assertNotEqual(None, self.bug_watch.next_check)
-        self.assertTrue(self.bug_watch.next_check <= datetime.now(utc))
+        self.assertTrue(
+            self.bug_watch.next_check <= datetime.now(timezone.utc)
+        )
 
     def test_scheduler_schedules_working_watches(self):
         # If a watch has been checked and has never failed its next
         # check will be scheduled for 24 hours after its last check.
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         # Add some successful activity to ensure that successful activity
         # is handled correctly.
         self.bug_watch.addActivity()
@@ -58,7 +59,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
     def test_scheduler_schedules_failing_watches(self):
         # If a watch has failed once, it will be scheduled more than 24
         # hours after its last check.
-        now = datetime.now(utc)
+        now = datetime.now(timezone.utc)
         self.bug_watch.lastchecked = now
 
         # The delay depends on the number of failures that the watch has
@@ -92,7 +93,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
     def test_scheduler_doesnt_schedule_scheduled_watches(self):
         # The scheduler will ignore watches whose next_check has been
         # set.
-        next_check_date = datetime.now(utc) + timedelta(days=1)
+        next_check_date = datetime.now(timezone.utc) + timedelta(days=1)
         self.bug_watch.next_check = next_check_date
         transaction.commit()
         self.scheduler(1)

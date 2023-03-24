@@ -1,9 +1,8 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from zope.formlib import form
 from zope.formlib.interfaces import (
     ConversionError,
@@ -134,7 +133,7 @@ class AnnouncementDateWidget(SimpleInputWidget):
             )
             raise self._error
         if action == "immediately":
-            return datetime.now(pytz.utc)
+            return datetime.now(timezone.utc)
         elif action == "sometime":
             return None
         elif action == "specific":

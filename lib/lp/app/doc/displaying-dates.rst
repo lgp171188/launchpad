@@ -26,10 +26,8 @@ hence if the display will be the date.
 
 First, let's bring in some dependencies:
 
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from lp.testing import test_tales
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
 
 fmt:approximatedate and fmt:displaydate display the difference between
 the formatted timestamp and the present.  This is a really bad idea
@@ -37,7 +35,7 @@ for tests, so we register an alternate formatter that use the same
 formatting code, but always display the difference from a known
 timestamp.
 
-    >>> fixed_time_utc = datetime(2005, 12, 25, 12, 0, 0, tzinfo=UTC)
+    >>> fixed_time_utc = datetime(2005, 12, 25, 12, 0, 0, tzinfo=timezone.utc)
     >>> fixed_time = datetime(2005, 12, 25, 12, 0, 0)
     >>> from lp.app.browser.tales import DateTimeFormatterAPI
     >>> class TestDateTimeFormatterAPI(DateTimeFormatterAPI):

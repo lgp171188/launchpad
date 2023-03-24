@@ -31,11 +31,10 @@ return the date you specified.
 When you choose to publish immediately, the widget will return the current
 date and time.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> action_widget.request.form[action_widget.name] = "immediately"
     >>> date_widget.request.form[date_widget.name] = ""
-    >>> now = datetime.now(pytz.utc)
+    >>> now = datetime.now(timezone.utc)
     >>> before = now - timedelta(1)  # 1 day
     >>> after = now + timedelta(1)  # 1 day
     >>> immediate_date = widget.getInputValue()

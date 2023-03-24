@@ -23,6 +23,7 @@ from storm.expr import (
     Or,
     Select,
     Table,
+    Union,
 )
 from storm.locals import SQL, Desc
 from zope.component import getUtility
@@ -70,6 +71,7 @@ def search_specifications(
     need_people=True,
     need_branches=True,
     need_workitems=False,
+    base_id_clauses=None,
 ):
     store = IStore(Specification)
     if not default_acceptance:
@@ -93,22 +95,38 @@ def search_specifications(
 
     if not tables:
         tables = [Specification]
-    clauses = base_clauses
     product_tables, product_clauses = get_specification_active_product_filter(
         context
     )
     tables.extend(product_tables)
-    clauses.extend(product_clauses)
-    # If there are any base or product clauses, they typically have good
-    # selectivity, so use a CTE to force PostgreSQL to calculate them
-    # up-front rather than doing a sequential scan for visible
-    # specifications.
-    if clauses:
+
+    # If there are any base clauses, they typically have good selectivity,
+    # so use a CTE to force PostgreSQL to calculate them up-front rather
+    # than doing a sequential scan for visible specifications.
+    if base_clauses or base_id_clauses:
         RelevantSpecification = Table("RelevantSpecification")
+        # Base ID clauses (that is, those that search for specifications
+        # whose IDs are in a set computed by a subquery) pose an
+        # optimization problem.  If we include them in a disjunction with
+        # other clauses that search for well-indexed columns such as the
+        # owner, then rather than using each of the appropriate indexes and
+        # combining them, the PostgreSQL planner will perform a sequential
+        # scan over the whole Specification table.  To avoid this, we put
+        # such clauses in a separate query and UNION them together.
         relevant_specification_cte = WithMaterialized(
             RelevantSpecification.name,
             store,
-            Select(Specification.id, And(clauses), tables=tables),
+            Union(
+                *(
+                    Select(
+                        Specification.id,
+                        And(clauses + product_clauses),
+                        tables=tables,
+                    )
+                    for clauses in (base_clauses, base_id_clauses)
+                    if clauses
+                )
+            ),
         )
         store = store.with_(relevant_specification_cte)
         tables = [
@@ -119,6 +137,9 @@ def search_specifications(
             ),
         ]
         clauses = []
+    else:
+        clauses = list(product_clauses)
+
     clauses.extend(get_specification_privacy_filter(user))
     clauses.extend(get_specification_filters(spec_filter))
 

@@ -1,10 +1,10 @@
 #  Copyright 2022 Canonical Ltd.  This software is licensed under the
 #  GNU Affero General Public License version 3 (see the file LICENSE).
-import datetime
+
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
-from pytz import UTC
 from zope.component import getUtility
 
 from lp.app.enums import InformationType
@@ -56,12 +56,10 @@ class TestUCTRecord(TestCase):
                 ],
                 candidate="CVE-2022-23222",
                 crd=None,
-                public_date_at_USN=datetime.datetime(
-                    2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+                public_date_at_USN=datetime(
+                    2022, 1, 14, 8, 15, tzinfo=timezone.utc
                 ),
-                public_date=datetime.datetime(
-                    2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
-                ),
+                public_date=datetime(2022, 1, 14, 8, 15, tzinfo=timezone.utc),
                 description=(
                     "kernel/bpf/verifier.c in the Linux kernel through "
                     "5.15.14 allows local\nusers to gain privileges because "
@@ -225,15 +223,11 @@ class TestCVE(TestCaseWithFactory):
                 ),
             ],
             candidate="CVE-2022-23222",
-            crd=datetime.datetime(
-                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            crd=datetime(2020, 1, 14, 8, 15, tzinfo=timezone.utc),
+            public_date_at_USN=datetime(
+                2021, 1, 14, 8, 15, tzinfo=timezone.utc
             ),
-            public_date_at_USN=datetime.datetime(
-                2021, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
-            ),
-            public_date=datetime.datetime(
-                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
-            ),
+            public_date=datetime(2022, 1, 14, 8, 15, tzinfo=timezone.utc),
             description="description",
             discovered_by="tr3e wang",
             mitigation="mitigation",
@@ -326,14 +320,12 @@ class TestCVE(TestCaseWithFactory):
 
         self.cve = CVE(
             sequence="CVE-2022-23222",
-            date_made_public=datetime.datetime(
-                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_made_public=datetime(2022, 1, 14, 8, 15, tzinfo=timezone.utc),
+            date_notice_issued=datetime(
+                2021, 1, 14, 8, 15, tzinfo=timezone.utc
             ),
-            date_notice_issued=datetime.datetime(
-                2021, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
-            ),
-            date_coordinated_release=datetime.datetime(
-                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_coordinated_release=datetime(
+                2020, 1, 14, 8, 15, tzinfo=timezone.utc
             ),
             distro_packages=[
                 CVE.DistroPackage(
@@ -581,14 +573,12 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.lp_cve = self.factory.makeCVE("2022-23222")
         self.cve = CVE(
             sequence="CVE-2022-23222",
-            date_made_public=datetime.datetime(
-                2022, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_made_public=datetime(2022, 1, 14, 8, 15, tzinfo=timezone.utc),
+            date_notice_issued=datetime(
+                2021, 1, 14, 8, 15, tzinfo=timezone.utc
             ),
-            date_notice_issued=datetime.datetime(
-                2021, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
-            ),
-            date_coordinated_release=datetime.datetime(
-                2020, 1, 14, 8, 15, tzinfo=datetime.timezone.utc
+            date_coordinated_release=datetime(
+                2020, 1, 14, 8, 15, tzinfo=timezone.utc
             ),
             distro_packages=[
                 CVE.DistroPackage(
@@ -907,14 +897,12 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         )
         cve = CVE(
             sequence="CVE-2022-1234",
-            date_made_public=datetime.datetime(
-                2022, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
+            date_made_public=datetime(2022, 1, 1, 8, 15, tzinfo=timezone.utc),
+            date_notice_issued=datetime(
+                2021, 1, 1, 8, 15, tzinfo=timezone.utc
             ),
-            date_notice_issued=datetime.datetime(
-                2021, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
-            ),
-            date_coordinated_release=datetime.datetime(
-                2020, 1, 1, 8, 15, tzinfo=datetime.timezone.utc
+            date_coordinated_release=datetime(
+                2020, 1, 1, 8, 15, tzinfo=timezone.utc
             ),
             distro_packages=[
                 CVE.DistroPackage(
@@ -1242,14 +1230,14 @@ class TestUCTImporterExporter(TestCaseWithFactory):
             bug.vulnerabilities[0].date_notice_issued,
             bug.vulnerabilities[0].date_coordinated_release,
         ):
-            self.assertEqual(UTC, date.tzinfo)
+            self.assertEqual(timezone.utc, date.tzinfo)
         self.importer.update_bug(bug, cve, self.lp_cve)
         for date in (
             bug.vulnerabilities[0].date_made_public,
             bug.vulnerabilities[0].date_notice_issued,
             bug.vulnerabilities[0].date_coordinated_release,
         ):
-            self.assertEqual(UTC, date.tzinfo)
+            self.assertEqual(timezone.utc, date.tzinfo)
 
     def test_make_cve_from_bug(self):
         self.importer.import_cve(self.cve)

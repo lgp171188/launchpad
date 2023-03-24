@@ -26,10 +26,9 @@ __all__ = [
 ]
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 from lazr.restful.utils import smartquote
 from storm.expr import Desc
 from zope.component import getUtility
@@ -1057,7 +1056,7 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
             "UPLOADING": "Currently uploading",
         }
 
-        now = datetime.now(tz=pytz.UTC)
+        now = datetime.now(tz=timezone.utc)
         source_ids = [result_tuple.id for result_tuple in result_tuples]
         summaries = getUtility(
             IPublishingSet
@@ -1095,7 +1094,7 @@ class ArchiveView(ArchiveSourcePackageListViewBase):
 
     def num_updates_over_last_days(self, num_days=30):
         """Return the number of updates over the past days."""
-        now = datetime.now(tz=pytz.UTC)
+        now = datetime.now(tz=timezone.utc)
         created_since = now - timedelta(num_days)
         return self.context.getPublishedSources(
             created_since_date=created_since

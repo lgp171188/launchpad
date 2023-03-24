@@ -362,8 +362,8 @@ If the difference between what we and the remote system think the time
 is, an error is raised.
 
     >>> import pytz
-    >>> from datetime import datetime, timedelta
-    >>> utc_now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> utc_now = datetime.now(timezone.utc)
     >>> class PositiveTimeSkewExternalBugTracker(TestExternalBugTracker):
     ...     def getCurrentDBTime(self):
     ...         return utc_now + timedelta(minutes=20)
@@ -469,7 +469,7 @@ know that their time is similar to ours.
 
     >>> class CheckModifiedExternalBugTracker(InitializingExternalBugTracker):
     ...     def getCurrentDBTime(self):
-    ...         return datetime.now(pytz.timezone("UTC"))
+    ...         return datetime.now(timezone.utc)
     ...
     ...     def getModifiedRemoteBugs(self, remote_bug_ids, last_checked):
     ...         print("last_checked: %s" % last_checked)
@@ -570,9 +570,7 @@ If the bug watches have the lastchecked attribute set, they will be
 passed to getModifiedRemoteBugs(). Only the bugs that have been modified
 will then be passed on to initializeRemoteBugDB().
 
-    >>> some_time_ago = datetime(
-    ...     2007, 3, 17, 16, 0, tzinfo=pytz.timezone("UTC")
-    ... )
+    >>> some_time_ago = datetime(2007, 3, 17, 16, 0, tzinfo=timezone.utc)
     >>> for bug_watch in bug_watches:
     ...     bug_watch.lastchecked = some_time_ago
     ...

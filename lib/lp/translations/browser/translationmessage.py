@@ -16,12 +16,11 @@ __all__ = [
     "TranslationMessageSuggestions",
 ]
 
-import datetime
 import operator
 import re
+from datetime import datetime, timezone
 from urllib.parse import parse_qsl, urlencode
 
-import pytz
 from zope import datetime as zope_datetime
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -323,8 +322,7 @@ class BaseTranslationView(LaunchpadView):
             self._checkSubmitConditions()
         else:
             # It's not a POST, so we should generate lock_timestamp.
-            UTC = pytz.timezone("UTC")
-            self.lock_timestamp = datetime.datetime.now(UTC)
+            self.lock_timestamp = datetime.now(timezone.utc)
 
         # The batch navigator needs to be initialized early, before
         # _submitTranslations is called; the reason for this is that

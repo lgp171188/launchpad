@@ -9,8 +9,8 @@ __all__ = [
 ]
 
 from collections import defaultdict
+from datetime import timezone
 
-import pytz
 from storm.expr import Join, LeftJoin, Or
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
@@ -84,10 +84,10 @@ class OCIProject(BugTargetBase, StructuralSubscriptionTargetMixin, StormBase):
 
     id = Int(primary=True)
     date_created = DateTime(
-        name="date_created", tzinfo=pytz.UTC, allow_none=False
+        name="date_created", tzinfo=timezone.utc, allow_none=False
     )
     date_last_modified = DateTime(
-        name="date_last_modified", tzinfo=pytz.UTC, allow_none=False
+        name="date_last_modified", tzinfo=timezone.utc, allow_none=False
     )
 
     registrant_id = Int(name="registrant", allow_none=False)

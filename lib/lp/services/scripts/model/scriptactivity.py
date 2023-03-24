@@ -7,8 +7,8 @@ __all__ = [
 ]
 
 import socket
+from datetime import timezone
 
-import pytz
 import six
 from storm.locals import DateTime, Int, Unicode
 from zope.interface import implementer
@@ -30,8 +30,8 @@ class ScriptActivity(StormBase):
     id = Int(primary=True)
     name = Unicode(allow_none=False)
     hostname = Unicode(allow_none=False)
-    date_started = DateTime(tzinfo=pytz.UTC, allow_none=False)
-    date_completed = DateTime(tzinfo=pytz.UTC, allow_none=False)
+    date_started = DateTime(tzinfo=timezone.utc, allow_none=False)
+    date_completed = DateTime(tzinfo=timezone.utc, allow_none=False)
 
     def __init__(self, name, hostname, date_started, date_completed):
         super().__init__()

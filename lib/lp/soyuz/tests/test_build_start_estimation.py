@@ -1,9 +1,8 @@
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -47,7 +46,7 @@ class TestBuildStartEstimation(TestCaseWithFactory):
             distroseries=self.distroseries,
         )
         build = pkg.createMissingBuilds()[0]
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         estimate = self.job_start_estimate(build)
         self.assertTrue(estimate > now)
 
@@ -68,7 +67,7 @@ class TestBuildStartEstimation(TestCaseWithFactory):
         )
         [build2] = pkg2.createMissingBuilds()
         build2.buildqueue_record.lastscore = 100
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         # Since build1 is higher priority, it's estimated dispatch time is now
         estimate = self.job_start_estimate(build1)
         self.assertEqual(5, (estimate - now).seconds)

@@ -4,9 +4,8 @@
 """Test Build features."""
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from pymacaroons import Macaroon
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
@@ -99,7 +98,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
             self.build.distro_arch_series,
             self.build.pocket,
         )
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         build.updateStatus(
             BuildStatus.BUILDING,
             date_started=now - timedelta(seconds=duration),

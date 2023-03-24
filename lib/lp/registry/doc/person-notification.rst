@@ -41,9 +41,8 @@ getNotificationsToSend().
 
 We can also retrieve notifications that are older than a certain date.
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> for n in notification_set.getNotificationsOlderThan(now):
     ...     print(n.subject)
     ...

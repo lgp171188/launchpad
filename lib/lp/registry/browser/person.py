@@ -50,7 +50,7 @@ __all__ = [
 
 
 import itertools
-from datetime import datetime
+from datetime import datetime, timezone
 from itertools import chain
 from operator import attrgetter, itemgetter
 from textwrap import dedent
@@ -3946,7 +3946,7 @@ class PersonOAuthTokensView(LaunchpadView):
                 "Invalid form value for token_type: %r" % token_type
             )
         if token is not None:
-            token.date_expires = datetime.now(pytz.timezone("UTC"))
+            token.date_expires = datetime.now(timezone.utc)
             self.request.response.addInfoNotification(
                 "Authorization revoked successfully."
             )
@@ -4419,13 +4419,13 @@ class PersonEditTimeZoneView(LaunchpadFormView):
     @action(_("Update"), name="update")
     def action_update(self, action, data):
         """Set the time zone for the person."""
-        timezone = data.get("time_zone")
-        if timezone is None:
+        tz = data.get("time_zone")
+        if tz is None:
             raise UnexpectedFormData("No location received.")
         # XXX salgado, 2012-02-16, bug=933699: Use setLocation() because it's
         # the cheaper way to set the timezone of a person. Once the bug is
         # fixed we'll be able to get rid of this hack.
-        self.context.setLocation(None, None, timezone, self.user)
+        self.context.setLocation(None, None, tz, self.user)
 
 
 def archive_to_person(archive):

@@ -3,9 +3,8 @@
 
 """Test the expire-archive-files.py script. """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -33,7 +32,7 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
         self.stp.prepareBreezyAutotest()
 
         # Prepare some date properties for the tests to use.
-        self.now = datetime.now(pytz.UTC)
+        self.now = datetime.now(timezone.utc)
         self.under_threshold_date = self.now - timedelta(days=29)
         self.over_threshold_date = self.now - timedelta(days=31)
 

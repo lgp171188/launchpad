@@ -8,9 +8,8 @@ OAuth specification is defined in <http://oauth.net/core/1.0/>.
 """
 
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -45,7 +44,7 @@ class TestOAuth(TestCaseWithFactory):
         self.person = self.factory.makePerson()
         self.consumer = self.factory.makeOAuthConsumer()
 
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         self.in_a_while = now + timedelta(hours=1)
         self.a_long_time_ago = now - timedelta(hours=1000)
 
@@ -119,7 +118,7 @@ class TestRequestTokens(TestOAuth):
 
     def test_date_created(self):
         request_token, _ = self.consumer.newRequestToken()
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         self.assertTrue(request_token.date_created <= now)
 
     def test_new_token_is_not_reviewed(self):
@@ -156,7 +155,7 @@ class TestRequestTokens(TestOAuth):
         request_token, _ = self.consumer.newRequestToken()
 
         request_token.review(self.person, OAuthPermission.WRITE_PUBLIC)
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
 
         self.assertTrue(request_token.is_reviewed)
         self.assertEqual(request_token.person, self.person)

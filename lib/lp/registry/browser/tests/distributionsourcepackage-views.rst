@@ -14,13 +14,12 @@ package within a distribution.
     >>> publisher.distroseries.status = SeriesStatus.DEVELOPMENT
 
     # Publish the source 'gedit' in the ubuntutest main archive.
-    >>> from datetime import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> from lp.soyuz.enums import PackagePublishingStatus
     >>> gedit_main_src_hist = publisher.getPubSource(
     ...     sourcename="gedit",
     ...     archive=ubuntutest.main_archive,
-    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=pytz.UTC),
+    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=timezone.utc),
     ...     status=PackagePublishingStatus.PUBLISHED,
     ... )
 
@@ -30,7 +29,7 @@ series.
     >>> eel_main_src_hist = publisher.getPubSource(
     ...     sourcename="eel",
     ...     archive=ubuntutest.main_archive,
-    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=pytz.UTC),
+    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=timezone.utc),
     ...     status=PackagePublishingStatus.PUBLISHED,
     ...     distroseries=ubuntutest.getSeries("breezy-autotest"),
     ... )
@@ -40,7 +39,7 @@ series.
     >>> eel_main_src_hist = publisher.getPubSource(
     ...     sourcename="eel",
     ...     archive=ubuntutest.main_archive,
-    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=pytz.UTC),
+    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=timezone.utc),
     ...     status=PackagePublishingStatus.PUBLISHED,
     ...     distroseries=earliest_series,
     ... )
@@ -50,7 +49,7 @@ series.
     >>> eel_main_src_hist = publisher.getPubSource(
     ...     sourcename="eel",
     ...     archive=ubuntutest.main_archive,
-    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=pytz.UTC),
+    ...     date_uploaded=datetime(2010, 12, 30, tzinfo=timezone.utc),
     ...     status=PackagePublishingStatus.PUBLISHED,
     ...     distroseries=latest_series,
     ... )

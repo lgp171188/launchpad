@@ -32,10 +32,9 @@ import copy
 import random
 import re
 import weakref
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 
-import pytz
 import six
 import transaction
 from lazr.delegates import delegate_to
@@ -869,6 +868,7 @@ class Person(
         if filter.intersection(roles) == set():
             filter.update(roles)
         role_clauses = []
+        id_clauses = []
         if SpecificationFilter.CREATOR in filter:
             role_clauses.append(Specification.owner == self)
         if SpecificationFilter.ASSIGNEE in filter:
@@ -878,7 +878,7 @@ class Person(
         if SpecificationFilter.APPROVER in filter:
             role_clauses.append(Specification._approver == self)
         if SpecificationFilter.SUBSCRIBER in filter:
-            role_clauses.append(
+            id_clauses.append(
                 Specification.id.is_in(
                     Select(
                         SpecificationSubscription.specification_id,
@@ -887,7 +887,7 @@ class Person(
                 )
             )
 
-        clauses = [Or(*role_clauses)]
+        clauses = [Or(*role_clauses)] if role_clauses else None
         if SpecificationFilter.COMPLETE not in filter:
             if (
                 in_progress
@@ -911,6 +911,7 @@ class Person(
             need_people=need_people,
             need_branches=need_branches,
             need_workitems=need_workitems,
+            base_id_clauses=id_clauses,
         )
 
     # XXX: Tom Berger 2008-04-14 bug=191799:
@@ -1285,7 +1286,8 @@ class Person(
             )
             .find(
                 Person,
-                CommercialSubscription.date_expires > datetime.now(pytz.UTC),
+                CommercialSubscription.date_expires
+                > datetime.now(timezone.utc),
                 Person.id == self.id,
             )
         )
@@ -2983,7 +2985,7 @@ class Person(
         """See `IPerson`."""
         days = self.defaultmembershipperiod
         if days:
-            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
+            return datetime.now(timezone.utc) + timedelta(days)
         else:
             return None
 
@@ -2992,7 +2994,7 @@ class Person(
         """See `IPerson`."""
         days = self.defaultrenewalperiod
         if days:
-            return datetime.now(pytz.timezone("UTC")) + timedelta(days)
+            return datetime.now(timezone.utc) + timedelta(days)
         else:
             return None
 

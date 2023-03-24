@@ -39,9 +39,8 @@ description.  It also takes an optional parameter 'datecreated' which defaults
 to UTC_NOW.
 
     # Initialize 'now' to a known value.
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
 
     >>> question = target.newQuestion(
     ...     sample_person,
@@ -588,12 +587,10 @@ question.  The question's owner is the same as the bug's owner.  The question
 title and description are taken from the bug.  The comments on the bug are
 copied to the question.
 
-    >>> from datetime import datetime
     >>> from lp.bugs.interfaces.bug import CreateBugParams
     >>> from lp.registry.interfaces.product import IProductSet
-    >>> from pytz import UTC
 
-    >>> now = datetime.now(UTC)
+    >>> now = datetime.now(timezone.utc)
     >>> target = getUtility(IProductSet)["jokosher"]
     >>> bug_params = CreateBugParams(
     ...     title="Print is broken",

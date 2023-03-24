@@ -13,13 +13,14 @@ Create some specific branches to use for this test
 
     >>> login(ANONYMOUS)
     >>> from lp.testing import time_counter
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
 
 Since the feed only shows revisions from the last 30 days, we need recent
 revisions.
 
-    >>> initial_revision_date = datetime.now(pytz.UTC) - timedelta(days=10)
+    >>> initial_revision_date = datetime.now(timezone.utc) - timedelta(
+    ...     days=10
+    ... )
     >>> date_generator = time_counter(
     ...     initial_revision_date, timedelta(days=1)
     ... )

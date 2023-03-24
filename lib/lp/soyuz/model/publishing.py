@@ -13,11 +13,10 @@ __all__ = [
 import json
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from operator import attrgetter, itemgetter
 from pathlib import Path
 
-import pytz
 from storm.databases.postgres import JSON
 from storm.expr import And, Cast, Desc, Join, LeftJoin, Not, Or, Sum
 from storm.info import ClassAlias
@@ -223,7 +222,7 @@ class ArchivePublisherBase:
     @property
     def age(self):
         """See `IArchivePublisher`."""
-        return datetime.now(pytz.UTC) - self.datecreated
+        return datetime.now(timezone.utc) - self.datecreated
 
     @property
     def component_name(self):

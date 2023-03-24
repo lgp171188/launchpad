@@ -3,10 +3,9 @@
 
 """Test the bulk database functions."""
 
-import datetime
+from datetime import datetime, timezone
 
 import transaction
-from pytz import UTC
 from storm.exceptions import ClassInfoError
 from storm.expr import SQL
 from storm.info import get_obj_info
@@ -291,7 +290,7 @@ class TestCreate(TestCaseWithFactory):
                 bug,
                 person,
                 person,
-                datetime.datetime.now(UTC),
+                datetime.now(timezone.utc),
                 BugNotificationLevel.LIFECYCLE,
             )
             for person in people

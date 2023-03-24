@@ -422,15 +422,14 @@ updated. If we set a bug watch's lastchanged timestamp manually and call
 update, lastchanged shouldn't be affected because the remote status of the bug
 watch hasn't altered:
 
-    >>> import pytz
-    >>> from datetime import datetime, timedelta
+    >>> from datetime import datetime, timedelta, timezone
     >>> from operator import attrgetter
     >>> sorted_bug_watches = sorted(
     ...     (bug_watch for bug_watch in example_bug_tracker.watches),
     ...     key=attrgetter("remotebug"),
     ... )
     >>> bug_watch = sorted_bug_watches[-1]
-    >>> now = datetime.now(pytz.timezone("UTC"))
+    >>> now = datetime.now(timezone.utc)
     >>> bug_watch.lastchanged = now - timedelta(weeks=2)
     >>> old_last_changed = bug_watch.lastchanged
     >>> print(bug_watch.remotebug)

@@ -6,7 +6,8 @@ __all__ = [
     "POExportRequestSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
@@ -208,7 +209,7 @@ class POExportRequest(StormBase):
     person = Reference(person_id, "Person.id")
 
     date_created = DateTime(
-        tzinfo=pytz.UTC, name="date_created", default=DEFAULT
+        tzinfo=timezone.utc, name="date_created", default=DEFAULT
     )
 
     potemplate_id = Int(name="potemplate", allow_none=False)

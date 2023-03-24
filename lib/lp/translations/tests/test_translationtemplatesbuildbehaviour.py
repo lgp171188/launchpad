@@ -3,11 +3,10 @@
 
 """Unit tests for TranslationTemplatesBuildBehaviour."""
 
-import datetime
 import logging
 import os
+from datetime import datetime, timezone
 
-import pytz
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from zope.component import getUtility
@@ -45,7 +44,7 @@ class FakeBuildQueue:
         """
         self.builder = behaviour._builder
         self.specific_build = behaviour.build
-        self.date_started = datetime.datetime.now(pytz.UTC)
+        self.date_started = datetime.now(timezone.utc)
         self.destroySelf = FakeMethod()
 
 

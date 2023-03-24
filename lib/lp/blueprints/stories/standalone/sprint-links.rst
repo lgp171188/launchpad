@@ -6,16 +6,12 @@ agenda, and then it is approved. If, however, the person nominating the spec
 also has permission to approve it, then it should be approved automatically
 for the agenda.
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
 
     >>> login("test@canonical.com")
     >>> _ = factory.makeSprint(
     ...     name="uds-guacamole",
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ...     time_starts=datetime.now(timezone.utc) + timedelta(days=1),
     ... )
     >>> logout()
 
@@ -75,16 +71,14 @@ It's VERY IMPORTANT that this test pass because we cannot test this in
 doctests, since it depends on Browser View code to work (the database
 classes don't know about their own permissions and security).
 
-    >>> import datetime as dt
-    >>> from pytz import UTC
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> login("test@canonical.com")
     >>> rome_sprint = factory.makeSprint(name="rome")
     >>> logout()
     >>> ignored = login_person(rome_sprint.owner)
-    >>> rome_sprint.time_ends = dt.datetime.now(UTC) + dt.timedelta(30)
-    >>> rome_sprint.time_starts = dt.datetime.now(UTC) + dt.timedelta(20)
+    >>> rome_sprint.time_ends = datetime.now(timezone.utc) + timedelta(30)
+    >>> rome_sprint.time_starts = datetime.now(timezone.utc) + timedelta(20)
     >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> rome_sprint.driver = sample_person
     >>> logout()

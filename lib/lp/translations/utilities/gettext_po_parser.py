@@ -12,12 +12,11 @@ __all__ = [
 ]
 
 import codecs
-import datetime
 import logging
 import re
+from datetime import datetime, timezone
 from email.utils import parseaddr
 
-import pytz
 import six
 from zope import datetime as zope_datetime
 from zope.interface import implementer
@@ -134,8 +133,7 @@ class POHeader:
     def __init__(self, header_content, comment=None):
         self._raw_header = header_content
         self.is_fuzzy = False
-        UTC = pytz.timezone("UTC")
-        self.template_creation_date = datetime.datetime.now(UTC)
+        self.template_creation_date = datetime.now(timezone.utc)
         self._last_translator = "FULL NAME <EMAIL@ADDRESS>"
         self.language_team = "LANGUAGE <LL@li.org>"
         self.has_plural_forms = False
@@ -365,8 +363,7 @@ class POHeader:
                 # Ignore it, new exports use x-launchpad-export-date.
                 continue
             elif key == "x-launchpad-export-date":
-                UTC = pytz.timezone("UTC")
-                now = self._renderDate(datetime.datetime.now(UTC))
+                now = self._renderDate(datetime.now(timezone.utc))
                 raw_content_list.append("%s: %s\n" % (value, now))
             elif key == "x-generator":
                 # Note the revision number so it would help for debugging

@@ -8,10 +8,9 @@ __all__ = [
 
 
 import uuid
-from datetime import timedelta
+from datetime import timedelta, timezone
 from io import BytesIO
 
-import pytz
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -42,7 +41,9 @@ class TemporaryBlobStorage(StormBase):
     uuid = Unicode(allow_none=False)
     file_alias_id = Int(name="file_alias", allow_none=False)
     file_alias = Reference(file_alias_id, "LibraryFileAlias.id")
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
 
     def __init__(self, uuid, file_alias):
         super().__init__()

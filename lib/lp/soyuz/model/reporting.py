@@ -5,6 +5,8 @@ __all__ = [
     "LatestPersonSourcePackageReleaseCache",
 ]
 
+from datetime import timezone
+
 from lazr.delegates import delegate_to
 from storm.locals import Int, Reference
 from storm.properties import DateTime
@@ -31,7 +33,7 @@ class LatestPersonSourcePackageReleaseCache(StormBase):
     publication = Reference(
         publication_id, "SourcePackagePublishingHistory.id"
     )
-    dateuploaded = DateTime(name="date_uploaded")
+    dateuploaded = DateTime(name="date_uploaded", tzinfo=timezone.utc)
     creator_id = Int(name="creator")
     maintainer_id = Int(name="maintainer")
     upload_archive_id = Int(name="upload_archive")

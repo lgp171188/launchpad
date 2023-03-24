@@ -12,13 +12,12 @@ __all__ = [
 import email
 import logging
 import os.path
-from datetime import datetime
+from datetime import datetime, timezone
 from email.header import decode_header, make_header
 from email.utils import make_msgid, mktime_tz, parseaddr, parsedate_tz
 from io import BytesIO
 from operator import attrgetter
 
-import pytz
 import six
 from lazr.config import as_timedelta
 from storm.locals import (
@@ -83,7 +82,7 @@ def utcdatetime_from_field(field_value):
     try:
         date_tuple = parsedate_tz(field_value)
         timestamp = mktime_tz(date_tuple)
-        return datetime.fromtimestamp(timestamp, tz=pytz.timezone("UTC"))
+        return datetime.fromtimestamp(timestamp, tz=timezone.utc)
     except (TypeError, ValueError, OverflowError):
         raise InvalidEmailMessage("Invalid date %s" % field_value)
 
@@ -481,8 +480,8 @@ class MessageSet:
 
         # Make sure we don't create an email with a datecreated in the
         # distant past or future.
-        now = datetime.now(pytz.timezone("UTC"))
-        thedistantpast = datetime(1990, 1, 1, tzinfo=pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
+        thedistantpast = datetime(1990, 1, 1, tzinfo=timezone.utc)
         if datecreated < thedistantpast or datecreated > now:
             datecreated = UTC_NOW
 
@@ -764,7 +763,7 @@ class DirectEmailAuthorization:
         # Users are only allowed to send X number of messages in a certain
         # period of time.  Both the number of messages and the time period
         # are configurable.
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         after = now - as_timedelta(
             config.launchpad.user_to_user_throttle_interval
         )
@@ -773,7 +772,7 @@ class DirectEmailAuthorization:
     @property
     def throttle_date(self):
         """See `IDirectEmailAuthorization`."""
-        now = datetime.now(pytz.timezone("UTC"))
+        now = datetime.now(timezone.utc)
         after = now - as_timedelta(
             config.launchpad.user_to_user_throttle_interval
         )

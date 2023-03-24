@@ -17,13 +17,12 @@ When a script completes successfully, it should record the fact in the
 database.  This is performed with a call to
 IScriptActivitySet.recordSuccess():
 
-    >>> import datetime
+    >>> from datetime import datetime, timezone
     >>> import socket
     >>> from textwrap import dedent
     >>> from unittest import mock
 
     >>> from fixtures import MockPatchObject
-    >>> import pytz
     >>> from zope.component import getUtility
 
     >>> from lp.services.config import config
@@ -33,7 +32,6 @@ IScriptActivitySet.recordSuccess():
     >>> from lp.services.statsd.interfaces.statsd_client import IStatsdClient
     >>> from lp.testing.dbuser import switch_dbuser
 
-    >>> UTC = pytz.timezone("UTC")
     >>> switch_dbuser("garbo_daily")  # A script db user
 
     >>> config.push(
@@ -51,9 +49,9 @@ IScriptActivitySet.recordSuccess():
     >>> with MockPatchObject(statsd_client, "_client", stats_client):
     ...     activity = getUtility(IScriptActivitySet).recordSuccess(
     ...         name="script-name",
-    ...         date_started=datetime.datetime(2007, 2, 1, 10, 0, tzinfo=UTC),
-    ...         date_completed=datetime.datetime(
-    ...             2007, 2, 1, 10, 1, tzinfo=UTC
+    ...         date_started=datetime(2007, 2, 1, 10, 0, tzinfo=timezone.utc),
+    ...         date_completed=datetime(
+    ...             2007, 2, 1, 10, 1, tzinfo=timezone.utc
     ...         ),
     ...         hostname="script-host",
     ...     )
@@ -104,8 +102,8 @@ script ran on, as determined by 'socket.gethostname()':
 
     >>> local_activity = getUtility(IScriptActivitySet).recordSuccess(
     ...     name=factory.getUniqueString(),
-    ...     date_started=datetime.datetime.now(UTC),
-    ...     date_completed=datetime.datetime.now(UTC),
+    ...     date_started=datetime.now(timezone.utc),
+    ...     date_completed=datetime.now(timezone.utc),
     ... )
     >>> local_activity.hostname == socket.gethostname()
     True

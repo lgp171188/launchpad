@@ -9,7 +9,8 @@ __all__ = [
     "SigningKey",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import Bytes, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -47,7 +48,9 @@ class SigningKey(StormBase):
 
     public_key = Bytes(allow_none=False)
 
-    date_created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     def __init__(
         self,

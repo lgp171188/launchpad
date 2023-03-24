@@ -18,6 +18,7 @@ __all__ = [
 
 from zope.interface import Interface, implementer
 from zope.schema import Choice, TextLine
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.browser.launchpadform import LaunchpadFormView, action
@@ -83,7 +84,10 @@ class AnnouncementMenuMixin:
     def announce(self):
         text = "Make announcement"
         summary = "Create an item of news for this project"
-        return Link("+announce", text, summary, icon="add")
+        link = Link("+announce", text, summary, icon="add")
+        if not current_user_can_announce(self.context):
+            link.enabled = False
+        return link
 
 
 class AnnouncementEditNavigationMenu(NavigationMenu, AnnouncementMenuMixin):
@@ -144,6 +148,11 @@ class AnnouncementAddView(LaunchpadFormView):
     page_title = label
 
     custom_widget_publication_date = AnnouncementDateWidget
+
+    def initialize(self):
+        if not current_user_can_announce(self.context):
+            raise Unauthorized
+        super().initialize()
 
     @action(_("Make announcement"), name="announce")
     def announce_action(self, action, data):

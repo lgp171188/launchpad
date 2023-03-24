@@ -3,9 +3,8 @@
 
 """Unit tests for BranchMergeProposal listing views."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import transaction
 from testtools.content import text_content
 from testtools.matchers import LessThan
@@ -911,10 +910,10 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is in needs review, the sort_key will be the
         # date_review_requested.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2009, 6, 1, tzinfo=timezone.utc)
         )
         login_person(bmp.registrant)
-        request_date = datetime(2009, 7, 1, tzinfo=pytz.UTC)
+        request_date = datetime(2009, 7, 1, tzinfo=timezone.utc)
         bmp.requestReview(request_date)
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(request_date, item.sort_key)
@@ -923,15 +922,15 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is approved, the sort_key will default to the
         # date_review_requested.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2009, 6, 1, tzinfo=timezone.utc)
         )
         login_person(bmp.target_branch.owner)
-        request_date = datetime(2009, 7, 1, tzinfo=pytz.UTC)
+        request_date = datetime(2009, 7, 1, tzinfo=timezone.utc)
         bmp.requestReview(request_date)
         bmp.approveBranch(
             bmp.target_branch.owner,
             "rev-id",
-            datetime(2009, 8, 1, tzinfo=pytz.UTC),
+            datetime(2009, 8, 1, tzinfo=timezone.utc),
         )
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(request_date, item.sort_key)
@@ -940,10 +939,10 @@ class TestBranchMergeProposalListingItemMixin:
         # If the proposal is approved and the review has been bypassed, the
         # date_reviewed is used.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2009, 6, 1, tzinfo=timezone.utc)
         )
         login_person(bmp.target_branch.owner)
-        review_date = datetime(2009, 8, 1, tzinfo=pytz.UTC)
+        review_date = datetime(2009, 8, 1, tzinfo=timezone.utc)
         bmp.approveBranch(bmp.target_branch.owner, "rev-id", review_date)
         item = BranchMergeProposalListingItem(bmp, None, None)
         self.assertEqual(review_date, item.sort_key)
@@ -951,7 +950,7 @@ class TestBranchMergeProposalListingItemMixin:
     def test_sort_key_wip(self):
         # If the proposal is a work in progress, the date_created is used.
         bmp = self.factory.makeBranchMergeProposal(
-            date_created=datetime(2009, 6, 1, tzinfo=pytz.UTC)
+            date_created=datetime(2009, 6, 1, tzinfo=timezone.utc)
         )
         login_person(bmp.target_branch.owner)
         item = BranchMergeProposalListingItem(bmp, None, None)
@@ -980,13 +979,13 @@ class ActiveReviewSortingTestMixin:
         product = self.factory.makeProduct()
         bmp1 = self._makeBranchMergeProposal(target=product)
         login_person(bmp1.merge_source.owner)
-        bmp1.requestReview(datetime(2009, 6, 1, tzinfo=pytz.UTC))
+        bmp1.requestReview(datetime(2009, 6, 1, tzinfo=timezone.utc))
         bmp2 = self._makeBranchMergeProposal(target=product)
         login_person(bmp2.merge_source.owner)
-        bmp2.requestReview(datetime(2009, 3, 1, tzinfo=pytz.UTC))
+        bmp2.requestReview(datetime(2009, 3, 1, tzinfo=timezone.utc))
         bmp3 = self._makeBranchMergeProposal(target=product)
         login_person(bmp3.merge_source.owner)
-        bmp3.requestReview(datetime(2009, 1, 1, tzinfo=pytz.UTC))
+        bmp3.requestReview(datetime(2009, 1, 1, tzinfo=timezone.utc))
         login(ANONYMOUS)
         view = create_initialized_view(
             product, name="+activereviews", rootsite="code"

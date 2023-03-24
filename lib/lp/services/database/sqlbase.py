@@ -27,10 +27,9 @@ __all__ = [
 ]
 
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import psycopg2
-import pytz
 import storm
 import transaction
 from psycopg2.extensions import (
@@ -289,7 +288,7 @@ def get_transaction_timestamp(store):
     timestamp = store.execute(
         "SELECT CURRENT_TIMESTAMP AT TIME ZONE 'UTC'"
     ).get_one()[0]
-    return timestamp.replace(tzinfo=pytz.timezone("UTC"))
+    return timestamp.replace(tzinfo=timezone.utc)
 
 
 def quote(x):

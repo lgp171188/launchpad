@@ -8,9 +8,8 @@ __all__ = [
     "SeriesSourcePackageBranchSet",
 ]
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from storm.locals import DateTime, Int, Reference
 from zope.interface import implementer
 
@@ -93,7 +92,7 @@ class SeriesSourcePackageBranchSet:
         )
 
         if date_created is None:
-            date_created = datetime.now(pytz.UTC)
+            date_created = datetime.now(timezone.utc)
         sspb = SeriesSourcePackageBranch(
             distroseries,
             pocket,

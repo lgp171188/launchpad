@@ -8,9 +8,8 @@ __all__ = [
     "CodeImportSet",
 ]
 
-from datetime import timedelta
+from datetime import timedelta, timezone
 
-import pytz
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import And, Desc, Func, Select
 from storm.locals import (
@@ -101,7 +100,9 @@ class CodeImport(StormBase):
         self.cvs_root = cvs_root
         self.cvs_module = cvs_module
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
     branch_id = Int(name="branch", allow_none=True)
     branch = Reference(branch_id, "Branch.id")
     git_repository_id = Int(name="git_repository", allow_none=True)
@@ -154,7 +155,7 @@ class CodeImport(StormBase):
 
     url = Unicode(default=None)
 
-    date_last_successful = DateTime(tzinfo=pytz.UTC, default=None)
+    date_last_successful = DateTime(tzinfo=timezone.utc, default=None)
     update_interval = TimeDelta(default=None)
 
     @property

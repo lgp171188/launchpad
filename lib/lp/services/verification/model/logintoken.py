@@ -7,8 +7,8 @@ __all__ = [
 ]
 
 import hashlib
+from datetime import timezone
 
-import pytz
 import six
 from storm.expr import And
 from zope.component import getUtility
@@ -252,7 +252,7 @@ class LoginToken(SQLBase):
     @property
     def validation_phrase(self):
         """The phrase used to validate sign-only GPG keys"""
-        utctime = self.date_created.astimezone(pytz.UTC)
+        utctime = self.date_created.astimezone(timezone.utc)
         return "Please register %s to the\nLaunchpad user %s.  %s UTC" % (
             self.fingerprint,
             self.requester.name,

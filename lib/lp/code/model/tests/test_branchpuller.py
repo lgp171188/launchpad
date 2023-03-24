@@ -3,9 +3,8 @@
 
 """Tests for the branch puller model code."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-import pytz
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -45,7 +44,7 @@ class TestMirroringForImportedBranches(TestCaseWithFactory):
 
     def getNow(self):
         """Return a datetime representing 'now' in UTC."""
-        return datetime.now(pytz.timezone("UTC"))
+        return datetime.now(timezone.utc)
 
     def makeAnyBranch(self):
         return self.factory.makeAnyBranch(branch_type=self.branch_type)
@@ -62,7 +61,7 @@ class TestMirroringForImportedBranches(TestCaseWithFactory):
         # requestMirror() doesn't move the branch backwards in the queue of
         # branches that need mirroring.
         branch = self.makeAnyBranch()
-        past_time = datetime.now(pytz.UTC) - timedelta(days=1)
+        past_time = datetime.now(timezone.utc) - timedelta(days=1)
         removeSecurityProxy(branch).next_mirror_time = past_time
         branch.requestMirror()
         self.assertEqual(branch.next_mirror_time, past_time)
@@ -71,7 +70,7 @@ class TestMirroringForImportedBranches(TestCaseWithFactory):
         # requestMirror() sets the mirror request time to 'now' if
         # next_mirror_time is set and in the future.
         branch = self.makeAnyBranch()
-        future_time = datetime.now(pytz.UTC) + timedelta(days=1)
+        future_time = datetime.now(timezone.utc) + timedelta(days=1)
         removeSecurityProxy(branch).next_mirror_time = future_time
         branch.requestMirror()
         self.assertSqlAttributeEqualsDate(branch, "next_mirror_time", UTC_NOW)

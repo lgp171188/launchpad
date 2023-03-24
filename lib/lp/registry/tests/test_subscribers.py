@@ -3,9 +3,8 @@
 
 """Test subscruber classes and functions."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.restful.utils import get_current_browser_request
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -264,7 +263,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
 
     def test_formatDate(self):
         # Verify the date format.
-        now = datetime(2005, 6, 15, 0, 0, 0, 0, pytz.UTC)
+        now = datetime(2005, 6, 15, 0, 0, 0, 0, timezone.utc)
         result = LicenseNotification._formatDate(now)
         self.assertEqual("2005-06-15", result)
 

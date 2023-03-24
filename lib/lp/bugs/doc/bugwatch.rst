@@ -620,9 +620,8 @@ If the watch is rescheduled, can_be_rescheduled will be False, since the
 next_check time for the watch will be in the past (or in this case is
 now) and therefore it will be checked with the next checkwatches run.
 
-    >>> from datetime import datetime
-    >>> from pytz import utc
-    >>> schedulable_watch.next_check = datetime.now(utc)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> schedulable_watch.next_check = datetime.now(timezone.utc)
     >>> schedulable_watch.can_be_rescheduled
     False
 
@@ -641,11 +640,10 @@ needs attention in order for it to be able to work again.
 If the watch has run and failed only once, can_be_rescheduled will be
 true.
 
-    >>> from datetime import timedelta
     >>> run_once_failed_once_watch = factory.makeBugWatch()
-    >>> run_once_failed_once_watch.next_check = datetime.now(utc) + timedelta(
-    ...     days=7
-    ... )
+    >>> run_once_failed_once_watch.next_check = datetime.now(
+    ...     timezone.utc
+    ... ) + timedelta(days=7)
     >>> run_once_failed_once_watch.addActivity(
     ...     result=BugWatchActivityStatus.BUG_NOT_FOUND
     ... )
@@ -680,7 +678,7 @@ be rescheduled.
 Calling setNextCheck() on this watch will cause an Exception,
 BugWatchCannotBeRescheduled, to be raised.
 
-    >>> schedulable_watch.setNextCheck(datetime.now(utc))
+    >>> schedulable_watch.setNextCheck(datetime.now(timezone.utc))
     Traceback (most recent call last):
       ...
     lp.bugs.interfaces.bugwatch.BugWatchCannotBeRescheduled
@@ -694,7 +692,7 @@ property become True, setNextCheck() will succeed.
     >>> schedulable_watch.can_be_rescheduled
     True
 
-    >>> next_check = datetime.now(utc)
+    >>> next_check = datetime.now(timezone.utc)
     >>> schedulable_watch.setNextCheck(next_check)
     >>> schedulable_watch.next_check == next_check
     True

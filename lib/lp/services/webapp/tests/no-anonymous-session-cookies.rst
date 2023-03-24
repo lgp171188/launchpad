@@ -13,11 +13,10 @@ When we go to launchpad as an anonymous user, the browser has no cookies.
 
 Now let's log in and show that the session cookie is set.
 
-    >>> import datetime
-    >>> import pytz
-    >>> now = datetime.datetime.now(pytz.UTC).replace(microsecond=0)
-    >>> year_from_now = now + datetime.timedelta(days=365)
-    >>> year_plus_from_now = year_from_now + datetime.timedelta(minutes=1)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc).replace(microsecond=0)
+    >>> year_from_now = now + timedelta(days=365)
+    >>> year_plus_from_now = year_from_now + timedelta(minutes=1)
     >>> browser.open("%s/+login" % root_url)
 
     # On a browser with JS support, this page would've been automatically
@@ -67,7 +66,7 @@ single cookie is shown to have the ten minute expiration.
     >>> len(browser.cookies)
     1
     >>> expires = browser.cookies.getinfo("launchpad_tests")["expires"]
-    >>> ten_minutes_from_now = now + datetime.timedelta(minutes=10)
-    >>> eleven_minutes_from_now = now + datetime.timedelta(minutes=11)
+    >>> ten_minutes_from_now = now + timedelta(minutes=10)
+    >>> eleven_minutes_from_now = now + timedelta(minutes=11)
     >>> ten_minutes_from_now <= expires < eleven_minutes_from_now
     True

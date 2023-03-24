@@ -3,7 +3,8 @@
 
 __all__ = ["Packageset", "PackagesetSet"]
 
-import pytz
+from datetime import timezone
+
 import six
 from storm.expr import SQL
 from storm.locals import DateTime, Int, Reference, Unicode
@@ -40,7 +41,7 @@ class Packageset(StormBase):
     id = Int(primary=True)
 
     date_created = DateTime(
-        name="date_created", allow_none=False, tzinfo=pytz.UTC
+        name="date_created", allow_none=False, tzinfo=timezone.utc
     )
 
     owner_id = Int(name="owner", allow_none=False)

@@ -211,12 +211,11 @@ Users with edit permission may delete a project's series. This person is
 often the project's owner or series driver who has setup the series by
 mistake.
 
-    >>> from datetime import datetime
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timezone
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> celebrities = getUtility(ILaunchpadCelebrities)
 
-    >>> test_date = datetime(2009, 5, 1, 19, 34, 24, tzinfo=UTC)
+    >>> test_date = datetime(2009, 5, 1, 19, 34, 24, tzinfo=timezone.utc)
     >>> product = factory.makeProduct(name="field", displayname="Field")
     >>> productseries = factory.makeProductSeries(
     ...     product=product, name="rabbit", date_created=test_date

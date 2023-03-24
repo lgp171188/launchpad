@@ -65,9 +65,8 @@ Ubuntu Team owning the distribution.
 
 A question starts its lifecycle in the Open state.
 
-    >>> from datetime import datetime, timedelta
-    >>> from pytz import UTC
-    >>> now = datetime.now(UTC)
+    >>> from datetime import datetime, timedelta, timezone
+    >>> now = datetime.now(timezone.utc)
     >>> new_question_args = dict(
     ...     owner=no_priv,
     ...     title="Unable to boot installer",

@@ -8,6 +8,7 @@ The collection of stuff we have traversed.
 """
 
 import threading
+from datetime import timezone
 
 import pytz
 from zope.component import getUtility
@@ -29,7 +30,7 @@ from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import ILoggedInEvent, IOpenLaunchBag
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
-_utc_tz = pytz.timezone("UTC")
+_utc_tz = timezone.utc
 
 
 @implementer(IOpenLaunchBag)

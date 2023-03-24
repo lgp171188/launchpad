@@ -11,10 +11,9 @@ __all__ = [
 ]
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 
-import pytz
 from lazr.delegates import delegate_to
 from storm.locals import Date, Desc, Int, Reference, ReferenceSet, Store
 from zope.component import adapter, getUtility
@@ -180,7 +179,7 @@ class LibraryFileAlias(SQLBase):
         if entry is None:
             return None
         else:
-            return datetime.now(pytz.utc).date() - entry.day
+            return datetime.now(timezone.utc).date() - entry.day
 
     def updateDownloadCount(self, day, country, count):
         """See ILibraryFileAlias."""
@@ -317,7 +316,7 @@ class LibraryFileAliasSet:
         results.config(
             distinct=(LibraryFileDownloadCount.libraryfilealias_id,)
         )
-        now = datetime.now(pytz.utc).date()
+        now = datetime.now(timezone.utc).date()
         lfas_by_id = {lfa.id: lfa for lfa in lfas}
         for lfa_id, day in results:
             get_property_cache(lfas_by_id[lfa_id]).last_downloaded = now - day

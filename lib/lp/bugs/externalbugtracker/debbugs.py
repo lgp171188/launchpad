@@ -7,10 +7,9 @@ __all__ = ["DebBugs", "DebBugsDatabaseNotFound"]
 
 import email
 import os.path
-from datetime import datetime
+from datetime import datetime, timezone
 from email.utils import mktime_tz, parseaddr, parsedate_tz
 
-import pytz
 import transaction
 from zope.component import getUtility
 from zope.interface import implementer
@@ -97,7 +96,7 @@ class DebBugs(ExternalBugTracker):
         """See `IExternalBugTracker`."""
         # We don't know the exact time for the Debbugs server, but we
         # trust it being correct.
-        return datetime.now(pytz.timezone("UTC"))
+        return datetime.now(timezone.utc)
 
     def initializeRemoteBugDB(self, bug_ids):
         """See `ExternalBugTracker`.
@@ -312,9 +311,7 @@ class DebBugs(ExternalBugTracker):
         if date_string is not None:
             date_with_tz = parsedate_tz(date_string)
             timestamp = mktime_tz(date_with_tz)
-            msg_date = datetime.fromtimestamp(
-                timestamp, tz=pytz.timezone("UTC")
-            )
+            msg_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
         else:
             msg_date = None
 

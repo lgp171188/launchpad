@@ -6,9 +6,8 @@
 __all__ = []
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 import soupmatchers
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -544,7 +543,7 @@ class TestOCIProjectEditView(BrowserTestCase):
 
     def test_edit_oci_project_sets_date_last_modified(self):
         # Editing an OCI project sets the date_last_modified property.
-        date_created = datetime(2000, 1, 1, tzinfo=pytz.UTC)
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
         oci_project = self.factory.makeOCIProject(date_created=date_created)
         self.assertEqual(date_created, oci_project.date_last_modified)
         with person_logged_in(oci_project.pillar.owner):

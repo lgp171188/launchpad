@@ -4,7 +4,7 @@
 """Tests for `WebhookJob`s."""
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import requests
@@ -12,7 +12,6 @@ import requests.exceptions
 import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
-from pytz import utc
 from storm.store import Store
 from testtools import TestCase
 from testtools.matchers import (
@@ -448,7 +447,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         job = hook.ping()
         job.acquireLease()
         self.assertThat(
-            job.lease_expires - datetime.now(utc),
+            job.lease_expires - datetime.now(timezone.utc),
             MatchesAll(
                 GreaterThan(timedelta(seconds=50)),
                 LessThan(timedelta(seconds=60)),

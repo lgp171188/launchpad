@@ -3,8 +3,7 @@ Poll Pages
 
 First import some stuff and setup some things we'll use in this test.
 
-    >>> from datetime import datetime, timedelta
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility, getMultiAdapter
     >>> from zope.publisher.browser import TestRequest
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -29,7 +28,7 @@ with a proper explanation of why it failed.
     ...     "%Y-%m-%d %H:%M:%S"
     ... )
     >>> one_year_from_now = (
-    ...     datetime.now(pytz.UTC) + timedelta(days=365)
+    ...     datetime.now(timezone.utc) + timedelta(days=365)
     ... ).strftime("%Y-%m-%d")
     >>> form = {
     ...     "field.name": "test-poll",

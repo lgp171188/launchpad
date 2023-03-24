@@ -1,10 +1,9 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 
-import pytz
 from zope.component import getAdapter, getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -85,7 +84,7 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         # translation.
 
         # A POTMsgSet has a shared, current translation created 5 days ago.
-        date_created = datetime.now(pytz.UTC) - timedelta(5)
+        date_created = datetime.now(timezone.utc) - timedelta(5)
         translation = self.factory.makeSuggestion(
             pofile=self.devel_pofile,
             potmsgset=self.potmsgset,
@@ -158,7 +157,7 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         #  * Suggestion is made active (nothing).
 
         # A POTMsgSet has a shared, current translation created 5 days ago.
-        date_created = datetime.now(pytz.UTC) - timedelta(5)
+        date_created = datetime.now(timezone.utc) - timedelta(5)
         translation = self.factory.makeSuggestion(
             pofile=self.devel_pofile,
             potmsgset=self.potmsgset,
@@ -761,7 +760,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         potmsgset = self.factory.makePOTMsgSet(
             self.devel_potemplate, "Translated text", sequence=2
         )
-        date_created = datetime.now(pytz.UTC) - timedelta(5)
+        date_created = datetime.now(timezone.utc) - timedelta(5)
         self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile,
             potmsgset=self.potmsgset,
@@ -952,7 +951,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         potmsgset = self.factory.makePOTMsgSet(
             self.devel_potemplate, sequence=3
         )
-        update_date = datetime.now(pytz.UTC) - timedelta(1)
+        update_date = datetime.now(timezone.utc) - timedelta(1)
         self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile,
             potmsgset=potmsgset,
@@ -1649,7 +1648,7 @@ class TestPOFileSet(TestCaseWithFactory):
     def test_POFileSet_getPOFilesTouchedSince_none(self):
         # Make sure getPOFilesTouchedSince returns nothing
         # when there are no touched PO files.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         pofiles = self.pofileset.getPOFilesTouchedSince(now)
         self.assertContentEqual([], pofiles)
 
@@ -1667,7 +1666,7 @@ class TestPOFileSet(TestCaseWithFactory):
     def test_POFileSet_getPOFilesTouchedSince_unshared(self):
         # Make sure actual touched POFiles are returned by
         # getPOFilesTouchedSince.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         yesterday = now - timedelta(1)
 
         new_pofile = self.factory.makePOFile("sr")
@@ -1708,7 +1707,7 @@ class TestPOFileSet(TestCaseWithFactory):
         )
         pofile2 = potemplate2.getPOFileByLang("sr")
 
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         yesterday = now - timedelta(1)
         pofiles = self.pofileset.getPOFilesTouchedSince(yesterday)
         self.assertContentEqual([pofile1, pofile2], pofiles)
@@ -1744,7 +1743,7 @@ class TestPOFileSet(TestCaseWithFactory):
             name="shared", productseries=series2
         )
         pofile2 = potemplate2.getPOFileByLang("sr")
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         yesterday = now - timedelta(1)
         week_ago = now - timedelta(7)
         pofile1.date_changed = week_ago
@@ -1788,7 +1787,7 @@ class TestPOFileSet(TestCaseWithFactory):
         pofile2 = potemplate2.getPOFileByLang("sr")
 
         # Now the test actually starts.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         yesterday = now - timedelta(1)
         pofiles = self.pofileset.getPOFilesTouchedSince(yesterday)
         self.assertContentEqual([pofile1, pofile2], pofiles)
@@ -1825,7 +1824,7 @@ class TestPOFileSet(TestCaseWithFactory):
         pofile2 = self.factory.makePOFile("sr", potemplate=potemplate2)
 
         # Now the test actually starts.
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         yesterday = now - timedelta(1)
         week_ago = now - timedelta(7)
 
@@ -2478,12 +2477,14 @@ class TestPOFile(TestCaseWithFactory):
         self.assertEqual(0, vpoexport.sequence)
 
     def test_markChanged_sets_date(self):
-        timestamp = datetime.now(pytz.UTC) - timedelta(days=14)
+        timestamp = datetime.now(timezone.utc) - timedelta(days=14)
         self.pofile.markChanged(timestamp=timestamp)
         self.assertEqual(timestamp, self.pofile.date_changed)
 
     def test_markChanged_defaults_to_now(self):
-        self.pofile.date_changed = datetime.now(pytz.UTC) - timedelta(days=99)
+        self.pofile.date_changed = datetime.now(timezone.utc) - timedelta(
+            days=99
+        )
         self.pofile.markChanged()
         self.assertSqlAttributeEqualsDate(self.pofile, "date_changed", UTC_NOW)
 

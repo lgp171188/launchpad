@@ -4,9 +4,8 @@
 """Project Milestone related test helper."""
 
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from lazr.restfulclient.errors import ClientError
 from storm.store import Store
 from zope.component import getUtility
@@ -338,7 +337,7 @@ class TestDuplicateProductReleases(TestCaseWithFactory):
         product = product_set["evolution"]
         series = product.getSeries("trunk")
         milestone = series.newMilestone(name="1.1", dateexpected=None)
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
         milestone.createProductRelease(1, now)
         self.assertRaises(
             MultipleProductReleases, milestone.createProductRelease, 1, now
@@ -358,7 +357,7 @@ class TestDuplicateProductReleases(TestCaseWithFactory):
 
         project = launchpad.projects["evolution"]
         milestone = project.getMilestone(name="2.1.6")
-        now = datetime.now(pytz.UTC)
+        now = datetime.now(timezone.utc)
 
         e = self.assertRaises(
             ClientError, milestone.createProductRelease, date_released=now

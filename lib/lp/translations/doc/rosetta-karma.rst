@@ -127,9 +127,7 @@ the upload action, you will get it from the translations you are adding.
 
 Let's say that we have this .po file to import:
 
-    >>> import datetime
-    >>> import pytz
-    >>> UTC = pytz.timezone("UTC")
+    >>> from datetime import datetime, timezone
     >>> pofile_contents = (
     ...     r"""
     ... msgid ""
@@ -140,7 +138,7 @@ Let's say that we have this .po file to import:
     ... msgid "foo"
     ... msgstr "bar"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
     >>> potemplate = POTemplate.get(1)
     >>> pofile = potemplate.getPOFileByLang("es")
@@ -225,7 +223,7 @@ case, we will give karma *only* because the translation change.
     ... msgid "foo"
     ... msgstr "bars"
     ... """
-    ...     % datetime.datetime.now(UTC).isoformat()
+    ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
 
 We attach the new file as not coming from upstream.

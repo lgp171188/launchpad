@@ -63,7 +63,7 @@ import tempfile
 import time
 import unittest
 from contextlib import contextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatchcase
 from functools import partial
 from select import select
@@ -72,7 +72,6 @@ from typing import TYPE_CHECKING, Optional, Type
 import fixtures
 import lp_sitecustomize
 import oops_datedir_repo.serializer_rfc822
-import pytz
 import six
 import subunit
 import testtools
@@ -1360,7 +1359,7 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
     datetime.datetime(2007, 12, 3, 0, 0)
     """
     if origin is None:
-        origin = datetime.now(pytz.UTC)
+        origin = datetime.now(timezone.utc)
     now = origin
     while True:
         yield now

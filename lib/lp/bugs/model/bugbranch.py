@@ -8,7 +8,8 @@ __all__ = [
     "BugBranchSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Int, Reference, Store
 from zope.interface import implementer
 
@@ -28,7 +29,10 @@ class BugBranch(StormBase):
     id = Int(primary=True)
 
     datecreated = DateTime(
-        name="datecreated", tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW
+        name="datecreated",
+        tzinfo=timezone.utc,
+        allow_none=False,
+        default=UTC_NOW,
     )
     bug_id = Int(name="bug", allow_none=False)
     bug = Reference(bug_id, "Bug.id")

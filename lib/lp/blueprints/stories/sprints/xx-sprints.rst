@@ -6,16 +6,15 @@ due to be discussed at that meeting. As a result we can schedule and
 prioritize BOF's at the meeting, using an as-yet-undeveloped
 schedul-o-matic.
 
-    >>> import datetime as dt
-    >>> from pytz import UTC
+    >>> from datetime import datetime, timedelta, timezone
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> login("test@canonical.com")
     >>> rome_sprint = factory.makeSprint(name="rome", title="Rome")
     >>> logout()
     >>> ignored = login_person(rome_sprint.owner)
-    >>> rome_sprint.time_ends = dt.datetime.now(UTC) + dt.timedelta(30)
-    >>> rome_sprint.time_starts = dt.datetime.now(UTC) + dt.timedelta(20)
+    >>> rome_sprint.time_ends = datetime.now(timezone.utc) + timedelta(30)
+    >>> rome_sprint.time_starts = datetime.now(timezone.utc) + timedelta(20)
     >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> rome_sprint.driver = sample_person
     >>> logout()

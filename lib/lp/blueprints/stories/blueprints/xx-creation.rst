@@ -181,17 +181,13 @@ From a sprint
 
 Starting from the Future Mega Meeting sprint page:
 
-    >>> from datetime import (
-    ...     datetime,
-    ...     timedelta,
-    ... )
-    >>> import pytz
+    >>> from datetime import datetime, timedelta, timezone
 
     >>> login("test@canonical.com")
     >>> _ = factory.makeSprint(
     ...     name="futurista",
     ...     title="Future Mega Meeting",
-    ...     time_starts=datetime.now(pytz.UTC) + timedelta(days=1),
+    ...     time_starts=datetime.now(timezone.utc) + timedelta(days=1),
     ... )
     >>> logout()
 
@@ -623,8 +619,8 @@ permission, the blueprint will be automatically added to the sprint agenda:
     >>> rome_sprint = factory.makeSprint(name="rome")
     >>> logout()
     >>> ignored = login_person(rome_sprint.owner)
-    >>> rome_sprint.time_ends = datetime.now(pytz.UTC) + timedelta(30)
-    >>> rome_sprint.time_starts = datetime.now(pytz.UTC) + timedelta(20)
+    >>> rome_sprint.time_ends = datetime.now(timezone.utc) + timedelta(30)
+    >>> rome_sprint.time_starts = datetime.now(timezone.utc) + timedelta(20)
     >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> rome_sprint.driver = sample_person
     >>> logout()

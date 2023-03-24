@@ -6,8 +6,7 @@ tarball to provide language packs.
 
 Some initialization tasks:
 
-    >>> import datetime
-    >>> import pytz
+    >>> from datetime import datetime, timezone
     >>> import transaction
     >>> from lp.testing import login
     >>> from lp.services.helpers import bytes_to_tarfile
@@ -146,10 +145,9 @@ creating.
 
 Get some dates.
 
-    >>> UTC = pytz.timezone("UTC")
-    >>> d2000_01_01 = datetime.datetime(year=2000, month=1, day=1, tzinfo=UTC)
-    >>> d2000_01_02 = datetime.datetime(year=2000, month=1, day=2, tzinfo=UTC)
-    >>> d2000_01_03 = datetime.datetime(year=2000, month=1, day=3, tzinfo=UTC)
+    >>> d2000_01_01 = datetime(year=2000, month=1, day=1, tzinfo=timezone.utc)
+    >>> d2000_01_02 = datetime(year=2000, month=1, day=2, tzinfo=timezone.utc)
+    >>> d2000_01_03 = datetime(year=2000, month=1, day=3, tzinfo=timezone.utc)
 
 Create a PO template and put a single message set in it.
 
@@ -339,7 +337,7 @@ The latest template change is noted in IPOTemplate.date_last_updated. An
 update to the template causes that field to be updated, so that the next
 export will include all its translations as well.
 
-    >>> template.date_last_updated = datetime.datetime.now(UTC)
+    >>> template.date_last_updated = datetime.now(timezone.utc)
 
     # Save changes.
 

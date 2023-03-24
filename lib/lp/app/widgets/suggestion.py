@@ -10,9 +10,8 @@ __all__ = [
 ]
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
-from pytz import utc
 from zope.component import getMultiAdapter, getUtility
 from zope.formlib.interfaces import IInputWidget, InputErrors
 from zope.formlib.utility import setUpWidget
@@ -232,7 +231,7 @@ class TargetBranchWidget(SuggestionWidget):
         """
         default_target = branch.target.default_merge_target
         logged_in_user = getUtility(ILaunchBag).user
-        since = datetime.now(utc) - timedelta(days=90)
+        since = datetime.now(timezone.utc) - timedelta(days=90)
         collection = branch.target.collection.targetedBy(logged_in_user, since)
         collection = collection.visibleByUser(logged_in_user)
         # May actually need some eager loading, but the API isn't fine grained
@@ -321,7 +320,7 @@ class TargetGitRepositoryWidget(SuggestionWidget):
                 repository.target
             )
             logged_in_user = getUtility(ILaunchBag).user
-            since = datetime.now(utc) - timedelta(days=90)
+            since = datetime.now(timezone.utc) - timedelta(days=90)
             collection = IGitCollection(repository.target).targetedBy(
                 logged_in_user, since
             )

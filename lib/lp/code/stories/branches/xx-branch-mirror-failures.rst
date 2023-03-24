@@ -65,12 +65,11 @@ A subsequent failure shows:
 If the mirror had been mirrored at some stage, the error is slightly
 different.
 
-    >>> import pytz
-    >>> from datetime import datetime
+    >>> from datetime import datetime, timezone
     >>> login("eric@example.com")  # To get Launchpad.Edit on the branch.
     >>> mirror_branch = getUtility(IBranchLookup).getByUniqueName(mirror_name)
     >>> mirror_branch.last_mirrored = datetime(
-    ...     2007, 12, 25, 12, tzinfo=pytz.UTC
+    ...     2007, 12, 25, 12, tzinfo=timezone.utc
     ... )
     >>> mirror_branch.startMirroring()
     >>> mirror_branch.mirrorFailed('Cannot access branch at "example.com".')

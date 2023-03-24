@@ -11,7 +11,6 @@ represents all the people who are /effective members/ of the team.
 
 First of all, create some teams:
 
-    >>> import pytz
     >>> from datetime import datetime, timedelta, timezone
     >>> from lp.registry.interfaces.person import (
     ...     TeamMembershipRenewalPolicy,
@@ -563,7 +562,7 @@ was approved. It returns True to indicate that the status was changed.
     True
     >>> print(membership.status.title)
     Approved
-    >>> utc_now = datetime.now(pytz.timezone("UTC"))
+    >>> utc_now = datetime.now(timezone.utc)
     >>> membership.datejoined.date() == utc_now.date()
     True
 
@@ -614,8 +613,8 @@ the new expiry date is not in the past.
     True
     >>> foobar_on_buildd.canChangeExpirationDate(foobar)
     True
-    >>> one_day_ago = datetime.now(pytz.timezone("UTC")) - timedelta(days=1)
-    >>> tomorrow = datetime.now(pytz.timezone("UTC")) + timedelta(days=1)
+    >>> one_day_ago = datetime.now(timezone.utc) - timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> foobar_on_buildd.setExpirationDate(one_day_ago, foobar)
     Traceback (most recent call last):
     ...
@@ -746,7 +745,7 @@ still active.
     >>> karl_on_mirroradmins = membershipset.getByPersonAndTeam(
     ...     karl, mirror_admins
     ... )
-    >>> tomorrow = datetime.now(pytz.timezone("UTC")) + timedelta(days=1)
+    >>> tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
     >>> print(karl_on_mirroradmins.status.title)
     Approved
     >>> print(karl_on_mirroradmins.dateexpires)

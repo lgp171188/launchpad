@@ -8,7 +8,8 @@ __all__ = [
     "CodeImportMachineSet",
 ]
 
-import pytz
+from datetime import timezone
+
 from storm.locals import DateTime, Desc, Int, ReferenceSet, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -37,7 +38,9 @@ class CodeImportMachine(StormBase):
 
     id = Int(primary=True)
 
-    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=DEFAULT)
+    date_created = DateTime(
+        tzinfo=timezone.utc, allow_none=False, default=DEFAULT
+    )
 
     hostname = Unicode(allow_none=False)
     state = DBEnum(
@@ -45,7 +48,7 @@ class CodeImportMachine(StormBase):
         allow_none=False,
         default=CodeImportMachineState.OFFLINE,
     )
-    heartbeat = DateTime(tzinfo=pytz.UTC, allow_none=True)
+    heartbeat = DateTime(tzinfo=timezone.utc, allow_none=True)
 
     current_jobs = ReferenceSet(
         id,
