@@ -163,7 +163,7 @@ class TestSnapPermissions(TestCaseWithFactory):
         super().setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
-    def test_delete_permissions(self):
+    def test_delete_permissions_registry_experts(self):
         # A snap package can be deleted from registry_experts,
         # commercial_admin, admin and owner.
 
@@ -183,6 +183,10 @@ class TestSnapPermissions(TestCaseWithFactory):
         # The deleted snap is gone.
         self.assertFalse(getUtility(ISnapSet).exists(owner, "condemned"))
 
+    def test_delete_permissions_commercial_admin(self):
+        # A snap package can be deleted from registry_experts,
+        # commercial_admin, admin and owner.
+
         not_owner = login_celebrity("commercial_admin")
         owner = self.factory.makePerson()
         distroseries = self.factory.makeDistroSeries()
@@ -199,6 +203,10 @@ class TestSnapPermissions(TestCaseWithFactory):
         # The deleted snap is gone.
         self.assertFalse(getUtility(ISnapSet).exists(owner, "condemned"))
 
+    def test_delete_permissions_admin(self):
+        # A snap package can be deleted from registry_experts,
+        # commercial_admin, admin and owner.
+
         not_owner = login_celebrity("admin")
         owner = self.factory.makePerson()
         distroseries = self.factory.makeDistroSeries()
@@ -210,6 +218,25 @@ class TestSnapPermissions(TestCaseWithFactory):
         )
 
         with person_logged_in(not_owner):
+            snap.destroySelf()
+        flush_database_caches()
+        # The deleted snap is gone.
+        self.assertFalse(getUtility(ISnapSet).exists(owner, "condemned"))
+
+    def test_delete_permissions_owner(self):
+        # A snap package can be deleted from registry_experts,
+        # commercial_admin, admin and owner.
+
+        owner = self.factory.makePerson()
+        distroseries = self.factory.makeDistroSeries()
+        snap = self.factory.makeSnap(
+            registrant=owner,
+            owner=owner,
+            distroseries=distroseries,
+            name="condemned",
+        )
+
+        with person_logged_in(owner):
             snap.destroySelf()
         flush_database_caches()
         # The deleted snap is gone.
