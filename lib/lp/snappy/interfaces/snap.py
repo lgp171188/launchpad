@@ -16,6 +16,7 @@ __all__ = [
     "ISnap",
     "ISnapBuildRequest",
     "ISnapEdit",
+    "ISnapDelete",
     "ISnapSet",
     "ISnapView",
     "MissingSnapcraftYaml",
@@ -828,6 +829,10 @@ class ISnapEdit(IWebhookTarget):
             properly configured for store uploads.
         """
 
+
+class ISnapDelete(Interface):
+    """`ISnap` methods that require launchpad.Delete permission."""
+
     @export_destructor_operation()
     @operation_for_version("devel")
     def destroySelf():
@@ -1209,6 +1214,7 @@ class ISnapAdminAttributes(Interface):
 class ISnap(
     ISnapView,
     ISnapEdit,
+    ISnapDelete,
     ISnapEditableAttributes,
     ISnapAdminAttributes,
     IInformationType,
