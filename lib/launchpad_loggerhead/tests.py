@@ -106,7 +106,7 @@ class TestLogout(TestCase):
         # TestLoginAndLogout.test_CookieLogoutPage).
 
         # Here, we will have a more useless example of the basic machinery.
-        dummy_root = "http://dummy.test/"
+        dummy_root = "http://launchpad.test/"
         self.browser.open(
             config.codehosting.secure_codebrowse_root
             + "+logout?"
@@ -121,6 +121,26 @@ class TestLogout(TestCase):
         self.assertEqual(
             self.browser.contents, b"This is a dummy destination.\n"
         )
+
+    def testLoggerheadLogoutRedirectFailure(self):
+        # When we visit +logout with a 'next_to' value in the query string,
+        # the logout page will redirect to the given URI only if
+        # the url belongs to well known domains
+
+        # Here, we will have an example of open redirect attack
+        dummy_root = "http://launchpad.phishing.test/"
+        self.browser.open(
+            config.codehosting.secure_codebrowse_root
+            + "+logout?"
+            + urlencode(dict(next_to=dummy_root + "+logout"))
+        )
+
+        # We are logged out, as before.
+        self.assertEqual(self.session, {})
+
+        # We are redirected to the default homepage because
+        # the next_to is unknown
+        self.assertEqual(self.browser.url, "http://launchpad.test/")
 
 
 class TestWSGI(TestCaseWithFactory):

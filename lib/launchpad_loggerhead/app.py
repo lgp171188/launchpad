@@ -5,7 +5,7 @@ import logging
 import os
 import threading
 import xmlrpc.client
-from urllib.parse import urlencode, urljoin
+from urllib.parse import urlencode, urljoin, urlparse
 
 import oops_wsgi
 from breezy import errors, lru_cache, urlutils
@@ -163,7 +163,8 @@ class RootApp:
         environ[self.session_var].clear()
         query = dict(parse_querystring(environ))
         next_url = query.get("next_to")
-        if next_url is None:
+        next_url_domain = urlparse(next_url).netloc
+        if next_url is None or next_url_domain not in allvhosts.hostnames:
             next_url = allvhosts.configs["mainsite"].rooturl
         raise HTTPMovedPermanently(next_url)
 
