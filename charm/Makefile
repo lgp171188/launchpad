@@ -4,7 +4,6 @@ export PATH := $(PATH):/snap/bin
 APP_NAME := launchpad
 
 BUILDDIR := $(CURDIR)/dist
-TMPDIR := $(CURDIR)/tmp
 
 CHARM_SERIES ?= 20.04
 ARCH := $(shell dpkg --print-architecture)
@@ -25,7 +24,7 @@ help: ## display this help message
 	@echo "Please use \`make <target>' where <target> is one of"
 	@grep '^[a-zA-Z]' $(MAKEFILE_LIST) | sort | awk -F ':.*?## ' 'NF==2 {printf "\033[36m  %-25s\033[0m %s\n", $$1, $$2}'
 
-$(BUILDDIR) $(TMPDIR):
+$(BUILDDIR):
 	@mkdir -p $@
 
 build: ## build all the charms
@@ -39,19 +38,15 @@ build-launchpad-appserver: dist/$(call charm_file,launchpad-appserver)
 
 dist/%_ubuntu-$(CHARM_SERIES)-$(ARCH).charm: $(BUILDDIR)
 	echo "Building $*..."
-	rm -rf $*/tmp
-	cp -a tmp $*/tmp
-	cp -a layer/launchpad-base $*/tmp/deps/ols-layers/layer/
 	cd $* && charmcraft pack
 	cp -a $*/$(call charm_file,$*) dist/
-	rm -rf $*/tmp
 
 clean: ## clean the build environment
 clean: $(foreach charm,$(CHARMS),clean-$(charm))
 	@find . -name \*.pyc -delete
 	@find . -depth -name '__pycache__' -exec rm -rf '{}' \;
 	@rm -f bundle.yaml
-	@rm -rf $(BUILDDIR) $(TMPDIR)
+	@rm -rf $(BUILDDIR)
 
 clean-%:
 	@echo "Cleaning $*..."
