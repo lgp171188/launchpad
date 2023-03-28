@@ -164,7 +164,12 @@ class RootApp:
         query = dict(parse_querystring(environ))
         next_url = query.get("next_to")
         next_url_domain = urlparse(next_url).netloc
-        if next_url is None or next_url_domain not in allvhosts.hostnames:
+        open_id_url = config.launchpad.openid_provider_root
+        open_id_domain = urlparse(open_id_url).netloc
+        if next_url is None or (
+            next_url_domain not in allvhosts.hostnames
+            and next_url_domain != open_id_domain
+        ):
             next_url = allvhosts.configs["mainsite"].rooturl
         raise HTTPMovedPermanently(next_url)
 
