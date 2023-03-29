@@ -125,6 +125,16 @@ installed and configured on your network.
 
     lxc launch ubuntu:16.04 lpdev -p default -p $USER
 
+
+.. note::
+   Ensure you have initialized your LXD storage. Run
+
+   .. code-block:: sh
+
+        lxd init
+
+   This will fix ``Error: No root device could be found`` errors.
+
 3. Find the container IP, either from ``lxc list`` or ``lxc info lpdev``.
 
 4. In order to be able to ssh into the container, you need to add your
