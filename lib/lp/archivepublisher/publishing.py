@@ -1468,6 +1468,15 @@ class Publisher:
                         extra_files.add(cnf_path)
             except FileNotFoundError:
                 pass
+            oval_dir = os.path.join(suite_dir, component, "oval")
+            try:
+                for oval_file in os.listdir(oval_dir):
+                    if ".oval.xml" in oval_file:
+                        oval_path = os.path.join(component, "oval", oval_file)
+                        extra_files.add(remove_suffix(oval_path))
+                        extra_files.add(oval_path)
+            except FileNotFoundError:
+                pass
         for architecture in all_architectures:
             for contents_path in get_suffixed_indices(
                 "Contents-" + architecture
