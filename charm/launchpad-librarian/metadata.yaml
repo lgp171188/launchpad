@@ -1,0 +1,18 @@
+name: launchpad-librarian
+display-name: launchpad-librarian
+summary: Launchpad librarian
+maintainer: Colin Watson <cjwatson@canonical.com>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm runs a Launchpad librarian.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false
+requires:
+  session-db:
+    interface: pgsql

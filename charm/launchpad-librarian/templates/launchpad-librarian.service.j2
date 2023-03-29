@@ -1,0 +1,16 @@
+# This service is really a systemd target, but we use a service since
+# targets cannot be reloaded.  See launchpad-librarian@.service for instance
+# configuration.
+
+[Unit]
+Description=Launchpad librarian
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecReload=/bin/true
+
+[Install]
+WantedBy=multi-user.target
+

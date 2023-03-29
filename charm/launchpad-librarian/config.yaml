@@ -1,0 +1,106 @@
+options:
+  active:
+    type: boolean
+    default: true
+    description: If true, enable jobs that may change the database.
+  nagios_path:
+    type: string
+    default: /
+    description: Path to a file on this librarian to use for Nagios checks.
+  nagios_expected_regex:
+    type: string
+    default: "Launchpad Librarian"
+    description: >
+      A regular expression that the response to `nagios_path` is expected to
+      match.
+  old_os_auth_url:
+    type: string
+    description: >
+      OpenStack authentication URL for a previous Swift instance that we're
+      migrating away from, but should still read from if necessary.
+    default:
+  old_os_auth_version:
+    type: string
+    description: >
+      OpenStack authentication protocol version for a previous Swift
+      instance that we're migrating away from, but should still read from if
+      necessary.
+    default: "2.0"
+  old_os_password:
+    type: string
+    description: >
+      OpenStack password for a previous Swift instance that we're migrating
+      away from, but should still read from if necessary.
+    default:
+  old_os_tenant_name:
+    type: string
+    description: >
+      OpenStack tenant name for a previous Swift instance that we're
+      migrating away from, but should still read from if necessary.
+    default:
+  old_os_username:
+    type: string
+    description: >
+      OpenStack username for a previous Swift instance that we're migrating
+      away from, but should still read from if necessary.
+    default:
+  os_auth_url:
+    type: string
+    description: OpenStack authentication URL.
+    default:
+  os_auth_version:
+    type: string
+    description: OpenStack authentication protocol version.
+    default: "2.0"
+  os_password:
+    type: string
+    description: OpenStack password.
+    default:
+  os_tenant_name:
+    type: string
+    description: OpenStack tenant name.
+    default:
+  os_username:
+    type: string
+    description: OpenStack username.
+    default:
+  port_download_base:
+    type: int
+    description: Base port number for public download workers.
+    default: 8000
+  port_restricted_download_base:
+    type: int
+    description: Base port number for restricted download workers.
+    default: 8005
+  port_restricted_upload_base:
+    type: int
+    description: Base port number for restricted upload workers.
+    default: 9095
+  port_upload_base:
+    type: int
+    description: Base port number for public upload workers.
+    default: 9090
+  swift_feed_workers:
+    type: int
+    description: Number of librarian-feed-swift workers to run in parallel.
+    default: 1
+  swift_timeout:
+    type: int
+    description: Time in seconds to wait for a response from Swift.
+    default: 15
+  upstream_host:
+    type: string
+    description: Host name for the upstream librarian, if any.
+    default:
+  upstream_port:
+    type: int
+    description: Port for the upstream librarian, if any.
+    default: 80
+  workers:
+    type: int
+    description: >
+      Number of librarian worker processes.  If set, each worker will listen
+      on consecutive ports starting from each of `port_download_base`,
+      `port_restricted_download_base`, `port_restricted_upload_base`, and
+      `port_upload_base`, so make sure there is enough space between those.
+    default: 1

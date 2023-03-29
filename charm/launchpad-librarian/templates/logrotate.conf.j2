@@ -1,0 +1,28 @@
+{{ logs_dir }}/librarian[0-9]*.log
+{
+    rotate 21
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 syslog adm
+    sharedscripts
+    postrotate
+        systemctl reload launchpad-librarian.service
+    endscript
+}
+
+{{ logs_dir }}/expire-archive-files.log {{ logs_dir }}/librarian-gc.log {{ logs_dir }}/librarian-feed-swift-*.log
+{
+    rotate 21
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 syslog adm
+}
+

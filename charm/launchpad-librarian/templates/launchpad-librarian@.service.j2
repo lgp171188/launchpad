@@ -1,0 +1,25 @@
+[Unit]
+Description=Launchpad librarian (%i)
+PartOf=launchpad-librarian.service
+Before=launchpad-librarian.service
+ReloadPropagatedFrom=launchpad-librarian.service
+After=network.target
+ConditionPathExists=!{{ code_dir }}/maintenance.txt
+
+[Service]
+User=launchpad
+Group=launchpad
+WorkingDirectory={{ code_dir }}
+# https://portal.admin.canonical.com/C44221
+MemoryMax=4G
+Environment=LPCONFIG=launchpad-librarian%i
+SyslogIdentifier=librarian
+ExecStart={{ code_dir }}/bin/twistd --python daemons/librarian.tac --pidfile {{ var_dir }}/librarian%i.pid --prefix librarian --logfile {{ logfile }} --nodaemon
+ExecReload=/bin/kill -USR1 $MAINPID
+KillMode=mixed
+Restart=on-failure
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
