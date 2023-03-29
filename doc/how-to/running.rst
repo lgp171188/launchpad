@@ -133,7 +133,7 @@ installed and configured on your network.
 
         lxd init
 
-   This will fix ``Error: No root device could be found`` errors.
+   This should fix ``Error: No root device could be found`` errors you might get when running the command above.
 
 3. Find the container IP, either from ``lxc list`` or ``lxc info lpdev``.
 
