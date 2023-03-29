@@ -127,13 +127,13 @@ installed and configured on your network.
 
 
 .. note::
-   Ensure you have initialized your LXD storage. Run
+   If the command above fails with ``Error: No root device could be found``, you may need to run
 
    .. code-block:: sh
 
         lxd init
 
-   This should fix ``Error: No root device could be found`` errors you might get when running the command above.
+   This will ensure you have initialized your LXD storage.
 
 3. Find the container IP, either from ``lxc list`` or ``lxc info lpdev``.
 
