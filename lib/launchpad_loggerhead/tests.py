@@ -122,6 +122,33 @@ class TestLogout(TestCase):
             self.browser.contents, b"This is a dummy destination.\n"
         )
 
+    def testLoggerheadLogoutRedirectCookieLogoutMimic(self):
+        # When we visit +logout with a 'next_to' value in the query string,
+        # the logout page will redirect to the given URI.  As of this
+        # writing, this is used by Launchpad to redirect to our OpenId
+        # provider (see lp.testing.tests.test_login.
+        # TestLoginAndLogout.test_CookieLogoutPage).
+
+        # CookieLogout behaviour mimic
+        self.browser.open(
+            config.codehosting.secure_codebrowse_root
+            + "+logout?"
+            + urlencode(
+                dict(next_to=config.launchpad.openid_provider_root + "+logout")
+            )
+        )
+
+        # We are logged out, as before.
+        self.assertEqual(self.session, {})
+
+        # Now, though, we are redirected to the ``next_to`` destination.
+        self.assertEqual(
+            self.browser.url, config.launchpad.openid_provider_root + "+logout"
+        )
+        self.assertEqual(
+            self.browser.contents, b"This is a dummy destination.\n"
+        )
+
     def testLoggerheadLogoutRedirectFailure(self):
         # When we visit +logout with a 'next_to' value in the query string,
         # the logout page will redirect to the given URI only if
