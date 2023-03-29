@@ -2483,6 +2483,54 @@ class TestPublisher(TestPublisherBase):
                 release, "Contents-i386.gz", contents_file.read()
             )
 
+    def testReleaseFileForOval(self):
+        # Test Release file writing for Oval metadata.
+        publisher = Publisher(
+            self.logger,
+            self.config,
+            self.disk_pool,
+            self.ubuntutest.main_archive,
+        )
+
+        # Put some Oval metadata files in place, and force the publisher
+        # to republish that suite.
+        series_path = os.path.join(self.config.distsroot, "breezy-autotest")
+        oval_path = os.path.join(series_path, "main", "oval")
+        oval_names = (
+            "data1.oval.xml.gz",
+            "data2.oval.xml.bz2",
+            "data3.oval.xml",
+            "data4.oval.xml.bz2",
+        )
+        os.makedirs(oval_path)
+        for name in oval_names:
+            if name.endswith(".gz"):
+                with gzip.GzipFile(os.path.join(oval_path, name), "wb") as f:
+                    f.write(name.encode())
+            elif name.endswith(".bz2"):
+                with bz2.open(os.path.join(oval_path, name), "wb") as f:
+                    f.write(name.encode())
+            else:
+                with open(os.path.join(oval_path, name), "wb") as f:
+                    f.write(name.encode())
+
+        publisher.markSuiteDirty(
+            self.ubuntutest.getSeries("breezy-autotest"),
+            PackagePublishingPocket.RELEASE,
+        )
+
+        publisher.A_publish(False)
+        publisher.C_doFTPArchive(False)
+        publisher.D_writeReleaseFiles(False)
+
+        # The metadata files are listed correctly in Release.
+        release = self.parseRelease(os.path.join(series_path, "Release"))
+        for name in oval_names:
+            with open(os.path.join(oval_path, name), "rb") as f:
+                self.assertReleaseContentsMatch(
+                    release, os.path.join("main", "oval", name), f.read()
+                )
+
     def testReleaseFileForDEP11(self):
         # Test Release file writing for DEP-11 metadata.
         publisher = Publisher(
