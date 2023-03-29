@@ -37,6 +37,8 @@ from psycopg2.extensions import (
     ISOLATION_LEVEL_READ_COMMITTED,
     ISOLATION_LEVEL_REPEATABLE_READ,
     ISOLATION_LEVEL_SERIALIZABLE,
+    make_dsn,
+    parse_dsn,
 )
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import State
@@ -576,27 +578,30 @@ def connect(user=None, dbname=None, isolation=ISOLATION_LEVEL_DEFAULT):
 
     Default database name is the one specified in the main configuration file.
     """
-    con = psycopg2.connect(connect_string(user=user, dbname=dbname))
-    con.set_isolation_level(isolation)
-    return con
-
-
-def connect_string(user=None, dbname=None):
-    """Return a PostgreSQL connection string.
-
-    Allows you to pass the generated connection details to external
-    programs like pg_dump or embed in slonik scripts.
-    """
     # We must connect to the read-write DB here, so we use rw_main_primary
     # directly.
-    from lp.services.database.postgresql import ConnectionString
-
-    con_str = ConnectionString(dbconfig.rw_main_primary)
-    if user is not None:
-        con_str.user = user
+    parsed_dsn = parse_dsn(dbconfig.rw_main_primary)
+    dsn_kwargs = {}
     if dbname is not None:
-        con_str.dbname = dbname
-    return str(con_str)
+        dsn_kwargs["dbname"] = dbname
+    if dbconfig.set_role_after_connecting:
+        assert "user" in parsed_dsn, (
+            "With set_role_after_connecting, database username must be "
+            "specified in connection string (%s)." % dbconfig.rw_main_primary
+        )
+    else:
+        assert "user" not in parsed_dsn, (
+            "Database username must not be specified in connection string "
+            "(%s)." % dbconfig.rw_main_primary
+        )
+        dsn_kwargs["user"] = user
+    dsn = make_dsn(dbconfig.rw_main_primary, **dsn_kwargs)
+
+    con = psycopg2.connect(dsn)
+    con.set_isolation_level(isolation)
+    if dbconfig.set_role_after_connecting and user != parsed_dsn["user"]:
+        con.cursor().execute("SET ROLE %s", (user,))
+    return con
 
 
 class cursor:

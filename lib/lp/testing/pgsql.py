@@ -126,6 +126,12 @@ class CursorWrapper:
             CursorWrapper.last_executed_sql.append(args[0])
         return self.real_cursor.execute(*args, **kwargs)
 
+    def __enter__(self):
+        return self.real_cursor.__enter__()
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        return self.real_cursor.__exit__(exc_type, exc_value, exc_tb)
+
     def __getattr__(self, key):
         return getattr(self.real_cursor, key)
 
