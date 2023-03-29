@@ -2506,13 +2506,13 @@ class TestPublisher(TestPublisherBase):
         for name in oval_names:
             if name.endswith(".gz"):
                 with gzip.GzipFile(os.path.join(oval_path, name), "wb") as f:
-                    f.write(six.ensure_binary(name))
+                    f.write(name.encode())
             elif name.endswith(".bz2"):
                 with bz2.open(os.path.join(oval_path, name), "wb") as f:
-                    f.write(six.ensure_binary(name))
+                    f.write(name.encode())
             else:
                 with open(os.path.join(oval_path, name), "wb") as f:
-                    f.write(six.ensure_binary(name))
+                    f.write(name.encode())
 
         publisher.markSuiteDirty(
             self.ubuntutest.getSeries("breezy-autotest"),
