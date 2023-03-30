@@ -31,8 +31,9 @@ TEST_PLAYGROUND_DBNAME=launchpad_ftest_playground
 # The session database name.
 SESSION_DBNAME=session_dev
 
-# The command we use to drop a database.
-DROPDB=../../utilities/pgmassacre.py
+# Database options to pass to PostgreSQL tools.
+DBOPTS:=$(shell ../../utilities/pgoptions.py)
+
 # The command we use to drop (if exists) and recreate a database.
 CREATEDB=../../utilities/pgmassacre.py -t
 
@@ -70,7 +71,7 @@ test: create
 	@ echo "* Creating database \"$(TEMPLATE_WITH_TEST_SAMPLEDATA)\"."
 	@ ${CREATEDB} ${EMPTY_DBNAME} ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Loading sample data"
-	@ psql -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_TEST_SAMPLEDATA} -f $(SAMPLEDATA) > /dev/null
+	@ psql $(DBOPTS) -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_TEST_SAMPLEDATA} -f $(SAMPLEDATA) > /dev/null
 	@ echo "* Rebuilding full text indexes"
 	@ ./fti.py --live-rebuild -q -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Resetting sequences"
@@ -78,7 +79,7 @@ test: create
 	@ echo "* Disabling autovacuum"
 	@ ./unautovacuumable.py -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 	@ echo "* Vacuuming"
-	@ vacuumdb -fz ${TEMPLATE_WITH_TEST_SAMPLEDATA}
+	@ vacuumdb $(DBOPTS) -fz -d ${TEMPLATE_WITH_TEST_SAMPLEDATA}
 
 # Create a launchpad_dev_template DB and load the dev sample data into it.
 # Also create a launchpad_ftest_playground DB as a copy of
@@ -87,7 +88,7 @@ dev: test
 	@ echo "* Creating ${TEMPLATE_WITH_DEV_SAMPLEDATA}"
 	@ ${CREATEDB} ${EMPTY_DBNAME} ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Loading sample data"
-	@ psql -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_DEV_SAMPLEDATA} -f $(SAMPLEDATA_DEV) > /dev/null
+	@ psql $(DBOPTS) -v ON_ERROR_STOP=1 -d ${TEMPLATE_WITH_DEV_SAMPLEDATA} -f $(SAMPLEDATA_DEV) > /dev/null
 	@ echo "* Rebuilding full text indexes"
 	@ ./fti.py --live-rebuild -q -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Resetting sequences"
@@ -95,7 +96,7 @@ dev: test
 	@ echo "* Disabling autovacuum"
 	@ ./unautovacuumable.py -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Vacuuming"
-	@ vacuumdb -fz ${TEMPLATE_WITH_DEV_SAMPLEDATA}
+	@ vacuumdb $(DBOPTS) -fz -d ${TEMPLATE_WITH_DEV_SAMPLEDATA}
 	@ echo "* Creating ${DBNAME_DEV}"
 	@ ${CREATEDB} ${TEMPLATE_WITH_DEV_SAMPLEDATA} ${DBNAME_DEV}
 	@ echo "* Creating ${TEST_PLAYGROUND_DBNAME}"
@@ -112,7 +113,7 @@ create:
 	@ echo "* Creating database \"$(EMPTY_DBNAME)\"."
 	@ ${CREATEDB} template0 ${EMPTY_DBNAME}
 	@ echo "* Loading base database schema"
-	@ psql -d ${EMPTY_DBNAME} -f ${BASELINE} | grep : | cat
+	@ psql $(DBOPTS) -d ${EMPTY_DBNAME} -f ${BASELINE} | grep : | cat
 	@ echo "* Patching the database schema"
 	@ ./upgrade.py --separate-sessions -d ${EMPTY_DBNAME}
 	@ echo "* Security setup"
@@ -120,16 +121,16 @@ create:
 	@ echo "* Disabling autovacuum"
 	@ ./unautovacuumable.py -d ${EMPTY_DBNAME}
 	@ echo "* Vacuuming"
-	@ vacuumdb -fz ${EMPTY_DBNAME}
+	@ vacuumdb $(DBOPTS) -fz -d ${EMPTY_DBNAME}
 
 	@ echo "* Creating session database '${SESSION_DBNAME}' (if necessary)"
-	@if [ "$$((`psql -l | grep -w ${SESSION_DBNAME} | wc -l`))" = '0' ]; \
+	@if [ "$$((`psql $(DBOPTS) -l | grep -w ${SESSION_DBNAME} | wc -l`))" = '0' ]; \
 	    then ${CREATEDB} template0 ${SESSION_DBNAME} ; \
-	    psql -q -d ${SESSION_DBNAME} -f launchpad_session.sql ; \
+	    psql $(DBOPTS) -q -d ${SESSION_DBNAME} -f launchpad_session.sql ; \
 	fi
 	@ echo "* Creating session database '${TEST_SESSION_DBNAME}'"
 	@ ${CREATEDB} template0 ${TEST_SESSION_DBNAME}
-	@ psql -q -d ${TEST_SESSION_DBNAME} -f launchpad_session.sql
+	@ psql $(DBOPTS) -q -d ${TEST_SESSION_DBNAME} -f launchpad_session.sql
 
 # Confirm that launchpad-XX-00-0.sql hasn't been messed with - this file
 # is our baseline telling us what was installed into production
