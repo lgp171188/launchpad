@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 import responses
 import transaction
 from lazr.lifecycle.snapshot import Snapshot
+from storm.store import Store
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -23,6 +24,7 @@ from lp.bugs.model.bugtracker import (
     make_bugtracker_title,
 )
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.testing import (
     TestCase,
     TestCaseWithFactory,
@@ -91,7 +93,8 @@ class BugTrackerTestCase(TestCaseWithFactory):
         for i in range(5):
             self.factory.makeBugWatch(bugtracker=self.bug_tracker)
 
-        self.now = datetime.now(timezone.utc)
+        store = Store.of(self.bug_tracker)
+        self.now = get_transaction_timestamp(store)
 
     def test_multi_product_constraints_observed(self):
         """BugTrackers for which multi_product=True should return None
