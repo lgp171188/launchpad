@@ -15,6 +15,7 @@
 
 import argparse
 import doctest
+import locale
 import os
 import random
 import re
@@ -51,6 +52,9 @@ def configure_environment():
     # (This is no longer actually required, as PQM does this.)
     os.environ["TZ"] = "Asia/Calcutta"
     time.tzset()
+
+    # Forces tests to run with a sensible locale encoding
+    locale.setlocale(locale.LC_ALL, "C.UTF-8")
 
     # Httplib2 0.7 started validating SSL certificates, and the test suite
     # uses a self-signed certificate, so disable it with an env variable.
