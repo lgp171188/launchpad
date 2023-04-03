@@ -7,7 +7,9 @@ __all__ = [
     "PublishDistro",
 ]
 
+import os
 from optparse import OptionValueError
+from subprocess import CalledProcessError, check_call
 
 from storm.store import Store
 from zope.component import getUtility
@@ -19,6 +21,7 @@ from lp.archivepublisher.publishing import (
     getPublisher,
 )
 from lp.archivepublisher.scripts.base import PublisherScript
+from lp.services.config import config
 from lp.services.limitedlist import LimitedList
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.services.webapp.adapter import (
@@ -504,10 +507,53 @@ class PublishDistro(PublisherScript):
                 # store and cause performance problems.
                 Store.of(archive).reset()
 
+    def rsync_oval_data(self):
+        if config.archivepublisher.oval_data_rsync_endpoint:
+            # Ensure that the rsync paths have a trailing slash.
+            rsync_src = os.path.join(
+                config.archivepublisher.oval_data_rsync_endpoint, ""
+            )
+            rsync_dest = os.path.join(
+                config.archivepublisher.oval_data_root, ""
+            )
+            rsync_command = [
+                "/usr/bin/rsync",
+                "-a",
+                "-q",
+                "--timeout={}".format(
+                    config.archivepublisher.oval_data_rsync_timeout
+                ),
+                "--delete",
+                "--delete-after",
+                rsync_src,
+                rsync_dest,
+            ]
+            try:
+                self.logger.info(
+                    "Attempting to rsync the OVAL data from '%s' to '%s'",
+                    rsync_src,
+                    rsync_dest,
+                )
+                check_call(rsync_command)
+            except CalledProcessError:
+                self.logger.exception(
+                    "Failed to rsync OVAL data from '%s' to '%s'",
+                    rsync_src,
+                    rsync_dest,
+                )
+                raise
+        else:
+            self.logger.info(
+                "Skipping the OVAL data sync as no rsync endpoint"
+                " has been configured."
+            )
+
     def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
         self.validateOptions()
         self.logOptions()
+
+        self.rsync_oval_data()
 
         archive_ids = []
         for distribution in self.findDistros():
