@@ -72,7 +72,7 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.milestonetag import MilestoneTag
 from lp.registry.model.person import Person
-from lp.registry.model.product import Product, ProductSet
+from lp.registry.model.product import Product, ProductSeries, ProductSet
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -84,6 +84,7 @@ from lp.services.database.sqlbase import (
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
+    IsTrue,
     Unnest,
     WithMaterialized,
     fti_search,
@@ -609,15 +610,30 @@ def _build_query(params):
         and params.productseries is None
         and params.distroseries is None
     ):
-        extra_clauses.append(
-            Or(BugTaskFlat.product == None, Product.active == True)
+        extra_clauses.append(IsTrue(Product.active))
+
+        join_tables.append(
+            (
+                ProductSeries,
+                LeftJoin(
+                    ProductSeries,
+                    BugTaskFlat.productseries_id == ProductSeries.id,
+                ),
+            )
         )
+
         join_tables.append(
             (
                 Product,
                 LeftJoin(
                     Product,
-                    And(BugTaskFlat.product_id == Product.id, Product.active),
+                    And(
+                        Or(
+                            BugTaskFlat.product_id == Product.id,
+                            ProductSeries.productID == Product.id,
+                        ),
+                        Product.active,
+                    ),
                 ),
             )
         )

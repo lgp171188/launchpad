@@ -416,8 +416,9 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         self._test_team_assigned_to_bug()
 
     def test_user_cant_see_bug_disabled_product(self, product_series=False):
-        # Checks that a user that reports a bug in a private project,
-        # can't see the bug once the project is deactivated
+        """A user that reports a bug in a private project, can't see the bug
+        once the project is deactivated
+        """
         private_product = self.factory.makeProduct(
             owner=self.priv_team,
             information_type=InformationType.PROPRIETARY,
@@ -451,6 +452,7 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         self.assertFalse(bug.userCanView(self.priv_member))
 
     def test_user_cant_see_bug_disabled_product_series(self):
-        # Checks that a user that reports a bug in a private project series,
-        # see the bug once the project is deactivated
+        """A user that reports a bug in a private project series, can't see
+        the bug once the series's project is deactivated
+        """
         self.test_user_cant_see_bug_disabled_product(product_series=True)
