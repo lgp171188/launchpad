@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os.path
+import subprocess
 
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import (
@@ -28,13 +29,55 @@ def strip_password(dsn):
     return make_dsn(**parsed_dsn)
 
 
+def database_is_initialized() -> bool:
+    """Has the database been initialized?
+
+    The launchpad-admin charm is itself used to initialize the database, so
+    we can't assume that that's been done yet at the time our `configure`
+    handler runs.  The `LaunchpadDatabaseRevision` table is used to track
+    schema migrations, so its presence is a good indicator of whether we
+    have a useful database.
+    """
+    return (
+        subprocess.run(
+            [
+                "sudo",
+                "-H",
+                "-u",
+                base.user(),
+                os.path.join(home_dir(), "bin", "db"),
+                "-c",
+                r"\d LaunchpadDatabaseRevision",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        == 0
+    )
+
+
+def update_database_permissions():
+    subprocess.run(
+        [
+            "sudo",
+            "-H",
+            "-u",
+            base.user(),
+            "LPCONFIG=launchpad-admin",
+            os.path.join(base.code_dir(), "database", "schema", "security.py"),
+            "--no-revoke",
+        ],
+        check=True,
+    )
+
+
 @when(
     "launchpad.base.configured",
     "db.master.available",
     "db-admin.master.available",
     "session-db.master.available",
 )
-@when_not("service_configured")
+@when_not("service.configured")
 def configure():
     db = endpoint_from_flag("db.master.available")
     db_admin = endpoint_from_flag("db-admin.master.available")
@@ -81,6 +124,12 @@ def configure():
             group=base.user(),
             perms=0o755,
         )
+
+    if database_is_initialized():
+        hookenv.log("Updating database permissions.")
+        update_database_permissions()
+    else:
+        hookenv.log("Database has not been initialized yet.")
 
     set_state("service.configured")
     hookenv.status_set("active", "Ready")
