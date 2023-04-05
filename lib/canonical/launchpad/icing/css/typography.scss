@@ -39,6 +39,8 @@ h1, h2, h3, h4, h5, h6 {
   p {
     width: auto;
     margin-bottom: $reduced-spacing;
+    /* Wrap the text before the eye gets lost. */
+    max-width: $wider-page;
   }
 
   div + p, ul + p, table + p {
