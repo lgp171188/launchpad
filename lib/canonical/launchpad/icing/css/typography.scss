@@ -1,6 +1,6 @@
 // This file the result of auto-converting typography.css to scss.
 
-$page-width: 45em;
+$page-width: 60em;
 $wider-page: $page-width + 15em;
 $reduced-spacing: 0.8em;
 $link-colour: #03a;
@@ -39,13 +39,15 @@ h1, h2, h3, h4, h5, h6 {
   p {
     width: auto;
     margin-bottom: $reduced-spacing;
+    /* Wrap the text before the eye gets lost. */
+    max-width: $wider-page;
   }
 
   div + p, ul + p, table + p {
     margin-top: $reduced-spacing;
   }
 
-  p, li, dt, dd, blockquote, .narrow, .narrow-listing {
+  li, dt, dd, blockquote, .narrow, .narrow-listing {
     /* Wrap the text before the eye gets lost. */
     max-width: $page-width;
   }
