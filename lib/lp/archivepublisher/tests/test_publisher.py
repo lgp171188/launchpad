@@ -1499,6 +1499,8 @@ class TestPublisher(TestPublisherBase):
             archive_file
         ).scheduled_deletion_date = now - timedelta(hours=12)
         self.assertIn(archive, ubuntu.getPendingPublicationPPAs())
+        getUtility(IArchiveFileSet).markDeleted([archive_file])
+        self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
 
     def testDirtySuitesArchive(self):
         # getPendingPublicationPPAs returns archives that have dirty_suites

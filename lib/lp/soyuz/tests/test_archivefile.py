@@ -351,6 +351,10 @@ class TestArchiveFile(TestCaseWithFactory):
                 archive, container_prefix="release:"
             ),
         )
+        archive_file_set.markDeleted([archive_files[3]])
+        self.assertContentEqual(
+            ["release:foo"], archive_file_set.getContainersToReap(archive)
+        )
 
     def test_markDeleted(self):
         archive = self.factory.makeArchive()
