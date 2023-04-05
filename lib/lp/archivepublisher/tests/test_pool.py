@@ -5,11 +5,17 @@
 
 import hashlib
 from pathlib import Path, PurePath
+from unittest import mock
 
 from lazr.enum import EnumeratedType, Item
 from zope.interface import alsoProvides, implementer
 
-from lp.archivepublisher.diskpool import DiskPool, poolify, unpoolify
+from lp.archivepublisher.diskpool import (
+    DiskPool,
+    _diskpool_atomicfile,
+    poolify,
+    unpoolify,
+)
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import ArchiveRepositoryFormat, BinaryPackageFileType
@@ -100,6 +106,10 @@ class FakePackageReleaseFile:
                 release_id, user_defined_fields=user_defined_fields
             )
             alsoProvides(self, IBinaryPackageFile)
+
+
+class SpecificTestException(Exception):
+    pass
 
 
 class PoolTestingFile:
@@ -290,3 +300,32 @@ class TestPool(TestCase):
         foo.removeFromPool("main")
         self.assertFalse(foo.checkExists("main"))
         self.assertTrue(foo.checkIsFile("universe"))
+
+    def test_raise_deletes_temporary_file(self):
+        """If ccopying fails, cleanup is called and same error is raised"""
+        foo = PoolTestingFile(
+            pool=self.pool,
+            source_name="foo",
+            source_version="1.0",
+            filename="foo-1.0.deb",
+        )
+
+        with mock.patch(
+            "lp.archivepublisher.diskpool.copy_and_close",
+            side_effect=SpecificTestException,
+        ), mock.patch.object(
+            _diskpool_atomicfile, "cleanup_temporary_path"
+        ) as mock_cleanup:
+            self.assertRaises(SpecificTestException, foo.addToPool, "universe")
+
+        self.assertEqual(mock_cleanup.call_count, 1)
+        self.assertFalse(foo.checkIsFile("universe"))
+
+    def test_diskpool_atomicfile(self):
+        """Temporary files are properly removed"""
+        target_path = Path(self.makeTemporaryDirectory() + "/temp.file")
+        foo = _diskpool_atomicfile(target_path, "wb")
+
+        self.assertTrue(foo.tempname.exists())
+        foo.cleanup_temporary_path()
+        self.assertFalse(foo.tempname.exists())
