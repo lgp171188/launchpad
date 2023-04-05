@@ -151,7 +151,7 @@ class _diskpool_atomicfile:
 
     def cleanup_temporary_path(self) -> None:
         """Removes temporary path created on __init__"""
-        if self.tempname.exists:
+        if self.tempname.exists():
             self.tempname.unlink()
 
 
