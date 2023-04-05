@@ -295,7 +295,7 @@ class DiskPoolEntry:
             copy_and_close(lfa, file_to_write)
         except Exception:
             # Prevent ending up with a stray temporary file lying around if
-            # anything goes wrong whily copying the file. Still raises error
+            # anything goes wrong while copying the file. Still raises error
             self.debug("Cleaning up temp path %s" % file_to_write.tempname)
             file_to_write.cleanup_temporary_path()
             raise

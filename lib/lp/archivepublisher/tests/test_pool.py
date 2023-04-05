@@ -302,7 +302,7 @@ class TestPool(TestCase):
         self.assertTrue(foo.checkIsFile("universe"))
 
     def test_raise_deletes_temporary_file(self):
-        """If ccopying fails, cleanup is called and same error is raised"""
+        """If copying fails, cleanup is called and same error is raised"""
         foo = PoolTestingFile(
             pool=self.pool,
             source_name="foo",
