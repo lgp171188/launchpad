@@ -88,7 +88,14 @@ PIP_BIN = \
 
 # Create archives in labelled directories (e.g.
 # <rev-id>/$(PROJECT_NAME).tar.gz)
-TARBALL_BUILD_LABEL ?= $(shell git rev-parse HEAD)
+GIT_BRANCH := $(shell git branch --show-current)
+TARBALL_REVISION ?= $(shell git rev-parse HEAD)
+ifeq ($(GIT_BRANCH),db-devel)
+TARBALL_SUFFIX := db
+else
+TARBALL_SUFFIX :=
+endif
+TARBALL_BUILD_LABEL := $(TARBALL_REVISION)$(if $(TARBALL_SUFFIX),-$(TARBALL_SUFFIX))
 TARBALL_FILE_NAME = launchpad.tar.gz
 TARBALL_BUILD_DIR = dist/$(TARBALL_BUILD_LABEL)
 TARBALL_BUILD_PATH = $(TARBALL_BUILD_DIR)/$(TARBALL_FILE_NAME)
@@ -304,7 +311,7 @@ publish-tarball: build-tarball
 	[ ! -e ~/.config/swift/launchpad ] || . ~/.config/swift/launchpad; \
 	utilities/publish-to-swift --debug \
 		$(SWIFT_CONTAINER_NAME) $(SWIFT_OBJECT_PATH) \
-		$(TARBALL_BUILD_PATH)
+		$(TARBALL_BUILD_PATH) $(TARBALL_SUFFIX)
 
 # setuptools won't touch files that would have the same contents, but for
 # Make's sake we need them to get fresh timestamps, so we touch them after

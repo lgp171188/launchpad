@@ -6,5 +6,5 @@
 
 set -e
 
-psql '{{ db_session_primary }}'
+psql '{{ db_session_primary }}' "$@"
 

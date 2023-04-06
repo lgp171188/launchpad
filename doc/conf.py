@@ -38,7 +38,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "Launchpad"
-copyright = "2004-2022, Canonical Ltd."
+copyright = "2004-2023, Canonical Ltd."
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

@@ -215,6 +215,7 @@ class ArchiveFileSet:
         clauses = [
             ArchiveFile.archive == archive,
             ArchiveFile.scheduled_deletion_date < _now(),
+            ArchiveFile.date_removed == None,
         ]
         if container_prefix is not None:
             clauses.append(ArchiveFile.container.startswith(container_prefix))

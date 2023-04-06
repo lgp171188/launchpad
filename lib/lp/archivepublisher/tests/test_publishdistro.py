@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from optparse import OptionValueError
 
+from fixtures import MockPatch
 from storm.store import Store
 from testtools.matchers import Not, PathExists
 from testtools.twistedsupport import AsynchronousDeferredRunTest
@@ -69,7 +70,8 @@ class TestPublishDistro(TestNativePublishingBase):
         if extra_args is not None:
             args.extend(extra_args)
         publish_distro = PublishDistro(test_args=args)
-        publish_distro.logger = BufferLogger()
+        self.logger = BufferLogger()
+        publish_distro.logger = self.logger
         publish_distro.txn = self.layer.txn
         switch_dbuser(config.archivepublisher.dbuser)
         publish_distro.main()
@@ -254,6 +256,80 @@ class TestPublishDistro(TestNativePublishingBase):
         self.runPublishDistro(["--ppa"])
         pub_source = self.loadPubSource(pub_source_id)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
+
+    def setUpOVALDataRsync(self):
+        self.pushConfig(
+            "archivepublisher",
+            oval_data_rsync_endpoint="oval.internal::oval/",
+            oval_data_root="/tmp/oval-data",
+            oval_data_rsync_timeout=90,
+        )
+
+    def testPublishDistroOVALDataRsyncEndpointNotConfigured(self):
+        """
+        Test what happens when the OVAL data rsync endpoint is not configured.
+        """
+        mock_subprocess_check_call = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        ).mock
+        self.runPublishDistro()
+        mock_subprocess_check_call.assert_not_called()
+        expected_log_line = (
+            "INFO Skipping the OVAL data sync as no rsync endpoint has been "
+            "configured."
+        )
+        self.assertTrue(expected_log_line in self.logger.getLogBuffer())
+
+    def testPublishDistroOVALDataRsyncEndpointConfigured(self):
+        """
+        Test the OVAL data rsync command.
+
+        When the endpoint is configured, verify that the command is run.
+        """
+        self.setUpOVALDataRsync()
+        mock_subprocess_check_call = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        ).mock
+        self.runPublishDistro()
+        call_args = [
+            "/usr/bin/rsync",
+            "-a",
+            "-q",
+            "--timeout=90",
+            "--delete",
+            "--delete-after",
+            "oval.internal::oval/",
+            "/tmp/oval-data/",
+        ]
+        mock_subprocess_check_call.assert_called_once_with(call_args)
+
+    def testPublishDistroOVALDataRsyncErrorsOut(self):
+        self.setUpOVALDataRsync()
+        mock_subprocess_check_call = self.useFixture(
+            MockPatch(
+                "lp.archivepublisher.scripts.publishdistro.check_call",
+                side_effect=subprocess.CalledProcessError(
+                    cmd="foo", returncode=5
+                ),
+            )
+        ).mock
+        self.assertRaises(subprocess.CalledProcessError, self.runPublishDistro)
+        call_args = [
+            "/usr/bin/rsync",
+            "-a",
+            "-q",
+            "--timeout=90",
+            "--delete",
+            "--delete-after",
+            "oval.internal::oval/",
+            "/tmp/oval-data/",
+        ]
+        mock_subprocess_check_call.assert_called_once_with(call_args)
+        expected_log_line = (
+            "ERROR Failed to rsync OVAL data from "
+            "'oval.internal::oval/' to '/tmp/oval-data/'"
+        )
+        self.assertTrue(expected_log_line in self.logger.getLogBuffer())
 
     @defer.inlineCallbacks
     def testForPPA(self):

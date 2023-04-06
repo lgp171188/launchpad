@@ -149,6 +149,11 @@ class _diskpool_atomicfile:
         # different filesystems.
         self.tempname.rename(self.targetfilename)
 
+    def cleanup_temporary_path(self) -> None:
+        """Removes temporary path created on __init__"""
+        if self.tempname.exists():
+            self.tempname.unlink()
+
 
 class DiskPoolEntry:
     """Represents a single file in the pool, across all components.
@@ -285,8 +290,16 @@ class DiskPoolEntry:
         file_to_write = _diskpool_atomicfile(
             targetpath, "wb", rootpath=self.temppath
         )
-        lfa.open()
-        copy_and_close(lfa, file_to_write)
+        try:
+            lfa.open()
+            copy_and_close(lfa, file_to_write)
+        except Exception:
+            # Prevent ending up with a stray temporary file lying around if
+            # anything goes wrong while copying the file. Still raises error
+            self.debug("Cleaning up temp path %s" % file_to_write.tempname)
+            file_to_write.cleanup_temporary_path()
+            raise
+
         self.file_component = component
         return FileAddActionEnum.FILE_ADDED
 

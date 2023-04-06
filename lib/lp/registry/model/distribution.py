@@ -1969,6 +1969,7 @@ class Distribution(
                 Archive.distribution == self,
                 ArchiveFile.archive == Archive.id,
                 ArchiveFile.scheduled_deletion_date < UTC_NOW,
+                ArchiveFile.date_removed == None,
             )
             .order_by(Archive.id)
             .config(distinct=True)
