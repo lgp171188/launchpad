@@ -176,7 +176,7 @@ class PackageDiff(StormBase):
         else:
             ancestry_identifier = "%s (in %s)" % (
                 self.from_source.version,
-                ancestry_archive.distribution.name.capitalize(),
+                ancestry_archive.reference,
             )
         return "diff from %s to %s" % (
             ancestry_identifier,
