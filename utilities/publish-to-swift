@@ -84,10 +84,8 @@ def prune_old_files_from_swift(options, container_name, object_dir, suffix):
     if suffix.endswith("-db"):
         try:
             response = requests.head("https://staging.launchpad.net/")
-            ok = response.ok
+            response.raise_for_status()
         except requests.RequestException:
-            ok = False
-        if not ok:
             # Staging is routinely down in order to restore its database
             # from a recent production dump, so don't consider this an
             # error; just skip pruning if we can't determine its revision.
