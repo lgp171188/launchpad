@@ -4,6 +4,7 @@ After=network.target
 ConditionPathExists=!{{ code_dir }}/maintenance.txt
 
 [Service]
+Type=notify
 User=launchpad
 Group=launchpad
 WorkingDirectory={{ code_dir }}

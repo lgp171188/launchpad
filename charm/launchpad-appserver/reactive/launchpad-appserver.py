@@ -6,6 +6,7 @@ import subprocess
 from multiprocessing import cpu_count
 
 from charmhelpers.core import hookenv, host, templating
+from charms.coordinator import acquire
 from charms.launchpad.base import (
     config_file_path,
     configure_cron,
@@ -24,6 +25,7 @@ from charms.reactive import (
     set_flag,
     set_state,
     when,
+    when_none,
     when_not,
 )
 from ols import base, postgres
@@ -64,6 +66,7 @@ def configure_gunicorn(config):
     templating.render(
         "launchpad.service.j2", "/lib/systemd/system/launchpad.service", config
     )
+    subprocess.run(["systemctl", "daemon-reload"], check=True)
     host.add_user_to_group("syslog", base.user())
     templating.render("rsyslog.j2", "/etc/rsyslog.d/22-launchpad.conf", config)
 
@@ -76,13 +79,6 @@ def configure_logrotate(config):
         config,
         perms=0o644,
     )
-
-
-def restart(soft=False):
-    if soft:
-        reload_or_restart("launchpad")
-    else:
-        host.service_restart("launchpad")
 
 
 def config_files():
@@ -100,7 +96,7 @@ def config_files():
     "session-db.master.available",
     "memcache.available",
 )
-@when_not("service.configured")
+@when_none("coordinator.requested.restart", "service.configured")
 def configure():
     session_db = endpoint_from_flag("session-db.master.available")
     memcache = endpoint_from_flag("memcache.available")
@@ -133,19 +129,21 @@ def configure():
     configure_logrotate(config)
     configure_cron(config, "crontab.j2")
 
-    restart_type = None
     if helpers.any_file_changed(
         [base.version_info_path(), "/lib/systemd/system/launchpad.service"]
+        + config_files()
     ):
-        restart_type = "hard"
-    elif helpers.any_file_changed(config_files()):
-        restart_type = "soft"
-    if restart_type is None:
-        hookenv.log("Not restarting, since no config files were changed")
+        hookenv.log("Config files changed; waiting for restart lock")
+        acquire("restart")
     else:
-        hookenv.log(f"Config files changed; performing {restart_type} restart")
-        restart(soft=(restart_type == "soft"))
+        hookenv.log("Not restarting, since no config files were changed")
+        set_state("service.configured")
 
+
+@when("coordinator.granted.restart")
+def restart():
+    hookenv.log("Restarting application server")
+    host.service_restart("launchpad")
     set_state("service.configured")
 
 

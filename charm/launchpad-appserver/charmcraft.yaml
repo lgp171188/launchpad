@@ -45,10 +45,23 @@ parts:
       - layers
     prime:
       - "-layers"
+  layer-coordinator:
+    source: https://git.launchpad.net/layer-coordinator
+    source-commit: "fa27fc93e0b08000963e83a6bfe49812d890dfcf"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": layers/layer/coordinator/
+    stage:
+      - layers
+    prime:
+      - "-layers"
   launchpad-appserver:
     after:
       - charm-wheels
       - launchpad-layers
+      - layer-coordinator
     source: .
     plugin: reactive
     build-snaps: [charm/2.x/stable]
