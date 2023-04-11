@@ -278,6 +278,7 @@ class ICharmRecipeEditSchema(Interface):
             "name",
             "project",
             "require_virtualized",
+            "build_path",
             "auto_build",
             "auto_build_channels",
             "store_upload",
@@ -333,6 +334,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
         else:
             fields += ["project"]
         return fields + [
+            "build_path",
             "auto_build",
             "auto_build_channels",
             "store_upload",
@@ -386,6 +388,7 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
             project,
             data["name"],
             git_ref=git_ref,
+            build_path=data["build_path"],
             auto_build=data["auto_build"],
             auto_build_channels=data["auto_build_channels"],
             store_upload=data["store_upload"],
@@ -515,6 +518,7 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
         "name",
         "project",
         "git_ref",
+        "build_path",
         "auto_build",
         "auto_build_channels",
         "store_upload",
