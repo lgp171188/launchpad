@@ -456,3 +456,14 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
         the bug once the series's project is deactivated
         """
         self.test_user_cant_see_bug_disabled_product(product_series=True)
+
+    def test_user_can_see_bug_without_product(self):
+        """A user that reports a bug withough targetting a product or
+        productseries, can see the bug
+        """
+        # Report a bug within a distribution and set it to private
+        distribution = self.factory.makeDistribution()
+        login_person(self.priv_member)
+        bug = self.factory.makeBug(owner=self.priv_member, target=distribution)
+        bug.setPrivate(True, self.priv_member)
+        self.assertTrue(bug.userCanView(self.priv_member))
