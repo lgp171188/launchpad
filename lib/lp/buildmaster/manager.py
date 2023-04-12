@@ -397,10 +397,20 @@ def recover_failure(logger, vitals, builder, retry, exception):
         )
 
     if job is not None and job_action is not None:
+        statsd_client = getUtility(IStatsdClient)
+        labels = {
+            "build": True,
+            "arch": job.specific_build.processor.name,
+            "builder_name": builder.name,
+            "virtualized": str(builder.virtualized),
+            "job_type": job.specific_build.job_type.name,
+        }
+
         if cancelling:
             # We've previously been asked to cancel the job, so just set
             # it to cancelled rather than retrying or failing.
             logger.info("Cancelling job %s.", job.build_cookie)
+            statsd_client.incr("builders.job_cancelled", labels=labels)
             job.markAsCancelled()
         elif job_action == False:
             # Fail and dequeue the job.
@@ -421,10 +431,12 @@ def recover_failure(logger, vitals, builder, retry, exception):
                 job.specific_build.updateStatus(
                     BuildStatus.FAILEDTOBUILD, force_invalid_transition=True
                 )
+            statsd_client.incr("builders.job_failed", labels=labels)
             job.destroySelf()
         elif job_action == True:
             # Reset the job so it will be retried elsewhere.
             logger.info("Requeueing job %s.", job.build_cookie)
+            statsd_client.incr("builders.job_reset", labels=labels)
             job.reset()
 
         if job_action == False:
