@@ -317,6 +317,8 @@ class Distribution(
         enum=TranslationPermission,
         default=TranslationPermission.OPEN,
     )
+    # Distributions can't be deactivated.  This is just here in order to
+    # implement the `IPillar` interface.
     active = True
     official_packages = BoolCol(notNull=True, default=False)
     supports_ppas = BoolCol(notNull=True, default=False)

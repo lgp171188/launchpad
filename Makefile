@@ -88,7 +88,10 @@ PIP_BIN = \
 
 # Create archives in labelled directories (e.g.
 # <rev-id>/$(PROJECT_NAME).tar.gz)
-GIT_BRANCH := $(shell git branch --show-current)
+# XXX cjwatson 2023-04-11: Should be "git branch --show-current", but
+# xenial's git doesn't support that.  Use the more concise form once we
+# require focal.
+GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
 TARBALL_REVISION ?= $(shell git rev-parse HEAD)
 ifeq ($(GIT_BRANCH),db-devel)
 TARBALL_SUFFIX := db
