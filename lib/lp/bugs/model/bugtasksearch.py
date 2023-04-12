@@ -610,7 +610,15 @@ def _build_query(params):
         and params.productseries is None
         and params.distroseries is None
     ):
-        extra_clauses.append(IsTrue(Product.active))
+        extra_clauses.append(
+            Or(
+                And(
+                    BugTaskFlat.product == None,
+                    BugTaskFlat.productseries == None,
+                ),
+                IsTrue(Product.active),
+            )
+        )
 
         join_tables.append(
             (
