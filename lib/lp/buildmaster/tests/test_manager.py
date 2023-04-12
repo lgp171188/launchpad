@@ -1385,7 +1385,7 @@ class TestBuilddManager(TestCase):
         self.assertNotEqual(0, manager.flushLogTails.call_count)
 
 
-class TestFailureAssessments(TestCaseWithFactory):
+class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
 
@@ -1396,6 +1396,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.buildqueue = self.build.queueBuild()
         self.buildqueue.markAsBuilding(self.builder)
         self.worker = OkWorker()
+        self.setUpStats()
 
     def _recover_failure(self, fail_notes, retry=True):
         # Helper for recover_failure boilerplate.
@@ -1408,6 +1409,29 @@ class TestFailureAssessments(TestCaseWithFactory):
             Exception(fail_notes),
         )
         return logger.getLogBuffer()
+
+    def assert_statsd_metrics_requeue(self):
+        build = removeSecurityProxy(self.build)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.job_reset,arch={},build=True,builder_name={},"
+                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "virtualized=True".format(
+                        build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.reset,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,virtualized=True".format(
+                        build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
 
     def test_job_reset_threshold_with_retry(self):
         naked_build = removeSecurityProxy(self.build)
@@ -1426,6 +1450,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIn("Requeueing job", log)
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(self.build.status, BuildStatus.NEEDSBUILD)
+        self.assert_statsd_metrics_requeue()
 
     def test_job_reset_threshold_no_retry(self):
         naked_build = removeSecurityProxy(self.build)
@@ -1436,6 +1461,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIn("Requeueing job", log)
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(self.build.status, BuildStatus.NEEDSBUILD)
+        self.assert_statsd_metrics_requeue()
 
     def test_reset_during_cancellation_cancels(self):
         self.buildqueue.cancel()
@@ -1449,11 +1475,33 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIn("Cancelling job", log)
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.job_cancelled,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.finished,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,status=CANCELLED,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
 
     def test_job_failing_more_than_builder_fails_job(self):
         self.build.gotFailure()
         self.build.gotFailure()
         self.builder.gotFailure()
+        naked_build = removeSecurityProxy(self.build)
 
         log = self._recover_failure("failnotes")
         self.assertIn("Failing job", log)
@@ -1461,6 +1509,27 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(self.build.status, BuildStatus.FAILEDTOBUILD)
         self.assertEqual(0, self.builder.failure_count)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "build.finished,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,status=FAILEDTOBUILD,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.job_failed,arch={},build=True,builder_name={},"
+                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
 
     def test_bad_job_does_not_unsucceed(self):
         # If a FULLYBUILT build somehow ends up back in buildd-manager,
@@ -1473,6 +1542,7 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.build.gotFailure()
         self.build.gotFailure()
         self.builder.gotFailure()
+        naked_build = removeSecurityProxy(self.build)
 
         log = self._recover_failure("failnotes")
         self.assertIn("Failing job", log)
@@ -1481,6 +1551,27 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(self.build.status, BuildStatus.FULLYBUILT)
         self.assertEqual(0, self.builder.failure_count)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "build.finished,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,status=FULLYBUILT,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.job_failed,arch={},build=True,builder_name={},"
+                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
 
     def test_failure_during_cancellation_cancels(self):
         self.buildqueue.cancel()
@@ -1489,11 +1580,33 @@ class TestFailureAssessments(TestCaseWithFactory):
         self.build.gotFailure()
         self.build.gotFailure()
         self.builder.gotFailure()
+        naked_build = removeSecurityProxy(self.build)
         log = self._recover_failure("failnotes")
         self.assertIn("Cancelling job", log)
         self.assertIn("Resetting failure count of builder", log)
         self.assertIs(None, self.builder.currentjob)
         self.assertEqual(BuildStatus.CANCELLED, self.build.status)
+        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.job_cancelled,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.finished,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,status=CANCELLED,"
+                    "virtualized=True".format(
+                        naked_build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
 
     def test_bad_builder(self):
         self.builder.setCleanStatus(BuilderCleanStatus.CLEAN)
