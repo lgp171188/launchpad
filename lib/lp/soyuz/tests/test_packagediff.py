@@ -3,6 +3,7 @@
 
 """Test source package diffs."""
 
+import io
 import os.path
 from datetime import datetime
 from textwrap import dedent
@@ -10,17 +11,27 @@ from textwrap import dedent
 import transaction
 from fixtures import EnvironmentVariableFixture
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
+from lp.archivepublisher.config import ArchivePurpose
 from lp.services.config import config
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.job.interfaces.job import JobType
 from lp.services.job.model.job import Job
+from lp.services.librarian.client import ILibrarianClient
 from lp.soyuz.enums import PackageDiffStatus
 from lp.soyuz.model.archive import Archive
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    BrowserTestCase,
+    TestCaseWithFactory,
+    getUtility,
+    login_person,
+)
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
+from lp.testing.pages import extract_text
 
 
 def create_proper_job(factory, sourcepackagename=None):
@@ -31,6 +42,11 @@ def create_proper_job(factory, sourcepackagename=None):
     foo_dash15 = factory.makeSourcePackageRelease(
         archive=archive, sourcepackagename=sourcepackagename
     )
+    add_files_to_sources(factory, foo_dash1, foo_dash15)
+    return foo_dash1.requestDiffTo(factory.makePerson(), foo_dash15)
+
+
+def add_files_to_sources(factory, source_1, source_2):
     suite_dir = "lib/lp/archiveuploader/tests/data/suite"
     files = {
         "%s/foo_1.0-1/foo_1.0-1.diff.gz" % suite_dir: None,
@@ -57,10 +73,9 @@ def create_proper_job(factory, sourcepackagename=None):
         "%s/foo_1.0-1.5/foo_1.0-1.5.dsc" % suite_dir,
     )
     for name in dash1_files:
-        foo_dash1.addFile(files[name])
+        source_1.addFile(files[name])
     for name in dash15_files:
-        foo_dash15.addFile(files[name])
-    return foo_dash1.requestDiffTo(factory.makePerson(), foo_dash15)
+        source_2.addFile(files[name])
 
 
 class TestPackageDiffs(TestCaseWithFactory):
@@ -242,3 +257,112 @@ class TestPackageDiffs(TestCaseWithFactory):
         diff = create_proper_job(self.factory, sourcepackagename="cordova-cli")
         diff.performDiff()
         self.assertEqual(PackageDiffStatus.FAILED, diff.status)
+
+
+class TestPackageDiffsView(BrowserTestCase):
+    """Test package diffs title."""
+
+    layer = LaunchpadFunctionalLayer
+    dbuser = config.uploader.dbuser
+
+    def setUp(self):
+        super().setUp()
+        self.user = self.factory.makePerson()
+        self.distroseries = self.factory.makeDistroSeries()
+        self.distribution = self.distroseries.distribution
+
+    def set_up_sources(self, same_archive=True, purpose=None):
+        """Create the archives, spph and sources needed for the test cases"""
+        # Create archives
+        self.from_archive = self.factory.makeArchive(
+            distribution=self.distribution,
+            purpose=purpose,
+            owner=self.user,
+        )
+        if same_archive:
+            self.to_archive = self.from_archive
+        else:
+            self.to_archive = self.factory.makeArchive()
+
+        # Create sources and spph
+        self.from_source = self.factory.makeSourcePackageRelease(
+            archive=self.from_archive,
+            version="1.0-3",
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=self.to_archive,
+            version="1.0-4",
+        )
+        self.to_source = spph.sourcepackagerelease
+        self.spph_id = spph.id
+        add_files_to_sources(self.factory, self.from_source, self.to_source)
+
+    def perform_fake_diff(self, diff, filename):
+        """Complete a pending diff"""
+        naked_diff = removeSecurityProxy(diff)
+        naked_diff.date_fulfilled = UTC_NOW
+        naked_diff.status = PackageDiffStatus.COMPLETED
+        naked_diff.diff_content = getUtility(ILibrarianClient).addFile(
+            filename, 3, io.BytesIO(b"Foo"), "application/gzipped-patch"
+        )
+
+    def assert_text_in_diffs_view(self, expected_text):
+        """Verify that expected text exists in the packages diffs view"""
+        login_person(self.user)
+        browser = self.getViewBrowser(self.to_archive, "+packages")
+        expander_id = "pub{spph_id}-expander".format(spph_id=self.spph_id)
+        browser.getLink(id=expander_id).click()
+        self.assertIn(expected_text, extract_text(browser.contents))
+        return browser
+
+    def test_package_diffs_view_same_archive(self):
+        """Compare different version sources from the same archive"""
+        self.set_up_sources(True)
+        self.from_source.requestDiffTo(self.user, self.to_source)
+        expected_text = "Available diffs\ndiff from 1.0-3 to 1.0-4 (pending)"
+        self.assert_text_in_diffs_view(expected_text)
+
+    def test_package_diffs_view_different_main_archives(self):
+        """Compare sources from distinct archives with a primary purpose"""
+        self.set_up_sources(False, ArchivePurpose.PRIMARY)
+        self.from_source.requestDiffTo(self.user, self.to_source)
+        expected_text = (
+            "Available diffs\ndiff from 1.0-3 (in {dis}) to 1.0-4 (pending)"
+        ).format(dis=self.distribution.name.capitalize())
+        self.assert_text_in_diffs_view(expected_text)
+
+    def test_package_diffs_view_different_ppa_archives(self):
+        """Compare sources from distinct archives with a ppa purpose"""
+        self.set_up_sources(False, ArchivePurpose.PPA)
+        self.from_source.requestDiffTo(self.user, self.to_source)
+        expected_text = (
+            "Available diffs\ndiff from 1.0-3 (in ~{user}/{distribution}/"
+            "{archive}) to 1.0-4 (pending)"
+        ).format(
+            user=self.user.name,
+            distribution=self.distribution.name,
+            archive=self.from_archive.name,
+        )
+        self.assert_text_in_diffs_view(expected_text)
+
+    def test_package_diffs_view_links(self):
+        """Diffs between sources from distinct archives with a ppa purpose,"""
+        self.set_up_sources(False, ArchivePurpose.PRIMARY)
+        diff = self.from_source.requestDiffTo(self.user, self.to_source)
+        expected_title = "diff from 1.0-3 (in {dis}) to 1.0-4".format(
+            dis=self.distribution.name.capitalize()
+        )
+
+        # Before the performing the diff
+        expected_text = "Available diffs\n{} (pending)".format(expected_title)
+        browser = self.assert_text_in_diffs_view(expected_text, True)
+        self.assertRaises(LinkNotFoundError, browser.getLink, expected_title)
+
+        # After the performing the diff
+        login_person(self.user)
+        self.perform_fake_diff(diff, "biscuit_1.0-3_1.0-4.diff.gz")
+        transaction.commit()
+        expected_text = "Available diffs\n{} (3 bytes)".format(expected_title)
+        browser = self.assert_text_in_diffs_view(expected_text, True)
+        url = browser.getLink(expected_title).url
+        self.assertIn("/+files/biscuit_1.0-3_1.0-4.diff.gz", url)
