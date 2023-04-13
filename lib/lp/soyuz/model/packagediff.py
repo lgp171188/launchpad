@@ -173,10 +173,15 @@ class PackageDiff(StormBase):
         ancestry_archive = self.from_source.upload_archive
         if ancestry_archive == self.to_source.upload_archive:
             ancestry_identifier = self.from_source.version
-        else:
+        elif ancestry_archive.is_main:
             ancestry_identifier = "%s (in %s)" % (
                 self.from_source.version,
                 ancestry_archive.distribution.name.capitalize(),
+            )
+        else:
+            ancestry_identifier = "%s (in %s)" % (
+                self.from_source.version,
+                ancestry_archive.reference,
             )
         return "diff from %s to %s" % (
             ancestry_identifier,
