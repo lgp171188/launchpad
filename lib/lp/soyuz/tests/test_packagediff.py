@@ -263,7 +263,6 @@ class TestPackageDiffsView(BrowserTestCase):
     """Test package diffs title."""
 
     layer = LaunchpadFunctionalLayer
-    dbuser = config.uploader.dbuser
 
     def setUp(self):
         super().setUp()
@@ -317,14 +316,14 @@ class TestPackageDiffsView(BrowserTestCase):
 
     def test_package_diffs_view_same_archive(self):
         """Compare different version sources from the same archive"""
-        self.set_up_sources(True)
+        self.set_up_sources(same_archive=True)
         self.from_source.requestDiffTo(self.user, self.to_source)
         expected_text = "Available diffs\ndiff from 1.0-3 to 1.0-4 (pending)"
         self.assert_text_in_diffs_view(expected_text)
 
     def test_package_diffs_view_different_main_archives(self):
         """Compare sources from distinct archives with a primary purpose"""
-        self.set_up_sources(False, ArchivePurpose.PRIMARY)
+        self.set_up_sources(same_archive=False, purpose=ArchivePurpose.PRIMARY)
         self.from_source.requestDiffTo(self.user, self.to_source)
         expected_text = (
             "Available diffs\ndiff from 1.0-3 (in {dis}) to 1.0-4 (pending)"
@@ -333,7 +332,7 @@ class TestPackageDiffsView(BrowserTestCase):
 
     def test_package_diffs_view_different_ppa_archives(self):
         """Compare sources from distinct archives with a ppa purpose"""
-        self.set_up_sources(False, ArchivePurpose.PPA)
+        self.set_up_sources(same_archive=False, purpose=ArchivePurpose.PPA)
         self.from_source.requestDiffTo(self.user, self.to_source)
         expected_text = (
             "Available diffs\ndiff from 1.0-3 (in ~{user}/{distribution}/"
@@ -347,22 +346,22 @@ class TestPackageDiffsView(BrowserTestCase):
 
     def test_package_diffs_view_links(self):
         """Diffs between sources from distinct archives with a ppa purpose,"""
-        self.set_up_sources(False, ArchivePurpose.PRIMARY)
+        self.set_up_sources(same_archive=False, purpose=ArchivePurpose.PRIMARY)
         diff = self.from_source.requestDiffTo(self.user, self.to_source)
         expected_title = "diff from 1.0-3 (in {dis}) to 1.0-4".format(
             dis=self.distribution.name.capitalize()
         )
 
-        # Before the performing the diff
+        # There is no link while diff is pending
         expected_text = "Available diffs\n{} (pending)".format(expected_title)
-        browser = self.assert_text_in_diffs_view(expected_text, True)
+        browser = self.assert_text_in_diffs_view(expected_text)
         self.assertRaises(LinkNotFoundError, browser.getLink, expected_title)
 
-        # After the performing the diff
+        # There is a link after diff is completed
         login_person(self.user)
         self.perform_fake_diff(diff, "biscuit_1.0-3_1.0-4.diff.gz")
         transaction.commit()
         expected_text = "Available diffs\n{} (3 bytes)".format(expected_title)
-        browser = self.assert_text_in_diffs_view(expected_text, True)
+        browser = self.assert_text_in_diffs_view(expected_text)
         url = browser.getLink(expected_title).url
         self.assertIn("/+files/biscuit_1.0-3_1.0-4.diff.gz", url)
