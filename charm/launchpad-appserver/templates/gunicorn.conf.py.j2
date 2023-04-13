@@ -1,5 +1,7 @@
 bind = [":{{ port_main }}", ":{{ port_xmlrpc }}"]
 workers = {{ wsgi_workers }}
+# Incompatible with `reload = True`, but that's fine for a Juju deployment.
+preload_app = True
 # This is set relatively low to work around memory leaks on Python 3.
 max_requests = 2000
 log_level = "DEBUG"

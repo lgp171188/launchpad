@@ -1,8 +1,7 @@
 Displaying Paragraphs of Text with ZPT
 ======================================
 
-To display paragraphs of text in HTML, use fmt:text-to-html. For details,
-see <https://launchpad.canonical.com/DisplayingParagraphsOfText>.
+To display paragraphs of text in HTML, use fmt:text-to-html.
 
 
 Basics
