@@ -8,7 +8,9 @@ __all__ = [
 ]
 
 import os
+from filecmp import dircmp
 from optparse import OptionValueError
+from pathlib import Path
 from subprocess import CalledProcessError, check_call
 
 from storm.store import Store
@@ -21,6 +23,7 @@ from lp.archivepublisher.publishing import (
     getPublisher,
 )
 from lp.archivepublisher.scripts.base import PublisherScript
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.limitedlist import LimitedList
 from lp.services.scripts.base import LaunchpadScriptFailure
@@ -44,6 +47,35 @@ def is_ppa_private(ppa):
 def is_ppa_public(ppa):
     """Is `ppa` public?"""
     return not ppa.private
+
+
+def has_oval_data_changed(incoming_dir, published_dir):
+    """Compare the incoming data with the already published one."""
+    return bool(dircmp(incoming_dir, published_dir).diff_files)
+
+
+def path_to_published_oval_data(
+    owner, archive, distribution, series, is_private_ppa
+):
+    """A path could look like this on dogfood:
+
+    /srv/launchpad.net/ppa/cjwatson/dogfood/ubuntu/dists/jammy/main
+    """
+    if is_private_ppa:
+        start_dir = Path(config.personalpackagearchive.private_root)
+    else:
+        start_dir = Path(config.personalpackagearchive.root)
+    path = (
+        start_dir
+        / owner
+        / archive
+        / distribution
+        / "dists"
+        / series
+        / "main"
+        / "oval"
+    )
+    return path
 
 
 class PublishDistro(PublisherScript):
@@ -548,12 +580,57 @@ class PublishDistro(PublisherScript):
                 " has been configured."
             )
 
+    def check_for_updated_oval_data(self):
+        """Compare the published OVAL files with the incoming one."""
+        # XXX 2023-04-14 jugmac00: pull this up together with the same check
+        # in `rsync_oval_data`
+        if not config.archivepublisher.oval_data_rsync_endpoint:
+            return
+        start_dir = Path(config.archivepublisher.oval_data_root)
+        for owner_path in start_dir.iterdir():
+            for distribution_path in owner_path.iterdir():
+                distribution = getUtility(IDistributionSet).getByName(
+                    distribution_path.name
+                )
+                for archive_path in start_dir.iterdir():
+                    for suite_path in archive_path.iterdir():
+                        incoming_dir = suite_path / "main"
+                        series, pocket = self.findSuite(
+                            distribution=distribution, suite=suite_path.name
+                        )
+                        archive = getUtility(IArchiveSet).getByReference(
+                            "~"
+                            + owner_path.name
+                            + "/"
+                            + distribution_path.name
+                            + "/"
+                            + archive_path.name
+                        )
+                        published_dir = path_to_published_oval_data(
+                            owner=owner_path.name,
+                            archive=archive_path.name,
+                            distribution=distribution_path.name,
+                            series=series,
+                            is_private_ppa=archive.private,
+                        )
+                        if has_oval_data_changed(
+                            incoming_dir=incoming_dir,
+                            published_dir=published_dir,
+                        ):
+                            archive.markSuiteDirty(
+                                distroseries=distribution.getSeries(series),
+                                pocket=pocket,
+                            )
+
     def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
         self.validateOptions()
         self.logOptions()
 
+        # XXX jugmac00 2023-04-14: pull up config check from the following two
+        # methods
         self.rsync_oval_data()
+        self.check_for_updated_oval_data()
 
         archive_ids = []
         for distribution in self.findDistros():
