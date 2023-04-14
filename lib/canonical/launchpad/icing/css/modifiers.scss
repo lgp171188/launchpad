@@ -179,17 +179,17 @@ div {
   }
 
   pre.changelog {
-    font-family: monospace;
+    font-family: $font-monospace;
   }
 
   table.diff td {
     &.line-no, &.ss-line-no, &.text {
-      font-family: monospace;
+      font-family: $font-monospace;
     }
   }
 
   .comment-text, .bug-activity {
-    font-family: monospace;
+    font-family: $font-monospace;
   }
 
   .cloud-size-smallest {
