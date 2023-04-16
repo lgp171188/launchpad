@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
+    "get_gpg_home_directory",
     "get_gpg_path",
     "get_gpgme_context",
     "GPG_INJECT",
@@ -24,8 +25,12 @@ __all__ = [
     "valid_keyid",
 ]
 
+import atexit
 import http.client
+import os.path
 import re
+import shutil
+import tempfile
 
 from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import error_status
@@ -60,12 +65,56 @@ def get_gpg_path():
     return "/usr/bin/gpg2"
 
 
+_gpg_home = None
+
+
+def get_gpg_home_directory():
+    """Create a new GnuPG home directory for this process.
+
+    This also installs an atexit handler to remove the directory on normal
+    process termination.
+    """
+    global _gpg_home
+
+    if _gpg_home is not None and os.path.exists(_gpg_home):
+        return _gpg_home
+
+    _gpg_home = tempfile.mkdtemp(prefix="gpg-")
+    confpath = os.path.join(_gpg_home, "gpg.conf")
+    with open(confpath, "w") as conf:
+        # Avoid wasting time verifying the local keyring's consistency.
+        conf.write("no-auto-check-trustdb\n")
+        # Use the loopback mode to allow using password callbacks.
+        conf.write("pinentry-mode loopback\n")
+        # Assume "yes" on most questions; this is needed to allow
+        # deletion of secret keys via GPGME.
+        conf.write("yes\n")
+        # Prefer a SHA-2 hash where possible, otherwise GPG will fall
+        # back to a hash it can use.
+        conf.write("personal-digest-preferences SHA512 SHA384 SHA256 SHA224\n")
+    agentconfpath = os.path.join(_gpg_home, "gpg-agent.conf")
+    with open(agentconfpath, "w") as agentconf:
+        agentconf.write("allow-loopback-pinentry\n")
+
+    def removeHome(home):
+        """Remove GnuPG home directory."""
+        if os.path.exists(home):
+            shutil.rmtree(home)
+
+    # Remove the configuration directory on normal termination.
+    atexit.register(removeHome, _gpg_home)
+
+    return _gpg_home
+
+
 def get_gpgme_context():
     """Return a new appropriately-configured GPGME context."""
     import gpgme
 
     context = gpgme.Context()
-    context.set_engine_info(gpgme.PROTOCOL_OpenPGP, get_gpg_path(), None)
+    context.set_engine_info(
+        gpgme.PROTOCOL_OpenPGP, get_gpg_path(), get_gpg_home_directory()
+    )
     context.armor = True
     return context
 
