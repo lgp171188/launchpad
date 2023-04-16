@@ -23,6 +23,7 @@ from lp.services.gpg.interfaces import (
     GPGKeyMismatchOnServer,
     GPGKeyTemporarilyNotFoundError,
     IGPGHandler,
+    get_gpg_home_directory,
     get_gpg_path,
     get_gpgme_context,
 )
@@ -87,21 +88,25 @@ class TestGPGHandler(TestCase):
         """Get a gpghandler and login"""
         super().setUp()
         login(ANONYMOUS)
+        self.addCleanup(logout)
         self.gpg_handler = getUtility(IGPGHandler)
         self.gpg_handler.resetLocalState()
-
-    def tearDown(self):
-        """Zero out the gpg database"""
-        # XXX Stuart Bishop 2005-10-27:
-        # This should be a zope test cleanup thing per SteveA.
-        self.gpg_handler.resetLocalState()
-        logout()
-        super().tearDown()
+        self.addCleanup(self.gpg_handler.resetLocalState)
 
     def populateKeyring(self):
         for email in iter_test_key_emails():
             pubkey = test_pubkey_from_email(email)
             self.gpg_handler.importPublicKey(pubkey)
+
+    def test_first_call_creates_home_directory(self):
+        original_home = get_gpg_home_directory()
+        shutil.rmtree(original_home)
+        list(self.gpg_handler.localKeys())
+        home = get_gpg_home_directory()
+        self.assertNotEqual(original_home, home)
+        self.assertTrue(os.path.exists(os.path.join(home, "gpg.conf")))
+        list(self.gpg_handler.localKeys())
+        self.assertEqual(home, get_gpg_home_directory())
 
     # This sequence might fit better as a doctest. Hmm.
     def testEmptyGetKeys(self):
@@ -541,6 +546,8 @@ class TestGPGHandler(TestCase):
                 gpg_proc = subprocess.Popen(
                     [
                         get_gpg_path(),
+                        "--homedir",
+                        get_gpg_home_directory(),
                         "--quiet",
                         "--status-fd",
                         "1",
