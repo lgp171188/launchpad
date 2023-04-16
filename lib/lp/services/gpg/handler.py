@@ -8,13 +8,11 @@ __all__ = [
     "PymeUserId",
 ]
 
-import atexit
 import http.client
 import os
 import shutil
 import subprocess
 import sys
-import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from io import BytesIO
@@ -47,6 +45,7 @@ from lp.services.gpg.interfaces import (
     IPymeUserId,
     MoreThanOneGPGKeyFound,
     SecretGPGKeyImportDetected,
+    get_gpg_home_directory,
     get_gpg_path,
     get_gpgme_context,
     valid_fingerprint,
@@ -83,49 +82,6 @@ def gpgme_timeline(name, detail):
 class GPGHandler:
     """See IGPGHandler."""
 
-    def __init__(self):
-        """Initialize environment variable."""
-        self._setNewHome()
-        os.environ["GNUPGHOME"] = self.home
-
-    def _setNewHome(self):
-        """Create a new directory containing the required configuration.
-
-        This method is called inside the class constructor and generates
-        a new directory (name randomly generated with the 'gpg-' prefix)
-        containing the proper file configuration and options.
-
-        Also installs an atexit handler to remove the directory on normal
-        process termination.
-        """
-        self.home = tempfile.mkdtemp(prefix="gpg-")
-        confpath = os.path.join(self.home, "gpg.conf")
-        with open(confpath, "w") as conf:
-            # Avoid wasting time verifying the local keyring's consistency.
-            conf.write("no-auto-check-trustdb\n")
-            # Use the loopback mode to allow using password callbacks.
-            conf.write("pinentry-mode loopback\n")
-            # Assume "yes" on most questions; this is needed to allow
-            # deletion of secret keys via GPGME.
-            conf.write("yes\n")
-            # Prefer a SHA-2 hash where possible, otherwise GPG will fall
-            # back to a hash it can use.
-            conf.write(
-                "personal-digest-preferences SHA512 SHA384 SHA256 SHA224\n"
-            )
-        agentconfpath = os.path.join(self.home, "gpg-agent.conf")
-        with open(agentconfpath, "w") as agentconf:
-            agentconf.write("allow-loopback-pinentry\n")
-        # create a local atexit handler to remove the configuration directory
-        # on normal termination.
-
-        def removeHome(home):
-            """Remove GNUPGHOME directory."""
-            if os.path.exists(home):
-                shutil.rmtree(home)
-
-        atexit.register(removeHome, self.home)
-
     def sanitizeFingerprint(self, fingerprint):
         """See IGPGHandler."""
         return sanitize_fingerprint(fingerprint)
@@ -133,6 +89,7 @@ class GPGHandler:
     def resetLocalState(self):
         """See IGPGHandler."""
         # Remove the public keyring, private keyring and the trust DB.
+        home = get_gpg_home_directory()
         for filename in (
             "pubring.gpg",
             "pubring.kbx",
@@ -140,7 +97,7 @@ class GPGHandler:
             "private-keys-v1.d",
             "trustdb.gpg",
         ):
-            filename = os.path.join(self.home, filename)
+            filename = os.path.join(home, filename)
             if os.path.exists(filename):
                 if os.path.isdir(filename):
                     shutil.rmtree(filename)
@@ -148,7 +105,12 @@ class GPGHandler:
                     os.remove(filename)
         # Kill any running gpg-agent for GnuPG 2
         if shutil.which("gpgconf"):
-            subprocess.check_call(["gpgconf", "--kill", "gpg-agent"])
+            # XXX cjwatson 2023-04-16: Ubuntu 16.04's gpgconf doesn't
+            # support --homedir, so we have to set an environment variable.
+            # This can be simplified once we require Ubuntu 20.04.
+            env = dict(os.environ)
+            env["GNUPGHOME"] = home
+            subprocess.check_call(["gpgconf", "--kill", "gpg-agent"], env=env)
 
     def getVerifiedSignatureResilient(self, content, signature=None):
         """See IGPGHandler."""
@@ -717,6 +679,8 @@ class PymeKey:
             return subprocess.run(
                 [
                     get_gpg_path(),
+                    "--homedir",
+                    get_gpg_home_directory(),
                     "--export-secret-keys",
                     "-a",
                     "--passphrase-fd",

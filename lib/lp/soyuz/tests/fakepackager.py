@@ -22,7 +22,11 @@ from zope.component import getUtility
 from lp.archiveuploader.nascentupload import NascentUpload
 from lp.archiveuploader.uploadpolicy import findPolicyByName
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.services.gpg.interfaces import IGPGHandler, get_gpg_path
+from lp.services.gpg.interfaces import (
+    IGPGHandler,
+    get_gpg_home_directory,
+    get_gpg_path,
+)
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import PackageUploadStatus
 from lp.testing.gpgkeys import import_secret_test_key
@@ -219,7 +223,7 @@ class FakePackager:
         changelog_file.write(previous_content)
         changelog_file.close()
 
-    def _runSubProcess(self, script, extra_args=None):
+    def _runSubProcess(self, script, extra_args=None, extra_env=None):
         """Run the given script and collects STDOUT and STDERR.
 
         :raises AssertionError: If the script returns a non-Zero value.
@@ -228,8 +232,11 @@ class FakePackager:
             extra_args = []
         args = [script]
         args.extend(extra_args)
+        env = dict(os.environ)
+        if extra_env:
+            env.update(extra_env)
         process = subprocess.Popen(
-            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env
         )
         stdout, stderr = process.communicate()
 
@@ -403,7 +410,11 @@ class FakePackager:
         current_path = os.getcwd()
         os.chdir(self.upstream_directory)
 
-        self._runSubProcess("dpkg-buildpackage", dpkg_buildpackage_options)
+        self._runSubProcess(
+            "dpkg-buildpackage",
+            extra_args=dpkg_buildpackage_options,
+            extra_env={"GNUPGHOME": get_gpg_home_directory()},
+        )
 
         os.chdir(current_path)
 
