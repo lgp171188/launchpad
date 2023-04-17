@@ -12,7 +12,14 @@ from charms.launchpad.base import (
     strip_dsn_authentication,
     update_pgpass,
 )
-from charms.reactive import endpoint_from_flag, set_state, when, when_not
+from charms.reactive import (
+    endpoint_from_flag,
+    remove_state,
+    set_state,
+    when,
+    when_not,
+    when_not_all,
+)
 from ols import base, postgres
 from psycopg2.extensions import make_dsn, parse_dsn
 
@@ -133,3 +140,21 @@ def configure():
 
     set_state("service.configured")
     hookenv.status_set("active", "Ready")
+
+
+@when("service.configured")
+@when_not_all("db-admin.master.available", "session-db.master.available")
+def deconfigure():
+    remove_state("service.configured")
+
+
+@when("db-admin.database.changed", "service.configured")
+def db_admin_changed():
+    remove_state("service.configured")
+    remove_state("db-admin.database.changed")
+
+
+@when("session-db.database.changed", "service.configured")
+def session_db_changed():
+    remove_state("service.configured")
+    remove_state("session-db.database.changed")
