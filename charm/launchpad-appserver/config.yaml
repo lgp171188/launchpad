@@ -47,6 +47,12 @@ options:
     type: int
     description: Port for the main application server.
     default: 8085
+  wsgi_worker_max_requests:
+    type: int
+    description: >
+      Restart WSGI worker processes after handling this many requests.  This
+      works around memory leaks.
+    default: 1000
   wsgi_workers:
     type: int
     default: 0
