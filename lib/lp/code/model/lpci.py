@@ -1,16 +1,16 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""This module provides a parser for lpcraft's configuration file.
+"""This module provides a parser for lpci's configuration file.
 
 As currently Launchpad is only compatible with Python 3.5, it was not possible
-to reuse lpcraft's parser.
+to reuse lpci's parser.
 
-The implementation was copied from https://launchpad.net/lpcraft ->
-`lpcraft/config.py`.
+The implementation was copied from https://launchpad.net/lpci ->
+`lpci/config.py`.
 
-XXX jugmac00 2022-01-07: use lpcraft for parsing the configuration file once
-we are on Python 3.8
+XXX jugmac00 2022-01-07: use lpci for parsing the configuration file once we
+are on Python 3.8
 """
 
 __all__ = ["load_configuration"]
@@ -18,10 +18,7 @@ __all__ = ["load_configuration"]
 import yaml
 from zope.interface import implementer
 
-from lp.code.interfaces.lpcraft import (
-    ILPCraftConfiguration,
-    LPCraftConfigurationError,
-)
+from lp.code.interfaces.lpci import ILPCIConfiguration, LPCIConfigurationError
 
 
 def _expand_job_values(values):
@@ -54,10 +51,10 @@ def load_configuration(configuration_file):
     # load yaml
     content = yaml.safe_load(configuration_file)
     if content is None:
-        raise LPCraftConfigurationError("Empty configuration file")
+        raise LPCIConfigurationError("Empty configuration file")
     for required_key in "pipeline", "jobs":
         if required_key not in content:
-            raise LPCraftConfigurationError(
+            raise LPCIConfigurationError(
                 "Configuration file does not declare '{}'".format(required_key)
             )
     # normalize each element of `pipeline` into a list
@@ -75,18 +72,18 @@ def load_configuration(configuration_file):
         for i, job_values in enumerate(expanded_job_values):
             for required_key in "series", "architectures":
                 if required_key not in job_values:
-                    raise LPCraftConfigurationError(
+                    raise LPCIConfigurationError(
                         "Job {}:{} does not declare '{}'".format(
                             job_name, i, required_key
                         )
                     )
     # create "data class"
-    return LPCraftConfiguration(expanded_values)
+    return LPCIConfiguration(expanded_values)
 
 
-@implementer(ILPCraftConfiguration)
-class LPCraftConfiguration:
-    """See `ILPCraftConfiguration`."""
+@implementer(ILPCIConfiguration)
+class LPCIConfiguration:
+    """See `ILPCIConfiguration`."""
 
     def __init__(self, d):
         self.__dict__.update(d)
