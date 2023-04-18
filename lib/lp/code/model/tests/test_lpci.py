@@ -3,11 +3,8 @@
 
 from textwrap import dedent
 
-from lp.code.interfaces.lpcraft import (
-    ILPCraftConfiguration,
-    LPCraftConfigurationError,
-)
-from lp.code.model.lpcraft import load_configuration
+from lp.code.interfaces.lpci import ILPCIConfiguration, LPCIConfigurationError
+from lp.code.model.lpci import load_configuration
 from lp.testing import TestCase
 
 
@@ -26,11 +23,11 @@ class TestLoadConfiguration(TestCase):
 
         configuration = load_configuration(c)
 
-        self.assertProvides(configuration, ILPCraftConfiguration)
+        self.assertProvides(configuration, ILPCIConfiguration)
 
     def test_load_configuration_empty(self):
         self.assertRaisesWithContent(
-            LPCraftConfigurationError,
+            LPCIConfigurationError,
             "Empty configuration file",
             load_configuration,
             "",
@@ -45,7 +42,7 @@ class TestLoadConfiguration(TestCase):
         )
 
         self.assertRaisesWithContent(
-            LPCraftConfigurationError,
+            LPCIConfigurationError,
             "Configuration file does not declare 'pipeline'",
             load_configuration,
             c,
@@ -60,7 +57,7 @@ class TestLoadConfiguration(TestCase):
         )
 
         self.assertRaisesWithContent(
-            LPCraftConfigurationError,
+            LPCIConfigurationError,
             "Configuration file does not declare 'jobs'",
             load_configuration,
             c,
@@ -77,7 +74,7 @@ class TestLoadConfiguration(TestCase):
         )
 
         self.assertRaisesWithContent(
-            LPCraftConfigurationError,
+            LPCIConfigurationError,
             "Job test:0 does not declare 'series'",
             load_configuration,
             c,
@@ -95,7 +92,7 @@ class TestLoadConfiguration(TestCase):
         )
 
         self.assertRaisesWithContent(
-            LPCraftConfigurationError,
+            LPCIConfigurationError,
             "Job test:0 does not declare 'architectures'",
             load_configuration,
             c,

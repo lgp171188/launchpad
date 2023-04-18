@@ -152,6 +152,18 @@ def check_is_running():
     hookenv.status_set("active", "Ready")
 
 
+@when("service.configured")
+@when_not("session-db.master.available")
+def deconfigure():
+    remove_state("service.configured")
+
+
+@when("session-db.database.changed", "service.configured")
+def session_db_changed():
+    remove_state("service.configured")
+    remove_state("session-db.database.changed")
+
+
 @hook("{requires:memcache}-relation-{joined,changed,broken,departed}")
 def memcache_relation_changed(memcache):
     remove_state("service.configured")

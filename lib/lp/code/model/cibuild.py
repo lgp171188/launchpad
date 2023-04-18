@@ -50,7 +50,7 @@ from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.interfaces.revisionstatus import IRevisionStatusReportSet
 from lp.code.model.gitref import GitRef
-from lp.code.model.lpcraft import load_configuration
+from lp.code.model.lpci import load_configuration
 from lp.code.model.revisionstatus import (
     RevisionStatusArtifact,
     RevisionStatusReport,
@@ -726,8 +726,8 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             commit_sha1s,
             # XXX cjwatson 2022-01-19: We should also fetch
             # debian/.launchpad.yaml (or perhaps make the path a property of
-            # the repository) once lpcraft and launchpad-buildd support
-            # using alternative paths for builds.
+            # the repository) once lpci and launchpad-buildd support using
+            # alternative paths for builds.
             filter_paths=[".launchpad.yaml"],
             logger=logger,
         )
