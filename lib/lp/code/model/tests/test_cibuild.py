@@ -48,7 +48,7 @@ from lp.code.model.cibuild import (
     determine_DASes_to_build,
     get_all_commits_for_paths,
 )
-from lp.code.model.lpcraft import load_configuration
+from lp.code.model.lpci import load_configuration
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageType

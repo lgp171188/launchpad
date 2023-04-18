@@ -1280,9 +1280,9 @@
     for="lp.code.interfaces.sourcepackagerecipe.ISourcePackageRecipe zope.lifecycleevent.interfaces.IObjectModifiedEvent"
     handler="lp.code.model.sourcepackagerecipe.recipe_modified"/>
 
-  <!-- LPCraftConfiguration -->
-  <class class="lp.code.model.lpcraft.LPCraftConfiguration">
-    <allow interface="lp.code.interfaces.lpcraft.ILPCraftConfiguration" />
+  <!-- LPCIConfiguration -->
+  <class class="lp.code.model.lpci.LPCIConfiguration">
+    <allow interface="lp.code.interfaces.lpci.ILPCIConfiguration" />
   </class>
 
   <!-- CIBuild -->
