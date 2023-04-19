@@ -15,9 +15,9 @@ The librarian listens on four ports.  By default, these are:
 - Restricted download: 8005
 - Restricted upload: 9095
 
-The restricted ports allow access to restricted files without
-authentication; firewall rules should ensure that they are only accessible
-by other parts of Launchpad.
+As well as public files, the restricted ports allow access to restricted
+files without authentication; firewall rules should ensure that they are
+only accessible by other parts of Launchpad.
 
 You will normally want to mount a persistent volume on
 `/srv/launchpad/librarian/`.  (Even when writing uploads to Swift, this is

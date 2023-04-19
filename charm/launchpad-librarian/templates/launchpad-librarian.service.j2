@@ -1,6 +1,8 @@
 # This service is really a systemd target, but we use a service since
-# targets cannot be reloaded.  See launchpad-librarian@.service for instance
-# configuration.
+# targets cannot be reloaded.  Starting, stopping, or reloading this service
+# causes all the individual instances (defined in
+# launchpad-librarian@.service) to be started, stopped, or reloaded
+# respectively.
 
 [Unit]
 Description=Launchpad librarian
