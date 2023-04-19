@@ -517,52 +517,40 @@ class PublishDistro(PublisherScript):
                 Store.of(archive).reset()
 
     def rsyncOVALData(self):
-        if config.archivepublisher.oval_data_rsync_endpoint:
-            # Ensure that the rsync paths have a trailing slash.
-            rsync_src = os.path.join(
-                config.archivepublisher.oval_data_rsync_endpoint, ""
-            )
-            rsync_dest = os.path.join(
-                config.archivepublisher.oval_data_root, ""
-            )
-            rsync_command = [
-                "/usr/bin/rsync",
-                "-a",
-                "-q",
-                "--timeout={}".format(
-                    config.archivepublisher.oval_data_rsync_timeout
-                ),
-                "--delete",
-                "--delete-after",
+        # Ensure that the rsync paths have a trailing slash.
+        rsync_src = os.path.join(
+            config.archivepublisher.oval_data_rsync_endpoint, ""
+        )
+        rsync_dest = os.path.join(config.archivepublisher.oval_data_root, "")
+        rsync_command = [
+            "/usr/bin/rsync",
+            "-a",
+            "-q",
+            "--timeout={}".format(
+                config.archivepublisher.oval_data_rsync_timeout
+            ),
+            "--delete",
+            "--delete-after",
+            rsync_src,
+            rsync_dest,
+        ]
+        try:
+            self.logger.info(
+                "Attempting to rsync the OVAL data from '%s' to '%s'",
                 rsync_src,
                 rsync_dest,
-            ]
-            try:
-                self.logger.info(
-                    "Attempting to rsync the OVAL data from '%s' to '%s'",
-                    rsync_src,
-                    rsync_dest,
-                )
-                check_call(rsync_command)
-            except CalledProcessError:
-                self.logger.exception(
-                    "Failed to rsync OVAL data from '%s' to '%s'",
-                    rsync_src,
-                    rsync_dest,
-                )
-                raise
-        else:
-            self.logger.info(
-                "Skipping the OVAL data sync as no rsync endpoint"
-                " has been configured."
             )
+            check_call(rsync_command)
+        except CalledProcessError:
+            self.logger.exception(
+                "Failed to rsync OVAL data from '%s' to '%s'",
+                rsync_src,
+                rsync_dest,
+            )
+            raise
 
     def checkForUpdatedOVALData(self):
         """Compare the published OVAL files with the incoming one."""
-        # XXX 2023-04-14 jugmac00: pull this up together with the same check
-        # in `rsyncOVALData`
-        if not config.archivepublisher.oval_data_rsync_endpoint:
-            return
         start_dir = Path(config.archivepublisher.oval_data_root)
         for owner_path in start_dir.iterdir():
             for distribution_path in owner_path.iterdir():
@@ -603,10 +591,14 @@ class PublishDistro(PublisherScript):
         self.validateOptions()
         self.logOptions()
 
-        # XXX jugmac00 2023-04-14: pull up config check from the following two
-        # methods
-        self.rsyncOVALData()
-        self.checkForUpdatedOVALData()
+        if config.archivepublisher.oval_data_rsync_endpoint:
+            self.rsyncOVALData()
+            self.checkForUpdatedOVALData()
+        else:
+            self.logger.info(
+                "Skipping the OVAL data sync as no rsync endpoint"
+                " has been configured."
+            )
 
         archive_ids = []
         for distribution in self.findDistros():
