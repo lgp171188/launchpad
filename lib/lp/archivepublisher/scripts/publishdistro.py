@@ -559,7 +559,6 @@ class PublishDistro(PublisherScript):
                 )
                 for archive_path in start_dir.iterdir():
                     for suite_path in archive_path.iterdir():
-                        incoming_dir = suite_path / "main"
                         series, pocket = self.findSuite(
                             distribution=distribution, suite=suite_path.name
                         )
@@ -571,20 +570,27 @@ class PublishDistro(PublisherScript):
                             + "/"
                             + archive_path.name
                         )
-                        published_dir = os.path.join(
-                            getPubConfig(archive).distsroot,
-                            series,
-                            "main",
-                            "oval",
-                        )
-                        if has_oval_data_changed(
-                            incoming_dir=incoming_dir,
-                            published_dir=published_dir,
+                        for component in archive.getComponentsForSeries(
+                            series
                         ):
-                            archive.markSuiteDirty(
-                                distroseries=distribution.getSeries(series),
-                                pocket=pocket,
+                            incoming_dir = suite_path / component.name
+                            published_dir = os.path.join(
+                                getPubConfig(archive).distsroot,
+                                series,
+                                component.name,
+                                "oval",
                             )
+                            if has_oval_data_changed(
+                                incoming_dir=incoming_dir,
+                                published_dir=published_dir,
+                            ):
+                                archive.markSuiteDirty(
+                                    distroseries=distribution.getSeries(
+                                        series
+                                    ),
+                                    pocket=pocket,
+                                )
+                                break
 
     def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
