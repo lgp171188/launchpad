@@ -552,6 +552,7 @@ class PublishDistro(PublisherScript):
     def checkForUpdatedOVALData(self):
         """Compare the published OVAL files with the incoming one."""
         start_dir = Path(config.archivepublisher.oval_data_root)
+        archive_set = getUtility(IArchiveSet)
         for owner_path in start_dir.iterdir():
             for distribution_path in owner_path.iterdir():
                 distribution = getUtility(IDistributionSet).getByName(
@@ -562,13 +563,8 @@ class PublishDistro(PublisherScript):
                         series, pocket = self.findSuite(
                             distribution=distribution, suite=suite_path.name
                         )
-                        archive = getUtility(IArchiveSet).getByReference(
-                            "~"
-                            + owner_path.name
-                            + "/"
-                            + distribution_path.name
-                            + "/"
-                            + archive_path.name
+                        archive = archive_set.getPPAByDistributionAndOwnerName(
+                            distribution, owner_path.name, archive_path.name
                         )
                         for component in archive.getComponentsForSeries(
                             series
