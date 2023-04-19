@@ -17,6 +17,7 @@ from storm.store import Store
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
+from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import (
     GLOBAL_PUBLISHER_LOCK,
     cannot_modify_suite,
@@ -52,30 +53,6 @@ def is_ppa_public(ppa):
 def has_oval_data_changed(incoming_dir, published_dir):
     """Compare the incoming data with the already published one."""
     return bool(dircmp(incoming_dir, published_dir).diff_files)
-
-
-def path_to_published_oval_data(
-    owner, archive, distribution, series, is_private_ppa
-):
-    """A path could look like this on dogfood:
-
-    /srv/launchpad.net/ppa/cjwatson/dogfood/ubuntu/dists/jammy/main
-    """
-    if is_private_ppa:
-        start_dir = Path(config.personalpackagearchive.private_root)
-    else:
-        start_dir = Path(config.personalpackagearchive.root)
-    path = (
-        start_dir
-        / owner
-        / archive
-        / distribution
-        / "dists"
-        / series
-        / "main"
-        / "oval"
-    )
-    return path
 
 
 class PublishDistro(PublisherScript):
@@ -606,12 +583,11 @@ class PublishDistro(PublisherScript):
                             + "/"
                             + archive_path.name
                         )
-                        published_dir = path_to_published_oval_data(
-                            owner=owner_path.name,
-                            archive=archive_path.name,
-                            distribution=distribution_path.name,
-                            series=series,
-                            is_private_ppa=archive.private,
+                        published_dir = os.path.join(
+                            getPubConfig(archive).distsroot,
+                            series,
+                            "main",
+                            "oval",
                         )
                         if has_oval_data_changed(
                             incoming_dir=incoming_dir,
