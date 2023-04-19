@@ -258,10 +258,11 @@ class TestPublishDistro(TestNativePublishingBase):
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
 
     def setUpOVALDataRsync(self):
+        self.oval_data_root = self.makeTemporaryDirectory()
         self.pushConfig(
             "archivepublisher",
             oval_data_rsync_endpoint="oval.internal::oval/",
-            oval_data_root="/tmp/oval-data",
+            oval_data_root=self.oval_data_root,
             oval_data_rsync_timeout=90,
         )
 
@@ -299,7 +300,7 @@ class TestPublishDistro(TestNativePublishingBase):
             "--delete",
             "--delete-after",
             "oval.internal::oval/",
-            "/tmp/oval-data/",
+            self.oval_data_root + "/",
         ]
         mock_subprocess_check_call.assert_called_once_with(call_args)
 
@@ -322,12 +323,12 @@ class TestPublishDistro(TestNativePublishingBase):
             "--delete",
             "--delete-after",
             "oval.internal::oval/",
-            "/tmp/oval-data/",
+            self.oval_data_root + "/",
         ]
         mock_subprocess_check_call.assert_called_once_with(call_args)
         expected_log_line = (
             "ERROR Failed to rsync OVAL data from "
-            "'oval.internal::oval/' to '/tmp/oval-data/'"
+            "'oval.internal::oval/' to '%s/'" % self.oval_data_root
         )
         self.assertTrue(expected_log_line in self.logger.getLogBuffer())
 
