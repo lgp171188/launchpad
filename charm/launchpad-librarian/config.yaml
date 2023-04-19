@@ -3,16 +3,6 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
-  nagios_path:
-    type: string
-    default: /
-    description: Path to a file on this librarian to use for Nagios checks.
-  nagios_expected_regex:
-    type: string
-    default: "Launchpad Librarian"
-    description: >
-      A regular expression that the response to `nagios_path` is expected to
-      match.
   old_os_auth_url:
     type: string
     description: >

@@ -2,7 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os.path
-import shlex
 import subprocess
 
 from charmhelpers.core import hookenv, host, templating
@@ -17,15 +16,11 @@ from charms.launchpad.base import (
     update_pgpass,
 )
 from charms.reactive import (
-    clear_flag,
     endpoint_from_flag,
     helpers,
-    hook,
     remove_state,
-    set_flag,
     set_state,
     when,
-    when_any,
     when_not,
 )
 from ols import base, postgres
@@ -157,53 +152,3 @@ def deconfigure():
 def session_db_changed():
     remove_state("service.configured")
     remove_state("session-db.database.changed")
-
-
-@when("nrpe-external-master.available", "service.configured")
-@when_not("launchpad.librarian.nrpe-external-master.published")
-def nrpe_available():
-    nrpe = endpoint_from_flag("nrpe-external-master.available")
-    config = hookenv.config()
-    # XXX cjwatson 2023-03-28: This doesn't deal with removing checks when
-    # the worker count is reduced.
-    for i in range(config["workers"]):
-        nrpe.add_check(
-            [
-                "/usr/lib/nagios/plugins/check_http",
-                "-H",
-                "localhost",
-                "-p",
-                str(config["port_download_base"] + i),
-                "-u",
-                config["nagios_path"],
-                "-s",
-                shlex.quote(config["nagios_expected_regex"]),
-                "-f",
-                "critical",
-            ],
-            name=f"check_librarian{i + 1}",
-            description=f"Launchpad librarian{i + 1}",
-            context=config["nagios_context"],
-        )
-    set_flag("launchpad.librarian.nrpe-external-master.published")
-
-
-@when("launchpad.librarian.nrpe-external-master.published")
-@when_not("nrpe-external-master.available")
-def nrpe_unavailable():
-    clear_flag("launchpad.librarian.nrpe-external-master.published")
-
-
-@when_any(
-    "config.changed.nagios_expected_regex",
-    "config.changed.nagios_path",
-    "config.changed.workers",
-)
-def nagios_options_changed():
-    clear_flag("launchpad.librarian.nrpe-external-master.published")
-
-
-@hook("upgrade-charm")
-def upgrade_charm():
-    # The ols and launchpad-base layer take care of clearing other flags.
-    clear_flag("launchpad.librarian.nrpe-external-master.published")
