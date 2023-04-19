@@ -51,7 +51,13 @@ def is_ppa_public(ppa):
 
 def has_oval_data_changed(incoming_dir, published_dir):
     """Compare the incoming data with the already published one."""
-    return bool(dircmp(incoming_dir, published_dir).diff_files)
+    compared = dircmp(str(incoming_dir), str(published_dir))
+    return (
+        bool(compared.left_only)
+        or bool(compared.right_only)
+        or bool(compared.diff_files)
+        or bool(compared.funny_files)
+    )
 
 
 class PublishDistro(PublisherScript):
@@ -568,13 +574,13 @@ class PublishDistro(PublisherScript):
                     )
                     for component in archive.getComponentsForSeries(series):
                         incoming_dir = suite_path / component.name
-                        published_dir = os.path.join(
-                            getPubConfig(archive).distsroot,
-                            series.name,
-                            component.name,
-                            "oval",
+                        published_dir = (
+                            Path(getPubConfig(archive).distsroot)
+                            / series.name
+                            / component.name
+                            / "oval"
                         )
-                        if has_oval_data_changed(
+                        if not published_dir.is_dir() or has_oval_data_changed(
                             incoming_dir=incoming_dir,
                             published_dir=published_dir,
                         ):
