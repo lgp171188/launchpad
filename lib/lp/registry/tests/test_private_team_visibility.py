@@ -24,6 +24,7 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
 )
+from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.authorization import (
     check_permission,
     clear_cache,
@@ -33,6 +34,7 @@ from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     TestCaseWithFactory,
+    admin_logged_in,
     login,
     login_celebrity,
     login_person,
@@ -412,3 +414,56 @@ class TestPrivateTeamVisibility(TestCaseWithFactory):
 
     def test_team_assigned_to_private_bug(self):
         self._test_team_assigned_to_bug()
+
+    def test_user_cant_see_bug_disabled_product(self, product_series=False):
+        """A user that reports a bug in a private project, can't see the bug
+        once the project is deactivated
+        """
+        private_product = self.factory.makeProduct(
+            owner=self.priv_team,
+            information_type=InformationType.PROPRIETARY,
+            registrant=self.priv_owner,
+        )
+        if product_series:
+            private_series = self.factory.makeProductSeries(
+                product=private_product
+            )
+        # Report a bug within the private product
+        login_person(self.priv_member)
+        bug = self.factory.makeBug(
+            owner=self.priv_member, target=private_product
+        )
+
+        # Change target to the product series
+        if product_series:
+            nomination = bug.addNomination(
+                target=private_series, owner=self.priv_member
+            )
+            nomination.approve(self.priv_owner)
+
+        # Bug reporter user should be able to see the bug initially
+        self.assertTrue(bug.userCanView(self.priv_member))
+
+        # Remove bug reporter from the team
+        with admin_logged_in():
+            private_product.active = False
+        clear_property_cache(bug)
+        # Bug reporter user should no longer have access to the bug
+        self.assertFalse(bug.userCanView(self.priv_member))
+
+    def test_user_cant_see_bug_disabled_product_series(self):
+        """A user that reports a bug in a private project series, can't see
+        the bug once the series's project is deactivated
+        """
+        self.test_user_cant_see_bug_disabled_product(product_series=True)
+
+    def test_user_can_see_bug_without_product(self):
+        """A user that reports a bug withough targetting a product or
+        productseries, can see the bug
+        """
+        # Report a bug within a distribution and set it to private
+        distribution = self.factory.makeDistribution()
+        login_person(self.priv_member)
+        bug = self.factory.makeBug(owner=self.priv_member, target=distribution)
+        bug.setPrivate(True, self.priv_member)
+        self.assertTrue(bug.userCanView(self.priv_member))
