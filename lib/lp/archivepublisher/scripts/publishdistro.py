@@ -51,6 +51,8 @@ def is_ppa_public(ppa):
 
 def has_oval_data_changed(incoming_dir, published_dir):
     """Compare the incoming data with the already published one."""
+    # XXX cjwatson 2023-04-19: `dircmp` in Python < 3.6 doesn't accept
+    # path-like objects.
     compared = dircmp(str(incoming_dir), str(published_dir))
     return (
         bool(compared.left_only)
