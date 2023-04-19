@@ -1,0 +1,30 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-buildd-manager
+
+{% if active -%}
+# Automatically retry builds in the "Dependency wait" state if their
+# dependencies can now be satisfied.
+25 * * * * {{ code_dir }}/cronscripts/buildd-retry-depwait.py -q --log-file=DEBUG2:{{ logs_dir }}/buildd-retry-depwait.log
+
+# Process uploaded builds.
+* * * * * {{ code_dir }}/scripts/process-upload.py -C buildd --builds {{ buildd_manager_dir }}/ -q --log-file=DEBUG:{{ logs_dir }}/process-build-uploads.log
+
+{% endif -%}
+# Clean up the accepted queue every hour, as it's redundant:
+# https://bugs.launchpad.net/launchpad/+bug/361192
+45 * * * *  find {{ buildd_manager_dir }}/accepted/ -maxdepth 1 -type d -execdir rm -rf {} + >/dev/null 2>&1
+
+# Directories older than 1 month can be deleted
+00 00 * * * find {{ buildd_manager_dir }}/rejected/ -maxdepth 1 -type d -mtime +30 -execdir rm -rf {} + >/dev/null 2>&1
+
+# Clean out failed directory: https://portal.admin.canonical.com/C98568
+0 1 * * * find {{ buildd_manager_dir }}/failed/ -maxdepth 1 -type d -mtime +7 -execdir rm -rf {} + >/dev/null 2>&1
+
+# Give up on in-progress downloads from builders after a couple of days
+0 2 * * * find {{ buildd_manager_dir }}/grabbing/ -maxdepth 1 -type d -mtime +2 -execdir rm -rf {} + >/dev/null 2>&1
+
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
