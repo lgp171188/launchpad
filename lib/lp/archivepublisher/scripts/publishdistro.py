@@ -11,6 +11,7 @@ import os
 from filecmp import dircmp
 from optparse import OptionValueError
 from pathlib import Path
+from shutil import copy
 from subprocess import CalledProcessError, check_call
 
 from storm.store import Store
@@ -418,6 +419,50 @@ class PublishDistro(PublisherScript):
             )
             return False
 
+    def synchronizeSecondDirectoryWithFirst(self, first_dir, second_dir):
+        """Synchronize the contents of the second directory with the first."""
+        comparison = dircmp(str(first_dir), str(second_dir))
+        files_to_copy = (
+            comparison.diff_files
+            + comparison.left_only
+            + comparison.funny_files
+        )
+        files_to_delete = comparison.right_only
+
+        for file in files_to_copy:
+            copy(str(first_dir / file), str(second_dir))
+
+        for file in files_to_delete:
+            os.unlink(str(second_dir / file))
+
+        return bool(files_to_copy) or bool(files_to_delete)
+
+    def syncOVALDataFilesForSuite(self, archive, suite):
+        """Synchronize the OVAL data from the staging to the PPA directory."""
+        updated = False
+        staged_oval_data_for_suite = (
+            Path(config.archivepublisher.oval_data_root)
+            / archive.reference
+            / suite
+        )
+        if staged_oval_data_for_suite.exists():
+            for item in staged_oval_data_for_suite.iterdir():
+                if not item.is_dir():
+                    continue
+                component = item
+                staged_oval_data_dir = staged_oval_data_for_suite / component
+                dest_dir = Path(
+                    getPubConfig(archive).distsroot
+                ) / "{}/{}/oval".format(suite, component.name)
+                if not dest_dir.exists():
+                    dest_dir.mkdir(parents=True)
+                files_modified = self.synchronizeSecondDirectoryWithFirst(
+                    staged_oval_data_dir, dest_dir
+                )
+                if files_modified:
+                    updated = True
+        return updated
+
     def publishArchive(self, archive, publisher):
         """Ask `publisher` to publish `archive`.
 
@@ -428,10 +473,13 @@ class PublishDistro(PublisherScript):
         for distroseries, pocket in self.findExplicitlyDirtySuites(archive):
             if not cannot_modify_suite(archive, distroseries, pocket):
                 publisher.markSuiteDirty(distroseries, pocket)
+
+        dirty_suites = None
         if archive.dirty_suites is not None:
             # Clear the explicit dirt indicator before we start doing
             # time-consuming publishing, which might race with an
             # Archive.markSuiteDirty call.
+            dirty_suites = archive.dirty_suites
             archive.dirty_suites = None
             self.txn.commit()
 
@@ -475,6 +523,20 @@ class PublishDistro(PublisherScript):
             self.options.enable_release
             and publishing_method == ArchivePublishingMethod.LOCAL
         ):
+            if (
+                config.archivepublisher.oval_data_rsync_endpoint
+                and archive.is_ppa
+                and dirty_suites
+            ):
+                for dirty_suite in dirty_suites:
+                    updated = self.syncOVALDataFilesForSuite(
+                        archive, dirty_suite
+                    )
+                    if updated:
+                        self.logger.info(
+                            "Synchronized the OVAL data for %s",
+                            archive.reference,
+                        )
             publisher.D_writeReleaseFiles(
                 self.isCareful(
                     self.options.careful_apt or self.options.careful_release

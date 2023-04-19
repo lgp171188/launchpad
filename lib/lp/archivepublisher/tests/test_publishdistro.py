@@ -8,6 +8,7 @@ import shutil
 import subprocess
 from optparse import OptionValueError
 from pathlib import Path
+from unittest.mock import call
 
 from fixtures import MockPatch
 from storm.store import Store
@@ -267,6 +268,7 @@ class TestPublishDistro(TestNativePublishingBase):
             oval_data_root=self.oval_data_root,
             oval_data_rsync_timeout=90,
         )
+        self.addCleanup(shutil.rmtree, self.oval_data_root)
 
     def testPublishDistroOVALDataRsyncEndpointNotConfigured(self):
         """
@@ -921,6 +923,7 @@ class FakePublisher:
         self.C_writeIndexes = FakeMethod()
         self.D_writeReleaseFiles = FakeMethod()
         self.createSeriesAliases = FakeMethod()
+        self.markSuiteDirty = FakeMethod()
 
 
 class TestPublishDistroMethods(TestCaseWithFactory):
@@ -1478,4 +1481,283 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         self.assertEqual(archive, archive_arg)
         self.assertEqual(
             [((archive, publisher), {})], script.publishArchive.calls
+        )
+
+    def setUpOVALDataRsync(self):
+        self.oval_data_root = self.makeTemporaryDirectory()
+        self.pushConfig(
+            "archivepublisher",
+            oval_data_rsync_endpoint="oval.internal::oval/",
+            oval_data_root=self.oval_data_root,
+            oval_data_rsync_timeout=90,
+        )
+        self.ppa_root = self.makeTemporaryDirectory()
+        self.pushConfig(
+            "personalpackagearchive",
+            root=self.ppa_root,
+        )
+        self.addCleanup(shutil.rmtree, self.oval_data_root)
+        self.addCleanup(shutil.rmtree, self.ppa_root)
+
+    def test_syncOVALDataFilesForSuite_oval_data_missing_in_destination(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("pathlib.Path.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        write_file(str(incoming_dir / "test"), b"test")
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_has_calls(
+            [
+                call(
+                    str(incoming_dir / "test"),
+                    "{}/breezy-autotest/main/oval".format(
+                        getPubConfig(archive).distsroot
+                    ),
+                )
+            ]
+        )
+        mock_unlink.assert_not_called()
+
+    def test_syncOVALDataFilesForSuite_oval_data_missing_in_source(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("os.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(published_dir / "foo2.oval.xml.bz2"), b"test")
+
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_not_called()
+        mock_unlink.assert_has_calls(
+            [
+                call(str(published_dir / "foo.oval.xml.bz2")),
+                call(str(published_dir / "foo2.oval.xml.bz2")),
+            ],
+            any_order=True,
+        )
+
+    def test_syncOVALDataFilesForSuite_oval_data_unchanged(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("os.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(incoming_dir / "foo2.oval.xml.bz2"), b"test")
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(published_dir / "foo2.oval.xml.bz2"), b"test")
+
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_not_called()
+        mock_unlink.assert_not_called()
+
+    def test_syncOVALDataFilesForSuite_oval_data_updated(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("os.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test2")
+        write_file(str(incoming_dir / "foo2.oval.xml.bz2"), b"test2")
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(published_dir / "foo2.oval.xml.bz2"), b"test")
+
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_has_calls(
+            [
+                call(
+                    str(incoming_dir / "foo.oval.xml.bz2"),
+                    "{}/breezy-autotest/main/oval".format(
+                        getPubConfig(archive).distsroot
+                    ),
+                ),
+                call(
+                    str(incoming_dir / "foo2.oval.xml.bz2"),
+                    "{}/breezy-autotest/main/oval".format(
+                        getPubConfig(archive).distsroot
+                    ),
+                ),
+            ],
+            any_order=True,
+        )
+        mock_unlink.assert_not_called()
+
+    def test_syncOVALDataFilesForSuite_oval_data_new_files(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("os.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(incoming_dir / "foo2.oval.xml.bz2"), b"test")
+        write_file(str(incoming_dir / "foo3.oval.xml.bz2"), b"test")
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(published_dir / "foo2.oval.xml.bz2"), b"test")
+
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_has_calls(
+            [
+                call(
+                    str(incoming_dir / "foo3.oval.xml.bz2"),
+                    "{}/breezy-autotest/main/oval".format(
+                        getPubConfig(archive).distsroot
+                    ),
+                ),
+            ]
+        )
+        mock_unlink.assert_not_called()
+
+    def test_syncOVALDataFilesForSuite_oval_data_some_files_removed(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        mock_copy = self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
+        ).mock
+        mock_unlink = self.useFixture(MockPatch("os.unlink")).mock
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        incoming_dir.mkdir(parents=True, exist_ok=True)
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"test")
+        write_file(str(published_dir / "foo2.oval.xml.bz2"), b"test")
+
+        script = self.makeScript()
+        script.txn = FakeTransaction()
+        script.findDistros = FakeMethod([archive.distribution])
+        script.getTargetArchives = FakeMethod([archive])
+        publisher = FakePublisher()
+        script.getPublisher = FakeMethod(publisher)
+        script.main()
+        mock_copy.assert_not_called()
+        mock_unlink.assert_has_calls(
+            [
+                call(
+                    "{}/breezy-autotest/main/oval/foo2.oval.xml.bz2".format(
+                        getPubConfig(archive).distsroot
+                    ),
+                ),
+            ]
         )
