@@ -553,6 +553,8 @@ class PublishDistro(PublisherScript):
         start_dir = Path(config.archivepublisher.oval_data_root)
         archive_set = getUtility(IArchiveSet)
         for owner_path in start_dir.iterdir():
+            if not owner_path.name.startswith("~"):
+                continue
             distribution_path = owner_path / distribution.name
             if not distribution_path.is_dir():
                 continue
@@ -562,7 +564,7 @@ class PublishDistro(PublisherScript):
                         distribution=distribution, suite=suite_path.name
                     )
                     archive = archive_set.getPPAByDistributionAndOwnerName(
-                        distribution, owner_path.name, archive_path.name
+                        distribution, owner_path.name[1:], archive_path.name
                     )
                     for component in archive.getComponentsForSeries(series):
                         incoming_dir = suite_path / component.name
