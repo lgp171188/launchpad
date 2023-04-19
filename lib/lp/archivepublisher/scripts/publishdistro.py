@@ -8,13 +8,16 @@ __all__ = [
 ]
 
 import os
+from filecmp import dircmp
 from optparse import OptionValueError
+from pathlib import Path
 from subprocess import CalledProcessError, check_call
 
 from storm.store import Store
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
+from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.publishing import (
     GLOBAL_PUBLISHER_LOCK,
     cannot_modify_suite,
@@ -44,6 +47,19 @@ def is_ppa_private(ppa):
 def is_ppa_public(ppa):
     """Is `ppa` public?"""
     return not ppa.private
+
+
+def has_oval_data_changed(incoming_dir, published_dir):
+    """Compare the incoming data with the already published one."""
+    # XXX cjwatson 2023-04-19: `dircmp` in Python < 3.6 doesn't accept
+    # path-like objects.
+    compared = dircmp(str(incoming_dir), str(published_dir))
+    return (
+        bool(compared.left_only)
+        or bool(compared.right_only)
+        or bool(compared.diff_files)
+        or bool(compared.funny_files)
+    )
 
 
 class PublishDistro(PublisherScript):
@@ -507,56 +523,108 @@ class PublishDistro(PublisherScript):
                 # store and cause performance problems.
                 Store.of(archive).reset()
 
-    def rsync_oval_data(self):
-        if config.archivepublisher.oval_data_rsync_endpoint:
-            # Ensure that the rsync paths have a trailing slash.
-            rsync_src = os.path.join(
-                config.archivepublisher.oval_data_rsync_endpoint, ""
-            )
-            rsync_dest = os.path.join(
-                config.archivepublisher.oval_data_root, ""
-            )
-            rsync_command = [
-                "/usr/bin/rsync",
-                "-a",
-                "-q",
-                "--timeout={}".format(
-                    config.archivepublisher.oval_data_rsync_timeout
-                ),
-                "--delete",
-                "--delete-after",
+    def rsyncOVALData(self):
+        # Ensure that the rsync paths have a trailing slash.
+        rsync_src = os.path.join(
+            config.archivepublisher.oval_data_rsync_endpoint, ""
+        )
+        rsync_dest = os.path.join(config.archivepublisher.oval_data_root, "")
+        rsync_command = [
+            "/usr/bin/rsync",
+            "-a",
+            "-q",
+            "--timeout={}".format(
+                config.archivepublisher.oval_data_rsync_timeout
+            ),
+            "--delete",
+            "--delete-after",
+            rsync_src,
+            rsync_dest,
+        ]
+        try:
+            self.logger.info(
+                "Attempting to rsync the OVAL data from '%s' to '%s'",
                 rsync_src,
                 rsync_dest,
-            ]
-            try:
-                self.logger.info(
-                    "Attempting to rsync the OVAL data from '%s' to '%s'",
-                    rsync_src,
-                    rsync_dest,
-                )
-                check_call(rsync_command)
-            except CalledProcessError:
-                self.logger.exception(
-                    "Failed to rsync OVAL data from '%s' to '%s'",
-                    rsync_src,
-                    rsync_dest,
-                )
-                raise
-        else:
-            self.logger.info(
-                "Skipping the OVAL data sync as no rsync endpoint"
-                " has been configured."
             )
+            check_call(rsync_command)
+        except CalledProcessError:
+            self.logger.exception(
+                "Failed to rsync OVAL data from '%s' to '%s'",
+                rsync_src,
+                rsync_dest,
+            )
+            raise
+
+    def checkForUpdatedOVALData(self, distribution):
+        """Compare the published OVAL files with the incoming one."""
+        start_dir = Path(config.archivepublisher.oval_data_root)
+        archive_set = getUtility(IArchiveSet)
+        for owner_path in start_dir.iterdir():
+            if not owner_path.name.startswith("~"):
+                continue
+            distribution_path = owner_path / distribution.name
+            if not distribution_path.is_dir():
+                continue
+            for archive_path in distribution_path.iterdir():
+                archive = archive_set.getPPAByDistributionAndOwnerName(
+                    distribution, owner_path.name[1:], archive_path.name
+                )
+                if archive is None:
+                    self.logger.info(
+                        "Skipping OVAL data for '~%s/%s/%s' "
+                        "(no such archive).",
+                        owner_path.name[1:],
+                        distribution.name,
+                        archive_path.name,
+                    )
+                    continue
+                for suite_path in archive_path.iterdir():
+                    try:
+                        series, pocket = distribution.getDistroSeriesAndPocket(
+                            suite_path.name
+                        )
+                    except NotFoundError:
+                        self.logger.info(
+                            "Skipping OVAL data for '%s:%s' (no such suite).",
+                            archive.reference,
+                            suite_path.name,
+                        )
+                        continue
+                    for component in archive.getComponentsForSeries(series):
+                        incoming_dir = suite_path / component.name
+                        published_dir = (
+                            Path(getPubConfig(archive).distsroot)
+                            / series.name
+                            / component.name
+                            / "oval"
+                        )
+                        if not published_dir.is_dir() or has_oval_data_changed(
+                            incoming_dir=incoming_dir,
+                            published_dir=published_dir,
+                        ):
+                            archive.markSuiteDirty(
+                                distroseries=series, pocket=pocket
+                            )
+                            break
 
     def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
         self.validateOptions()
         self.logOptions()
 
-        self.rsync_oval_data()
+        if config.archivepublisher.oval_data_rsync_endpoint:
+            self.rsyncOVALData()
+        else:
+            self.logger.info(
+                "Skipping the OVAL data sync as no rsync endpoint"
+                " has been configured."
+            )
 
         archive_ids = []
         for distribution in self.findDistros():
+            if config.archivepublisher.oval_data_rsync_endpoint:
+                self.checkForUpdatedOVALData(distribution)
             for archive in self.getTargetArchives(distribution):
                 if archive.distribution != distribution:
                     raise AssertionError(
