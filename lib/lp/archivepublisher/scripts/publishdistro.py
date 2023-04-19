@@ -565,13 +565,30 @@ class PublishDistro(PublisherScript):
             if not distribution_path.is_dir():
                 continue
             for archive_path in distribution_path.iterdir():
+                archive = archive_set.getPPAByDistributionAndOwnerName(
+                    distribution, owner_path.name[1:], archive_path.name
+                )
+                if archive is None:
+                    self.logger.info(
+                        "Skipping OVAL data for '~%s/%s/%s' "
+                        "(no such archive).",
+                        owner_path.name[1:],
+                        distribution.name,
+                        archive_path.name,
+                    )
+                    continue
                 for suite_path in archive_path.iterdir():
-                    series, pocket = self.findSuite(
-                        distribution=distribution, suite=suite_path.name
-                    )
-                    archive = archive_set.getPPAByDistributionAndOwnerName(
-                        distribution, owner_path.name[1:], archive_path.name
-                    )
+                    try:
+                        series, pocket = distribution.getDistroSeriesAndPocket(
+                            suite_path.name
+                        )
+                    except NotFoundError:
+                        self.logger.info(
+                            "Skipping OVAL data for '%s:%s' (no such suite).",
+                            archive.reference,
+                            suite_path.name,
+                        )
+                        continue
                     for component in archive.getComponentsForSeries(series):
                         incoming_dir = suite_path / component.name
                         published_dir = (

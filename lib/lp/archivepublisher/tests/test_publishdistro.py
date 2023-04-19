@@ -440,6 +440,52 @@ class TestPublishDistro(TestNativePublishingBase):
         )
         self.assertEqual(["breezy-autotest"], archive.dirty_suites)
 
+    def test_checkForUpdatedOVALData_nonexistent_archive(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / "~nonexistent"
+            / "ubuntutest"
+            / "archive"
+            / "breezy-autotest"
+            / "main"
+        )
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        self.runPublishDistro(extra_args=["--ppa"], distribution="ubuntutest")
+        self.assertIn(
+            "INFO Skipping OVAL data for '~nonexistent/ubuntutest/archive' "
+            "(no such archive).",
+            self.logger.getLogBuffer(),
+        )
+
+    def test_checkForUpdatedOVALData_nonexistent_suite(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        archive.publish = False
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "nonexistent"
+            / "main"
+        )
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        self.runPublishDistro(
+            extra_args=["--ppa"], distribution=archive.distribution.name
+        )
+        self.assertIn(
+            "INFO Skipping OVAL data for '%s:nonexistent' (no such suite)."
+            % archive.reference,
+            self.logger.getLogBuffer(),
+        )
+        self.assertIsNone(archive.dirty_suites)
+
     @defer.inlineCallbacks
     def testForPPA(self):
         """Try to run publish-distro in PPA mode.
