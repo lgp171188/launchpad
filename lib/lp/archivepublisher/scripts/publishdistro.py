@@ -24,7 +24,6 @@ from lp.archivepublisher.publishing import (
     getPublisher,
 )
 from lp.archivepublisher.scripts.base import PublisherScript
-from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.limitedlist import LimitedList
 from lp.services.scripts.base import LaunchpadScriptFailure
@@ -549,41 +548,38 @@ class PublishDistro(PublisherScript):
             )
             raise
 
-    def checkForUpdatedOVALData(self):
+    def checkForUpdatedOVALData(self, distribution):
         """Compare the published OVAL files with the incoming one."""
         start_dir = Path(config.archivepublisher.oval_data_root)
         archive_set = getUtility(IArchiveSet)
         for owner_path in start_dir.iterdir():
-            for distribution_path in owner_path.iterdir():
-                distribution = getUtility(IDistributionSet).getByName(
-                    distribution_path.name
-                )
-                for archive_path in start_dir.iterdir():
-                    for suite_path in archive_path.iterdir():
-                        series, pocket = self.findSuite(
-                            distribution=distribution, suite=suite_path.name
+            distribution_path = owner_path / distribution.name
+            if not distribution_path.is_dir():
+                continue
+            for archive_path in distribution_path.iterdir():
+                for suite_path in archive_path.iterdir():
+                    series, pocket = self.findSuite(
+                        distribution=distribution, suite=suite_path.name
+                    )
+                    archive = archive_set.getPPAByDistributionAndOwnerName(
+                        distribution, owner_path.name, archive_path.name
+                    )
+                    for component in archive.getComponentsForSeries(series):
+                        incoming_dir = suite_path / component.name
+                        published_dir = os.path.join(
+                            getPubConfig(archive).distsroot,
+                            series.name,
+                            component.name,
+                            "oval",
                         )
-                        archive = archive_set.getPPAByDistributionAndOwnerName(
-                            distribution, owner_path.name, archive_path.name
-                        )
-                        for component in archive.getComponentsForSeries(
-                            series
+                        if has_oval_data_changed(
+                            incoming_dir=incoming_dir,
+                            published_dir=published_dir,
                         ):
-                            incoming_dir = suite_path / component.name
-                            published_dir = os.path.join(
-                                getPubConfig(archive).distsroot,
-                                series.name,
-                                component.name,
-                                "oval",
+                            archive.markSuiteDirty(
+                                distroseries=series, pocket=pocket
                             )
-                            if has_oval_data_changed(
-                                incoming_dir=incoming_dir,
-                                published_dir=published_dir,
-                            ):
-                                archive.markSuiteDirty(
-                                    distroseries=series, pocket=pocket
-                                )
-                                break
+                            break
 
     def main(self, reset_store_between_archives=True):
         """See `LaunchpadScript`."""
@@ -592,7 +588,6 @@ class PublishDistro(PublisherScript):
 
         if config.archivepublisher.oval_data_rsync_endpoint:
             self.rsyncOVALData()
-            self.checkForUpdatedOVALData()
         else:
             self.logger.info(
                 "Skipping the OVAL data sync as no rsync endpoint"
@@ -601,6 +596,8 @@ class PublishDistro(PublisherScript):
 
         archive_ids = []
         for distribution in self.findDistros():
+            if config.archivepublisher.oval_data_rsync_endpoint:
+                self.checkForUpdatedOVALData(distribution)
             for archive in self.getTargetArchives(distribution):
                 if archive.distribution != distribution:
                     raise AssertionError(
