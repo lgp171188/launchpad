@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 from optparse import OptionValueError
+from pathlib import Path
 
 from fixtures import MockPatch
 from storm.store import Store
@@ -33,6 +34,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger, DevNullLogger
+from lp.services.osutils import write_file
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
@@ -331,6 +333,112 @@ class TestPublishDistro(TestNativePublishingBase):
             "'oval.internal::oval/' to '%s/'" % self.oval_data_root
         )
         self.assertTrue(expected_log_line in self.logger.getLogBuffer())
+
+    def test_checkForUpdatedOVALData_new(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        archive.publish = False
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        write_file(str(incoming_dir), b"test")
+        self.runPublishDistro(
+            extra_args=["--ppa"], distribution=archive.distribution.name
+        )
+        self.assertEqual(["breezy-autotest"], archive.dirty_suites)
+
+    def test_checkForUpdatedOVALData_unchanged(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        archive.publish = False
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        shutil.copytree(str(incoming_dir), str(published_dir))
+        self.runPublishDistro(
+            extra_args=["--ppa"], distribution=archive.distribution.name
+        )
+        self.assertIsNone(archive.dirty_suites)
+
+    def test_checkForUpdatedOVALData_updated(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        archive.publish = False
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(published_dir / "foo.oval.xml.bz2"), b"old")
+        mtime = (published_dir / "foo.oval.xml.bz2").stat().st_mtime
+        os.utime(
+            str(published_dir / "foo.oval.xml.bz2"), (mtime - 1, mtime - 1)
+        )
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"new")
+        self.runPublishDistro(
+            extra_args=["--ppa"], distribution=archive.distribution.name
+        )
+        self.assertEqual(["breezy-autotest"], archive.dirty_suites)
+
+    def test_checkForUpdatedOVALData_new_files(self):
+        self.setUpOVALDataRsync()
+        self.useFixture(
+            MockPatch("lp.archivepublisher.scripts.publishdistro.check_call")
+        )
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        # Disable normal publication so that dirty_suites isn't cleared.
+        archive.publish = False
+        incoming_dir = (
+            Path(self.oval_data_root)
+            / archive.reference
+            / "breezy-autotest"
+            / "main"
+        )
+        published_dir = (
+            Path(getPubConfig(archive).distsroot)
+            / "breezy-autotest"
+            / "main"
+            / "oval"
+        )
+        write_file(str(incoming_dir / "foo.oval.xml.bz2"), b"test")
+        shutil.copytree(str(incoming_dir), str(published_dir))
+        write_file(str(incoming_dir / "bar.oval.xml.bz2"), b"test")
+        self.runPublishDistro(
+            extra_args=["--ppa"], distribution=archive.distribution.name
+        )
+        self.assertEqual(["breezy-autotest"], archive.dirty_suites)
 
     @defer.inlineCallbacks
     def testForPPA(self):
