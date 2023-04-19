@@ -576,7 +576,7 @@ class PublishDistro(PublisherScript):
                             incoming_dir = suite_path / component.name
                             published_dir = os.path.join(
                                 getPubConfig(archive).distsroot,
-                                series,
+                                series.name,
                                 component.name,
                                 "oval",
                             )
@@ -585,10 +585,7 @@ class PublishDistro(PublisherScript):
                                 published_dir=published_dir,
                             ):
                                 archive.markSuiteDirty(
-                                    distroseries=distribution.getSeries(
-                                        series
-                                    ),
-                                    pocket=pocket,
+                                    distroseries=series, pocket=pocket
                                 )
                                 break
 
