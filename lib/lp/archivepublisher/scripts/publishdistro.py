@@ -539,7 +539,7 @@ class PublishDistro(PublisherScript):
                 # store and cause performance problems.
                 Store.of(archive).reset()
 
-    def rsync_oval_data(self):
+    def rsyncOVALData(self):
         if config.archivepublisher.oval_data_rsync_endpoint:
             # Ensure that the rsync paths have a trailing slash.
             rsync_src = os.path.join(
@@ -580,10 +580,10 @@ class PublishDistro(PublisherScript):
                 " has been configured."
             )
 
-    def check_for_updated_oval_data(self):
+    def checkForUpdatedOVALData(self):
         """Compare the published OVAL files with the incoming one."""
         # XXX 2023-04-14 jugmac00: pull this up together with the same check
-        # in `rsync_oval_data`
+        # in `rsyncOVALData`
         if not config.archivepublisher.oval_data_rsync_endpoint:
             return
         start_dir = Path(config.archivepublisher.oval_data_root)
@@ -629,8 +629,8 @@ class PublishDistro(PublisherScript):
 
         # XXX jugmac00 2023-04-14: pull up config check from the following two
         # methods
-        self.rsync_oval_data()
-        self.check_for_updated_oval_data()
+        self.rsyncOVALData()
+        self.checkForUpdatedOVALData()
 
         archive_ids = []
         for distribution in self.findDistros():
