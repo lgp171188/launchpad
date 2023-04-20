@@ -599,7 +599,11 @@ def connect(user=None, dbname=None, isolation=ISOLATION_LEVEL_DEFAULT):
 
     con = psycopg2.connect(dsn)
     con.set_isolation_level(isolation)
-    if dbconfig.set_role_after_connecting and user != parsed_dsn["user"]:
+    if (
+        dbconfig.set_role_after_connecting
+        and user is not None
+        and user != parsed_dsn["user"]
+    ):
         con.cursor().execute("SET ROLE %s", (user,))
     return con
 

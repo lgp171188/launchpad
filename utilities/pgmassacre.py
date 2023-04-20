@@ -15,22 +15,29 @@ Cut off access, slaughter connections and burn the database to the ground
 
 import _pythonpath  # noqa: F401
 
+import os
 import sys
 import time
 from optparse import OptionParser
 
 import psycopg2
-import psycopg2.extensions
+from psycopg2.extensions import make_dsn, parse_dsn
 
+from lp.services.config import config, dbconfig
 from lp.services.database import activity_cols
 
 
 def connect(dbname="template1"):
     """Connect to the database, returning the DB-API connection."""
+    parsed_dsn = parse_dsn(dbconfig.rw_main_primary)
     if options.user is not None:
-        return psycopg2.connect("dbname=%s user=%s" % (dbname, options.user))
-    else:
-        return psycopg2.connect("dbname=%s" % dbname)
+        parsed_dsn["user"] = options.user
+    # For database administration, we only pass a username if we're
+    # connecting over TCP.
+    elif "host" not in parsed_dsn:
+        parsed_dsn.pop("user", None)
+    parsed_dsn["dbname"] = dbname
+    return psycopg2.connect(make_dsn(**parsed_dsn))
 
 
 def rollback_prepared_transactions(database):
@@ -223,7 +230,16 @@ options = None
 
 
 def main():
-    parser = OptionParser("Usage: %prog [options] DBNAME")
+    parser = OptionParser(
+        "Usage: %prog [options] DBNAME",
+        description=(
+            "Set LPCONFIG to choose which database cluster to connect to; "
+            "credentials are taken from the database.rw_main_primary "
+            "configuration option, ignoring the 'dbname' parameter.  The "
+            "default behaviour is to connect to a cluster on the local "
+            "machine using PostgreSQL's default port."
+        ),
+    )
     parser.add_option(
         "-U",
         "--user",
@@ -254,6 +270,16 @@ def main():
         parser.error(
             "Running this script against template1 or template0 is nuts."
         )
+    if (
+        "host" in parse_dsn(dbconfig.rw_main_primary)
+        and os.environ.get("LP_DESTROY_REMOTE_DATABASE") != "yes"
+    ):
+        parser.error(
+            "For safety, refusing to destroy a remote database.  Set "
+            "LP_DESTROY_REMOTE_DATABASE=yes to override this."
+        )
+    if config.vhost.mainsite.hostname == "launchpad.net":
+        parser.error("Flatly refusing to destroy production.")
 
     con = connect()
     cur = con.cursor()
