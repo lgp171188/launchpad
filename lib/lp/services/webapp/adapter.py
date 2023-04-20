@@ -422,6 +422,9 @@ class LaunchpadDatabase(Postgres):
         self.name = uri.database
 
     def raw_connect(self):
+        # XXX cjwatson 2023-03-28: Can we rework this on top of
+        # lp.services.database.sqlbase.connect somehow so that we only need
+        # one implementation of the set_role_after_connecting logic?
         try:
             realm, flavor = self._uri.database.split("-")
         except ValueError:
