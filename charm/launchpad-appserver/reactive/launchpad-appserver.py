@@ -10,6 +10,7 @@ from charms.coordinator import acquire
 from charms.launchpad.base import (
     config_file_path,
     configure_cron,
+    configure_email,
     configure_lazr,
     get_service_config,
     lazr_config_files,
@@ -125,6 +126,7 @@ def configure():
         "launchpad-appserver-secrets-lazr.conf",
         secret=True,
     )
+    configure_email(config, "launchpad-appserver")
     configure_gunicorn(config)
     configure_logrotate(config)
     configure_cron(config, "crontab.j2")

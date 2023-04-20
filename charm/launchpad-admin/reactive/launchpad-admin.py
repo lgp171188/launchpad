@@ -6,6 +6,7 @@ import subprocess
 
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import (
+    configure_email,
     configure_lazr,
     get_service_config,
     home_dir,
@@ -111,6 +112,7 @@ def configure():
         "launchpad-admin-lazr.conf",
         "launchpad-admin/launchpad-lazr.conf",
     )
+    configure_email(config, "launchpad-admin")
     templating.render(
         "bash_aliases.j2",
         os.path.join(home_dir(), ".bash_aliases"),
