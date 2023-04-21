@@ -268,7 +268,6 @@ class TestPublishDistro(TestNativePublishingBase):
             oval_data_root=self.oval_data_root,
             oval_data_rsync_timeout=90,
         )
-        self.addCleanup(shutil.rmtree, self.oval_data_root)
 
     def testPublishDistroOVALDataRsyncEndpointNotConfigured(self):
         """
@@ -1496,8 +1495,6 @@ class TestPublishDistroMethods(TestCaseWithFactory):
             "personalpackagearchive",
             root=self.ppa_root,
         )
-        self.addCleanup(shutil.rmtree, self.oval_data_root)
-        self.addCleanup(shutil.rmtree, self.ppa_root)
 
     def test_syncOVALDataFilesForSuite_oval_data_missing_in_destination(self):
         self.setUpOVALDataRsync()
@@ -1507,6 +1504,10 @@ class TestPublishDistroMethods(TestCaseWithFactory):
         mock_copy = self.useFixture(
             MockPatch("lp.archivepublisher.scripts.publishdistro.copy")
         ).mock
+        # XXX 2023-04-21 jugmac00: as we create temporary directories anyway,
+        # we can avoid to use mocks, and directly assert on the content of the
+        # target directory on the filesystem
+        # This also applies for similar tests here.
         mock_unlink = self.useFixture(MockPatch("pathlib.Path.unlink")).mock
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         incoming_dir = (

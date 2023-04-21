@@ -11,6 +11,11 @@ import os
 from filecmp import dircmp
 from optparse import OptionValueError
 from pathlib import Path
+
+# XXX 2023-04-21 jugmac00: prefer `import shutil` as `copy` is so common
+# This will break a lot of tests which mocked this import, so let's do this
+# together with removing mocks from e.g.
+# `test_syncOVALDataFilesForSuite_oval_data_missing_in_destination`
 from shutil import copy
 from subprocess import CalledProcessError, check_call
 
@@ -451,11 +456,13 @@ class PublishDistro(PublisherScript):
                     continue
                 component = item
                 staged_oval_data_dir = staged_oval_data_for_suite / component
-                dest_dir = Path(
-                    getPubConfig(archive).distsroot
-                ) / "{}/{}/oval".format(suite, component.name)
-                if not dest_dir.exists():
-                    dest_dir.mkdir(parents=True)
+                dest_dir = (
+                    Path(getPubConfig(archive).distsroot)
+                    / suite
+                    / component.name
+                    / "oval"
+                )
+                dest_dir.mkdir(parents=True, exist_ok=True)
                 files_modified = self.synchronizeSecondDirectoryWithFirst(
                     staged_oval_data_dir, dest_dir
                 )
@@ -523,6 +530,7 @@ class PublishDistro(PublisherScript):
             self.options.enable_release
             and publishing_method == ArchivePublishingMethod.LOCAL
         ):
+            # XXX 2023-04-21 jugmac00: add test for the non-ppa case
             if (
                 config.archivepublisher.oval_data_rsync_endpoint
                 and archive.is_ppa
@@ -537,6 +545,8 @@ class PublishDistro(PublisherScript):
                             "Synchronized the OVAL data for %s",
                             archive.reference,
                         )
+                    # XXX 2023-04-21 jugmac00: evaluate whether the above code
+                    # would better fit into the `Publisher` class
             publisher.D_writeReleaseFiles(
                 self.isCareful(
                     self.options.careful_apt or self.options.careful_release
