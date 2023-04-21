@@ -38,6 +38,7 @@ from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.codeofconduct import SignedCodeOfConduct
+from lp.services.config import config
 from lp.services.database.interfaces import IPrimaryStore, IStandbyStore
 from lp.services.scripts.base import LaunchpadScript
 from lp.soyuz.enums import SourcePackageFormat
@@ -88,7 +89,10 @@ def check_preconditions(options):
     # run.  Don't even accept --force there.
     forbidden_configs = re.compile("(edge|lpnet|production)")
     current_config = os.getenv("LPCONFIG", "an unknown config")
-    if forbidden_configs.match(current_config):
+    if (
+        forbidden_configs.match(current_config)
+        or config.vhost.mainsite.hostname == "launchpad.net"
+    ):
         raise DoNotRunOnProduction(
             "I won't delete Ubuntu data on %s and you can't --force me."
             % current_config

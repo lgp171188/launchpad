@@ -1,0 +1,19 @@
+includes:
+  - layer:launchpad-base
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - run-one
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - binaryfile-expire
+          - librarian
+          - librarianfeedswift
+          - librariangc
+      session-db:
+        name: session_dev
+        roles: session
