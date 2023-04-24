@@ -424,9 +424,11 @@ class PublishDistro(PublisherScript):
             )
             return False
 
-    def synchronizeSecondDirectoryWithFirst(self, first_dir, second_dir):
+    def synchronizeSecondDirectoryWithFirst(
+        self, first_dir, second_dir, ignore
+    ):
         """Synchronize the contents of the second directory with the first."""
-        comparison = dircmp(str(first_dir), str(second_dir))
+        comparison = dircmp(str(first_dir), str(second_dir), ignore=ignore)
         files_to_copy = (
             comparison.diff_files
             + comparison.left_only
@@ -464,7 +466,7 @@ class PublishDistro(PublisherScript):
                 )
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 files_modified = self.synchronizeSecondDirectoryWithFirst(
-                    staged_oval_data_dir, dest_dir
+                    staged_oval_data_dir, dest_dir, ignore=["by-hash"]
                 )
                 if files_modified:
                     updated = True
