@@ -33,6 +33,14 @@ mkdir -p "$output_dir"
     echo ./version-info.py
     echo ./version-info.txt
     find ./wheels/ -name \*.whl -print
+    # We include assets (API documentation, CSS, and JavaScript); only some
+    # deployments need these, but including them in the tarball anyway is
+    # relatively cheap, and they'd otherwise take some time to build during
+    # rollouts.
+    find ./lib/canonical/launchpad/apidoc/ -not -type d -print
+    find ./yarn/node_modules/yui/ -not -type d -print
+    find ./lib/canonical/launchpad/icing/ -not -type d -print
+    find ./build/js/ -not -type d -print
 ) | sort >"$output_dir/.files"
 
 # Create the tarball.
