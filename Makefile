@@ -278,7 +278,7 @@ requirements/combined.txt: \
 # dependencies without also building a useless wheel of Launchpad itself;
 # fortunately that doesn't take too long, and we just remove it afterwards.
 .PHONY: build_wheels_only
-build_wheels_only: $(PIP_BIN) requirements/combined.txt
+build_wheels_only: build
 	$(RM) -r wheelhouse wheels
 	$(SHHH) $(PIP) wheel -w wheels -r requirements/setup.txt
 	$(SHHH) $(PIP) wheel \
