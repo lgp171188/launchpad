@@ -16,7 +16,7 @@ output_dir="$1"
 # the Makefile and also has to call out to the Makefile, but this is
 # difficult to disentangle until we refactor our build system to use
 # something higher-level than pip.
-make build_wheels_only
+make build build_wheels_only
 
 # Ensure that we have an updated idea of this tree's version.
 scripts/update-version-info.sh
