@@ -16,7 +16,7 @@ output_dir="$1"
 # the Makefile and also has to call out to the Makefile, but this is
 # difficult to disentangle until we refactor our build system to use
 # something higher-level than pip.
-make build build_wheels_only
+make build_wheels_only
 
 # Ensure that we have an updated idea of this tree's version.
 scripts/update-version-info.sh
@@ -33,14 +33,6 @@ mkdir -p "$output_dir"
     echo ./version-info.py
     echo ./version-info.txt
     find ./wheels/ -name \*.whl -print
-    # We include assets (API documentation, CSS, and JavaScript); only some
-    # deployments need these, but including them in the tarball anyway is
-    # relatively cheap, and they'd otherwise take some time to build during
-    # rollouts.
-    find ./lib/canonical/launchpad/apidoc/ -not -type d -print
-    find ./yarn/node_modules/yui/ -not -type d -print
-    find ./lib/canonical/launchpad/icing/ -not -type d -print
-    find ./build/js/ -not -type d -print
 ) | sort >"$output_dir/.files"
 
 # Create the tarball.
