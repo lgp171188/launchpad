@@ -15,8 +15,8 @@ import _pythonpath  # noqa: F401
 
 import optparse
 import os
-import subprocess
 import sys
+from datetime import datetime
 from multiprocessing import Process
 
 import six
@@ -24,6 +24,7 @@ from lazr.restful.interfaces import IWebServiceConfiguration
 from zope.component import getUtility
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
+from lp.app import versioninfo
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webservice.wadl import (
     generate_html,
@@ -140,10 +141,7 @@ def main(directory, force=False):
     # generated files so that we can safely use it as part of Apache's etag
     # generation in the face of multiple servers/filesystems.
     timestamp = int(
-        subprocess.check_output(
-            ["git", "log", "-1", "--format=%ct", "HEAD"],
-            universal_newlines=True,
-        )
+        datetime.strptime(versioninfo.date, "%Y-%m-%d %H:%M:%S %z").timestamp()
     )
 
     # Start a process to build each set of WADL and HTML files.
