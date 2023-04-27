@@ -30,6 +30,7 @@ mkdir -p "$output_dir"
     # Most of download-cache is unnecessary since we include a wheelhouse
     # instead, but JavaScript-enabled builds need yarn.
     find ./download-cache/dist/ -name yarn-\*.tar.gz
+    find ./download-cache/yarn/ -type f
     echo ./version-info.py
     echo ./version-info.txt
     find ./wheels/ -name \*.whl -print
