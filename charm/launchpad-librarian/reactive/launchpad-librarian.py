@@ -39,6 +39,12 @@ def configure_systemd(config):
         "/lib/systemd/system/launchpad-librarian@.service",
         config,
     )
+    templating.render(
+        "launchpad-librarian-generator.j2",
+        "/lib/systemd/system-generators/launchpad-librarian-generator",
+        config,
+        perms=0o555,
+    )
     subprocess.run(["systemctl", "daemon-reload"])
 
 
