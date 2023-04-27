@@ -17,6 +17,7 @@ CHARMS := \
 	launchpad-admin \
 	launchpad-appserver \
 	launchpad-assets \
+	launchpad-debian-importer \
 	launchpad-librarian
 
 all: ## alias to build
