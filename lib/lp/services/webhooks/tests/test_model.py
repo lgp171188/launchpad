@@ -531,6 +531,9 @@ class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
 
 
 class TestWebhookSetBugBase(TestWebhookSetBase):
+
+    event_type = "bug:0.1"
+
     def test__checkVisibility_private_artifact(self):
         owner = self.factory.makePerson()
         target = self.makeTarget(
@@ -538,7 +541,7 @@ class TestWebhookSetBugBase(TestWebhookSetBase):
         )
         self.assertTrue(WebhookSet._checkVisibility(target, owner))
 
-    def test_webhook_trigger(self):
+    def test_webhook_trigger_private_target(self):
         owner = self.factory.makePerson()
         target = self.makeTarget(
             owner=owner,
@@ -560,49 +563,9 @@ class TestWebhookSetBugBase(TestWebhookSetBase):
             self.assertEqual(delivery.payload, {"some": "payload"})
 
 
-class TestWebhookSetProductBugComment(
-    TestWebhookSetBugBase, TestCaseWithFactory
-):
-
-    event_type = "bug:comment:0.1"
-
-    def makeTarget(self, **kwargs):
-        return self.factory.makeProduct(**kwargs)
-
-
-class TestWebhookSetDistributionBugComment(
-    TestWebhookSetBugBase, TestCaseWithFactory
-):
-
-    event_type = "bug:comment:0.1"
-
-    def makeTarget(self, **kwargs):
-        return self.factory.makeDistribution(**kwargs)
-
-
-class TestWebhookSetDistributionSourcePackageBugComment(
-    TestWebhookSetBugBase, TestCaseWithFactory
-):
-
-    event_type = "bug:comment:0.1"
-
-    def get_target_owner(self, target):
-        return target.distribution.owner
-
-    def makeTarget(self, **kwargs):
-        with admin_logged_in():
-            distribution = self.factory.makeDistribution(**kwargs)
-            return self.factory.makeDistributionSourcePackage(
-                distribution=distribution
-            )
-
-
 class TestWebhookSetProductBugUpdate(
     TestWebhookSetBugBase, TestCaseWithFactory
 ):
-
-    event_type = "bug:0.1"
-
     def makeTarget(self, **kwargs):
         return self.factory.makeProduct(**kwargs)
 
@@ -610,9 +573,6 @@ class TestWebhookSetProductBugUpdate(
 class TestWebhookSetDistributionBugUpdate(
     TestWebhookSetBugBase, TestCaseWithFactory
 ):
-
-    event_type = "bug:0.1"
-
     def makeTarget(self, **kwargs):
         return self.factory.makeDistribution(**kwargs)
 
@@ -620,9 +580,6 @@ class TestWebhookSetDistributionBugUpdate(
 class TestWebhookSetDistributionSourcePackageBugUpdate(
     TestWebhookSetBugBase, TestCaseWithFactory
 ):
-
-    event_type = "bug:0.1"
-
     def get_target_owner(self, target):
         return target.distribution.owner
 
