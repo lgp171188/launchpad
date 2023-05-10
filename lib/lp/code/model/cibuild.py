@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2022-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """CI builds."""
@@ -77,6 +77,7 @@ from lp.services.macaroons.interfaces import (
 )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import cachedproperty
+from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -503,6 +504,31 @@ class CIBuild(PackageBuildMixin, StormBase):
         """See `IPackageBuild`."""
         # We have no interesting checks to perform here.
         return True
+
+    def updateStatus(
+        self,
+        status,
+        builder=None,
+        worker_status=None,
+        date_started=None,
+        date_finished=None,
+        force_invalid_transition=False,
+    ):
+        """See `IBuildFarmJob`."""
+        edited_fields = set()
+        with notify_modified(
+            self, edited_fields, snapshot_names=("status",)
+        ) as previous_obj:
+            super().updateStatus(
+                status,
+                builder=builder,
+                worker_status=worker_status,
+                date_started=date_started,
+                date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition,
+            )
+            if self.status != previous_obj.status:
+                edited_fields.add("status")
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""

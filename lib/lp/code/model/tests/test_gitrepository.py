@@ -12,7 +12,7 @@ from textwrap import dedent
 
 import transaction
 from breezy import urlutils
-from fixtures import MockPatch
+from fixtures import FakeLogger, MockPatch
 from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon
 from storm.exceptions import LostObjectError
@@ -76,7 +76,11 @@ from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
 )
-from lp.code.interfaces.cibuild import ICIBuild, ICIBuildSet
+from lp.code.interfaces.cibuild import (
+    CI_WEBHOOKS_FEATURE_FLAG,
+    ICIBuild,
+    ICIBuildSet,
+)
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.code.interfaces.gitjob import (
@@ -170,7 +174,9 @@ from lp.services.propertycache import clear_property_cache
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     ANONYMOUS,
@@ -4170,6 +4176,83 @@ class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
             .is_empty()
         )
         self.assertEqual("", logger.getLogBuffer())
+
+    def test_triggers_webhooks(self):
+        # Requesting CI builds triggers any relevant webhooks.
+        self.useFixture(FeatureFixture({CI_WEBHOOKS_FEATURE_FLAG: "on"}))
+        logger = self.useFixture(FakeLogger())
+        repository = self.factory.makeGitRepository()
+        hook = self.factory.makeWebhook(
+            target=repository, event_types=["ci:build:0.1"]
+        )
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distroseries
+        )
+        configuration = dedent(
+            """\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {series}
+                    architectures: [{architecture}]
+            """.format(
+                series=distroseries.name, architecture=das.architecturetag
+            )
+        ).encode()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(
+            GitHostingFixture(
+                commits=[
+                    {
+                        "sha1": new_commit,
+                        "blobs": {".launchpad.yaml": configuration},
+                    },
+                ]
+            )
+        )
+        with dbuser("branchscanner"):
+            repository.createOrUpdateRefs(
+                {
+                    "refs/heads/test": {
+                        "sha1": new_commit,
+                        "type": GitObjectType.COMMIT,
+                    }
+                }
+            )
+
+        [build] = getUtility(ICIBuildSet).findByGitRepository(repository)
+        delivery = hook.deliveries.one()
+        payload_matcher = MatchesDict(
+            {
+                "build": Equals(canonical_url(build, force_local_path=True)),
+                "action": Equals("created"),
+                "git_repository": Equals(
+                    canonical_url(repository, force_local_path=True)
+                ),
+                "commit_sha1": Equals(new_commit),
+                "status": Equals("Needs building"),
+            }
+        )
+        self.assertThat(
+            delivery,
+            MatchesStructure(
+                event_type=Equals("ci:build:0.1"), payload=payload_matcher
+            ),
+        )
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks(
+                    [(hook, "ci:build:0.1", payload_matcher)]
+                ),
+            )
 
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):
