@@ -7,8 +7,7 @@
     compress
     notifempty
     missingok
-    create 0644 syslog adm
-    sharedscripts
+    create 0644 launchpad launchpad
     postrotate
         systemctl reload launchpad-librarian.service
     endscript
@@ -23,6 +22,5 @@
     compress
     notifempty
     missingok
-    create 0644 syslog adm
 }
 
