@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -S
 #
-# Copyright 2012-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import _pythonpath  # noqa: F401
@@ -87,6 +87,20 @@ DELETE FROM POTemplate
      LIMIT ?)
 """
 
+# Reset status from RosettaImportStatus.APPROVED (1) to
+# RosettaImportStatus.NEEDSREVIEW (5); we've just unset the target, so these
+# entries will have to be gardened again.
+unapprove_translationimportqueueentry = """\
+UPDATE TranslationImportQueueEntry
+   SET status = 5
+ WHERE TranslationImportQueueEntry.id IN (
+    SELECT TranslationImportQueueEntry.id
+      FROM TranslationImportQueueEntry
+     WHERE TranslationImportQueueEntry.status = 1
+       AND TranslationImportQueueEntry.distroseries = ?
+     LIMIT ?)
+"""
+
 statements = [
     delete_pofiletranslator,
     null_translationimportqueueentry_pofile,
@@ -95,6 +109,7 @@ statements = [
     delete_packagingjob,
     null_translationimportqueueentry_potemplate,
     delete_potemplate,
+    unapprove_translationimportqueueentry,
 ]
 
 
