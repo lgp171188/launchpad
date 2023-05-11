@@ -16,6 +16,7 @@ ASSET = ../build/$(BUILD_LABEL)/$(TARBALL)
 CHARMS := \
 	launchpad-admin \
 	launchpad-appserver \
+	launchpad-assets \
 	launchpad-librarian
 
 all: ## alias to build

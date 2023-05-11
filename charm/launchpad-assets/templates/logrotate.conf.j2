@@ -1,0 +1,15 @@
+{{ logs_dir }}/convoy.log
+{
+    rotate 21
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 syslog adm
+    postrotate
+        systemctl reload convoy.service
+    endscript
+}
+

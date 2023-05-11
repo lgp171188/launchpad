@@ -1,0 +1,21 @@
+[Unit]
+Description=Launchpad CSS/JavaScript combo loader
+Requires=convoy.socket
+After=network.target
+
+[Service]
+Type=notify
+User=launchpad
+Group=launchpad
+Restart=on-failure
+Environment=CONVOY_ROOT={{ base_dir }}/convoy
+ExecStart={{ code_dir }}/bin/gunicorn --bind unix:/run/convoy.socket --log-file {{ logs_dir }}/convoy.log --log-level debug --workers=4 convoy.wsgi
+ExecReload=/bin/kill -USR1 $MAINPID
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
+

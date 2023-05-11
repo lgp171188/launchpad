@@ -1,0 +1,72 @@
+type: charm
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "20.04"
+      architectures: [amd64]
+    run-on:
+    - name: ubuntu
+      channel: "20.04"
+      architectures: [amd64]
+parts:
+  charm-wheels:
+    source: https://git.launchpad.net/~ubuntuone-hackers/ols-charm-deps/+git/wheels
+    source-commit: "59b32ae07f98051385c96d6d8e7e02ca4f197fe5"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": charm-wheels/
+    prime:
+      - "-charm-wheels"
+  ols-layers:
+    source: https://git.launchpad.net/ols-charm-deps
+    source-commit: "56d219f60a293a6c73759b8439ef5fdb11e19d1f"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": layers/
+    stage:
+      - layers
+    prime:
+      - "-layers"
+  launchpad-layers:
+    after:
+      - ols-layers
+    source: https://git.launchpad.net/launchpad-layers
+    source-commit: "42a4b4c4f62936b1d050c775e84f7364dfb5efc0"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      launchpad-payload: layers/layer/launchpad-payload
+    stage:
+      - layers
+    prime:
+      - "-layers"
+  interface-apache-website:
+    source: https://github.com/juju-solutions/interface-apache-website
+    source-commit: "2f736ebcc90d19ac142a2d898a2ec7e1aafaa13f"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": layers/interface/apache-website/
+    stage:
+      - layers
+    prime:
+      - "-layers"
+  launchpad-assets:
+    after:
+      - charm-wheels
+      - launchpad-layers
+      - interface-apache-website
+    source: .
+    plugin: reactive
+    build-snaps: [charm/2.x/stable]
+    build-environment:
+      - CHARM_LAYERS_DIR: $CRAFT_STAGE/layers/layer
+      - CHARM_INTERFACES_DIR: $CRAFT_STAGE/layers/interface
+      - PIP_NO_INDEX: "true"
+      - PIP_FIND_LINKS: $CRAFT_STAGE/charm-wheels
