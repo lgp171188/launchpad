@@ -126,11 +126,11 @@
     <subscriber
         for="lp.bugs.interfaces.bug.IBugTask
              lazr.lifecycle.interfaces.IObjectCreatedEvent"
-        handler="lp.bugs.subscribers.webhooks.bug_created"/>
+        handler="lp.bugs.subscribers.webhooks.bugtask_created"/>
     <subscriber
         for="lp.bugs.interfaces.bug.IBugTask
              lazr.lifecycle.interfaces.IObjectModifiedEvent"
-        handler="lp.bugs.subscribers.webhooks.bug_modified"/>
+        handler="lp.bugs.subscribers.webhooks.bugtask_modified"/>
     <lp:securedutility
         class="lp.systemhomes.MaloneApplication"
         provides="lp.bugs.interfaces.malone.IMaloneApplication">

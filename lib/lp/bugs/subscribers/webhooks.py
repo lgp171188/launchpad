@@ -3,8 +3,6 @@
 
 """Webhook subscribers for bugs and bugtasks."""
 
-from typing import AnyStr, Union
-
 from lazr.lifecycle.interfaces import IObjectCreatedEvent, IObjectModifiedEvent
 from zope.component import getUtility
 
@@ -19,11 +17,8 @@ from lp.services.webhooks.interfaces import IWebhookSet, IWebhookTarget
 
 
 @block_implicit_flushes
-def _trigger_bugtask_webhook(bugtask: IBugTask, action: AnyStr):
-    """ "Builds payload and triggers event for a specific BugTask.
-
-    TODO: Define a payload for this event (use compose_webhook_payload())
-    """
+def _trigger_bugtask_webhook(bugtask: IBugTask, action: str):
+    """ "Builds payload and triggers event for a specific BugTask"""
     if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
         return
 
@@ -38,17 +33,14 @@ def _trigger_bugtask_webhook(bugtask: IBugTask, action: AnyStr):
 
 
 @block_implicit_flushes
-def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: AnyStr):
-    """Builds payload and triggers "bug:comment" events for a bug comment.
-
-    One event is triggered for each BugTask target that has webhooks setup.
-
-    TODO: Define a payload for this event (use compose_webhook_payload())
-    """
+def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: str):
+    """Builds payload and triggers "bug:comment" events for a bug comment"""
     if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
         return
 
     bugtasks = bug_comment.bug.bugtasks
+
+    # We trigger one webhook for each coment's bugtask that has webhooks set up
     for bugtask in bugtasks:
         target = bugtask.target
         if IWebhookTarget.providedBy(target):
@@ -61,26 +53,23 @@ def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: AnyStr):
             getUtility(IWebhookSet).trigger(target, "bug:comment:0.1", payload)
 
 
-def bug_created(
-    event_target: Union[IBug, IBugTask],
-    event: IObjectCreatedEvent,
-):
-    """Trigger a 'created' event for a Bug or BugTask.
+def bugtask_created(bugtask: IBugTask, event: IObjectCreatedEvent):
+    """Trigger a 'created' event when a BugTask is created for an existing bug
 
-    Triggering the event for Bug AND BugTask creation ensures that the event is
-    triggered both when a user reports a new bug and when an existing bug is
-    referenced to another target (BugTask creation).
+    #NOTE Ideally, when we create a new bug, we would also trigger this since
+    we are creating a bug task with it. That is not the case, so we separate it
+    into 'bugtask_created' and 'bug_created' to get all bugtask creation cases
     """
-    if IBug.providedBy(event_target):
-        bugtasks = event_target.bugtasks
-    else:
-        bugtasks = [event_target]
+    _trigger_bugtask_webhook(bugtask, "created")
 
-    for bugtask in bugtasks:
+
+def bug_created(bug: IBug, event: IObjectCreatedEvent):
+    """Trigger a 'created' event when a new Bug is created"""
+    for bugtask in bug.bugtasks:
         _trigger_bugtask_webhook(bugtask, "created")
 
 
-def bug_task_modified(bugtask: IBugTask, event: IObjectModifiedEvent):
+def bugtask_modified(bugtask: IBugTask, event: IObjectModifiedEvent):
     """Trigger a 'modified' event when a BugTask is modified"""
     _trigger_bugtask_webhook(bugtask, "modified")
 
