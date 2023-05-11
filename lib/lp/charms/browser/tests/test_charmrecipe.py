@@ -128,7 +128,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         )
 
     def test_create_new_recipe_git(self):
-        self.factory.makeProduct(
+        project = self.factory.makeProduct(
             name="test-project", displayname="Test Project"
         )
         [git_ref] = self.factory.makeGitRefs(
@@ -156,6 +156,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             "Source:\n%s\nEdit charm recipe" % source_display,
             MatchesTagText(content, "source"),
         )
+        self.assertIsNone(find_tag_by_id(content, "build_path"))
         self.assertThat(
             "Build schedule:\n(?)\nBuilt on request\nEdit charm recipe\n",
             MatchesTagText(content, "auto_build"),
@@ -165,6 +166,24 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             "Builds of this charm recipe are not automatically uploaded to "
             "the store.\nEdit charm recipe",
             MatchesTagText(content, "store_upload"),
+        )
+
+        login_person(self.person)
+        recipe = getUtility(ICharmRecipeSet).getByName(
+            self.person, project, "charm-name"
+        )
+        self.assertThat(
+            recipe,
+            MatchesStructure(
+                owner=Equals(self.person),
+                project=Equals(project),
+                name=Equals("charm-name"),
+                source=Equals(git_ref),
+                build_path=Is(None),
+                auto_build=Is(False),
+                auto_build_channels=Equals({}),
+                store_upload=Is(False),
+            ),
         )
 
     def test_create_new_recipe_git_project_namespace(self):
@@ -262,6 +281,29 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             ["Test Person (test-person)", "Test Team (test-team)"],
             sorted(str(option) for option in options),
         )
+
+    def test_create_new_recipe_build_path(self):
+        project = self.factory.makeProduct(name="test-project")
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            git_ref, view_name="+new-charm-recipe", user=self.person
+        )
+        browser.getControl(name="field.name").value = "charm-name"
+        browser.getControl(name="field.project").value = "test-project"
+        browser.getControl("Build path").value = "charm/foo"
+        browser.getControl("Create charm recipe").click()
+
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Build path:\ncharm/foo\nEdit charm recipe\n",
+            MatchesTagText(content, "build-path"),
+        )
+
+        login_person(self.person)
+        recipe = getUtility(ICharmRecipeSet).getByName(
+            self.person, project, "charm-name"
+        )
+        self.assertEqual("charm/foo", recipe.build_path)
 
     def test_create_new_recipe_auto_build(self):
         # Creating a new recipe and asking for it to be automatically built
@@ -626,6 +668,7 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
             name="field.git_ref.repository"
         ).value = new_git_ref_identity
         browser.getControl(name="field.git_ref.path").value = new_git_ref_path
+        browser.getControl("Build path").value = "some-path"
         browser.getControl(
             "Automatically build when branch changes"
         ).selected = True
@@ -640,6 +683,10 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         self.assertThat(
             "Source:\n%s\nEdit charm recipe" % new_git_ref_display_name,
             MatchesTagText(content, "source"),
+        )
+        self.assertThat(
+            "Build path:\nsome-path\nEdit charm recipe\n",
+            MatchesTagText(content, "build-path"),
         )
         self.assertThat(
             "Build schedule:\n(?)\nBuilt automatically\nEdit charm recipe\n",
@@ -1502,6 +1549,12 @@ class TestCharmRecipeView(BaseTestCharmRecipeView):
             Failed build request 1 hour ago \(Boom\)
             """,
             self.getMainText(recipe),
+        )
+
+    def test_index_build_path(self):
+        recipe = self.makeCharmRecipe(build_path="charm/foo")
+        self.assertTextMatchesExpressionIgnoreWhitespace(
+            "Build path: charm/foo", self.getMainText(recipe)
         )
 
     def setStatus(self, build, status):
