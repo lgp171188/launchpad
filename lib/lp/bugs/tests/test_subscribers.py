@@ -86,7 +86,8 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
     def _build_comment_expected_payload(self, comment):
         return {
             "action": Equals("created"),
-            "url": Equals(canonical_url(comment)),
+            "bug_comment": Equals(canonical_url(comment)),
+            "bug": Equals(canonical_url(self.bugtask.bug)),
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
@@ -95,7 +96,7 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
     def _build_bug_expected_payload(self, bug, action):
         return {
             "action": Equals(action),
-            "url": Equals(canonical_url(bug)),
+            "bug": Equals(canonical_url(bug)),
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
