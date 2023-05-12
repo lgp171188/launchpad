@@ -191,6 +191,13 @@ class TestWSGI(TestCaseWithFactory):
             "loggerhead-debug", Content(UTF8_TEXT, get_debug_log_bytes)
         )
 
+    def test_robots(self):
+        response = requests.get(
+            "http://127.0.0.1:%d/robots.txt" % config.codebrowse.port
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(b"User-agent: *\nDisallow: /\n", response.content)
+
     def test_public_port_public_branch(self):
         # Requests for public branches on the public port are allowed.
         db_branch, _ = self.create_branch_and_tree()

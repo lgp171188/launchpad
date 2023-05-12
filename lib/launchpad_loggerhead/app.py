@@ -34,7 +34,7 @@ from lp.services.webapp.errorlog import ErrorReportingUtility
 from lp.services.webapp.vhosts import allvhosts
 from lp.xmlrpc import faults
 
-robots_txt = """\
+robots_txt = b"""\
 User-agent: *
 Disallow: /
 """
