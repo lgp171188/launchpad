@@ -7,15 +7,16 @@ from multiprocessing import cpu_count
 
 from charmhelpers.core import hookenv, host, templating
 from charms.coordinator import acquire
-from charms.launchpad.base import (
-    config_file_path,
-    configure_cron,
-    configure_email,
-    configure_lazr,
-    get_service_config,
+from charms.launchpad.base import configure_email, get_service_config
+from charms.launchpad.db import (
     lazr_config_files,
     strip_dsn_authentication,
     update_pgpass,
+)
+from charms.launchpad.payload import (
+    config_file_path,
+    configure_cron,
+    configure_lazr,
 )
 from charms.reactive import (
     clear_flag,
@@ -28,6 +29,7 @@ from charms.reactive import (
     when,
     when_none,
     when_not,
+    when_not_all,
 )
 from ols import base, postgres
 from psycopg2.extensions import parse_dsn
@@ -93,7 +95,7 @@ def config_files():
 
 
 @when(
-    "launchpad.base.configured",
+    "launchpad.db.configured",
     "session-db.master.available",
     "memcache.available",
 )
@@ -155,7 +157,11 @@ def check_is_running():
 
 
 @when("service.configured")
-@when_not("session-db.master.available")
+@when_not_all(
+    "launchpad.db.configured",
+    "session-db.master.available",
+    "memcache.available",
+)
 def deconfigure():
     remove_state("service.configured")
 

@@ -1,5 +1,5 @@
 includes:
-  - layer:launchpad-base
+  - layer:launchpad-db
 repo: https://git.launchpad.net/launchpad
 options:
   apt:
