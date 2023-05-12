@@ -5,14 +5,9 @@ import os.path
 import subprocess
 
 from charmhelpers.core import hookenv, host, templating
-from charms.launchpad.base import (
-    configure_email,
-    configure_lazr,
-    get_service_config,
-    home_dir,
-    strip_dsn_authentication,
-    update_pgpass,
-)
+from charms.launchpad.base import configure_email, get_service_config
+from charms.launchpad.db import strip_dsn_authentication, update_pgpass
+from charms.launchpad.payload import configure_lazr, home_dir
 from charms.reactive import (
     endpoint_from_flag,
     remove_state,
@@ -80,7 +75,7 @@ def update_database_permissions():
 
 
 @when(
-    "launchpad.base.configured",
+    "launchpad.db.configured",
     "db.master.available",
     "db-admin.master.available",
     "session-db.master.available",
@@ -145,7 +140,12 @@ def configure():
 
 
 @when("service.configured")
-@when_not_all("db-admin.master.available", "session-db.master.available")
+@when_not_all(
+    "launchpad.db.configured",
+    "db.master.available",
+    "db-admin.master.available",
+    "session-db.master.available",
+)
 def deconfigure():
     remove_state("service.configured")
 

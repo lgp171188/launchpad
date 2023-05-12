@@ -1,5 +1,5 @@
 includes:
-  - layer:launchpad-base
+  - layer:launchpad-db
   - layer:coordinator
   - interface:memcache
 repo: https://git.launchpad.net/launchpad

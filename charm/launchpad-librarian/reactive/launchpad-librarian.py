@@ -5,15 +5,16 @@ import os.path
 import subprocess
 
 from charmhelpers.core import hookenv, host, templating
-from charms.launchpad.base import (
-    config_file_path,
-    configure_cron,
-    configure_email,
-    configure_lazr,
-    get_service_config,
+from charms.launchpad.base import configure_email, get_service_config
+from charms.launchpad.db import (
     lazr_config_files,
     strip_dsn_authentication,
     update_pgpass,
+)
+from charms.launchpad.payload import (
+    config_file_path,
+    configure_cron,
+    configure_lazr,
 )
 from charms.reactive import (
     endpoint_from_flag,
@@ -22,6 +23,7 @@ from charms.reactive import (
     set_state,
     when,
     when_not,
+    when_not_all,
 )
 from ols import base, postgres
 from psycopg2.extensions import parse_dsn
@@ -73,7 +75,7 @@ def config_files():
     "config.set.port_restricted_download_base",
     "config.set.port_restricted_upload_base",
     "config.set.port_upload_base",
-    "launchpad.base.configured",
+    "launchpad.db.configured",
     "session-db.master.available",
 )
 @when_not("service.configured")
@@ -149,7 +151,14 @@ def check_is_running():
 
 
 @when("service.configured")
-@when_not("session-db.master.available")
+@when_not_all(
+    "config.set.port_download_base",
+    "config.set.port_restricted_download_base",
+    "config.set.port_restricted_upload_base",
+    "config.set.port_upload_base",
+    "launchpad.db.configured",
+    "session-db.master.available",
+)
 def deconfigure():
     remove_state("service.configured")
 
