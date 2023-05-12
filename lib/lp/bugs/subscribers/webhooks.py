@@ -18,6 +18,33 @@ from lp.services.webhooks.interfaces import IWebhookSet, IWebhookTarget
 from lp.services.webhooks.payload import compose_webhook_payload
 
 
+@block_implicit_flushes
+def _trigger_bugtask_webhook(bugtask: IBugTask, action: str):
+    """Triggers 'bug' event for a specific bugtask"""
+    if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
+        return
+
+    if IWebhookTarget.providedBy(bugtask.target):
+        payload = create_bugtask_payload(bugtask, action)
+        getUtility(IWebhookSet).trigger(bugtask.target, "bug:0.1", payload)
+
+
+@block_implicit_flushes
+def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: str):
+    """Triggers 'bug:comment' events for each bug target for that comment"""
+    if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
+        return
+
+    bugtasks = bug_comment.bug.bugtasks
+
+    # We trigger one webhook for each coment's bugtask that has webhooks set up
+    for bugtask in bugtasks:
+        target = bugtask.target
+        if IWebhookTarget.providedBy(target):
+            payload = create_bug_comment_payload(bugtask, bug_comment, action)
+            getUtility(IWebhookSet).trigger(target, "bug:comment:0.1", payload)
+
+
 def create_bugtask_payload(bugtask, action):
     payload = {
         "target": canonical_url(bugtask.target, force_local_path=True),
@@ -41,7 +68,7 @@ def create_bugtask_payload(bugtask, action):
     return payload
 
 
-def create_bugcomment_payload(bugtask, bug_comment, action):
+def create_bug_comment_payload(bugtask, bug_comment, action):
     payload = {
         "target": canonical_url(bugtask.target, force_local_path=True),
         "action": action,
@@ -52,35 +79,7 @@ def create_bugcomment_payload(bugtask, bug_comment, action):
     payload.update(
         compose_webhook_payload(IBugMessage, bug_comment, ["owner"])
     )
-    print(payload)
     return payload
-
-
-@block_implicit_flushes
-def _trigger_bugtask_webhook(bugtask: IBugTask, action: str):
-    """ "Builds payload and triggers event for a specific BugTask"""
-    if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
-        return
-
-    if IWebhookTarget.providedBy(bugtask.target):
-        payload = create_bugtask_payload(bugtask, action)
-        getUtility(IWebhookSet).trigger(bugtask.target, "bug:0.1", payload)
-
-
-@block_implicit_flushes
-def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: str):
-    """Builds payload and triggers "bug:comment" events for a bug comment"""
-    if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
-        return
-
-    bugtasks = bug_comment.bug.bugtasks
-
-    # We trigger one webhook for each coment's bugtask that has webhooks set up
-    for bugtask in bugtasks:
-        target = bugtask.target
-        if IWebhookTarget.providedBy(target):
-            payload = create_bugcomment_payload(bugtask, bug_comment, action)
-            getUtility(IWebhookSet).trigger(target, "bug:comment:0.1", payload)
 
 
 def bug_created(bug: IBug, event: IObjectCreatedEvent):
@@ -110,7 +109,7 @@ def bugtask_created(bugtask: IBugTask, event: IObjectCreatedEvent):
 
 
 def bugtask_modified(bugtask: IBugTask, event: IObjectModifiedEvent):
-    """Trigger a 'modified' event when a BugTask is modified"""
+    """Trigger a '<field>-updated' event when a BugTask is modified"""
     changed_fields = what_changed(event)
 
     for field in changed_fields:
