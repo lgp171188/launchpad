@@ -124,6 +124,10 @@
              lazr.lifecycle.interfaces.IObjectCreatedEvent"
         handler="lp.bugs.subscribers.webhooks.bug_created"/>
     <subscriber
+        for="lp.bugs.interfaces.bug.IBug
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.bugs.subscribers.webhooks.bug_modified"/>
+    <subscriber
         for="lp.bugs.interfaces.bug.IBugTask
              lazr.lifecycle.interfaces.IObjectCreatedEvent"
         handler="lp.bugs.subscribers.webhooks.bugtask_created"/>

@@ -10,10 +10,50 @@ from lp.bugs.interfaces.bug import IBug
 from lp.bugs.interfaces.bugmessage import IBugMessage
 from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import IBugTask
+from lp.bugs.subscribers.bugactivity import what_changed
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet, IWebhookTarget
+from lp.services.webhooks.payload import compose_webhook_payload
+
+
+def create_bugtask_payload(bugtask, action):
+    payload = {
+        "target": canonical_url(bugtask.target, force_local_path=True),
+        "action": action,
+        "bug": canonical_url(bugtask.bug, force_local_path=True),
+    }
+    payload.update(
+        compose_webhook_payload(
+            IBug,
+            bugtask.bug,
+            ["title", "description", "owner"],
+        )
+    )
+    payload.update(
+        compose_webhook_payload(
+            IBugTask,
+            bugtask,
+            ["status", "importance", "assignee", "datecreated"],
+        )
+    )
+    return payload
+
+
+def create_bugcomment_payload(bugtask, bug_comment, action):
+    payload = {
+        "target": canonical_url(bugtask.target, force_local_path=True),
+        "action": action,
+        "bug": canonical_url(bug_comment.bug, force_local_path=True),
+        "bug_comment": canonical_url(bug_comment, force_local_path=True),
+        "content": bug_comment.text_contents,
+    }
+    payload.update(
+        compose_webhook_payload(IBugMessage, bug_comment, ["owner"])
+    )
+    print(payload)
+    return payload
 
 
 @block_implicit_flushes
@@ -22,14 +62,9 @@ def _trigger_bugtask_webhook(bugtask: IBugTask, action: str):
     if not getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG):
         return
 
-    target = bugtask.target
-    if IWebhookTarget.providedBy(target):
-        payload = {
-            "target": canonical_url(target, force_local_path=True),
-            "action": action,
-            "bug": canonical_url(bugtask.bug),
-        }
-        getUtility(IWebhookSet).trigger(target, "bug:0.1", payload)
+    if IWebhookTarget.providedBy(bugtask.target):
+        payload = create_bugtask_payload(bugtask, action)
+        getUtility(IWebhookSet).trigger(bugtask.target, "bug:0.1", payload)
 
 
 @block_implicit_flushes
@@ -44,34 +79,43 @@ def _trigger_bug_comment_webhook(bug_comment: IBugMessage, action: str):
     for bugtask in bugtasks:
         target = bugtask.target
         if IWebhookTarget.providedBy(target):
-            payload = {
-                "target": canonical_url(target, force_local_path=True),
-                "action": action,
-                "bug": canonical_url(bug_comment.bug),
-                "bug_comment": canonical_url(bug_comment),
-            }
+            payload = create_bugcomment_payload(bugtask, bug_comment, action)
             getUtility(IWebhookSet).trigger(target, "bug:comment:0.1", payload)
 
 
-def bugtask_created(bugtask: IBugTask, event: IObjectCreatedEvent):
-    """Trigger a 'created' event when a BugTask is created for an existing bug
-
-    #NOTE Ideally, when we create a new bug, we would also trigger this since
-    we are creating a bug task with it. That is not the case, so we separate it
-    into 'bugtask_created' and 'bug_created' to get all bugtask creation cases
-    """
-    _trigger_bugtask_webhook(bugtask, "created")
-
-
 def bug_created(bug: IBug, event: IObjectCreatedEvent):
-    """Trigger a 'created' event when a new Bug is created"""
+    """Trigger a 'created' event when a new Bug is created
+
+    #NOTE When a user creates a new Bug, only the 'bug_created' is called
+    (not 'bugtask_created'). On the other hand, when a new project is added to
+    a bug as being affected by it, then only 'bugtask_created' is called.
+    """
     for bugtask in bug.bugtasks:
         _trigger_bugtask_webhook(bugtask, "created")
 
 
+def bug_modified(bug: IBug, event: IObjectCreatedEvent):
+    """Trigger a '<field>-updated' event when a bug is modified"""
+    changed_fields = what_changed(event)
+
+    for field in changed_fields:
+        action = "{}-updated".format(field)
+        for bugtask in bug.bugtasks:
+            _trigger_bugtask_webhook(bugtask, action)
+
+
+def bugtask_created(bugtask: IBugTask, event: IObjectCreatedEvent):
+    """Trigger a 'created' event when a BugTask is created in existing bug"""
+    _trigger_bugtask_webhook(bugtask, "created")
+
+
 def bugtask_modified(bugtask: IBugTask, event: IObjectModifiedEvent):
     """Trigger a 'modified' event when a BugTask is modified"""
-    _trigger_bugtask_webhook(bugtask, "modified")
+    changed_fields = what_changed(event)
+
+    for field in changed_fields:
+        action = "{}-updated".format(field)
+        _trigger_bugtask_webhook(bugtask, action)
 
 
 def bug_comment_added(comment, event: IObjectCreatedEvent):

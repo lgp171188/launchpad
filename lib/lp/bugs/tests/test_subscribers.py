@@ -14,6 +14,7 @@ from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.subscribers.bugactivity import what_changed
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.publisher import canonical_url
+from lp.services.webapp.snapshot import notify_modified
 from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -73,9 +74,8 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
             target=self.target, event_types=["bug:comment:0.1", "bug:0.1"]
         )
 
-    def _assert_last_webhook_delivery(self, hook, event, payload, total_count):
+    def _assert_last_webhook_delivery(self, hook, event, payload):
         with person_logged_in(self.owner):
-            self.assertEqual(total_count, hook.deliveries.count())
             delivery = hook.deliveries.last()
             expected_structure = MatchesStructure(
                 event_type=Equals(event),
@@ -83,63 +83,103 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
             )
             self.assertThat(delivery, expected_structure)
 
-    def _build_comment_expected_payload(self, comment):
+    def _build_comment_expected_payload(self, comment, content):
         return {
             "action": Equals("created"),
-            "bug_comment": Equals(canonical_url(comment)),
-            "bug": Equals(canonical_url(self.bugtask.bug)),
+            "bug_comment": Equals(
+                canonical_url(comment, force_local_path=True)
+            ),
+            "bug": Equals(
+                canonical_url(self.bugtask.bug, force_local_path=True)
+            ),
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
+            "content": Equals(content),
+            "owner": Equals("/~" + comment.owner.name),
         }
 
-    def _build_bug_expected_payload(self, bug, action):
+    def _build_bugtask_expected_payload(self, bugtask, action):
+        assignee = "/~" + bugtask.assignee.name if bugtask.assignee else None
+
         return {
             "action": Equals(action),
-            "bug": Equals(canonical_url(bug)),
+            "bug": Equals(canonical_url(bugtask.bug, force_local_path=True)),
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
+            "title": Equals(bugtask.bug.title),
+            "description": Equals(bugtask.bug.description),
+            "owner": Equals("/~" + bugtask.bug.owner.name),
+            "status": Equals(bugtask.status.title),
+            "importance": Equals(bugtask.importance.title),
+            "assignee": Equals(assignee),
+            "datecreated": Equals(bugtask.datecreated.isoformat()),
         }
 
     def test_new_bug_comment_triggers_webhook(self):
-        comment = self.factory.makeBugComment(bug=self.bugtask.bug)
-        expected_payload = self._build_comment_expected_payload(comment)
+        """Adding a comment to a bug with a webhook, triggers webhook"""
+        comment = self.factory.makeBugComment(
+            bug=self.bugtask.bug, body="test comment"
+        )
+        expected_payload = self._build_comment_expected_payload(
+            comment, content="test comment"
+        )
         self._assert_last_webhook_delivery(
-            self.hook, "bug:comment:0.1", expected_payload, total_count=1
+            self.hook, "bug:comment:0.1", expected_payload
         )
 
     def test_new_bug_triggers_webhook(self):
+        """Adding a bug to a target with a webhook, triggers webhook"""
         bug = self.factory.makeBug(target=self.target)
-        expected_payload = self._build_bug_expected_payload(bug, "created")
+        expected_payload = self._build_bugtask_expected_payload(
+            bug.bugtasks[0], "created"
+        )
         self._assert_last_webhook_delivery(
-            self.hook, "bug:0.1", expected_payload, total_count=1
+            self.hook, "bug:0.1", expected_payload
         )
 
     def test_new_bugtask_triggers_webhook(self):
-        """Check that adding a new task targeted at our webhook target, will
-        invoke the bug 'created' event"""
+        """Adding a new task targeted at our webhook target, will invoke the
+        bug 'created' event"""
         bug = self.factory.makeBug()
         with person_logged_in(self.owner):
             new_task = bug.addTask(owner=self.owner, target=self.target)
             # The ObjectCreatedEvent would be triggered in BugAlsoAffectsView
             notify(ObjectCreatedEvent(new_task))
 
-        expected_payload = self._build_bug_expected_payload(bug, "created")
+        expected_payload = self._build_bugtask_expected_payload(
+            new_task, "created"
+        )
         self._assert_last_webhook_delivery(
-            self.hook, "bug:0.1", expected_payload, total_count=1
+            self.hook, "bug:0.1", expected_payload
+        )
+
+    def test_bug_modified_triggers_webhook(self):
+        """Modifying the bug fields, will trigger webhook"""
+        bug = self.bugtask.bug
+        with person_logged_in(self.owner), notify_modified(
+            bug, ["title"], user=self.owner
+        ):
+            bug.title = "new title"
+        expected_payload = self._build_bugtask_expected_payload(
+            self.bugtask, "title-updated"
+        )
+        self._assert_last_webhook_delivery(
+            self.hook, "bug:0.1", expected_payload
         )
 
     def test_bugtask_modified_triggers_webhook(self):
+        """Modifying the bug task fields, will trigger webhook"""
         with person_logged_in(self.owner):
             self.bugtask.bug.setStatus(
                 self.target, BugTaskStatus.FIXRELEASED, self.owner
             )
-        expected_payload = self._build_bug_expected_payload(
-            self.bugtask.bug, "modified"
+        expected_payload = self._build_bugtask_expected_payload(
+            self.bugtask, "status-updated"
         )
         self._assert_last_webhook_delivery(
-            self.hook, "bug:0.1", expected_payload, total_count=1
+            self.hook, "bug:0.1", expected_payload
         )
 
     def test_webhook_subscription(self):
@@ -153,15 +193,22 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
         )
 
         bug = self.factory.makeBug(target=self.target)
-        comment = self.factory.makeBugComment(bug=self.bugtask.bug)
+        comment = self.factory.makeBugComment(
+            bug=self.bugtask.bug, body="test comment"
+        )
 
-        b_expected_payload = self._build_bug_expected_payload(bug, "created")
-        c_expected_payload = self._build_comment_expected_payload(comment)
-
-        self._assert_last_webhook_delivery(
-            bug_hook, "bug:0.1", b_expected_payload, total_count=1
+        b_exptd_payload = self._build_bugtask_expected_payload(
+            bug.bugtasks[0], "created"
+        )
+        c_exptd_payload = self._build_comment_expected_payload(
+            comment,
+            content="test comment",
         )
 
         self._assert_last_webhook_delivery(
-            comment_hook, "bug:comment:0.1", c_expected_payload, total_count=1
+            bug_hook, "bug:0.1", b_exptd_payload
+        )
+
+        self._assert_last_webhook_delivery(
+            comment_hook, "bug:comment:0.1", c_exptd_payload
         )
