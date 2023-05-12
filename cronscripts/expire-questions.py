@@ -30,9 +30,21 @@ class ExpireQuestions(LaunchpadCronScript):
     usage = "usage: %prog [options]"
     description = __doc__
 
+    def add_my_options(self):
+        self.parser.add_option(
+            "-l",
+            "--limit",
+            action="store",
+            dest="limit",
+            type="int",
+            metavar="NUMBER",
+            default=None,
+            help="Limit expiry to NUMBER of questions.",
+        )
+
     def main(self):
         """Expire old questions."""
-        janitor = QuestionJanitor(log=self.logger)
+        janitor = QuestionJanitor(log=self.logger, limit=self.options.limit)
         janitor.expireQuestions(self.txn)
 
 
