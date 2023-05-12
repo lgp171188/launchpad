@@ -126,3 +126,24 @@ class TestQuestionSet(TestCaseWithFactory):
         question_set = getUtility(IQuestionSet)
         expired = question_set.findExpiredQuestions(3)
         self.assertNotIn(question, expired)
+
+    def test_expiredQuestions_limit(self):
+        for _ in range(10):
+            question = self.factory.makeQuestion()
+            removeSecurityProxy(question).datelastquery = datetime.now(
+                timezone.utc
+            ) - timedelta(days=5)
+
+        question_set = getUtility(IQuestionSet)
+        self.assertGreaterEqual(
+            question_set.findExpiredQuestions(
+                days_before_expiration=3
+            ).count(),
+            10,
+        )
+        self.assertEqual(
+            5,
+            question_set.findExpiredQuestions(
+                days_before_expiration=3, limit=5
+            ).count(),
+        )

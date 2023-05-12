@@ -19,13 +19,14 @@ class QuestionJanitor:
     without activity in a configurable period.
     """
 
-    def __init__(self, days_before_expiration=None, log=None):
+    def __init__(self, days_before_expiration=None, log=None, limit=None):
         """Create a new QuestionJanitor.
 
         :days_before_expiration: Days of inactivity before a question is
             expired. Defaults to config.answertracker.days_before_expiration
         :log: A logger instance to use for logging. Defaults to the default
             logger.
+        :limit: Expire no more than limit questions.
         """
 
         if days_before_expiration is None:
@@ -37,6 +38,7 @@ class QuestionJanitor:
             log = getLogger()
         self.days_before_expiration = days_before_expiration
         self.log = log
+        self.limit = limit
 
         self.janitor = getUtility(ILaunchpadCelebrities).janitor
 
@@ -57,7 +59,7 @@ class QuestionJanitor:
         try:
             count = 0
             expired_questions = getUtility(IQuestionSet).findExpiredQuestions(
-                self.days_before_expiration
+                self.days_before_expiration, limit=self.limit
             )
             self.log.info(
                 "Found %d questions to expire." % expired_questions.count()

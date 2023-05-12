@@ -137,6 +137,10 @@ installed and configured on your network.
 
 3. Find the container IP, either from ``lxc list`` or ``lxc info lpdev``.
 
+.. note::
+   If your new container does not have an IPv4 address when you run ``lxc list``, 
+   see :ref:`Network Connectivity <network-connectivity>` in Troubleshooting section.
+
 4. In order to be able to ssh into the container, you need to add your
    public key to your local ``.ssh/authorized_keys`` configuration.  Also
    make sure that both ``.ssh`` (700) and ``authorized_keys`` (600) have the
@@ -360,6 +364,8 @@ Or you can be at a prompt in the same directory and run this:
 
 Troubleshooting
 ===============
+
+.. _network-connectivity:
 
 Network connectivity
 --------------------

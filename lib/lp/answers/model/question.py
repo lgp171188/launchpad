@@ -833,7 +833,7 @@ class QuestionSet:
         """See `IQuestionSet`."""
         self.title = "Launchpad"
 
-    def findExpiredQuestions(self, days_before_expiration):
+    def findExpiredQuestions(self, days_before_expiration, limit=None):
         """See `IQuestionSet`."""
         # This query joins to bugtasks that are not BugTaskStatus.INVALID
         # because there are many bugtasks to one question. A question is
@@ -859,7 +859,7 @@ class QuestionSet:
         expiry = datetime.now(timezone.utc) - timedelta(
             days=days_before_expiration
         )
-        return (
+        rows = (
             IStore(Question)
             .using(*origin)
             .find(
@@ -877,6 +877,9 @@ class QuestionSet:
             )
             .config(distinct=True)
         )
+        if limit is not None:
+            rows = rows[:limit]
+        return rows
 
     def searchQuestions(
         self,
