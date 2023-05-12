@@ -14,7 +14,7 @@ WorkingDirectory={{ code_dir }}
 MemoryMax=4G
 Environment=LPCONFIG=launchpad-librarian%i
 SyslogIdentifier=librarian
-ExecStart={{ code_dir }}/bin/twistd --python daemons/librarian.tac --pidfile {{ var_dir }}/librarian%i.pid --prefix librarian --logfile {{ logfile }} --nodaemon
+ExecStart={{ code_dir }}/bin/twistd --python daemons/librarian.tac --pidfile {{ var_dir }}/librarian%i.pid --prefix librarian --logfile {{ logs_dir }}/librarian%i.log --nodaemon
 ExecReload=/bin/kill -USR1 $MAINPID
 KillMode=mixed
 Restart=on-failure
