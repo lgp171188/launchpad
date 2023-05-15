@@ -40,7 +40,7 @@ files into the branches.  We mock it up here.
     ...
     ...     def writeFile(self, path, contents):
     ...         self.logger.info("Writing file '%s':" % path)
-    ...         self.logger.info(six.ensure_text(contents))
+    ...         self.logger.info(contents.decode())
     ...         self.written_files += 1
     ...
     ...     def lockForCommit(self):

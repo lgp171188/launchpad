@@ -9,7 +9,6 @@ import io
 from email.utils import parseaddr
 
 import defusedxml.cElementTree as cElementTree
-import six
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
@@ -65,9 +64,11 @@ class XpiHeader:
         # Both cElementTree and elementtree fail when trying to parse
         # proper unicode strings.  Use our raw input instead.
         try:
+            raw_content = self._raw_content
+            if not isinstance(raw_content, bytes):
+                raw_content = raw_content.encode()
             parse = cElementTree.iterparse(
-                io.BytesIO(six.ensure_binary(self._raw_content)),
-                forbid_dtd=True,
+                io.BytesIO(raw_content), forbid_dtd=True
             )
             for event, elem in parse:
                 if elem.tag == contributor_tag:

@@ -4,7 +4,6 @@
 import os.path
 from operator import attrgetter
 
-import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -330,7 +329,7 @@ class TestGetGuessedPOFile(TestCaseWithFactory):
         )
         queue_entry = self.queue.addOrUpdateEntry(
             "%s.po" % template_path,
-            six.ensure_binary(template_name),
+            template_name.encode(),
             True,
             self.uploaderperson,
             distroseries=package.distroseries,
