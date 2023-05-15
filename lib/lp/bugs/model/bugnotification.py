@@ -10,6 +10,7 @@ __all__ = [
     "BugNotificationSet",
 ]
 
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 
 from storm.expr import In, Join, LeftJoin
@@ -255,6 +256,7 @@ class BugNotificationSet:
         # First we get some intermediate data structures set up.
         source_person_id_map = {}
         recipient_id_map = {}
+
         for recipient, sources in recipient_to_sources.items():
             if recipient.id in muted_person_ids:
                 continue
@@ -312,7 +314,12 @@ class BugNotificationSet:
                     list(source_person_id_map),
                 ),
             )
+
         filter_ids = []
+        no_filter_marker = -1
+
+        # Associate filters to each notification to facilitate search
+        filters_by_person = defaultdict(set)
         # Record the filters for each source.
         for source_person_id, filter_id, filter_description in filter_data:
             source_person_id_map[source_person_id]["filters"][
@@ -320,16 +327,32 @@ class BugNotificationSet:
             ] = filter_description
             filter_ids.append(filter_id)
 
+            filters_by_person[source_person_id] = {
+                (i, filter_id)
+                for i in source_person_id_map[source_person_id]["sources"]
+            }
+
+        # Remaining notifications have no filters
+        source_filter_ids = filters_by_person.keys()
+        for source_person_id in source_person_id_map:
+            if source_person_id not in source_filter_ids:
+                filters_by_person[source_person_id] = {
+                    (i, no_filter_marker)
+                    for i in source_person_id_map[source_person_id]["sources"]
+                }
+
         # This is only necessary while production and sample data have
         # structural subscriptions without filters.  Assign the filters to
         # each recipient.
-        no_filter_marker = -1
-
         for recipient_data in recipient_id_map.values():
             for source_person_id in recipient_data["source person ids"]:
                 recipient_data["filters"].update(
                     source_person_id_map[source_person_id]["filters"]
                     or {no_filter_marker: None}
+                )
+
+                filters_by_person[recipient_data["principal"].id].update(
+                    filters_by_person[source_person_id]
                 )
         if filter_ids:
             # Now we get the information about subscriptions that might be
@@ -355,19 +378,38 @@ class BugNotificationSet:
                     del recipient_id_map[person_id]["filters"][
                         no_filter_marker
                     ]
+
+                # Remove notification if it's muted
+                filtered_set = set()
+                for source_filter in filters_by_person[person_id]:
+                    if source_filter[1] != filter_id:
+                        filtered_set.add(source_filter)
+                filters_by_person[person_id] = filtered_set
+
         # Now recipient_id_map has all the information we need.  Let's
         # build the final result and return it.
         result = {}
         for recipient_data in recipient_id_map.values():
+            # Getting filtered sources
+
             if recipient_data["filters"]:
                 filter_descriptions = [
                     description
                     for description in recipient_data["filters"].values()
                     if description
                 ]
-                filter_descriptions.sort()  # This is good for tests.
+                filtered_source = []
+
+                # (source, filter)
+                for source, _ in filters_by_person[
+                    recipient_data["principal"].id
+                ]:
+                    filtered_source.append(source)
+
+                # This is good for tests.
+                filter_descriptions.sort()
                 result[recipient_data["principal"]] = {
-                    "sources": recipient_data["sources"],
+                    "sources": filtered_source,
                     "filter descriptions": filter_descriptions,
                 }
         return result

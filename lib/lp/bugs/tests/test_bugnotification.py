@@ -237,7 +237,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
         sources = list(self.notification.recipients)
         sources.extend(self.notification2.recipients)
         assert len(sources) == 2
-        self.assertEqual(
+        self.assertContentEqual(
             {
                 self.subscriber: {
                     "sources": sources,
@@ -311,7 +311,7 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
         sources = list(self.notification.recipients)
         sources.extend(self.notification2.recipients)
         # Perform the test.
-        self.assertEqual(
+        self.assertContentEqual(
             {
                 self.subscriber: {
                     "sources": sources,
@@ -371,9 +371,8 @@ class TestNotificationsLinkToFilters(TestCaseWithFactory):
         self.addNotificationRecipient(self.notification, person)
 
         sources = list(self.notification.recipients)
-
         # Perform the test.
-        self.assertEqual(
+        self.assertContentEqual(
             {person: {"filter descriptions": [], "sources": sources}},
             BugNotificationSet().getRecipientFilterData(
                 self.bug,
