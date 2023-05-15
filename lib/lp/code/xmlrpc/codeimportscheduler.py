@@ -8,7 +8,6 @@ __all__ = [
 ]
 
 import io
-import xmlrpc.client
 
 import six
 from zope.component import getUtility
@@ -91,28 +90,16 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
         job = self._getJob(job_id)
         status = CodeImportResultStatus.items[status_name]
         workflow = removeSecurityProxy(getUtility(ICodeImportJobWorkflow))
-        if isinstance(log_file, xmlrpc.client.Binary):
-            if log_file.data:
-                log_file_name = "%s.log" % (
-                    job.code_import.target.unique_name[1:].replace("/", "-")
-                )
-                log_file_alias = getUtility(ILibraryFileAliasSet).create(
-                    log_file_name,
-                    len(log_file.data),
-                    io.BytesIO(log_file.data),
-                    "text/plain",
-                )
-            else:
-                log_file_alias = None
-        elif log_file:
-            # XXX cjwatson 2020-10-05: Backward compatibility for previous
-            # versions that uploaded the log file to the librarian from the
-            # scheduler; remove this once deployed code import machines no
-            # longer need this.
-            library_file_alias_set = getUtility(ILibraryFileAliasSet)
-            # XXX This is so so so terrible:
-            log_file_alias_id = int(six.ensure_text(log_file).split("/")[-2])
-            log_file_alias = library_file_alias_set[log_file_alias_id]
+        if log_file and log_file.data:
+            log_file_name = "%s.log" % (
+                job.code_import.target.unique_name[1:].replace("/", "-")
+            )
+            log_file_alias = getUtility(ILibraryFileAliasSet).create(
+                log_file_name,
+                len(log_file.data),
+                io.BytesIO(log_file.data),
+                "text/plain",
+            )
         else:
             log_file_alias = None
         workflow.finishJob(job, status, log_file_alias)
