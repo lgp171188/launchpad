@@ -3,6 +3,7 @@
 
 """Event subscribers for CI builds."""
 
+from lazr.lifecycle.interfaces import IObjectCreatedEvent, IObjectModifiedEvent
 from zope.component import getUtility
 
 from lp.code.interfaces.cibuild import CI_WEBHOOKS_FEATURE_FLAG, ICIBuild
@@ -12,7 +13,7 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.payload import compose_webhook_payload
 
 
-def _trigger_ci_build_webhook(build, action):
+def _trigger_ci_build_webhook(build: ICIBuild, action: str) -> None:
     if getFeatureFlag(CI_WEBHOOKS_FEATURE_FLAG):
         payload = {
             "build": canonical_url(build, force_local_path=True),
@@ -28,12 +29,12 @@ def _trigger_ci_build_webhook(build, action):
         )
 
 
-def ci_build_created(build, event):
+def ci_build_created(build: ICIBuild, event: IObjectCreatedEvent) -> None:
     """Trigger events when a new CI build is created."""
     _trigger_ci_build_webhook(build, "created")
 
 
-def ci_build_modified(build, event):
+def ci_build_modified(build: ICIBuild, event: IObjectModifiedEvent) -> None:
     """Trigger events when a CI build is modified."""
     if event.edited_fields is not None:
         if "status" in event.edited_fields:
