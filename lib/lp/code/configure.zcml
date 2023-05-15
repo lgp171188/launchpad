@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2021 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -1297,6 +1297,14 @@
         permission="launchpad.Admin"
         interface="lp.code.interfaces.cibuild.ICIBuildAdmin" />
   </class>
+  <subscriber
+      for="lp.code.interfaces.cibuild.ICIBuild
+           lazr.lifecycle.interfaces.IObjectCreatedEvent"
+      handler="lp.code.subscribers.cibuild.ci_build_created" />
+  <subscriber
+      for="lp.code.interfaces.cibuild.ICIBuild
+           lazr.lifecycle.interfaces.IObjectModifiedEvent"
+      handler="lp.code.subscribers.cibuild.ci_build_modified" />
 
   <!-- CIBuildSet -->
   <lp:securedutility

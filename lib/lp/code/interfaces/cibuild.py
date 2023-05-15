@@ -1,9 +1,10 @@
-# Copyright 2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2022-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for CI builds."""
 
 __all__ = [
+    "CI_WEBHOOKS_FEATURE_FLAG",
     "CannotFetchConfiguration",
     "CannotParseConfiguration",
     "CIBuildAlreadyRequested",
@@ -40,6 +41,8 @@ from lp.buildmaster.interfaces.packagebuild import (
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.database.constants import DEFAULT
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+CI_WEBHOOKS_FEATURE_FLAG = "ci.webhooks.enabled"
 
 
 class MissingConfiguration(Exception):
