@@ -319,8 +319,11 @@ def create_sample_series(original_series, log):
         ("Focal Fossa", SeriesStatus.SUPPORTED, "20.04"),
         ("Groovy Gorilla", SeriesStatus.OBSOLETE, "20.10"),
         ("Hirsute Hippo", SeriesStatus.OBSOLETE, "21.04"),
-        ("Impish Indri", SeriesStatus.CURRENT, "21.10"),
-        ("Jammy Jellyfish", SeriesStatus.DEVELOPMENT, "22.04"),
+        ("Impish Indri", SeriesStatus.OBSOLETE, "21.10"),
+        ("Jammy Jellyfish", SeriesStatus.SUPPORTED, "22.04"),
+        ("Kinetic Kudu", SeriesStatus.SUPPORTED, "22.10"),
+        ("Lunar Lobster", SeriesStatus.CURRENT, "23.04"),
+        ("Mantic Minotaur", SeriesStatus.DEVELOPMENT, "23.10"),
     ]
 
     parent = original_series
