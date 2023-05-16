@@ -911,7 +911,6 @@ def _do_direct_copy(
 
     # Always ensure the needed builds exist in the copy destination
     # after copying the binaries.
-    # XXX cjwatson 2012-06-22 bug=869308: Fails to honour P-a-s.
     source_copy.createMissingBuilds(logger=logger)
 
     if move:

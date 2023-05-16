@@ -557,10 +557,6 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     def createMissingBuilds(architectures_available=None, logger=None):
         """Create missing Build records for a published source.
 
-        P-a-s should be used when accepting sources to the PRIMARY archive
-        (in drescher). It explicitly ignores given P-a-s for sources
-        targeted to PPAs.
-
         :param architectures_available: options list of `DistroArchSeries`
             that should be considered for build creation; if not given
             it will be calculated in place, all architectures for the
