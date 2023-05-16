@@ -5,7 +5,6 @@
 
 from textwrap import dedent
 
-import six
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -143,7 +142,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         potemplate = self.factory.makePOTemplate()
         template_entry = self.translation_import_queue.addOrUpdateEntry(
             potemplate.path,
-            six.ensure_binary(pot_content),
+            pot_content.encode(),
             by_maintainer,
             self.importer_person,
             productseries=potemplate.productseries,
@@ -172,7 +171,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         person = person or self.importer_person
         translation_entry = self.translation_import_queue.addOrUpdateEntry(
             pofile.path,
-            six.ensure_binary(po_content),
+            po_content.encode(),
             by_maintainer,
             person,
             productseries=potemplate.productseries,
@@ -202,7 +201,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         potemplate = self.factory.makePOTemplate()
         template_entry = self.translation_import_queue.addOrUpdateEntry(
             potemplate.path,
-            six.ensure_binary(TEST_TEMPLATE_EXPORTED),
+            TEST_TEMPLATE_EXPORTED.encode(),
             False,
             self.importer_person,
             productseries=potemplate.productseries,
@@ -467,7 +466,7 @@ class FileImporterTestCase(TestCaseWithFactory):
                 "should be none.",
             )
             potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-                six.ensure_text(TEST_MSGID)
+                TEST_MSGID
             )
             message = potmsgset.getCurrentTranslation(
                 po_importer.potemplate,
@@ -561,7 +560,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         # Although the message has an error, it should still be stored
         # in the database, though only as a suggestion.
         potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-            six.ensure_text(TEST_MSGID_ERROR)
+            TEST_MSGID_ERROR
         )
         message = potmsgset.getLocalTranslationMessages(
             po_importer.potemplate, po_importer.pofile.language
@@ -593,7 +592,7 @@ class FileImporterTestCase(TestCaseWithFactory):
         po_importer2.importFile()
 
         potmsgset = po_importer.pofile.potemplate.getPOTMsgSetByMsgIDText(
-            six.ensure_text(TEST_MSGID_ERROR)
+            TEST_MSGID_ERROR
         )
         messages = potmsgset.getLocalTranslationMessages(
             po_importer.pofile.potemplate, po_importer.pofile.language
@@ -665,7 +664,7 @@ class CreateFileImporterTestCase(TestCaseWithFactory):
         po_content = TEST_TRANSLATION_FILE % ("", "foo", "bar")
         queue_entry = self.translation_import_queue.addOrUpdateEntry(
             pofile.path,
-            six.ensure_binary(po_content),
+            po_content.encode(),
             by_maintainer,
             self.importer_person,
             productseries=pofile.potemplate.productseries,

@@ -1,4 +1,4 @@
-# Copyright 2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2022-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test CI builds."""
@@ -9,13 +9,14 @@ from textwrap import dedent
 from unittest.mock import Mock
 from urllib.request import urlopen
 
-from fixtures import MockPatchObject
+from fixtures import FakeLogger, MockPatchObject
 from pymacaroons import Macaroon
 from storm.locals import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
     Is,
+    MatchesDict,
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
@@ -35,6 +36,7 @@ from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.code.errors import GitRepositoryBlobNotFound, GitRepositoryScanFault
 from lp.code.interfaces.cibuild import (
+    CI_WEBHOOKS_FEATURE_FLAG,
     CannotFetchConfiguration,
     CannotParseConfiguration,
     CIBuildAlreadyRequested,
@@ -55,12 +57,15 @@ from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.database.sqlbase import flush_database_caches
+from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.interfaces import IMacaroonIssuer
 from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.soyuz.enums import BinaryPackageFormat
 from lp.testing import (
     ANONYMOUS,
@@ -73,6 +78,7 @@ from lp.testing import (
     person_logged_in,
     pop_notifications,
 )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import webservice_for_person
@@ -319,6 +325,95 @@ class TestCIBuild(TestCaseWithFactory):
         # checks to perform here.
         build = self.factory.makeCIBuild()
         self.assertTrue(build.verifySuccessfulUpload())
+
+    def test_updateStatus_triggers_webhooks(self):
+        # Updating the status of a CIBuild triggers webhooks on the
+        # corresponding GitRepository.
+        self.useFixture(FeatureFixture({CI_WEBHOOKS_FEATURE_FLAG: "on"}))
+        logger = self.useFixture(FakeLogger())
+        build = self.factory.makeCIBuild()
+        hook = self.factory.makeWebhook(
+            target=build.git_repository, event_types=["ci:build:0.1"]
+        )
+        build.updateStatus(BuildStatus.FULLYBUILT)
+        expected_payload = {
+            "build": Equals(canonical_url(build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "git_repository": Equals(
+                canonical_url(build.git_repository, force_local_path=True)
+            ),
+            "commit_sha1": Equals(build.commit_sha1),
+            "status": Equals("Successfully built"),
+        }
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery,
+            MatchesStructure(
+                event_type=Equals("ci:build:0.1"),
+                payload=MatchesDict(expected_payload),
+            ),
+        )
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>"
+                % (hook.id, hook.target),
+                repr(delivery),
+            )
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks(
+                    [(hook, "ci:build:0.1", MatchesDict(expected_payload))]
+                ),
+            )
+
+    def test_updateStatus_no_change_does_not_trigger_webhooks(self):
+        # An updateStatus call that changes details of the worker status but
+        # that doesn't change the build's status attribute does not trigger
+        # webhooks.
+        self.useFixture(FeatureFixture({CI_WEBHOOKS_FEATURE_FLAG: "on"}))
+        logger = self.useFixture(FakeLogger())
+        build = self.factory.makeCIBuild()
+        hook = self.factory.makeWebhook(
+            target=build.git_repository, event_types=["ci:build:0.1"]
+        )
+        builder = self.factory.makeBuilder()
+        build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (
+                hook,
+                "ci:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Currently building"),
+                    }
+                ),
+            )
+        ]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+        build.updateStatus(
+            BuildStatus.BUILDING,
+            builder=builder,
+            worker_status={"revision_id": build.commit_sha1},
+        )
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+        build.updateStatus(BuildStatus.UPLOADING)
+        expected_logs.append(
+            (
+                hook,
+                "ci:build:0.1",
+                ContainsDict(
+                    {
+                        "action": Equals("status-changed"),
+                        "status": Equals("Uploading build"),
+                    }
+                ),
+            )
+        )
+        self.assertEqual(2, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def addFakeBuildLog(self, build):
         build.setLog(self.factory.makeLibraryFileAlias("mybuildlog.txt"))

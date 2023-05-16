@@ -1429,11 +1429,9 @@ bug 138650 for an example).
 If such bad requests do end up on the import queue, the import queue code will
 raise errors about them.
 
-    >>> import six
-
     >>> def print_import_failures(import_script):
     ...     """List failures recorded in an import script instance."""
-    ...     for reason, entries in six.iteritems(script.failures):
+    ...     for reason, entries in script.failures.items():
     ...         print(reason)
     ...         for entry in entries:
     ...             print("-> " + entry)

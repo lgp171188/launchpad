@@ -30,14 +30,3 @@ doesn't already exist, use POTranslation.getOrCreateTranslation.
     >>> got = POTranslation.getOrCreateTranslation("In Xanadu did Kubla Khan")
     >>> print(got.translation)
     In Xanadu did Kubla Khan
-
-If you want to pass non-ascii characters to either of these, it had better be
-either UTF-8 string or, better, a unicode object.
-
-    >>> got = POTranslation.getOrCreateTranslation(b"\xc3\x81")
-    >>> got = POTranslation.getOrCreateTranslation("\u00c2")
-
-    >>> got = POTranslation.getOrCreateTranslation(b"\xc0")
-    Traceback (most recent call last):
-    ...
-    UnicodeDecodeError: 'utf...8' codec can't decode byte 0xc0 in position...

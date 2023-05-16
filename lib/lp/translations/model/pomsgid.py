@@ -3,7 +3,6 @@
 
 __all__ = ["POMsgID"]
 
-import six
 from storm.expr import Func
 from storm.locals import Int, Unicode
 from zope.interface import implementer
@@ -46,8 +45,7 @@ class POMsgID(StormBase):
             IStore(POMsgID)
             .find(
                 POMsgID,
-                Func("sha1", POMsgID.msgid)
-                == Func("sha1", six.ensure_text(key)),
+                Func("sha1", POMsgID.msgid) == Func("sha1", key),
             )
             .one()
         )

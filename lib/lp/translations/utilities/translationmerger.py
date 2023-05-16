@@ -10,7 +10,6 @@ __all__ = [
 
 from operator import methodcaller
 
-import six
 from storm.locals import ClassAlias, Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -316,8 +315,6 @@ class MessageSharingMerge(LaunchpadScript):
             sourcepackagename=sourcepackagename,
         )
         template_regex = self.options.template_names
-        if template_regex is not None:
-            template_regex = six.ensure_text(template_regex)
         equivalence_classes = subset.groupEquivalentPOTemplates(template_regex)
 
         class_count = len(equivalence_classes)

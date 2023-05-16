@@ -3,7 +3,6 @@
 
 __all__ = ["POTranslation"]
 
-import six
 from storm.expr import Func
 from storm.locals import Int, Unicode
 from zope.interface import implementer
@@ -44,8 +43,7 @@ class POTranslation(StormBase):
             IStore(POTranslation)
             .find(
                 POTranslation,
-                Func("sha1", POTranslation.translation)
-                == Func("sha1", six.ensure_text(key)),
+                Func("sha1", POTranslation.translation) == Func("sha1", key),
             )
             .one()
         )
@@ -60,11 +58,6 @@ class POTranslation(StormBase):
         """Return a POTranslation object for the given translation, or create
         it if it doesn't exist.
         """
-        # If this is not a unicode object, it had better be ASCII or UTF-8.
-        # XXX: JeroenVermeulen 2008-06-06 bug=237868: non-ascii str strings
-        # should be contained in the parser or the browser code.
-        key = six.ensure_text(key)
-
         try:
             return cls.getByTranslation(key)
         except NotFoundError:

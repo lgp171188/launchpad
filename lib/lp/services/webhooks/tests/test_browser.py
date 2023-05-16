@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for Webhook views."""
@@ -63,6 +63,7 @@ class GitRepositoryTestHelpers:
 
     event_type = "git:push:0.1"
     expected_event_types = [
+        ("ci:build:0.1", "CI build"),
         ("git:push:0.1", "Git push"),
         ("merge-proposal:0.1", "Merge proposal"),
     ]
