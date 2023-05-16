@@ -14,7 +14,6 @@
   <include package="zope.publisher" file="meta.zcml" />
   <include package="zope.browsermenu" file="meta.zcml" />
   <include package="zope.browserpage" file="meta.zcml" />
-  <include package="zope.securitypolicy" file="meta.zcml" />
   <include package="zope.sendmail" file="meta.zcml" />
   <include package="zope.app.publication" file="meta.zcml" />
   <include package="zope.app.publisher.xmlrpc" file="meta.zcml" />
