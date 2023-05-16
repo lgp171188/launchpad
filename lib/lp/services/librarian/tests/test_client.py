@@ -10,6 +10,7 @@ import socket
 import textwrap
 import threading
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 
@@ -40,29 +41,6 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
 )
 from lp.testing.views import create_webservice_error_view
-
-
-class PropagatingThread(threading.Thread):
-    """Thread class that propagates errors to the parent."""
-
-    # https://stackoverflow.com/a/31614591
-    def run(self):
-        self.exc = None
-        try:
-            if hasattr(self, "_Thread__target"):
-                # Thread uses name mangling prior to Python 3.
-                self.ret = self._Thread__target(
-                    *self._Thread__args, **self._Thread__kwargs
-                )
-            else:
-                self.ret = self._target(*self._args, **self._kwargs)
-        except BaseException as e:
-            self.exc = e
-
-    def join(self):
-        super().join()
-        if self.exc:
-            raise self.exc
 
 
 class InstrumentedLibrarianClient(LibrarianClient):
@@ -598,12 +576,15 @@ class LibrarianClientTestCase(TestCase):
 
     def test_thread_state_FileUploadClient(self):
         client = InstrumentedLibrarianClient()
-        th = PropagatingThread(
-            target=client.addFile,
-            args=("sample.txt", 6, io.BytesIO(b"sample"), "text/plain"),
-        )
-        th.start()
-        th.join()
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                client.addFile,
+                "sample.txt",
+                6,
+                io.BytesIO(b"sample"),
+                "text/plain",
+            )
+            future.result()
         self.assertEqual(5, client.check_error_calls)
 
 
