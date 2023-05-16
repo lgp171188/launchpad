@@ -115,19 +115,6 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
             code_import, "date_last_successful", UTC_NOW
         )
 
-    def test_finishJobID_with_log_file_alias_url(self):
-        # finishJobID calls the finishJobID job workflow method and can parse
-        # a librarian file's http url to figure out its ID.
-        code_import_job = self.makeCodeImportJob(running=True)
-        code_import = code_import_job.code_import
-        log_file_alias = self.factory.makeLibraryFileAlias()
-        self.api.finishJobID(
-            code_import_job.id,
-            CodeImportResultStatus.SUCCESS.name,
-            log_file_alias.http_url,
-        )
-        self.assertEqual(log_file_alias, code_import.results.last().log_file)
-
     def test_finishJobID_with_log_file_data(self):
         # finishJobID calls the finishJobID job workflow method and uploads
         # log file data to the librarian.
