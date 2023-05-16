@@ -597,16 +597,6 @@ class ISnapView(Interface):
         )
     )
 
-    # XXX cjwatson 2018-06-20: Deprecated as an exported method; can become
-    # an internal helper method once production JavaScript no longer uses
-    # it.
-    @operation_parameters(
-        snap_build_ids=List(
-            title=_("A list of snap build IDs."), value_type=Int()
-        )
-    )
-    @export_read_operation()
-    @operation_for_version("devel")
     def getBuildSummariesForSnapBuildIds(snap_build_ids):
         """Return a dictionary containing a summary of the build statuses.
 
