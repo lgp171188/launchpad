@@ -79,20 +79,23 @@ will be cookie@example.com.
     cookie@example.com
 
 
-time_zone
----------
+time_zone_name and time_zone
+----------------------------
 
-The time_zone attribute gives the user's time zone, as an pytz object.
+The time_zone_name attribute gives the name of the user's time zone; the
+time_zone attribute gives it as a tzinfo object.
 
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> factory = LaunchpadObjectFactory()
     >>> person = factory.makePerson()
     >>> ignored = login_person(person)
+    >>> launchbag.time_zone_name
+    'UTC'
     >>> launchbag.time_zone
-    <UTC>
+    datetime.timezone.utc
 
-It's cached, so even if the user's time zone is changed, it will stay
-the same. This is to optimize the look-up time, since some pages look it
+They're cached, so even if the user's time zone is changed, they will stay
+the same. This is to optimize the look-up time, since some pages look them
 up a lot of times.
 
     >>> person.setLocation(
@@ -101,11 +104,15 @@ up a lot of times.
     ...     "Europe/Paris",
     ...     launchbag.user,
     ... )
+    >>> launchbag.time_zone_name
+    'UTC'
     >>> launchbag.time_zone
-    <UTC>
+    datetime.timezone.utc
 
 After the LaunchBag has been cleared, the correct time zone is returned.
 
     >>> launchbag.clear()
+    >>> launchbag.time_zone_name
+    'Europe/Paris'
     >>> launchbag.time_zone
     <... 'Europe/Paris' ...>

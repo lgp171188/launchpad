@@ -9,7 +9,7 @@
                    disabled view/disabled_flag" />
 <tal:display_zone condition="view/display_zone">
   <span> in time zone: <tal:tz replace="view/time_zone_name" />
-  <a tal:condition="not: view/required_time_zone"
+  <a tal:condition="not: view/required_time_zone_name"
      href="/people/+me/+editlocation">
     <img src="/@@/edit"/>
   </a></span>
