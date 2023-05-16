@@ -1,6 +1,6 @@
 #!/usr/bin/python3 -S
 #
-# Copyright 2012-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import _pythonpath  # noqa: F401
@@ -13,6 +13,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.interfaces import IPrimaryStore
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.services.scripts.base import LaunchpadScript
+from lp.translations.enums import RosettaImportStatus
 
 delete_pofiletranslator = """\
 DELETE FROM POFileTranslator
@@ -87,6 +88,22 @@ DELETE FROM POTemplate
      LIMIT ?)
 """
 
+# Reset status from Approved to Needs Review; we've just unset the target,
+# so these entries will have to be gardened again.
+unapprove_translationimportqueueentry = """\
+UPDATE TranslationImportQueueEntry
+   SET status = %(needs_review)d
+ WHERE TranslationImportQueueEntry.id IN (
+    SELECT TranslationImportQueueEntry.id
+      FROM TranslationImportQueueEntry
+     WHERE TranslationImportQueueEntry.status = %(approved)d
+       AND TranslationImportQueueEntry.distroseries = ?
+     LIMIT ?)
+""" % {
+    "needs_review": RosettaImportStatus.NEEDS_REVIEW.value,
+    "approved": RosettaImportStatus.APPROVED.value,
+}
+
 statements = [
     delete_pofiletranslator,
     null_translationimportqueueentry_pofile,
@@ -95,6 +112,7 @@ statements = [
     delete_packagingjob,
     null_translationimportqueueentry_potemplate,
     delete_potemplate,
+    unapprove_translationimportqueueentry,
 ]
 
 
