@@ -13,6 +13,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.interfaces import IPrimaryStore
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 from lp.services.scripts.base import LaunchpadScript
+from lp.translations.enums import RosettaImportStatus
 
 delete_pofiletranslator = """\
 DELETE FROM POFileTranslator
@@ -87,19 +88,21 @@ DELETE FROM POTemplate
      LIMIT ?)
 """
 
-# Reset status from RosettaImportStatus.APPROVED (1) to
-# RosettaImportStatus.NEEDSREVIEW (5); we've just unset the target, so these
-# entries will have to be gardened again.
+# Reset status from Approved to Needs Review; we've just unset the target,
+# so these entries will have to be gardened again.
 unapprove_translationimportqueueentry = """\
 UPDATE TranslationImportQueueEntry
-   SET status = 5
+   SET status = %(needs_review)d
  WHERE TranslationImportQueueEntry.id IN (
     SELECT TranslationImportQueueEntry.id
       FROM TranslationImportQueueEntry
-     WHERE TranslationImportQueueEntry.status = 1
+     WHERE TranslationImportQueueEntry.status = %(approved)d
        AND TranslationImportQueueEntry.distroseries = ?
      LIMIT ?)
-"""
+""" % {
+    "needs_review": RosettaImportStatus.NEEDS_REVIEW.value,
+    "approved": RosettaImportStatus.APPROVED.value,
+}
 
 statements = [
     delete_pofiletranslator,
