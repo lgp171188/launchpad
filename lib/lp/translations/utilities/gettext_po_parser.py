@@ -17,7 +17,6 @@ import re
 from datetime import datetime, timezone
 from email.utils import parseaddr
 
-import six
 from zope import datetime as zope_datetime
 from zope.interface import implementer
 
@@ -61,11 +60,14 @@ class POSyntaxWarning(Warning):
         logging.info(self.message)
 
     def __str__(self):
-        return six.ensure_text(self.message)
+        return self.message
 
 
 def parse_charset(string_to_parse, is_escaped=True):
     """Return charset used in the given string_to_parse."""
+    if isinstance(string_to_parse, bytes):
+        string_to_parse = string_to_parse.decode("UTF-8", "replace")
+
     # Scan for the charset in the same way that gettext does.
     default_charset = "UTF-8"
     pattern = r"charset=([^\s]+)"
@@ -75,9 +77,7 @@ def parse_charset(string_to_parse, is_escaped=True):
     # Default to UTF-8 if the header still has the default value or
     # is unknown.
     charset = default_charset
-    match = re.search(
-        pattern, six.ensure_text(string_to_parse, "UTF-8", "replace")
-    )
+    match = re.search(pattern, string_to_parse)
     if match is not None and match.group(1) != b"CHARSET":
         charset = match.group(1).strip()
         try:

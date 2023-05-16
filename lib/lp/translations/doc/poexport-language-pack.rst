@@ -98,7 +98,7 @@ And one of the included .po files look like what we expected.
     >>> fh = tarfile.extractfile(
     ...     "rosetta-hoary/es/LC_MESSAGES/evolution-2.2.po"
     ... )
-    >>> print(six.ensure_text(fh.readline()))
+    >>> print(fh.readline().decode())
     # traducción de es.po al Spanish
 
 

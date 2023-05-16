@@ -11,7 +11,6 @@ import posixpath
 from datetime import datetime, timezone
 from operator import attrgetter
 
-import six
 import transaction
 from storm.exceptions import TimeoutError
 from zope.component import getUtility
@@ -636,7 +635,7 @@ class FileImporter:
                 "pomessage": self.format_exporter.exportTranslationMessageData(
                     message
                 ),
-                "error-message": six.ensure_text(errormsg),
+                "error-message": errormsg,
             }
         )
 

@@ -452,7 +452,7 @@ The special symbols and numeric representations of the chars '8', '80' and 'p'
 are decoded correctly.
 
     >>> for translation in translation_file.messages[0].translations:
-    ...     print(repr(six.ensure_str(translation)))
+    ...     print(repr(translation))
     ...
     '\x07\x08\x0b\x0c\t\x0b\\"\'\n8 8 80 p\n'
 
