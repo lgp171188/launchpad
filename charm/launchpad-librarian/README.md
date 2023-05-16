@@ -30,12 +30,11 @@ Only one instance of the librarian may be active at any one time, and very
 little downtime is acceptable on production.  This means that we have to be
 especially careful when redeploying.  The general procedure is as follows:
 
-1. Deploy a new unit with `active=false`.  This will run the librarian in
-   more or less a read-only mode: downloads are possible, and cron jobs that
-   would modify the database, the contents of the librarian, or the contents
-   of Swift are disabled.  If uploads happen they will be spooled locally,
-   but that's low-risk since only Launchpad itself uploads to the librarian.
-   This allows testing connectivity.
+1. Deploy a new unit with `active=false`.  This will disable periodic jobs
+   that would modify the database, the contents of the librarian, or the
+   contents of Swift.  Downloads are possible, and if uploads happen they
+   will be spooled locally, but that's low-risk since only Launchpad itself
+   uploads to the librarian.  This mode allows testing connectivity.
 
 1. Ensure that a Ceph volume is mounted persistently on
    `/srv/launchpad/librarian/`.  On production this should be a 2 TiB volume

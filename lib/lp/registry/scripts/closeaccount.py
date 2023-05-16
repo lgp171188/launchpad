@@ -626,6 +626,7 @@ def close_account(username, log):
             "User %s is still referenced" % person_name
         )
 
+    log.info("%s's account closed" % person_name)
     return True
 
 

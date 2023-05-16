@@ -83,9 +83,9 @@ class TestCloseAccount(TestCaseWithFactory):
             self.addDetail("log", script.logger.content)
             flush_database_caches()
 
-    def makePopulatedUser(self):
+    def makePopulatedUser(self, name=None):
         """Return a person and account linked to some personal information."""
-        person = self.factory.makePerson(karma=10)
+        person = self.factory.makePerson(name=name, karma=10)
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
         self.assertNotEqual([], list(person.account.openid_identifiers))
         self.factory.makeBugTask().transitionToAssignee(person, validate=False)
@@ -200,6 +200,23 @@ class TestCloseAccount(TestCaseWithFactory):
             "Dry run, so not committing changes", script.logger.getLogBuffer()
         )
         self.assertNotRemoved(account_id, person_id)
+
+    def test_close_account_logs(self):
+        person, person_id, account_id = self.makePopulatedUser(
+            name="test-account-to-close"
+        )
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertIn(
+            "Closing test-account-to-close's account",
+            script.logger.getLogBuffer(),
+        )
+        self.assertIn(
+            "test-account-to-close's account closed",
+            script.logger.getLogBuffer(),
+        )
 
     def test_single_by_name(self):
         person, person_id, account_id = self.makePopulatedUser()
