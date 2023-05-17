@@ -125,7 +125,8 @@ class PackageClonerTests(TestCaseWithFactory):
     def makeCopyArchive(
         self,
         package_infos,
-        component="main",
+        from_component=None,
+        to_component="main",
         source_pocket=None,
         target_pocket=None,
         processors=None,
@@ -135,11 +136,14 @@ class PackageClonerTests(TestCaseWithFactory):
         copy_archive = self.getTargetArchive(
             distroseries.distribution, processors=processors
         )
-        to_component = getUtility(IComponentSet).ensure(component)
+        if from_component is not None:
+            from_component = getUtility(IComponentSet).ensure(from_component)
+        to_component = getUtility(IComponentSet).ensure(to_component)
         self.copyArchive(
             copy_archive,
             distroseries,
             from_pocket=source_pocket,
+            from_component=from_component,
             to_pocket=target_pocket,
             to_component=to_component,
             processors=processors,
@@ -174,6 +178,7 @@ class PackageClonerTests(TestCaseWithFactory):
         from_archive=None,
         from_distroseries=None,
         from_pocket=None,
+        from_component=None,
         to_pocket=None,
         to_component=None,
         packagesets=None,
@@ -195,16 +200,16 @@ class PackageClonerTests(TestCaseWithFactory):
             from_distroseries.distribution,
             from_distroseries,
             from_pocket,
+            component=from_component,
+            packagesets=packagesets,
         )
         destination = PackageLocation(
             to_archive,
             to_distroseries.distribution,
             to_distroseries,
             to_pocket,
+            component=to_component,
         )
-        origin.packagesets = packagesets
-        if to_component is not None:
-            destination.component = to_component
         cloner = getUtility(IPackageCloner)
         cloner.clonePackages(
             origin,
@@ -277,9 +282,30 @@ class PackageClonerTests(TestCaseWithFactory):
             ),
         ]
         copy_archive, distroseries = self.makeCopyArchive(
-            package_infos, component="main"
+            package_infos, to_component="main"
         )
         self.checkCopiedSources(copy_archive, distroseries, package_infos)
+
+    def testCopySingleComponent(self):
+        """Setting the origin's component limits the sources copied."""
+        package_infos = [
+            PackageInfo(
+                "bzr",
+                "2.1",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="universe",
+            ),
+            PackageInfo(
+                "apt",
+                "2.2",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="main",
+            ),
+        ]
+        copy_archive, distroseries = self.makeCopyArchive(
+            package_infos, from_component="main", to_component="main"
+        )
+        self.checkCopiedSources(copy_archive, distroseries, [package_infos[1]])
 
     def testSubsetsBasedOnPackageset(self):
         """Test that --package-set limits the sources copied."""
@@ -478,25 +504,37 @@ class PackageClonerTests(TestCaseWithFactory):
         self,
         target_archive,
         target_distroseries,
+        target_component=None,
         source_archive=None,
         source_distroseries=None,
+        source_component=None,
     ):
         """Run a packageSetDiff of two archives."""
         if source_distroseries is None:
             source_distroseries = target_distroseries
         if source_archive is None:
             source_archive = source_distroseries.distribution.main_archive
+        if source_component is not None:
+            source_component = getUtility(IComponentSet).ensure(
+                source_component
+            )
         source_location = PackageLocation(
             source_archive,
             source_distroseries.distribution,
             source_distroseries,
             PackagePublishingPocket.RELEASE,
+            component=source_component,
         )
+        if target_component is not None:
+            target_component = getUtility(IComponentSet).ensure(
+                target_component
+            )
         target_location = PackageLocation(
             target_archive,
             target_distroseries.distribution,
             target_distroseries,
             PackagePublishingPocket.RELEASE,
+            component=target_component,
         )
         cloner = getUtility(IPackageCloner)
         return cloner.packageSetDiff(source_location, target_location)
@@ -608,6 +646,50 @@ class PackageClonerTests(TestCaseWithFactory):
         self.checkPackageDiff(
             [package_infos[0]],
             [package_infos[1]],
+            diff,
+            distroseries.distribution.main_archive,
+        )
+
+    def testPackageSetDiffInComponent(self):
+        package_infos = [
+            PackageInfo(
+                "bzr",
+                "2.1",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="universe",
+            ),
+            PackageInfo(
+                "apt",
+                "1.2",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="main",
+            ),
+        ]
+        copy_archive, distroseries = self.makeCopyArchive(package_infos)
+        package_infos = [
+            PackageInfo(
+                "bzr",
+                "2.2",
+                status=PackagePublishingStatus.PUBLISHED,
+                component="universe",
+            ),
+            PackageInfo(
+                "apt",
+                "1.3",
+                status=PackagePublishingStatus.PENDING,
+                component="main",
+            ),
+        ]
+        self.createSourcePublications(package_infos, distroseries)
+        diff = self.diffArchives(
+            copy_archive,
+            distroseries,
+            target_component="main",
+            source_component="main",
+        )
+        self.checkPackageDiff(
+            [package_infos[1]],
+            [],
             diff,
             distroseries.distribution.main_archive,
         )
