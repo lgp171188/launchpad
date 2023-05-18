@@ -651,7 +651,7 @@ class PackageClonerTests(TestCaseWithFactory):
         )
 
     def testPackageSetDiffInComponent(self):
-        package_infos = [
+        old_package_infos = [
             PackageInfo(
                 "bzr",
                 "2.1",
@@ -665,8 +665,8 @@ class PackageClonerTests(TestCaseWithFactory):
                 component="main",
             ),
         ]
-        copy_archive, distroseries = self.makeCopyArchive(package_infos)
-        package_infos = [
+        copy_archive, distroseries = self.makeCopyArchive(old_package_infos)
+        new_package_infos = [
             PackageInfo(
                 "bzr",
                 "2.2",
@@ -680,7 +680,7 @@ class PackageClonerTests(TestCaseWithFactory):
                 component="main",
             ),
         ]
-        self.createSourcePublications(package_infos, distroseries)
+        self.createSourcePublications(new_package_infos, distroseries)
         diff = self.diffArchives(
             copy_archive,
             distroseries,
@@ -688,7 +688,7 @@ class PackageClonerTests(TestCaseWithFactory):
             source_component="main",
         )
         self.checkPackageDiff(
-            [package_infos[1]],
+            [new_package_infos[1]],
             [],
             diff,
             distroseries.distribution.main_archive,
