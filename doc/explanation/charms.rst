@@ -111,3 +111,74 @@ Managing secrets like this is more cumbersome than updating Mojo specs, so
 try to keep it to a minimum.  In some cases there may be automation
 available to help, such as the `autocert charm
 <https://charmhub.io/autocert>`_.
+
+Database roles
+==============
+
+PostgreSQL considers "users" and "roles" to be very nearly synonymous.  In
+this section, "user" means specifically a role that has login credentials.
+
+Launchpad uses lots of different database roles.  We used to deal with this
+by having each user on each machine that runs Launchpad code have a
+``.pgpass`` file with credentials for the particular set of users that it
+needs, and then it would log in as those users directly.  However, this
+approach doesn't work very well with Juju: the ``postgresql`` charm allows
+related charms to request access to a single user (per interface), and they
+can optionally request that that user be made a member of some other roles;
+SQL sessions can then use ``SET ROLE`` to switch to a different role.
+
+In our production, staging, and qastaging environments, we use a proxy charm
+to provide charms with database credentials rather than relating them to
+``postgresql`` directly (partly for historical reasons, and partly to avoid
+complications when the database is deployed in a different region from some
+of our applications).  As a result, we need to do some manual user
+management in these environments.  On staging and qastaging, developers can
+do this themselves when setting up deployments of a new charm.
+
+Taking the librarian as an example: ``charm/launchpad-librarian/layer.yaml``
+lists the ``binaryfile-expire``, ``librarian``, ``librarianfeedswift``, and
+``librariangc`` roles as being required (this corresponds to the database
+users used by the services and jobs installed by that particular charm).  To
+create the corresponding user, we first generate a password (e.g. using
+``pwgen 30 1``), then log into the ``launchpad-admin/leader`` unit and run
+``db-admin``.  In the resulting PostgreSQL session, replacing ``<secret>``
+with the generated password:
+
+.. code-block:: psql
+
+    CREATE ROLE "juju_launchpad-librarian"
+    	WITH LOGIN PASSWORD '<secret>'
+        ROLE "binaryfile-expire", "librarian", "librarianfeedswift", "librariangc";
+
+The user name here should be ``juju_`` plus the name of the charm, since
+that matches what the ``postgresql`` charm would create.
+
+Having done that, we need to install the new credentials.  On
+``stg-launchpad@launchpad-bastion-ps5.internal``, find the
+``db_connections`` option, and add an entry to
+``~/.local/share/mojo/LOCAL/mojo-lp/lp/qastaging/deploy-secrets`` that looks
+like this, again replacing ``<secret>`` with the generated password:
+
+.. code-block:: yaml
+
+    launchpad_qastaging_librarian:
+      master: "postgresql://juju_launchpad-librarian:<secret>@pamola.internal:6432/launchpad_qastaging?connect_timeout=10"
+      standbys: []
+
+In the connection string URL, the database host, port, and name (in this
+case, ``pamola.internal``, ``6432``, and ``launchpad_qastaging``
+respectively) should match those of other entries in ``db_connections``.
+
+Staging works similarly with the obvious substitutions of ``staging`` for
+``qastaging``.
+
+Production works similarly, except that IS needs to generate the user on the
+production database and update the secrets file, found in
+``~/.local/share/mojo/LOCAL/mojo-lp/lp/production/deploy-secrets`` on
+``prod-launchpad@is-bastion-ps5.internal``.  Developers should request this
+via RT, using this document to construct instructions for IS on what to do.
+
+Finally, the corresponding application in `launchpad-mojo-specs
+<https://git.launchpad.net/launchpad-mojo-specs>`_ needs to be configured
+with the appropriate database name (``launchpad_qastaging_librarian`` in the
+example above, but typically set in a way that depends on the stage name).
