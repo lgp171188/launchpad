@@ -30,8 +30,6 @@ from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import ILoggedInEvent, IOpenLaunchBag
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
-_utc_tz = timezone.utc
-
 
 @implementer(IOpenLaunchBag)
 class LaunchBag:
@@ -92,6 +90,7 @@ class LaunchBag:
             setattr(store, attribute, None)
         store.login = None
         store.time_zone = None
+        store.time_zone_name = None
 
     @property
     def person(self):
@@ -147,13 +146,22 @@ class LaunchBag:
         return getattr(self._store, "bugtask", None)
 
     @property
-    def time_zone(self):
-        if getattr(self._store, "time_zone", None) is None:
+    def time_zone_name(self):
+        if getattr(self._store, "time_zone_name", None) is None:
             if self.user:
-                self._store.time_zone = pytz.timezone(self.user.time_zone)
+                self._store.time_zone_name = self.user.time_zone
             else:
                 # fall back to UTC
-                self._store.time_zone = _utc_tz
+                self._store.time_zone_name = "UTC"
+        return self._store.time_zone_name
+
+    @property
+    def time_zone(self):
+        if getattr(self._store, "time_zone", None) is None:
+            if self.time_zone_name == "UTC":
+                self._store.time_zone = timezone.utc
+            else:
+                self._store.time_zone = pytz.timezone(self.time_zone_name)
         return self._store.time_zone
 
 

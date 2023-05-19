@@ -17,8 +17,9 @@ __all__ = [
     "DatetimeDisplayWidget",
 ]
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 
+import pytz
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import DateTimeError, parse
@@ -40,7 +41,6 @@ from lp.services.webapp.interfaces import ILaunchBag
 class DateTimeWidget(TextWidget):
     """A date and time selection widget with popup selector.
 
-      >>> import pytz
       >>> from zope.schema import Field
       >>> from lp.services.webapp.servers import LaunchpadTestRequest
       >>> field = Field(__name__="foo", title="Foo")
@@ -63,7 +63,7 @@ class DateTimeWidget(TextWidget):
     If there is a required time zone, then that overrides the user or system
     default, and the user is not invited to change the time zone:
 
-      >>> widget.required_time_zone = pytz.timezone("America/Los_Angeles")
+      >>> widget.required_time_zone_name = "America/Los_Angeles"
       >>> print(widget())  # doctest: +ELLIPSIS
       <BLANKLINE>
       <...in time zone: America/Los_Angeles...
@@ -114,7 +114,7 @@ class DateTimeWidget(TextWidget):
     """
 
     timeformat = "%Y-%m-%d %H:%M:%S"
-    required_time_zone = None
+    required_time_zone_name = None  # type: str
     display_zone = True
     from_date = None
     to_date = None
@@ -126,7 +126,7 @@ class DateTimeWidget(TextWidget):
     def __init__(self, context, request):
         super().__init__(context, request)
         launchbag = getUtility(ILaunchBag)
-        self.system_time_zone = launchbag.time_zone
+        self.system_time_zone_name = launchbag.time_zone_name
 
     @property
     def supported_input_formats(self):
@@ -158,7 +158,17 @@ class DateTimeWidget(TextWidget):
         return [o.strip() for o in outputs]
 
     @property
-    def time_zone(self):
+    def time_zone_name(self) -> str:
+        """The name of the widget time zone for display in the widget."""
+        if self.required_time_zone_name is not None:
+            return self.required_time_zone_name
+        assert (
+            self.system_time_zone_name is not None
+        ), "DateTime widget needs a time zone."
+        return self.system_time_zone_name
+
+    @property
+    def time_zone(self) -> tzinfo:
         """The widget time zone.
 
         This will either give you the user's time zone, or the system
@@ -167,7 +177,7 @@ class DateTimeWidget(TextWidget):
         externally-defined time zone. For example, when a person will join a
         conference in the time zone in which the conference is being held.
 
-          >>> import pytz
+          >>> from datetime import tzinfo
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
           >>> field = Field(__name__="foo", title="Foo")
@@ -176,12 +186,12 @@ class DateTimeWidget(TextWidget):
         The time zone is a time zone object, not the string representation
         of that.
 
-          >>> print(type(widget.time_zone))
-          <class 'datetime.timezone'>
+          >>> isinstance(widget.time_zone, tzinfo)
+          True
 
-        The widget required_time_zone is None by default.
+        The widget required_time_zone_name is None by default.
 
-          >>> print(widget.required_time_zone)
+          >>> print(widget.required_time_zone_name)
           None
 
         The widget "system time zone" is generally UTC. It is the logged in
@@ -189,41 +199,32 @@ class DateTimeWidget(TextWidget):
         user. Although this isn't used directly, it influences the outcome
         of widget.time_zone.
 
-          >>> print(repr(widget.system_time_zone))
-          datetime.timezone.utc
+          >>> print(widget.system_time_zone_name)
+          UTC
 
-        When there is no required_time_zone, then we get the system time
-        zone.
+        When there is no required_time_zone_name, then we get the system
+        time zone.
 
-          >>> print(widget.required_time_zone)
+          >>> print(widget.required_time_zone_name)
           None
+          >>> print(widget.time_zone_name)
+          UTC
           >>> print(repr(widget.time_zone))
           datetime.timezone.utc
 
-        When there is a required_time_zone, we get it:
+        When there is a required_time_zone_name, we get it:
 
-          >>> widget.required_time_zone = pytz.timezone("Africa/Maseru")
+          >>> widget.required_time_zone_name = "Africa/Maseru"
+          >>> print(widget.time_zone_name)
+          Africa/Maseru
           >>> print(widget.time_zone)
           Africa/Maseru
 
         """
-        if self.required_time_zone is not None:
-            return self.required_time_zone
-        assert (
-            self.system_time_zone is not None
-        ), "DateTime widget needs a time zone."
-        return self.system_time_zone
-
-    @property
-    def time_zone_name(self):
-        """The name of the widget time zone for display in the widget."""
-        # XXX cjwatson 2023-03-09: In Python < 3.6, `timezone.utc.tzname`
-        # returns "UTC+00:00" rather than "UTC".  Drop this once we require
-        # Python >= 3.6.
-        if self.time_zone is timezone.utc:
-            return "UTC"
+        if self.time_zone_name == "UTC":
+            return timezone.utc
         else:
-            return self.time_zone.tzname(None)
+            return pytz.timezone(self.time_zone_name)
 
     def _align_date_constraints_with_time_zone(self):
         """Ensure that from_date and to_date use the widget time zone."""
@@ -383,14 +384,13 @@ class DateTimeWidget(TextWidget):
     def _parseInput(self, input):
         """Convert a string to a datetime value.
 
-          >>> import pytz
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
           >>> field = Field(__name__="foo", title="Foo")
           >>> widget = DateTimeWidget(field, TestRequest())
-          >>> widget.required_time_zone = timezone.utc
-          >>> widget.time_zone
-          datetime.timezone.utc
+          >>> widget.required_time_zone_name = "UTC"
+          >>> widget.time_zone_name
+          'UTC'
 
         The widget converts an empty string to the missing value:
 
@@ -404,7 +404,7 @@ class DateTimeWidget(TextWidget):
 
         But it will handle other time zones:
 
-          >>> widget.required_time_zone = pytz.timezone("Australia/Perth")
+          >>> widget.required_time_zone_name = "Australia/Perth"
           >>> print(widget._parseInput("2006-01-01 12:00:00"))
           2006-01-01 12:00:00+08:00
 
@@ -434,7 +434,6 @@ class DateTimeWidget(TextWidget):
     def _toFormValue(self, value):
         """Convert a date to its string representation.
 
-          >>> import pytz
           >>> from zope.publisher.browser import TestRequest
           >>> from zope.schema import Field
           >>> field = Field(__name__="foo", title="Foo")
@@ -455,7 +454,7 @@ class DateTimeWidget(TextWidget):
         The date value will be converted to the widget's time zone
         before being displayed:
 
-          >>> widget.required_time_zone = pytz.timezone("America/New_York")
+          >>> widget.required_time_zone_name = "America/New_York"
           >>> widget._toFormValue(dt)
           '2006-01-01 07:00:00'
         """
@@ -497,7 +496,6 @@ class DateWidget(DateTimeWidget):
     The DateWidget subclass can limit requests to date ranges:
 
       >>> from datetime import date
-      >>> import pytz
       >>> from zope.publisher.browser import TestRequest
       >>> from zope.schema import Field
       >>> field = Field(__name__="foo", title="Foo")
@@ -509,7 +507,7 @@ class DateWidget(DateTimeWidget):
       >>> "[[2004,04,05],[2004,04,10]]" in widget()
       True
 
-    This widget ignores required_time_zone and system_time_zone and
+    This widget ignores required_time_zone_name and system_time_zone_name and
     interprets everything as UTC. This does not matter, because it is only
     picking the date, and it will always be rendered as a date sans time
     zone even if it is stored as a datetime.
@@ -517,11 +515,11 @@ class DateWidget(DateTimeWidget):
       >>> widget.time_zone
       datetime.timezone.utc
 
-      >>> widget.system_time_zone = pytz.timezone("America/New_York")
+      >>> widget.system_time_zone_name = "America/New_York"
       >>> widget.time_zone
       datetime.timezone.utc
 
-      >>> widget.required_time_zone = pytz.timezone("America/Los_Angeles")
+      >>> widget.required_time_zone_name = "America/Los_Angeles"
       >>> widget.time_zone
       datetime.timezone.utc
 
@@ -536,7 +534,7 @@ class DateWidget(DateTimeWidget):
     """
 
     timeformat = "%Y-%m-%d"
-    time_zone = timezone.utc
+    time_zone_name = "UTC"
 
     # ZPT that renders our widget
     __call__ = ViewPageTemplateFile("templates/date.pt")

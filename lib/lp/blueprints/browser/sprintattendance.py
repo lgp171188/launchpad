@@ -44,11 +44,10 @@ class BaseSprintAttendanceAddView(LaunchpadFormView):
 
     def setUpWidgets(self):
         LaunchpadFormView.setUpWidgets(self)
-        tz = pytz.timezone(self.context.time_zone)
         self.starts_widget = self.widgets["time_starts"]
         self.ends_widget = self.widgets["time_ends"]
-        self.starts_widget.required_time_zone = tz
-        self.ends_widget.required_time_zone = tz
+        self.starts_widget.required_time_zone_name = self.context.time_zone
+        self.ends_widget.required_time_zone_name = self.context.time_zone
         # We don't need to display seconds
         timeformat = "%Y-%m-%d %H:%M"
         self.starts_widget.timeformat = timeformat
@@ -57,8 +56,9 @@ class BaseSprintAttendanceAddView(LaunchpadFormView):
         # after the sprint. We will accept a time just before or just after
         # and map those to the beginning and end times, respectively, in
         # self.getDates().
-        from_date = self.context.time_starts.astimezone(tz)
-        to_date = self.context.time_ends.astimezone(tz)
+        time_zone = pytz.timezone(self.context.time_zone)
+        from_date = self.context.time_starts.astimezone(time_zone)
+        to_date = self.context.time_ends.astimezone(time_zone)
         self.starts_widget.from_date = from_date - timedelta(days=1)
         self.starts_widget.to_date = to_date
         self.ends_widget.from_date = from_date
