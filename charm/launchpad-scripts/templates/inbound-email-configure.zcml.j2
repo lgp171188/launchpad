@@ -1,0 +1,11 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:mail="http://namespaces.zope.org/mail"
+    i18n_domain="zope">
+
+    <mail:pop3MailBox
+        host="{{ process_inbound_email_host }}" user="{{ process_inbound_email_username }}"
+        password="{{ process_inbound_email_password }}" ssl="true" />
+
+</configure>
+

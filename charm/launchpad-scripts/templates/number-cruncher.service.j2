@@ -1,0 +1,14 @@
+[Unit]
+Description=Launchpad Number Cruncher
+ConditionPathExists=!{{ code_dir }}/maintenance.txt
+
+[Service]
+User=launchpad
+Environment=LPCONFIG=launchpad-scripts
+ExecStart={{ code_dir }}/bin/twistd --python={{ code_dir }}/daemons/numbercruncher.tac --logfile={{ logs_dir }}/number-cruncher.log --pidfile= --nodaemon --umask=0022
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,13 @@
+{{ logs_dir }}/*.log {
+        rotate 21
+        dateext
+        daily
+        compress
+        delaycompress
+        sharedscripts
+        postrotate
+            systemctl restart celeryd_launchpad_job
+            systemctl restart celeryd_launchpad_job_slow
+        endscript
+}
+

@@ -1,0 +1,19 @@
+[Unit]
+Description=celerybeat scheduler for launchpad
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Environment=LPCONFIG=launchpad-scripts
+User=launchpad
+WorkingDirectory={{ code_dir }}
+ExecStart={{ code_dir }}/bin/celery beat \
+    --config=lp.services.job.celeryconfig \
+    --pidfile={{ var_dir }}/celerybeat_launchpad.pid \
+    --logfile={{ logs_dir }}/celerybeat_launchpad.log \
+    --schedule={{ var_dir }}/celerybeat-schedule.db
+Restart=on-failure
+LimitNOFILE=10000
+
+[Install]
+WantedBy=multi-user.target
+

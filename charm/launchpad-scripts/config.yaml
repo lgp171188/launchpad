@@ -1,0 +1,55 @@
+options:
+  active:
+    type: boolean
+    description: Should the cron jobs and the celery services be active?
+    default: true
+  checkwatches_batch_query_threshold:
+    type: int
+    description: The batch query threshold for the checkwatches.
+    default: 0
+  checkwatches_credentials:
+    type: string
+    description: YAML-encoded dict mapping the credentials name to values.
+    default: "{}"
+  language_pack_exporter_schedule:
+    type: string
+    description: >-
+      YAML-encoded dict mapping Ubuntu release codenames (in lower case)
+      to the corresponding cron schedule strings. Example:
+      xenial: 30 10 * * 0
+    default: "{}"
+  librarian_frontend_ip_addresses:
+    type: string
+    description: YAML-encoded list of librarian frontend IP addresses
+    default: "[]"
+  mirror_prober_active:
+    type: boolean
+    description: Should the mirror prober be enabled?
+    default: false
+  mirror_prober_release_mode:
+    type: boolean
+    description: >-
+      Should the mirror prober run in the cdimage-prober-only mode with
+      custom schedule and options? This is typically enabled prior to
+      release and on request only. Enabling it will disable the regular
+      mode, which runs both the archive and mirror probers once an hour.
+      This option will work only when the 'mirror_prober_active' option
+      is true.
+    default: false
+  process_inbound_email_host:
+    type: string
+    description: >-
+      The mail server that the `process-mail.py` script connects to for processing
+      inbound email.
+    default:
+  process_inbound_email_password:
+    type: string
+    description: >-
+      The credentials for the `process_inbound_email_username` on the
+      `process_inbound_email_host` mail server.
+    default:
+  process_inbound_email_username:
+    type: string
+    description: >-
+      The username to connect to the `process_inbound_email_host` as.
+    default:
