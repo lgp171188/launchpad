@@ -287,8 +287,12 @@ need to do ``make schema`` every time, and you should avoid it because it's
 expensive and because it will clean out any data you might have put into
 your test instance (through the web UI or by running other scripts).
 
-Setting up remote access
-========================
+Accessing your web application
+==============================
+
+When running ``make run``, your application is running in your container, but it
+is not yet accessible outside of it - this includes your host machine, i.e.,
+you won't, for example, be able to access your application from your browser.
 
 Unless the only thing you're doing is running parts of the test suite, you
 probably want to make your new Launchpad instance accessible from other
@@ -312,20 +316,36 @@ Amending the hosts file
 
 Launchpad makes extensive use of virtual hosts, so you'll need to add
 entries to ``/etc/hosts`` on any machine from which you want to access the
-Launchpad instance.  You'll see the relevant hostnames in ``/etc/hosts`` on
-the machine running the instance - they need to be added to the remote
-machine, mapped to the server machine or container's external IP address.
+Launchpad instance.
 
-If some of those other machines run Windows, it may be helpful to know that
-the Windows equivalent of ``/etc/hosts`` is located at
-``C:\WINDOWS\system32\drivers\etc\hosts``.  Note that Windows' version has a
-line length limit, so you might have to split it across multiple lines or
-only include the hostnames that you need.
+Within the container running the instance, you can see the relevant hostnames
+in ``/etc/hosts`` - these need to be added to the machine you want to access
+the application from, mapped to the server machine or container's external IP address.
+
+For example, to access the application in your host system (and your browser),
+you should copy the ``*.launchpad.test`` hostnames you see in the ``hosts`` file 
+within the container running the application, and append them to your host system's
+``hosts`` file, mapped to the IPv4 address of the container running the app.
+
+This should look similar to this:
+
+.. code-block::
+
+    # Launchpad virtual domains. This should be on one line.
+    <your container IPv4 address>     launchpad.test answers.launchpad.test archive.launchpad.test api.launchpad.test bazaar.launchpad.test bazaar-internal.launchpad.test blueprints.launchpad.test bugs.launchpad.test code.launchpad.test feeds.launchpad.test keyserver.launchpad.test lists.launchpad.test ppa.launchpad.test private-ppa.launchpad.test testopenid.test translations.launchpad.test xmlrpc-private.launchpad.test xmlrpc.launchpad.test
+
+.. note::
+
+    To access the application in a Windows machine, it may be helpful to know that
+    the Windows equivalent of ``/etc/hosts`` is located at
+    ``C:\WINDOWS\system32\drivers\etc\hosts``.  Note that Windows' version has a
+    line length limit, so you might have to split it across multiple lines or
+    only include the hostnames that you need.
 
 You should now be able to access ``https://launchpad.test/`` in a web
-browser on a suitably configured remote computer.  Accept the local
-self-signed certificate.  You can log in as ``admin@canonical.com`` without
-a password.  (This is only for development convenience, and assumes that you
+browser on a suitably configured remote computer. Accept the local
+self-signed certificate. You can log in as ``admin@canonical.com`` without
+a password. (This is only for development convenience, and assumes that you
 trust machines that can route to your LXD containers; of course a production
 deployment would need real authentication.). If you want to create more user
 accounts, see :doc:`new-user`.
