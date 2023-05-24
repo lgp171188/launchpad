@@ -118,12 +118,12 @@ installed and configured on your network.
         path: $HOME
     EOF
 
-2. Create a container.  This command creates a Ubuntu 16.04 unprivileged
+2. Create a container.  This command creates a Ubuntu 18.04 unprivileged
    container using the profile created in the previous step.
 
 .. code-block:: sh
 
-    lxc launch ubuntu:16.04 lpdev -p default -p $USER
+    lxc launch ubuntu:18.04 lpdev -p default -p $USER
 
 
 .. note::
