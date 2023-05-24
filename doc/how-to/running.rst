@@ -15,6 +15,8 @@ isolate it from the rest of your system.
 After you've done this, you may want to read about
 :doc:`../explanation/navigating`.
 
+.. _supported_operating_systems:
+
 Supported operating systems
 ===========================
 
@@ -118,13 +120,20 @@ installed and configured on your network.
         path: $HOME
     EOF
 
-2. Create a container.  This command creates a Ubuntu 18.04 unprivileged
+2. Create a container. This command creates a Ubuntu 20.04 unprivileged
    container using the profile created in the previous step.
 
 .. code-block:: sh
 
-    lxc launch ubuntu:18.04 lpdev -p default -p $USER
+    lxc launch ubuntu:20.04 lpdev -p default -p $USER
 
+.. note::
+    Note that as of now, Launchpad still runs on `ubuntu:16.04` in production, 
+    but will be upgraded to `20.04` in the near future.
+
+    You can use `ubuntu:16.04` in the command above instead, but note that for
+    more recent Ubuntu versions (22.04 and above) it might need some extra steps 
+    (see note in :ref: `Supported Operating Systems <supported_operating_systems>`).
 
 .. note::
    If the command above fails with ``Error: No root device could be found``, you may need to run
