@@ -28,3 +28,9 @@
   font-weight: normal;
   src: local('Ubuntu'), url('fonts/Ubuntu.woff') format('woff');
 }
+@font-face {
+  font-family: 'Ubuntu Mono';
+  font-style: normal;
+  font-weight: 100 800; /*  min and max value for the weight axis */
+  src: url('fonts/UbuntuMono.woff2') format('woff2');
+}

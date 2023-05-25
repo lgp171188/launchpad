@@ -27,7 +27,7 @@
  */
 div#edit-description,
 div#edit-commit_message {
-    font-family: monospace;
+    font-family: "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
     margin: 1em 0;
     }
 
@@ -517,7 +517,7 @@ div.logtail {
     padding: 5px;
     border: solid gray;
     border-width: 1px;
-    font-family: monospace;
+    font-family: "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
     border-radius: 5px;
 }
 
@@ -564,7 +564,7 @@ code.command {
     border-radius: 3px;
     color: #626262;
     padding: 4px;
-    font-family: "DejaVu Sans Mono", "Courier New", monospace;
+    font-family: "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
     font-size: 1.05em;
 }
 code.command-block {
@@ -678,7 +678,7 @@ table.diff .inline-comments .boardComment {
 }
 table.diff .inline-comments .boardCommentBody {
   word-wrap: break-word;
-  font-family: monospace;
+  font-family: "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
   padding-bottom: 0.5em;
 }
 table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
