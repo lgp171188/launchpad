@@ -1,7 +1,7 @@
 name: launchpad-librarian
 display-name: launchpad-librarian
 summary: Launchpad librarian
-maintainer: Colin Watson <cjwatson@canonical.com>
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
 description: |
   Launchpad is an open source suite of tools that help people and teams
   to work together on software projects.
