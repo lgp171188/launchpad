@@ -1,0 +1,15 @@
+name: launchpad-debian-importer
+display-name: launchpad-debian-importer
+summary: Launchpad Debian importer
+maintainer: Colin Watson <cjwatson@canonical.com>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm runs a job that imports Debian packages into Launchpad.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false

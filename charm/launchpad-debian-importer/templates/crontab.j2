@@ -1,0 +1,15 @@
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-debian-importer
+
+{% if active -%}
+# Mirror from Debian and then run the importer.  Debian publishes at "52
+# 1,7,13,19", but we also need to allow time for the above mirror to update.
+25 4,10,16,22 * * * {{ scripts_dir }}/mirror-update.sh >> {{ logs_dir }}/mirror-update.log 2>&1 && {{ code_dir }}/scripts/gina.py {{ debian_suites.keys()|reverse|join(" ") }} -q --log-file=INFO:{{ logs_dir }}/gina.log
+
+{% endif -%}
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

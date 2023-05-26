@@ -1,0 +1,13 @@
+includes:
+  - layer:launchpad-base
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - debian-archive-keyring
+      - debmirror
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles: gina
