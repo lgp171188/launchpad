@@ -1,0 +1,24 @@
+#! /bin/sh
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+# Part of the launchpad-debian-importer Juju charm.
+
+set -e
+
+DEST="{{ mirror_dir }}/"
+HOST="{{ debian_mirror_host }}"
+DISTS="{{ debian_suites.keys()|join(',') }}"
+SECTIONS="{{ debian_components|join(',') }}"
+
+{% if http_proxy -%}
+http_proxy="{{ http_proxy }}"
+ftp_proxy="{{ http_proxy }}"
+export http_proxy ftp_proxy
+
+{% endif -%}
+echo "Starting Mirror: $(date)"
+rm -rf "${DEST}/.temp"
+debmirror --keyring /usr/share/keyrings/debian-archive-keyring.gpg --root=debian --host="$HOST" --method=http --dist="$DISTS" --section="$SECTIONS" --arch=none --diff=none --progress --rsync-extra=none --allow-dist-rename "$DEST"
+echo "Finished Mirror: $(date)"
+

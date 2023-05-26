@@ -1,0 +1,14 @@
+options:
+  active:
+    type: boolean
+    description: If true, enable jobs that may change the database.
+    default: true
+  debian_mirror_host:
+    type: string
+    description: Hostname of the Debian mirror to use.
+    default: "ftp.debian.org"
+  debian_suites:
+    type: string
+    description: YAML-encoded dict mapping Debian suites to components.
+    default: |
+      sid: ["main", "contrib", "non-free"]
