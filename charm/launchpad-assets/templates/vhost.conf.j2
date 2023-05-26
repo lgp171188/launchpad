@@ -1,0 +1,37 @@
+<VirtualHost *:{{ port_assets }}>
+    ServerName assets.{{ domain }}
+
+    ErrorLog /var/log/apache2/assets.{{ domain }}-error.log
+    CustomLog /var/log/apache2/assets.{{ domain }}-access.log combined
+
+    <Location "/+apidoc/">
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+    </Location>
+    Alias "/+apidoc/" "{{ code_dir }}/lib/canonical/launchpad/apidoc/"
+
+    <Location "/+combo/">
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+        ProxyPass "unix:/run/convoy.socket|http://localhost/"
+    </Location>
+
+    <LocationMatch "^/\+icing/rev(?<commit>[0-9a-f]+)/">
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+    </LocationMatch>
+    AliasMatch "^/\+icing/rev([0-9a-f]+)/(.*)" "{{ payloads_dir }}/$1/lib/canonical/launchpad/icing/$2"
+    <Location "/+icing/">
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+    </Location>
+    Alias "/+icing/" "{{ code_dir }}/lib/canonical/launchpad/icing/"
+
+    <Location "/@@/">
+        Options MultiViews
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+    </Location>
+    Alias "/@@/" "{{ code_dir }}/lib/canonical/launchpad/images/"
+</VirtualHost>
+

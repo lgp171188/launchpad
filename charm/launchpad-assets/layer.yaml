@@ -1,0 +1,11 @@
+includes:
+  - layer:launchpad-payload
+  - interface:apache-website
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - nodejs
+      - python3-convoy
+  launchpad-payload:
+    build_target: build

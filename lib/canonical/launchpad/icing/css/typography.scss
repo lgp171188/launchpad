@@ -1,5 +1,6 @@
 // This file the result of auto-converting typography.css to scss.
 
+$font-monospace: "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
 $page-width: 60em;
 $wider-page: $page-width + 15em;
 $reduced-spacing: 0.8em;
@@ -74,7 +75,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   pre, code, samp, tt, .console {
-    font-family: monospace;
+    font-family: $font-monospace;
     margin-bottom: $reduced-spacing;
   }
 

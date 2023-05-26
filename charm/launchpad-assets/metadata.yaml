@@ -1,20 +1,20 @@
-name: launchpad-appserver
-display-name: launchpad-appserver
-summary: Launchpad application server
+name: launchpad-assets
+display-name: launchpad-assets
+summary: Launchpad assets
 maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
 description: |
   Launchpad is an open source suite of tools that help people and teams
   to work together on software projects.
 
-  This charm runs a Launchpad application server.
+  This charm publishes Launchpad assets (CSS, JavaScript, and API
+  documentation) so that they can be proxied by frontends.
 tags:
   # https://juju.is/docs/charm-metadata#heading--charm-store-fields
   - network
 series:
   - focal
-subordinate: false
+subordinate: true
 requires:
-  session-db:
-    interface: pgsql
-  memcache:
-    interface: memcache
+  apache-website:
+    interface: apache-website
+    scope: container

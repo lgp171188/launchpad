@@ -13,7 +13,7 @@ from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import quote, sqlvalues
+from lp.services.database.sqlbase import sqlvalues
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.packagecloner import IPackageCloner
 from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
@@ -299,8 +299,8 @@ class PackageCloner:
         )
 
         if origin.component is not None:
-            find_newer_packages += " AND secsrc.component = %s" % quote(
-                origin.component
+            find_newer_packages += (
+                " AND secsrc.component = %s" % origin.component.id
             )
         store.execute(find_newer_packages)
 
@@ -342,8 +342,8 @@ class PackageCloner:
         )
 
         if origin.component is not None:
-            find_origin_only_packages += " AND secsrc.component = %s" % quote(
-                origin.component
+            find_origin_only_packages += (
+                " AND secsrc.component = %s" % origin.component.id
             )
         store.execute(find_origin_only_packages)
 
@@ -422,8 +422,8 @@ class PackageCloner:
         )
 
         if destination.component is not None:
-            pop_query += " AND secsrc.component = %s" % quote(
-                destination.component
+            pop_query += (
+                " AND secsrc.component = %s" % destination.component.id
             )
         store.execute(pop_query)
 
@@ -504,7 +504,7 @@ class PackageCloner:
             )
 
         if origin.component:
-            query += "and spph.component = %s" % sqlvalues(origin.component)
+            query += "AND spph.component = %s" % origin.component.id
 
         store.execute(query)
 

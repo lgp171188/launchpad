@@ -291,9 +291,9 @@ class SprintAddView(LaunchpadFormView):
         self.widgets["time_ends"].timeformat = timeformat
         time_zone_widget = self.widgets["time_zone"]
         if time_zone_widget.hasValidInput():
-            tz = pytz.timezone(time_zone_widget.getInputValue())
-            self.widgets["time_starts"].required_time_zone = tz
-            self.widgets["time_ends"].required_time_zone = tz
+            tz_name = time_zone_widget.getInputValue()
+            self.widgets["time_starts"].required_time_zone_name = tz_name
+            self.widgets["time_ends"].required_time_zone_name = tz_name
 
     def validate(self, data):
         time_starts = data.get("time_starts")
@@ -373,11 +373,11 @@ class SprintEditView(LaunchpadEditFormView):
         time_zone_widget = self.widgets["time_zone"]
         # What time zone are the start and end values relative to?
         if time_zone_widget.hasValidInput():
-            tz = pytz.timezone(time_zone_widget.getInputValue())
+            tz_name = time_zone_widget.getInputValue()
         else:
-            tz = pytz.timezone(self.context.time_zone)
-        self.widgets["time_starts"].required_time_zone = tz
-        self.widgets["time_ends"].required_time_zone = tz
+            tz_name = self.context.time_zone
+        self.widgets["time_starts"].required_time_zone_name = tz_name
+        self.widgets["time_ends"].required_time_zone_name = tz_name
 
     def validate(self, data):
         time_starts = data.get("time_starts")

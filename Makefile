@@ -115,7 +115,7 @@ SWIFT_OBJECT_PATH = \
 default: inplace
 
 .PHONY: schema
-schema: build
+schema: compile
 	$(MAKE) -C database/schema
 	$(RM) -r /var/tmp/fatsam
 

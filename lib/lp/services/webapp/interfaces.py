@@ -335,6 +335,7 @@ class ILaunchBag(Interface):
     user = Attribute("Currently authenticated IPerson, or None")
     login = Attribute("The login used by the authenticated person, or None")
 
+    time_zone_name = Attribute("The name of the user's time zone")
     time_zone = Attribute("The user's time zone")
 
     developer = Bool(
