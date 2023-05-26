@@ -1,7 +1,7 @@
 name: launchpad
 display-name: launchpad
 summary: Launchpad web application
-maintainer: Guruprasad <guruprasad.ln@canonical.com>
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
 description: |
   Launchpad is an open source suite of tools that help people and teams
   to work together on software projects.
