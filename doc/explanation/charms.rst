@@ -148,7 +148,7 @@ with the generated password:
 
     CREATE ROLE "juju_launchpad-librarian"
     	WITH LOGIN PASSWORD '<secret>'
-        ROLE "binaryfile-expire", "librarian", "librarianfeedswift", "librariangc";
+        IN ROLE "binaryfile-expire", "librarian", "librarianfeedswift", "librariangc";
 
 The user name here should be ``juju_`` plus the name of the charm, since
 that matches what the ``postgresql`` charm would create.
