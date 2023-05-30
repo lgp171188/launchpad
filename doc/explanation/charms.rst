@@ -170,7 +170,10 @@ case, ``pamola.internal``, ``6432``, and ``launchpad_qastaging``
 respectively) should match those of other entries in ``db_connections``.
 
 Staging works similarly with the obvious substitutions of ``staging`` for
-``qastaging``.
+``qastaging``.  The qastaging and staging environments currently share a
+``pgbouncer``; as a result, while the user still has to be created on both
+database clusters, the passwords for a given user on qastaging and staging
+must be identical.
 
 Production works similarly, except that IS needs to generate the user on the
 production database and update the secrets file, found in
