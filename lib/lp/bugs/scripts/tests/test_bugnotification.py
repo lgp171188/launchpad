@@ -1511,3 +1511,64 @@ class TestSendBugNotifications(TestCaseWithFactory):
                     self.assertEqual(
                         BugNotificationStatus.SENT, bug_notification.status
                     )
+
+    def test_muted_team_subscription(self):
+        # If a user mutes a Team subscription to a bug
+        # while having a personal subscription,
+        # they should receive only the 1 notification
+        # related to the personal subscription
+
+        team_owner = self.factory.makePerson(
+            name="team-owner", email="team-owner@canonical.com"
+        )
+        team_participant = self.factory.makePerson(
+            name="team-participant", email="team-participant@canonical.com"
+        )
+
+        team = self.factory.makeTeam(
+            name="team-name", owner=team_owner, members=[team_participant]
+        )
+        bug = self.factory.makeBug()
+
+        subscription = bug.default_bugtask.target.addBugSubscription(
+            team, team_owner
+        )
+        # Take team subscription's filter
+        subscription_filter = subscription.bug_filters.one()
+        bug.default_bugtask.target.addBugSubscription(
+            team_participant, team_participant
+        )
+
+        # Mute team subscription for team_participant
+
+        message = getUtility(IMessageSet).fromText(
+            "subject",
+            "a comment.",
+            bug.owner,
+            datecreated=self.ten_minutes_ago,
+        )
+        notification = bug.addCommentNotification(message)
+
+        BugSubscriptionFilterMute(
+            person=team_participant,
+            filter=subscription_filter,
+        )
+
+        notification = self.notification_set.getNotificationsToSend()
+
+        pending_notification = get_email_notifications(notification)
+        # Since team subscription is muted for team_participant
+        # we expect two messages: one for the team member (owner)
+        # and the other for the personal subscription.
+        # team-owner@canonical.com team-name-100000
+        # team-participant@canonical.com team-participant
+
+        _, _, messages = list(pending_notification)[0]
+
+        self.assertEqual(2, len(messages))
+        self.assertEqual("team-owner@canonical.com", messages[0]["To"])
+        self.assertEqual("team-participant@canonical.com", messages[1]["To"])
+        self.assertEqual("team-name", messages[0]["X-Launchpad-Message-For"])
+        self.assertEqual(
+            "team-participant", messages[1]["X-Launchpad-Message-For"]
+        )
