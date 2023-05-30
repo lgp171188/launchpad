@@ -133,7 +133,7 @@ to provide charms with database credentials rather than relating them to
 complications when the database is deployed in a different region from some
 of our applications).  As a result, we need to do some manual user
 management in these environments.  On staging and qastaging, developers can
-do this themselves when setting up deployments of a new charm.
+do most of this themselves when setting up deployments of a new charm.
 
 Taking the librarian as an example: ``charm/launchpad-librarian/layer.yaml``
 lists the ``binaryfile-expire``, ``librarian``, ``librarianfeedswift``, and
@@ -169,6 +169,12 @@ In the connection string URL, the database host, port, and name (in this
 case, ``pamola.internal``, ``6432``, and ``launchpad_qastaging``
 respectively) should match those of other entries in ``db_connections``.
 
+The configuration for the ``pgbouncer`` connection pooler must also be
+updated to match, which currently requires help from IS.  On
+``pamola.internal``, IS should take the relevant username/password pair from
+the ``deploy-secrets`` file above and add it to
+``/etc/pgbouncer/userlist.txt``.
+
 Staging works similarly with the obvious substitutions of ``staging`` for
 ``qastaging``.  The qastaging and staging environments currently share a
 ``pgbouncer``; as a result, while the user still has to be created on both
@@ -176,7 +182,9 @@ database clusters, the passwords for a given user on qastaging and staging
 must be identical.
 
 Production works similarly, except that IS needs to generate the user on the
-production database and update the secrets file, found in
+production database, add it to the production ``pgbouncer`` by editing
+``userlist.txt`` in ``prod-launchpad-db@is-bastion-ps5.internal`` and
+pushing it out using Mojo, and update the secrets file found in
 ``~/.local/share/mojo/LOCAL/mojo-lp/lp/production/deploy-secrets`` on
 ``prod-launchpad@is-bastion-ps5.internal``.  Developers should request this
 via RT, using this document to construct instructions for IS on what to do.
