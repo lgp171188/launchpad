@@ -133,16 +133,19 @@ to provide charms with database credentials rather than relating them to
 complications when the database is deployed in a different region from some
 of our applications).  As a result, we need to do some manual user
 management in these environments.  On staging and qastaging, developers can
-do most of this themselves when setting up deployments of a new charm.
+do most of this themselves when adding new charms to those existing
+deployment environments.
 
 Taking the librarian as an example: ``charm/launchpad-librarian/layer.yaml``
 lists the ``binaryfile-expire``, ``librarian``, ``librarianfeedswift``, and
 ``librariangc`` roles as being required (this corresponds to the database
 users used by the services and jobs installed by that particular charm).  To
 create the corresponding user, we first generate a password (e.g. using
-``pwgen 30 1``), then log into the ``launchpad-admin/leader`` unit and run
-``db-admin``.  In the resulting PostgreSQL session, replacing ``<secret>``
-with the generated password:
+``pwgen 30 1``), then log into the management environment (``ssh -t
+launchpad-bastion-ps5.internal sudo -iu stg-launchpad``), set up environment
+variables for qastaging (``. .mojorc.qastaging``), run ``juju ssh
+launchpad-admin/leader``, and run ``db-admin``.  In the resulting PostgreSQL
+session, replacing ``<secret>`` with the generated password:
 
 .. code-block:: psql
 
@@ -155,7 +158,8 @@ that matches what the ``postgresql`` charm would create.
 
 Having done that, we need to install the new credentials.  On
 ``stg-launchpad@launchpad-bastion-ps5.internal``, find the
-``db_connections`` option, and add an entry to
+``db_connections`` option under the ``external-services`` application, and
+add an entry to
 ``~/.local/share/mojo/LOCAL/mojo-lp/lp/qastaging/deploy-secrets`` that looks
 like this, again replacing ``<secret>`` with the generated password:
 
@@ -192,4 +196,15 @@ via RT, using this document to construct instructions for IS on what to do.
 Finally, the corresponding application in `launchpad-mojo-specs
 <https://git.launchpad.net/launchpad-mojo-specs>`_ needs to be configured
 with the appropriate database name (``launchpad_qastaging_librarian`` in the
-example above, but typically set in a way that depends on the stage name).
+example above).  This normally looks something like this, where
+``librarian_database_name`` is an option whose value is set depending on the
+stage name:
+
+.. code-block:: yaml
+
+  launchpad-librarian:
+    ...
+    options: {{ base_options() }}
+      databases: |
+        db:
+          name: "{{ librarian_database_name }}"
