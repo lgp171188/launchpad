@@ -5,12 +5,9 @@ import os.path
 
 import yaml
 from charmhelpers.core import hookenv, host, templating
-from charms.launchpad.base import (
-    configure_cron,
-    configure_lazr,
-    get_service_config,
-)
-from charms.reactive import set_state, when, when_not
+from charms.launchpad.base import get_service_config
+from charms.launchpad.payload import configure_cron, configure_lazr
+from charms.reactive import remove_state, set_state, when, when_not
 from ols import base
 
 
@@ -24,7 +21,7 @@ def configure_logrotate(config):
     )
 
 
-@when("launchpad.base.configured")
+@when("launchpad.db.configured")
 @when_not("service.configured")
 def configure():
     config = get_service_config()
@@ -60,3 +57,9 @@ def configure():
 @when("service.configured")
 def check_is_running():
     hookenv.status_set("active", "Ready")
+
+
+@when("service.configured")
+@when_not("launchpad.db.configured")
+def deconfigure():
+    remove_state("service.configured")
