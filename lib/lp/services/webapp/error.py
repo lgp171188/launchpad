@@ -118,7 +118,7 @@ class SystemErrorView(LaunchpadView):
         return (
             '<div class="highlight" style="'
             'font-family: "Ubuntu Mono variable", "Ubuntu Mono",'
-            ' Consolas, Monaco, Courier, monospace;'
+            " Consolas, Monaco, Courier, monospace;"
             ' font-size: smaller;">'
             "%s"
             "</div>"
