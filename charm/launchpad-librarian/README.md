@@ -36,10 +36,29 @@ especially careful when redeploying.  The general procedure is as follows:
    will be spooled locally, but that's low-risk since only Launchpad itself
    uploads to the librarian.  This mode allows testing connectivity.
 
-1. Ensure that a Ceph volume is mounted persistently on
-   `/srv/launchpad/librarian/`.  On production this should be a 2 TiB volume
-   to allow some breathing room if uploading to Swift is temporarily
-   unavailable.
+1. Create a Ceph volume for locally-spooled librarian data.  On production
+   this should be a 2 TiB volume to allow some breathing room if uploading
+   to Swift is temporarily unavailable: `openstack volume create --size 2048
+   --description 'spooled production librarian data' librarian-data`.
+
+1. Attach this Ceph volume to the new unit using `openstack server add
+   volume`.
+
+1. On the librarian unit, create a filesystem on the new volume using `sudo
+   mkfs.ext4 /dev/vdb` (check that this device node matches the new volume).
+
+1. On the librarian unit, add `/dev/vdb /srv/launchpad/librarian ext4
+   defaults 0 2` to `/etc/fstab`.
+
+1. On the librarian unit, stop the librarian using `sudo systemctl stop
+   launchpad-librarian.service`.
+
+1. On the librarian unit, set the correct permissions on the new volume
+   using `sudo chown launchpad:launchpad /srv/launchpad/librarian && sudo
+   chmod 700 /srv/launchpad/librarian`.
+
+1. On the librarian unit, start the librarian using `sudo systemctl start
+   launchpad-librarian.service`.
 
 1. On the librarian unit, run `systemctl status
    launchpad-librarian@1.service` to ensure that the librarian is running.
