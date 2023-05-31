@@ -53,6 +53,9 @@ especially careful when redeploying.  The general procedure is as follows:
 1. On the librarian unit, stop the librarian using `sudo systemctl stop
    launchpad-librarian.service`.
 
+1. On the librarian unit, mount the new volume using `sudo mount
+   /srv/launchpad/librarian`.
+
 1. On the librarian unit, set the correct permissions on the new volume
    using `sudo chown launchpad:launchpad /srv/launchpad/librarian && sudo
    chmod 700 /srv/launchpad/librarian`.
