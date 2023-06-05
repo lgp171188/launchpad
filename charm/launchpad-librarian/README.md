@@ -94,3 +94,14 @@ especially careful when redeploying.  The general procedure is as follows:
 1. As `stg-launchpad@launchpad-bastion-ps5.internal`, run `lpndt
    service-start buildd-manager` to start `buildd-manager, then (after a
    minute) `lpndt service-start cron-fdt` to enable all cron jobs.
+
+## Clearing librarian storage
+
+If you have reset the associated database, then it may be useful to clear
+the librarian's storage as well, since the IDs used for stored files will no
+longer exist in the database.  To do this, run:
+
+    juju run-action --wait launchpad-librarian/leader clear-storage host=launchpadlibrarian.test
+
+The value passed to `host=` must match the hostname part of the
+`librarian_download_url` configuration option.

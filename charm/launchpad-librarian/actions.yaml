@@ -1,0 +1,15 @@
+clear-storage:
+  description: |
+    Clear local librarian storage.  This irreversibly deletes data, so it
+    requires the host name of this librarian instance to avoid accidentally
+    clearing the wrong instance, and it always refuses to clear storage for
+    the Launchpad production instance.  It is useful when the associated
+    database has been reset.
+  params:
+    host:
+      type: string
+      description: |
+        The public host name of this librarian instance, required as a
+        safety check.
+  required:
+    - host
