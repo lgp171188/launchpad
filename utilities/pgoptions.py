@@ -35,6 +35,4 @@ if __name__ == "__main__":
     # connecting over TCP.
     if "host" in parsed_dsn and "user" in parsed_dsn:
         conn_opts.append("--username=%s" % parsed_dsn["user"])
-    if "dbname" in parsed_dsn:
-        conn_opts.append("--dbname=%s" % parsed_dsn["dbname"])
     print(" ".join(conn_opts))
