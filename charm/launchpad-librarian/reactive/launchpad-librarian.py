@@ -129,6 +129,7 @@ def configure():
             base.version_info_path(),
             "/lib/systemd/system/launchpad-librarian.service",
             "/lib/systemd/system/launchpad-librarian@.service",
+            "/lib/systemd/system-generators/launchpad-librarian-generator",
         ]
         + config_files()
     ):
