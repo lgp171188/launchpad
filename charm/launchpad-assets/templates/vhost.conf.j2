@@ -33,5 +33,11 @@
         Require all granted
     </Location>
     Alias "/@@/" "{{ code_dir }}/lib/canonical/launchpad/images/"
+
+    <LocationMatch "^/favicon\.(?:ico|gif|png)$">
+        Header set Cache-Control "public,max-age=5184000"
+        Require all granted
+    </LocationMatch>
+    AliasMatch "^/favicon\.(?:ico|gif|png)$" "/srv/launchpad/code/lib/canonical/launchpad/images/launchpad.png"
 </VirtualHost>
 
