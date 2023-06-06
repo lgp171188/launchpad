@@ -16,3 +16,6 @@ subordinate: false
 requires:
   session-db:
     interface: pgsql
+provides:
+  loadbalancer:
+    interface: http

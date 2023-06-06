@@ -8,6 +8,11 @@ You will need the following relations:
     juju relate launchpad-librarian:session-db postgresql:db
     juju relate launchpad-librarian rabbitmq-server
 
+You can also relate it to a load balancer, which is especially useful if you
+set `workers` to something other than 1:
+
+    juju relate launchpad-librarian:loadbalancer haproxy:reverseproxy
+
 The librarian listens on four ports.  By default, these are:
 
 - Public download: 8000
