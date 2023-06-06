@@ -326,11 +326,11 @@ class TestDispatchBuildToWorker(StatsMixin, TestCase):
         yield behaviour.dispatchBuildToWorker(logger)
         self.assertEqual(1, self.stats_client.incr.call_count)
         self.assertEqual(
-            self.stats_client.incr.call_args_list[0][0],
             (
                 "build.count,builder_name=mock-builder,env=test,"
-                "job_type=UNKNOWN",
+                "job_type=UNKNOWN,region=",
             ),
+            self.stats_client.incr.call_args_list[0][0],
         )
 
 

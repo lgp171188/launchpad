@@ -401,6 +401,7 @@ def recover_failure(logger, vitals, builder, retry, exception):
         labels = {
             "build": True,
             "arch": job.specific_build.processor.name,
+            "region": builder.region,
             "builder_name": builder.name,
             "virtualized": str(builder.virtualized),
             "job_type": job.specific_build.job_type.name,
@@ -596,6 +597,7 @@ class WorkerScanner:
                     {
                         "build": True,
                         "arch": builder.current_build.processor.name,
+                        "region": builder.region,
                     }
                 )
             else:

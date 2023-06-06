@@ -782,7 +782,9 @@ class TestAsyncOCIRecipeBuildBehaviour(
             self.stats_client.incr.call_args_list[0][0],
             (
                 "build.count,builder_name={},env=test,"
-                "job_type=OCIRECIPEBUILD".format(builder.name),
+                "job_type=OCIRECIPEBUILD,region={}".format(
+                    builder.name, builder.region
+                ),
             ),
         )
 
