@@ -4,6 +4,7 @@
 import os.path
 import subprocess
 
+import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
 from charms.launchpad.db import (
@@ -168,3 +169,125 @@ def deconfigure():
 def session_db_changed():
     remove_state("service.configured")
     remove_state("session-db.database.changed")
+
+
+@when(
+    "config.set.librarian_download_port",
+    "config.set.librarian_restricted_download_port",
+    "config.set.librarian_restricted_upload_port",
+    "config.set.librarian_upload_port",
+    "loadbalancer.available",
+    "service.configured",
+)
+@when_not("launchpad.loadbalancer.configured")
+def configure_loadbalancer():
+    config = hookenv.config()
+
+    try:
+        service_options_download = yaml.safe_load(
+            config["haproxy_service_options_download"]
+        )
+    except Exception:
+        hookenv.log("Could not parse haproxy_service_options_download YAML")
+        hookenv.status_set(
+            "blocked",
+            "Bad haproxy_service_options_download YAML configuration",
+        )
+        return
+    try:
+        service_options_upload = yaml.safe_load(
+            config["haproxy_service_options_upload"]
+        )
+    except Exception:
+        hookenv.log("Could not parse haproxy_service_options_upload YAML")
+        hookenv.status_set(
+            "blocked", "Bad haproxy_service_options_upload YAML configuration"
+        )
+        return
+    server_options = config["haproxy_server_options"]
+
+    unit_name = hookenv.local_unit().replace("/", "-")
+    unit_ip = hookenv.unit_private_ip()
+    services = [
+        {
+            "service_name": "librarian-download",
+            "service_port": config["librarian_download_port"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_download),
+            "servers": [
+                [
+                    f"dl_{unit_name}_{i + 1}",
+                    unit_ip,
+                    config["port_download_base"] + i,
+                    server_options,
+                ]
+                for i in range(config["workers"])
+            ],
+        },
+        {
+            "service_name": "librarian-upload",
+            "service_port": config["librarian_upload_port"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_upload),
+            "servers": [
+                [
+                    f"ul_{unit_name}_{i + 1}",
+                    unit_ip,
+                    config["port_upload_base"] + i,
+                    f"port {config['port_download_base'] + i} "
+                    + server_options,
+                ]
+                for i in range(config["workers"])
+            ],
+        },
+        {
+            "service_name": "librarian-restricted-download",
+            "service_port": config["librarian_restricted_download_port"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_download),
+            "servers": [
+                [
+                    f"dl_restricted_{unit_name}_{i + 1}",
+                    unit_ip,
+                    config["port_restricted_download_base"] + i,
+                    server_options,
+                ]
+                for i in range(config["workers"])
+            ],
+        },
+        {
+            "service_name": "librarian-restricted-upload",
+            "service_port": config["librarian_restricted_upload_port"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_upload),
+            "servers": [
+                [
+                    f"ul_restricted_{unit_name}_{i + 1}",
+                    unit_ip,
+                    config["port_restricted_upload_base"] + i,
+                    f"port {config['port_restricted_download_base'] + i} "
+                    + server_options,
+                ]
+                for i in range(config["workers"])
+            ],
+        },
+    ]
+    services_yaml = yaml.dump(services)
+
+    for rel in hookenv.relations_of_type("loadbalancer"):
+        hookenv.relation_set(rel["__relid__"], services=services_yaml)
+
+    set_state("launchpad.loadbalancer.configured")
+
+
+@when("launchpad.loadbalancer.configured")
+@when_not_all(
+    "config.set.librarian_download_port",
+    "config.set.librarian_restricted_download_port",
+    "config.set.librarian_restricted_upload_port",
+    "config.set.librarian_upload_port",
+    "loadbalancer.available",
+    "service.configured",
+)
+def deconfigure_loadbalancer():
+    remove_state("launchpad.loadbalancer.configured")
