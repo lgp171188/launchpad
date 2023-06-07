@@ -46,6 +46,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.distributionsourcepackagerelease import (
@@ -88,6 +89,7 @@ class DistributionSourcePackage(
     HasCustomLanguageCodesMixin,
     HasMergeProposalsMixin,
     HasDriversMixin,
+    WebhookTargetMixin,
 ):
     """This is a "Magic Distribution Source Package". It is not an
     SQLObject, but instead it represents a source package with a particular
@@ -560,6 +562,10 @@ class DistributionSourcePackage(
         dsp = cls._get(distribution, sourcepackagename)
         if dsp is None:
             cls._new(distribution, sourcepackagename)
+
+    @property
+    def valid_webhook_event_types(self):
+        return ["bug:0.1", "bug:comment:0.1"]
 
 
 @implementer(transaction.interfaces.ISynchronizer)

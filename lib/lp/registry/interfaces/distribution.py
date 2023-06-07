@@ -102,6 +102,7 @@ from lp.services.fields import (
     Summary,
     Title,
 )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
@@ -1064,7 +1065,9 @@ class IDistributionView(
         """Return the vulnerability in this distribution with the given id."""
 
 
-class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
+class IDistributionEditRestricted(
+    IOfficialBugTagTargetRestricted, IWebhookTarget
+):
     """IDistribution properties requiring launchpad.Edit permission."""
 
     @mutator_for(IDistributionView["bug_sharing_policy"])

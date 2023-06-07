@@ -48,6 +48,8 @@ from lp.services.webservice.apihelpers import (
 )
 
 WEBHOOK_EVENT_TYPES = {
+    "bug:0.1": "Bug change",
+    "bug:comment:0.1": "Bug comment",
     "bzr:push:0.1": "Bazaar push",
     "charm-recipe:build:0.1": "Charm recipe build",
     "ci:build:0.1": "CI build",

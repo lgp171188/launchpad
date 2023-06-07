@@ -111,6 +111,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
+from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import RESOLVED_BUGTASK_STATUSES
 from lp.charms.browser.hascharmrecipes import HasCharmRecipesMenuMixin
 from lp.code.browser.branchref import BranchRef
@@ -190,6 +191,7 @@ from lp.services.webapp.interfaces import UnsafeFormGetSubmissionError
 from lp.services.webapp.menu import NavigationMenu
 from lp.services.webapp.url import urlsplit
 from lp.services.webapp.vhosts import allvhosts
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.services.worlddata.helpers import browser_languages
 from lp.services.worlddata.interfaces.country import ICountry
 from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
@@ -210,6 +212,7 @@ class ProductNavigation(
     StructuralSubscriptionTargetTraversalMixin,
     PillarNavigationMixin,
     TargetDefaultVCSNavigationMixin,
+    WebhookTargetNavigationMixin,
 ):
 
     usedfor = IProduct
@@ -512,6 +515,15 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
         ) and product.canAdministerOCIProjects(self.user)
         return link
 
+    @enabled_with_permission("launchpad.Edit")
+    def webhooks(self):
+        return Link(
+            "+webhooks",
+            "Manage webhooks",
+            icon="edit",
+            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+        )
+
 
 class IProductEditMenu(Interface):
     """A marker interface for the 'Change details' navigation menu."""
@@ -537,6 +549,7 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
             "sharing",
             "search_oci_project",
             "new_oci_project",
+            "webhooks",
         ]
         add_subscribe_link(links)
         return links
@@ -648,7 +661,7 @@ class ProductBugsMenu(PillarBugsMenu, ProductEditLinksMixin):
     def links(self):
         links = ["filebug", "bugsupervisor", "cve"]
         add_subscribe_link(links)
-        links.append("configure_bugtracker")
+        links.extend(["configure_bugtracker", "webhooks"])
         return links
 
 

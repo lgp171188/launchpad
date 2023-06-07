@@ -164,6 +164,7 @@ from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.translations.enums import TranslationPermission
 from lp.translations.interfaces.customlanguagecode import (
     IHasCustomLanguageCodes,
@@ -265,6 +266,7 @@ class Product(
     HasAliasMixin,
     HasCustomLanguageCodesMixin,
     SharingPolicyMixin,
+    WebhookTargetMixin,
 ):
     """A Product."""
 
@@ -1592,6 +1594,10 @@ class Product(
             )
             .is_empty()
         )
+
+    @property
+    def valid_webhook_event_types(self):
+        return ["bug:0.1", "bug:comment:0.1"]
 
 
 def get_precached_products(

@@ -27,27 +27,22 @@ from lp.code.interfaces.hasbranches import (
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.role import IHasDrivers
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.enums import ArchivePurpose
 
 
 @exported_as_webservice_entry(as_of="beta")
-class IDistributionSourcePackage(
+class IDistributionSourcePackageView(
     IHeadingContext,
     IBugTarget,
     IHasBranches,
     IHasMergeProposals,
     IHasOfficialBugTags,
-    IStructuralSubscriptionTarget,
-    IQuestionTarget,
     IHasDrivers,
     IHasGitRepositories,
     IHasCodeImports,
 ):
-    """Represents a source package in a distribution.
-
-    Create IDistributionSourcePackages by invoking
-    `IDistribution.getSourcePackage()`.
-    """
+    """`IDistributionSourcePackage` attributes that require launchpad.View."""
 
     distribution = exported(
         Reference(IDistribution, title=_("The distribution."))
@@ -209,3 +204,21 @@ class IDistributionSourcePackage(
 
         :return: True if a persistent object was removed, otherwise False.
         """
+
+
+class IDistributionSourcePackageEdit(IWebhookTarget):
+    """`IDistributionSourcePackage` attributes that require launchpad.Edit."""
+
+
+@exported_as_webservice_entry(as_of="beta")
+class IDistributionSourcePackage(
+    IDistributionSourcePackageView,
+    IDistributionSourcePackageEdit,
+    IStructuralSubscriptionTarget,
+    IQuestionTarget,
+):
+    """Represents a source package in a distribution.
+
+    Create IDistributionSourcePackages by invoking
+    `IDistribution.getSourcePackage()`.
+    """
