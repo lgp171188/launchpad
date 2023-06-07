@@ -42,6 +42,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
+from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
@@ -54,6 +55,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -76,6 +78,7 @@ from lp.services.webapp.menu import (
 )
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.sorting import sorted_dotted_numbers
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.sourcepackagerelease import linkify_changelog
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
@@ -170,6 +173,15 @@ class DistributionSourcePackageLinksMixin:
         get_data = "?field.status=OPEN"
         return Link(base_path + get_data, "Open Questions", site="answers")
 
+    @enabled_with_permission("launchpad.Edit")
+    def webhooks(self):
+        return Link(
+            "+webhooks",
+            "Manage webhooks",
+            icon="edit",
+            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+        )
+
 
 class DistributionSourcePackageOverviewMenu(
     ApplicationMenu, DistributionSourcePackageLinksMixin
@@ -193,6 +205,7 @@ class DistributionSourcePackageBugsMenu(
     def links(self):
         links = ["filebug"]
         add_subscribe_link(links)
+        links.append("webhooks")
         return links
 
 
@@ -214,6 +227,7 @@ class DistributionSourcePackageNavigation(
     QuestionTargetTraversalMixin,
     TargetDefaultVCSNavigationMixin,
     StructuralSubscriptionTargetTraversalMixin,
+    WebhookTargetNavigationMixin,
 ):
 
     usedfor = IDistributionSourcePackage
@@ -285,7 +299,7 @@ class DistributionSourcePackageActionMenu(
     def links(self):
         links = ["publishing_history", "change_log"]
         add_subscribe_link(links)
-        links.append("edit")
+        links.extend(["edit", "webhooks"])
         return links
 
     def publishing_history(self):

@@ -550,48 +550,14 @@
     <class
         class="lp.registry.model.distributionsourcepackage.DistributionSourcePackage">
         <allow interface="lp.bugs.interfaces.bugsummary.IBugSummaryDimension"/>
-        <allow interface="lp.bugs.interfaces.bugtarget.IBugTarget"/>
         <allow
             interface="lp.translations.interfaces.customlanguagecode.IHasCustomLanguageCodes"/>
 
         <allow
-            attributes="
-                __eq__
-                __getitem__
-                __ne__
-                _getOfficialTagClause
-                binary_names
-                bug_count
-                bugtasks
-                current_publishing_records
-                currentrelease
-                delete
-                development_version
-                display_name
-                displayname
-                distribution
-                distro
-                drivers
-                findRelatedArchivePublications
-                findRelatedArchives
-                getBranches
-                getMergeProposals
-                getReleasesAndPublishingHistory
-                getUsedBugTagsWithOpenCounts
-                getVersion
-                get_distroseries_packages
-                is_official
-                latest_overall_publication
-                name
-                official_bug_tags
-                personHasDriverRights
-                publishing_history
-                releases
-                sourcepackagename
-                subscribers
-                summary
-                title
-                upstream_product"/>
+            interface="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackageView"/>
+        <require
+            permission="launchpad.Edit"
+            interface="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackageEdit"/>
 
         <!-- IStructuralSubscriptionTarget -->
 
@@ -615,16 +581,6 @@
                 bug_reporting_guidelines
                 enable_bugfiling_duplicate_search
                 "/>
-
-        <!-- IHasGitRepositories -->
-
-        <allow
-            interface="lp.code.interfaces.hasgitrepositories.IHasGitRepositories" />
-
-        <!-- IHasCodeImports -->
-
-        <allow
-            interface="lp.code.interfaces.hasbranches.IHasCodeImports" />
     </class>
     <adapter
         provides="lp.registry.interfaces.distribution.IDistribution"

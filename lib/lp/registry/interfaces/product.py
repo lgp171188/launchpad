@@ -130,6 +130,7 @@ from lp.services.fields import (
     Title,
     URIField,
 )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.services.webservice.apihelpers import (
     patch_collection_property,
     patch_reference_property,
@@ -1099,7 +1100,7 @@ class IProductView(
         """
 
 
-class IProductEditRestricted(IOfficialBugTagTargetRestricted):
+class IProductEditRestricted(IOfficialBugTagTargetRestricted, IWebhookTarget):
     """`IProduct` properties which require launchpad.Edit permission."""
 
     @mutator_for(IProductView["bug_sharing_policy"])

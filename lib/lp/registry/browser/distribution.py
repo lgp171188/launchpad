@@ -83,6 +83,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
+from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.registry.browser import RegistryEditFormView, add_subscribe_link
@@ -141,6 +142,7 @@ from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.archive import EnableProcessorsMixin
 from lp.soyuz.browser.packagesearch import PackageSearchViewBase
 from lp.soyuz.enums import ArchivePurpose
@@ -155,6 +157,7 @@ class DistributionNavigation(
     StructuralSubscriptionTargetTraversalMixin,
     PillarNavigationMixin,
     TargetDefaultVCSNavigationMixin,
+    WebhookTargetNavigationMixin,
 ):
 
     usedfor = IDistribution
@@ -388,6 +391,18 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
     usedfor = IDistribution
     facet = "overview"
 
+    links = (
+        "edit",
+        "admin",
+        "pubconf",
+        "subscribe_to_bug_mail",
+        "edit_bug_mail",
+        "sharing",
+        "new_oci_project",
+        "search_oci_project",
+        "webhooks",
+    )
+
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
         text = "Administer"
@@ -419,18 +434,14 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
         link.enabled = not oci_projects.is_empty()
         return link
 
-    @cachedproperty
-    def links(self):
-        return [
-            "edit",
-            "admin",
-            "pubconf",
-            "subscribe_to_bug_mail",
-            "edit_bug_mail",
-            "sharing",
-            "new_oci_project",
-            "search_oci_project",
-        ]
+    @enabled_with_permission("launchpad.Edit")
+    def webhooks(self):
+        return Link(
+            "+webhooks",
+            "Manage webhooks",
+            icon="edit",
+            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+        )
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
@@ -623,6 +634,7 @@ class DistributionBugsMenu(PillarBugsMenu):
     def links(self):
         links = ["bugsupervisor", "cve", "filebug"]
         add_subscribe_link(links)
+        links.append("webhooks")
         return links
 
 
