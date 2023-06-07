@@ -19,7 +19,7 @@ import psutil
 import transaction
 from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
-from storm.expr import Desc
+from storm.expr import And, Desc
 from storm.properties import JSON, Bool, DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
@@ -92,6 +92,17 @@ class Webhook(StormBase):
     charm_recipe_id = Int(name="charm_recipe")
     charm_recipe = Reference(charm_recipe_id, "CharmRecipe.id")
 
+    project_id = Int(name="project")
+    project = Reference(project_id, "Product.id")
+
+    distribution_id = Int(name="distribution")
+    distribution = Reference(distribution_id, "Distribution.id")
+
+    source_package_name_id = Int(name="source_package_name")
+    source_package_name = Reference(
+        source_package_name_id, "SourcePackageName.id"
+    )
+
     registrant_id = Int(name="registrant", allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
     date_created = DateTime(tzinfo=timezone.utc, allow_none=False)
@@ -117,6 +128,15 @@ class Webhook(StormBase):
             return self.oci_recipe
         elif self.charm_recipe is not None:
             return self.charm_recipe
+        elif self.project is not None:
+            return self.project
+        elif self.distribution is not None:
+            if self.source_package_name is not None:
+                return self.distribution.getSourcePackage(
+                    self.source_package_name
+                )
+            else:
+                return self.distribution
         else:
             raise AssertionError("No target.")
 
@@ -178,6 +198,11 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
+        from lp.registry.interfaces.distribution import IDistribution
+        from lp.registry.interfaces.distributionsourcepackage import (
+            IDistributionSourcePackage,
+        )
+        from lp.registry.interfaces.product import IProduct
         from lp.snappy.interfaces.snap import ISnap
         from lp.soyuz.interfaces.livefs import ILiveFS
 
@@ -194,6 +219,14 @@ class WebhookSet:
             hook.oci_recipe = target
         elif ICharmRecipe.providedBy(target):
             hook.charm_recipe = target
+        elif IProduct.providedBy(target):
+            hook.project = target
+        elif IDistribution.providedBy(target):
+            hook.distribution = target
+        elif IDistributionSourcePackage.providedBy(target):
+            hook.distribution = target.distribution
+            hook.source_package_name = target.sourcepackagename
+
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -220,6 +253,11 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.oci.interfaces.ocirecipe import IOCIRecipe
+        from lp.registry.interfaces.distribution import IDistribution
+        from lp.registry.interfaces.distributionsourcepackage import (
+            IDistributionSourcePackage,
+        )
+        from lp.registry.interfaces.product import IProduct
         from lp.snappy.interfaces.snap import ISnap
         from lp.soyuz.interfaces.livefs import ILiveFS
 
@@ -235,6 +273,18 @@ class WebhookSet:
             target_filter = Webhook.oci_recipe == target
         elif ICharmRecipe.providedBy(target):
             target_filter = Webhook.charm_recipe == target
+        elif IProduct.providedBy(target):
+            target_filter = Webhook.project == target
+        elif IDistribution.providedBy(target):
+            target_filter = And(
+                Webhook.distribution == target,
+                Webhook.source_package_name == None,
+            )
+        elif IDistributionSourcePackage.providedBy(target):
+            target_filter = And(
+                Webhook.distribution == target.distribution,
+                Webhook.source_package_name == target.sourcepackagename,
+            )
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return (
