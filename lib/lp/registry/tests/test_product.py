@@ -1113,11 +1113,15 @@ class TestProduct(TestCaseWithFactory):
         "launchpad.Driver": {"newSeries"},
         "launchpad.Edit": {
             "addOfficialBugTag",
+            "checkInformationType",
+            "default_webhook_event_types",
+            "newWebhook",
             "removeOfficialBugTag",
             "setBranchSharingPolicy",
             "setBugSharingPolicy",
             "setSpecificationSharingPolicy",
-            "checkInformationType",
+            "valid_webhook_event_types",
+            "webhooks",
         },
         "launchpad.Moderate": {
             "is_permitted",

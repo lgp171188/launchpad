@@ -221,6 +221,7 @@ Projects are available at their canonical URL on the API virtual host.
     translation_focus_link: None
     vcs: None
     web_link: 'http://launchpad.../firefox'
+    webhooks_collection_link: 'http://api.launchpad.../firefox/webhooks'
     wiki_url: None
 
 In Launchpad project names may not have uppercase letters in their

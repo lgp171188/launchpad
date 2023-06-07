@@ -23,6 +23,7 @@ Source packages can be obtained from the context of a distribution.
     title: 'mozilla-firefox package in Debian'
     upstream_product_link: None
     web_link: 'http://launchpad.../debian/+source/mozilla-firefox'
+    webhooks_collection_link: 'http.../debian/+source/mozilla-firefox/webhooks'
 
 It's also possible to search for tasks with the "searchTasks" method:
 

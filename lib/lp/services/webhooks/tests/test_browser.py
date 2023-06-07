@@ -182,7 +182,7 @@ class BugUpdateTestHelpersBase:
 
     event_type = "bug:0.1"
     expected_event_types = [
-        ("bug:0.1", "Bug change"),
+        ("bug:0.1", "Bug creation/change"),
         ("bug:comment:0.1", "Bug comment"),
     ]
 
