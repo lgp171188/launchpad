@@ -45,16 +45,19 @@ class TestWebhook(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        target = self.factory.makeGitRepository()
-        self.owner = target.owner
+        self.target = self.factory.makeGitRepository()
+        self.owner = self.get_target_owner()
         with person_logged_in(self.owner):
             self.webhook = self.factory.makeWebhook(
-                target=target, delivery_url="http://example.com/ep"
+                target=self.target, delivery_url="http://example.com/ep"
             )
             self.webhook_url = api_url(self.webhook)
         self.webservice = webservice_for_person(
             self.owner, permission=OAuthPermission.WRITE_PRIVATE
         )
+
+    def get_target_owner(self):
+        return self.target.owner
 
     def test_get(self):
         representation = self.webservice.get(
@@ -262,11 +265,11 @@ class TestWebhookDelivery(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        target = self.factory.makeGitRepository()
-        self.owner = target.owner
+        self.target = self.factory.makeGitRepository()
+        self.owner = self.get_target_owner()
         with person_logged_in(self.owner):
             self.webhook = self.factory.makeWebhook(
-                target=target, delivery_url="http://example.com/ep"
+                target=self.target, delivery_url="http://example.com/ep"
             )
             self.webhook_url = api_url(self.webhook)
             self.delivery = self.webhook.ping()
@@ -274,6 +277,9 @@ class TestWebhookDelivery(TestCaseWithFactory):
         self.webservice = webservice_for_person(
             self.owner, permission=OAuthPermission.WRITE_PRIVATE
         )
+
+    def get_target_owner(self):
+        return self.target.owner
 
     def test_get(self):
         representation = self.webservice.get(
@@ -355,11 +361,14 @@ class TestWebhookTargetBase:
     def setUp(self):
         super().setUp()
         self.target = self.makeTarget()
-        self.owner = self.target.owner
+        self.owner = self.get_target_owner()
         self.target_url = api_url(self.target)
         self.webservice = webservice_for_person(
             self.owner, permission=OAuthPermission.WRITE_PRIVATE
         )
+
+    def get_target_owner(self):
+        return self.target.owner
 
     def test_webhooks(self):
         with person_logged_in(self.owner):
@@ -511,3 +520,36 @@ class TestWebhookTargetCharmRecipe(TestWebhookTargetBase, TestCaseWithFactory):
             }
         ):
             return self.factory.makeCharmRecipe(registrant=owner, owner=owner)
+
+
+class TestWebhookTargetProduct(TestWebhookTargetBase, TestCaseWithFactory):
+
+    event_type = "bug:0.1"
+
+    def makeTarget(self):
+        owner = self.factory.makePerson()
+        return self.factory.makeProduct(owner=owner)
+
+
+class TestWebhookTargetDistribution(
+    TestWebhookTargetBase, TestCaseWithFactory
+):
+
+    event_type = "bug:0.1"
+
+    def makeTarget(self):
+        owner = self.factory.makePerson()
+        return self.factory.makeDistribution(owner=owner)
+
+
+class TestWebhookTargetDistributionSourcePackage(
+    TestWebhookTargetBase, TestCaseWithFactory
+):
+
+    event_type = "bug:0.1"
+
+    def makeTarget(self):
+        return self.factory.makeDistributionSourcePackage()
+
+    def get_target_owner(self):
+        return self.target.distribution.owner

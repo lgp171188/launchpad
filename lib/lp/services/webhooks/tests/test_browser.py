@@ -10,6 +10,7 @@ import transaction
 from testtools.matchers import MatchesAll, MatchesStructure, Not
 from zope.component import getUtility
 
+from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -174,12 +175,53 @@ class CharmRecipeTestHelpers:
         return [obj]
 
 
+class BugUpdateTestHelpersBase:
+
+    # Overriding this since product webhooks don't have breadcrumbs
+    _webhook_listing = soupmatchers.HTMLContains(add_webhook_tag)
+
+    event_type = "bug:0.1"
+    expected_event_types = [
+        ("bug:0.1", "Bug change"),
+        ("bug:comment:0.1", "Bug comment"),
+    ]
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
+class ProductTestHelpers(BugUpdateTestHelpersBase):
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
+        owner = self.factory.makePerson()
+        return self.factory.makeProduct(owner=owner)
+
+
+class DistributionTestHelpers(BugUpdateTestHelpersBase):
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
+        owner = self.factory.makePerson()
+        return self.factory.makeDistribution(owner=owner)
+
+
+class DistributionSourcePackageTestHelpers(BugUpdateTestHelpersBase):
+    def get_target_owner(self):
+        return self.target.distribution.owner
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
+        return self.factory.makeDistributionSourcePackage()
+
+
 class WebhookTargetViewTestHelpers:
     def setUp(self):
         super().setUp()
         self.target = self.makeTarget()
-        self.owner = self.target.owner
+        self.owner = self.get_target_owner()
         login_person(self.owner)
+
+    def get_target_owner(self):
+        return self.target.owner
 
     def makeView(self, name, **kwargs):
         # XXX cjwatson 2020-02-06: We need to give the view a
@@ -212,6 +254,7 @@ class WebhookTargetViewTestHelpers:
 class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
+    _webhook_listing = webhook_listing_constants
 
     def makeHooksAndMatchers(self, count):
         hooks = [
@@ -257,7 +300,7 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
         self.assertThat(
             self.makeView("+webhooks")(),
             MatchesAll(
-                webhook_listing_constants,
+                self._webhook_listing,
                 Not(soupmatchers.HTMLContains(webhook_listing_tag)),
             ),
         )
@@ -268,7 +311,7 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
         self.assertThat(
             self.makeView("+webhooks")(),
             MatchesAll(
-                webhook_listing_constants,
+                self._webhook_listing,
                 soupmatchers.HTMLContains(webhook_listing_tag, *link_matchers),
                 Not(soupmatchers.HTMLContains(batch_nav_tag)),
             ),
@@ -280,7 +323,7 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
         self.assertThat(
             self.makeView("+webhooks")(),
             MatchesAll(
-                webhook_listing_constants,
+                self._webhook_listing,
                 soupmatchers.HTMLContains(
                     webhook_listing_tag, batch_nav_tag, *link_matchers[:5]
                 ),
@@ -338,6 +381,29 @@ class TestWebhooksViewOCIRecipe(
 
 class TestWebhooksViewCharmRecipe(
     TestWebhooksViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhooksViewProductBugUpdate(
+    ProductTestHelpers, TestWebhooksViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhooksViewDistributionBugUpdate(
+    DistributionTestHelpers, TestWebhooksViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhooksViewDistributionSourcePackageBugUpdate(
+    DistributionSourcePackageTestHelpers,
+    TestWebhooksViewBase,
+    TestCaseWithFactory,
 ):
 
     pass
@@ -492,15 +558,41 @@ class TestWebhookAddViewCharmRecipe(
     pass
 
 
+class TestWebhookAddViewProductBugUpdate(
+    ProductTestHelpers, TestWebhookAddViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhookAddViewDistributionBugUpdate(
+    DistributionTestHelpers, TestWebhookAddViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhookAddViewDistributionSourcePackageBugUpdate(
+    DistributionSourcePackageTestHelpers,
+    TestWebhookAddViewBase,
+    TestCaseWithFactory,
+):
+
+    pass
+
+
 class WebhookViewTestHelpers:
     def setUp(self):
         super().setUp()
         self.target = self.makeTarget()
-        self.owner = self.target.owner
+        self.owner = self.get_target_owner()
         self.webhook = self.factory.makeWebhook(
             target=self.target, delivery_url="http://example.com/original"
         )
         login_person(self.owner)
+
+    def get_target_owner(self):
+        return self.target.owner
 
     def makeView(self, name, **kwargs):
         view = create_view(self.webhook, name, principal=self.owner, **kwargs)
@@ -726,6 +818,29 @@ class TestWebhookDeleteViewOCIRecipe(
 
 class TestWebhookDeleteViewCharmRecipe(
     TestWebhookDeleteViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhookDeleteViewProductBugUpdate(
+    ProductTestHelpers, TestWebhookDeleteViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhookDeleteViewDistributionBugUpdate(
+    DistributionTestHelpers, TestWebhookDeleteViewBase, TestCaseWithFactory
+):
+
+    pass
+
+
+class TestWebhookDeleteViewDistributionSourcePackageBugUpdate(
+    DistributionSourcePackageTestHelpers,
+    TestWebhookDeleteViewBase,
+    TestCaseWithFactory,
 ):
 
     pass
