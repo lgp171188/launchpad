@@ -5,6 +5,7 @@ import shlex
 import subprocess
 from multiprocessing import cpu_count
 
+import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.coordinator import acquire
 from charms.launchpad.base import configure_email, get_service_config
@@ -206,3 +207,76 @@ def nrpe_available():
 @when_not("nrpe-external-master.available")
 def nrpe_unavailable():
     clear_flag("launchpad.appserver.nrpe-external-master.published")
+
+
+@when("loadbalancer.available", "service.configured")
+@when_not("launchpad.loadbalancer.configured")
+def configure_loadbalancer():
+    config = hookenv.config()
+
+    try:
+        service_options_main = yaml.safe_load(
+            config["haproxy_service_options_main"]
+        )
+    except Exception:
+        hookenv.log("Could not parse haproxy_service_options_main YAML")
+        hookenv.status_set(
+            "blocked", "Bad haproxy_service_options_main YAML configuration"
+        )
+        return
+    try:
+        service_options_xmlrpc = yaml.safe_load(
+            config["haproxy_service_options_xmlrpc"]
+        )
+    except Exception:
+        hookenv.log("Could not parse haproxy_service_options_xmlrpc YAML")
+        hookenv.status_set(
+            "blocked", "Bad haproxy_service_options_xmlrpc YAML configuration"
+        )
+        return
+    server_options = config["haproxy_server_options"]
+
+    unit_name = hookenv.local_unit().replace("/", "-")
+    unit_ip = hookenv.unit_private_ip()
+    services = [
+        {
+            "service_name": "appserver-main",
+            "service_port": config["port_main"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_main),
+            "servers": [
+                [
+                    f"main_{unit_name}",
+                    unit_ip,
+                    config["port_main"],
+                    server_options,
+                ]
+            ],
+        },
+        {
+            "service_name": "appserver-xmlrpc",
+            "service_port": config["port_xmlrpc"],
+            "service_host": "0.0.0.0",
+            "service_options": list(service_options_xmlrpc),
+            "servers": [
+                [
+                    f"xmlrpc_{unit_name}",
+                    unit_ip,
+                    config["port_xmlrpc"],
+                    server_options,
+                ]
+            ],
+        },
+    ]
+    services_yaml = yaml.dump(services)
+
+    for rel in hookenv.relations_of_type("loadbalancer"):
+        hookenv.relation_set(rel["__relid__"], services=services_yaml)
+
+    set_state("launchpad.loadbalancer.configured")
+
+
+@when("launchpad.loadbalancer.configured")
+@when_not_all("loadbalancer.available", "service.configured")
+def deconfigure_loadbalancer():
+    remove_state("launchpad.loadbalancer.configured")
