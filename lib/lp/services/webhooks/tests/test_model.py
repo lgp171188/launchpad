@@ -77,10 +77,13 @@ class TestWebhookPermissions(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def get_target_owner(self, target):
+        return target.owner
+
     def test_target_owner_can_view(self):
         target = self.factory.makeGitRepository()
         webhook = self.factory.makeWebhook(target=target)
-        with person_logged_in(target.owner):
+        with person_logged_in(self.get_target_owner(target)):
             self.assertTrue(check_permission("launchpad.View", webhook))
 
     def test_random_cannot_view(self):
@@ -140,9 +143,12 @@ class TestWebhookSetBase:
 
     layer = DatabaseFunctionalLayer
 
+    def get_target_owner(self, target):
+        return target.owner
+
     def test_new(self):
         target = self.makeTarget()
-        login_person(target.owner)
+        login_person(self.get_target_owner(target))
         person = self.factory.makePerson()
         hook = getUtility(IWebhookSet).new(
             target,
@@ -178,7 +184,7 @@ class TestWebhookSetBase:
                 self.factory.makeWebhook(
                     target, "http://path/%s/%d" % (name, i)
                 )
-        with person_logged_in(target1.owner):
+        with person_logged_in(self.get_target_owner(target1)):
             self.assertContentEqual(
                 [
                     "http://path/one/0",
@@ -190,7 +196,7 @@ class TestWebhookSetBase:
                     for hook in getUtility(IWebhookSet).findByTarget(target1)
                 ],
             )
-        with person_logged_in(target2.owner):
+        with person_logged_in(self.get_target_owner(target2)):
             self.assertContentEqual(
                 [
                     "http://path/two/0",
@@ -205,7 +211,7 @@ class TestWebhookSetBase:
 
     def test_delete(self):
         target = self.makeTarget()
-        login_person(target.owner)
+        login_person(self.get_target_owner(target))
         hooks = []
         for i in range(3):
             hook = self.factory.makeWebhook(target, "http://path/to/%d" % i)
@@ -237,7 +243,9 @@ class TestWebhookSetBase:
 
     def test__checkVisibility_public_artifact(self):
         target = self.makeTarget()
-        self.assertTrue(WebhookSet._checkVisibility(target, target.owner))
+        self.assertTrue(
+            WebhookSet._checkVisibility(target, self.get_target_owner(target))
+        )
 
     def test_trigger(self):
         owner = self.factory.makePerson()
@@ -519,4 +527,65 @@ class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
         ):
             return self.factory.makeCharmRecipe(
                 registrant=owner, owner=owner, **kwargs
+            )
+
+
+class TestWebhookSetBugBase(TestWebhookSetBase):
+
+    event_type = "bug:0.1"
+
+    def test__checkVisibility_private_artifact(self):
+        owner = self.factory.makePerson()
+        target = self.makeTarget(
+            owner=owner, information_type=InformationType.PROPRIETARY
+        )
+        self.assertTrue(WebhookSet._checkVisibility(target, owner))
+
+    def test_webhook_trigger_private_target(self):
+        owner = self.factory.makePerson()
+        target = self.makeTarget(
+            owner=owner,
+            information_type=InformationType.PROPRIETARY,
+        )
+        hook = self.factory.makeWebhook(
+            target=target, event_types=[self.event_type]
+        )
+
+        with admin_logged_in():
+            self.assertThat(list(hook.deliveries), HasLength(0))
+
+        getUtility(IWebhookSet).trigger(
+            target, self.event_type, {"some": "payload"}
+        )
+        with admin_logged_in():
+            self.assertThat(list(hook.deliveries), HasLength(1))
+            delivery = hook.deliveries.one()
+            self.assertEqual(delivery.payload, {"some": "payload"})
+
+
+class TestWebhookSetProductBugUpdate(
+    TestWebhookSetBugBase, TestCaseWithFactory
+):
+    def makeTarget(self, **kwargs):
+        return self.factory.makeProduct(**kwargs)
+
+
+class TestWebhookSetDistributionBugUpdate(
+    TestWebhookSetBugBase, TestCaseWithFactory
+):
+    def makeTarget(self, **kwargs):
+        return self.factory.makeDistribution(**kwargs)
+
+
+class TestWebhookSetDistributionSourcePackageBugUpdate(
+    TestWebhookSetBugBase, TestCaseWithFactory
+):
+    def get_target_owner(self, target):
+        return target.distribution.owner
+
+    def makeTarget(self, **kwargs):
+        with admin_logged_in():
+            distribution = self.factory.makeDistribution(**kwargs)
+            return self.factory.makeDistributionSourcePackage(
+                distribution=distribution
             )
