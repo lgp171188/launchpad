@@ -83,6 +83,14 @@ class TestBuilder(TestCaseWithFactory):
         self.assertEqual(proc, builder.processor)
         self.assertEqual([proc], builder.processors)
 
+    def test_region_empty(self):
+        builder = self.factory.makeBuilder(name="some-builder-name")
+        self.assertEqual("", builder.region)
+
+    def test_region(self):
+        builder = self.factory.makeBuilder(name="some-region-001")
+        self.assertEqual("some-region", builder.region)
+
 
 # XXX cjwatson 2020-05-18: All these tests would now make more sense in
 # lp.buildmaster.tests.test_buildqueue, and should be moved there when

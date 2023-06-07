@@ -1417,17 +1417,20 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
             [
                 mock.call(
                     "builders.job_reset,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "env=test,job_type=RECIPEBRANCHBUILD,region={},"
                     "virtualized=True".format(
                         build.processor.name,
                         self.builder.name,
+                        self.builder.region,
                     )
                 ),
                 mock.call(
                     "build.reset,arch={},builder_name={},env=test,"
-                    "job_type=RECIPEBRANCHBUILD,virtualized=True".format(
+                    "job_type=RECIPEBRANCHBUILD,region={},"
+                    "virtualized=True".format(
                         build.processor.name,
                         self.builder.name,
+                        self.builder.region,
                     )
                 ),
             ]
@@ -1481,15 +1484,15 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                 mock.call(
                     "builders.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
-                    "virtualized=True".format(
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
                 ),
                 mock.call(
                     "build.finished,arch={},builder_name={},env=test,"
-                    "job_type=RECIPEBRANCHBUILD,status=CANCELLED,"
-                    "virtualized=True".format(
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "status=CANCELLED,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
@@ -1514,15 +1517,15 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
             [
                 mock.call(
                     "build.finished,arch={},builder_name={},env=test,"
-                    "job_type=RECIPEBRANCHBUILD,status=FAILEDTOBUILD,"
-                    "virtualized=True".format(
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "status=FAILEDTOBUILD,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
                 ),
                 mock.call(
                     "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
                     "virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
@@ -1556,15 +1559,15 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
             [
                 mock.call(
                     "build.finished,arch={},builder_name={},env=test,"
-                    "job_type=RECIPEBRANCHBUILD,status=FULLYBUILT,"
-                    "virtualized=True".format(
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "status=FULLYBUILT,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
                 ),
                 mock.call(
                     "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,"
+                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
                     "virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
@@ -1592,15 +1595,15 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                 mock.call(
                     "builders.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
-                    "virtualized=True".format(
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
                 ),
                 mock.call(
                     "build.finished,arch={},builder_name={},env=test,"
-                    "job_type=RECIPEBRANCHBUILD,status=CANCELLED,"
-                    "virtualized=True".format(
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "status=CANCELLED,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )

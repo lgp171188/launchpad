@@ -516,7 +516,9 @@ class TestAsyncCharmRecipeBuildBehaviour(
             self.stats_client.incr.call_args_list[0][0],
             (
                 "build.count,builder_name={},env=test,"
-                "job_type=CHARMRECIPEBUILD".format(builder.name),
+                "job_type=CHARMRECIPEBUILD,region={}".format(
+                    builder.name, builder.region
+                ),
             ),
         )
 

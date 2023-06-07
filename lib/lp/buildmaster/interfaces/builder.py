@@ -311,6 +311,16 @@ class IBuilderView(IHasBuildRecords, IHasOwner):
         )
     )
 
+    region = TextLine(
+        title=_("Region"),
+        required=True,
+        description=_(
+            "The builder's region.  This is derived purely based on its name "
+            "(e.g. lcy02-amd64-001 is in the 'lcy02-amd64' region), and is "
+            "used for metrics."
+        ),
+    )
+
     def gotFailure():
         """Increment failure_count on the builder."""
 

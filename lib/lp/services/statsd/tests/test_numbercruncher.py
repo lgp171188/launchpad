@@ -59,8 +59,8 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         ]
         expected_gauges.extend(
             [
-                "builders,arch=386,env=test,status=%s,virtualized=True"
-                % status
+                "builders,arch=386,env=test,region=builder-name,status=%s,"
+                "virtualized=True" % status
                 for status in ("building", "cleaning", "disabled", "idle")
             ]
         )
@@ -74,16 +74,21 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
     def test_multiple_processor_counts(self):
         builders = [
             self.factory.makeBuilder(
+                name=self.factory.getUniqueUnicode(region),
                 processors=[
                     getUtility(IProcessorSet).getByName(processor_name)
                 ],
                 virtualized=virtualized,
             )
-            for processor_name, virtualized in (
-                ("386", True),
-                ("386", False),
-                ("amd64", True),
-                ("amd64", False),
+            for processor_name, virtualized, region in (
+                ("386", True, "test1"),
+                ("386", True, "test2"),
+                ("386", False, "test1"),
+                ("386", False, "test2"),
+                ("amd64", True, "test1"),
+                ("amd64", True, "test2"),
+                ("amd64", False, "test1"),
+                ("amd64", False, "test2"),
             )
         ]
         for builder in builders:
@@ -101,10 +106,11 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         ]
         expected_gauges.extend(
             [
-                "builders,arch=%s,env=test,status=%s,virtualized=%s"
-                % (arch, status, virtualized)
+                "builders,arch=%s,env=test,region=%s,status=%s,virtualized=%s"
+                % (arch, region, status, virtualized)
                 for arch in ("386", "amd64")
                 for virtualized in (True, False)
+                for region in ("test1", "test2")
                 for status in ("building", "cleaning", "disabled", "idle")
             ]
         )
@@ -182,7 +188,7 @@ class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
         )
         expected_gauges.update(
             {
-                "builders,arch=amd64,env=test,status=%s,"
+                "builders,arch=amd64,env=test,region=builder-name,status=%s,"
                 "virtualized=True" % status: count
                 for status, count in (
                     ("building", 2),

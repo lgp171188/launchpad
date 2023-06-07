@@ -375,6 +375,7 @@ BuilderVitals = namedtuple(
         "clean_status",
         "active",
         "failure_count",
+        "region",
     ),
 )
 
@@ -400,6 +401,7 @@ def extract_vitals_from_db(builder, build_queue=_BQ_UNSPECIFIED):
         builder.clean_status,
         builder.active,
         builder.failure_count,
+        builder.region,
     )
 
 
