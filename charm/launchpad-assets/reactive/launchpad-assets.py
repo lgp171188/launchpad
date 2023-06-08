@@ -92,7 +92,7 @@ def send_apache_website():
     # interface-apache incorrectly sets `modules`, not `site_modules`.  Work
     # around this.
     apache.set_remote(site_modules="headers proxy proxy_http")
-    apache.send_ports([config["port_assets"]])
+    apache.send_ports([config["port"]])
     apache.send_enabled()
     hookenv.status_set("active", "Ready")
     set_flag("service.apache-configured")
