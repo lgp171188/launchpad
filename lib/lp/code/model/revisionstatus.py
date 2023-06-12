@@ -141,6 +141,7 @@ class RevisionStatusReport(StormBase):
             file=file,
             contentType="application/octet-stream",
             restricted=self.git_repository.private,
+            allow_zero_length=True,
         )
         getUtility(IRevisionStatusArtifactSet).new(lfa, self, artifact_type)
 
