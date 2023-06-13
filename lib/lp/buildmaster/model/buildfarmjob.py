@@ -197,6 +197,7 @@ class BuildFarmJobMixin:
                 {
                     "builder_name": self.builder.name,
                     "virtualized": str(self.builder.virtualized),
+                    "region": self.builder.region,
                 }
             )
         labels.update(extra)

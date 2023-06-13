@@ -3,6 +3,28 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
+  haproxy_server_options:
+    type: string
+    description: Options to add to HAProxy "server" lines.
+    default: check inter 5000 rise 2 fall 5 maxconn 16
+  haproxy_service_options_download:
+    type: string
+    description: HAProxy options for download services.
+    default: |
+      - mode http
+      - option httplog
+      - option httpchk HEAD / HTTP/1.0
+      - balance leastconn
+  haproxy_service_options_upload:
+    type: string
+    description: HAProxy options for upload services.
+    default: |
+      - mode tcp
+      - option tcplog
+      - option httpchk HEAD / HTTP/1.0
+      - balance leastconn
+      - timeout client 600000
+      - timeout server 600000
   old_os_auth_url:
     type: string
     description: >

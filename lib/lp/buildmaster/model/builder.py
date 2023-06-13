@@ -7,6 +7,7 @@ __all__ = [
     "BuilderSet",
 ]
 
+import re
 from datetime import timezone
 
 from storm.expr import Coalesce, Count, Sum
@@ -42,6 +43,8 @@ from lp.services.propertycache import cachedproperty, get_property_cache
 # is moved.
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
+
+region_re = re.compile(r"(^[a-z0-9][a-z0-9+.-]+)-\d+$")
 
 
 @implementer(IBuilder, IHasBuildRecords)
@@ -233,6 +236,11 @@ class Builder(StormBase):
             return getUtility(IBuildFarmJobSet).getBuildsForBuilder(
                 self, status=build_state, user=user
             )
+
+    @property
+    def region(self):
+        region_match = region_re.match(self.name)
+        return region_match.group(1) if region_match is not None else ""
 
 
 class BuilderProcessor(StormBase):

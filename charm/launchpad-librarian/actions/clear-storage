@@ -1,0 +1,52 @@
+#! /usr/bin/python3
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+import re
+import shutil
+import sys
+from pathlib import Path
+from urllib.parse import urlparse
+
+sys.path.append("lib")
+
+from charms.layer import basic  # noqa: E402
+
+basic.bootstrap_charm_deps()
+basic.init_config_states()
+
+from charmhelpers.core import hookenv  # noqa: E402
+from ols import base  # noqa: E402
+
+
+def clear_storage():
+    params = hookenv.action_get()
+    config = hookenv.config()
+    expected_host = urlparse(config["librarian_download_url"]).hostname
+    if expected_host == "launchpadlibrarian.net":
+        hookenv.action_fail("Refusing to clear storage for production.")
+        return
+    if expected_host != params["host"]:
+        hookenv.action_fail(
+            f"Requested clearing storage for {params['host']}, but this is "
+            f"{expected_host}."
+        )
+        return
+
+    librarian_dir = Path(base.base_dir()) / "librarian"
+    hookenv.log(f"Clearing {librarian_dir}")
+    # Only consider subdirectories created by
+    # lp.services.librarianserver.storage._relFileLocation.  In particular,
+    # this excludes "incoming" and "lost+found".
+    librarian_subdirs = [
+        path
+        for path in librarian_dir.iterdir()
+        if re.match(r"^[0-9a-f][0-9a-f]$", path.name)
+    ]
+    for path in librarian_subdirs:
+        shutil.rmtree(path)
+    hookenv.action_set({"result": "Completed"})
+
+
+if __name__ == "__main__":
+    clear_storage()

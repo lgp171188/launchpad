@@ -197,6 +197,7 @@ class BuildFarmJobBehaviourBase:
             labels={
                 "job_type": job_type_name,
                 "builder_name": self._builder.name,
+                "region": self._builder.region,
             },
         )
 

@@ -356,6 +356,23 @@ class TestRevisionStatusReportWebservice(TestCaseWithFactory):
             sha1(content.encode()).hexdigest(),
         )
 
+    def test_attach_empty_file(self):
+        report = self.factory.makeRevisionStatusReport(
+            title="build:0",
+            ci_build=self.factory.makeCIBuild(),
+        )
+
+        with person_logged_in(report.creator):
+            report.attach("empty", b"")
+
+        artifacts = list(
+            getUtility(IRevisionStatusArtifactSet).findByReport(report)
+        )
+        self.assertEqual(
+            artifacts[0].library_file.content.sha1,
+            hashlib.sha1(b"").hexdigest(),
+        )
+
     def test_update(self):
         test_properties = {
             "launchpad.source-name": "go-module",

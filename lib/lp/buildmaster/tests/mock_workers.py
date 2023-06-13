@@ -38,6 +38,7 @@ from txfixtures.tachandler import TacTestFixture
 from lp.buildmaster.enums import BuilderCleanStatus, BuilderResetProtocol
 from lp.buildmaster.interactor import BuilderWorker
 from lp.buildmaster.interfaces.builder import CannotFetchFile
+from lp.buildmaster.model.builder import region_re
 from lp.services.config import config
 from lp.services.daemons.tachandler import twistd_script
 from lp.services.webapp import urlappend
@@ -94,6 +95,11 @@ class MockBuilder:
     def failBuilder(self, reason):
         self.builderok = False
         self.failnotes = reason
+
+    @property
+    def region(self):
+        region_match = region_re.match(self.name)
+        return region_match.group(1) if region_match is not None else ""
 
 
 # XXX: It would be *really* nice to run some set of tests against the real

@@ -111,7 +111,7 @@ class NumberCruncher(service.Service):
                 continue
             for processor_name in builder.processor_names:
                 counts = counts_by_processor.setdefault(
-                    (processor_name, builder.virtualized),
+                    (processor_name, builder.virtualized, builder.region),
                     {"cleaning": 0, "idle": 0, "disabled": 0, "building": 0},
                 )
                 if not builder.builderok:
@@ -127,7 +127,11 @@ class NumberCruncher(service.Service):
                 builder.failure_count,
                 labels={"builder_name": builder.name},
             )
-        for (processor, virtualized), counts in counts_by_processor.items():
+        for (
+            processor,
+            virtualized,
+            region,
+        ), counts in counts_by_processor.items():
             for count_name, count_value in counts.items():
                 self._sendGauge(
                     "builders",
@@ -135,6 +139,7 @@ class NumberCruncher(service.Service):
                     labels={
                         "status": count_name,
                         "arch": processor,
+                        "region": region,
                         "virtualized": virtualized,
                     },
                 )

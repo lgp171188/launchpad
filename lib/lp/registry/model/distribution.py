@@ -172,6 +172,7 @@ from lp.services.helpers import backslashreplace, shortlist
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.url import urlparse
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -238,6 +239,7 @@ class Distribution(
     TranslationPolicyMixin,
     InformationTypeMixin,
     SharingPolicyMixin,
+    WebhookTargetMixin,
 ):
     """A distribution of an operating system, e.g. Debian GNU/Linux."""
 
@@ -2311,6 +2313,10 @@ class Distribution(
             .find(Vulnerability, distribution=self, id=vulnerability_id)
             .one()
         )
+
+    @property
+    def valid_webhook_event_types(self):
+        return ["bug:0.1", "bug:comment:0.1"]
 
 
 @implementer(IDistributionSet)

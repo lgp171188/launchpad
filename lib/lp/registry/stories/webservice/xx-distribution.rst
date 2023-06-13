@@ -73,6 +73,7 @@ And for every distribution we publish most of its attributes.
     vcs: None
     vulnerabilities_collection_link: 'http://.../ubuntu/vulnerabilities'
     web_link: 'http://launchpad.../ubuntu'
+    webhooks_collection_link: 'http://api.launchpad.../ubuntu/webhooks'
 
 
 Distribution Custom Operations

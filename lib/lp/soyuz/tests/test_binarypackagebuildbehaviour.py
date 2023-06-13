@@ -235,7 +235,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             self.stats_client.incr.call_args_list[0][0],
             (
                 "build.count,builder_name={},env=test,"
-                "job_type=PACKAGEBUILD".format(builder.name),
+                "job_type=PACKAGEBUILD,region={}".format(
+                    builder.name, builder.region
+                ),
             ),
         )
 
@@ -318,7 +320,9 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
             self.stats_client.incr.call_args_list[0][0],
             (
                 "build.count,builder_name={},env=test,"
-                "job_type=PACKAGEBUILD".format(builder.name),
+                "job_type=PACKAGEBUILD,region={}".format(
+                    builder.name, builder.region
+                ),
             ),
         )
 
