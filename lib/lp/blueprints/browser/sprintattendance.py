@@ -10,7 +10,7 @@ __all__ = [
 
 from datetime import timedelta
 
-import pytz
+from dateutil import tz
 from zope.formlib.widget import CustomWidgetFactory
 
 from lp import _
@@ -56,7 +56,7 @@ class BaseSprintAttendanceAddView(LaunchpadFormView):
         # after the sprint. We will accept a time just before or just after
         # and map those to the beginning and end times, respectively, in
         # self.getDates().
-        time_zone = pytz.timezone(self.context.time_zone)
+        time_zone = tz.gettz(self.context.time_zone)
         from_date = self.context.time_starts.astimezone(time_zone)
         to_date = self.context.time_ends.astimezone(time_zone)
         self.starts_widget.from_date = from_date - timedelta(days=1)
@@ -142,16 +142,16 @@ class BaseSprintAttendanceAddView(LaunchpadFormView):
     @property
     def local_start(self):
         """The sprint start time, in the local time zone, as text."""
-        tz = pytz.timezone(self.context.time_zone)
-        return self.context.time_starts.astimezone(tz).strftime(
+        time_zone = tz.gettz(self.context.time_zone)
+        return self.context.time_starts.astimezone(time_zone).strftime(
             self._local_timeformat
         )
 
     @property
     def local_end(self):
         """The sprint end time, in the local time zone, as text."""
-        tz = pytz.timezone(self.context.time_zone)
-        return self.context.time_ends.astimezone(tz).strftime(
+        time_zone = tz.gettz(self.context.time_zone)
+        return self.context.time_ends.astimezone(time_zone).strftime(
             self._local_timeformat
         )
 

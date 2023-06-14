@@ -19,7 +19,7 @@ __all__ = [
 
 from datetime import datetime, timezone, tzinfo
 
-import pytz
+from dateutil import tz
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import DateTimeError, parse
@@ -217,14 +217,14 @@ class DateTimeWidget(TextWidget):
           >>> widget.required_time_zone_name = "Africa/Maseru"
           >>> print(widget.time_zone_name)
           Africa/Maseru
-          >>> print(widget.time_zone)
-          Africa/Maseru
+          >>> print(widget.time_zone)  # doctest: +ELLIPSIS
+          tzfile('.../Africa/Maseru')
 
         """
         if self.time_zone_name == "UTC":
             return timezone.utc
         else:
-            return pytz.timezone(self.time_zone_name)
+            return tz.gettz(self.time_zone_name)
 
     def _align_date_constraints_with_time_zone(self):
         """Ensure that from_date and to_date use the widget time zone."""
@@ -232,22 +232,14 @@ class DateTimeWidget(TextWidget):
             if self.from_date.tzinfo is None:
                 # Timezone-naive constraint is interpreted as being in the
                 # widget time zone.
-                if hasattr(self.time_zone, "localize"):  # pytz
-                    self.from_date = self.time_zone.localize(self.from_date)
-                else:
-                    self.from_date = self.from_date.replace(
-                        tzinfo=self.time_zone
-                    )
+                self.from_date = self.from_date.replace(tzinfo=self.time_zone)
             else:
                 self.from_date = self.from_date.astimezone(self.time_zone)
         if isinstance(self.to_date, datetime):
             if self.to_date.tzinfo is None:
                 # Timezone-naive constraint is interpreted as being in the
                 # widget time zone.
-                if hasattr(self.time_zone, "localize"):  # pytz
-                    self.to_date = self.time_zone.localize(self.to_date)
-                else:
-                    self.to_date = self.to_date.replace(tzinfo=self.time_zone)
+                self.to_date = self.to_date.replace(tzinfo=self.time_zone)
             else:
                 self.to_date = self.to_date.astimezone(self.time_zone)
 
@@ -426,10 +418,7 @@ class DateTimeWidget(TextWidget):
             dt = datetime(year, month, day, hour, minute, int(second), micro)
         except (DateTimeError, ValueError, IndexError) as v:
             raise ConversionError("Invalid date value", v)
-        if hasattr(self.time_zone, "localize"):  # pytz
-            return self.time_zone.localize(dt)
-        else:
-            return dt.replace(tzinfo=self.time_zone)
+        return dt.replace(tzinfo=self.time_zone)
 
     def _toFormValue(self, value):
         """Convert a date to its string representation.

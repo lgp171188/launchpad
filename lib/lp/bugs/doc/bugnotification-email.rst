@@ -585,12 +585,12 @@ method requires a from address, a to person, a body, a subject and a sending
 date for the mail.
 
     >>> from datetime import datetime
-    >>> import pytz
+    >>> from dateutil import tz
 
     >>> from_address = get_bugmail_from_address(lp_janitor, bug_four)
     >>> to_person = getUtility(IPersonSet).getByEmail("foo.bar@canonical.com")
-    >>> sending_date = pytz.timezone("Europe/Prague").localize(
-    ...     datetime(2008, 5, 20, 11, 5, 47)
+    >>> sending_date = datetime(
+    ...     2008, 5, 20, 11, 5, 47, tzinfo=tz.gettz("Europe/Prague")
     ... )
 
     >>> notification_email = bug_four_notification_builder.build(

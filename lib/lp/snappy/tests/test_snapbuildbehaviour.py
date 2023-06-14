@@ -12,8 +12,8 @@ from textwrap import dedent
 from urllib.parse import urlsplit
 
 import fixtures
-import pytz
 from aptsources.sourceslist import SourceEntry
+from dateutil import tz
 from pymacaroons import Macaroon
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -101,8 +101,8 @@ class FormatAsRfc3339TestCase(TestCase):
         self.assertEqual("2016-01-01T00:00:00Z", format_as_rfc3339(ts))
 
     def test_tzinfo_is_ignored(self):
-        tz = datetime(2016, 1, 1, tzinfo=pytz.timezone("US/Eastern"))
-        self.assertEqual("2016-01-01T00:00:00Z", format_as_rfc3339(tz))
+        time_zone = datetime(2016, 1, 1, tzinfo=tz.gettz("US/Eastern"))
+        self.assertEqual("2016-01-01T00:00:00Z", format_as_rfc3339(time_zone))
 
 
 class TestSnapBuildBehaviourBase(TestCaseWithFactory):
