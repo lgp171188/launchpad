@@ -67,14 +67,87 @@ from other parts, so loose coupling will help: for example, it may be useful
 to allow configuring connections using explicit configuration as well as or
 instead of Juju integrations.
 
+Creating a Launchpad charm
+--------------------------
+
+If you don't already have a suitable testbed, then see the `Juju tutorial
+<https://juju.is/docs/olm/get-started-with-juju>`_ for how to set one up;
+you should use the non-Kubernetes approach here.
+
+Assuming you have a suitable testbed to deploy charms with Juju, you can follow
+these guidelines to build your charm for Launchpad:
+
+.. note::
+
+  These are just **optional guidelines** for developing charms specifically for
+  Launchpad.
+  
+1. **Consider your application:** Think about what parts it entails and
+   consider: what do you need to get your application running? Do you need a
+   database, a celery worker, etc.? Does it makes sense to divide your
+   application into multiple charms related to each other?
+
+2. **Create your charm base:** Either create a charm from scratch or base it
+   off existing ones. Without adding any code (i.e., the reactive code, within
+   the ``/reactive`` folder) update ``layer.yaml``, ``charmcraft.yaml`` and 
+   ``metadata.yaml``, to create your base. You can find more information about
+   what each file is important for in the `reactive charms documentation
+   <https://charmsreactive.readthedocs.io/en/latest/structure.html#charm-layer>`_.
+   Note that the `charmcraft.yaml` file is not part of reactive charms, but
+   it's an important file to be able to use ``charmcraft`` tools (e.g. 
+   ``charmcraft pack`` for packing a charm). See 
+   `here <https://juju.is/docs/sdk/charmcraft-yaml>`_ for information about the
+   `charmcraft.yaml` file specifically. If you take a look at the ``parts``
+   section of the existing Launchpad charms, you will see a few common ones
+   used as a base to build your charm:
+
+   * ``charm-wheels``: contains Python dependencies for ols-layers.
+
+   * ``ols-layers``: contains common charm code used by both the Snap Store and
+     Launchpad teams; it provides layers that deal with the way that we
+     normally deploy simple web services, some common interfaces, and a few
+     generic layers such as ``basic`` and ``apt``.
+
+   * ``launchpad-layers``: contains common charm code specific to charms
+     maintained by the Launchpad team. It deals with things like unpacking the
+     Launchpad payload, configuring common relations, and setting up Launchpad
+     configuration files.
+
+3. **Write minimal code:** You can start by writing minimal reactive code
+   that gets the source tree deployed (nothing too specialized).
+   This should give you something you can build and deploy to a Juju model to
+   test out. (Tip: have a look at ``charm/launchpad/`` charm. It can be used as a
+   minimal skeleton that does nothing except deploy a Launchpad payload with
+   some basic configuration).
+
+4. **Add configurations:** Have a look at configurations related to your app
+   in `lp-production-configs 
+   <https://bazaar.launchpad.net/lp-production-config>`_ - what is common
+   between environments and what changes. You should be able to create a config
+   Jinja template in your charm ``/templates`` folder with all the base
+   configurations, where the configuration that changes between environments
+   should be variables.
+   These variables should be set in the ``config.yaml`` file with reasonable
+   default values (ideally, values that would allow a local deployment) - note
+   that some config variables might already be set by other layers of your
+   charm, if your charm is based on other layers. The actual values that will
+   be running in each environment (production, dogfood, staging, qastaging),
+   should later be set in the ``lp/bundle.yaml`` file within the
+   `launchpad-mojo-specs <https://code.launchpad.net/launchpad-mojo-specs>`
+   repo (you should only worry about these specs after your charm is ready).
+
+5. **Write your reactive code:** Start adding code that it might need
+   to configure and start your application. Setup any crontabs, logrotate...
+
+6. **Test:** Test your new charm(s) deploys correctly with all its
+   integrations, and your application is running. This can be challenging for
+   some applications. See `Workflow` section below for some tips.
+
 Workflow
 ========
 
 You can run test deployments using `Juju <https://juju.is/docs/olm>`_ and
-`LXD <https://linuxcontainers.org/lxd/introduction/>`_.  If you don't
-already have a suitable testbed, then see the `Juju tutorial
-<https://juju.is/docs/olm/get-started-with-juju>`_ for how to set one up;
-you should use the non-Kubernetes approach here.
+`LXD <https://linuxcontainers.org/lxd/introduction/>`_.
 
 Each Mojo spec has a ``README.md`` file explaining how to deploy it, and
 that's usually the easiest way to get started.  You should normally use the
@@ -84,73 +157,18 @@ of Canonical's internal infrastructure will be available.
 
 Once you've successfully deployed an environment, you will probably want to
 iterate on it in various ways.  You can build a new charm using ``charmcraft
-pack`` in the appropriate subdirectory, and then use ``juju refresh`` to
-upgrade your local deployment to that.  You can change configuration items
-using ``juju config``.  Alternatively, you can make a local clone of the
-Mojo spec and point ``mojo run`` at that rather than at a repository on
-``git.launchpad.net``, and then you can iterate by changing the spec.
+pack`` in the appropriate subdirectory, and then use ``juju deploy`` to deploy
+a new charm, or ``juju refresh`` to upgrade your local deployment to that.
+You can change configuration items using ``juju config``.  Alternatively, you
+can make a local clone of the Mojo spec and point ``mojo run`` at that rather
+than at a repository on ``git.launchpad.net``, and then you can iterate by
+changing the spec.
 
 Use ``juju debug-log`` and ``juju status`` liberally to observe what's
-happening as you make changes.  See `How to debug a charm
+happening as you make changes. You can also use ``juju ssh`` to ssh into your
+deployed unit. to See `How to debug a charm
 <https://juju.is/docs/sdk/debug-a-charm>`_ for more specific advice on that
 topic.
-
-Creating a Launchpad charm
---------------------------
-
-Assuming you have a suitable testbed to deploy charms with Juju, you can follow
-the following workflow to build your charm for launchpad:
-
-.. note::
-
-  These are just **optional guidelines** for developing charms specifically for
-  launchpad.
-
- 1. **Consider your application:** Think about what parts it entails and
- consider: what do you need to get your application running? Do you need a
- database, a celery worker, etc? Does it makes sense to divide your application 
- into multiple charms related to each other?
- 2. **Create your charm base:** Either create a charm from scratch or base it
- off existing ones. Without adding any code (i.e., the reactive code, within
- the `/reactive` folder) update `layer.yaml`, `charmcraft.yaml` and 
- `metadata.yaml`, to create your base. You can find more information about what
- each file is important for in the `reactive charms documentation
- <https://charmsreactive.readthedocs.io/en/latest/structure.html#charm-layer>`_
- s. Note that the
- `charmcraft.yaml` file is not part of reactive charms, but it's an important
- file to be able to use `charmcraft` tools (e.g. `charmcraft pack` for packing
- a charm). See `here <https://juju.is/docs/sdk/charmcraft-yaml>`_ for
- information about the `charmcraft.yaml` file specifically. If you take a look
- at the `parts` section of the existing launchpad charms, you will see a few
- common ones used as a base to build your charm:
-    - `charm-wheels`
-    - `ols-layers`
-    - `launchpad-layers`
-    - `launchpad-admin``
-    - `launchpad-payload`
-  1. **Write minimal code:** You can start by writing minimal reactive code
-  that gets the source tree deployed (nothing too relevant).
-  This should give you something you can build and deploy to a Juju model to
-  test out.
-  4. **Add configurations:** Have a look at configurations related to your app
-  in `launchpad-production-configs 
-  <https://git.launchpad.net/lp-production-config>`_ - what is common between
-  environments and what changes. You should be able to create a config Jinja
-  template in your charm `/templates` folder with all the base configurations,
-  where the configuration that changes between environments should be variables.
-  These variables should be set in the `config.yaml` file with reasonable
-  default values (ideally, values that would allow a local deployment) - note
-  that some config variables might already be set by other layers of your
-  charm, if your charm is based on other layers. The actual values that will
-  be running in each environment (production, dogfood, staging, qastaging),
-  should go into the `lp.bundle.yaml` file within the `launchpad-mojo-specs
-  <https://code.launchpad.net/launchpad-mojo-specs>`_ repo.
-  1. **Write your reactive code:** Start adding code that it might need
-  to configure and start your application. Setup any crontabs, logrotate...
-  6. **Test:** Test your new charm(s) deploys correctly with all its
-   integrations, and your application is running. This can be challenging for
-   some applications. Use ``juju ssh``, ``juju status`` and ``juju debug-logs``
-   to debug and test your application.
 
 Secrets
 =======
