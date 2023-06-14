@@ -15,7 +15,7 @@ First we create a new poll to use throughout this test.
     ...     "dpl-2080",
     ...     "dpl-2080",
     ... )
-    <lp.registry.model.poll.Poll...
+    <Poll object>
     >>> logout()
 
 Now we'll try to change its name to something that is already in use.

@@ -86,7 +86,7 @@ IBug.getDirectSubscribers().
     >>> mark = personset.getByName("mark")
 
     >>> linux_source_bug.subscribe(mark, mark)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
 
     >>> print_displayname(linux_source_bug.getDirectSubscribers())
     Foo Bar
@@ -475,7 +475,7 @@ be unsubscribed from dupes.
     False
 
     >>> bug_six.subscribe(sample_person, sample_person)
-    <lp.bugs.model.bugsubscription.BugSubscription...>
+    <BugSubscription...>
 
     >>> bug_five.isSubscribedToDupes(sample_person)
     True
@@ -763,7 +763,7 @@ package.
 So, if the Ubuntu team is added as a bug supervisor to evolution:
 
     >>> evolution.addBugSubscription(ubuntu_team, ubuntu_team)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
 The team will be implicitly subscribed to the previous bug we
 created:
@@ -821,7 +821,7 @@ subscriptions themselves, rather than the subscribers.
     ... )
     >>> ff_bug = firefox.createBug(params)
     >>> ff_bug.subscribe(lifeless, mark)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
     >>> subscriptions = [
     ...     "%s: %s"
     ...     % (
@@ -843,7 +843,7 @@ subscriptions themselves, rather than the subscribers.
     >>> dupe_ff_bug = firefox.createBug(params)
     >>> dupe_ff_bug.markAsDuplicate(ff_bug)
     >>> dupe_ff_bug.subscribe(foobar, lifeless)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
     >>> for subscription in ff_bug.getSubscriptionsFromDuplicates():
     ...     print(
     ...         "%s: %s"

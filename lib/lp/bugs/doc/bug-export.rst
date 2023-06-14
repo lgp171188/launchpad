@@ -149,7 +149,7 @@ the file when we later serialise the bug:
     ...     url=None,
     ...     description='"Hello World" attachment',
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment ...>
+    <BugAttachment ...>
     >>> bug4.addAttachment(
     ...     owner=sampleperson,
     ...     data=None,
@@ -158,7 +158,7 @@ the file when we later serialise the bug:
     ...     url="https://launchpad.net/",
     ...     description=None,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment ...>
+    <BugAttachment ...>
 
     >>> transaction.commit()
 

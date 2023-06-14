@@ -744,10 +744,10 @@ result in a NotFound error.
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound:
-    Object: <Person at ... name16 (Foo Bar)>, name: '+archive'
+    Object: <Person name16 (Foo Bar)>, name: '+archive'
 
     >>> admin_browser.open("http://launchpad.test/~name16/+archive")
     Traceback (most recent call last):
     ...
     zope.publisher.interfaces.NotFound:
-    Object: <Person at ... name16 (Foo Bar)>, name: '+archive'
+    Object: <Person name16 (Foo Bar)>, name: '+archive'

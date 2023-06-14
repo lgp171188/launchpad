@@ -232,7 +232,7 @@ For source uploads, Changes.version == DSC.version == SPR.version:
     ...     component=bar_spr.component,
     ...     section=bar_spr.section,
     ... )
-    <SourcePackagePublishingHistory at ...>
+    <SourcePackagePublishingHistory object>
 
 Let's accept the source and claim 'build from accepted' to process the
 respective binary:

@@ -65,7 +65,7 @@ comment, of the bug report.
     >>> launchbag.add(ubuntu)
 
     >>> ubuntu_filebug.initialize()
-    ObjectCreatedEvent: <Bug at ...>
+    ObjectCreatedEvent: <Bug object>
 
     >>> launchbag.clear()
 
@@ -103,7 +103,7 @@ the bugtask.
     >>> firefox_filebug = getMultiAdapter((firefox, request), name="+filebug")
 
     >>> firefox_filebug.initialize()
-    ObjectCreatedEvent: <Bug at ...>
+    ObjectCreatedEvent: <Bug object>
 
 3. Filing a bug on a distribution source package.
 
@@ -129,7 +129,7 @@ You can also access the +filebug page from a sourcepackage.
     >>> launchbag.add(ubuntu)
 
     >>> ubuntu_firefox_filebug.initialize()
-    ObjectCreatedEvent: <Bug at ...>
+    ObjectCreatedEvent: <Bug object>
 
     >>> launchbag.clear()
 
@@ -384,7 +384,7 @@ If the user isn't subscribed to the bug , 'Subscribe' is shown.
 If we subscribe Foo Bar, 'Edit subscription' is shown.
 
     >>> bug_one.subscribe(foo_bar, foo_bar)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
     >>> bug_menu = BugContextMenu(bug_one_bugtask)
     >>> bug_menu.subscription().text
     'Edit subscription'
@@ -399,7 +399,7 @@ still say 'Edit subscription':
     >>> foo_bar.inTeam(launchpad_team)
     True
     >>> bug_one.subscribe(launchpad_team, launchpad_team)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
     >>> bug_menu = BugContextMenu(bug_one_bugtask)
     >>> bug_menu.subscription().text
     'Edit subscription'
@@ -471,7 +471,7 @@ can't know if the user is subscribed or not.
 
     >>> ubuntu_team = getUtility(IPersonSet).getByName("ubuntu-team")
     >>> bug_two.subscribe(ubuntu_team, ubuntu_team)
-        <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
 
     >>> bug_two.markAsDuplicate(bug_three)
 

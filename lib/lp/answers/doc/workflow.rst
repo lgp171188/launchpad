@@ -618,7 +618,7 @@ Users without launchpad.Moderator privileges cannot set the assignee.
     Traceback (most recent call last):
       ...
     zope.security.interfaces.Unauthorized:
-    (<lp.answers.model.question.Question ...>, 'assignee', 'launchpad.Append')
+    (<Question ...>, 'assignee', 'launchpad.Append')
 
 
 Events

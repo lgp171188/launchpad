@@ -65,19 +65,19 @@ one person and one team matching the 'test' string.
     >>> form = dict(name="test")
     >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
-    <Person at ... name12 (Sample Person)>
-    <Person at ... testing-spanish-team (testing Spanish team)>
+    <Person name12 (Sample Person)>
+    <Person testing-spanish-team (testing Spanish team)>
 
 Searching for just people returns Sample Person.
 
     >>> form["searchfor"] = "peopleonly"
     >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
-    <Person at ... name12 (Sample Person)>
+    <Person name12 (Sample Person)>
 
 Searching for just teams returns the testing Spanish team.
 
     >>> form["searchfor"] = "teamsonly"
     >>> view = create_initialized_view(person_set, "+index", form=form)
     >>> print_batch(view.searchPeopleBatchNavigator())
-    <Person at ... testing-spanish-team (testing Spanish team)>
+    <Person testing-spanish-team (testing Spanish team)>

@@ -852,6 +852,9 @@ class BugTrackerSet:
     def __init__(self):
         self.title = "Bug trackers registered in Launchpad"
 
+    def __repr__(self):
+        return "<BugTrackerSet object>"
+
     def get(self, bugtracker_id, default=None):
         """See `IBugTrackerSet`."""
         bugtracker = IStore(BugTracker).get(BugTracker, bugtracker_id)

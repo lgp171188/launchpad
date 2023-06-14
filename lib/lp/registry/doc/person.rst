@@ -1158,11 +1158,11 @@ alphabetically by package name.
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> pmount = ubuntu.getSourcePackage("pmount")
     >>> pmount.addBugSubscription(no_priv, no_priv)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> mozilla_firefox = ubuntu.getSourcePackage("mozilla-firefox")
     >>> mozilla_firefox.addBugSubscription(no_priv, no_priv)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> for package in no_priv.getBugSubscriberPackages():
     ...     print(package.name)
@@ -1546,7 +1546,7 @@ also takes the parameters hide_email_addresses, comment and registrant.
     ...     "testing _newPerson().",
     ...     foo_bar,
     ... )
-    <Person at ...>
+    <Person ...>
 
 If the name passed to _newPerson() is already taken, a NameAlreadyTaken
 error will be raised.

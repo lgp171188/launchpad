@@ -13,6 +13,7 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasDrivers, IPersonRoles
+from lp.services.helpers import backslashreplace
 
 
 @adapter(IPerson)
@@ -24,6 +25,11 @@ class PersonRoles:
         # Use an unproxied inTeam() method for security checks.
         self.inTeam = removeSecurityProxy(self.person).inTeam
         self.inAnyTeam = removeSecurityProxy(self.person).inAnyTeam
+
+    def __repr__(self):
+        # Compare Person.__repr__.
+        displayname = backslashreplace(self.person.displayname)
+        return "<PersonRoles %s (%s)>" % (self.person.name, displayname)
 
     def __getattr__(self, name):
         """Handle all in_* attributes."""

@@ -871,7 +871,7 @@ demonstrate, let's first make no_privs an indirect subscriber from bug
     Sample Person
 
     >>> bug_six.subscribe(no_priv, no_priv)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
 
     >>> for subscriber in sorted(
     ...     bug_five.getIndirectSubscribers(), key=attrgetter("displayname")

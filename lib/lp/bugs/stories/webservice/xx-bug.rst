@@ -1475,7 +1475,7 @@ a 404 error, but do not generate an OOPS.
     Content-Length: ...
     ...
     <BLANKLINE>
-    Object: <...BugTrackerSet object at ...>, name: 'mozilla.org'
+    Object: <BugTrackerSet object>, name: 'mozilla.org'
 
 Naturally, if we follow the Location: header then we'll get the
 renamed bug tracker.
@@ -1510,7 +1510,7 @@ Non-admins can't disable a bugtracker through the API.
     ... )
     HTTP/1.1 401 Unauthorized
     ...
-    (<...BugTracker object at ...>, 'active', 'launchpad.Admin')
+    (<...BugTracker object>, 'active', 'launchpad.Admin')
 
 Admins can, however.
 

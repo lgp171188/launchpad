@@ -304,7 +304,7 @@ It returns the number of open questions for each given package.
     >>> closed_question.setStatus(
     ...     closed_question.owner, QuestionStatus.SOLVED, "no comment"
     ... )
-    <lp.answers.model.questionmessage.QuestionMessage ...>
+    <QuestionMessage ...>
 
     >>> packages = (
     ...     ubuntu_evolution,

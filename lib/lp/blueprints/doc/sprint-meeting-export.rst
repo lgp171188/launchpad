@@ -64,8 +64,7 @@ and check the list of interested people:
 
     >>> essential = False
     >>> ext_spec.subscribe(sampleperson, sampleperson, essential)
-    <lp.blueprints.model.specificationsubscription.SpecificationSubscription
-    object at ...>
+    <SpecificationSubscription object>
 
     >>> view = getMultiAdapter((ubz, request), name="+temp-meeting-export")
     >>> view.initialize()

@@ -429,7 +429,7 @@ uploader or component uploader.
     >>> print(response)
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'newPackageUploader', 'launchpad.Edit')
+    (<Archive object>, 'newPackageUploader', 'launchpad.Edit')
 
     >>> response = cjwatson_webservice.named_post(
     ...     ubuntu["main_archive_link"],
@@ -441,7 +441,7 @@ uploader or component uploader.
     >>> print(response)
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'newPackagesetUploader', 'launchpad.Edit')
+    (<Archive object>, 'newPackagesetUploader', 'launchpad.Edit')
 
     >>> response = cjwatson_webservice.named_post(
     ...     ubuntu["main_archive_link"],
@@ -453,7 +453,7 @@ uploader or component uploader.
     >>> print(response)
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'newComponentUploader', 'launchpad.Edit')
+    (<Archive object>, 'newComponentUploader', 'launchpad.Edit')
 
 From here on we'll use ubuntu_owner, who does have permission as Ubuntu's
 owner.
@@ -1454,7 +1454,7 @@ Attempting to modify this flag without the necessary permissions will fail.
     >>> print(modify_archive(user_webservice, mark_archive))
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'authorized_size', 'launchpad.Moderate')
+    (<Archive object>, 'authorized_size', 'launchpad.Moderate')
 
 Private archives
 ~~~~~~~~~~~~~~~~
@@ -1667,7 +1667,7 @@ admins, commercial admins, PPA admins, and Launchpad developers.
     >>> print(modify_archive(user_webservice, pubpriv_archive))
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'private', 'launchpad.Moderate')
+    (<Archive object>, 'private', 'launchpad.Moderate')
 
     >>> login("foo.bar@canonical.com")
     >>> ppa_admin = factory.makePerson(

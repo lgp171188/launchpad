@@ -57,7 +57,7 @@ can't get a list of the dependencies.
     >>> print(user_webservice.get("/~cprov/+archive/ubuntu/p3a/dependencies"))
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'dependencies', 'launchpad.SubscriberView')
+    (<Archive object>, 'dependencies', 'launchpad.SubscriberView')
 
 Nor can said user craft a URL to a dependency.
 
@@ -66,7 +66,7 @@ Nor can said user craft a URL to a dependency.
     ... )
     HTTP/1.1 401 Unauthorized
     ...
-    (<Archive at ...>, 'getArchiveDependency', 'launchpad.View')
+    (<Archive object>, 'getArchiveDependency', 'launchpad.View')
 
 Celso can see them if we grant private permissions, of course.
 

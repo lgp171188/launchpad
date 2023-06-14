@@ -503,7 +503,7 @@ class Person(
 
     def __repr__(self):
         displayname = backslashreplace(self.displayname)
-        return "<Person at 0x%x %s (%s)>" % (id(self), self.name, displayname)
+        return "<Person %s (%s)>" % (self.name, displayname)
 
     display_name = StringCol(dbName="displayname", notNull=True)
 

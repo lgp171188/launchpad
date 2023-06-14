@@ -24,7 +24,7 @@ distribution.
     ...     )
     ...
     >>> ff_sub.target
-    <Product at ...>
+    <Product object>
 
     >>> with person_logged_in(foobar):
     ...     ubuntu_sub = ubuntu.addBugSubscription(

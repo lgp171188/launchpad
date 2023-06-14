@@ -89,7 +89,7 @@ Questions are manipulated through the IQuestion interface.
 The person who submitted the question is available in the owner field.
 
     >>> firefox_question.owner
-    <Person at ... name12 (Sample Person)>
+    <Person name12 (Sample Person)>
 
 When the question is created, the owner is added to the question's
 subscribers.

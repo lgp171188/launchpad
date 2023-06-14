@@ -484,10 +484,10 @@ First, we add a couple of IRC nicknames for Carlos.
     >>> login("carlos@canonical.com")
     >>> carlos = getUtility(IPersonSet).getByName("carlos")
     >>> IrcID(person=carlos, network="freenode", nickname="carlos")
-    <IrcID at ...>
+    <IrcID object>
 
     >>> IrcID(person=carlos, network="QuakeNet", nickname="qarlos")
-    <IrcID at ...>
+    <IrcID object>
 
     >>> for ircid in sorted(carlos.ircnicknames, key=attrgetter("nickname")):
     ...     print(ircid.nickname)

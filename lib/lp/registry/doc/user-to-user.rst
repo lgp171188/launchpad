@@ -165,9 +165,9 @@ to include his full name.  His contact is still recorded correctly.
     ...     .one()
     ... )
     >>> entry.sender
-    <Person at ... dave (Dave)>
+    <Person dave (Dave)>
     >>> entry.recipient
-    <Person at ... elly (Elly)>
+    <Person elly (Elly)>
 
 
 Adapters

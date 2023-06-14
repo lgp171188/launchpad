@@ -118,7 +118,7 @@ archives are published on disk.
     >>> cprov_archive.purpose = ArchivePurpose.COPY
     Traceback (most recent call last):
     ...
-    zope.security.interfaces.ForbiddenAttribute: ('purpose', <Archive at ...>)
+    zope.security.interfaces.ForbiddenAttribute: ('purpose', <Archive object>)
 
 'status' tracks the status of an Archive.  Its current values are only
 ACTIVE and DELETING.  ACTIVE is the normal value; DELETING is set when
@@ -1276,7 +1276,7 @@ it gets listed by `getPPAsForUser`.
     PPA for No Privileges Person
 
     >>> cprov_archive.newComponentUploader(no_priv, "main")
-    <lp.soyuz.model.archivepermission.ArchivePermission ...>
+    <ArchivePermission ...>
 
     >>> for ppa in archive_set.getPPAsForUser(no_priv):
     ...     print(ppa.displayname)
@@ -1290,7 +1290,7 @@ and user and give the team access to cprov's PPA:
     >>> uploader_team = factory.makeTeam(owner=cprov, name="uploader-team")
     >>> indirect_uploader = factory.makePerson(name="indirect-uploader")
     >>> cprov_archive.newComponentUploader(uploader_team, "main")
-    <lp.soyuz.model.archivepermission.ArchivePermission ...>
+    <ArchivePermission ...>
 
 'indirect_uploader' currently can't upload to cprov's PPA:
 

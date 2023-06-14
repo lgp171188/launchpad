@@ -176,7 +176,7 @@ Private teams can have structural subscriptions to products.
     ...     subscriber=priv_team, subscribed_by=team_owner
     ... )
     >>> sub.target
-    <Product at ...>
+    <Product object>
 
 
 Structural Subscription to Distributions
@@ -215,7 +215,7 @@ or private, can be the project registrant.
     Traceback (most recent call last):
     ...
     lp.registry.errors.PrivatePersonLinkageError: Cannot link person
-    (name=private-team, visibility=PRIVATE) to <Product at...
+    (name=private-team, visibility=PRIVATE) to <Product object> (name=...)
 
 
 Maintainer/Owner
