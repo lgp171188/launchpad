@@ -210,7 +210,7 @@ def configure_loadbalancer():
     unit_ip = hookenv.unit_private_ip()
     services = [
         {
-            "service_name": "librarian-download",
+            "service_name": config["librarian_download_host"],
             "service_port": config["librarian_download_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_download),
@@ -225,7 +225,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": "librarian-upload",
+            "service_name": config["librarian_upload_host"],
             "service_port": config["librarian_upload_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_upload),
@@ -241,7 +241,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": "librarian-restricted-download",
+            "service_name": config["librarian_restricted_download_host"],
             "service_port": config["librarian_restricted_download_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_download),
@@ -256,7 +256,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": "librarian-restricted-upload",
+            "service_name": config["librarian_restricted_upload_host"],
             "service_port": config["librarian_restricted_upload_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_upload),
