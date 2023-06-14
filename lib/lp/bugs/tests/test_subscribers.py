@@ -95,27 +95,47 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
-            "content": Equals(content),
-            "owner": Equals("/~" + comment.owner.name),
+            "new": MatchesDict(
+                {
+                    "content": Equals(content),
+                    "commenter": Equals("/~" + comment.owner.name),
+                }
+            ),
         }
 
-    def _build_bugtask_expected_payload(self, bugtask, action):
+    def _build_bugtask_expected_payload(
+        self, bugtask, action, changed_fields=None
+    ):
         assignee = "/~" + bugtask.assignee.name if bugtask.assignee else None
 
-        return {
+        bug_task_attributes = {
+            "title": Equals(bugtask.bug.title),
+            "description": Equals(bugtask.bug.description),
+            "reporter": Equals(
+                canonical_url(bugtask.bug.owner, force_local_path=True)
+            ),
+            "status": Equals(bugtask.status.title),
+            "importance": Equals(bugtask.importance.title),
+            "assignee": Equals(assignee),
+            "date_created": Equals(bugtask.datecreated.isoformat()),
+        }
+
+        expected_payload = {
             "action": Equals(action),
             "bug": Equals(canonical_url(bugtask.bug, force_local_path=True)),
             "target": Equals(
                 canonical_url(self.target, force_local_path=True)
             ),
-            "title": Equals(bugtask.bug.title),
-            "description": Equals(bugtask.bug.description),
-            "owner": Equals("/~" + bugtask.bug.owner.name),
-            "status": Equals(bugtask.status.title),
-            "importance": Equals(bugtask.importance.title),
-            "assignee": Equals(assignee),
-            "datecreated": Equals(bugtask.datecreated.isoformat()),
+            "new": MatchesDict(bug_task_attributes),
         }
+
+        if changed_fields:
+            old_bug_attributes = bug_task_attributes.copy()
+            for k, v in changed_fields.items():
+                old_bug_attributes[k] = Equals(v)
+            expected_payload["old"] = MatchesDict(old_bug_attributes)
+
+        return expected_payload
 
     def test_new_bug_comment_triggers_webhook(self):
         """Adding a comment to a bug with a webhook, triggers webhook"""
@@ -158,12 +178,13 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
     def test_bug_modified_triggers_webhook(self):
         """Modifying the bug fields, will trigger webhook"""
         bug = self.bugtask.bug
+        original_title = bug.title
         with person_logged_in(self.owner), notify_modified(
             bug, ["title"], user=self.owner
         ):
             bug.title = "new title"
         expected_payload = self._build_bugtask_expected_payload(
-            self.bugtask, "title-updated"
+            self.bugtask, "title-changed", {"title": original_title}
         )
         self._assert_last_webhook_delivery(
             self.hook, "bug:0.1", expected_payload
@@ -171,12 +192,13 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
 
     def test_bugtask_modified_triggers_webhook(self):
         """Modifying the bug task fields, will trigger webhook"""
+        original_status = self.bugtask.status.title
         with person_logged_in(self.owner):
             self.bugtask.bug.setStatus(
                 self.target, BugTaskStatus.FIXRELEASED, self.owner
             )
         expected_payload = self._build_bugtask_expected_payload(
-            self.bugtask, "status-updated"
+            self.bugtask, "status-changed", {"status": original_status}
         )
         self._assert_last_webhook_delivery(
             self.hook, "bug:0.1", expected_payload
