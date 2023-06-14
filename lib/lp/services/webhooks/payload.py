@@ -51,7 +51,7 @@ class WebhookAbsoluteURL:
     __call__ = __str__
 
 
-def compose_webhook_payload(interface, obj, names):
+def compose_webhook_payload(interface, obj, keys, keys_prefered_names=None):
     """Compose a webhook payload dictionary from some fields of an object.
 
     Fields are serialised in the same way that lazr.restful does for
@@ -59,16 +59,23 @@ def compose_webhook_payload(interface, obj, names):
 
     :param interface: The interface of the object to serialise.
     :param obj: The object to serialise.
-    :param names: A list of fields from `obj` to serialise.
+    :param keys: A list of fields from `obj` to serialise.
+    :param keys_prefered_names: [Optional] A dictionary with the field keys
+    as keys, and their prefered name as values.
     """
     # XXX cjwatson 2015-10-19: Fields are serialised with the privileges of
     # the actor, not the webhook owner.  Until this is fixed, callers must
     # make sure that this makes no difference to the fields in question.
+    if not keys_prefered_names:
+        keys_prefered_names = dict()
+
     payload = {}
     request = WebhookPayloadRequest()
-    for name in names:
-        field = interface[name]
+    for key in keys:
+        field = interface[key]
         marshaller = getMultiAdapter((field, request), IFieldMarshaller)
-        value = getattr(obj, name, None)
+        value = getattr(obj, key, None)
+        # Get prefered name for the key, or default to key
+        name = keys_prefered_names.get(key, key)
         payload[name] = marshaller.unmarshall(field, value)
     return payload
