@@ -4418,7 +4418,7 @@ class PersonSet:
         # Short circuit for returning all users in order
         if not text:
             results = store.find(Person, base_query)
-            return results.order_by(Person._storm_sortingColumns)
+            return results.order_by(Person.sortingColumns)
 
         # We use a UNION here because this makes things *a lot* faster
         # than if we did a single SELECT with the two following clauses
