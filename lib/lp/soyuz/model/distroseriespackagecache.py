@@ -77,6 +77,10 @@ class DistroSeriesPackageCache(StormBase):
                 ),
             )
             .config(distinct=True)
+            # Not necessary for correctness, but useful for testability; and
+            # at the time of writing the sort only adds perhaps 10-20 ms to
+            # the query time on staging.
+            .order_by(BinaryPackagePublishingHistory.binarypackagenameID)
         )
         return bulk.load(BinaryPackageName, bpn_ids)
 
@@ -204,6 +208,14 @@ class DistroSeriesPackageCache(StormBase):
             )
 
         for bpn in binarypackagenames:
+            if bpn not in details_map:
+                log.debug(
+                    "No active publishing details found for %s; perhaps "
+                    "removed in parallel with update-pkgcache?  Skipping.",
+                    bpn.name,
+                )
+                continue
+
             cache = cache_map[bpn]
             details = details_map[bpn]
             # make sure the cached name, summary and description are correct
