@@ -220,11 +220,20 @@ class DateTimeWidget(TextWidget):
           >>> print(widget.time_zone)  # doctest: +ELLIPSIS
           tzfile('.../Africa/Maseru')
 
+        When the required_time_zone_name is invalid, we fall back to UTC.
+
+          >>> widget.required_time_zone_name = "Some/Nonsense"
+          >>> print(widget.time_zone_name)
+          Some/Nonsense
+          >>> print(repr(widget.time_zone))
+          datetime.timezone.utc
+
         """
         if self.time_zone_name == "UTC":
             return timezone.utc
         else:
-            return tz.gettz(self.time_zone_name)
+            zone = tz.gettz(self.time_zone_name)
+            return zone if zone is not None else timezone.utc
 
     def _align_date_constraints_with_time_zone(self):
         """Ensure that from_date and to_date use the widget time zone."""
