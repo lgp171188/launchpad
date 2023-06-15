@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the database garbage collector."""
@@ -54,6 +54,7 @@ from lp.code.interfaces.revisionstatus import (
     IRevisionStatusReportSet,
 )
 from lp.code.model.branchjob import BranchJob, BranchUpgradeJob
+from lp.code.model.branchmergeproposaljob import BranchMergeProposalJob
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
 from lp.code.model.diff import Diff
@@ -977,6 +978,52 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         switch_dbuser("testadmin")
         self.assertEqual(store.find(BranchJob).count(), 1)
+
+    def test_BranchMergeProposalJobPruner(self):
+        # Garbo should remove jobs completed over 30 days ago.
+        switch_dbuser("testadmin")
+        store = IPrimaryStore(Job)
+
+        bmp = self.factory.makeBranchMergeProposal()
+        bmp_job = removeSecurityProxy(bmp.next_preview_diff_job)
+        bmp_job.job.date_finished = THIRTY_DAYS_AGO
+
+        self.assertEqual(
+            store.find(
+                BranchMergeProposalJob,
+                BranchMergeProposalJob.branch_merge_proposal == bmp.id,
+            ).count(),
+            1,
+        )
+
+        self.runDaily()
+
+        switch_dbuser("testadmin")
+        self.assertEqual(
+            store.find(
+                BranchMergeProposalJob,
+                BranchMergeProposalJob.branch_merge_proposal == bmp.id,
+            ).count(),
+            0,
+        )
+
+    def test_BranchMergeProposalJobPruner_doesnt_prune_recent_jobs(self):
+        # Check to make sure the garbo doesn't remove jobs that aren't more
+        # than thirty days old.
+        switch_dbuser("testadmin")
+        store = IPrimaryStore(Job)
+
+        bmp = self.factory.makeBranchMergeProposal()
+        bmp_job = removeSecurityProxy(bmp.next_preview_diff_job)
+        bmp_job.job.date_finished = THIRTY_DAYS_AGO
+
+        bmp2 = self.factory.makeBranchMergeProposal()
+        self.assertIsNotNone(bmp2.next_preview_diff_job)
+
+        self.runDaily()
+
+        switch_dbuser("testadmin")
+        self.assertEqual(store.find(BranchMergeProposalJob).count(), 1)
 
     def test_GitJobPruner(self):
         # Garbo should remove jobs completed over 30 days ago.
