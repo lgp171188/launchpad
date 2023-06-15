@@ -244,7 +244,8 @@ class DeathRow:
 
             See `canRemove` for more information.
             """
-            for pub_file in pub_record.files:
+            files = pub_record.files
+            for pub_file in files:
                 filename = pub_file.libraryfile.filename
                 file_md5 = pub_file.libraryfile.content.md5
 
@@ -278,6 +279,13 @@ class DeathRow:
                 # Update local containers, in preparation to file removal.
                 details.setdefault(file_path, pub_file_details)
                 condemned_files.add(file_path)
+                condemned_records.add(pub_record)
+
+            # A source package with no files at all (which can happen in
+            # some cases where the archive's repository format is not
+            # ArchiveRepositoryFormat.DEBIAN) cannot have any files which
+            # refer to other publishing records, so can always be removed.
+            if not files:
                 condemned_records.add(pub_record)
 
         # Check source and binary publishing records.

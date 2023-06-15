@@ -68,7 +68,6 @@ from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.distributionjob import (
     IDistroSeriesDifferenceJobSource,
 )
-from lp.soyuz.interfaces.files import ISourcePackageReleaseFile
 from lp.soyuz.interfaces.publishing import (
     DeletionError,
     IBinaryPackagePublishingHistory,
@@ -154,17 +153,6 @@ class ArchivePublisherBase:
         """See `IPublishing`"""
         try:
             for pub_file in self.files:
-                # XXX ilasc 2022-14-11 We want to exclude the Conda source
-                # packages as a temporary workaround to overcome the issue of
-                # the publisher crashing when the package contains files
-                # missing required metadata as was the case of the missing
-                # `subdir` from info/index.json file.
-                if (
-                    self.archive.repository_format
-                    == ArchiveRepositoryFormat.CONDA
-                    and ISourcePackageReleaseFile.providedBy(pub_file)
-                ):
-                    continue
                 pool_name = self.pool_name
                 pool_version = self.pool_version
                 component = (
@@ -476,6 +464,20 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     @property
     def files(self):
         """See `IPublishing`."""
+        # XXX ilasc 2022-11-14 / cjwatson 2023-06-15: Source packages in
+        # Conda repositories should never have any files attached; they
+        # should be pure skeletons used to fit into the rest of Launchpad's
+        # data model (see commit 397fbebfa3).  However, there is one case
+        # where a file somehow got attached to a source package in a Conda
+        # repository (see
+        # https://bugs.launchpad.net/launchpad/+bug/2023315); this file
+        # doesn't have enough metadata for the publisher to compute its URL
+        # path, and so it crashes.  Until we figure out why this happened
+        # and ensure that it can't happen again, forcibly return the empty
+        # list for such source packages.
+        if self.archive.repository_format == ArchiveRepositoryFormat.CONDA:
+            return []
+
         files = self.sourcepackagerelease.files
         lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfile_id"])
         bulk.load_related(LibraryFileContent, lfas, ["contentID"])
