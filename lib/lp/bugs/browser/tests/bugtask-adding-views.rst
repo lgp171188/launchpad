@@ -361,7 +361,7 @@ linked to the new bug watch.
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, "+choose-affected-product", form
     ... )
-    ObjectCreatedEvent: <...BugWatch object at ...>
+    ObjectCreatedEvent: <...BugWatch object>
     ObjectCreatedEvent: <BugTask ...>
 
     >>> for bugtask in bug_four.bugtasks:
@@ -389,7 +389,7 @@ and the bug watch will be added without any confirmation needed:
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, "+choose-affected-product", form
     ... )
-    ObjectCreatedEvent: <...BugWatch object at ...>
+    ObjectCreatedEvent: <...BugWatch object>
     ObjectCreatedEvent: <BugTask ...>
 
     >>> print(add_task_view.notifications)
@@ -435,7 +435,7 @@ another bug links to the same bug.
     >>> add_task_view = get_and_setup_view(
     ...     bug_five_task, "+choose-affected-product", form
     ... )
-    ObjectCreatedEvent: <...BugWatch object at ...>
+    ObjectCreatedEvent: <...BugWatch object>
     ObjectCreatedEvent: <BugTask ...>
 
     >>> add_task_view.request.response.getHeader("Location")

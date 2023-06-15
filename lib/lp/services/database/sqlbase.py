@@ -212,10 +212,7 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         return IStore(cls)
 
     def __repr__(self):
-        # XXX jamesh 2008-05-09:
-        # This matches the repr() output for the sqlos.SQLOS class.
-        # A number of the doctests rely on this formatting.
-        return "<%s at 0x%x>" % (self.__class__.__name__, id(self))
+        return "<%s object>" % (self.__class__.__name__)
 
     def destroySelf(self):
         my_primary = IPrimaryObject(self)

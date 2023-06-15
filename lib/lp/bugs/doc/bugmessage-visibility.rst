@@ -47,4 +47,4 @@ field.
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized:
-    (<Message at ...>, 'visible', 'launchpad.Admin')
+    (<Message id=...>, 'visible', 'launchpad.Admin')

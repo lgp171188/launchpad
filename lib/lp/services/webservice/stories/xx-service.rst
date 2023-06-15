@@ -94,7 +94,7 @@ Anonymous requests can't change the dataset.
     >>> response.status
     401
     >>> print(six.ensure_text(response.body))
-    (<Person at...>, 'display_name', 'launchpad.Edit')
+    (<Person salgado (Guilherme Salgado)>, 'display_name', 'launchpad.Edit')
 
 A completely unsigned web service request is treated as an anonymous
 request, with the OAuth consumer name being equal to the User-Agent.

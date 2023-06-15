@@ -75,11 +75,7 @@ class BugMessage(StormBase):
         self.bugwatch = bugwatch
 
     def __repr__(self):
-        return "<BugMessage at 0x%x message=%s index=%s>" % (
-            id(self),
-            self.message,
-            self.index,
-        )
+        return "<BugMessage message=%s index=%s>" % (self.message, self.index)
 
 
 @implementer(IBugMessageSet)

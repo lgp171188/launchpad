@@ -594,7 +594,7 @@ Then the source gets accepted and published, step 3 and 4:
     ...     component=multibar_spr.component,
     ...     section=multibar_spr.section,
     ... )
-    <SourcePackagePublishingHistory at ...>
+    <SourcePackagePublishingHistory object>
 
 Build creation is done based on the SourcePackageRelease object, step 5:
 

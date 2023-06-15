@@ -79,6 +79,6 @@ We can also retrieve the corresponding BinaryPackageFile:
 
     >>> bpf = build.getBinaryPackageFileByName("test_1.0_all.deb")
     >>> bpf
-    <...BinaryPackageFile object ...>
+    <BinaryPackageFile object>
     >>> bpf.libraryfile == deb
     True

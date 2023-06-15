@@ -564,7 +564,7 @@ which is the one we want the method to return.
     ...     source_branch=source_branch,
     ... )
     >>> proposal.nominateReviewer(target_owner, branch_owner)
-    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
+    <CodeReviewVoteReference object>
 
 And then we propose a merge the other way, so that the owner is target,
 but they have not been asked to review, meaning that the method shouldn't
@@ -578,7 +578,7 @@ return this review.
     ...     source_branch=target_branch,
     ... )
     >>> proposal.nominateReviewer(branch_owner, target_owner)
-    <lp.code.model.codereviewvote.CodeReviewVoteReference object at ...>
+    <CodeReviewVoteReference object>
     >>> logout()
 
     >>> proposals = webservice.named_get(

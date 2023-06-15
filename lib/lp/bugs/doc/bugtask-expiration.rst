@@ -482,7 +482,7 @@ No Privileges Person can't see the bug either...
 ... unless they're subscribed to the bug.
 
     >>> private_bug.subscribe(no_priv, sample_person)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
     >>> reset_bug_modified_date(private_bug, 351)
     >>> expirable_bugtasks = bugtaskset.findExpirableBugTasks(
     ...     0, user=no_priv, target=ubuntu

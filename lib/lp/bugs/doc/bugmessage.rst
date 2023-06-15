@@ -154,7 +154,7 @@ an external bug tracker.
     ... )
     >>> bugmsg = bug_one.linkMessage(message)
     >>> bugmsg
-    <BugMessage at...
+    <BugMessage ...
     >>> bugmsg.index
     4
     >>> for cve in bug_one.cves:

@@ -122,7 +122,7 @@ The `SourcePackageRelease` 'package_upload' and 'upload_changesfile'
 
     >>> original_source_upload = source.sourcepackagerelease.package_upload
     >>> print(original_source_upload)
-    <lp.soyuz.model.queue.PackageUpload ...>
+    <PackageUpload ...>
 
     >>> source_changesfile = source.sourcepackagerelease.upload_changesfile
     >>> original_source_upload.changesfile == source_changesfile

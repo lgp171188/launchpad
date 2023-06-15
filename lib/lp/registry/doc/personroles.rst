@@ -26,7 +26,7 @@ PersonRoles is registered as an unnamed adapter for IPersonRoles.
     >>> from lp.registry.interfaces.role import IPersonRoles
     >>> person = factory.makePerson()
     >>> print(IPersonRoles(person))
-    <lp.registry.model.personroles.PersonRoles object at ...>
+    <PersonRoles ...>
 
 The original Person object can be reached through the person attribute.
 

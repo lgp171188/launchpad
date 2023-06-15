@@ -1086,7 +1086,7 @@ for the status, however, they may not change it:
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized:
-    (<lp.registry.model.distributionmirror.DistributionMirror object at ...>,
+    (<DistributionMirror object>,
      'transitionToCountryMirror', 'launchpad.Admin')
 
 Mirror listing administrators may change the status however:

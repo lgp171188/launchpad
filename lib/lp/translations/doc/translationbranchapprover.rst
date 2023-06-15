@@ -85,7 +85,7 @@ It approves the entry which leads to the creation of a new POTemplate object.
     None
     >>> entry = approver.approve(entry)
     >>> print(repr(entry.potemplate))
-    <POTemplate at ...>
+    <POTemplate object>
     >>> foo_potemplate = entry.potemplate
     >>> print(foo_potemplate.name)
     foo
@@ -119,7 +119,7 @@ object.
     None
     >>> entry = approver.approve(entry)
     >>> print(repr(entry.potemplate))
-    <POTemplate at ...>
+    <POTemplate object>
     >>> bar_potemplate = entry.potemplate
     >>> print(bar_potemplate.name)
     bar

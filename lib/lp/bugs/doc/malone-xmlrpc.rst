@@ -284,7 +284,7 @@ the ID of the new LoginToken.
     >>> token_string = bugtracker_token_api.newBugTrackerToken()
     >>> token = getUtility(ILoginTokenSet)[token_string]
     >>> token
-    <LoginToken at ...>
+    <LoginToken object>
 
 The LoginToken generated will be of the LoginTokenType BUGTRACKER.
 
@@ -301,7 +301,7 @@ These requests are all handled by the private xml-rpc server.
     >>> token_string = bugtracker_api.newBugTrackerToken()
     >>> token = getUtility(ILoginTokenSet)[token_string]
     >>> token
-    <LoginToken at ...>
+    <LoginToken object>
 
     >>> print(token.tokentype.title)
     Launchpad is authenticating itself with a remote bug tracker.
