@@ -12,12 +12,10 @@ TimezoneName
 The TimezoneName vocabulary should only contain timezone names that
 do not raise an exception when instantiated.
 
-    >>> import pytz
+    >>> from dateutil import tz
     >>> timezone_vocabulary = vocabulary_registry.get(None, "TimezoneName")
     >>> for timezone in timezone_vocabulary:
-    ...     # Assign the return value of pytz.timezone() to the zone
-    ...     # variable to prevent printing out the return value.
-    ...     zone = pytz.timezone(timezone.value)
+    ...     _ = tz.gettz(timezone.value)
     ...
 
 LanguageVocabulary

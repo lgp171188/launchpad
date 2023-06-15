@@ -7,8 +7,6 @@ __all__ = [
     "TimezoneNameVocabulary",
 ]
 
-import pytz
-import six
 from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
@@ -19,14 +17,57 @@ from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
 from lp.services.worlddata.model.language import Language
 
-# create a sorted list of the common time zone names, with UTC at the start
-_values = sorted(six.ensure_text(tz) for tz in pytz.common_timezones)
-_values.remove("UTC")
-_values.insert(0, "UTC")
 
-_timezone_vocab = SimpleVocabulary.fromValues(_values)
+def _common_timezones():
+    """A list of useful, current time zone names.
+
+    This is inspired by `pytz.common_timezones`, which seems to be
+    approximately the list supported by `tzdata` with the additions of some
+    Canada- and US-specific names.  Since we're aiming for current rather
+    than historical zone names, `zone1970.tab` seems appropriate.
+    """
+    zones = set()
+    with open("/usr/share/zoneinfo/zone.tab") as zone_tab:
+        for line in zone_tab:
+            if line.startswith("#"):
+                continue
+            zones.add(line.rstrip("\n").split("\t")[2])
+    # Backward-compatible US zone names, still in common use.
+    zones.update(
+        {
+            "US/Alaska",
+            "US/Arizona",
+            "US/Central",
+            "US/Eastern",
+            "US/Hawaii",
+            "US/Mountain",
+            "US/Pacific",
+        }
+    )
+    # Backward-compatible Canadian zone names; see
+    # https://bugs.launchpad.net/pytz/+bug/506341.
+    zones.update(
+        {
+            "Canada/Atlantic",
+            "Canada/Central",
+            "Canada/Eastern",
+            "Canada/Mountain",
+            "Canada/Newfoundland",
+            "Canada/Pacific",
+        }
+    )
+    # pytz has this in addition to UTC.  Perhaps it's more understandable
+    # for people not steeped in time zone lore.
+    zones.add("GMT")
+
+    # UTC comes first, then everything else.
+    yield "UTC"
+    zones.discard("UTC")
+    yield from sorted(zones)
+
+
+_timezone_vocab = SimpleVocabulary.fromValues(_common_timezones())
 alsoProvides(_timezone_vocab, ITimezoneNameVocabulary)
-del _values
 
 
 def TimezoneNameVocabulary(context=None):

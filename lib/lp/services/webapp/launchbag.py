@@ -10,7 +10,7 @@ The collection of stuff we have traversed.
 import threading
 from datetime import timezone
 
-import pytz
+from dateutil import tz
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -161,7 +161,7 @@ class LaunchBag:
             if self.time_zone_name == "UTC":
                 self._store.time_zone = timezone.utc
             else:
-                self._store.time_zone = pytz.timezone(self.time_zone_name)
+                self._store.time_zone = tz.gettz(self.time_zone_name)
         return self._store.time_zone
 
 
