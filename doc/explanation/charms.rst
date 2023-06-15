@@ -116,9 +116,12 @@ these guidelines to build your charm for Launchpad:
 3. **Write minimal code:** You can start by writing minimal reactive code
    that gets the source tree deployed (nothing too specialized).
    This should give you something you can build and deploy to a Juju model to
-   test out. (Tip: have a look at ``charm/launchpad/`` charm. It can be used as a
-   minimal skeleton that does nothing except deploy a Launchpad payload with
+   test out. (Tip: have a look at ``charm/launchpad/`` charm. It can be used as
+   a minimal skeleton that does nothing except deploy a Launchpad payload with
    some basic configuration).
+   If your application doesn't publish artifacts that can be used by your charm
+   to deploy the source code, have a look at
+   :ref:`Create Jobs to Publish Artifacts <create_job_to_publish_artifacts>`.
 
 4. **Add configurations:** Have a look at configurations related to your app
    in `lp-production-configs 
