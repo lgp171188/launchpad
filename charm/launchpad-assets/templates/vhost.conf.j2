@@ -1,4 +1,4 @@
-<VirtualHost *:{{ port_assets }}>
+<VirtualHost *:{{ port }}>
     ServerName assets.{{ domain }}
 
     ErrorLog /var/log/apache2/assets.{{ domain }}-error.log
@@ -39,5 +39,10 @@
         Require all granted
     </LocationMatch>
     AliasMatch "^/favicon\.(?:ico|gif|png)$" "/srv/launchpad/code/lib/canonical/launchpad/images/launchpad.png"
+
+    <Location "/_status/check">
+        Require all granted
+    </Location>
+    Alias "/_status/check" "/dev/null"
 </VirtualHost>
 

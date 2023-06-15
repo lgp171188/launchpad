@@ -3,7 +3,7 @@ options:
     type: string
     description: Domain name for this instance.
     default: "launchpad.test"
-  port_assets:
+  port:
     type: int
     description: Port for the assets website.
     default: 8009
