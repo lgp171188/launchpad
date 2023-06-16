@@ -68,4 +68,6 @@ class CheckTeamParticipationScript(LaunchpadCronScript):
 
 
 if __name__ == "__main__":
-    CheckTeamParticipationScript("check-teamparticipation").run()
+    CheckTeamParticipationScript(
+        "check-teamparticipation", dbuser="teammembership"
+    ).run()
