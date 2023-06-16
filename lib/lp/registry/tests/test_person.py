@@ -1145,17 +1145,14 @@ class TestPersonStates(TestCaseWithFactory):
         person = self.factory.makePerson(
             name="user", displayname="\xdc-tester"
         )
-        ignore, name, displayname = repr(person).rsplit(" ", 2)
-        self.assertEqual("user", name)
-        self.assertEqual("(\\xdc-tester)>", displayname)
+        self.assertEqual("<Person user (\\xdc-tester)>", repr(person))
 
     def test_person_repr_unicode(self):
         # Verify that Unicode displayname is ascii safe.
         person = self.factory.makePerson(
             name="user", displayname="\u0170-tester"
         )
-        ignore, displayname = repr(person).rsplit(" ", 1)
-        self.assertEqual("(\\u0170-tester)>", displayname)
+        self.assertEqual("<Person user (\\u0170-tester)>", repr(person))
 
 
 class TestPersonRelatedBugTaskSearch(TestCaseWithFactory):

@@ -39,7 +39,7 @@ Let's login then to add a subscription:
     >>> login("foo.bar@canonical.com")
 
     >>> debian_firefox.addBugSubscription(sample_person, sample_person)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> for pbc in debian_firefox.bug_subscriptions:
     ...     print(pbc.subscriber.name)
@@ -50,13 +50,13 @@ Trying to add a subscription to a package when that person or team is
 already subscribe to that package will return the existing subscription.
 
     >>> debian_firefox.addBugSubscription(sample_person, sample_person)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
 Let's add an ITeam as one of the subscribers:
 
     >>> ubuntu_team = personset.getByName("ubuntu-team")
     >>> debian_firefox.addBugSubscription(ubuntu_team, ubuntu_team)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> from operator import attrgetter
 
@@ -143,10 +143,10 @@ subscriber to the new package is already subscribed to the bug:
 
     >>> daf = personset.getByName("daf")
     >>> ubuntu_pmount.addBugSubscription(daf, daf)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> ubuntu_pmount.addBugSubscription(sample_person, sample_person)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> with notify_modified(
     ...     bug_one_in_ubuntu_firefox, ["id", "title", "sourcepackagename"]
@@ -273,7 +273,7 @@ contact address. Let's add such a team as a subscriber.
     True
 
     >>> ubuntu_pmount.addBugSubscription(ubuntu_gnome, ubuntu_gnome)
-    <...StructuralSubscription object at ...>
+    <...StructuralSubscription object>
 
     >>> with notify_modified(
     ...     bug_one_in_ubuntu_firefox, ["sourcepackagename"]

@@ -15,14 +15,14 @@ Distributions and products can define official bug tags.
     >>> distro_tag.tag = "PCI"
     >>> distro_tag.target = ubuntu
     >>> store.add(distro_tag)
-    <lp.bugs.model.bugtarget.OfficialBugTag object at...
+    <OfficialBugTag object>
 
     >>> firefox = getUtility(IProductSet).getByName("firefox")
     >>> product_tag = OfficialBugTag()
     >>> product_tag.tag = "bar"
     >>> product_tag.target = firefox
     >>> store.add(product_tag)
-    <lp.bugs.model.bugtarget.OfficialBugTag object at...
+    <OfficialBugTag object>
 
 We can add the same bug tag for different products and distributions.
 
@@ -30,7 +30,7 @@ We can add the same bug tag for different products and distributions.
     >>> distro_tag2.tag = "foo"
     >>> distro_tag2.distribution = ubuntu
     >>> store.add(distro_tag2)
-    <lp.bugs.model.bugtarget.OfficialBugTag object at...
+    <OfficialBugTag object>
     >>> store.flush()
 
 But bug tags must be unique for each product and distribution.
@@ -39,7 +39,7 @@ But bug tags must be unique for each product and distribution.
     >>> distro_tag3.tag = "PCI"
     >>> distro_tag3.distribution = ubuntu
     >>> store.add(distro_tag3)
-    <lp.bugs.model.bugtarget.OfficialBugTag object at...
+    <OfficialBugTag object>
     >>> store.flush()
     Traceback (most recent call last):
     storm.database.UniqueViolation: ...
@@ -142,13 +142,13 @@ Ordinary users cannot add and remove official bug tags.
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized:
-    (<Product at ...>, 'addOfficialBugTag', 'launchpad.Edit')
+    (<Product object>, 'addOfficialBugTag', 'launchpad.Edit')
 
     >>> firefox.removeOfficialBugTag("foo")
     Traceback (most recent call last):
     ...
     zope.security.interfaces.Unauthorized:
-    (<Product at ...>, 'removeOfficialBugTag', 'launchpad.Edit')
+    (<Product object>, 'removeOfficialBugTag', 'launchpad.Edit')
 
 Official tags are accessible as a list property of official tag targets.
 

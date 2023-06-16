@@ -206,7 +206,7 @@ Only the product owner can create a new release.
     >>> milestone.createProductRelease(
     ...     firefox.owner, now, changelog="New in v2"
     ... )
-    <ProductRelease at ...>
+    <ProductRelease object>
     >>> for release in release_set.getReleasesForSeries(series):
     ...     print(release.version)
     ...

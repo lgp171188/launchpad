@@ -27,7 +27,7 @@ import io
 from collections import defaultdict
 from typing import List
 
-import pytz
+from dateutil import tz
 from lazr.restful.utils import smartquote
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
@@ -190,7 +190,7 @@ class SprintView(HasSpecificationsView):
     def initialize(self):
         self.notices = []
         self.latest_specs_limit = 5
-        self.tzinfo = pytz.timezone(self.context.time_zone)
+        self.tzinfo = tz.gettz(self.context.time_zone)
 
     def attendance(self):
         """establish if this user is attending"""
@@ -246,14 +246,18 @@ class SprintView(HasSpecificationsView):
     @property
     def local_start(self):
         """The sprint start time, in the local time zone, as text."""
-        tz = pytz.timezone(self.context.time_zone)
-        return self._formatLocal(self.context.time_starts.astimezone(tz))
+        return self._formatLocal(
+            self.context.time_starts.astimezone(
+                tz.gettz(self.context.time_zone)
+            )
+        )
 
     @property
     def local_end(self):
         """The sprint end time, in the local time zone, as text."""
-        tz = pytz.timezone(self.context.time_zone)
-        return self._formatLocal(self.context.time_ends.astimezone(tz))
+        return self._formatLocal(
+            self.context.time_ends.astimezone(tz.gettz(self.context.time_zone))
+        )
 
 
 class SprintAddView(LaunchpadFormView):

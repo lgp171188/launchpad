@@ -412,7 +412,7 @@ particular bug (see bug 1357):
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.newMessage(no_priv, "Some message", "Contents")
-    <Message at ...>
+    <Message id=...>
 
     >>> commented_bugtasks_view = create_view(no_priv, "+commentedbugs")
     >>> commented_bugs = list(commented_bugtasks_view.search().batch)
@@ -549,7 +549,7 @@ found.
 Once the user has commented, the related milestone does appear.
 
     >>> bug.newMessage(user)
-    <Message at ...>
+    <Message id=...>
 
     >>> print(pretty(commented_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,
@@ -574,7 +574,7 @@ are found.
 Once new_user has subscribed, the related milestones appear.
 
     >>> bug.subscribe(new_user, new_user)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
 
     >>> print(pretty(subscribed_bugs_view.getMilestoneWidgetValues()))
     [{'checked': False,

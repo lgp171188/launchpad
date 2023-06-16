@@ -19,6 +19,9 @@ class StormBase(Storm):  # noqa: B1
     This class adds storm cache management functions to base.Storm.
     """
 
+    def __repr__(self):
+        return "<%s object>" % (self.__class__.__name__)
+
     def __eq__(self, other):
         """Equality operator.
 

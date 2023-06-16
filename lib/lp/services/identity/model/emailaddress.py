@@ -53,11 +53,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
     person = ForeignKey(dbName="person", foreignKey="Person", notNull=False)
 
     def __repr__(self):
-        return "<EmailAddress at 0x%x <%s> [%s]>" % (
-            id(self),
-            self.email,
-            self.status,
-        )
+        return "<EmailAddress <%s> [%s]>" % (self.email, self.status)
 
     def destroySelf(self):
         """See `IEmailAddress`."""

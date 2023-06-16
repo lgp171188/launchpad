@@ -17,7 +17,7 @@ Several views are used to handle the various operations on a question.
 
     >>> login("test@canonical.com")
     >>> firefox_question.subscribe(firefox_question.owner)
-    <lp.answers.model.questionsubscription.QuestionSubscription...>
+    <QuestionSubscription...>
 
 
 QuestionSubscriptionView

@@ -1,5 +1,6 @@
 includes:
   - layer:launchpad-payload
+  - layer:ols-http
   - interface:apache-website
 repo: https://git.launchpad.net/launchpad
 options:
@@ -9,3 +10,6 @@ options:
       - python3-convoy
   launchpad-payload:
     build_target: build
+  ols:
+    service_name: launchpad-assets
+    tarball_payload_name: launchpad

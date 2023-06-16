@@ -112,14 +112,14 @@ page.  The display of mugshots is batched.
     >>> for person in list(batch):
     ...     print(removeSecurityProxy(person))
     ...
-    <Person at ... limi (Alexander Limi)>
-    <Person at ... cprov (Celso Providelo)>
-    <Person at ... kamion (Colin Watson)>
-    <Person at ... kinnison (Daniel Silverstone)>
-    <Person at ... edgar (Edgar Bursic)>
-    <Person at ... name16 (Foo Bar)>
-    <Person at ... jdub (Jeff Waugh)>
-    <Person at ... mark (Mark Shuttleworth)>
+    <Person limi (Alexander Limi)>
+    <Person cprov (Celso Providelo)>
+    <Person kamion (Colin Watson)>
+    <Person kinnison (Daniel Silverstone)>
+    <Person edgar (Edgar Bursic)>
+    <Person name16 (Foo Bar)>
+    <Person jdub (Jeff Waugh)>
+    <Person mark (Mark Shuttleworth)>
 
 
 Privacy and visibility

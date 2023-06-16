@@ -12,7 +12,7 @@ from email.utils import formatdate, mktime_tz
 from textwrap import dedent
 from urllib.parse import quote
 
-import pytz
+from dateutil import tz
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 from zope.browserpage import ViewPageTemplateFile
@@ -1293,7 +1293,7 @@ class PersonFormatterAPI(ObjectFormatterAPI):
     def local_time(self):
         """Return the local time for this person."""
         time_zone = self._context.time_zone
-        dt = datetime.now(pytz.timezone(time_zone))
+        dt = datetime.now(tz.gettz(time_zone))
         return "%s %s" % (dt.strftime("%T"), tzname(dt))
 
     def url(self, view_name=None, rootsite="mainsite"):

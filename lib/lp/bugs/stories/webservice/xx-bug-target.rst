@@ -43,7 +43,7 @@ Not everyone can modify it however:
     Content-Length: ...
     Content-Type: text/plain...
     <BLANKLINE>
-    (<Product at ...>, 'bug_reporting_guidelines', 'launchpad.BugSupervisor')
+    (<Product object>, 'bug_reporting_guidelines', 'launchpad.BugSupervisor')
 
 
 Official Bug Tags

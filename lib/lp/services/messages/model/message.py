@@ -133,7 +133,7 @@ class Message(SQLBase):
     visible = BoolCol(notNull=True, default=True)
 
     def __repr__(self):
-        return "<Message at 0x%x id=%s>" % (id(self), self.id)
+        return "<Message id=%s>" % self.id
 
     def __iter__(self):
         """See IMessage.__iter__"""

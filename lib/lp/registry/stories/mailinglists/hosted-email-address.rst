@@ -15,7 +15,7 @@ the address is reserved for the team which owns the ML.
     >>> from lp.services.identity.model.emailaddress import EmailAddressSet
     >>> email_set = EmailAddressSet()
     >>> email_set.getByEmail(mailing_list.address)
-    <EmailAddress at...
+    <EmailAddress ...
 
 The team owner sets the contact address to the hosted mailing list.
 
@@ -81,4 +81,4 @@ EmailAddress object for that team's mailing list will still be in the
 database.
 
     >>> email_set.getByEmail(mailing_list.address)
-    <EmailAddress at...
+    <EmailAddress ...

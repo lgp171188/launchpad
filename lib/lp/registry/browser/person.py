@@ -56,7 +56,7 @@ from operator import attrgetter, itemgetter
 from textwrap import dedent
 from urllib.parse import quote, urlencode
 
-import pytz
+from dateutil import tz
 from lazr.config import as_timedelta
 from lazr.delegates import delegate_to
 from lazr.restful.interface import copy_field
@@ -2043,9 +2043,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     @property
     def time_zone_offset(self):
         """Return a string with offset from UTC"""
-        return datetime.now(pytz.timezone(self.context.time_zone)).strftime(
-            "%z"
-        )
+        return datetime.now(tz.gettz(self.context.time_zone)).strftime("%z")
 
 
 class PersonParticipationView(LaunchpadView):
@@ -4419,13 +4417,13 @@ class PersonEditTimeZoneView(LaunchpadFormView):
     @action(_("Update"), name="update")
     def action_update(self, action, data):
         """Set the time zone for the person."""
-        tz = data.get("time_zone")
-        if tz is None:
+        time_zone = data.get("time_zone")
+        if time_zone is None:
             raise UnexpectedFormData("No location received.")
         # XXX salgado, 2012-02-16, bug=933699: Use setLocation() because it's
         # the cheaper way to set the timezone of a person. Once the bug is
         # fixed we'll be able to get rid of this hack.
-        self.context.setLocation(None, None, tz, self.user)
+        self.context.setLocation(None, None, time_zone, self.user)
 
 
 def archive_to_person(archive):

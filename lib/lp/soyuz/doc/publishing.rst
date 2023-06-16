@@ -85,13 +85,13 @@ tiny 2-column content classes and force the users to retrieve those.
 Other properties are shortcuts to the source package's properties:
 
     >>> print(spph.package_creator)
-    <Person at ... mark (Mark Shuttleworth)>
+    <Person mark (Mark Shuttleworth)>
 
     >>> print(spph.package_maintainer)
-    <Person at ... mark (Mark Shuttleworth)>
+    <Person mark (Mark Shuttleworth)>
 
     >>> print(spph.package_signer)
-    <Person at ... name16 (Foo Bar)>
+    <Person name16 (Foo Bar)>
 
 The signer can also be None for packages that were synced (e.g. from Debian):
 

@@ -361,8 +361,8 @@ the time is.
 If the difference between what we and the remote system think the time
 is, an error is raised.
 
-    >>> import pytz
     >>> from datetime import datetime, timedelta, timezone
+    >>> from dateutil import tz
     >>> utc_now = datetime.now(timezone.utc)
     >>> class PositiveTimeSkewExternalBugTracker(TestExternalBugTracker):
     ...     def getCurrentDBTime(self):
@@ -417,7 +417,7 @@ than the UTC time.
 
     >>> class LocalTimeExternalBugTracker(TestExternalBugTracker):
     ...     def getCurrentDBTime(self):
-    ...         local_time = utc_now.astimezone(pytz.timezone("US/Eastern"))
+    ...         local_time = utc_now.astimezone(tz.gettz("US/Eastern"))
     ...         return local_time + timedelta(minutes=1)
     ...
     >>> bug_watch_updater.updateBugWatches(

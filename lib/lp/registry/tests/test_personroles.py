@@ -33,6 +33,20 @@ class TestPersonRoles(TestCaseWithFactory):
         roles = IPersonRoles(self.person)
         self.assertIs(self.person, roles.person)
 
+    def test_repr_ascii(self):
+        person = self.factory.makePerson(
+            name="user", displayname="\xdc-tester"
+        )
+        roles = IPersonRoles(person)
+        self.assertEqual("<PersonRoles user (\\xdc-tester)>", repr(roles))
+
+    def test_repr_unicode(self):
+        person = self.factory.makePerson(
+            name="user", displayname="\u0170-tester"
+        )
+        roles = IPersonRoles(person)
+        self.assertEqual("<PersonRoles user (\\u0170-tester)>", repr(roles))
+
     def _get_person_celebrities(self, is_team):
         for name in ILaunchpadCelebrities.names():
             attr = getattr(self.celebs, name)

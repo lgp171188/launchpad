@@ -1243,7 +1243,7 @@ When 'No Privileges Person' gets upload right to Celso's PPA ...
     >>> login("foo.bar@canonical.com")
     >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
     >>> cprov.archive.newComponentUploader(no_priv, "main")
-    <lp.soyuz.model.archivepermission.ArchivePermission ...>
+    <ArchivePermission ...>
 
 They become able to copy to the context PPA.
 

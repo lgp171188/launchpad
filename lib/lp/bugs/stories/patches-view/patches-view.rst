@@ -69,7 +69,7 @@ After we add a non-patch attachment to that bug, the patches view
 still shows no patches.
 
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_a, is_patch=False)
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
@@ -92,7 +92,7 @@ patches view.
     ...     bug=bug_a,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/patchy-product-1/+patches"
@@ -139,7 +139,7 @@ attachments, and various statuses...
     ...     bug=bug_b,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch c",
@@ -149,10 +149,10 @@ attachments, and various statuses...
     ...     bug=bug_b,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_c, is_patch=False)
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch d",
@@ -162,7 +162,7 @@ attachments, and various statuses...
     ...     bug=bug_c,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch e",
@@ -172,7 +172,7 @@ attachments, and various statuses...
     ...     bug=bug_c,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch f",
@@ -182,7 +182,7 @@ attachments, and various statuses...
     ...     bug=bug_c,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
     >>> with_anybody(factory.makeBugAttachment)(
     ...     comment="comment about patch g",
@@ -192,7 +192,7 @@ attachments, and various statuses...
     ...     bug=bug_d,
     ...     is_patch=True,
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment object at...
+    <BugAttachment object>
     >>> transaction.commit()
 
 ...the youngest patch on each bug is visible in the patch report

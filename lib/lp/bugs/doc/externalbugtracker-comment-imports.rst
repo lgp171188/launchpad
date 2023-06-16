@@ -230,7 +230,7 @@ A BugTrackerPerson record will have been created to map the new Person
 to the name 'noemail' on our example bugtracker.
 
     >>> bug_watch.bugtracker.getLinkedPersonByName("noemail")
-    <lp.bugs.model.bugtrackerperson.BugTrackerPerson ...>
+    <BugTrackerPerson ...>
 
 If the remote person is invalid (i.e. a Launchpad Person can't be
 created for them) an error will be logged and the comment will not be
@@ -396,7 +396,7 @@ DebBugs database. The message is linked to the bug watch for which it
 was imported.
 
     >>> bug_watch.addComment(message_two.rfc822msgid, message_two)
-    <BugMessage at ...>
+    <BugMessage ...>
     >>> bug_watch.hasComment(message_two.rfc822msgid)
     True
 

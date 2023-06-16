@@ -470,7 +470,7 @@ hand, are carried over just like when merging people.
     name12
 
     >>> list(IPollSubset(test_team).getAll())
-    [<lp.registry.model.poll.Poll object at ...]
+    [<Poll object>]
 
     # Landscape-developers has no super teams, two members and no polls.
 

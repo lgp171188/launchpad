@@ -251,7 +251,7 @@ subscribed to...
     >>> pt_BR_question = getUtility(IQuestionSet).get(13)
     >>> login("foo.bar@canonical.com")
     >>> pt_BR_question.subscribe(foo_bar_raw)
-    <lp.answers.model.questionsubscription.QuestionSubscription...>
+    <QuestionSubscription...>
 
     >>> print(
     ...     ", ".join(
@@ -267,7 +267,7 @@ subscribed to...
 
     >>> es_question = getUtility(IQuestionSet).get(12)
     >>> es_question.reject(foo_bar_raw, "Reject question.")
-    <lp.answers.model.questionmessage.QuestionMessage...>
+    <QuestionMessage...>
 
     >>> print(
     ...     ", ".join(
@@ -297,7 +297,7 @@ subscribed to...
     >>> en_question = getUtility(IQuestionSet).get(1)
     >>> login("carlos@canonical.com")
     >>> en_question.addComment(carlos_raw, "A simple comment.")
-    <lp.answers.model.questionmessage.QuestionMessage...>
+    <QuestionMessage...>
 
     >>> print(
     ...     ", ".join(

@@ -871,7 +871,7 @@ demonstrate, let's first make no_privs an indirect subscriber from bug
     Sample Person
 
     >>> bug_six.subscribe(no_priv, no_priv)
-    <lp.bugs.model.bugsubscription.BugSubscription ...>
+    <BugSubscription ...>
 
     >>> for subscriber in sorted(
     ...     bug_five.getIndirectSubscribers(), key=attrgetter("displayname")
@@ -3193,7 +3193,7 @@ we'll create a new bug on firefox and link it to a remote bug.
     >>> no_priv = getUtility(IPersonSet).getByName("no-priv")
 
     >>> from datetime import datetime, timezone
-    >>> import pytz
+    >>> from dateutil import tz
     >>> creation_date = datetime(2008, 4, 12, 10, 12, 12, tzinfo=timezone.utc)
 
 We create the initial bug message separately from the bug itself so that
@@ -3238,7 +3238,7 @@ importing machinery.
     >>> bug_watch = getUtility(IBugWatchSet).get(bug_watch.id)
 
     >>> comment_date = datetime(
-    ...     2008, 5, 19, 16, 19, 12, tzinfo=pytz.timezone("Europe/Prague")
+    ...     2008, 5, 19, 16, 19, 12, tzinfo=tz.gettz("Europe/Prague")
     ... )
 
     >>> initial_mail = (
@@ -3265,7 +3265,7 @@ Now someone uses the email interface to respond to the comment that has
 been submitted.
 
     >>> comment_date = datetime(
-    ...     2008, 5, 20, 11, 24, 12, tzinfo=pytz.timezone("Europe/Prague")
+    ...     2008, 5, 20, 11, 24, 12, tzinfo=tz.gettz("Europe/Prague")
     ... )
 
     >>> reply_mail = (
@@ -3318,7 +3318,7 @@ to an email that isn't linked to the bug, the new message will be linked
 to the bug and will not have its bugwatch field set.
 
     >>> comment_date = datetime(
-    ...     2008, 5, 21, 11, 9, 12, tzinfo=pytz.timezone("Europe/Prague")
+    ...     2008, 5, 21, 11, 9, 12, tzinfo=tz.gettz("Europe/Prague")
     ... )
 
     >>> initial_mail = (
@@ -3338,7 +3338,7 @@ to the bug and will not have its bugwatch field set.
     >>> message = getUtility(IMessageSet).fromEmail(initial_mail, no_priv)
 
     >>> comment_date = datetime(
-    ...     2008, 5, 21, 12, 52, 12, tzinfo=pytz.timezone("Europe/Prague")
+    ...     2008, 5, 21, 12, 52, 12, tzinfo=tz.gettz("Europe/Prague")
     ... )
 
     >>> reply_mail = (

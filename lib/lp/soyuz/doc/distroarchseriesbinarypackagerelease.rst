@@ -38,10 +38,10 @@ Assemble our DARBPRs for fun and profit:
     ...         darbpr._latest_publishing_record(),
     ...     )
     ...
-    mozilla-firefox 0.9 <BinaryPackagePublishingHistory at 0x...>
+    mozilla-firefox 0.9 <BinaryPackagePublishingHistory object>
     mozilla-firefox 0.9 None
-    pmount 0.1-1 <BinaryPackagePublishingHistory at 0x...>
-    pmount 0.1-1 <BinaryPackagePublishingHistory at 0x...>
+    pmount 0.1-1 <BinaryPackagePublishingHistory object>
+    pmount 0.1-1 <BinaryPackagePublishingHistory object>
 
     >>> print(
     ...     mf_warty.status.title,

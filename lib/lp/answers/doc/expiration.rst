@@ -75,14 +75,14 @@ somebody are subject to expiration.
     >>> recent_open_question.giveInfo(
     ...     "SVG works better now, but is still broken"
     ... )
-    <lp.answers.model.questionmessage.QuestionMessage...>
+    <QuestionMessage...>
 
     # This one was put in the NEEDSINFO state recently.
     >>> recent_needsinfo_question = questionset.get(4)
     >>> recent_needsinfo_question.requestInfo(
     ...     no_priv, "What URL were you visiting?"
     ... )
-    <lp.answers.model.questionmessage.QuestionMessage...>
+    <QuestionMessage...>
 
     # Old open questions.
     >>> old_open_question = questionset.get(5)
@@ -91,7 +91,7 @@ somebody are subject to expiration.
     # to make sure that DB permissions are correct.
     >>> admin_team = getUtility(IPersonSet).getByName("admins")
     >>> old_open_question.subscribe(admin_team)
-    <lp.answers.model.questionsubscription.QuestionSubscription...>
+    <QuestionSubscription...>
     >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> old_open_question.target.addAnswerContact(salgado, salgado)
     True

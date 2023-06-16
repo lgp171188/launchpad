@@ -326,7 +326,7 @@ giveInfo() transitions, let's see the other ones.
     # sent.
 
     >>> ubuntu_question.subscribe(sample_person)
-    <lp.answers.model.questionsubscription.QuestionSubscription ...>
+    <QuestionSubscription ...>
 
 
 Notifications for expireQuestion()
@@ -746,7 +746,7 @@ the notifications.
     >>> pt_BR_question.giveInfo(
     ...     "Veja o screenshot: http://tinyurl.com/y8jq8z"
     ... )
-    <lp.answers.model.questionmessage.QuestionMessage...>
+    <QuestionMessage...>
 
     >>> ignore = pop_questionemailjobs()
 

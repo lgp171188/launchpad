@@ -59,7 +59,7 @@ ObjectCreatedEvent in order to trigger email notifications:
     ...     is_patch=False,
     ... )
     Attachment added: 'foo.bar'
-    <lp.bugs.model.bugattachment.BugAttachment ...>
+    <BugAttachment ...>
 
     >>> import transaction
     >>> transaction.commit()
@@ -613,7 +613,7 @@ LibraryFileAlias.restricted and Bug.private. See also the section
     ...     url=None,
     ...     comment="Some attachment",
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment ...>
+    <BugAttachment ...>
 
     >>> bug.attachments.count()
     1
@@ -646,7 +646,7 @@ meaningful description.
     ...     is_patch=True,
     ...     description="An attachment of some sort",
     ... )
-    <lp.bugs.model.bugattachment.BugAttachment ...>
+    <BugAttachment ...>
 
     >>> bug.attachments.count()
     2
@@ -734,7 +734,7 @@ The method IBugAttachment.getFileByName() returns the Librarian file.
     >>> print(attachment.libraryfile.filename)
     foobar
     >>> attachment.getFileByName("foobar")
-    <LibraryFileAlias at...
+    <LibraryFileAlias object>
 
 A NotFoundError is raised if the file name passed to getFileByName()
 does not match the file name of the Librarian file.

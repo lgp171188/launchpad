@@ -115,4 +115,4 @@ After the LaunchBag has been cleared, the correct time zone is returned.
     >>> launchbag.time_zone_name
     'Europe/Paris'
     >>> launchbag.time_zone
-    <... 'Europe/Paris' ...>
+    tzfile('.../Europe/Paris')
