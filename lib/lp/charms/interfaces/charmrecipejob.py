@@ -11,7 +11,7 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Datetime, Dict, List, Set, TextLine
+from zope.schema import Datetime, List, Set, TextLine
 
 from lp import _
 from lp.charms.interfaces.charmrecipe import (
@@ -20,6 +20,7 @@ from lp.charms.interfaces.charmrecipe import (
 )
 from lp.charms.interfaces.charmrecipebuild import ICharmRecipeBuild
 from lp.registry.interfaces.person import IPerson
+from lp.services.fields import SnapBuildChannelsField
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
@@ -53,16 +54,15 @@ class ICharmRecipeRequestBuildsJob(IRunnableJob):
         readonly=True,
     )
 
-    channels = Dict(
+    channels = SnapBuildChannelsField(
         title=_("Source snap channels to use for these builds."),
-        description=_(
+        description_prefix=_(
             "A dictionary mapping snap names to channels to use for these "
-            "builds.  Currently only 'charmcraft', 'core', 'core18', "
-            "'core20', and 'core22' keys are supported."
+            "builds."
         ),
-        key_type=TextLine(),
         required=False,
         readonly=True,
+        extra_snap_names=["charmcraft"],
     )
 
     architectures = Set(

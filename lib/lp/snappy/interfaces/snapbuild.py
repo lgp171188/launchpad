@@ -42,6 +42,7 @@ from lp.buildmaster.interfaces.packagebuild import (
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import DEFAULT
+from lp.services.fields import SnapBuildChannelsField
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.snappy.interfaces.snap import ISnap, ISnapBuildRequest
 from lp.snappy.interfaces.snapbase import ISnapBase
@@ -214,14 +215,13 @@ class ISnapBuildView(IPackageBuildView, IPrivacy):
     )
 
     channels = exported(
-        Dict(
+        SnapBuildChannelsField(
             title=_("Source snap channels to use for this build."),
-            description=_(
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core18', 'core20', 'core22', "
-                "and 'snapcraft' keys are supported."
+                "build."
             ),
-            key_type=TextLine(),
+            extra_snap_names=["snapcraft"],
         )
     )
 

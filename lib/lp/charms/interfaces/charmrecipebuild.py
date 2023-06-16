@@ -23,7 +23,7 @@ from lazr.restful.declarations import (
 )
 from lazr.restful.fields import CollectionField, Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Bool, Choice, Datetime, Dict, Int, TextLine
+from zope.schema import Bool, Choice, Datetime, Int, TextLine
 
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import (
@@ -41,6 +41,7 @@ from lp.charms.interfaces.charmrecipe import (
 )
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.constants import DEFAULT
+from lp.services.fields import SnapBuildChannelsField
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
@@ -142,14 +143,13 @@ class ICharmRecipeBuildView(IPackageBuildView):
     )
 
     channels = exported(
-        Dict(
+        SnapBuildChannelsField(
             title=_("Source snap channels to use for this build."),
-            description=_(
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'charmcraft', 'core', 'core18', "
-                "'core20', and 'core22' keys are supported."
+                "build."
             ),
-            key_type=TextLine(),
+            extra_snap_names=["charmcraft"],
         )
     )
 

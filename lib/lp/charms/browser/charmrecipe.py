@@ -21,7 +21,7 @@ from lazr.restful.interface import copy_field, use_template
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import Interface, implementer
-from zope.schema import Dict, TextLine
+from zope.schema import TextLine
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -658,11 +658,11 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
     class schema(Interface):
         """Schema for requesting a build."""
 
-        channels = Dict(
+        channels = copy_field(
+            ICharmRecipe["auto_build_channels"],
+            __name__="channels",
             title="Source snap channels",
-            key_type=TextLine(),
             required=True,
-            description=ICharmRecipe["auto_build_channels"].description,
         )
 
     custom_widget_channels = CharmRecipeBuildChannelsWidget
