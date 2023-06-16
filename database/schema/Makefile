@@ -123,11 +123,9 @@ create:
 	@ echo "* Vacuuming"
 	@ vacuumdb $(DBOPTS) -fz -d ${EMPTY_DBNAME}
 
-	@ echo "* Creating session database '${SESSION_DBNAME}' (if necessary)"
-	@if [ "$$((`psql $(DBOPTS) -l | grep -w ${SESSION_DBNAME} | wc -l`))" = '0' ]; \
-	    then ${CREATEDB} template0 ${SESSION_DBNAME} ; \
-	    psql $(DBOPTS) -q -d ${SESSION_DBNAME} -f launchpad_session.sql ; \
-	fi
+	@ echo "* Creating session database '${SESSION_DBNAME}'"
+	@ ${CREATEDB} template0 ${SESSION_DBNAME}
+	@ psql $(DBOPTS) -q -d ${SESSION_DBNAME} -f launchpad_session.sql
 	@ echo "* Creating session database '${TEST_SESSION_DBNAME}'"
 	@ ${CREATEDB} template0 ${TEST_SESSION_DBNAME}
 	@ psql $(DBOPTS) -q -d ${TEST_SESSION_DBNAME} -f launchpad_session.sql
