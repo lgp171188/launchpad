@@ -43,7 +43,7 @@ def _trigger_bug_comment_webhook(action: str, bug_comment: IBugMessage):
 
     bugtasks = bug_comment.bug.bugtasks
 
-    # We trigger one webhook for each coment's bugtask that has webhooks set up
+    # We trigger one webhook per comment's bugtask that has webhooks set up
     for bugtask in bugtasks:
         target = bugtask.target
         if IWebhookTarget.providedBy(target):
@@ -82,14 +82,14 @@ def get_bugtask_attributes(bugtask: IBugTask, bug: IBug):
         IBug,
         bug,
         ["title", "description", "owner"],
-        {"owner": "reporter"},
+        preferred_names={"owner": "reporter"},
     )
     data.update(
         compose_webhook_payload(
             IBugTask,
             bugtask,
             ["status", "importance", "assignee", "datecreated"],
-            {"datecreated": "date_created"},
+            preferred_names={"datecreated": "date_created"},
         )
     )
     return data
@@ -107,7 +107,7 @@ def create_bug_comment_payload(
 
     # NOTE We might want to add a comment 'modified' event in the future, and
     # an 'old' field as well. Having the 'new' field here now, makes it
-    # coherent with the bug events and allows for that addition to be seemless
+    # coherent with the bug events and allows for that addition to be seamless
     payload["new"] = {
         "commenter": canonical_url(bug_comment.owner, force_local_path=True),
         "content": bug_comment.text_contents,
