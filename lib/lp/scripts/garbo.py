@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database garbage collection."""
@@ -1315,6 +1315,25 @@ class GitJobPruner(BulkPruner):
         """
 
 
+class BranchMergeProposalJobPruner(BulkPruner):
+    """Prune `BranchMergeProposalJob`s that are in a final state and more
+    than a month old.
+
+    When a BranchMergeProposalJob is completed, it gets set to a final
+    state. These jobs should be pruned from the database after a month.
+    """
+
+    target_table_class = Job
+    ids_to_prune_query = """
+        SELECT DISTINCT Job.id
+        FROM Job, BranchMergeProposalJob
+        WHERE
+            Job.id = BranchMergeProposalJob.job
+            AND Job.date_finished < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('30 days' AS interval)
+        """
+
+
 class SnapBuildJobPruner(BulkPruner):
     """Prune `SnapBuildJob`s that are in a final state and more than a month
     old.
@@ -2557,6 +2576,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         BinaryPackagePublishingHistoryFormatPopulator,
         BinaryPackagePublishingHistorySPNPopulator,
         BranchJobPruner,
+        BranchMergeProposalJobPruner,
         BugNotificationPruner,
         BugWatchActivityPruner,
         CodeImportEventPruner,

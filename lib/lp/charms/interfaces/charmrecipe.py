@@ -78,7 +78,11 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
-from lp.services.fields import PersonChoice, PublicPersonChoice
+from lp.services.fields import (
+    PersonChoice,
+    PublicPersonChoice,
+    SnapBuildChannelsField,
+)
 from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.snappy.validators.channels import channels_validator
 
@@ -385,15 +389,14 @@ class ICharmRecipeView(Interface):
 
     @call_with(requester=REQUEST_USER)
     @operation_parameters(
-        channels=Dict(
+        channels=SnapBuildChannelsField(
             title=_("Source snap channels to use for these builds."),
-            description=_(
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use for these "
-                "builds.  Currently only 'charmcraft', 'core', 'core18', "
-                "'core20', and 'core22' keys are supported."
+                "builds."
             ),
-            key_type=TextLine(),
             required=False,
+            extra_snap_names=["charmcraft"],
         )
     )
     @export_factory_operation(ICharmRecipeBuildRequest, [])
@@ -679,15 +682,14 @@ class ICharmRecipeEditableAttributes(Interface):
     )
 
     auto_build_channels = exported(
-        Dict(
+        SnapBuildChannelsField(
             title=_("Source snap channels for automatic builds"),
-            key_type=TextLine(),
             required=False,
             readonly=False,
-            description=_(
+            extra_snap_names=["charmcraft"],
+            description_prefix=_(
                 "A dictionary mapping snap names to channels to use when "
-                "building this charm recipe.  Currently only 'charmcraft', "
-                "'core', 'core18', 'core20', and 'core22' keys are supported."
+                "building this charm recipe."
             ),
         )
     )

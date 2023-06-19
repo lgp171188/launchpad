@@ -11,11 +11,12 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Choice, Datetime, Dict, List, Set, TextLine
+from zope.schema import Choice, Datetime, List, Set, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.fields import SnapBuildChannelsField
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 from lp.snappy.interfaces.snap import ISnap, ISnapBuildRequest
 from lp.snappy.interfaces.snapbuild import ISnapBuild
@@ -66,16 +67,15 @@ class ISnapRequestBuildsJob(IRunnableJob):
         readonly=True,
     )
 
-    channels = Dict(
+    channels = SnapBuildChannelsField(
         title=_("Source snap channels to use for these builds."),
-        description=_(
+        description_prefix=_(
             "A dictionary mapping snap names to channels to use for these "
-            "builds.  Currently only 'core', 'core18', 'core20', 'core22', "
-            "and 'snapcraft' keys are supported."
+            "builds."
         ),
-        key_type=TextLine(),
         required=False,
         readonly=True,
+        extra_snap_names=["snapcraft"],
     )
 
     architectures = Set(
