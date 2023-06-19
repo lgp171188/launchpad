@@ -199,6 +199,6 @@ def nrpe_available():
 
 
 @when("launchpad.appserver.nrpe-external-master.published")
-@when_not("nrpe-external-master.available")
+@when_not_all("nrpe-external-master.available", "service.configured")
 def nrpe_unavailable():
     clear_flag("launchpad.appserver.nrpe-external-master.published")
