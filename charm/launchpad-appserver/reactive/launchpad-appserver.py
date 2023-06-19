@@ -1,7 +1,6 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import shlex
 import subprocess
 from multiprocessing import cpu_count
 
@@ -182,9 +181,6 @@ def memcache_relation_changed(memcache):
 def nrpe_available():
     nrpe = endpoint_from_flag("nrpe-external-master.available")
     config = hookenv.config()
-    healthy_regex = (
-        r"(\/\+icing\/rev[0-9a-f]+\/).*(Is your project registered yet\?)"
-    )
     nrpe.add_check(
         [
             "/usr/lib/nagios/plugins/check_http",
@@ -192,8 +188,8 @@ def nrpe_available():
             "localhost",
             "-p",
             str(config["port_main"]),
-            "-l",
-            "--regex=%s" % shlex.quote(healthy_regex),
+            "-u",
+            "/_status/check",
         ],
         name="check_launchpad_appserver",
         description="Launchpad appserver",
