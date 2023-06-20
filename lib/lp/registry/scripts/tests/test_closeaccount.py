@@ -31,6 +31,7 @@ from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.model.productrelease import ProductRelease
+from lp.registry.model.teammembership import TeamParticipation
 from lp.registry.personmerge import merge_people
 from lp.registry.scripts.closeaccount import CloseAccountScript
 from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
@@ -919,6 +920,31 @@ class TestCloseAccount(TestCaseWithFactory):
         with dbuser("launchpad"):
             self.runScript(script)
         self.assertRemoved(account_id, person_id)
+
+    def test_handles_teamparticipation_except_self(self):
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[person])
+        store = Store.of(person)
+        person_id = person.id
+        account_id = person.account.id
+        self.assertContentEqual(
+            [person_id, team.id],
+            store.find(
+                TeamParticipation.teamID,
+                TeamParticipation.personID == person_id,
+            ),
+        )
+        script = self.makeScript([person.name])
+        with dbuser("launchpad"):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertContentEqual(
+            [person_id],
+            store.find(
+                TeamParticipation.teamID,
+                TeamParticipation.personID == person_id,
+            ),
+        )
 
     def test_skips_teamowner_merged(self):
         person = self.factory.makePerson()

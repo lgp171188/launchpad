@@ -331,7 +331,6 @@ def close_account(username, log):
         ("KarmaTotalCache", "person"),
         # Team memberships
         ("TeamMembership", "person"),
-        ("TeamParticipation", "person"),
         # Contacts
         ("AnswerContact", "person"),
         # Pending items in queues
@@ -360,6 +359,19 @@ def close_account(username, log):
             },
             (person.id,),
         )
+
+    # Remove all team participation records for the person, except for the
+    # self-participation record that every person has.
+    table_notification("TeamParticipation")
+    store.execute(
+        """
+        DELETE FROM TeamParticipation
+        WHERE person = ? AND team != ?
+        """,
+        (person.id, person.id),
+    )
+    skip.add(("teamparticipation", "person"))
+    skip.add(("teamparticipation", "team"))
 
     # Trash Sprint Attendance records in the future.
     table_notification("SprintAttendance")
