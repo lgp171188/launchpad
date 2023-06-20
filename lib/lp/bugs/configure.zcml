@@ -92,6 +92,10 @@
         for="lp.bugs.interfaces.bugmessage.IBugMessage                 lazr.lifecycle.interfaces.IObjectCreatedEvent"
         handler="lp.bugs.subscribers.bug.notify_bug_comment_added"/>
     <subscriber
+        for="lp.bugs.interfaces.bugmessage.IBugMessage
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.bugs.subscribers.webhooks.bug_comment_added"/>
+    <subscriber
         for="lp.bugs.interfaces.bugmessage.IBugMessage                 lazr.lifecycle.interfaces.IObjectCreatedEvent"
         handler="lp.bugs.subscribers.karma.bug_comment_added"/>
     <subscriber
@@ -115,6 +119,22 @@
     <subscriber
         for="lp.bugs.interfaces.bug.IBug                 lazr.lifecycle.interfaces.IObjectModifiedEvent"
         handler="lp.bugs.subscribers.bug.notify_bug_modified"/>
+    <subscriber
+        for="lp.bugs.interfaces.bug.IBug
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.bugs.subscribers.webhooks.bug_created"/>
+    <subscriber
+        for="lp.bugs.interfaces.bug.IBug
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.bugs.subscribers.webhooks.bug_modified"/>
+    <subscriber
+        for="lp.bugs.interfaces.bug.IBugTask
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.bugs.subscribers.webhooks.bugtask_created"/>
+    <subscriber
+        for="lp.bugs.interfaces.bug.IBugTask
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.bugs.subscribers.webhooks.bugtask_modified"/>
     <lp:securedutility
         class="lp.systemhomes.MaloneApplication"
         provides="lp.bugs.interfaces.malone.IMaloneApplication">
