@@ -327,10 +327,12 @@ class BugNotificationSet:
             ] = filter_description
             filter_ids.append(filter_id)
 
-            filters_by_person[source_person_id] = {
-                (i, filter_id)
-                for i in source_person_id_map[source_person_id]["sources"]
-            }
+            filters_by_person[source_person_id].update(
+                {
+                    (i, filter_id)
+                    for i in source_person_id_map[source_person_id]["sources"]
+                }
+            )
 
         # Remaining notifications have no filters
         source_filter_ids = filters_by_person.keys()
@@ -392,7 +394,10 @@ class BugNotificationSet:
         for recipient_data in recipient_id_map.values():
             # Getting filtered sources
 
-            if recipient_data["filters"]:
+            if (
+                recipient_data["filters"]
+                and filters_by_person[recipient_data["principal"].id]
+            ):
                 filter_descriptions = [
                     description
                     for description in recipient_data["filters"].values()
