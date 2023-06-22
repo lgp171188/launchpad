@@ -26,6 +26,7 @@ Common development tasks
    update-configuration-for-testing
    doc-theme
    testing-scripts
+   create-job-publish-artifact
 
 Operating development instances
 -------------------------------
