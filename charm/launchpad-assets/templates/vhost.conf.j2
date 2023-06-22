@@ -38,7 +38,7 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </LocationMatch>
-    AliasMatch "^/favicon\.(?:ico|gif|png)$" "/srv/launchpad/code/lib/canonical/launchpad/images/launchpad.png"
+    AliasMatch "^/favicon\.(?:ico|gif|png)$" "{{ code_dir }}/lib/canonical/launchpad/images/launchpad.png"
 
     <Location "/_status/check">
         Require all granted
