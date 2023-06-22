@@ -5,6 +5,11 @@
     CustomLog /var/log/apache2/assets.{{ domain }}-access.log combined
 
     <Location "/+apidoc/">
+        Options MultiViews
+        DirectoryIndex index
+        AddType application/vnd.sun.wadl+xml .wadl
+        AddType application/vd.sun.wadl+xml .brokenwadl
+        AddType application/json .json
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </Location>
