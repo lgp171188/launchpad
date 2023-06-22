@@ -58,9 +58,18 @@ def configure_convoy(config):
 
 def get_service_config():
     config = hookenv.config()
+    # If the build label has a suffix (see comment in configure_convoy
+    # above), then we'll need to append it when mapping +icing URLs to
+    # payload directories on the file system.
+    build_label = config["build_label"]
+    if "-" in build_label:
+        build_label_suffix = f"-{build_label.split('-', 1)[1]}"
+    else:
+        build_label_suffix = ""
     config.update(
         {
             "base_dir": base.base_dir(),
+            "build_label_suffix": build_label_suffix,
             "code_dir": base.code_dir(),
             "logs_dir": base.logs_dir(),
             "payloads_dir": base.payloads_dir(),

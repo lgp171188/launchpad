@@ -20,7 +20,7 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </LocationMatch>
-    AliasMatch "^/\+icing/rev([0-9a-f]+)/(.*)" "{{ payloads_dir }}/$1/lib/canonical/launchpad/icing/$2"
+    AliasMatch "^/\+icing/rev([0-9a-f]+)/(.*)" "{{ payloads_dir }}/$1{{ build_label_suffix }}/lib/canonical/launchpad/icing/$2"
     <Location "/+icing/">
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
