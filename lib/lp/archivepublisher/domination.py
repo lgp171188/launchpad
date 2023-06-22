@@ -708,7 +708,7 @@ class Dominator:
 
         def execute_plan():
             if supersede:
-                self.logger.info("Applying supersessions...")
+                self.logger.info("Superseding binaries...")
             for pub, dominant in supersede:
                 pub.supersede(dominant, logger=self.logger)
                 IStore(pub).flush()
@@ -723,7 +723,7 @@ class Dominator:
                             dominated.supersede(dominant, logger=self.logger)
                             IStore(dominated).flush()
             if delete:
-                self.logger.info("Applying deletions...")
+                self.logger.info("Deleting binaries...")
             for pub in delete:
                 pub.requestDeletion(None)
                 IStore(pub).flush()
