@@ -20,7 +20,7 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </LocationMatch>
-    AliasMatch "^/\+icing/rev([0-9a-f]+)/(.*)" "{{ payloads_dir }}/$1/lib/canonical/launchpad/icing/$2"
+    AliasMatch "^/\+icing/rev([0-9a-f]+)/(.*)" "{{ payloads_dir }}/$1{{ build_label_suffix }}/lib/canonical/launchpad/icing/$2"
     <Location "/+icing/">
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
@@ -38,7 +38,7 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </LocationMatch>
-    AliasMatch "^/favicon\.(?:ico|gif|png)$" "/srv/launchpad/code/lib/canonical/launchpad/images/launchpad.png"
+    AliasMatch "^/favicon\.(?:ico|gif|png)$" "{{ code_dir }}/lib/canonical/launchpad/images/launchpad.png"
 
     <Location "/_status/check">
         Require all granted
