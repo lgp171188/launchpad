@@ -33,7 +33,9 @@ def configure_convoy(config):
     convoy_path.mkdir(parents=True, exist_ok=True)
     link_path = convoy_path / f"rev{build_label}"
     if not link_path.is_symlink():
-        link_path.symlink_to(Path(base.code_dir()) / "build" / "js")
+        link_path.symlink_to(
+            Path(base.payloads_dir()) / build_label / "build" / "js"
+        )
     for link_path in convoy_path.iterdir():
         if link_path.name.startswith("rev") and link_path.is_symlink():
             if not link_path.exists():
