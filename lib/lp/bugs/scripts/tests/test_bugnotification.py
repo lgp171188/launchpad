@@ -54,6 +54,7 @@ from lp.bugs.scripts.bugnotification import (
     notification_comment_batches,
     process_deferred_notifications,
 )
+from lp.registry.enums import TeamMembershipPolicy
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
@@ -1572,3 +1573,58 @@ class TestSendBugNotifications(TestCaseWithFactory):
         self.assertEqual(
             "team-participant", messages[1]["X-Launchpad-Message-For"]
         )
+
+    def test_team_subscription_with_multiple_filters(self):
+
+        team_owner = self.factory.makePerson(email="team-owner@canonical.com")
+
+        bug_watcher = self.factory.makePerson(
+            name="bug-watcher-name", email="bug-watcher@canonical.com"
+        )
+
+        team = self.factory.makeTeam(
+            name="team-name",
+            owner=team_owner,
+            members=[bug_watcher, team_owner],
+            membership_policy=TeamMembershipPolicy.RESTRICTED,
+        )
+
+        bug = self.factory.makeBug(owner=team_owner)
+
+        subscription = bug.default_bugtask.target.addSubscription(
+            team, team_owner
+        )
+
+        message = getUtility(IMessageSet).fromText(
+            "subject",
+            "a comment.",
+            team_owner,
+            datecreated=self.ten_minutes_ago,
+        )
+        recipients = bug.getBugNotificationRecipients()
+        notification = getUtility(IBugNotificationSet).addNotification(
+            bug=bug,
+            is_comment=True,
+            message=message,
+            recipients=recipients,
+            activity=None,
+        )
+
+        bug_filter = subscription.newBugFilter()
+        BugNotificationFilter(
+            bug_notification=notification,
+            bug_subscription_filter=bug_filter,
+        )
+        BugSubscriptionFilterMute(
+            person=bug_watcher,
+            filter=bug_filter,
+        )
+        notification = self.notification_set.getNotificationsToSend()
+
+        pending_notification = get_email_notifications(notification)
+
+        _, _, messages = list(pending_notification)[0]
+
+        self.assertEqual(1, len(messages))
+        self.assertEqual("bug-watcher@canonical.com", messages[0]["To"])
+        self.assertEqual("team-name", messages[0]["X-Launchpad-Message-For"])

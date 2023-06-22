@@ -66,6 +66,10 @@ def what_changed(object_modified_event):
     after = object_modified_event.object
     fields = object_modified_event.edited_fields
     changes = {}
+
+    if not fields:
+        return changes
+
     for fieldname in fields:
         # XXX 2011-01-21 gmb bug=705955:
         #     Sometimes, something (webservice, I'm looking at you

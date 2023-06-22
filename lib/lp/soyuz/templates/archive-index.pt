@@ -105,19 +105,18 @@ sudo apt update
              sources. </p>
           <tal:entries replace="structure view/sources_list_entries" />
           <dl id="signing-key"
-              tal:define="signing_key context/signing_key"
-              tal:condition="signing_key">
+              tal:condition="context/signing_key_fingerprint">
             <dt>Signing key:</dt>
             <dd>
-              <a tal:attributes="href signing_key/keyserverURL">
-                <code tal:content="signing_key/displayname"
+              <a tal:attributes="href context/signing_key_keyserver_url">
+                <code tal:content="context/signing_key_display_name"
                   >1024R/23456789</code>
               </a>
               (<a href="/+help-soyuz/ppa-sources-list.html"
                   target="help">What is this?</a>)
             </dd>
             <dt>Fingerprint:</dt>
-            <dd tal:content="signing_key/fingerprint"/>
+            <dd tal:content="context/signing_key_fingerprint"/>
           </dl>
           <div id="archive-dependencies"
                tal:condition="not: context/dependencies/is_empty">

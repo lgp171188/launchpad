@@ -27,3 +27,21 @@ class TestComposeWebhookPayload(TestCaseWithFactory):
                 }
             ),
         )
+
+    def test_serialises_with_prefered_names(self):
+        project = self.factory.makeProduct()
+        self.assertThat(
+            compose_webhook_payload(
+                IProduct,
+                project,
+                ["display_name", "owner", "projectgroup"],
+                {"projectgroup": "group", "foo": "bar"},
+            ),
+            MatchesDict(
+                {
+                    "display_name": Equals(project.display_name),
+                    "owner": Equals("/~%s" % project.owner.name),
+                    "group": Is(None),
+                }
+            ),
+        )
