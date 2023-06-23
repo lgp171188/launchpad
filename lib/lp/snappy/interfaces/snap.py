@@ -470,7 +470,7 @@ class ISnapView(Interface):
                 "build."
             ),
             required=False,
-            extra_snap_names=["snapcraft"],
+            extra_snap_names=["snapcraft", "snapd"],
         ),
     )
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
@@ -513,7 +513,7 @@ class ISnapView(Interface):
                 "build."
             ),
             required=False,
-            extra_snap_names=["snapcraft"],
+            extra_snap_names=["snapcraft", "snapd"],
         ),
     )
     @export_factory_operation(ISnapBuildRequest, [])
@@ -1059,7 +1059,7 @@ class ISnapEditableAttributes(IHasOwner):
             title=_("Source snap channels for automatic builds"),
             required=False,
             readonly=False,
-            extra_snap_names=["snapcraft"],
+            extra_snap_names=["snapcraft", "snapd"],
             description_prefix=_(
                 "A dictionary mapping snap names to channels to use when "
                 "building this snap package."

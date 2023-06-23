@@ -75,7 +75,7 @@ class ISnapRequestBuildsJob(IRunnableJob):
         ),
         required=False,
         readonly=True,
-        extra_snap_names=["snapcraft"],
+        extra_snap_names=["snapcraft", "snapd"],
     )
 
     architectures = Set(
