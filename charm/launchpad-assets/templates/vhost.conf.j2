@@ -13,7 +13,7 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </Location>
-    Alias "/+apidoc/" "{{ code_dir }}/lib/canonical/launchpad/apidoc/"
+    Alias "/+apidoc/" "{{ payloads_dir }}/{{ build_label }}/lib/canonical/launchpad/apidoc/"
 
     <Location "/+combo/">
         Header set Cache-Control "public,max-age=5184000"
@@ -30,20 +30,20 @@
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </Location>
-    Alias "/+icing/" "{{ code_dir }}/lib/canonical/launchpad/icing/"
+    Alias "/+icing/" "{{ payloads_dir }}/{{ build_label }}/lib/canonical/launchpad/icing/"
 
     <Location "/@@/">
         Options MultiViews
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </Location>
-    Alias "/@@/" "{{ code_dir }}/lib/canonical/launchpad/images/"
+    Alias "/@@/" "{{ payloads_dir }}/{{ build_label }}/lib/canonical/launchpad/images/"
 
     <LocationMatch "^/favicon\.(?:ico|gif|png)$">
         Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </LocationMatch>
-    AliasMatch "^/favicon\.(?:ico|gif|png)$" "{{ code_dir }}/lib/canonical/launchpad/images/launchpad.png"
+    AliasMatch "^/favicon\.(?:ico|gif|png)$" "{{ payloads_dir }}/{{ build_label }}/lib/canonical/launchpad/images/launchpad.png"
 
     <Location "/_status/check">
         Require all granted

@@ -3,6 +3,10 @@ options:
     type: string
     description: Domain name for this instance.
     default: "launchpad.test"
+  domain_xmlrpc_private:
+    type: string
+    description: Domain name for this instance's private XML-RPC service.
+    default: "xmlrpc-private.launchpad.test"
   port:
     type: int
     description: Port for the assets website.

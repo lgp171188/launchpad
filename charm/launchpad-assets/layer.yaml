@@ -8,8 +8,6 @@ options:
     packages:
       - nodejs
       - python3-convoy
-  launchpad-payload:
-    build_target: build
   ols:
     service_name: launchpad-assets
     tarball_payload_name: launchpad
