@@ -772,7 +772,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels(self):
         # If the build needs particular channels, extraBuildArgs sends them.
-        job = self.makeJob(channels={"snapcraft": "edge"})
+        job = self.makeJob(channels={"snapcraft": "edge", "snapd": "edge"})
         (
             expected_archives,
             expected_trusted_keys,
@@ -782,7 +782,9 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertFalse(isProxy(args["channels"]))
-        self.assertEqual({"snapcraft": "edge"}, args["channels"])
+        self.assertEqual(
+            {"snapcraft": "edge", "snapd": "edge"}, args["channels"]
+        )
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels_apt(self):

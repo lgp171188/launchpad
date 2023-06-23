@@ -221,7 +221,7 @@ class ISnapBuildView(IPackageBuildView, IPrivacy):
                 "A dictionary mapping snap names to channels to use for this "
                 "build."
             ),
-            extra_snap_names=["snapcraft"],
+            extra_snap_names=["snapcraft", "snapd"],
         )
     )
 

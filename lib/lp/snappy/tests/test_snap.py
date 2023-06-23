@@ -441,9 +441,11 @@ class TestSnap(TestCaseWithFactory):
             snap.distro_series.main_archive,
             distroarchseries,
             PackagePublishingPocket.UPDATES,
-            channels={"snapcraft": "edge"},
+            channels={"snapcraft": "edge", "snapd": "edge"},
         )
-        self.assertEqual({"snapcraft": "edge"}, build.channels)
+        self.assertEqual(
+            {"snapcraft": "edge", "snapd": "edge"}, build.channels
+        )
 
     def test_requestBuild_rejects_repeats(self):
         # requestBuild refuses if there is already a pending build.
@@ -737,7 +739,7 @@ class TestSnap(TestCaseWithFactory):
                 snap.owner.teamowner,
                 snap.distro_series.main_archive,
                 PackagePublishingPocket.UPDATES,
-                channels={"snapcraft": "edge"},
+                channels={"snapcraft": "edge", "snapd": "edge"},
             )
         self.assertThat(
             request,
@@ -751,7 +753,9 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(snap.distro_series.main_archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=MatchesDict({"snapcraft": Equals("edge")}),
+                channels=MatchesDict(
+                    {"snapcraft": Equals("edge"), "snapd": Equals("edge")}
+                ),
                 architectures=Is(None),
             ),
         )
@@ -765,7 +769,7 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(snap.distro_series.main_archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=Equals({"snapcraft": "edge"}),
+                channels=Equals({"snapcraft": "edge", "snapd": "edge"}),
                 architectures=Is(None),
             ),
         )
@@ -780,7 +784,7 @@ class TestSnap(TestCaseWithFactory):
                 snap.owner.teamowner,
                 archive,
                 PackagePublishingPocket.UPDATES,
-                channels={"snapcraft": "edge"},
+                channels={"snapcraft": "edge", "snapd": "edge"},
             )
         self.assertThat(
             request,
@@ -794,7 +798,9 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=MatchesDict({"snapcraft": Equals("edge")}),
+                channels=MatchesDict(
+                    {"snapcraft": Equals("edge"), "snapd": Equals("edge")}
+                ),
                 architectures=Is(None),
             ),
         )
@@ -808,7 +814,7 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=Equals({"snapcraft": "edge"}),
+                channels=Equals({"snapcraft": "edge", "snapd": "edge"}),
                 architectures=Is(None),
             ),
         )
@@ -823,7 +829,7 @@ class TestSnap(TestCaseWithFactory):
                 snap.owner.teamowner,
                 snap.distro_series.main_archive,
                 PackagePublishingPocket.UPDATES,
-                channels={"snapcraft": "edge"},
+                channels={"snapcraft": "edge", "snapd": "edge"},
                 architectures={"amd64", "i386"},
             )
         self.assertThat(
@@ -838,7 +844,9 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(snap.distro_series.main_archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=MatchesDict({"snapcraft": Equals("edge")}),
+                channels=MatchesDict(
+                    {"snapcraft": Equals("edge"), "snapd": Equals("edge")}
+                ),
                 architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
             ),
         )
@@ -852,7 +860,7 @@ class TestSnap(TestCaseWithFactory):
                 requester=Equals(snap.owner.teamowner),
                 archive=Equals(snap.distro_series.main_archive),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=Equals({"snapcraft": "edge"}),
+                channels=Equals({"snapcraft": "edge", "snapd": "edge"}),
                 architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
             ),
         )
@@ -958,7 +966,7 @@ class TestSnap(TestCaseWithFactory):
             snap.owner.teamowner,
             distro.main_archive,
             PackagePublishingPocket.RELEASE,
-            {"snapcraft": "edge"},
+            {"snapcraft": "edge", "snapd": "edge"},
         )
 
     def assertRequestedBuildsMatch(
@@ -1480,7 +1488,7 @@ class TestSnap(TestCaseWithFactory):
             processors=[das.processor for das in dases[:2]],
             auto_build_archive=archive,
             auto_build_pocket=PackagePublishingPocket.PROPOSED,
-            auto_build_channels={"snapcraft": "edge"},
+            auto_build_channels={"snapcraft": "edge", "snapd": "edge"},
         )
         with person_logged_in(snap.owner):
             builds = snap.requestAutoBuilds()
@@ -1494,7 +1502,7 @@ class TestSnap(TestCaseWithFactory):
                         archive=archive,
                         distro_arch_series=das,
                         pocket=PackagePublishingPocket.PROPOSED,
-                        channels={"snapcraft": "edge"},
+                        channels={"snapcraft": "edge", "snapd": "edge"},
                     )
                     for das in dases[:2]
                 )
@@ -3307,7 +3315,8 @@ class TestSnapSet(TestCaseWithFactory):
         # to match a snap if they match its auto_build_channels.
         das1, snap1 = self.makeAutoBuildableSnap(is_stale=True)
         das2, snap2 = self.makeAutoBuildableSnap(
-            is_stale=True, auto_build_channels={"snapcraft": "edge"}
+            is_stale=True,
+            auto_build_channels={"snapcraft": "edge", "snapd": "edge"},
         )
         # Create some builds with mismatched channels.
         self.factory.makeSnapBuild(
@@ -3315,7 +3324,7 @@ class TestSnapSet(TestCaseWithFactory):
             snap=snap1,
             archive=snap1.auto_build_archive,
             distroarchseries=das1,
-            channels={"snapcraft": "edge"},
+            channels={"snapcraft": "edge", "snapd": "edge"},
         )
         self.factory.makeSnapBuild(
             requester=snap2.owner,
@@ -3344,7 +3353,7 @@ class TestSnapSet(TestCaseWithFactory):
                     requester=snap2.owner,
                     archive=snap2.auto_build_archive,
                     pocket=snap2.auto_build_pocket,
-                    channels={"snapcraft": "edge"},
+                    channels={"snapcraft": "edge", "snapd": "edge"},
                 ),
             ),
         )
@@ -5225,7 +5234,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             "requestBuilds",
             archive=archive_url,
             pocket="Updates",
-            channels={"snapcraft": "edge"},
+            channels={"snapcraft": "edge", "snapd": "edge"},
         )
         self.assertEqual(201, response.status)
         build_request_url = response.getHeader("Location")
@@ -5297,7 +5306,9 @@ class TestSnapWebservice(TestCaseWithFactory):
                                 ),
                                 "arch_tag": Equals(processor.name),
                                 "pocket": Equals("Updates"),
-                                "channels": Equals({"snapcraft": "edge"}),
+                                "channels": Equals(
+                                    {"snapcraft": "edge", "snapd": "edge"}
+                                ),
                             }
                         )
                         for processor in processors
