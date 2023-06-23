@@ -11,7 +11,6 @@
         # Misspelling used by some old versions of lazr.restfulclient.
         AddType application/vd.sun.wadl+xml;qs=0.8 .brokenwadl
         AddType application/json;qs=0.9 .json
-        Header set Cache-Control "public,max-age=5184000"
         Require all granted
     </Location>
     Alias "/+apidoc/" "{{ payloads_dir }}/{{ build_label }}/lib/canonical/launchpad/apidoc/"
