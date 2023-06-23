@@ -1,0 +1,18 @@
+#!/bin/sh
+
+{% if librarian_frontend_ip_addresses %}
+{% for ip_address in librarian_frontend_ip_addresses %}
+rsync -aq --timeout=120 --delete {{ ip_address }}::librarian-logs/ {{ librarian_logs_dir }}/frontend-{{ loop.index0 }}/
+{% endfor %}
+
+rm -f {{ librarian_logs_dir }}/for_parsing/*
+
+{% for ip_address in librarian_frontend_ip_addresses %}
+for i in {{ librarian_logs_dir }}/frontend-{{ loop.index0 }}/*
+do
+    FILENAME=$(basename $i)
+    ln -s $i {{ librarian_logs_dir }}/for_parsing/frontend-{{ loop.index0 }}-${FILENAME}
+done
+{% endfor %}
+{% endif %}
+

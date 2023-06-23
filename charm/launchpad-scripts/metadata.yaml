@@ -1,0 +1,21 @@
+name: launchpad-scripts
+display-name: launchpad-scripts
+summary: Launchpad scripts
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm sets up the cron jobs to run the scripts and the celery
+  workers needed by a Launchpad deployment.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false
+requires:
+  session-db:
+    interface: pgsql
+  memcache:
+    interface: memcache

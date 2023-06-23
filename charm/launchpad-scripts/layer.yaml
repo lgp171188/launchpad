@@ -1,0 +1,66 @@
+includes:
+  - layer:launchpad-db
+  - interface:memcache
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - procmail # Needed for the 'lockfile' command.
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - answertracker
+          - branchscanner
+          - bugnotification
+          - charm-build-job
+          - checkwatches
+          - copy_packages
+          - cve
+          - distributionmirror
+          - distroseriesdifferencejob
+          - expire_questions
+          - garbo_daily
+          - garbo_frequently
+          - garbo_hourly
+          - initializedistroseries
+          - karma
+          - langpack
+          - launchpad
+          - librarianlogparser
+          - merge-proposal-jobs
+          - oci-build-job
+          - package_diff_job
+          - person-merge-job
+          - person-transfer-job
+          - personnotification
+          - poexport
+          - pofilestats
+          - poimport
+          - process-apport-blobs
+          - process-job-source-groups
+          - process_accepted
+          - processmail
+          - product-job
+          - productreleasefinder
+          - queued
+          - reclaim-branch-space
+          - revisionkarma
+          - rosettaadmin
+          - send-branch-mail
+          - sharing-jobs
+          - snap-build-job
+          - standingupdater
+          - statistician
+          - targetnamecacheupdater
+          - teammembership
+          - translations_import_queue_gardener
+          - update-pkg-cache
+          - upload_package_translations_job
+          - uploader
+          - webhookrunner
+
+      session-db:
+        name: session_dev
+        roles: session
