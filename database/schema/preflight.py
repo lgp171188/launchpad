@@ -22,7 +22,6 @@ import psycopg2
 
 import upgrade
 from dbcontroller import DBController, streaming_sync
-from lp.services.database import activity_cols
 from lp.services.database.sqlbase import ISOLATION_LEVEL_AUTOCOMMIT, sqlvalues
 from lp.services.scripts import logger, logger_options
 from replication.helpers import Node
@@ -142,10 +141,9 @@ class DatabasePreflight:
                 FROM pg_stat_activity
                 WHERE
                     datname=current_database()
-                    AND %(pid)s <> pg_backend_pid()
+                    AND pid <> pg_backend_pid()
                 GROUP BY datname, usename
                 """
-                % activity_cols(cur)
             )
             for datname, usename, num_connections in cur.fetchall():
                 if usename in SYSTEM_USERS:
@@ -177,18 +175,15 @@ class DatabasePreflight:
         for node in self.lpmain_nodes:
             cur = node.con.cursor()
             cur.execute(
-                (
-                    """
+                """
                 SELECT datname, usename, COUNT(*) AS num_connections
                 FROM pg_stat_activity
                 WHERE
                     datname=current_database()
-                    AND %(pid)s <> pg_backend_pid()
-                    AND usename IN %%s
+                    AND pid <> pg_backend_pid()
+                    AND usename IN %s
                 GROUP BY datname, usename
                 """
-                    % activity_cols(cur)
-                )
                 % sqlvalues(FRAGILE_USERS)
             )
             for datname, usename, num_connections in cur.fetchall():
@@ -376,19 +371,14 @@ class KillConnectionsPreflight(DatabasePreflight):
             for node in nodes:
                 cur = node.con.cursor()
                 cur.execute(
-                    (
-                        """
-                    SELECT
-                        %(pid)s, datname, usename,
-                        pg_terminate_backend(%(pid)s)
+                    """
+                    SELECT pid, datname, usename, pg_terminate_backend(pid)
                     FROM pg_stat_activity
                     WHERE
                         datname=current_database()
-                        AND %(pid)s <> pg_backend_pid()
-                        AND usename NOT IN %%s
+                        AND pid <> pg_backend_pid()
+                        AND usename NOT IN %s
                     """
-                        % activity_cols(cur)
-                    )
                     % sqlvalues(SYSTEM_USERS)
                 )
                 for pid, datname, usename, ignored in cur.fetchall():

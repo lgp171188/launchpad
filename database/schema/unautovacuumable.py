@@ -21,7 +21,6 @@ import sys
 import time
 from optparse import OptionParser
 
-from lp.services.database import activity_cols
 from lp.services.database.sqlbase import ISOLATION_LEVEL_AUTOCOMMIT, connect
 from lp.services.scripts import db_options, logger, logger_options
 
@@ -69,12 +68,11 @@ def main():
         time.sleep(0.6)
         cur.execute(
             """
-            SELECT %(pid)s FROM pg_stat_activity
+            SELECT pid FROM pg_stat_activity
             WHERE
                 datname=current_database()
-                AND %(query)s LIKE 'autovacuum: %%'
+                AND query LIKE 'autovacuum: %'
             """
-            % activity_cols(cur)
         )
         autovacuums = [row[0] for row in cur.fetchall()]
         num_autovacuums = len(autovacuums)

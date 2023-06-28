@@ -17,8 +17,6 @@ from optparse import OptionParser
 
 import psycopg2
 
-from lp.services.database import activity_cols
-
 
 def main():
     parser = OptionParser()
@@ -75,15 +73,12 @@ def main():
     con = psycopg2.connect(options.connect_string)
     cur = con.cursor()
     cur.execute(
-        (
-            """
-        SELECT usename, %(pid)s, backend_start, xact_start
-        FROM pg_stat_activity
-        WHERE xact_start < CURRENT_TIMESTAMP - '%%d seconds'::interval %%s
-        ORDER BY %(pid)s
         """
-            % activity_cols(cur)
-        )
+        SELECT usename, pid, backend_start, xact_start
+        FROM pg_stat_activity
+        WHERE xact_start < CURRENT_TIMESTAMP - '%d seconds'::interval %s
+        ORDER BY pid
+        """
         % (options.max_seconds, user_match_sql),
         options.users,
     )
