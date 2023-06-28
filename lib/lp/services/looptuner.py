@@ -18,7 +18,6 @@ from six import reraise
 from zope.interface import Interface, implementer
 
 import lp.services.scripts
-from lp.services.database import activity_cols
 from lp.services.database.interfaces import IPrimaryStore
 
 
@@ -333,21 +332,18 @@ class DBLoopTuner(LoopTuner):
         while not self._isTimedOut():
             results = list(
                 store.execute(
-                    (
-                        """
+                    """
                 SELECT
                     CURRENT_TIMESTAMP - xact_start,
-                    %(pid)s,
+                    pid,
                     usename,
                     datname,
-                    %(query)s
+                    query
                 FROM activity()
-                WHERE xact_start < CURRENT_TIMESTAMP - interval '%%f seconds'
+                WHERE xact_start < CURRENT_TIMESTAMP - interval '%f seconds'
                     AND datname = current_database()
                 ORDER BY xact_start LIMIT 4
                 """
-                        % activity_cols(store)
-                    )
                     % self.long_running_transaction
                 ).get_all()
             )

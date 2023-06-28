@@ -18,7 +18,6 @@ from breezy.lock import WriteLock
 from psycopg2.errors import InvalidCatalogName, ObjectInUse
 
 from lp.services.config import config
-from lp.services.database import activity_cols
 
 
 class ConnectionWrapper:
@@ -439,11 +438,10 @@ rw_main_standby: dbname=%s
                     cur = con.cursor()
                     cur.execute(
                         """
-                        SELECT pg_terminate_backend(%(pid)s)
+                        SELECT pg_terminate_backend(pid)
                         FROM pg_stat_activity
-                        WHERE %(pid)s <> pg_backend_pid() AND datname=%%s
-                        """
-                        % activity_cols(cur),
+                        WHERE pid <> pg_backend_pid() AND datname=%s
+                        """,
                         [self.dbname],
                     )
                 except psycopg2.DatabaseError:
