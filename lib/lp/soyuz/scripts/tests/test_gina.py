@@ -755,6 +755,8 @@ class TestRunner(TestCaseWithFactory):
         )
 
         def import_and_get_versions():
+            # Unpacking source packages can be slow, so ensure that we don't
+            # hold a transaction while doing so.
             with TransactionFreeOperation.require():
                 import_sourcepackages(
                     series.distribution.name,

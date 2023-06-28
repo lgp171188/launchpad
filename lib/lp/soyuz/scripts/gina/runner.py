@@ -194,6 +194,8 @@ def do_one_sourcepackage(distro, source, package_root, importer_handler):
         log.info("%s already exists in the archive", source_data.package)
         return
     importer_handler.commit()
+    # Unpacking source packages can be slow, so don't hold a transaction
+    # while doing so.
     with TransactionFreeOperation():
         source_data.process_package(distro, package_root)
         source_data.ensure_complete()
