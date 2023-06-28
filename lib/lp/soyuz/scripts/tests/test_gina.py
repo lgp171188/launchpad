@@ -19,6 +19,7 @@ import lp.soyuz.scripts.gina.handlers
 from lp.archiveuploader.tagfiles import parse_tagfile
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
@@ -754,12 +755,13 @@ class TestRunner(TestCaseWithFactory):
         )
 
         def import_and_get_versions():
-            import_sourcepackages(
-                series.distribution.name,
-                packages_map,
-                archive_root,
-                importer_handler,
-            )
+            with TransactionFreeOperation.require():
+                import_sourcepackages(
+                    series.distribution.name,
+                    packages_map,
+                    archive_root,
+                    importer_handler,
+                )
             return [
                 p.source_package_version
                 for p in series.main_archive.getPublishedSources(
