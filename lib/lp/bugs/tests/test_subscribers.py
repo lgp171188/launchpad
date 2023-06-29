@@ -9,7 +9,7 @@ from testtools.matchers import Equals, MatchesDict, MatchesStructure
 from zope.event import notify
 
 from lp.bugs.interfaces.bug import IBug
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
+from lp.bugs.interfaces.bugtarget import DISABLE_BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.subscribers.bugactivity import what_changed
 from lp.services.features.testing import FeatureFixture
@@ -63,7 +63,7 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
         self.useFixture(
             FeatureFixture(
                 {
-                    BUG_WEBHOOKS_FEATURE_FLAG: "on",
+                    DISABLE_BUG_WEBHOOKS_FEATURE_FLAG: "on",
                 }
             )
         )

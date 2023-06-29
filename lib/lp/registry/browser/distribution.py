@@ -83,7 +83,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
+from lp.bugs.interfaces.bugtarget import DISABLE_BUG_WEBHOOKS_FEATURE_FLAG
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.registry.browser import RegistryEditFormView, add_subscribe_link
@@ -440,7 +440,7 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
             "+webhooks",
             "Manage webhooks",
             icon="edit",
-            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+            enabled=not getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG),
         )
 
 

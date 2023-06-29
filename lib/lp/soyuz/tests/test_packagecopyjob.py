@@ -18,7 +18,6 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -1664,16 +1663,6 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
     def test_copying_closes_bugs_with_webhooks(self):
         # Copying a package into a primary archive closes any bugs mentioned
         # in its recent changelog, including triggering their webhooks.
-
-        # Set bug webhooks feature flag on for the purpose of this test
-        self.useFixture(
-            FeatureFixture(
-                {
-                    BUG_WEBHOOKS_FEATURE_FLAG: "on",
-                }
-            )
-        )
-
         target_archive = self.factory.makeArchive(
             self.distroseries.distribution, purpose=ArchivePurpose.PRIMARY
         )
