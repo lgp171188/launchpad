@@ -97,7 +97,6 @@ class TestMirroringForImportedBranches(TestCaseWithFactory):
 
 
 class TestMirroringForMirroredBranches(TestMirroringForImportedBranches):
-
     branch_type = BranchType.MIRRORED
 
     def setUp(self):

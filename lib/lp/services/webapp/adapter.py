@@ -500,7 +500,6 @@ class LaunchpadDatabase(Postgres):
 
 
 class LaunchpadSessionDatabase(Postgres):
-
     # A unique name for this database connection.
     name = "session"
 

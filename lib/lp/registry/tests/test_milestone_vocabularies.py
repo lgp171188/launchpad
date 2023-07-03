@@ -116,7 +116,6 @@ class TestMilestoneVocabulary(TestCaseWithFactory):
 
 
 class TestMilestoneWithDateExpectedVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_milestone_with_date_expected(self):

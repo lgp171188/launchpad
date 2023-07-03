@@ -19,7 +19,6 @@ from lp.services.webapp.publisher import canonical_url
 
 
 class PreviewDiffNavigation(Navigation, FileNavigationMixin):
-
     usedfor = IPreviewDiff
 
 

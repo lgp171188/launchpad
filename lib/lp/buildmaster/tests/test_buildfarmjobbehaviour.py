@@ -173,7 +173,6 @@ class TestBuildFarmJobBehaviourBase(TestCaseWithFactory):
 
 
 class TestDispatchBuildToWorker(StatsMixin, TestCase):
-
     layer = ZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest
 

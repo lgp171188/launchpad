@@ -44,7 +44,6 @@ class CommentPushingExternalBugTracker(ExternalBugTracker):
 
 
 class TestCheckwatchesConfig(TestCase):
-
     layer = ZopelessDatabaseLayer
     base_url = "http://www.example.com/"
 

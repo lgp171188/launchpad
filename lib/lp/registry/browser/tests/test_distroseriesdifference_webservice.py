@@ -17,7 +17,6 @@ from lp.testing.layers import AppServerLayer
 
 
 class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
-
     layer = AppServerLayer
 
     def test_get_difference(self):

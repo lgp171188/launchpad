@@ -22,7 +22,6 @@ from lp.services.webapp.vocabulary import NamedSQLObjectVocabulary
 
 
 class ProcessorVocabulary(NamedSQLObjectVocabulary):
-
     displayname = "Select a processor"
     _table = Processor
     _orderBy = "name"

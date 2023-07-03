@@ -51,7 +51,6 @@ class ArchiveFilesystemInfo:
     def __init__(
         self, root, distroseries, component, arch=None, source_only=False
     ):
-
         # Holds the distribution information
         self.distroseries = distroseries
         self.component = component
@@ -224,7 +223,6 @@ class PackagesMap:
         # Iterate over ArchComponentItems instance to cover
         # all components in all architectures.
         for info_set in arch_component_items:
-
             # Run over the source stanzas and store info in src_map. We
             # make just one source map (instead of one per architecture)
             # because most of them are the same for all architectures,

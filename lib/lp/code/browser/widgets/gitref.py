@@ -90,7 +90,6 @@ class GitRepositoryPickerWidget(VocabularyPickerWidget):
 
 @implementer(IMultiLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
 class GitRefWidget(BrowserWidget, InputWidget):
-
     template = ViewPageTemplateFile("templates/gitref.pt")
     _widgets_set_up = False
 
@@ -249,7 +248,6 @@ class GitRefWidget(BrowserWidget, InputWidget):
 
 
 class GitRefPickerWidget(VocabularyPickerWidget):
-
     __call__ = ViewPageTemplateFile("templates/gitref-picker.pt")
 
     @property

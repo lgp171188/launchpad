@@ -33,7 +33,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):

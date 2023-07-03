@@ -11,7 +11,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestGitRepositoryDelta(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_no_modification(self):

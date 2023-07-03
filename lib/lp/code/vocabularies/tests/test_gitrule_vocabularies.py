@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestGitPermissionsVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     expected_branch_values = [

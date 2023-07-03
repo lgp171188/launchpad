@@ -36,7 +36,6 @@ from lp.soyuz.interfaces.archive import IArchive
 
 @implementer(IMultiLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
 class SnapArchiveWidget(BrowserWidget, InputWidget):
-
     template = ViewPageTemplateFile("templates/snaparchive.pt")
     default_option = "primary"
     _widgets_set_up = False

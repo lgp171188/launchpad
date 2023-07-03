@@ -246,7 +246,6 @@ class MixinBaseLaunchpadServerTests:
 
 
 class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
@@ -876,7 +875,6 @@ class LaunchpadTransportTests:
 
 
 class TestLaunchpadTransportSync(LaunchpadTransportTests, TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def _ensureDeferred(self, function, *args, **kwargs):
@@ -904,7 +902,6 @@ class TestLaunchpadTransportSync(LaunchpadTransportTests, TestCase):
 
 
 class TestLaunchpadTransportAsync(LaunchpadTransportTests, TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def _ensureDeferred(self, function, *args, **kwargs):

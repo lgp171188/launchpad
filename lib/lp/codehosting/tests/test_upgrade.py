@@ -31,7 +31,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestUpgrader(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def prepare(self, format="pack-0.92", loomify_branch=False):

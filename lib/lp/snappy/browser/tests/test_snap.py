@@ -97,7 +97,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestSnapNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -122,7 +121,6 @@ class TestSnapNavigation(TestCaseWithFactory):
 
 
 class TestSnapViewsFeatureFlag(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_private_feature_flag_disabled(self):
@@ -143,7 +141,6 @@ class TestSnapViewsFeatureFlag(TestCaseWithFactory):
 
 
 class BaseTestSnapView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

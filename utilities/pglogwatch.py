@@ -119,7 +119,6 @@ class Watcher:
             self.feed(line)
 
     def feed(self, line):
-
         # Handle continuations of previous statement
         if line.startswith("\t"):
             if self.previous_process is not None:

@@ -13,7 +13,6 @@ from lp.services.webapp import canonical_url
 
 
 class CreateBotAccountScript(LaunchpadScript):
-
     description = "Create a bot account."
     output = None
 

@@ -50,7 +50,6 @@ from lp.testing.matchers import IsProxied, Provides, ProvidesAndIsProxied
 
 
 class TestFactory(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     # getOrMakeBinaryPackageName
@@ -686,7 +685,6 @@ class TestFactory(TestCaseWithFactory):
 
 
 class TestFactoryWithLibrarian(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     # makeBinaryPackageFile
@@ -913,7 +911,6 @@ class TestFactoryWithLibrarian(TestCaseWithFactory):
 
 
 class IsSecurityProxiedOrHarmlessTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_is_security_proxied_or_harmless__none(self):

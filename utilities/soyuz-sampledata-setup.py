@@ -453,7 +453,6 @@ def create_ppa(distribution, person, name):
 
 
 class SoyuzSampledataSetup(LaunchpadScript):
-
     description = "Set up fresh Ubuntu series and %s identity." % user_name
 
     def add_my_options(self):

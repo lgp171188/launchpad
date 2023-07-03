@@ -143,7 +143,6 @@ def compose_approval_conflict_notice(domain, templates_count, sample):
 
 @implementer(ITranslationImportQueueEntry)
 class TranslationImportQueueEntry(StormBase):
-
     __storm_table__ = "TranslationImportQueueEntry"
 
     id = Int(primary=True)

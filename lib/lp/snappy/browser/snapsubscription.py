@@ -119,7 +119,6 @@ class _SnapSubscriptionCreationView(RedirectToSnapMixin, LaunchpadFormView):
 
 
 class SnapSubscriptionAddView(_SnapSubscriptionCreationView):
-
     page_title = label = "Subscribe to snap recipe"
 
     @action("Subscribe")

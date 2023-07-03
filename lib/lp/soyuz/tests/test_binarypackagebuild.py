@@ -59,7 +59,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestBinaryPackageBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -236,7 +235,6 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
 
 
 class TestBuildUpdateDependencies(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def _setupSimpleDepwaitContext(self):
@@ -425,7 +423,6 @@ class TestBuildUpdateDependencies(TestCaseWithFactory):
 
 
 class BaseTestCaseWithThreeBuilds(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -457,7 +454,6 @@ class BaseTestCaseWithThreeBuilds(TestCaseWithFactory):
 
 
 class TestBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_getByBuildFarmJob_works(self):
@@ -706,7 +702,6 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
 
 
 class TestPostprocessCandidate(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeBuildJob(self, pocket="RELEASE"):
@@ -745,7 +740,6 @@ class TestPostprocessCandidate(TestCaseWithFactory):
 
 
 class TestCalculateScore(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeBuild(

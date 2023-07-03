@@ -10,7 +10,6 @@ from lp.testing.layers import YUITestLayer
 
 
 class SnappyYUIUnitTestCase(YUIUnitTestCase):
-
     layer = YUITestLayer
     suite_name = "SnappyYUIUnitTests"
 

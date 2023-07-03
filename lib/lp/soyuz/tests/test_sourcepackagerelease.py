@@ -12,7 +12,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestSourcePackageRelease(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_uploader_no_uploader(self):

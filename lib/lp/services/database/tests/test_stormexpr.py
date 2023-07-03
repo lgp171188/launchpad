@@ -73,7 +73,6 @@ class TestWithMaterializedRealDatabase(TestCase):
 
 
 class TestImmutablePgJSON(TestCase):
-
     layer = BaseLayer
 
     def setUpProperty(self, *args, **kwargs):

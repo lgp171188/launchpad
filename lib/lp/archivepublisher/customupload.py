@@ -315,7 +315,6 @@ class CustomUpload:
         assert self.tmpdir is not None, "Must extract tarfile first"
         extracted = False
         for dirpath, dirnames, filenames in os.walk(self.tmpdir):
-
             # Create symbolic links to directories.
             for dirname in dirnames:
                 sourcepath, basepath, destpath = self._buildInstallPaths(

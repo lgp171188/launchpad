@@ -28,7 +28,6 @@ def make_git_ref(test_case):
 
 
 class TestHasSnapsView(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -97,7 +96,6 @@ class TestHasSnapsView(WithScenarios, TestCaseWithFactory):
 
 
 class TestHasSnapsMenu(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     needs_git_hosting_fixture = False

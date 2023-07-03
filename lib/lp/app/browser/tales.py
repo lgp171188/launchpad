@@ -1053,7 +1053,6 @@ class SpecificationImageDisplayAPI(ObjectImageDisplayAPI):
         return '<span class="%s"></span>' % self.sprite_css()
 
     def badges(self):
-
         badges = ""
 
         if len(self._context.linked_branches) > 0:
@@ -1778,7 +1777,6 @@ class BranchSubscriptionFormatterAPI(CustomizableFormatter):
 
 
 class BranchMergeProposalFormatterAPI(CustomizableFormatter):
-
     _link_summary_template = _("%(title)s")
 
     def _link_summary_values(self):
@@ -1858,7 +1856,6 @@ class BugTaskFormatterAPI(CustomizableFormatter):
 
 
 class BugAttachmentFormatterAPI(CustomizableFormatter):
-
     final_traversable_names = dict(
         **CustomizableFormatter.final_traversable_names,
         attachment_link="attachment_link",

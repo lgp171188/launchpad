@@ -19,7 +19,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestXRefSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_create_sets_date_created(self):

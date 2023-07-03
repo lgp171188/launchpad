@@ -112,7 +112,6 @@ KEY_NOT_FOUND_BODY = (
 
 
 class LookUp(Resource):
-
     isLeaf = True
     permitted_actions = ["index", "get"]
 

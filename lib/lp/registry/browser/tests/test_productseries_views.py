@@ -20,7 +20,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestProductSeries(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_golang_meta_renders(self):
@@ -160,7 +159,6 @@ class TestProductSeriesHelp(TestCaseWithFactory):
 
 
 class TestWithBrowser(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_timeline_graph(self):

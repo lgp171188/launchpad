@@ -61,7 +61,6 @@ class FindReleasesTestCase(TestCase):
 
 
 class FindReleasesDBTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_findReleases_permissions(self):
@@ -93,7 +92,6 @@ class FindReleasesDBTestCase(TestCaseWithFactory):
 
 
 class GetFiltersTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_getFilters(self):
@@ -244,7 +242,6 @@ class HandleProductTestCase(TestCase):
 
 
 class HandleReleaseTestCase(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def create_tarball(self, file_name):

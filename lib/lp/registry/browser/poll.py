@@ -91,7 +91,6 @@ class PollActionNavigationMenu(PollEditNavigationMenu):
 
 
 class PollNavigation(Navigation):
-
     usedfor = IPoll
 
     @stepthrough("+option")
@@ -517,5 +516,4 @@ class PollOptionAddView(LaunchpadFormView):
 
 
 class TeamPollsView(PersonView):
-
     page_title = "Polls"

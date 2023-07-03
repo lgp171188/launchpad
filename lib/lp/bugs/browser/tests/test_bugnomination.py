@@ -174,7 +174,6 @@ class TestBugNominationView(TestCaseWithFactory):
 
 
 class TestBugEditLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     edit_link_matcher = soupmatchers.HTMLContains(

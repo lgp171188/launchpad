@@ -585,7 +585,6 @@ class CVE:
             )
 
             for uct_package_status in uct_package.statuses:
-
                 if uct_package_status.status not in cls.BUG_TASK_STATUS_MAP:
                     logger.warning(
                         "Can't find a suitable bug task status for %s",

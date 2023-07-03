@@ -8,7 +8,6 @@ from lp.testing import TestCase, layers
 
 
 class TestFeatureModel(TestCase):
-
     layer = layers.DatabaseFunctionalLayer
 
     def test_defaultEmptyCollection(self):

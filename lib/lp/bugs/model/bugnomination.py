@@ -39,7 +39,6 @@ from lp.services.features import getFeatureFlag
 
 @implementer(IBugNomination)
 class BugNomination(StormBase):
-
     __storm_table__ = "BugNomination"
 
     id = Int(primary=True)

@@ -19,7 +19,6 @@ from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 
 class ConvertPersonToTeamScript(LaunchpadScript):
-
     usage = "%prog <person-to-convert> <team-owner>"
 
     def main(self):

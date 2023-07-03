@@ -25,7 +25,6 @@ class CIBuildRecipientReason(RecipientReason):
 
 
 class CIBuildMailer(BaseMailer):
-
     app = "code"
 
     @classmethod

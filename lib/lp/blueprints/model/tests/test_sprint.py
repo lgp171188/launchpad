@@ -27,7 +27,6 @@ def list_result(sprint, filter=None, user=None):
 
 
 class TestSpecifications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -246,7 +245,6 @@ class TestSpecifications(TestCaseWithFactory):
 
 
 class TestSprintAttendancesSort(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_attendances(self):

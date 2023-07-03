@@ -17,7 +17,6 @@ from lp.translations.model.approver import TranslationBuildApprover
 
 
 class TestTranslationBuildApprover(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

@@ -141,7 +141,6 @@ class DistributionSourcePackageBreadcrumb(Breadcrumb):
 
 
 class DistributionSourcePackageFacets(StandardLaunchpadFacets):
-
     usedfor = IDistributionSourcePackage
     enable_only = [
         "overview",
@@ -186,7 +185,6 @@ class DistributionSourcePackageLinksMixin:
 class DistributionSourcePackageOverviewMenu(
     ApplicationMenu, DistributionSourcePackageLinksMixin
 ):
-
     usedfor = IDistributionSourcePackage
     facet = "overview"
     links = ["new_bugs", "open_questions"]
@@ -197,7 +195,6 @@ class DistributionSourcePackageBugsMenu(
     StructuralSubscriptionMenuMixin,
     DistributionSourcePackageLinksMixin,
 ):
-
     usedfor = IDistributionSourcePackage
     facet = "bugs"
 
@@ -210,7 +207,6 @@ class DistributionSourcePackageBugsMenu(
 
 
 class DistributionSourcePackageAnswersMenu(QuestionTargetAnswersMenu):
-
     usedfor = IDistributionSourcePackage
     facet = "answers"
 
@@ -229,7 +225,6 @@ class DistributionSourcePackageNavigation(
     StructuralSubscriptionTargetTraversalMixin,
     WebhookTargetNavigationMixin,
 ):
-
     usedfor = IDistributionSourcePackage
 
     @redirection("+editbugcontact")

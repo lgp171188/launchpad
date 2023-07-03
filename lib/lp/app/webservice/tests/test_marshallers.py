@@ -29,7 +29,6 @@ def ws_url(bug):
 
 
 class TestTextFieldMarshaller(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_unmarshall_obfuscated(self):
@@ -138,7 +137,6 @@ class TestWebServiceObfuscation(TestCaseWithFactory):
 
 
 class IInlineExample(Interface):
-
     person = PersonChoice(vocabulary="ValidPersonOrTeam")
 
     status = Choice(vocabulary=JobStatus)
@@ -158,7 +156,6 @@ def inline_example_from_dict(template):
 
 
 class TestInlineObjectFieldMarshaller(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_unmarshall(self):

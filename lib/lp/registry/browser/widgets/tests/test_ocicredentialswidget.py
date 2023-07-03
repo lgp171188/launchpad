@@ -24,7 +24,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestOCICredentialsWidget(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

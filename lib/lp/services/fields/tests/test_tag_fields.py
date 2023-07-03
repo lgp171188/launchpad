@@ -11,7 +11,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestTag(TestCase):
-
     layer = LaunchpadFunctionalLayer
     field = Tag()
 
@@ -59,7 +58,6 @@ class TestTag(TestCase):
 
 
 class TestSearchTag(TestTag):
-
     field = SearchTag()
 
     def test_negated_search_form(self):

@@ -15,7 +15,6 @@ from lp.services.fields import PersonChoice
 
 
 class IHasBugSupervisor(Interface):
-
     bug_supervisor = exported(
         PersonChoice(
             title=_("Bug Supervisor"),

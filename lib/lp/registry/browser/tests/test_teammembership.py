@@ -19,7 +19,6 @@ from lp.testing.views import create_view
 
 
 class TestTeamMenu(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

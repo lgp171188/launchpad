@@ -28,7 +28,6 @@ from lp.testing.script import run_script
 
 
 class MembershipNotificationJobTest(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -129,7 +128,6 @@ class MembershipNotificationJobTest(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_smoke_admining_team(self):

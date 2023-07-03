@@ -63,7 +63,6 @@ class FooToBar:
 
 
 class TestZopeAdapterFixture(TestCase):
-
     layer = BaseLayer
 
     def test_register_and_unregister(self):
@@ -109,12 +108,10 @@ class TestZopeAdapterFixture(TestCase):
 
 @implementer(IMailDelivery)
 class FakeMailer:
-
     pass
 
 
 class TestZopeUtilityFixture(TestCase):
-
     layer = BaseLayer
 
     def getMailer(self):
@@ -269,7 +266,6 @@ class TestRunCapturingOutput(TestCase):
 
 
 class TestCaptureOopsNoRabbit(TestCase):
-
     # Need CA for subscription.
     layer = BaseLayer
 
@@ -286,7 +282,6 @@ class TestCaptureOopsNoRabbit(TestCase):
 
 
 class TestCaptureOopsRabbit(TestCase):
-
     # Has rabbit + CA.
     layer = LaunchpadLayer
 

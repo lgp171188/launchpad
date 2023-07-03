@@ -21,7 +21,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 class RetryDepwaitTunableLoop(TunableLoop):
-
     # We don't write too much, and it's important that we're timely.
     # Ignore the replication lag and long transaction checks by using a
     # basic LoopTuner.

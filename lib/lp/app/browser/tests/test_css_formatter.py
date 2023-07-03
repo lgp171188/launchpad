@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestCSSFormatter(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_select(self):

@@ -13,7 +13,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestFAQWebService(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_representation(self):

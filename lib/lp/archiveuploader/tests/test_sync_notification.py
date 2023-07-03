@@ -53,7 +53,6 @@ class FakeChangesFile:
 
 
 class TestSyncNotification(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makePersonWithEmail(self):

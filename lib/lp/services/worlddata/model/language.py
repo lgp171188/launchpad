@@ -35,7 +35,6 @@ from lp.services.worlddata.interfaces.language import (
 
 @implementer(ILanguage)
 class Language(SQLBase):
-
     _table = "Language"
 
     code = StringCol(dbName="code", notNull=True, unique=True)

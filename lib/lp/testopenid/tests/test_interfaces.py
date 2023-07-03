@@ -11,7 +11,6 @@ from lp.testopenid.interfaces.server import ITestOpenIDApplication
 
 
 class TestInterfaces(TestCaseWithFactory):
-
     layer = FunctionalLayer
 
     def test_ITestOpenIDApplication_implementation(self):

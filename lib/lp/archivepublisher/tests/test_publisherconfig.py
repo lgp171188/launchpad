@@ -70,7 +70,6 @@ class TestPublisherConfig(TestCaseWithFactory):
 
 
 class TestPublisherConfigSecurity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_only_admin(self):

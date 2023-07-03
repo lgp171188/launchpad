@@ -151,7 +151,6 @@ class ExecuteLoop:
 
 
 class WipeSeriesTranslationsScript(LaunchpadScript):
-
     description = "Wipe translations for a series."
 
     def add_my_options(self):

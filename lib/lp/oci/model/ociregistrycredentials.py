@@ -66,7 +66,6 @@ def url_validator(allowed_schemes):
 
 @implementer(IOCIRegistryCredentials)
 class OCIRegistryCredentials(StormBase):
-
     __storm_table__ = "OCIRegistryCredentials"
 
     id = Int(primary=True)

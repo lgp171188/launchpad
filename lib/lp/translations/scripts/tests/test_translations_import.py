@@ -27,7 +27,6 @@ class OutrageousSystemError(SystemError):
 
 
 class TestTranslationsImport(TestCaseWithFactory):
-
     layer = LaunchpadScriptLayer
 
     def setUp(self):

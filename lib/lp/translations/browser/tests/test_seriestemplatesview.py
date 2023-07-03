@@ -19,7 +19,6 @@ from lp.translations.browser.productseries import ProductSeriesTemplatesView
 
 
 class SeriesTemplatesViewScenario:
-
     # The view class to test.
     view_class = None
 

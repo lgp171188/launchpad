@@ -34,7 +34,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForCIBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -48,7 +47,6 @@ class TestCanonicalUrlForCIBuild(TestCaseWithFactory):
 
 
 class TestCIBuildOperations(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -229,7 +227,6 @@ class TestCIBuildOperations(BrowserTestCase):
 
 
 class TestCIBuildView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_files(self):

@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestProductSeries(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     @staticmethod

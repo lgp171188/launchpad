@@ -114,7 +114,6 @@ class TestNotificationsBase:
 
 
 class TestNotificationRequest(TestNotificationsBase, TestCase):
-
     layer = FunctionalLayer
 
     def test_provides_interface(self):
@@ -161,7 +160,6 @@ class TestNotificationRequest(TestNotificationsBase, TestCase):
 
 
 class TestNotificationResponse(TestNotificationsBase, TestCase):
-
     layer = FunctionalLayer
 
     def test_provides_interface(self):
@@ -338,7 +336,6 @@ class TestNotificationResponseTextEscaping(TestNotificationsBase, TestCase):
 
 
 class TestNotificationList(TestNotificationsBase, TestCase):
-
     layer = FunctionalLayer
 
     def test_empty(self):

@@ -40,7 +40,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestDistributionNavigation(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def assertRedirects(self, url, expected_url):

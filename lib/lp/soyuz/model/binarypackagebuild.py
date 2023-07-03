@@ -1204,6 +1204,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def getStatusSummaryForBuilds(self, builds):
         """See `IBinaryPackageBuildSet`."""
+
         # Create a small helper function to collect the builds for a given
         # list of build states:
         def collect_builds(*states):
@@ -1511,7 +1512,6 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
 
 @implementer(IMacaroonIssuer)
 class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "binary-package-build"
     issuable_via_authserver = True
 

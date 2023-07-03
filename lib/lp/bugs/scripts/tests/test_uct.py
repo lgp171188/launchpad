@@ -30,7 +30,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestUCTRecord(TestCase):
-
     maxDiff = None
 
     def test_load_save(self):
@@ -173,7 +172,6 @@ class TestUCTRecord(TestCase):
 
 
 class TestCVE(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     maxDiff = None
 
@@ -508,7 +506,6 @@ class TestCVE(TestCaseWithFactory):
 
 
 class TestUCTImporterExporter(TestCaseWithFactory):
-
     maxDiff = None
     layer = ZopelessDatabaseLayer
 

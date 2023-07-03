@@ -565,7 +565,6 @@ class MaintenanceMessage:
 
 
 class LaunchpadRootFacets(StandardLaunchpadFacets):
-
     usedfor = ILaunchpadRoot
     enable_only = [
         "overview",
@@ -689,7 +688,6 @@ class LoginStatus:
 
 
 class LaunchpadRootNavigation(Navigation):
-
     usedfor = ILaunchpadRoot
 
     @stepto("support")
@@ -1185,7 +1183,6 @@ class IAppFrontPageSearchForm(Interface):
 
 
 class AppFrontPageSearchView(LaunchpadFormView):
-
     schema = IAppFrontPageSearchForm
     custom_widget_scope = ProjectScopeWidget
 

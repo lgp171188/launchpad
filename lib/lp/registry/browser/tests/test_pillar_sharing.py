@@ -46,7 +46,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class SharingBaseTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     pillar_type = None
@@ -274,7 +273,6 @@ class PillarSharingDetailsMixin:
 class TestProductSharingDetailsView(
     SharingBaseTestCase, PillarSharingDetailsMixin
 ):
-
     pillar_type = "product"
 
     def setUp(self):
@@ -285,7 +283,6 @@ class TestProductSharingDetailsView(
 class TestDistributionSharingDetailsView(
     SharingBaseTestCase, PillarSharingDetailsMixin
 ):
-
     pillar_type = "distribution"
 
     def setUp(self):

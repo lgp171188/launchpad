@@ -73,7 +73,6 @@ class LocalTestHelper(TestCaseWithFactory):
 
 
 class TestPackageTranslationsUploadJob(LocalTestHelper):
-
     layer = LaunchpadZopelessLayer
 
     def test_job_implements_IPackageTranslationsUploadJob(self):

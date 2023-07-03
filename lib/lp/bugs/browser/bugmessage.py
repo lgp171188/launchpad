@@ -53,7 +53,6 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
         return "%s/+addcomment" % canonical_url(self.context)
 
     def validate(self, data):
-
         # Ensure either a comment or filecontent or a URL was provided,
         # but only if no errors have already been noted.
         if len(self.errors) == 0:
@@ -113,7 +112,6 @@ class BugMessageAddFormView(LaunchpadFormView, BugAttachmentContentCheck):
         attachment_description = data.get("attachment_description")
 
         if file_:
-
             # Slashes in filenames cause problems, convert them to dashes
             # instead.
             filename = file_.filename.replace("/", "-")

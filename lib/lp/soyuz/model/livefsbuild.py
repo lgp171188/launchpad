@@ -447,7 +447,6 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
 
 @implementer(IMacaroonIssuer)
 class LiveFSBuildMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "livefs-build"
     issuable_via_authserver = True
 

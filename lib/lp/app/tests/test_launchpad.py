@@ -16,7 +16,6 @@ from lp.testing.layers import FunctionalLayer
 
 
 class PrivacyTestCase(TestCase):
-
     layer = FunctionalLayer
 
     def test_init(self):
@@ -29,7 +28,6 @@ class PrivacyTestCase(TestCase):
 
 
 class ExceptionPrivacyTestCase(TestCase):
-
     layer = FunctionalLayer
 
     def test_exception(self):

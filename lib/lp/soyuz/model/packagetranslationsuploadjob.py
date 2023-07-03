@@ -70,7 +70,6 @@ def _filter_ubuntu_translation_file(filename):
 class PackageTranslationsUploadJobDerived(
     BaseRunnableJob, metaclass=EnumeratedSubclass
 ):
-
     config = config.IPackageTranslationsUploadJobSource
 
     def __init__(self, job):

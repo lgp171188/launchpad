@@ -685,7 +685,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
 
     def attachOopses(self):
         if len(self.oopses) > 0:
-            for (i, report) in enumerate(self.oopses):
+            for i, report in enumerate(self.oopses):
                 content = Content(
                     UTF8_TEXT,
                     partial(
@@ -1071,7 +1071,6 @@ class WebServiceTestCase(TestCaseWithFactory):
 
 
 class AbstractYUITestCase(TestCase):
-
     layer = None  # type: Type[BaseLayer]
     suite_name = ""
     # 30 seconds for the suite.
@@ -1182,7 +1181,6 @@ class AbstractYUITestCase(TestCase):
 
 
 class YUIUnitTestCase(AbstractYUITestCase):
-
     _testMethodName = "checkResults"
 
     def initialize(self, test_path):

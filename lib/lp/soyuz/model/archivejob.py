@@ -150,7 +150,6 @@ class ArchiveJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 @implementer(IPackageUploadNotificationJob)
 @provider(IPackageUploadNotificationJobSource)
 class PackageUploadNotificationJob(ArchiveJobDerived):
-
     class_job_type = ArchiveJobType.PACKAGE_UPLOAD_NOTIFICATION
 
     config = config.IPackageUploadNotificationJobSource
@@ -287,7 +286,6 @@ class ScannedArtifact:
 @implementer(ICIBuildUploadJob)
 @provider(ICIBuildUploadJobSource)
 class CIBuildUploadJob(ArchiveJobDerived):
-
     class_job_type = ArchiveJobType.CI_BUILD_UPLOAD
 
     user_error_types = (ScanException,)

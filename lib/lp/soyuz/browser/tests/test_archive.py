@@ -25,7 +25,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestArchiveIndexView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_index_page_without_packages(self):
@@ -49,7 +48,6 @@ class TestArchiveIndexView(TestCaseWithFactory):
 
 
 class TestArchiveEditView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -197,7 +195,6 @@ class TestArchiveEditView(TestCaseWithFactory):
 
 
 class TestArchiveCopyPackagesView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_query_count(self):

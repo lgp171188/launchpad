@@ -186,7 +186,6 @@ class TestBugCommentRepresentation(TestCaseWithFactory):
 
 
 class TestBugScaling(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_attachments_query_counts_constant(self):
@@ -265,7 +264,6 @@ class TestBugScaling(TestCaseWithFactory):
 
 
 class TestBugMessages(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -359,7 +357,6 @@ class TestPostBugWithLargeCollections(TestCaseWithFactory):
 
 
 class TestErrorHandling(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_add_duplicate_bugtask_for_project_gives_bad_request(self):
@@ -425,7 +422,6 @@ class TestErrorHandling(TestCaseWithFactory):
 
 
 class BugSetTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeAPITarget(self, bug_policy):
@@ -481,7 +477,6 @@ class BugSetTestCase(TestCaseWithFactory):
 
 
 class TestBugDateLastUpdated(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def make_old_bug(self):

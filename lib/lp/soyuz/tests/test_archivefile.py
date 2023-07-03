@@ -33,7 +33,6 @@ def read_library_file(library_file):
 
 
 class TestArchiveFile(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_new(self):

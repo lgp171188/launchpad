@@ -45,7 +45,6 @@ from lp.testing.views import create_initialized_view
 
 
 class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_provides_conversation(self):
@@ -409,7 +408,6 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
 
 class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def number_of_request_diff_texts(self, html_or_soup):

@@ -350,7 +350,6 @@ class SpecificationAttributeWebserviceTests(TestCaseWithFactory):
 
 
 class SpecificationMutationTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_set_information_type(self):
@@ -569,7 +568,6 @@ class IHasSpecificationsTests(TestCaseWithFactory):
 
 
 class TestSpecificationSubscription(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_subscribe(self):
@@ -636,7 +634,6 @@ class TestSpecificationSubscription(TestCaseWithFactory):
 
 
 class TestSpecificationBugLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_bug_linking(self):
@@ -713,7 +710,6 @@ class TestSpecificationBugLinks(TestCaseWithFactory):
 
 
 class TestSpecificationGoalHandling(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

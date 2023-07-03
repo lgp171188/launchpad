@@ -35,7 +35,6 @@ class OCIRecipeDistroArchSeriesVocabulary(StormVocabularyBase):
 
 
 class OCIRegistryCredentialsVocabulary(StormVocabularyBase):
-
     _table = OCIRegistryCredentials
 
     def toTerm(self, obj):

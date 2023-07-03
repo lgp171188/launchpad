@@ -8,7 +8,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestProjectBranches(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

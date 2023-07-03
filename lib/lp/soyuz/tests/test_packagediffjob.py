@@ -27,7 +27,6 @@ from lp.testing.script import run_script
 
 
 class TestPackageDiffJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeJob(self):

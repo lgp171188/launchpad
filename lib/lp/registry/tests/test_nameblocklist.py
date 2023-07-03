@@ -50,7 +50,6 @@ class TestNameBlocklist(TestCaseWithFactory):
         return bool(blocklisted)
 
     def test_name_blocklist_match(self):
-
         # A name that is not blocklisted returns NULL/None
         self.assertIsNone(self.name_blocklist_match("bar"))
 
@@ -120,7 +119,6 @@ class TestNameBlocklist(TestCaseWithFactory):
 
 
 class TestNameBlocklistSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -372,6 +372,7 @@ def readonly_settings(message, interface):
 
     When you write, the message is raised in a NotImplementedError.
     """
+
     # We will make a class that has properties for each field on the
     # interface (we expect every name on the interface to correspond to a
     # zope.schema field).  Each property will have a getter that will
@@ -5217,7 +5218,6 @@ class SSHKeySet:
 
 @implementer(IWikiName)
 class WikiName(SQLBase, HasOwnerMixin):
-
     _table = "WikiName"
 
     person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
@@ -5245,7 +5245,6 @@ class WikiNameSet:
 
 @implementer(IJabberID)
 class JabberID(SQLBase, HasOwnerMixin):
-
     _table = "JabberID"
     _defaultOrder = ["jabberid"]
 

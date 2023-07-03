@@ -279,7 +279,6 @@ class TestGetPersonOrTeam(TestCaseWithFactory):
 
 
 class Testget_contact_email_addresses(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_person_with_hidden_email(self):

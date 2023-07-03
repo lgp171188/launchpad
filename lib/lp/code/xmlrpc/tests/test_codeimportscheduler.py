@@ -23,7 +23,6 @@ from lp.xmlrpc.faults import NoSuchCodeImportJob
 
 
 class TestCodeImportSchedulerAPI(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

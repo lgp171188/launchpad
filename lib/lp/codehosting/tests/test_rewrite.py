@@ -29,7 +29,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, DatabaseLayer
 
 
 class TestBranchRewriter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

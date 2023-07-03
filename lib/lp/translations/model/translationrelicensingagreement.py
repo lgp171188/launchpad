@@ -20,7 +20,6 @@ from lp.translations.interfaces.translationrelicensingagreement import (
 
 @implementer(ITranslationRelicensingAgreement)
 class TranslationRelicensingAgreement(StormBase):
-
     __storm_table__ = "TranslationRelicensingAgreement"
 
     id = Int(primary=True)

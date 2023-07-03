@@ -100,7 +100,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class WithVCSScenarios(WithScenarios):
-
     scenarios = [
         ("bzr", {"git": False}),
         ("git", {"git": True}),
@@ -700,7 +699,6 @@ class TestMergeProposalGetComment(TestCase):
 
 
 class TestMergeProposalSetCommentVisibility(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_anonymous(self):
@@ -1190,7 +1188,6 @@ class TestMergeProposalNotification(WithVCSScenarios, TestCaseWithFactory):
 
 
 class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getWebhookTarget(self, branch):
@@ -1746,7 +1743,6 @@ class TestBranchMergeProposalDeletion(TestCaseWithFactory):
 
 
 class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2390,7 +2386,6 @@ class TestBranchMergeProposalNominateReviewer(
 
 
 class TestBranchMergeProposalResubmit(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_resubmit(self):
@@ -2653,7 +2648,6 @@ class TestScheduleDiffUpdates(TestCaseWithFactory):
 
 
 class TestNextPreviewDiffJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_returns_none_if_job_not_pending(self):
@@ -2696,7 +2690,6 @@ class TestNextPreviewDiffJob(TestCaseWithFactory):
 
 
 class TestRevisionEndDate(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_revision_end_date_active(self):
@@ -2720,7 +2713,6 @@ class TestRevisionEndDate(TestCaseWithFactory):
 
 
 class TestGetRevisionsSinceReviewStart(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertRevisionGroups(self, bmp, expected_groups):
@@ -2792,7 +2784,6 @@ class TestGetRevisionsSinceReviewStart(TestCaseWithFactory):
 
 
 class TestBranchMergeProposalGetIncrementalDiffs(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_getIncrementalDiffs(self):
@@ -2839,7 +2830,6 @@ class TestBranchMergeProposalGetIncrementalDiffs(TestCaseWithFactory):
 
 
 class TestGetUnlandedSourceBranchRevisions(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_getUnlandedSourceBranchRevisions(self):
@@ -2860,7 +2850,6 @@ class TestGetUnlandedSourceBranchRevisions(TestCaseWithFactory):
 
 
 class TestBranchMergeProposalInlineComments(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

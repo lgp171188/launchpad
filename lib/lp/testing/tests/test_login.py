@@ -30,7 +30,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestLoginHelpers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getLoggedInPerson(self):

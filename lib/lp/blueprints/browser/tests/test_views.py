@@ -25,7 +25,6 @@ from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
 
 class TestAssignments(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

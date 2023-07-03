@@ -437,7 +437,6 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
 
 
 class TestDifferenceTypeExpression(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def selectDifferenceType(self, parent_version=None, derived_version=None):

@@ -139,7 +139,6 @@ class BranchBreadcrumb(NameBreadcrumb):
 
 
 class BranchNavigation(WebhookTargetNavigationMixin, Navigation):
-
     usedfor = IBranch
 
     @stepthrough("+bug")
@@ -392,7 +391,6 @@ class BranchView(
     HasSnapsViewMixin,
     CodeImportTargetMixin,
 ):
-
     feed_types = (BranchFeedLink,)
 
     @property
@@ -642,7 +640,6 @@ class BranchView(
 
 
 class BranchRescanView(LaunchpadEditFormView):
-
     schema = Interface
     field_names = []
     next_url = None
@@ -1425,7 +1422,6 @@ class RegisterBranchMergeProposalView(LaunchpadFormView):
 
 @implementer(IBrowserPublisher)
 class BranchDiffView(DataDownloadView):
-
     content_type = "text/x-patch"
 
     def __init__(self, context, request, new, old=None):

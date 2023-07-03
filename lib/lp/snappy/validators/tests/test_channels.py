@@ -8,7 +8,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestChannelsValidator(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_channels_validator_valid(self):

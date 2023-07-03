@@ -24,7 +24,6 @@ from lp.services.webapp.interfaces import (
 
 @implementer(ISingleLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
 class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
-
     template = ViewPageTemplateFile("templates/snapbuildchannels.pt")
     hint = False
     _widgets_set_up = False

@@ -478,7 +478,6 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
 
 
 class TestDistroSeriesDerivationPortlet(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     @property
@@ -641,7 +640,6 @@ class TestMilestoneBatchNavigatorAttribute(TestCaseWithFactory):
 
 
 class TestDistroSeriesAddView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -695,7 +693,6 @@ class TestDistroSeriesAddView(TestCaseWithFactory):
 
 
 class TestDistroSeriesInitializeView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_init(self):
@@ -2839,7 +2836,6 @@ class DistroSeriesUniquePackagesPageTestCase(
 
 
 class TestDistroSeriesEditView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_edit_full_functionality_sets_datereleased(self):

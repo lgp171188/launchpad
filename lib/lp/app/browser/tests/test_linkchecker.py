@@ -16,7 +16,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestLinkCheckerAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     BRANCH_URL_TEMPLATE = "/+code/%s"

@@ -121,7 +121,6 @@ class TestPublishingSet(BaseTestCaseWithThreeBuilds):
 
 
 class TestSourcePackagePublishingHistory(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_ancestry(self):
@@ -240,7 +239,6 @@ class TestSourcePackagePublishingHistory(TestCaseWithFactory):
 
 
 class TestBinaryPackagePublishingHistory(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def getURLsForBPPH(self, bpph, include_meta=False):

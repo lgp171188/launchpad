@@ -13,7 +13,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestQuestionDirectSubscribers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_get_direct_subscribers(self):
@@ -63,7 +62,6 @@ class TestQuestionDirectSubscribers(TestCaseWithFactory):
 
 
 class TestQuestionInDirectSubscribers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_answerContactIsIndirectSubscriber(self):
@@ -108,7 +106,6 @@ class TestQuestionInDirectSubscribers(TestCaseWithFactory):
 
 
 class TestQuestionSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_expiredQuestions(self):

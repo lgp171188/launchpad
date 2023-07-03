@@ -70,7 +70,6 @@ class BugAttachmentContentCheck:
 
 
 class BugAttachmentSetNavigation(GetitemNavigation):
-
     usedfor = IBugAttachmentSet
 
 

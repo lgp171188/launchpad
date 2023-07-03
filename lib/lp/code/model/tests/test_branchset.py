@@ -27,7 +27,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestBranchSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_provides_IBranchSet(self):

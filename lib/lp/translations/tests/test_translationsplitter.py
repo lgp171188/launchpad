@@ -40,7 +40,6 @@ def make_shared_potmsgset(factory, splitter=None):
 
 
 class TestTranslationSplitter(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_findShared_requires_both(self):
@@ -170,7 +169,6 @@ class TestTranslationSplitter(TestCaseWithFactory):
 
 
 class TestTranslationTemplateSplitterBase:
-
     layer = ZopelessDatabaseLayer
 
     def getPOTMsgSetAndTemplateToSplit(self, splitter):

@@ -65,7 +65,6 @@ from lp.translations.interfaces.translationsoverview import (
 
 @implementer(IArchiveApplication)
 class ArchiveApplication:
-
     title = "Archive API"
 
 
@@ -85,7 +84,6 @@ class CodeImportSchedulerApplication:
 
 @implementer(IGitApplication)
 class GitApplication:
-
     title = "Git API"
 
 
@@ -357,5 +355,4 @@ class WebServiceApplication(ServiceRootResource):
 
 @implementer(ITestOpenIDApplication)
 class TestOpenIDApplication:
-
     title = "TestOpenIDApplication"

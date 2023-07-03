@@ -1048,7 +1048,6 @@ class TeamMailingListModerationView(MailingListTeamBaseView):
 
 
 class TeamMailingListArchiveView(LaunchpadView):
-
     label = "Mailing list archive"
 
     def __init__(self, context, request):
@@ -1239,7 +1238,6 @@ class ProposedTeamMembersEditView(LaunchpadFormView):
 
 
 class TeamBrandingView(BrandingChangeView):
-
     schema = ITeam
     field_names = ["icon", "logo", "mugshot"]
 
@@ -1259,7 +1257,6 @@ class ITeamMember(Interface):
 
 
 class TeamMemberAddView(LaunchpadFormView):
-
     schema = ITeamMember
     label = "Select the new member"
     # XXX: jcsackett 5.7.2011 bug=799847 The assignment of 'false' to the vars
@@ -1335,7 +1332,6 @@ class TeamMemberAddView(LaunchpadFormView):
 
 
 class TeamNavigation(PersonNavigation):
-
     usedfor = ITeam
 
     @stepthrough("+poll")
@@ -1375,7 +1371,6 @@ class TeamBreadcrumb(Breadcrumb):
 
 @implementer(IBrowserPublisher)
 class TeamMembershipSelfRenewalView(LaunchpadFormView):
-
     # This is needed for our breadcrumbs, as there's no <browser:page>
     # declaration for this view.
     __name__ = "+self-renewal"
@@ -1789,7 +1784,6 @@ class TeamOverviewMenu(
     HasOCIRecipesMenuMixin,
     HasCharmRecipesMenuMixin,
 ):
-
     usedfor = ITeam
     facet = "overview"
     links = [
@@ -2266,7 +2260,6 @@ class TeamLeaveView(LaunchpadFormView, TeamJoinMixin):
 
 
 class TeamReassignmentView(ObjectReassignmentView):
-
     ownerOrMaintainerAttr = "teamowner"
     schema = ITeamReassignment
 

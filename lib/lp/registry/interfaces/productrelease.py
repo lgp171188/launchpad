@@ -135,7 +135,6 @@ class UpstreamFileType(DBEnumeratedType):
 
 
 class ProductReleaseVersionField(ContentNameField):
-
     errormessage = _(
         "%s is already in use by another version in this release series."
     )

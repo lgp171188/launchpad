@@ -14,7 +14,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestIsolation(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def createTransaction(self):

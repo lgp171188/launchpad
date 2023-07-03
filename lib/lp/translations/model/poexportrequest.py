@@ -198,7 +198,6 @@ class POExportRequestSet:
 
 @implementer(IPOExportRequest)
 class POExportRequest(StormBase):
-
     __storm_table__ = "POExportRequest"
 
     id = Int(primary=True)

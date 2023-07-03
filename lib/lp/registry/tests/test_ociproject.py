@@ -35,7 +35,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestOCIProject(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):
@@ -189,7 +188,6 @@ class TestOCIProject(TestCaseWithFactory):
 
 
 class TestOCIProjectSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):

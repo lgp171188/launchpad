@@ -190,7 +190,6 @@ class UnrestrictedStructuralSubscriptionTestBase(
 class TestStructuralSubscriptionForDistro(
     RestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -266,7 +265,6 @@ class TestStructuralSubscriptionForDistro(
 class TestStructuralSubscriptionForProduct(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -277,7 +275,6 @@ class TestStructuralSubscriptionForProduct(
 class TestStructuralSubscriptionForDistroSourcePackage(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -289,7 +286,6 @@ class TestStructuralSubscriptionForDistroSourcePackage(
 class TestStructuralSubscriptionForMilestone(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -301,7 +297,6 @@ class TestStructuralSubscriptionForMilestone(
 class TestStructuralSubscriptionForDistroSeries(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -313,7 +308,6 @@ class TestStructuralSubscriptionForDistroSeries(
 class TestStructuralSubscriptionForProjectGroup(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -325,7 +319,6 @@ class TestStructuralSubscriptionForProjectGroup(
 class TestStructuralSubscriptionForProductSeries(
     UnrestrictedStructuralSubscriptionTestBase, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -477,7 +470,6 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
 
 
 class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

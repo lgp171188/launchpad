@@ -74,7 +74,6 @@ def create_tasks(factory):
 
 
 class TestBugSummaryRebuild(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_get_bugsummary_targets(self):
@@ -191,7 +190,6 @@ class TestBugSummaryRebuild(TestCaseWithFactory):
 
 
 class TestGetBugSummaryRows(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_get_bugsummary_rows(self):
@@ -208,7 +206,6 @@ class TestGetBugSummaryRows(TestCaseWithFactory):
 
 
 class TestCalculateBugSummaryRows(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_public_untagged(self):
@@ -498,7 +495,6 @@ class TestCalculateBugSummaryRows(TestCaseWithFactory):
 
 
 class TestFormatTarget(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_product(self):

@@ -77,12 +77,10 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
 
 
 class TranslationGroupVocabulary(NamedStormVocabulary):
-
     _table = TranslationGroup
 
 
 class TranslationMessageVocabulary(SQLObjectVocabularyBase):
-
     _table = TranslationMessage
     _orderBy = "date_created"
 

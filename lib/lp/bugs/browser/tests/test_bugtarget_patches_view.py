@@ -12,7 +12,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestBugTargetPatchCountBase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

@@ -29,7 +29,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class SourcePackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def make_spph_for(self, person):
@@ -166,7 +165,6 @@ class SourcePackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
 
 
 class BinaryPackagePublishingHistoryWebserviceTests(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def make_bpph_for(self, person):

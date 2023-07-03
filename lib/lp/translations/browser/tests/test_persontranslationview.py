@@ -396,7 +396,6 @@ class TestPersonTranslationView(TestCaseWithFactory):
 
 
 class TestPersonTranslationViewPermissions(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -155,7 +155,6 @@ class DistroSeriesNavigation(
     BugTargetTraversalMixin,
     StructuralSubscriptionTargetTraversalMixin,
 ):
-
     usedfor = IDistroSeries
 
     @stepthrough("+lang")
@@ -234,7 +233,6 @@ class DistroSeriesBreadcrumb(Breadcrumb):
 class DistroSeriesOverviewMenu(
     ApplicationMenu, StructuralSubscriptionMenuMixin
 ):
-
     usedfor = IDistroSeries
     facet = "overview"
 
@@ -319,7 +317,6 @@ class DistroSeriesOverviewMenu(
 
 
 class DistroSeriesBugsMenu(ApplicationMenu, StructuralSubscriptionMenuMixin):
-
     usedfor = IDistroSeries
     facet = "bugs"
 
@@ -342,7 +339,6 @@ class DistroSeriesBugsMenu(ApplicationMenu, StructuralSubscriptionMenuMixin):
 class DistroSeriesSpecificationsMenu(
     NavigationMenu, HasSpecificationsMenuMixin
 ):
-
     usedfor = IDistroSeries
     facet = "specifications"
     links = [
@@ -716,7 +712,6 @@ class DistroSeriesAdminView(LaunchpadEditFormView, SeriesStatusMixin):
 
 
 class IDistroSeriesAddForm(Interface):
-
     name = copy_field(
         IDistroSeries["name"],
         description=_("The name of this series as used for URLs."),

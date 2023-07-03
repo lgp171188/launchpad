@@ -9,7 +9,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestBuilderResourceVocabulary(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_provides_interface(self):

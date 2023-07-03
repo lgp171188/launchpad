@@ -54,7 +54,6 @@ class FakePlacelessLoginSource:
 
 
 class TestPlacelessAuth(TestCase):
-
     layer = FunctionalLayer
 
     def setUp(self):

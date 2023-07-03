@@ -119,7 +119,6 @@ class FakeChangesFile:
 
 
 class TestDSCFileWithDatabase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_checkFiles_verifies_additional_hashes(self):
@@ -312,7 +311,6 @@ class BaseTestSourceFileVerification(TestCase):
 
 
 class Test10SourceFormatVerification(BaseTestSourceFileVerification):
-
     format = SourcePackageFormat.FORMAT_1_0
 
     wrong_files_error = (
@@ -378,7 +376,6 @@ class Test10SourceFormatVerification(BaseTestSourceFileVerification):
 
 
 class Test30QuiltSourceFormatVerification(BaseTestSourceFileVerification):
-
     format = SourcePackageFormat.FORMAT_3_0_QUILT
 
     wrong_files_error = (
@@ -428,7 +425,6 @@ class Test30QuiltSourceFormatVerification(BaseTestSourceFileVerification):
 
 
 class Test30NativeSourceFormatVerification(BaseTestSourceFileVerification):
-
     format = SourcePackageFormat.FORMAT_3_0_NATIVE
 
     wrong_files_error = "foo_1.dsc: must have only a tar.*."

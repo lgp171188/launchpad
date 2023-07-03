@@ -12,7 +12,6 @@ from lp.testing.layers import DatabaseLayer
 
 
 class TestSourcePackageNameSet(TestCase):
-
     layer = DatabaseLayer
 
     def test_invalid_name(self):

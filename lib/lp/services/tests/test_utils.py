@@ -57,7 +57,6 @@ class TestAutoDecorateMetaClass(TestCase):
         # All of the decorators passed along with AutoDecorateMetaClass
         # are applied as decorators in reverse order.
         class AutoDecoratedClass(metaclass=AutoDecorateMetaClass):
-
             __decorators = (self.decorator_1, self.decorator_2)
 
             def method_a(s):

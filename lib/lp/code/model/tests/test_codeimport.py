@@ -56,7 +56,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestCodeImportBase(WithScenarios, TestCaseWithFactory):
-
     scenarios = [
         (
             "Branch",

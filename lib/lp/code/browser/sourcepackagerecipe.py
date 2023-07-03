@@ -633,7 +633,6 @@ USE_ARCHIVE_VOCABULARY = SimpleVocabulary(
 
 
 class ISourcePackageAddSchema(ISourcePackageEditSchema):
-
     daily_build_archive = Choice(
         vocabulary="TargetPPAs",
         title="Daily build archive",

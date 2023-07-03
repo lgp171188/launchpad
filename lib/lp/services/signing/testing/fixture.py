@@ -22,7 +22,6 @@ from lp.testing.factory import ObjectFactory
 
 
 class SigningServiceFixture(TacTestFixture):
-
     tacfile = os.path.join(os.path.dirname(__file__), "fakesigning.tac")
     pidfile = None
     logfile = None

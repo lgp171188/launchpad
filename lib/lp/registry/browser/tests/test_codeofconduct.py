@@ -17,7 +17,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestSignedCodeOfConductAckView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -51,7 +50,6 @@ class TestSignedCodeOfConductAckView(TestCaseWithFactory):
 
 
 class SignCodeOfConductTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

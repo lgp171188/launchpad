@@ -12,7 +12,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestNotificationRecipientSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_add_doesnt_break_on_private_teams(self):

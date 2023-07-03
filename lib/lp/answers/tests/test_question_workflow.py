@@ -612,6 +612,7 @@ class LinkFAQTestCase(BaseAnswerTrackerWorkflowTestCase):
         one of OPEN, NEEDSINFO or ANSWERED and check that it returns a
         valid IQuestionMessage.
         """
+
         # Do not check the edited_fields attributes since it
         # changes based on departure state.
         def checkFAQ(message):

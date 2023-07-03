@@ -14,7 +14,6 @@ from lp.testing.matchers import Provides
 
 
 class TestPillarNameSet(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_search_correctly_ranks_by_aliases(self):
@@ -50,7 +49,6 @@ class TestPillarNameSet(TestCaseWithFactory):
 
 
 class TestPillarPerson(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements(self):

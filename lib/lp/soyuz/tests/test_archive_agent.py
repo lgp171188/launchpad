@@ -16,7 +16,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestSoftwareCenterAgent(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getArchiveSubscriptionURL(self):

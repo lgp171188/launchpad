@@ -14,7 +14,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestBuildInfoFile(PackageUploadFileTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def getBaseBuildInfo(self):
@@ -54,7 +53,7 @@ class TestBuildInfoFile(PackageUploadFileTestCase):
     def test_properties(self):
         buildinfo = self.getBaseBuildInfo()
         changes = self.getBaseChanges()
-        for (arch, is_sourceful, is_binaryful, is_archindep) in (
+        for arch, is_sourceful, is_binaryful, is_archindep in (
             ("source", True, False, False),
             ("all", False, True, True),
             ("i386", False, True, False),

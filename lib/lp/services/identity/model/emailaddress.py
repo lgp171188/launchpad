@@ -42,7 +42,6 @@ class HasOwnerMixin:
 
 @implementer(IEmailAddress)
 class EmailAddress(SQLBase, HasOwnerMixin):
-
     _table = "EmailAddress"
     _defaultOrder = ["email"]
 

@@ -641,7 +641,6 @@ class TestCreatePersonAndEmail(TestCase):
 
 
 class TestPersonSetBranchCounts(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -665,7 +664,6 @@ class TestPersonSetBranchCounts(TestCaseWithFactory):
 
 
 class TestPersonSetEnsurePerson(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
     email_address = "testing.ensure.person@example.com"
     displayname = "Testing ensurePerson"
@@ -708,7 +706,6 @@ class TestPersonSetEnsurePerson(TestCaseWithFactory):
 
 
 class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -823,7 +820,6 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
 
 
 class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -990,7 +986,6 @@ class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
 
 
 class TestPersonGetUsernameForSSO(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1026,7 +1021,6 @@ class TestPersonGetUsernameForSSO(TestCaseWithFactory):
 
 
 class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1163,7 +1157,6 @@ class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
 
 
 class TestPersonGetSSHKeysForSSO(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1198,7 +1191,6 @@ class TestPersonGetSSHKeysForSSO(TestCaseWithFactory):
 
 
 class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1275,7 +1267,6 @@ class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
 
 
 class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1365,7 +1356,6 @@ class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
 
 
 class TestGDPRUserRetrieval(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

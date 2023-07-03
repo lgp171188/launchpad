@@ -118,7 +118,6 @@ class GitHostingClientMixin:
 
 
 class TestBranchMergeProposalContextMenu(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_add_comment_enabled_when_not_mergeable(self):
@@ -132,7 +131,6 @@ class TestBranchMergeProposalContextMenu(TestCaseWithFactory):
 
 
 class TestDecoratedCodeReviewVoteReference(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_commentEnabled(self):
@@ -1573,7 +1571,6 @@ class TestResubmitBrowserGit(GitHostingClientMixin, BrowserTestCase):
 
 
 class TestBranchMergeProposalView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -2137,7 +2134,6 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
 
 
 class TestBranchMergeProposalBrowserView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2610,7 +2606,6 @@ class TestBranchMergeProposalChangeStatusView(TestCaseWithFactory):
 class TestCodeReviewCommentVisibility(
     WithScenarios, BrowserTestCase, TestMessageVisibilityMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -2639,7 +2634,6 @@ class TestCodeReviewCommentVisibility(
 class TestCodeReviewCommentHideControls(
     WithScenarios, BrowserTestCase, TestHideMessageControlMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -2753,7 +2747,6 @@ class TestBranchMergeCandidateView(TestCaseWithFactory):
 
 
 class TestBranchMergeProposal(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def test_conversation(self):
@@ -2928,7 +2921,6 @@ class TestBranchMergeProposal(BrowserTestCase):
 
 
 class TestBranchMergeProposalRescanView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def test_rescan_with_git(self):
@@ -3068,7 +3060,6 @@ class TestLatestProposalsForEachBranchGit(
 
 
 class TestBranchMergeProposalLinkBugViewMixin:
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

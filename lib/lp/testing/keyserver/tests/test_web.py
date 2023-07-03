@@ -26,7 +26,6 @@ class RegularCallbackExecuted(Exception):
 
 
 class TestWebResources(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUpKeysDirectory(self):

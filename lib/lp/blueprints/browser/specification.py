@@ -475,7 +475,6 @@ class NewSpecificationFromSprintView(NewSpecificationFromNonTargetView):
 
 
 class SpecificationNavigation(Navigation):
-
     usedfor = ISpecification
 
     @stepthrough("+subscription")
@@ -513,14 +512,12 @@ class SpecificationEditLinksMixin:
 
 
 class SpecificationActionMenu(NavigationMenu, SpecificationEditLinksMixin):
-
     usedfor = ISpecification
     facet = "specifications"
     links = ("edit", "supersede", "retarget")
 
 
 class SpecificationContextMenu(ContextMenu, SpecificationEditLinksMixin):
-
     usedfor = ISpecification
     links = [
         "edit",
@@ -864,7 +861,6 @@ class SpecificationEditSchema(ISpecification):
 
 
 class SpecificationEditView(LaunchpadEditFormView):
-
     schema = SpecificationEditSchema
     field_names = ["name", "title", "specurl", "summary", "whiteboard"]
     next_url = None
@@ -1071,12 +1067,10 @@ class SpecificationGoalDecideView(LaunchpadFormView):
 
 
 class ISpecificationRetargetingSchema(Interface):
-
     target = copy_field(ISpecification["target"], readonly=False)
 
 
 class SpecificationRetargetingView(LaunchpadFormView):
-
     schema = ISpecificationRetargetingSchema
     field_names = ["target"]
     label = _("Move this blueprint to a different project")
@@ -1385,7 +1379,6 @@ class SpecGraph:
 
 
 class SpecificationSprintAddView(LaunchpadFormView):
-
     schema = ISprintSpecification
     label = _("Propose specification for meeting agenda")
     field_names = ["sprint"]
@@ -1564,7 +1557,6 @@ here = os.path.dirname(__file__)
 
 
 class SpecificationTreePNGView(SpecificationTreeGraphView):
-
     fail_over_image_path = os.path.join(
         config.root,
         "lib",

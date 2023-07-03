@@ -63,7 +63,6 @@ class DBTestCase(TestCase):
 
 @implementer(IMacaroonIssuer)
 class FakeMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "test"
     _root_secret = "test"
     _verified_user = NO_USER

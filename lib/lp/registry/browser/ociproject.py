@@ -108,7 +108,6 @@ def getPillarFieldName(pillar):
 
 
 class OCIProjectAddView(LaunchpadFormView):
-
     schema = IOCIProjectName
     field_names = ["name"]
     next_url = None
@@ -164,7 +163,6 @@ class OCIProjectFormatterAPI(CustomizableFormatter):
 class OCIProjectNavigation(
     TargetDefaultVCSNavigationMixin, BugTargetTraversalMixin, Navigation
 ):
-
     usedfor = IOCIProject
 
     @stepthrough("+series")
@@ -185,7 +183,6 @@ class OCIProjectBreadcrumb(Breadcrumb):
 
 
 class OCIProjectFacets(StandardLaunchpadFacets):
-
     usedfor = IOCIProject
     enable_only = [
         "overview",

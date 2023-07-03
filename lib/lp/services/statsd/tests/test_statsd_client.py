@@ -13,7 +13,6 @@ from lp.testing.layers import ZopelessLayer
 
 
 class TestClientConfiguration(TestCase):
-
     layer = ZopelessLayer
 
     def test_accessible_via_utility(self):

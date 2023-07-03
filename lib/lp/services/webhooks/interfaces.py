@@ -99,7 +99,6 @@ class ValidWebhookEventTypeVocabulary(SimpleVocabulary):
 
 @exported_as_webservice_entry(as_of="beta")
 class IWebhook(Interface):
-
     id = Int(title=_("ID"), readonly=True, required=True)
 
     target = exported(
@@ -216,7 +215,6 @@ class IWebhookSet(Interface):
 
 @exported_as_webservice_entry(as_of="beta")
 class IWebhookTarget(Interface):
-
     webhooks = exported(
         doNotSnapshot(
             CollectionField(

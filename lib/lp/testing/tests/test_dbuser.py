@@ -14,7 +14,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestDbUser(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def get_current_dbuser(self):

@@ -64,7 +64,6 @@ class BugCommentStub:
 
 
 class PersonStub:
-
     ids = count(1)
 
     def __init__(self):
@@ -218,7 +217,6 @@ class TestGroupCommentsWithActivities(TestCase):
 
 
 class TestBugCommentVisibility(BrowserTestCase, TestMessageVisibilityMixin):
-
     layer = DatabaseFunctionalLayer
 
     def makeHiddenMessage(self, comment_owner=None):
@@ -240,7 +238,6 @@ class TestBugCommentVisibility(BrowserTestCase, TestMessageVisibilityMixin):
 
 
 class TestBugHideCommentControls(BrowserTestCase, TestHideMessageControlMixin):
-
     layer = DatabaseFunctionalLayer
 
     def getContext(self, comment_owner=None):
@@ -283,7 +280,6 @@ class TestBugHideCommentControls(BrowserTestCase, TestHideMessageControlMixin):
 
 
 class TestBugCommentMicroformats(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_bug_comment_metadata(self):
@@ -307,7 +303,6 @@ class TestBugCommentMicroformats(BrowserTestCase):
 
 
 class TestBugCommentImplementsInterface(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_bug_comment_implements_interface(self):
@@ -346,7 +341,6 @@ def make_bug_comment(factory, *args, **kwargs):
 
 
 class TestBugCommentInBrowser(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_excessive_comments_redirect_to_download(self):

@@ -18,7 +18,6 @@ from lp.testing.factory import LaunchpadObjectFactory
 
 
 class BugImportScript(LaunchpadScript):
-
     description = "Import bugs into Launchpad from XML."
     loglevel = logging.INFO
 

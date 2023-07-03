@@ -25,7 +25,6 @@ from lp.testing.matchers import HasQueryCount, Provides
 
 
 class TestPersonSubscriptionInfo(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -19,7 +19,6 @@ from lp.translations.model.approver import TranslationBranchApprover
 
 
 class TestTranslationBranchApprover(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

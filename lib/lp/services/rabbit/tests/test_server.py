@@ -14,7 +14,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestRabbitServer(TestCase):
-
     layer = BaseLayer
 
     def test_service_config(self):

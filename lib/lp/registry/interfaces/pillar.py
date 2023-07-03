@@ -57,7 +57,6 @@ class IPillar(IHeadingContext):
 
 
 class IHasAliases(Interface):
-
     aliases = List(
         title=_("Aliases"),
         required=False,

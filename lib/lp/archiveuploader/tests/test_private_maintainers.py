@@ -9,7 +9,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestPrivateMaintainers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_private_team_maintainer(self):

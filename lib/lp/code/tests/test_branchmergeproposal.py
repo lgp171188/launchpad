@@ -98,7 +98,6 @@ class TestEditMergeProposal(PermissionTest):
 
 
 class TestViewMergeProposal(PermissionTest):
-
     layer = DatabaseFunctionalLayer
 
     @with_celebrity_logged_in("admin")

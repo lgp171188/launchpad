@@ -667,7 +667,6 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
 @implementer(IMacaroonIssuer)
 class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "snap-build"
     issuable_via_authserver = True
 

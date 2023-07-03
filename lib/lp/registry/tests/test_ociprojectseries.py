@@ -20,7 +20,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestOCIProjectSeries(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):

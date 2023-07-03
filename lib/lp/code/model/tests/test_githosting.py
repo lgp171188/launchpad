@@ -74,7 +74,6 @@ class MatchesURL(AfterPreprocessing):
 
 
 class TestGitHostingClient(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

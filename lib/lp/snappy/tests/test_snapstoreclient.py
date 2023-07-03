@@ -250,7 +250,6 @@ class RequestMatches(Matcher):
 
 
 class TestSnapStoreClient(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

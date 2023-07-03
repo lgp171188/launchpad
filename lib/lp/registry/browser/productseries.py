@@ -500,7 +500,6 @@ class ProductSeriesDetailedDisplayView(ProductSeriesView):
 
 
 class IPackagingForm(IPackaging):
-
     sourcepackagename = copy_field(
         IPackaging["sourcepackagename"],
         vocabularyName="DistributionSourcePackage",

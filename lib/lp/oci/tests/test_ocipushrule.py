@@ -20,7 +20,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -73,7 +72,6 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
 
 
 class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

@@ -92,7 +92,6 @@ from lp.translations.model.potemplate import POTemplate
 
 
 class POTemplateNavigation(Navigation):
-
     usedfor = IPOTemplate
 
     def traverse(self, name):
@@ -175,7 +174,6 @@ class POTemplateSubsetView(RedirectionView):
 class POTemplateView(
     LaunchpadView, TranslationsMixin, TranslationSharingDetailsMixin
 ):
-
     SHOW_RELATED_TEMPLATES = 4
 
     label = "Translation status"
@@ -531,7 +529,6 @@ class POTemplateViewPreferred(POTemplateView):
 
 
 class IPOTemplateEditForm(IPOTemplate):
-
     sourcepackagename = copy_field(
         IPOTemplate["sourcepackagename"],
         vocabularyName="DistributionSourcePackage",
@@ -879,7 +876,6 @@ class POTemplateExportView(BaseExportView):
 
 @implementer(ICanonicalUrlData)
 class POTemplateSubsetURL:
-
     rootsite = "mainsite"
     path = "+pots"
 
@@ -901,7 +897,6 @@ class POTemplateSubsetURL:
 
 @implementer(ICanonicalUrlData)
 class POTemplateURL:
-
     rootsite = "translations"
 
     def __init__(self, context):
@@ -931,12 +926,10 @@ class POTemplateURL:
 
 
 class POTemplateSetNavigation(GetitemNavigation):
-
     usedfor = IPOTemplateSet
 
 
 class POTemplateSubsetNavigation(Navigation):
-
     usedfor = IPOTemplateSubset
 
     def traverse(self, name):

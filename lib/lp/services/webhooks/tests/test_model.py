@@ -39,7 +39,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestWebhook(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_modifiedevent_sets_date_last_modified(self):
@@ -74,7 +73,6 @@ class TestWebhook(TestCaseWithFactory):
 
 
 class TestWebhookPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def get_target_owner(self, target):
@@ -140,7 +138,6 @@ class TestWebhookPermissions(TestCaseWithFactory):
 
 
 class TestWebhookSetBase:
-
     layer = DatabaseFunctionalLayer
 
     def get_target_owner(self, target):
@@ -420,7 +417,6 @@ class TestWebhookSetMergeProposalBase(TestWebhookSetBase):
 class TestWebhookSetGitRepository(
     TestWebhookSetMergeProposalBase, TestCaseWithFactory
 ):
-
     event_type = "git:push:0.1"
 
     def makeTarget(self, project=None, **kwargs):
@@ -448,7 +444,6 @@ class TestWebhookSetGitRepository(
 class TestWebhookSetBranch(
     TestWebhookSetMergeProposalBase, TestCaseWithFactory
 ):
-
     event_type = "bzr:push:0.1"
 
     def makeTarget(self, project=None, **kwargs):
@@ -472,7 +467,6 @@ class TestWebhookSetBranch(
 
 
 class TestWebhookSetSnap(TestWebhookSetBase, TestCaseWithFactory):
-
     event_type = "snap:build:0.1"
 
     def makeTarget(self, owner=None, **kwargs):
@@ -482,7 +476,6 @@ class TestWebhookSetSnap(TestWebhookSetBase, TestCaseWithFactory):
 
 
 class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
-
     event_type = "livefs:build:0.1"
 
     def makeTarget(self, owner=None, **kwargs):
@@ -498,7 +491,6 @@ class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
 
 
 class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
-
     event_type = "oci-recipe:build:0.1"
 
     def makeTarget(self, owner=None, **kwargs):
@@ -512,7 +504,6 @@ class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
 
 
 class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
-
     event_type = "charm-recipe:build:0.1"
 
     def makeTarget(self, owner=None, **kwargs):
@@ -531,7 +522,6 @@ class TestWebhookSetCharmRecipe(TestWebhookSetBase, TestCaseWithFactory):
 
 
 class TestWebhookSetBugBase(TestWebhookSetBase):
-
     event_type = "bug:0.1"
 
     def test__checkVisibility_private_artifact(self):

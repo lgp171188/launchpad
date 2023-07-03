@@ -546,7 +546,6 @@ class TestQueueItemsView(TestCaseWithFactory):
 
 
 class TestCompletePackageUpload(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeCompletePackageUpload(

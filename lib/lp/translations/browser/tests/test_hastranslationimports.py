@@ -10,7 +10,6 @@ from lp.testing.pages import find_tags_by_class
 
 
 class TestHasTranslationImportsView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_https(self):

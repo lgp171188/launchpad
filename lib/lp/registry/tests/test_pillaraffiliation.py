@@ -19,7 +19,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestPillarAffiliation(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_distro_badge_icon(self):
@@ -188,7 +187,6 @@ class _TestBugTaskorBranchMixin:
 class TestBugTaskPillarAffiliation(
     _TestBugTaskorBranchMixin, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used(self):
@@ -244,7 +242,6 @@ class TestBugTaskPillarAffiliation(
 class TestBranchPillarAffiliation(
     _TestBugTaskorBranchMixin, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used(self):
@@ -287,7 +284,6 @@ class TestBranchPillarAffiliation(
 
 
 class CodeReviewVotePillarAffiliationTestCase(TestBranchPillarAffiliation):
-
     layer = DatabaseFunctionalLayer
 
     def makeCodeReviewVote(self, branch):
@@ -332,7 +328,6 @@ class CodeReviewVotePillarAffiliationTestCase(TestBranchPillarAffiliation):
 
 
 class TestDistroSeriesPillarAffiliation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used(self):
@@ -374,7 +369,6 @@ class TestDistroSeriesPillarAffiliation(TestCaseWithFactory):
 
 
 class TestProductSeriesPillarAffiliation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used(self):
@@ -433,7 +427,6 @@ class TestProductSeriesPillarAffiliation(TestCaseWithFactory):
 
 
 class TestQuestionPillarAffiliation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used_for_product(self):
@@ -598,7 +591,6 @@ class TestQuestionPillarAffiliation(TestCaseWithFactory):
 
 
 class TestSpecificationPillarAffiliation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_correct_pillars_are_used_for_product(self):

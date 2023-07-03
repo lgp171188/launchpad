@@ -17,7 +17,6 @@ from lp.services.verification.model.logintoken import LoginToken
 
 @implementer(IGPGKey)
 class GPGKey(StormBase):
-
     __storm_table__ = "GPGKey"
     __storm_order__ = ["owner", "keyid"]
 

@@ -35,7 +35,6 @@ class UpdateRemoteComponentsFromBugzilla(LaunchpadCronScript):
 
 
 if __name__ == "__main__":
-
     updater = UpdateRemoteComponentsFromBugzilla(
         "updatebugzillaremotecomponents",
         dbuser=config.updatebugzillaremotecomponents.dbuser,

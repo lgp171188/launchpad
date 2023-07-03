@@ -18,7 +18,6 @@ from lp.translations.browser.potemplate import (
 
 
 class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

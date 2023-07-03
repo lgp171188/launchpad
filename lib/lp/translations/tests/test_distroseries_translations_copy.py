@@ -29,7 +29,6 @@ class EarlyExit(Exception):
 
 
 class TestDistroSeriesTranslationsCopying(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_does_not_overwrite_existing_pofile(self):

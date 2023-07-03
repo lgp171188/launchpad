@@ -20,7 +20,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestDeathRow(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def getTestPublisher(self, distroseries):

@@ -85,7 +85,6 @@ class TeamMembershipRecipientReason(RecipientReason):
 
 
 class TeamMembershipMailer(BaseMailer):
-
     app = "registry"
 
     @classmethod

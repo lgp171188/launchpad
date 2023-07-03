@@ -472,7 +472,6 @@ class CodeImportJobWorkflow:
 
 @implementer(IMacaroonIssuer)
 class CodeImportJobMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "code-import-job"
 
     @property

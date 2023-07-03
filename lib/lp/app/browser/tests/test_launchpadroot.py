@@ -127,7 +127,6 @@ class TestLaunchpadRootNavigation(TestCaseWithFactory):
 
 
 class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

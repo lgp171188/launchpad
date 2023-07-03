@@ -9,7 +9,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestOCIBranchValidator(TestCase):
-
     layer = BaseLayer
 
     def test_validate_oci_branch_name_with_leading_slash(self):

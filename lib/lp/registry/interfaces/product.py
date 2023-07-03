@@ -465,7 +465,6 @@ class IProductModerateRestricted(Interface):
 
 
 class IProductPublic(Interface):
-
     id = Int(title=_("The Project ID"))
 
     def userCanView(user):
@@ -1190,7 +1189,6 @@ patch_reference_property(IProductRelease, "product", IProduct)
 
 @exported_as_webservice_collection(IProduct)
 class IProductSet(Interface):
-
     title = Attribute("The set of Products registered in the Launchpad")
 
     people = Attribute(

@@ -2161,7 +2161,6 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
 
 @implementer(IHugeVocabulary)
 class DistributionSourcePackageVocabulary(FilteredVocabularyBase):
-
     displayname = "Select a package"
     step_title = "Search by name"
 

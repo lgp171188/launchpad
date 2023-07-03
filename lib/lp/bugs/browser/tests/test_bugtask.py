@@ -87,7 +87,6 @@ def getFeedViewCache(target, feed_cls):
 
 
 class TestBugTaskView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_rendered_query_counts_constant_with_team_memberships(self):
@@ -366,7 +365,6 @@ class TestBugTaskView(TestCaseWithFactory):
 
 
 class TestBugTasksNominationsView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -627,7 +625,6 @@ class TestBugTasksNominationsView(TestCaseWithFactory):
 
 
 class TestBugTasksTableView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1474,7 +1471,6 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
 
 
 class TestBugTaskEditViewAssigneeField(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2098,7 +2094,6 @@ class TestProjectGroupBugs(TestCaseWithFactory, BugTaskViewTestMixin):
 
 
 class TestBugActivityItem(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setAttribute(self, obj, attribute, value):
@@ -2521,7 +2516,6 @@ def make_bug_task_listing_item(
 
 
 class TestBugTaskSearchListingView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     client_listing = soupmatchers.Tag(
@@ -2995,7 +2989,6 @@ class TestBugTaskExpirableListingView(BrowserTestCase):
 
 
 class TestBugListingBatchNavigator(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_mustache_listings_escaped(self):
@@ -3006,7 +2999,6 @@ class TestBugListingBatchNavigator(TestCaseWithFactory):
 
 
 class TestBugTaskListingItem(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_model(self):

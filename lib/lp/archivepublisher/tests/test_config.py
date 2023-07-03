@@ -27,7 +27,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestGetPubConfig(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -143,7 +142,6 @@ class TestGetPubConfig(TestCaseWithFactory):
 
 
 class TestGetPubConfigPPA(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -252,7 +250,6 @@ class TestGetPubConfigPPA(TestCaseWithFactory):
 
 
 class TestGetPubConfigPPACompatUefi(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -275,7 +272,6 @@ class TestGetPubConfigPPACompatUefi(TestCaseWithFactory):
 
 
 class TestGetPubConfigPPARepositoryFormatPython(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

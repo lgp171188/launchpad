@@ -690,7 +690,6 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
 
 
 class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -1086,7 +1085,6 @@ class TestDistroSeriesDifferenceJobPermissions(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_DerivedDistroseriesDifferenceJob(self):

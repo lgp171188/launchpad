@@ -19,7 +19,6 @@ from lp.testing.pages import find_tag_by_id
 class TestQuestionMessageVisibility(
     BrowserTestCase, TestMessageVisibilityMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     def makeHiddenMessage(self, comment_owner=None):
@@ -44,7 +43,6 @@ class TestQuestionMessageVisibility(
 class TestHideQuestionMessageControls(
     BrowserTestCase, TestHideMessageControlMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     control_text = "mark-spam-0"

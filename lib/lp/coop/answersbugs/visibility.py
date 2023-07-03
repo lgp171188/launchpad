@@ -13,7 +13,6 @@ from lp.testing.pages import find_tag_by_id
 
 
 class TestMessageVisibilityMixin:
-
     comment_text = "You can't see me."
     html_comment_text = html_escape(comment_text)
 
@@ -63,7 +62,6 @@ class TestMessageVisibilityMixin:
 
 
 class TestHideMessageControlMixin:
-
     control_text = "mark-spam-1"
 
     def getContext(self, comment_owner=None):

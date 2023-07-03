@@ -1843,5 +1843,4 @@ class DistroSeriesSet:
         if orderBy is not None:
             return DistroSeries.select(where_clause, orderBy=orderBy)
         else:
-
             return DistroSeries.select(where_clause)

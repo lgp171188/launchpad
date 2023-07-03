@@ -15,7 +15,6 @@ from lp.testing.pages import LaunchpadWebServiceCaller
 
 
 class TestXHTMLRepresentations(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_person(self):

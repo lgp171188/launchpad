@@ -758,7 +758,7 @@ class SerialScheduler(BaseScheduler):
 
     def run(self):
         jobs, self._jobs = self._jobs[:], []
-        for (func, args, kwargs) in jobs:
+        for func, args, kwargs in jobs:
             func(*args, **kwargs)
 
 

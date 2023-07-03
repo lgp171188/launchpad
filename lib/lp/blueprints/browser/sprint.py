@@ -91,7 +91,6 @@ class SprintFacets(StandardLaunchpadFacets):
 
 
 class SprintNavigation(Navigation):
-
     usedfor = ISprint
 
 
@@ -159,7 +158,6 @@ class SprintSpecificationsMenu(NavigationMenu, HasSpecificationsMenuMixin):
 
 
 class SprintSetNavigation(GetitemNavigation):
-
     usedfor = ISprintSet
 
 
@@ -170,13 +168,11 @@ class SprintSetBreadcrumb(Breadcrumb):
 
 
 class HasSprintsView(LaunchpadView):
-
     page_title = "Events"
 
 
 @implementer(IMajorHeadingView)
 class SprintView(HasSpecificationsView):
-
     # XXX Michael Nelson 20090923 bug=435255
     # This class inherits a label from HasSpecificationsView, which causes
     # a second h1 to display. But as this view implements IMajorHeadingView
@@ -335,7 +331,6 @@ class SprintAddView(LaunchpadFormView):
 
 
 class SprintBrandingView(BrandingChangeView):
-
     schema = ISprint
     # sabdfl 2007-03-28 deliberately leaving icon off the list, i think it
     # would be overkill, we can add it later if people ask for it
@@ -543,7 +538,6 @@ class SprintMeetingExportView(LaunchpadView):
         for spec in self.context.specifications(
             self.user, filter=[SpecificationFilter.ACCEPTED]
         ):
-
             # Skip sprints with no priority or less than LOW.
             if spec.priority < SpecificationPriority.UNDEFINED:
                 continue

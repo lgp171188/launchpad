@@ -17,7 +17,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestDistributionSourcePackageReleaseNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUpLatestBuildTests(self):

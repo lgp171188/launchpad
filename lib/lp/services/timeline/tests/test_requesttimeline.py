@@ -16,7 +16,6 @@ from lp.services.timeline.requesttimeline import (
 
 
 class TestRequestTimeline(testtools.TestCase):
-
     # These disabled tests are for the desired API using request annotations.
     # bug=623199 describes some issues with why this doesn't work.
     def disabled_test_new_request_get_request_timeline_works(self):

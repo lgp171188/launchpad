@@ -54,7 +54,6 @@ LOCATION_SCHEMES_ALLOWED = "http", "https", "mailto"
 
 
 class BugTrackerNameField(ContentNameField):
-
     errormessage = _("%s is already in use by another bugtracker.")
 
     @property

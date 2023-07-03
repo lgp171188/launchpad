@@ -9,7 +9,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class BugTagsWidgetTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def get_widget(self, bug_target):

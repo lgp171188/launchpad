@@ -58,7 +58,6 @@ from lp.services.webapp.vhosts import allvhosts
 
 
 class LoginTokenSetNavigation(GetitemNavigation):
-
     usedfor = ILoginTokenSet
 
 
@@ -167,7 +166,6 @@ class BaseTokenView:
 class ClaimTeamView(
     BaseTokenView, HasRenewalPolicyMixin, LaunchpadEditFormView
 ):
-
     schema = ITeam
     field_names = [
         "teamowner",
@@ -243,7 +241,6 @@ class ClaimTeamView(
 
 
 class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
-
     schema = IGPGKeyValidationForm
     field_names = []
     expected_token_types = (
@@ -408,7 +405,6 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
 
 
 class ValidateEmailView(BaseTokenView, LaunchpadFormView):
-
     schema = Interface
     field_names = []
     expected_token_types = (LoginTokenType.VALIDATEEMAIL,)
@@ -511,7 +507,6 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
 
 
 class ValidateTeamEmailView(ValidateEmailView):
-
     expected_token_types = (LoginTokenType.VALIDATETEAMEMAIL,)
     # The desired label is the same as ValidateEmailView.
 
@@ -521,7 +516,6 @@ class ValidateTeamEmailView(ValidateEmailView):
 
 
 class MergePeopleView(BaseTokenView, LaunchpadFormView):
-
     schema = Interface
     field_names = []
     expected_token_types = (LoginTokenType.ACCOUNTMERGE,)

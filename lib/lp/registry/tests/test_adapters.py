@@ -18,7 +18,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestAdapters(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_sourcepackage_to_distribution_dsp(self):

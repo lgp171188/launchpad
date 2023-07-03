@@ -13,7 +13,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestBranchMergeProposalDelta(TestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

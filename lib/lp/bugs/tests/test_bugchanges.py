@@ -31,7 +31,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestBugChanges(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

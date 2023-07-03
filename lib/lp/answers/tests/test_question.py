@@ -19,7 +19,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestQuestionSecurity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_title_and_description_writes(self):

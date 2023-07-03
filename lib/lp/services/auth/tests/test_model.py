@@ -37,7 +37,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestAccessToken(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_owner_can_edit(self):
@@ -169,7 +168,6 @@ class TestAccessToken(TestCaseWithFactory):
 
 
 class TestAccessTokenSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_new(self):
@@ -396,7 +394,6 @@ class TestAccessTokenSet(TestCaseWithFactory):
 
 
 class TestAccessTokenTargetBase:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

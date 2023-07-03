@@ -313,7 +313,7 @@ class VirtualHostRequestPublicationFactory:
             if port is not None:
                 try:
                     port = int(port)
-                except (ValueError):
+                except ValueError:
                     port = None
             if self.port != port:
                 return False
@@ -845,7 +845,6 @@ Zope3WidgetsUseIBrowserFormNGMonkeyPatch.install()
 
 
 class LaunchpadBrowserResponse(NotificationResponse, BrowserResponse):
-
     # Note that NotificationResponse defines a 'redirect' method which
     # needs to override the 'redirect' method in BrowserResponse
     def __init__(self, header_output=None, http_transaction=None):

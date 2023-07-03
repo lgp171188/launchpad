@@ -13,7 +13,6 @@ from lp.translations.scripts.import_queue_gardener import ImportQueueGardener
 
 
 class TestTranslationsImportApproval(TestCaseWithFactory):
-
     layer = LaunchpadScriptLayer
 
     def setUp(self):

@@ -26,7 +26,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestProcessAccepted(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.uploadqueue.dbuser
 
@@ -175,7 +174,6 @@ class TestProcessAccepted(TestCaseWithFactory):
         ]
 
         class UploadCheckingSynchronizer:
-
             commit_count = 0
 
             def beforeCompletion(inner_self, txn):

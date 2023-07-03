@@ -29,7 +29,6 @@ class FakeLanguage:
 
 @implementer(ILanguageSet)
 class FakeLanguageSet:
-
     _languages = {
         "ja": FakeLanguage("ja", 1),
         "es": FakeLanguage("es", 2),
@@ -98,7 +97,6 @@ class FakeLaunchBag:
 
 
 class TestPreferredOrRequestLanguages(TestCase):
-
     layer = FunctionalLayer
 
     def test_single_preferred_language(self):
@@ -159,7 +157,6 @@ class TestPreferredOrRequestLanguages(TestCase):
 
 
 class TestIsEnglishVariant(TestCase):
-
     layer = BaseLayer
 
     def test_fr(self):

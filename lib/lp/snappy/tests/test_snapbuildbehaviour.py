@@ -106,7 +106,6 @@ class FormatAsRfc3339TestCase(TestCase):
 
 
 class TestSnapBuildBehaviourBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

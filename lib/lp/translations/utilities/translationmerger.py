@@ -180,7 +180,6 @@ def bequeathe_flags(source_message, target_message, incumbents=None):
 
 
 class MessageSharingMerge(LaunchpadScript):
-
     template_set = None
 
     commit_count = 0

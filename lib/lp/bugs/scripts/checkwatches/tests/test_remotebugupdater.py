@@ -36,7 +36,6 @@ class ImportanceConvertingExternalBugTracker(TestExternalBugTracker):
 
 
 class RemoteBugUpdaterTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeUpdater(

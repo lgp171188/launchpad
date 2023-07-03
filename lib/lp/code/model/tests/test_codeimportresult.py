@@ -13,7 +13,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestCodeImportResult(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_provides_interface(self):

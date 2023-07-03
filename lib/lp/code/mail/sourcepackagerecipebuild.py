@@ -13,7 +13,6 @@ from lp.services.webapp import canonical_url
 
 
 class SourcePackageRecipeBuildMailer(BaseMailer):
-
     app = "code"
 
     @classmethod

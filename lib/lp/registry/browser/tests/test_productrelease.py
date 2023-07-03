@@ -11,7 +11,6 @@ from lp.testing.views import create_initialized_view
 
 
 class ProductReleaseAddDownloadFileViewTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def makeForm(self, file_name, file_release_type="CODETARBALL"):

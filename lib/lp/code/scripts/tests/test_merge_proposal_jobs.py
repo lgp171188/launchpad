@@ -18,7 +18,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class TestMergeProposalJobScript(DiffTestCase):
-
     layer = ZopelessAppServerLayer
 
     def test_script_runs(self):

@@ -21,7 +21,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestDistroSeriesBinaryPackage(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

@@ -79,7 +79,6 @@ def reconcile_access_for_artifacts(
 
 @implementer(IAccessArtifact)
 class AccessArtifact(StormBase):
-
     __storm_table__ = "AccessArtifact"
 
     id = Int(primary=True)
@@ -224,7 +223,6 @@ class AccessArtifact(StormBase):
 
 @implementer(IAccessPolicy)
 class AccessPolicy(StormBase):
-
     __storm_table__ = "AccessPolicy"
 
     id = Int(primary=True)
@@ -328,7 +326,6 @@ class AccessPolicy(StormBase):
 
 @implementer(IAccessPolicyArtifact)
 class AccessPolicyArtifact(StormBase):
-
     __storm_table__ = "AccessPolicyArtifact"
     __storm_primary__ = "abstract_artifact_id", "policy_id"
 
@@ -386,7 +383,6 @@ class AccessPolicyArtifact(StormBase):
 
 @implementer(IAccessArtifactGrant)
 class AccessArtifactGrant(StormBase):
-
     __storm_table__ = "AccessArtifactGrant"
     __storm_primary__ = "abstract_artifact_id", "grantee_id"
 
@@ -446,7 +442,6 @@ class AccessArtifactGrant(StormBase):
 
 @implementer(IAccessPolicyGrant)
 class AccessPolicyGrant(StormBase):
-
     __storm_table__ = "AccessPolicyGrant"
     __storm_primary__ = "policy_id", "grantee_id"
 
@@ -542,7 +537,7 @@ class AccessPolicyGrantFlat(StormBase):
             )
             .group_by(cls.grantee_id, cls.policy_id)
         )
-        for (person_id, policy_id, has_all, has_some) in result_set:
+        for person_id, policy_id, has_all, has_some in result_set:
             person = persons_by_id[person_id]
             policy = policies_by_id[policy_id]
             permissions_cache[person][policy] = (

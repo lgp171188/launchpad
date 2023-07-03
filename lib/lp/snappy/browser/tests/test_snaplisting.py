@@ -28,7 +28,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestSnapListing(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def assertSnapsLink(

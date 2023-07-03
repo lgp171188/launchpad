@@ -437,7 +437,6 @@ class TeamMembershipSet:
 
 @implementer(ITeamParticipation)
 class TeamParticipation(SQLBase):
-
     _table = "TeamParticipation"
 
     team = ForeignKey(dbName="team", foreignKey="Person", notNull=True)
@@ -631,6 +630,6 @@ def find_team_participations(people, teams=None):
         store = IStore(Person)
         rs = store.find((Person, Team), *conditions)
 
-        for (person, team) in rs:
+        for person, team in rs:
             add_team_to_result(person, team)
     return people_teams

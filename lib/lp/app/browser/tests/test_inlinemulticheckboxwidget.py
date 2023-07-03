@@ -25,7 +25,6 @@ class Alphabet(EnumeratedType):
 
 
 class TestInlineMultiCheckboxWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def _getWidget(self, **kwargs):

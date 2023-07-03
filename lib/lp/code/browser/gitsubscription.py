@@ -112,7 +112,6 @@ class _GitSubscriptionView(LaunchpadFormView):
 
 
 class GitSubscriptionAddView(_GitSubscriptionView):
-
     page_title = label = "Subscribe to repository"
 
     @action("Subscribe")

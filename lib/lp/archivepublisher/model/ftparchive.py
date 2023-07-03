@@ -889,7 +889,6 @@ class FTPArchiveHandler:
         # each of the distroseries we've touched
         for distroseries in self.distro.series:
             for pocket in PackagePublishingPocket.items:
-
                 if not fullpublish:
                     if not self.publisher.isDirty(distroseries, pocket):
                         self.log.debug(

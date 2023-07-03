@@ -26,7 +26,6 @@ from lp.soyuz.interfaces.packagediffjob import (
 @delegate_to(IPackageDiffJob)
 @provider(IPackageDiffJobSource)
 class PackageDiffJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
-
     config = config.IPackageDiffJobSource
 
     def __init__(self, job):

@@ -19,7 +19,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class StormExample(StormBase):
-
     __storm_table__ = "StormExample"
 
     id = Int(primary=True)
@@ -32,7 +31,6 @@ class StormExample(StormBase):
 
 
 class TestStormBase(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

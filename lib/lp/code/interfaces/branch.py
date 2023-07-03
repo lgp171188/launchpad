@@ -107,7 +107,6 @@ def get_blacklisted_hostnames():
 
 
 class BranchURIField(URIField):
-
     # XXX leonardr 2009-02-12 [bug=328588]:
     # This code should be removed once the underlying database restriction
     # is removed.

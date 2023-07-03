@@ -25,7 +25,6 @@ from lp.testing.views import create_initialized_view
 
 
 class Test_getWorkItemsDueBefore(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -190,7 +189,6 @@ class Test_getWorkItemsDueBefore(TestCaseWithFactory):
 
 
 class TestGenericWorkItem(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -254,7 +252,6 @@ class TestWorkItemContainer(TestCase):
 
 
 class TestPersonUpcomingWork(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -474,7 +471,6 @@ class TestPersonUpcomingWork(BrowserTestCase):
 
 
 class TestPersonUpcomingWorkView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

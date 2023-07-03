@@ -13,7 +13,6 @@ from lp.testing.publication import test_traverse
 
 
 class TestBugTaskTraversal(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_traversal_to_nonexistent_bugtask(self):

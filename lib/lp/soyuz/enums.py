@@ -868,7 +868,6 @@ class IndexCompressionType(DBEnumeratedType):
 
 
 class DistroArchSeriesFilterSense(DBEnumeratedType):
-
     INCLUDE = DBItem(
         1,
         """

@@ -697,7 +697,6 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
 
 class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 
@@ -827,7 +826,6 @@ class TestWorkerScannerWithLibrarian(TestCaseWithFactory):
 
 
 class TestPrefetchedBuilderFactory(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_get(self):
@@ -1021,7 +1019,6 @@ class FakeBuilddManager:
 
 
 class TestWorkerScannerWithoutDB(TestCase):
-
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest
 
@@ -1320,7 +1317,6 @@ class TestCancellationChecking(TestCaseWithFactory):
 
 
 class TestBuilddManager(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def _stub_out_scheduleNextScanCycle(self):
@@ -1386,7 +1382,6 @@ class TestBuilddManager(TestCase):
 
 
 class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -1850,7 +1845,6 @@ def is_file_growing(filepath, poll_interval=1, poll_repeat=10):
 
 
 class TestBuilddManagerScript(TestCaseWithFactory):
-
     layer = LaunchpadScriptLayer
 
     def testBuilddManagerRuns(self):

@@ -99,11 +99,11 @@ def fetch_team_participation_info(log):
         "SELECT team, person FROM TeamMembership"
         " WHERE status in %s" % quote(ACTIVE_STATES)
     )
-    for (team, person) in results:
+    for team, person in results:
         team_memberships[team].add(person)
     team_participations = defaultdict(set)
     results = slurp("SELECT team, person FROM TeamParticipation")
-    for (team, person) in results:
+    for team, person in results:
         team_participations[team].add(person)
 
     # Don't hold any locks.

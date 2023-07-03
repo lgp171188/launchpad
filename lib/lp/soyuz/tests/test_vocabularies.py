@@ -11,7 +11,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestPPAVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_toTerm_empty_description(self):

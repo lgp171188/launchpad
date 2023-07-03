@@ -261,7 +261,6 @@ class PersonAnswerContactForView(LaunchpadView):
 
 
 class PersonAnswersMenu(NavigationMenu):
-
     usedfor = IPerson
     facet = "answers"
     links = [

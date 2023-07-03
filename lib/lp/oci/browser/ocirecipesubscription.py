@@ -125,7 +125,6 @@ class _OCIRecipeSubscriptionCreationView(
 
 
 class OCIRecipeSubscriptionAddView(_OCIRecipeSubscriptionCreationView):
-
     page_title = label = "Subscribe to OCI recipe"
 
     @action("Subscribe")

@@ -40,7 +40,6 @@ class TimeoutException(Exception):
 
 
 class TestSystemErrorView(TestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def test_without_oops_id(self):
@@ -63,7 +62,6 @@ class TestSystemErrorView(TestCase):
 
 
 class TestDatabaseErrorViews(TestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def getHTTPError(self, url):

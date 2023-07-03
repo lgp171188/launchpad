@@ -156,7 +156,6 @@ def create_knit(test_case):
 
 
 class TestCodeImport(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -316,7 +315,6 @@ class TestBranchChanged(TestCaseWithFactory):
 
 
 class TestBranchJobViaCelery(TestCaseWithFactory):
-
     layer = CeleryBzrsyncdJobLayer
 
     def test_branchChanged_via_celery(self):
@@ -353,7 +351,6 @@ class TestBranchJobViaCelery(TestCaseWithFactory):
 
 
 class TestBranchWriteJobViaCelery(TestCaseWithFactory):
-
     layer = CeleryBranchWriteJobLayer
 
     def test_destroySelf_via_celery(self):
@@ -2247,7 +2244,6 @@ class BranchAddLandingTarget(TestCaseWithFactory):
 
 
 class TestLandingCandidates(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_private_branch(self):
@@ -3456,7 +3452,6 @@ class TestGetMergeProposalsWS(WebServiceTestCase):
 
 
 class TestGetMergeProposals(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3516,7 +3511,6 @@ class TestGetMergeProposals(TestCaseWithFactory):
 
 
 class TestScheduleDiffUpdates(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_scheduleDiffUpdates(self):
@@ -3679,7 +3673,6 @@ class TestGetBzrBranch(TestCaseWithFactory):
 
 
 class TestBranchGetBlob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_default_rev_unscanned(self):
@@ -3730,7 +3723,6 @@ class TestBranchGetBlob(TestCaseWithFactory):
 
 
 class TestBranchUnscan(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_unscan(self):

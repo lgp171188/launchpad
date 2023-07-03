@@ -35,7 +35,6 @@ def size_distance(sequence, item1, item2):
 
 
 class TestScrubPOFileTranslator(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def query_pofiletranslator(self, pofile, person):

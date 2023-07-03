@@ -29,7 +29,6 @@ def randomize_list(original_list):
 
 
 class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):
@@ -95,7 +94,6 @@ class DistroSeriesDifferenceCommentTestCase(TestCaseWithFactory):
 
 
 class TestDistroSeriesDifferenceCommentSource(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_implements_interface(self):

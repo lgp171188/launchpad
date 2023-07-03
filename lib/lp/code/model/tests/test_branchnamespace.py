@@ -1421,7 +1421,6 @@ class TestPersonalBranchNamespaceAllowedInformationTypes(TestCaseWithFactory):
 
 
 class BaseValidateNewBranchMixin:
-
     layer = DatabaseFunctionalLayer
 
     def _getNamespace(self, owner):

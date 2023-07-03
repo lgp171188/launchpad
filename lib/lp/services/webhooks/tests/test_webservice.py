@@ -461,7 +461,6 @@ class TestWebhookTargetBase:
 class TestWebhookTargetGitRepository(
     TestWebhookTargetBase, TestCaseWithFactory
 ):
-
     event_type = "git:push:0.1"
 
     def makeTarget(self):
@@ -469,7 +468,6 @@ class TestWebhookTargetGitRepository(
 
 
 class TestWebhookTargetBranch(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "bzr:push:0.1"
 
     def makeTarget(self):
@@ -477,7 +475,6 @@ class TestWebhookTargetBranch(TestWebhookTargetBase, TestCaseWithFactory):
 
 
 class TestWebhookTargetSnap(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "snap:build:0.1"
 
     def makeTarget(self):
@@ -486,7 +483,6 @@ class TestWebhookTargetSnap(TestWebhookTargetBase, TestCaseWithFactory):
 
 
 class TestWebhookTargetLiveFS(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "livefs:build:0.1"
 
     def makeTarget(self):
@@ -498,7 +494,6 @@ class TestWebhookTargetLiveFS(TestWebhookTargetBase, TestCaseWithFactory):
 
 
 class TestWebhookTargetOCIRecipe(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "oci-recipe:build:0.1"
 
     def makeTarget(self):
@@ -508,7 +503,6 @@ class TestWebhookTargetOCIRecipe(TestWebhookTargetBase, TestCaseWithFactory):
 
 
 class TestWebhookTargetCharmRecipe(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "charm-recipe:build:0.1"
 
     def makeTarget(self):
@@ -523,7 +517,6 @@ class TestWebhookTargetCharmRecipe(TestWebhookTargetBase, TestCaseWithFactory):
 
 
 class TestWebhookTargetProduct(TestWebhookTargetBase, TestCaseWithFactory):
-
     event_type = "bug:0.1"
 
     def makeTarget(self):
@@ -534,7 +527,6 @@ class TestWebhookTargetProduct(TestWebhookTargetBase, TestCaseWithFactory):
 class TestWebhookTargetDistribution(
     TestWebhookTargetBase, TestCaseWithFactory
 ):
-
     event_type = "bug:0.1"
 
     def makeTarget(self):
@@ -545,7 +537,6 @@ class TestWebhookTargetDistribution(
 class TestWebhookTargetDistributionSourcePackage(
     TestWebhookTargetBase, TestCaseWithFactory
 ):
-
     event_type = "bug:0.1"
 
     def makeTarget(self):

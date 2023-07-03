@@ -29,7 +29,6 @@ class TestVocabulary(FilteredVocabularyBase):
 
 
 class FilteredVocabularyBaseTestCase(TestCaseWithFactory):
-
     layer = ZopelessLayer
 
     def test_searchForTerms_filter_parameter_as_string(self):

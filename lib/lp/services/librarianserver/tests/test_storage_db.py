@@ -141,7 +141,6 @@ class LibrarianStorageDBTests(TestCase):
 
 
 class LibrarianStorageSwiftTests(TestCase):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 

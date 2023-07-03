@@ -106,7 +106,6 @@ class MockBuilderFactory(BaseBuilderFactory):
 
 
 class TestBuilderInteractor(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def setUp(self):
@@ -172,7 +171,6 @@ class TestBuilderInteractor(TestCase):
 
 
 class TestBuilderInteractorCleanWorker(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     @defer.inlineCallbacks

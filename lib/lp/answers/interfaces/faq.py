@@ -35,7 +35,6 @@ class CannotDeleteFAQ(Exception):
 
 
 class IFAQPublic(IHasOwner):
-
     id = exported(
         Int(
             title=_("FAQ Number"),

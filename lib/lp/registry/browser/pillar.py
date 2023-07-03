@@ -301,7 +301,6 @@ class PillarViewMixin:
 
 
 class PillarSharingView(LaunchpadView):
-
     page_title = "Sharing"
     label = "Sharing information"
 
@@ -421,7 +420,6 @@ class PillarSharingView(LaunchpadView):
 
 
 class PillarPersonSharingView(LaunchpadView):
-
     page_title = "Person or team"
     label = "Information shared with person or team"
 

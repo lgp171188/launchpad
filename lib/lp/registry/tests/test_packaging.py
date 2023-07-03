@@ -330,7 +330,6 @@ class TestDeletePackaging(TestCaseWithFactory):
 
 
 class TestPackagingSecurity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):

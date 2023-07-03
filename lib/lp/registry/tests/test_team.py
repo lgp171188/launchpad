@@ -43,7 +43,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, FunctionalLayer
 
 
 class TestTeamContactAddress(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getAllEmailAddresses(self):
@@ -210,7 +209,6 @@ class TestTeamGetTeamAdminsEmailAddresses(TestCaseWithFactory):
 
 
 class TestDefaultRenewalPeriodIsRequiredForSomeTeams(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -254,7 +252,6 @@ class TestDefaultRenewalPeriodIsRequiredForSomeTeams(TestCaseWithFactory):
 
 
 class TestDefaultMembershipPeriod(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -548,7 +545,6 @@ class TestTeamMembershipPolicyValidator(TestCaseWithFactory):
 
 
 class TestVisibilityConsistencyWarning(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -624,7 +620,6 @@ class TestVisibilityConsistencyWarning(TestCaseWithFactory):
 
 
 class TestPersonJoinTeam(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_join_restricted_team_error(self):

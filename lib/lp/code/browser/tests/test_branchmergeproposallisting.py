@@ -321,7 +321,6 @@ class TestProposalVoteSummaryGit(
 
 
 class TestMergesOnce(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_productseries_bzr(self):
@@ -346,7 +345,6 @@ class TestMergesOnce(BrowserTestCase):
 
 
 class BranchMergeProposalListingTestMixin:
-
     layer = DatabaseFunctionalLayer
 
     supports_privacy = True
@@ -459,7 +457,6 @@ class BranchMergeProposalListingTestMixin:
 
 
 class MergesTestMixin(BranchMergeProposalListingTestMixin):
-
     view_name = "+merges"
     page_title = "Merge proposals"
 
@@ -472,7 +469,6 @@ class MergesTestMixin(BranchMergeProposalListingTestMixin):
 
 
 class DependentMergesTestMixin(BranchMergeProposalListingTestMixin):
-
     view_name = "+dependent-merges"
     page_title = "Dependent merge proposals"
 
@@ -536,7 +532,6 @@ class DependentMergesTestMixin(BranchMergeProposalListingTestMixin):
 
 
 class ActiveReviewsTestMixin(BranchMergeProposalListingTestMixin):
-
     view_name = "+activereviews"
     page_title = "Active reviews"
 
@@ -549,7 +544,6 @@ class ActiveReviewsTestMixin(BranchMergeProposalListingTestMixin):
 
 
 class ProductContextMixin:
-
     label_describes_context = False
 
     def setUp(self):
@@ -562,7 +556,6 @@ class ProductContextMixin:
 
 
 class ProjectGroupContextMixin:
-
     label_describes_context = False
 
     def setUp(self):
@@ -576,7 +569,6 @@ class ProjectGroupContextMixin:
 
 
 class DistributionSourcePackageContextMixin:
-
     # Distribution branches don't have access_policy set.
     supports_privacy = False
     label_describes_context = False
@@ -604,7 +596,6 @@ class DistributionSourcePackageContextMixin:
 
 
 class SourcePackageContextMixin:
-
     # Distribution branches don't have access_policy set.
     supports_privacy = False
     supports_git = False
@@ -617,7 +608,6 @@ class SourcePackageContextMixin:
 
 
 class PersonContextMixin:
-
     label_describes_context = False
 
     def setUp(self):
@@ -629,7 +619,6 @@ class PersonContextMixin:
 
 
 class PersonProductContextMixin:
-
     label_describes_context = False
 
     def setUp(self):
@@ -643,7 +632,6 @@ class PersonProductContextMixin:
 
 
 class BranchContextMixin:
-
     supports_git = False
 
     def setUp(self):
@@ -657,7 +645,6 @@ class BranchContextMixin:
 
 
 class GitRefContextMixin:
-
     supports_bzr = False
 
     def setUp(self):
@@ -671,78 +658,66 @@ class GitRefContextMixin:
 
 
 class TestProductMerges(ProductContextMixin, MergesTestMixin, BrowserTestCase):
-
     pass
 
 
 class TestProjectGroupMerges(
     ProjectGroupContextMixin, MergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestDistributionSourcePackageMerges(
     DistributionSourcePackageContextMixin, MergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestSourcePackageMerges(
     SourcePackageContextMixin, MergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestPersonMerges(PersonContextMixin, MergesTestMixin, BrowserTestCase):
-
     pass
 
 
 class TestPersonProductMerges(
     PersonProductContextMixin, MergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestBranchMerges(BranchContextMixin, MergesTestMixin, BrowserTestCase):
-
     pass
 
 
 class TestGitRefMerges(GitRefContextMixin, MergesTestMixin, BrowserTestCase):
-
     pass
 
 
 class TestBranchDependentMerges(
     BranchContextMixin, DependentMergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestGitRefDependentMerges(
     GitRefContextMixin, DependentMergesTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestProductActiveReviews(
     ProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestProjectGroupActiveReviews(
     ProjectGroupContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
@@ -751,42 +726,36 @@ class TestDistributionSourcePackageActiveReviews(
     ActiveReviewsTestMixin,
     BrowserTestCase,
 ):
-
     pass
 
 
 class TestSourcePackageActiveReviews(
     SourcePackageContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestPersonActiveReviews(
     PersonContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestPersonProductActiveReviews(
     PersonProductContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestBranchActiveReviews(
     BranchContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 
 class TestGitRefActiveReviews(
     GitRefContextMixin, ActiveReviewsTestMixin, BrowserTestCase
 ):
-
     pass
 
 

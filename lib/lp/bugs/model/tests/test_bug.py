@@ -42,7 +42,6 @@ from lp.testing.matchers import Equals, HasQueryCount, LessThan
 
 
 class TestBug(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getNominationFor_sourcepackage(self):
@@ -678,7 +677,6 @@ class TestBug(TestCaseWithFactory):
 
 
 class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_setPrivate_subscribes_person_who_makes_bug_private(self):
@@ -865,7 +863,6 @@ class TestBugPrivateAndSecurityRelatedUpdatesProject(TestCaseWithFactory):
 
 
 class TestBugPrivacy(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_multipillar_proprietary_bugs_disallowed(self):
@@ -1062,7 +1059,6 @@ class TestBugPrivacy(TestCaseWithFactory):
 
 
 class TestBugPrivateAndSecurityRelatedUpdatesSpecialCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_transition_special_cased_for_ubuntu(self):
@@ -1089,7 +1085,6 @@ class TestBugPrivateAndSecurityRelatedUpdatesSpecialCase(TestCaseWithFactory):
 
 
 class TestBugActivityMethods(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

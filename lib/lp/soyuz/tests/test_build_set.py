@@ -32,7 +32,6 @@ from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class TestBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

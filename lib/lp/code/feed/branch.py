@@ -368,7 +368,6 @@ class RevisionPerson:
     """
 
     def __init__(self, person, rootsite):
-
         no_email = person.name_without_email
         if no_email:
             self.name = no_email

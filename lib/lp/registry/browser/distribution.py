@@ -159,7 +159,6 @@ class DistributionNavigation(
     TargetDefaultVCSNavigationMixin,
     WebhookTargetNavigationMixin,
 ):
-
     usedfor = IDistribution
 
     @redirection("+source", status=301)
@@ -277,7 +276,6 @@ class DistributionNavigation(
 
 
 class DistributionSetNavigation(Navigation):
-
     usedfor = IDistributionSet
 
     def traverse(self, name):
@@ -289,7 +287,6 @@ class DistributionSetNavigation(Navigation):
 
 
 class DistributionFacets(StandardLaunchpadFacets):
-
     usedfor = IDistribution
 
 
@@ -300,7 +297,6 @@ class DistributionSetBreadcrumb(Breadcrumb):
 
 
 class DistributionSetContextMenu(ContextMenu):
-
     usedfor = IDistributionSet
     links = ["products", "distributions", "people", "meetings"]
 
@@ -318,7 +314,6 @@ class DistributionSetContextMenu(ContextMenu):
 
 
 class DistributionMirrorsNavigationMenu(NavigationMenu):
-
     usedfor = IDistributionMirrorMenuMarker
     facet = "overview"
     links = (
@@ -445,7 +440,6 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
-
     usedfor = IDistribution
     facet = "overview"
     links = [
@@ -626,7 +620,6 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
 
 
 class DistributionBugsMenu(PillarBugsMenu):
-
     usedfor = IDistribution
     facet = "bugs"
 
@@ -1076,7 +1069,6 @@ class RequireVirtualizedBuildersMixin:
 class DistributionAddView(
     LaunchpadFormView, RequireVirtualizedBuildersMixin, EnableProcessorsMixin
 ):
-
     schema = IDistribution
     label = "Register a new distribution"
     field_names = [
@@ -1150,7 +1142,6 @@ class DistributionEditView(
     RequireVirtualizedBuildersMixin,
     EnableProcessorsMixin,
 ):
-
     schema = IDistribution
     field_names = [
         "display_name",
@@ -1259,7 +1250,6 @@ class DistributionEditView(
 
 
 class DistributionAdminView(LaunchpadEditFormView):
-
     schema = IDistribution
     field_names = [
         "official_packages",
@@ -1539,7 +1529,6 @@ class DistributionMirrorsView(LaunchpadView):
 
 
 class DistributionArchiveMirrorsView(DistributionMirrorsView):
-
     heading = "Official Archive Mirrors"
     description = (
         "These mirrors provide repositories and archives of all "
@@ -1552,7 +1541,6 @@ class DistributionArchiveMirrorsView(DistributionMirrorsView):
 
 
 class DistributionSeriesMirrorsView(DistributionMirrorsView):
-
     heading = "Official CD Mirrors"
     description = (
         "These mirrors offer ISO images which you can download "
@@ -1614,7 +1602,6 @@ class DistributionMirrorsAdminView(DistributionMirrorsView):
 
 
 class DistributionUnofficialMirrorsView(DistributionMirrorsAdminView):
-
     heading = "Unofficial Mirrors"
 
     @cachedproperty
@@ -1623,7 +1610,6 @@ class DistributionUnofficialMirrorsView(DistributionMirrorsAdminView):
 
 
 class DistributionPendingReviewMirrorsView(DistributionMirrorsAdminView):
-
     heading = "Pending-review mirrors"
     show_mirror_type = True
     show_freshness = False
@@ -1634,7 +1620,6 @@ class DistributionPendingReviewMirrorsView(DistributionMirrorsAdminView):
 
 
 class DistributionDisabledMirrorsView(DistributionMirrorsAdminView):
-
     heading = "Disabled Mirrors"
 
     @cachedproperty

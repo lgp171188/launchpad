@@ -223,7 +223,6 @@ class PlaceholderTranslationMessage(TranslationMessageMixIn):
 
 @implementer(ITranslationMessage)
 class TranslationMessage(SQLBase, TranslationMessageMixIn):
-
     _table = "TranslationMessage"
 
     browser_pofile = None

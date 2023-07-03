@@ -17,7 +17,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class TestLoginToken(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_sendMergeRequestEmail(self):

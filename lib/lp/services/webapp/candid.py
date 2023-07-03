@@ -184,7 +184,6 @@ def request_candid_discharge(
 
 
 class CandidErrorView(LaunchpadView):
-
     page_title = "Authorization error"
     template = ViewPageTemplateFile("templates/candid-error.pt")
 

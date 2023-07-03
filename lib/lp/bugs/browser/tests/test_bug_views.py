@@ -43,7 +43,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestPrivateBugLinks(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_private_master_not_linked_without_permission(self):
@@ -227,7 +226,6 @@ class TestEmailObfuscated(BrowserTestCase):
 
 
 class TestBugPortletSubscribers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -956,7 +954,6 @@ class TestBugMarkAsDuplicateView(TestCaseWithFactory):
 
 
 class TestBugActivityView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_bug_activity_query_count(self):
@@ -986,7 +983,6 @@ class TestBugActivityView(TestCaseWithFactory):
 
 
 class TestMainBugView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

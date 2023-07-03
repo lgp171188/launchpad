@@ -39,7 +39,6 @@ class TestOAuthParsing(TestCase):
 
 
 class TestCheckOAuthSignature(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeRequest(self, signature, method="PLAINTEXT"):

@@ -71,7 +71,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForRecipe(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -286,7 +285,6 @@ class TestCaseForRecipe(BrowserTestCase):
 
 
 class TestSourcePackageRecipeAddViewInitialValuesMixin:
-
     layer = DatabaseFunctionalLayer
 
     def test_initial_name_exists(self):
@@ -405,7 +403,6 @@ class TestSourcePackageRecipeAddViewInitialValuesGit(
 
 
 class TestSourcePackageRecipeAddViewMixin:
-
     layer = DatabaseFunctionalLayer
 
     def test_create_new_recipe_not_logged_in(self):
@@ -928,7 +925,6 @@ class TestSourcePackageRecipeAddViewBzr(
 class TestSourcePackageRecipeAddViewGit(
     TestSourcePackageRecipeAddViewMixin, GitMixin, TestCaseForRecipe
 ):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -1362,7 +1358,6 @@ class TestSourcePackageRecipeEditViewGit(
 
 
 class TestSourcePackageRecipeViewMixin:
-
     layer = LaunchpadFunctionalLayer
 
     def makeSuccessfulBuild(self, archive=None):
@@ -2187,7 +2182,6 @@ class TestSourcePackageRecipeBuildViewGit(
 
 
 class TestSourcePackageRecipeDeleteViewMixin:
-
     layer = DatabaseFunctionalLayer
 
     def test_delete_recipe(self):
@@ -2307,7 +2301,6 @@ class TestBrokenExistingRecipesMixin:
 class TestBrokenExistingRecipesBzr(
     TestBrokenExistingRecipesMixin, BzrMixin, BrowserTestCase
 ):
-
     RECIPE_FIRST_LINE = (
         "# bzr-builder format 0.2 deb-version {debupstream}+{revno}"
     )
@@ -2316,7 +2309,6 @@ class TestBrokenExistingRecipesBzr(
 class TestBrokenExistingRecipesGit(
     TestBrokenExistingRecipesMixin, GitMixin, BrowserTestCase
 ):
-
     RECIPE_FIRST_LINE = (
         "# git-build-recipe format 0.4 deb-version {debupstream}+{revtime}"
     )

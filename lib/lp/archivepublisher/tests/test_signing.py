@@ -183,7 +183,6 @@ class FakeMethodCallLog(FakeMethod):
 
 
 class TestSigningHelpers(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 

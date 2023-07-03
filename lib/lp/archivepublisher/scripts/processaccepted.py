@@ -128,7 +128,6 @@ class ProcessAccepted(PublisherScript):
             )
             try:
                 for distroseries in distribution.series:
-
                     self.logger.debug(
                         "Processing queue for %s %s"
                         % (archive.reference, distroseries.name)

@@ -59,7 +59,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestGitRef(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_comparison(self):

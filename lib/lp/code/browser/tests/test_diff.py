@@ -9,7 +9,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestFormatterAPI(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_empty_conflicts(self):

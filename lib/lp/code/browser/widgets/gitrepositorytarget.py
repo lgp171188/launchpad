@@ -45,7 +45,6 @@ from lp.services.webapp.interfaces import (
 
 @implementer(IMultiLineWidgetLayout)
 class GitRepositoryTargetWidgetBase(BrowserWidget):
-
     template = ViewPageTemplateFile("templates/gitrepository-target.pt")
     default_option = "project"
     _widgets_set_up = False

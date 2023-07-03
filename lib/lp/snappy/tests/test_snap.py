@@ -137,7 +137,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestSnapFeatureFlag(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_private_feature_flag_disabled(self):
@@ -156,7 +155,6 @@ class TestSnapFeatureFlag(TestCaseWithFactory):
 
 
 class TestSnapPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -263,7 +261,6 @@ class TestSnapPermissions(TestCaseWithFactory):
 
 
 class TestSnap(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1958,7 +1955,6 @@ class TestSnap(TestCaseWithFactory):
 
 
 class TestSnapDeleteWithBuilds(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -2103,7 +2099,6 @@ class TestSnapDeleteWithBuilds(TestCaseWithFactory):
 
 
 class TestSnapVisibility(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2273,7 +2268,6 @@ class TestSnapVisibility(TestCaseWithFactory):
 
 
 class TestSnapSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3504,7 +3498,6 @@ class TestSnapSet(TestCaseWithFactory):
 
 
 class TestSnapProcessors(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -3655,7 +3648,6 @@ class TestSnapProcessors(TestCaseWithFactory):
 
 
 class TestSnapWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

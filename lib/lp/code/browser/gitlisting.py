@@ -110,7 +110,6 @@ class BaseGitListingView(LaunchpadView):
 
 
 class TargetGitListingView(BaseGitListingView):
-
     page_title = "Git"
 
     @property
@@ -129,7 +128,6 @@ class TargetGitListingView(BaseGitListingView):
 
 
 class PersonTargetGitListingView(BaseGitListingView):
-
     page_title = "Git"
 
     @property
@@ -161,7 +159,6 @@ class PersonTargetGitListingView(BaseGitListingView):
 
 
 class OCIProjectGitListingView(TargetGitListingView):
-
     # OCIProject:+branches doesn't exist.
     show_bzr_link = False
 
@@ -169,19 +166,16 @@ class OCIProjectGitListingView(TargetGitListingView):
 class PersonDistributionSourcePackageGitListingView(
     PersonTargetGitListingView
 ):
-
     # PersonDistributionSourcePackage:+branches doesn't exist.
     show_bzr_link = False
 
 
 class PersonOCIProjectGitListingView(PersonTargetGitListingView):
-
     # PersonOCIProject:+branches doesn't exist.
     show_bzr_link = False
 
 
 class PlainGitListingView(BaseGitListingView):
-
     page_title = "Git"
     target = None
     default_git_repository = None

@@ -23,7 +23,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestBugNotificationRecipients(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getFreshRecipients(self, bug):

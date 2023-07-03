@@ -16,7 +16,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestGitRefVocabulary(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     vocabulary_class = GitRefVocabulary
@@ -168,7 +167,6 @@ class TestGitRefVocabulary(TestCaseWithFactory):
 
 
 class TestGitBranchVocabulary(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     vocabulary_class = GitBranchVocabulary

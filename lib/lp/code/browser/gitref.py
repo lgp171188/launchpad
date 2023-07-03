@@ -107,7 +107,6 @@ class GitRefView(
     HasCharmRecipesViewMixin,
     HasRevisionStatusReportsMixin,
 ):
-
     # This is set at self.commit_infos, and should be accessed by the view
     # as self.commit_info_message.
     _commit_info_message = None

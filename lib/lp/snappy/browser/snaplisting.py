@@ -23,7 +23,6 @@ from lp.snappy.interfaces.snap import ISnapSet
 
 
 class SnapListingView(LaunchpadView, FeedsMixin):
-
     feed_types = ()
 
     source_enabled = True
@@ -55,7 +54,6 @@ class SnapListingView(LaunchpadView, FeedsMixin):
 
 
 class BranchSnapListingView(SnapListingView):
-
     source_enabled = False
 
     def initialize(self):
@@ -67,7 +65,6 @@ class BranchSnapListingView(SnapListingView):
 
 
 class GitSnapListingView(SnapListingView):
-
     source_enabled = False
 
     @property
@@ -78,7 +75,6 @@ class GitSnapListingView(SnapListingView):
 
 
 class PersonSnapListingView(SnapListingView):
-
     owner_enabled = False
 
 

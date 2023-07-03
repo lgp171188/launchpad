@@ -106,7 +106,6 @@ class TestFAQPermissions(TestCaseWithFactory):
 
 
 class TestFAQ(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_destroySelf(self):

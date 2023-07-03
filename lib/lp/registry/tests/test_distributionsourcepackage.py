@@ -31,7 +31,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestDistributionSourcePackage(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_dsp_with_no_series_summary(self):
@@ -241,7 +240,6 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
 
 
 class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -377,7 +375,6 @@ class TestDistributionSourcePackageFindRelatedArchives(TestCaseWithFactory):
 
 
 class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_mapping_cache_cleared_on_abort(self):

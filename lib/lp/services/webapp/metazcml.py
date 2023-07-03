@@ -230,7 +230,6 @@ class IFeedsDirective(IGlueDirective):
 
 
 class IFaviconDirective(Interface):
-
     for_ = GlobalObject(
         title="Specification of the object that has this favicon",
         required=True,
@@ -375,7 +374,6 @@ class TALESContextForInterfaceInstance:
 # provide an 'inside' property.
 @implementer(ICanonicalUrlData)
 class CanonicalUrlDataBase:
-
     # Filled in by subclass.
     _for = None
     _compiled_path_expression = None
@@ -686,7 +684,6 @@ def call(_context, callable):
 
 
 class IDefineLaunchpadPermissionDirective(IPermissionDirective):
-
     access_level = TextLine(
         title="Access level",
         required=False,
@@ -695,7 +692,6 @@ class IDefineLaunchpadPermissionDirective(IPermissionDirective):
 
 
 class ILaunchpadPermission(IPermission):
-
     access_level = IDefineLaunchpadPermissionDirective["access_level"]
 
 

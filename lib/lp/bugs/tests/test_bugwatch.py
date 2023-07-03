@@ -404,7 +404,6 @@ class EmailAddressExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
 
 
 class TestBugWatch(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_bugtasks_to_update(self):
@@ -671,7 +670,6 @@ class TestBugWatchSetBulkOperations(TestCaseWithFactory):
 
 
 class TestBugWatchBugTasks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -725,7 +723,6 @@ class TestBugWatchActivityPruner(TestCaseWithFactory):
 
 
 class TestBugWatchResetting(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

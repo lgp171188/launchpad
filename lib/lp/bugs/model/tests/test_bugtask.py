@@ -960,7 +960,6 @@ class TestBugTaskPrivacy(TestCaseWithFactory):
 
 
 class TestBugTaskDelta(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1182,7 +1181,6 @@ class TestSimilarBugs(TestCaseWithFactory):
 
 
 class TestBugTaskPermissionsToSetAssigneeMixin:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):
@@ -1663,7 +1661,6 @@ class TestBugTaskStatuses(TestCase):
 
 
 class TestBugTaskContributor(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_non_contributor(self):
@@ -3337,7 +3334,6 @@ class ValidateTargetMixin:
 
 
 class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
-
     layer = DatabaseFunctionalLayer
 
     multi_tenant_test_one_task_only = False
@@ -3590,7 +3586,6 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
 
 
 class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
-
     layer = DatabaseFunctionalLayer
 
     multi_tenant_test_one_task_only = True
@@ -3689,7 +3684,6 @@ class TestWebservice(TestCaseWithFactory):
 
 
 class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3780,7 +3774,6 @@ class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
 
 
 class TestBugTaskUserHasBugSupervisorPrivilegesContext(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assert_userHasBugSupervisorPrivilegesContext(self, obj):

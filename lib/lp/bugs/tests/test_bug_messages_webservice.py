@@ -84,7 +84,6 @@ class TestMessageTraversal(TestCaseWithFactory):
 
 
 class TestBugMessage(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_attachments(self):

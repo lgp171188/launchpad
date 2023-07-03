@@ -15,7 +15,6 @@ from lp.services.webapp.publisher import LaunchpadView
 
 
 class PersonSpecsMenu(NavigationMenu):
-
     usedfor = IPerson
     facet = "specifications"
     links = [

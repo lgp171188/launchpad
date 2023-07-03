@@ -72,7 +72,6 @@ class FakePackageRelease:
 
 
 class FakeReleaseType(EnumeratedType):
-
     SOURCE = Item("Source")
     BINARY = Item("Binary")
 

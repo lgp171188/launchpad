@@ -124,7 +124,6 @@ class TestProcessOrderBy(TestCase):
 
 
 class SearchTestBase:
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -785,7 +784,6 @@ class TargetTests:
 
 
 class DeactivatedProductBugTaskTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1867,7 +1865,6 @@ class QueryBugIDs:
 
 
 class TestMilestoneDueDateFiltering(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_milestone_date_filters(self):
@@ -2364,7 +2361,6 @@ class TestBugTaskTagSearchClauses(TestCase):
 
 
 class TestBugTaskSearch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def login(self):
@@ -2520,7 +2516,6 @@ class TestBugTaskSearch(TestCaseWithFactory):
 
 
 class BugTaskSetSearchTest(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_explicit_blueprint_specified(self):
@@ -2567,7 +2562,6 @@ class TargetLessTestCase(TestCaseWithFactory):
 
 
 class BaseGetBugPrivacyFilterTermsTests:
-
     layer = DatabaseFunctionalLayer
 
     def test_public(self):
