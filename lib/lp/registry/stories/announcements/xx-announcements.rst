@@ -411,7 +411,7 @@ any links to show announcements.
     >>> count_show_links(anon_browser.contents)
     0
 
-Distribution pages may have the link in the annoucements portlet,
+Distribution pages may have the link in the announcements portlet.
 
     >>> anon_browser.open("http://launchpad.test/ubuntu")
     >>> count_show_links(anon_browser.contents)

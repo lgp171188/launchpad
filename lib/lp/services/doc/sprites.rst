@@ -41,7 +41,7 @@ A SpriteUtil object currently can only process a single group.
 Loading the CSS Template
 ------------------------
 
-Instatiating a new SpriteUtil object will parse the css template and
+Instantiating a new SpriteUtil object will parse the css template and
 find all the css rules for the specified group. The url_prefix_substitutions
 parameter allows you to convert url prefixes into file paths relative
 to the directory passed into combineImages(). The space between sprites
