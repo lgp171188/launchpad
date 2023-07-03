@@ -34,8 +34,7 @@ class TestKarmaCacheUpdater(unittest.TestCase):
 
     def _runScript(self):
         process = subprocess.Popen(
-            "cronscripts/foaf-update-karma-cache.py",
-            shell=True,
+            ["cronscripts/foaf-update-karma-cache.py"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

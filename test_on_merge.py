@@ -9,6 +9,7 @@ import _pythonpath  # noqa: F401
 
 import os
 import select
+import shlex
 import sys
 import time
 from signal import SIGHUP, SIGINT, SIGKILL, SIGTERM
@@ -142,20 +143,18 @@ def run_test_process():
     cmd = [
         "/usr/bin/xvfb-run",
         "--error-file=/var/tmp/xvfb-errors.log",
-        "--server-args='-screen 0 1024x768x24'",
+        "--server-args=-screen 0 1024x768x24",
         os.path.join(HERE, "bin", "test"),
     ] + sys.argv[1:]
-    command_line = " ".join(cmd)
-    print("Running command:", command_line)
+    print("Running command:", " ".join(shlex.quote(arg) for arg in cmd))
 
     # Run the test suite.  Make the suite the leader of a new process group
     # so that we can signal the group without signaling ourselves.
     xvfb_proc = Popen(
-        command_line,
+        cmd,
         stdout=PIPE,
         stderr=STDOUT,
         preexec_fn=os.setpgrp,
-        shell=True,
     )
 
     # This code is very similar to what takes place in Popen._communicate(),

@@ -3871,8 +3871,7 @@ class TestTargetNameCache(TestCase):
         transaction.commit()
 
         process = subprocess.Popen(
-            "cronscripts/update-bugtask-targetnamecaches.py",
-            shell=True,
+            ["cronscripts/update-bugtask-targetnamecaches.py"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

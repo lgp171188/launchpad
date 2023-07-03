@@ -125,8 +125,7 @@ is updated by the foaf-update-karma-cache.py cronscript.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/foaf-update-karma-cache.py",
-    ...     shell=True,
+    ...     ["cronscripts/foaf-update-karma-cache.py"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

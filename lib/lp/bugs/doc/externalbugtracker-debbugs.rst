@@ -706,8 +706,7 @@ tracker.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "scripts/import-debian-bugs.py 237001 322535",
-    ...     shell=True,
+    ...     ["scripts/import-debian-bugs.py", "237001", "322535"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

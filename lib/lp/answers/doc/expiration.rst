@@ -144,8 +144,7 @@ somebody are subject to expiration.
     # Run the script.
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/expire-questions.py",
-    ...     shell=True,
+    ...     ["cronscripts/expire-questions.py"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

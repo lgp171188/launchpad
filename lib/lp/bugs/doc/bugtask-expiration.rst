@@ -561,8 +561,7 @@ config.malone.expiration_dbuser.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/expire-bugtasks.py",
-    ...     shell=True,
+    ...     ["cronscripts/expire-bugtasks.py"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,
