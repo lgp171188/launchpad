@@ -11,8 +11,8 @@ You will need the following relations:
 
 ## Maintenance actions
 
-To stop long-running services (perhaps in preparation for a schema upgrade),
-run:
+To stop Celery workers and `number-cruncher` (perhaps in preparation for a
+schema upgrade), run:
 
     juju run-action --wait launchpad-scripts/leader stop-services
 
