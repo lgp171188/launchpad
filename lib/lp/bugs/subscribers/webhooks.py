@@ -27,7 +27,7 @@ def _trigger_bugtask_webhook(
     previous_state: Union[IBug, IBugTask] = None,
 ):
     """Triggers 'bug' event for a specific bugtask"""
-    if not getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG):
+    if getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG):
         return
 
     if IWebhookTarget.providedBy(bugtask.target):
@@ -38,7 +38,7 @@ def _trigger_bugtask_webhook(
 @block_implicit_flushes
 def _trigger_bug_comment_webhook(action: str, bug_comment: IBugMessage):
     """Triggers 'bug:comment' events for each bug target for that comment"""
-    if not getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG):
+    if getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG):
         return
 
     bugtasks = bug_comment.bug.bugtasks
