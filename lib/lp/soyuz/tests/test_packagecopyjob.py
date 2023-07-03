@@ -18,6 +18,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -1659,6 +1660,88 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         self.assertEqual(BugTaskStatus.FIXRELEASED, bugtask282.status)
         self.assertEqual(BugTaskStatus.FIXRELEASED, bugtask281.status)
         self.assertEqual(BugTaskStatus.NEW, bugtask280.status)
+
+    def test_copying_closes_bugs_with_webhooks(self):
+        # Copying a package into a primary archive closes any bugs mentioned
+        # in its recent changelog, including triggering their webhooks.
+
+        # Set bug webhooks feature flag on for the purpose of this test
+        self.useFixture(
+            FeatureFixture(
+                {
+                    BUG_WEBHOOKS_FEATURE_FLAG: "on",
+                }
+            )
+        )
+
+        target_archive = self.factory.makeArchive(
+            self.distroseries.distribution, purpose=ArchivePurpose.PRIMARY
+        )
+        source_archive = self.factory.makeArchive(
+            self.distroseries.distribution
+        )
+        bug = self.factory.makeBug()
+        webhook = self.factory.makeWebhook(
+            target=bug.default_bugtask.target,
+            event_types=["bug:comment:0.1", "bug:0.1"],
+        )
+
+        # Publish a package in the source archive and give it a changelog
+        # entry that closes a bug.
+        source_pub = self.factory.makeSourcePackagePublishingHistory(
+            distroseries=self.distroseries,
+            sourcepackagename="libc",
+            version="2.8-2",
+            status=PackagePublishingStatus.PUBLISHED,
+            archive=source_archive,
+        )
+        spr = removeSecurityProxy(source_pub).sourcepackagerelease
+        changelog = dedent(
+            """\
+            libc (2.8-2) unstable; urgency=low
+
+              * closes: %s
+
+             -- Foo Bar <foo@example.com>  Tue, 01 Jan 1970 01:50:41 +0000
+
+            libc (2.8-1) unstable; urgency=low
+
+              * Initial release.
+
+             -- Foo Bar <foo@example.com>  Tue, 01 Jan 1970 01:50:41 +0000
+            """
+            % bug.id
+        ).encode("UTF-8")
+        spr.changelog = self.factory.makeLibraryFileAlias(content=changelog)
+        spr.changelog_entry = "dummy"
+        self.layer.txn.commit()  # Librarian.
+
+        # Now put the same named package in the target archive at the
+        # oldest version in the changelog.
+        self.publisher.getPubSource(
+            distroseries=self.distroseries,
+            sourcename="libc",
+            version="2.8-1",
+            status=PackagePublishingStatus.PUBLISHED,
+            archive=target_archive,
+        )
+
+        sp = self.distroseries.getSourcePackage(spr.sourcepackagename)
+        bugtask = self.factory.makeBugTask(target=sp, bug=bug, publish=False)
+
+        # Run the copy job.
+        requester = self.factory.makePerson()
+        with person_logged_in(target_archive.owner):
+            target_archive.newComponentUploader(requester, "main")
+        job = self.createCopyJobForSPPH(
+            source_pub, source_archive, target_archive, requester=requester
+        )
+        self.runJob(job)
+        self.assertEqual(JobStatus.COMPLETED, job.status)
+
+        # The bug is fixed, and a webhook delivery is scheduled.
+        self.assertEqual(BugTaskStatus.FIXRELEASED, bugtask.status)
+        self.assertEqual(1, webhook.deliveries.count())
 
     def test_copying_unembargoes_files(self):
         # The unembargo flag causes the job to unrestrict files.

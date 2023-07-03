@@ -4,7 +4,6 @@
 """The lp.services.database package."""
 
 __all__ = [
-    "activity_cols",
     "read_transaction",
     "write_transaction",
 ]
@@ -17,11 +16,6 @@ from twisted.python.util import mergeFunctionMetadata
 from lp.services.database.sqlbase import reset_store
 
 RETRY_ATTEMPTS = 3
-
-
-def activity_cols(cur):
-    """Adapt pg_stat_activity column names for the current DB server."""
-    return {"query": "query", "pid": "pid"}
 
 
 def retry_transaction(func):

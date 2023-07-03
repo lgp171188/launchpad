@@ -15,12 +15,6 @@
         send a POST request to any matching webhook URLs that you've
         specified.
       </p>
-      <div>
-        <div class="beta" style="display: inline">
-          <img class="beta" alt="[BETA]" src="/@@/beta" /></div>
-        The supported events are Git and Bazaar pushes,
-        snap package builds, and OCI image builds.
-      </div>
       <ul class="horizontal">
         <li>
           <a class="sprite add"

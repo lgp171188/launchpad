@@ -13,6 +13,7 @@ import six
 from zope.component import getUtility
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
 from lp.services.scripts import log
@@ -192,8 +193,12 @@ def do_one_sourcepackage(distro, source, package_root, importer_handler):
         # already exists in the database
         log.info("%s already exists in the archive", source_data.package)
         return
-    source_data.process_package(distro, package_root)
-    source_data.ensure_complete()
+    importer_handler.commit()
+    # Unpacking source packages can be slow, so don't hold a transaction
+    # while doing so.
+    with TransactionFreeOperation():
+        source_data.process_package(distro, package_root)
+        source_data.ensure_complete()
     importer_handler.import_sourcepackage(source_data)
     importer_handler.commit()
 

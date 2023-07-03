@@ -95,6 +95,17 @@ def configure():
         group=base.user(),
         perms=0o444,
     )
+    # Build assets now that we have the correct configuration in place.
+    subprocess.run(
+        [
+            "make",
+            "build",
+            f"PYTHON={base.python_bin()}",
+            "LPCONFIG=launchpad-assets",
+        ],
+        cwd=base.code_dir(),
+        check=True,
+    )
     configure_convoy(config)
     set_flag("service.configured")
 

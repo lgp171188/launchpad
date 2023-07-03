@@ -16,8 +16,6 @@ from subprocess import PIPE, STDOUT, Popen
 
 import psycopg2
 
-from lp.services.database import activity_cols
-
 # The TIMEOUT setting (expressed in seconds) affects how long a test will run
 # before it is deemed to be hung, and then appropriately terminated.
 # It's principal use is preventing a PQM job from hanging indefinitely and
@@ -71,12 +69,11 @@ def setup_test_database():
     for loop in range(2):
         cur.execute(
             """
-            SELECT usename, %(query)s
+            SELECT usename, query
             FROM pg_stat_activity
             WHERE datname IN (
                 'launchpad_dev', 'launchpad_ftest_template', 'launchpad_ftest')
             """
-            % activity_cols(cur)
         )
         results = list(cur.fetchall())
         if not results:

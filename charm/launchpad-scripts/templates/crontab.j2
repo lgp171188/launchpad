@@ -1,0 +1,125 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-scripts
+
+{% if active -%}
+# Expire BugTasks https://portal.admin.canonical.com/C42519
+17 04 * * * {{ code_dir }}/cronscripts/expire-bugtasks.py -q --log-file=INFO:{{ logs_dir }}/expire-bugtasks.log
+
+# Regular daily chores
+15 5 * * * {{ code_dir }}/cronscripts/nightly.sh {{ logs_dir }}
+
+# Product release finder
+19 7 * * * {{ code_dir }}/cronscripts/product-release-finder.py -q --log-file={{ logs_dir }}/product-release-finder.log
+
+# Bugs Appport monitoring for ubuntu bugs - https://portal.admin.canonical.com/C37741
+* * * * *  {{ code_dir }}/cronscripts/process-job-source.py IProcessApportBlobJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IProcessApportBlobJobSource.log
+
+32 */2 * * * {{ code_dir }}/cronscripts/parse-librarian-apache-access-logs.py -q --log-file=INFO:{{ logs_dir }}/parse-librarian-apache-access-logs.log
+
+# generic job controller, tasks are controlled via the production configs
+# Currently only found in section [process-job-source-groups] in lib/canonical/config/schema-lazr.conf
+# XXX: GavinPanella 2011-09-02 https://bugs.launchpad.net/bugs/839659: Do *not* create overlapping schedules with process-job-source-groups.py
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source-groups.py MAIN >> {{ logs_dir }}/process-job-source-groups.log 2>&1
+
+# packaging translations cron job per https://portal.admin.canonical.com/C45152
+* * * * * {{ code_dir }}/cronscripts/process-job-source.py ITranslationPackagingJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.ITranslationPackagingJobSource.log
+
+# https://portal.admin.canonical.com/C46248 : Read-only part of Derived Distros.
+*/2 * * * * {{ code_dir }}/cronscripts/process-job-source.py IDistroSeriesDifferenceJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IDistroSeriesDifferenceJobSource.log
+
+27 07 * * 3 {{ code_dir }}/cronscripts/rosetta-pofile-stats.py -q --log-file=INFO:{{ logs_dir }}/rosetta-pofile-stats.log
+
+# Debian bugs mirroring, used by checkwatches
+4,19,34,49 * * * * {{ code_dir }}/scripts/debbugs-sync >>{{ logs_dir }}/debbugs-sync.log 2>&1
+
+# NB. checkwatches requires access to /srv/bugs-mirror.debian.org/
+# Reverted to doing ten at a time (--jobs=10) as https://bugs.launchpad.net/bugs/435952 should be fixed
+*/10 * * * * {{ code_dir }}/cronscripts/checkwatches.py --jobs=1 -q --log-file=INFO:{{ logs_dir }}/checkwatches/`date '+\%Y-\%m-\%d'`.log
+# Compress old checkwatches logs
+5 0 * * * find {{ logs_dir }}/checkwatches -maxdepth 1 -name '*.log' -type f -mtime +5 -print0 | xargs -0 -r nice gzip
+
+# Rosetta
+*/10 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-approve-imports.py -q --log-file=INFO:{{ logs_dir }}/rosetta-approve-imports.log
+*/4 * * * * {{ code_dir }}/cronscripts/rosetta-export-queue.py -q --log-file=INFO:{{ logs_dir }}/rosetta-export-queue.log
+*/3 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-poimport.py -q --log-file=INFO:{{ logs_dir }}/rosetta-poimport.log
+
+{% if language_pack_exporter_schedule -%}
+# Rosetta language packs
+{% for release_name, schedule in language_pack_exporter_schedule.items() -%}
+{{ schedule }} nice -16 {{ code_dir }}/cronscripts/language-pack-exporter.py ubuntu {{ release_name }} --force-utf8-encoding -q --log-file=INFO:{{ logs_dir }}/language-pack-exporter.log
+{% endfor %}
+{% endif -%}
+
+# Archive package cache updater
+19 7 * * * {{ code_dir }}/cronscripts/update-pkgcache.py -q --log-file={{ logs_dir }}/update-pkgcache.log
+
+# Garbo DB Cleanup
+*/5 * * * * {{ code_dir }}/cronscripts/garbo-frequently.py -qq --log-file=DEBUG2:{{ logs_dir }}/garbo-frequently.log
+13 * * * * {{ code_dir }}/cronscripts/garbo-hourly.py -qq --log-file=DEBUG2:{{ logs_dir }}/garbo-hourly.log
+5 23 * * * {{ code_dir }}/cronscripts/garbo-daily.py --abort-script=72000 -q --log-file=INFO:{{ logs_dir }}/garbo-daily.log
+
+# Jobs which need to be run frequently
+* * * * * {{ code_dir }}/cronscripts/process-job-source.py IPlainPackageCopyJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IPlainPackageCopyJobSource.log
+* * * * * {{ code_dir }}/cronscripts/process-job-source.py IProcessAcceptedBugsJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IProcessAcceptedBugsJobSource.log
+
+# Per https://portal.admin.canonical.com/C48031
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source.py IInitializeDistroSeriesJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IInitializeDistroSeriesJobSource.log
+
+# https://portal.admin.canonical.com/C49247
+00 6,18 * * * {{ code_dir }}/cronscripts/check-teamparticipation.py -q --log-file=INFO:{{ logs_dir }}/check-teamparticipation.log
+
+# Queue ProductJobs such as commercial expiration notification one a day.
+# The jobs themselves are run by process-job-source-groups.
+15 15 * * * {{ code_dir }}/cronscripts/daily_product_jobs.py >> {{ logs_dir }}/daily_product_jobs.log 2>&1
+
+# https://portal.admin.canonical.com/C49635
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source.py IPOFileStatsJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IPOFileStatsJobSource.log
+
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source.py IPackageTranslationsUploadJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IPackageTranslationsUploadJobSource.log
+
+{% if domain_git %}
+*/5 * * * * {{ code_dir }}/cronscripts/process-job-source.py IGitRefScanJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IGitRefScanJobSource.log
+{% endif %}
+
+*/6 * * * * {{ code_dir }}/cronscripts/process-job-source.py IOCIRegistryUploadJobSource -q --log-file=INFO:{{ logs_dir }}/process-job-source.IOCIRegistryUploadJobSource.log
+
+# Bug notifications
+*/5 * * * * {{ code_dir }}/cronscripts/send-bug-notifications.py -q --log-file=INFO:{{ logs_dir }}/send-bug-notifications.log
+
+# Person notifications
+*/5 * * * * {{ code_dir }}/cronscripts/send-person-notifications.py -q --log-file=INFO:{{ logs_dir }}/send-person-notifications.log
+
+# Process inbound email
+*/3 * * * * {{ code_dir }}/cronscripts/process-mail.py -q --log-file=DEBUG:{{ logs_dir }}/process-mail.log
+
+{%- if mirror_prober_active %}
+# Mirror prober
+# Only one of the regular mirror prober and the CD Image Only mirror
+# prober can be active. Enable the latter by setting the 'enable_cdimage_mirror_prober'
+# configuration parameter to 'true'. Typically, this is done prior to release and
+# on request only.
+PROBER="{{ code_dir }}/cronscripts/distributionmirror-prober.py -q --log-file=DEBUG:{{ logs_dir }}/mirror-prober.log"
+{%- if mirror_prober_release_mode %}
+*/3 * * * * $PROBER --force --content-type=cdimage --no-owner-notification --max-parallel=16 --max-mirrors=200
+{% else %}
+40 * * * * $PROBER --content-type=archive --max-mirrors=100 --max-parallel=300 --max-parallel-per-host=4 && $PROBER --content-type=cdimage --max-mirrors=100
+{% endif %}
+{%- endif %}
+
+{% if domain_git %}
+# Automatic Git repository repacks; limit to weekdays to avoid on-call
+# problems caused by high load at weekends
+35 */4 * * 1-5 BRZ_PLUGIN_PATH={{ code_dir }}/brzplugins {{ code_dir }}/cronscripts/repack_git_repositories.py -v --log-file=INFO:{{ logs_dir }}/repack-git-repositories.log
+{% endif %}
+
+{% if librarian_frontend_ip_addresses %}
+# Sync librarian logs for parsing
+25 * * * * run-one sh {{ scripts_dir }}/sync-librarian-logs
+{% endif %}
+
+{% endif -%}
+
+# OOPS amqp
+*/15 * * * * run-one {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

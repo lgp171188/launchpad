@@ -24,7 +24,6 @@ import psycopg2
 from psycopg2.extensions import make_dsn, parse_dsn
 
 from lp.services.config import config, dbconfig
-from lp.services.database import activity_cols
 
 
 def connect(dbname="template1"):
@@ -78,11 +77,10 @@ def still_open(database, max_wait=120):
             """
             SELECT TRUE FROM pg_stat_activity
             WHERE
-                datname=%%s
-                AND %(pid)s != pg_backend_pid()
+                datname=%s
+                AND pid != pg_backend_pid()
             LIMIT 1
-            """
-            % activity_cols(cur),
+            """,
             [database],
         )
         if cur.fetchone() is None:
@@ -122,11 +120,10 @@ def massacre(database):
         # Terminate open connections.
         cur.execute(
             """
-            SELECT %(pid)s, pg_terminate_backend(%(pid)s)
+            SELECT pid, pg_terminate_backend(pid)
             FROM pg_stat_activity
-            WHERE datname=%%s AND %(pid)s <> pg_backend_pid()
-            """
-            % activity_cols(cur),
+            WHERE datname=%s AND pid <> pg_backend_pid()
+            """,
             [database],
         )
         for pid, success in cur.fetchall():
@@ -212,11 +209,10 @@ def report_open_connections(database):
         """
         SELECT usename, datname, count(*)
         FROM pg_stat_activity
-        WHERE %(pid)s != pg_backend_pid()
+        WHERE pid != pg_backend_pid()
         GROUP BY usename, datname
         ORDER BY datname, usename
         """
-        % activity_cols(cur)
     )
     for usename, datname, num_connections in cur.fetchall():
         print(
