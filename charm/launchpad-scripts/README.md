@@ -8,3 +8,14 @@ You will need the following relations:
     juju relate launchpad-scripts:session-db postgresql:db
     juju relate launchpad-scripts memcached
     juju relate launchpad-scripts rabbitmq-server
+
+## Maintenance actions
+
+To stop long-running services (perhaps in preparation for a schema upgrade),
+run:
+
+    juju run-action --wait launchpad-scripts/leader stop-services
+
+To start them again once maintenance is complete:
+
+    juju run-action --wait launchpad-scripts/leader start-services
