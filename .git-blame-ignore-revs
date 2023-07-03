@@ -106,3 +106,5 @@ a0cc45d527f251438cff74b4134e7a66fba42ac7
 9c7e734d893362de4461910d309d9891558c9634
 # apply blackdoc on the complete codebase
 78a72ed0e3f5be6c727f4981d6a09e978cde4b7e
+# apply black's 2023 stable style
+ee5977f514d584c64afe453ac9d2eaa0fdbc3afd
