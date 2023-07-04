@@ -758,7 +758,7 @@ class ValidPersonOrTeamVocabulary(
                 cache.preferredemail = email_by_person.get(person.id, None)
                 cache.ircnicknames = []
 
-            for nick in bulk.load_referencing(IrcID, persons, ["personID"]):
+            for nick in bulk.load_referencing(IrcID, persons, ["person_id"]):
                 get_property_cache(nick.person).ircnicknames.append(nick)
 
         return DecoratedResultSet(result, pre_iter_hook=pre_iter_hook)

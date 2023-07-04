@@ -115,7 +115,7 @@
           </dd>
         </dl>
       </tal:cannot-push>
-      <p tal:condition="not:view/user/sshkeys" id="ssh-key-directions">
+      <p tal:condition="view/user/sshkeys/is_empty" id="ssh-key-directions">
         To authenticate with the Launchpad Git hosting service, you need to
         <a tal:attributes="href string:${view/user/fmt:url}/+editsshkeys">
           register an SSH key</a>.

@@ -1646,7 +1646,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         It's shown when the person has Jabber IDs registered or has rights
         to register new ones.
         """
-        return bool(self.context.jabberids) or (
+        return not self.context.jabberids.is_empty() or (
             check_permission("launchpad.Edit", self.context)
         )
 
@@ -1657,7 +1657,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         It's shown when the person has SSH keys registered or has rights
         to register new ones.
         """
-        return bool(self.context.sshkeys) or (
+        return not self.context.sshkeys.is_empty() or (
             check_permission("launchpad.Edit", self.context)
         )
 
