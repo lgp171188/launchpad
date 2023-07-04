@@ -45,6 +45,7 @@ from lp.app.widgets.itemswidgets import (
     LaunchpadRadioWidget,
     LaunchpadRadioWidgetWithDescription,
 )
+from lp.app.widgets.snapbuildchannels import SnapBuildChannelsWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.code.interfaces.branch import IBranch
@@ -74,10 +75,10 @@ from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.services.webapp.url import urlappend
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
-from lp.snappy.browser.widgets.snapbuildchannels import SnapBuildChannelsWidget
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.snappy.interfaces.snap import (
     SNAP_PRIVATE_FEATURE_FLAG,
+    SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     CannotAuthorizeStoreUploads,
     CannotFetchSnapcraftYaml,
     CannotParseSnapcraftYaml,
@@ -396,6 +397,33 @@ def builds_and_requests_for_snap(snap):
     return items
 
 
+class HintedSnapBuildChannelsWidget(SnapBuildChannelsWidget):
+    """A variant of SnapBuildChannelsWidget with appropriate hints."""
+
+    def __init__(self, context, request):
+        super().__init__(context, request)
+        self.hint = (
+            "The channels to use for build tools when building the snap "
+            "package.\n"
+        )
+        default_snapcraft_channel = (
+            getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt"
+        )
+        if default_snapcraft_channel == "apt":
+            self.hint += (
+                'If unset, or if the channel for snapcraft is set to "apt", '
+                "the default is to install snapcraft from the source archive "
+                "using apt."
+            )
+        else:
+            self.hint += (
+                'If unset, the default is to install snapcraft from the "%s" '
+                'channel.  Setting the channel for snapcraft to "apt" causes '
+                "snapcraft to be installed from the source archive using "
+                "apt." % default_snapcraft_channel
+            )
+
+
 class SnapRequestBuildsView(LaunchpadFormView):
     """A view for requesting builds of a snap package."""
 
@@ -434,7 +462,7 @@ class SnapRequestBuildsView(LaunchpadFormView):
     custom_widget_archive = SnapArchiveWidget
     custom_widget_distro_arch_series = LabeledMultiCheckBoxWidget
     custom_widget_pocket = LaunchpadDropdownWidget
-    custom_widget_channels = SnapBuildChannelsWidget
+    custom_widget_channels = HintedSnapBuildChannelsWidget
 
     help_links = {
         "pocket": "/+help-snappy/snap-build-pocket.html",
@@ -565,7 +593,7 @@ class SnapAddView(
     custom_widget_store_distro_series = LaunchpadRadioWidget
     custom_widget_auto_build_archive = SnapArchiveWidget
     custom_widget_auto_build_pocket = LaunchpadDropdownWidget
-    custom_widget_auto_build_channels = SnapBuildChannelsWidget
+    custom_widget_auto_build_channels = HintedSnapBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
 
     help_links = {
@@ -973,7 +1001,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     )
     custom_widget_auto_build_archive = SnapArchiveWidget
     custom_widget_auto_build_pocket = LaunchpadDropdownWidget
-    custom_widget_auto_build_channels = SnapBuildChannelsWidget
+    custom_widget_auto_build_channels = HintedSnapBuildChannelsWidget
     custom_widget_store_channels = StoreChannelsWidget
     # See `setUpWidgets` method.
     custom_widget_information_type = CustomWidgetFactory(
