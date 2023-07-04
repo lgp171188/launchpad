@@ -12,8 +12,9 @@ from fixtures import TempDir
 from lp.code.bzr import branch_changed
 from lp.codehosting.upgrade import Upgrader
 from lp.services.config import config
-from lp.testing import TestCaseWithFactory, person_logged_in, run_script
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import AppServerLayer
+from lp.testing.script import run_script
 
 
 class TestUpgradeAllBranchesScript(TestCaseWithFactory):
@@ -29,11 +30,13 @@ class TestUpgradeAllBranchesScript(TestCaseWithFactory):
         """Run the script to upgrade all branches."""
         transaction.commit()
         if finish:
-            flags = " --finish "
+            flags = ["--finish"]
         else:
-            flags = " "
+            flags = []
         return run_script(
-            "scripts/upgrade_all_branches.py" + flags + target, cwd=self.cwd
+            "scripts/upgrade_all_branches.py",
+            args=flags + [target],
+            cwd=self.cwd,
         )
 
     def prepare(self):
@@ -52,7 +55,7 @@ class TestUpgradeAllBranchesScript(TestCaseWithFactory):
     def test_start_upgrade(self):
         """Test that starting the upgrade behaves as expected."""
         upgrader = self.prepare()
-        stdout, stderr, retcode = self.upgrade_all_branches(
+        retcode, stdout, stderr = self.upgrade_all_branches(
             upgrader.target_dir
         )
         self.assertIn(
@@ -68,7 +71,7 @@ class TestUpgradeAllBranchesScript(TestCaseWithFactory):
         """Test that finishing the upgrade behaves as expected."""
         upgrader = self.prepare()
         upgrader.start_upgrade()
-        stdout, stderr, retcode = self.upgrade_all_branches(
+        retcode, stdout, stderr = self.upgrade_all_branches(
             upgrader.target_dir, finish=True
         )
         self.assertIn(

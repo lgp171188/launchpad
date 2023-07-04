@@ -3,6 +3,8 @@
 
 """Tests for SharingJobs."""
 
+import os
+
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -42,17 +44,13 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
 from lp.services.mail.sendmail import format_address_for_person
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
-from lp.testing import (
-    TestCaseWithFactory,
-    login_person,
-    person_logged_in,
-    run_script,
-)
+from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import (
     CeleryJobLayer,
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
 )
+from lp.testing.script import run_script
 
 
 class SharingJobTestCase(TestCaseWithFactory):
@@ -266,9 +264,12 @@ class TestRunViaCron(TestCaseWithFactory):
         )
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (job_type)
+        env = os.environ.copy()
+        env["LP_DEBUG_SQL"] = "1"
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", job_type],
+            env=env,
         )
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))

@@ -33,7 +33,6 @@ __all__ = [
     "record_statements",
     "reset_logging",
     "run_process",
-    "run_script",
     "run_with_login",
     "run_with_storm_debug",
     "RunIsolatedTest",
@@ -1366,42 +1365,11 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
         now += delta
 
 
-def run_script(cmd_line, env=None, cwd=None, universal_newlines=True):
-    """Run the given command line as a subprocess.
-
-    :param cmd_line: A command line suitable for passing to
-        `subprocess.Popen`.
-    :param env: An optional environment dict.  If none is given, the
-        script will get a copy of your present environment.  Either way,
-        PYTHONPATH will be removed from it because it will break the
-        script.
-    :param universal_newlines: If True, return stdout and stderr as text.
-        Defaults to True.
-    :return: A 3-tuple of stdout, stderr, and the process' return code.
-    """
-    if env is None:
-        env = os.environ.copy()
-    env.pop("PYTHONPATH", None)
-    process = subprocess.Popen(
-        cmd_line,
-        shell=True,
-        stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        cwd=cwd,
-        universal_newlines=universal_newlines,
-    )
-    (out, err) = process.communicate()
-    return out, err, process.returncode
-
-
 def run_process(cmd, env=None, universal_newlines=True):
     """Run the given command as a subprocess.
 
-    This differs from `run_script` in that it does not execute via a shell and
-    it explicitly connects stdin to /dev/null so that processes will not be
-    able to hang, waiting for user input.
+    This explicitly connects stdin to /dev/null so that processes will not
+    be able to hang, waiting for user input.
 
     :param cmd_line: A command suitable for passing to `subprocess.Popen`.
     :param env: An optional environment dict. If none is given, the script

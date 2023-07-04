@@ -84,13 +84,13 @@ from lp.testing import (
     TestCaseWithFactory,
     admin_logged_in,
     clean_up_reactor,
-    run_script,
 )
 from lp.testing.layers import (
     LaunchpadZopelessLayer,
     TwistedLayer,
     ZopelessDatabaseLayer,
 )
+from lp.testing.script import run_script
 
 
 class HTTPServerTestSetup(TacTestSetup):
@@ -1324,9 +1324,14 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         mirror = self.makeMirror(content_type=MirrorContent.RELEASE)
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
-            "--content-type=cdimage --no-owner-notification --force"
+        exit_code, out, err = run_script(
+            "cronscripts/distributionmirror-prober.py",
+            args=[
+                "--no-remote-hosts",
+                "--content-type=cdimage",
+                "--no-owner-notification",
+                "--force",
+            ],
         )
         self.assertEqual(0, exit_code, err)
 
@@ -1376,9 +1381,14 @@ class TestDistroMirrorProberFunctional(TestCaseWithFactory):
         )
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "cronscripts/distributionmirror-prober.py --no-remote-hosts "
-            "--content-type=archive --no-owner-notification --force"
+        exit_code, out, err = run_script(
+            "cronscripts/distributionmirror-prober.py",
+            args=[
+                "--no-remote-hosts",
+                "--content-type=archive",
+                "--no-owner-notification",
+                "--force",
+            ],
         )
         self.assertEqual(0, exit_code, err)
 
