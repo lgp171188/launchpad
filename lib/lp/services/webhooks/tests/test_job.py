@@ -42,7 +42,6 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.job.tests import block_on_job
-from lp.services.scripts.tests import run_script
 from lp.services.webhooks.client import WebhookClient, create_request
 from lp.services.webhooks.interfaces import (
     IWebhookClient,
@@ -69,6 +68,7 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     ZopelessDatabaseLayer,
 )
+from lp.testing.script import run_script
 
 
 class TestWebhookJob(TestCaseWithFactory):
@@ -927,9 +927,9 @@ class TestViaCronscript(TestCaseWithFactory):
 
         retcode, stdout, stderr = run_script(
             "cronscripts/process-job-source.py",
-            ["IWebhookDeliveryJobSource"],
-            expect_returncode=0,
+            args=["IWebhookDeliveryJobSource"],
         )
+        self.assertEqual(0, retcode)
         self.assertEqual("", stdout)
         self.assertIn(
             "INFO    Scheduling retry due to WebhookDeliveryRetry", stderr

@@ -7,14 +7,17 @@ This would normally be done in a doctest but TestCaseWithFactory has all the
 provisions to handle Bazaar branches.
 """
 
+import os.path
+
 import transaction
 from zope.component import getUtility
 
 from lp.code.model.branchjob import RosettaUploadJob
+from lp.services.config import config
 from lp.services.osutils import override_environ
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
@@ -65,7 +68,8 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
         transaction.commit()
 
         return_code, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py", ["IRosettaUploadJobSource"]
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IRosettaUploadJobSource"],
         )
         self.assertEqual(0, return_code)
 

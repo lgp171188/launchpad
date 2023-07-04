@@ -4,7 +4,6 @@
 """Tests for jobs to close bugs for accepted package uploads."""
 
 import io
-import os
 from itertools import product
 from textwrap import dedent
 
@@ -448,12 +447,10 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
         self.makeJob(spr=spr, bug_ids=[bug.id])
         transaction.commit()
 
-        env = os.environ.copy()
-        env["LP_DEBUG_SQL"] = "1"
         exit_code, out, err = run_script(
             "cronscripts/process-job-source.py",
             args=["-vv", IProcessAcceptedBugsJobSource.getName()],
-            env=env,
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

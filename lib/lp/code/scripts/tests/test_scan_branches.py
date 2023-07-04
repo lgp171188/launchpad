@@ -5,6 +5,7 @@
 
 """Test the scan_branches script."""
 
+import os.path
 
 import transaction
 from storm.locals import Store
@@ -15,11 +16,12 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
 )
 from lp.code.model.branchjob import BranchJob, BranchJobType, BranchScanJob
+from lp.services.config import config
 from lp.services.job.model.job import Job, JobStatus
 from lp.services.osutils import override_environ
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class TestScanBranches(TestCaseWithFactory):
@@ -42,11 +44,11 @@ class TestScanBranches(TestCaseWithFactory):
     def run_script_and_assert_success(self):
         """Run the scan_branches script and assert it ran successfully."""
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py",
-            ["IBranchScanJobSource"],
-            expect_returncode=0,
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IBranchScanJobSource"],
         )
         self.oops_capture.sync()
+        self.assertEqual(0, retcode)
         self.assertEqual("", stdout)
         self.assertIn("INFO    Ran 1 BranchScanJob jobs.\n", stderr)
 

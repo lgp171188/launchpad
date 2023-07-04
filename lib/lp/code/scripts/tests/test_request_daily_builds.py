@@ -19,11 +19,11 @@ from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
 from lp.services.config.fixture import ConfigFixture, ConfigUseFixture
 from lp.services.features.testing import FeatureFixture
-from lp.services.scripts.tests import run_script
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS, ISnap
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class SilentWSGIRequestHandler(WSGIRequestHandler):
@@ -329,8 +329,9 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
             pack_ref.repository, "charmcraft.yaml", b"name: pack-charm"
         )
         retcode, stdout, stderr = run_script(
-            "cronscripts/request_daily_builds.py", []
+            "cronscripts/request_daily_builds.py"
         )
+        self.assertEqual(0, retcode)
         self.assertIn("Requested 4 daily recipe builds.", stderr)
         self.assertIn(
             "Requested 4 sets of automatic snap package builds.", stderr
@@ -353,8 +354,9 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
         )
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            "cronscripts/request_daily_builds.py", []
+            "cronscripts/request_daily_builds.py"
         )
+        self.assertEqual(0, retcode)
         self.assertEqual(0, recipe.pending_builds.count())
         self.assertIn("Requested 0 daily recipe builds.", stderr)
         self.assertIn(
