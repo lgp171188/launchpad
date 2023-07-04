@@ -1019,15 +1019,15 @@ package copy request:
     >>> from lp.testing.factory import (
     ...     remove_security_proxy_and_shout_at_engineer,
     ... )
-    >>> requestor = factory.makePerson(name="me-copy")
+    >>> requester = factory.makePerson(name="me-copy")
     >>> copy_target = factory.makeCopyArchiveLocation(
-    ...     distribution=ubuntu, name="my-copy-archive", owner=requestor
+    ...     distribution=ubuntu, name="my-copy-archive", owner=requester
     ... )
     >>> naked_copy_target = remove_security_proxy_and_shout_at_engineer(
     ...     copy_target
     ... )
     >>> pcr = ubuntu.main_archive.requestPackageCopy(
-    ...     naked_copy_target, requestor
+    ...     naked_copy_target, requester
     ... )
     >>> print(pcr)
     Package copy request
@@ -1041,7 +1041,7 @@ package copy request:
 The requestPackageCopy method can also take an optional suite name:
 
     >>> package_copy_request = ubuntu.main_archive.requestPackageCopy(
-    ...     naked_copy_target, requestor, suite="hoary-updates"
+    ...     naked_copy_target, requester, suite="hoary-updates"
     ... )
     >>> print(package_copy_request)
     Package copy request

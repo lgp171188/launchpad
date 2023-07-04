@@ -1484,7 +1484,7 @@ be able to access Celso's private PPA.
     ... )
 
 Note that the 'description' and the 'signing_key_fingerprint'
-attributes are only exposed when the requestor has View permission in
+attributes are only exposed when the requester has View permission in
 the IArchive context, in this case only Celso has it.
 
     >>> pprint_entry(
