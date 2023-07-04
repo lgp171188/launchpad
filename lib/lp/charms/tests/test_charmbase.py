@@ -26,7 +26,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestCharmBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_implements_interface(self):
@@ -54,7 +53,6 @@ class TestCharmBase(TestCaseWithFactory):
 
 
 class TestCharmBaseProcessors(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -108,7 +106,6 @@ class TestCharmBaseProcessors(TestCaseWithFactory):
 
 
 class TestCharmBaseSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_getByDistroSeries(self):
@@ -133,7 +130,6 @@ class TestCharmBaseSet(TestCaseWithFactory):
 
 
 class TestCharmBaseWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_new_unpriv(self):

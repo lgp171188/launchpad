@@ -90,7 +90,6 @@ class GitGranteePersonDisplayWidget(BrowserWidget):
 
 @implementer(IMultiLineWidgetLayout)
 class GitGranteeWidgetBase(BrowserWidget):
-
     template = ViewPageTemplateFile("templates/gitgrantee.pt")
     default_option = "person"
     _widgets_set_up = False

@@ -121,7 +121,6 @@ def dictify_translations(translations):
 
 @implementer(IPOTMsgSet)
 class POTMsgSet(SQLBase):
-
     _table = "POTMsgSet"
 
     context = StringCol(dbName="context", notNull=False)

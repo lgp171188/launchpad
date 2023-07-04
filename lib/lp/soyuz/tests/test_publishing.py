@@ -1128,7 +1128,6 @@ class TestNativePublishing(TestNativePublishingBase):
 
 
 class PublishingSetTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1195,7 +1194,6 @@ class PublishingSetTests(TestCaseWithFactory):
 
 
 class TestPublishingSetLite(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -1892,7 +1890,6 @@ class TestGetBuiltBinaries(TestNativePublishingBase):
 
 
 class TestGetActiveArchSpecificPublications(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeSPR(self):

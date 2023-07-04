@@ -67,7 +67,6 @@ from lp.testing.matchers import HasQueryCount, Provides
 
 
 class PackageUploadTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.uploadqueue.dbuser
 
@@ -565,7 +564,6 @@ class TestPackageUploadSecurity(TestCaseWithFactory):
 
 
 class TestPackageUploadWithPackageCopyJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.uploadqueue.dbuser
 

@@ -1301,7 +1301,6 @@ class IAddBugTaskForm(ILinkPackaging):
 
 
 class IAddBugTaskWithProductCreationForm(ILinkPackaging):
-
     bug_url = StrippedTextLine(
         title=_("Bug URL"),
         required=True,

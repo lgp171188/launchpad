@@ -22,7 +22,6 @@ from lp.services.webapp import canonical_url
 
 
 class BaseSprintAttendanceAddView(LaunchpadFormView):
-
     schema = ISprintAttendance
     custom_widget_time_starts = DateTimeWidget
     custom_widget_time_ends = DateTimeWidget

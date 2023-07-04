@@ -52,7 +52,6 @@ from lp.services.webapp.vhosts import allvhosts
 
 
 class UnauthorizedView(SystemErrorView):
-
     response_code = None
     page_title = "Forbidden"
 
@@ -468,7 +467,6 @@ class OpenIDCallbackView(OpenIDLogin):
 
 
 class OpenIDLoginErrorView(LaunchpadView):
-
     page_title = "Error logging in"
     template = ViewPageTemplateFile("templates/login-error.pt")
 
@@ -491,7 +489,6 @@ class OpenIDLoginErrorView(LaunchpadView):
 
 
 class AlreadyLoggedInView(LaunchpadView):
-
     page_title = "Already logged in"
     template = ViewPageTemplateFile("templates/login-already.pt")
 

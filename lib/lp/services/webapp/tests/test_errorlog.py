@@ -45,7 +45,6 @@ class ArbitraryException(Exception):
 
 
 class TestErrorReportingUtility(TestCaseWithFactory):
-
     # want rabbit
     layer = LaunchpadZopelessLayer
 

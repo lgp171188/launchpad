@@ -347,7 +347,6 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
 
 
 class TestCodeTraversal(TestCaseWithFactory, TraversalMixin):
-
     layer = DatabaseFunctionalLayer
 
     def traverse(self, path, **kwargs):
@@ -606,7 +605,6 @@ class TestCodeTraversal(TestCaseWithFactory, TraversalMixin):
 
 
 class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -720,7 +718,6 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
 
 
 class TestErrorViews(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_GoneError(self):
@@ -731,7 +728,6 @@ class TestErrorViews(TestCaseWithFactory):
 
 
 class ExceptionHierarchyTestCase(TestCaseWithFactory):
-
     layer = FunctionalLayer
 
     def test_exception(self):
@@ -751,7 +747,6 @@ class ExceptionHierarchyTestCase(TestCaseWithFactory):
 
 
 class TestIterViewRegistrations(TestCaseWithFactory):
-
     layer = FunctionalLayer
 
     def test_iter_view_registrations(self):
@@ -765,7 +760,6 @@ class TestIterViewRegistrations(TestCaseWithFactory):
 
 
 class TestProductTraversal(TestCaseWithFactory, TraversalMixin):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

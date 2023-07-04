@@ -643,7 +643,6 @@ def close_account(username, log):
 
 
 class CloseAccountScript(LaunchpadScript):
-
     usage = "%prog [options] (username|email) [...]"
     description = (
         "Close a person's account, deleting as much personal information "

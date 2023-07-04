@@ -426,7 +426,6 @@ class ChangesFileTests(TestCase):
 
 
 class TestSignatureVerification(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

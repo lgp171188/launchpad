@@ -47,7 +47,6 @@ class Fake:
 
 
 class TestAuthorizationBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_checkAuthenticated_for_full_fledged_account(self):

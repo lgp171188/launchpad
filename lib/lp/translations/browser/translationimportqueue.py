@@ -71,12 +71,10 @@ def escape_js_string(string):
 
 
 class TranslationImportQueueEntryNavigation(GetitemNavigation):
-
     usedfor = ITranslationImportQueueEntry
 
 
 class IEditTranslationImportQueueEntryDSP(IEditTranslationImportQueueEntry):
-
     sourcepackagename = copy_field(
         IEditTranslationImportQueueEntry["sourcepackagename"],
         vocabularyName="DistributionSourcePackage",

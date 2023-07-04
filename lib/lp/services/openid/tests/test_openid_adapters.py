@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class OpenIdAdapterTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def set_launchpad_section_setings(self, **kwargs):

@@ -13,7 +13,6 @@ __all__ = []  # type: List[str]
 
 
 class BugTrackerComponentTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):
@@ -99,7 +98,6 @@ class BugTrackerComponentTestCase(TestCaseWithFactory):
 
 
 class TestBugTrackerWithComponents(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -186,7 +184,6 @@ class TestBugTrackerWithComponents(TestCaseWithFactory):
 
 
 class TestWebservice(TestCaseWithFactory):
-
     layer = AppServerLayer
 
     def setUp(self):

@@ -977,7 +977,6 @@ class TestSourcePackageRecipeGit(
 
 
 class TestRecipeBranchRoundTrippingMixin:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1402,7 +1401,6 @@ class RecipeDateLastModified(TestCaseWithFactory):
 
 
 class TestWebserviceMixin:
-
     layer = AppServerLayer
 
     def makeRecipe(

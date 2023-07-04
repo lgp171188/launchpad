@@ -84,12 +84,10 @@ NO_DIRECT_CREATION_TRACKERS = SINGLE_INSTANCE_TRACKERS + (
 
 
 class BugTrackerSetNavigation(GetitemNavigation):
-
     usedfor = IBugTrackerSet
 
 
 class BugTrackerSetContextMenu(ContextMenu):
-
     usedfor = IBugTrackerSet
 
     links = ["newbugtracker"]
@@ -100,7 +98,6 @@ class BugTrackerSetContextMenu(ContextMenu):
 
 
 class BugTrackerAddView(LaunchpadFormView):
-
     page_title = "Register an external bug tracker"
     schema = IBugTracker
     label = page_title
@@ -216,7 +213,6 @@ class BugTrackerSetView(LaunchpadView):
 
 
 class BugTrackerView(LaunchpadView):
-
     usedfor = IBugTracker
 
     @property
@@ -250,7 +246,6 @@ BUG_TRACKER_ACTIVE_VOCABULARY = SimpleVocabulary.fromItems(
 
 
 class BugTrackerEditView(LaunchpadEditFormView):
-
     schema = IBugTracker
     custom_widget_summary = CustomWidgetFactory(
         TextAreaWidget, width=30, height=5
@@ -469,7 +464,6 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
 
 class BugTrackerNavigation(Navigation):
-
     usedfor = IBugTracker
 
     def traverse(self, remotebug):
@@ -578,7 +572,6 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
 
 
 class BugTrackerComponentGroupNavigation(Navigation):
-
     usedfor = IBugTrackerComponentGroup
 
     def traverse(self, id):
@@ -618,7 +611,6 @@ class RemoteBugView(LaunchpadView):
 
 
 class BugTrackerNavigationMenu(NavigationMenu):
-
     usedfor = BugTrackerView
     facet = "bugs"
     links = ["edit"]

@@ -32,7 +32,6 @@ from lp.services.fields import (
 
 
 class SprintNameField(ContentNameField):
-
     errormessage = _("%s is already in use by another sprint.")
 
     @property

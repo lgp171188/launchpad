@@ -33,7 +33,6 @@ from lp.services.webapp.interfaces import ILaunchBag
 
 
 class BugWatchSetNavigation(GetitemNavigation):
-
     usedfor = IBugWatchSet
 
 

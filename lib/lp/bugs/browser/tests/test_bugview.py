@@ -12,7 +12,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class TestBugView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -57,7 +56,6 @@ class TestBugView(TestCaseWithFactory):
 
 
 class TestBugInformationTypePortletView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

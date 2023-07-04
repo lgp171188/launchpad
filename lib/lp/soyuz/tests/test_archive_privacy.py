@@ -17,7 +17,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadZopelessLayer
 
 
 class TestArchivePrivacy(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_no_subscription(self):
@@ -64,7 +63,6 @@ class TestArchivePrivacy(TestCaseWithFactory):
 
 
 class TestPrivacySwitching(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_switch_privacy_no_pubs_succeeds(self):

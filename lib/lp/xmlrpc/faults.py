@@ -494,7 +494,6 @@ class OopsOccurred(LaunchpadFault):
 
 
 class InvalidSourcePackageName(LaunchpadFault):
-
     error_code = 390
     msg_template = "%(name)s is not a valid source package name."
 

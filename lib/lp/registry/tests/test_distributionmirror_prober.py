@@ -317,7 +317,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
 
 class TestProberProtocolAndFactory(TestCase):
-
     layer = TwistedLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
@@ -912,7 +911,6 @@ class TestRedirectAwareProberFactoryAndProtocol(TestCase):
 
 
 class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeMirrorProberCallbacks(self):
@@ -1286,7 +1284,6 @@ class TestLoggingMixin(TestCase):
 
 
 class TestDistroMirrorProberFunctional(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

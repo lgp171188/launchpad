@@ -25,7 +25,6 @@ from lp.services.webapp.authorization import precache_permission_for_objects
 
 
 class BazaarApplicationView(LaunchpadView):
-
     page_title = "Launchpad Branches"
 
     @property

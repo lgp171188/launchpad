@@ -11,7 +11,6 @@ from lp.testing.matchers import DoesNotSnapshot
 
 
 class HasSpecificationsTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertNamesOfSpecificationsAre(self, expected_names, specifications):

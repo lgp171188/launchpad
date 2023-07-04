@@ -31,7 +31,6 @@ class StubTransactionManager:
 
 
 class TestWorkingBase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -147,7 +146,6 @@ class TestWorkingBase(TestCaseWithFactory):
 
 
 class TestWorkingBaseErrorReporting(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     @contextmanager

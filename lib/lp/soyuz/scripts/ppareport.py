@@ -31,7 +31,6 @@ from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 
 
 class PPAReportScript(LaunchpadScript):
-
     description = "PPA report tool."
     output = None
 

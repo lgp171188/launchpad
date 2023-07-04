@@ -56,7 +56,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestLiveFSFeatureFlag(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_feature_flag_disabled(self):
@@ -75,7 +74,6 @@ class TestLiveFSFeatureFlag(TestCaseWithFactory):
 
 
 class TestLiveFS(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -558,7 +556,6 @@ class TestLiveFS(TestCaseWithFactory):
 
 
 class TestLiveFSSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -668,7 +665,6 @@ class TestLiveFSSet(TestCaseWithFactory):
 
 
 class TestLiveFSWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

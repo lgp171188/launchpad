@@ -100,7 +100,6 @@ from lp.soyuz.interfaces.binarypackagebuild import BuildSetStatus
 
 
 class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
-
     usedfor = IOCIRecipe
 
     @stepthrough("+build-request")
@@ -1136,7 +1135,6 @@ class OCIRecipeAddView(
 
 
 class BaseOCIRecipeEditView(LaunchpadEditFormView):
-
     schema = IOCIRecipeEditSchema
     next_url = None
 

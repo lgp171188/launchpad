@@ -13,7 +13,6 @@ from lp.translations.pottery.detect_intltool import is_intltool_structure
 
 
 class SetupTestPackageMixin:
-
     test_data_dir = "pottery_test_data"
 
     def prepare_package(self, packagename, buildfiles=None):

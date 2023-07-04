@@ -83,7 +83,6 @@ class GoalProposeError(Exception):
 
 
 class SpecNameField(ContentNameField):
-
     errormessage = _("%s is already in use by another blueprint.")
 
     @property
@@ -126,7 +125,6 @@ class SpecNameField(ContentNameField):
 
 
 class SpecURLField(TextLine):
-
     errormessage = _('%s is already registered by <a href="%s">%s</a>.')
 
     def _validate(self, specurl):

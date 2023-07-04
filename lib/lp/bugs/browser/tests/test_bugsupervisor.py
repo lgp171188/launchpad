@@ -16,7 +16,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBugSupervisorEditView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -113,7 +112,6 @@ class TestBugSupervisorEditView(TestCaseWithFactory):
 
 
 class TestBugSupervisorLink(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_with_no_access(self):

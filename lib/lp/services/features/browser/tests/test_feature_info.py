@@ -24,7 +24,6 @@ from lp.testing.matchers import Contains
 
 
 class TestFeatureControlPage(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def getFeatureInfoUrl(self):

@@ -1882,10 +1882,10 @@ class DirectoryHash:
         ]
         with open(path, "rb") as in_file:
             for chunk in iter(lambda: in_file.read(256 * 1024), b""):
-                for (checksum_file, hashobj) in hashes:
+                for checksum_file, hashobj in hashes:
                     hashobj.update(chunk)
 
-        for (checksum_file, hashobj) in hashes:
+        for checksum_file, hashobj in hashes:
             checksum_line = "%s *%s\n" % (
                 hashobj.hexdigest(),
                 path[len(self.root) + 1 :],
@@ -1899,5 +1899,5 @@ class DirectoryHash:
                 self.add(os.path.join(dirpath, filename))
 
     def close(self):
-        for (checksum_path, checksum_file, archive_hash) in self.checksum_hash:
+        for checksum_path, checksum_file, archive_hash in self.checksum_hash:
             checksum_file.close()

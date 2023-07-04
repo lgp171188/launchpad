@@ -21,7 +21,6 @@ from lp.translations.interfaces.potemplate import IPOTemplate
 class TestPOTemplateEditSourcePackageNameWidget(
     WithScenarios, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -73,7 +72,6 @@ class TestPOTemplateEditSourcePackageNameWidget(
 class TestPOTemplateAdminSourcePackageNameWidget(
     WithScenarios, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

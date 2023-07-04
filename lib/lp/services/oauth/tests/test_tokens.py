@@ -34,7 +34,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class TestOAuth(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

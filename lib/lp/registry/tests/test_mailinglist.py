@@ -44,7 +44,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class PersonMailingListTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_autoSubscribeToMailingList_ON_REGISTRATION_someone_else(self):
@@ -796,7 +795,6 @@ class MailingListSetTestCase(TestCaseWithFactory):
 
 
 class MailingListMessageTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

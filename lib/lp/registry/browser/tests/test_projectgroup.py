@@ -216,7 +216,6 @@ class TestProjectGroupEditView(TestCaseWithFactory):
 
 
 class TestProjectGroupAddProductViews(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_information_type(self):

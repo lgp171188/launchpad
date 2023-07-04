@@ -30,7 +30,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class AffectsEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test__splitPath_with_slashes(self):
@@ -360,7 +359,6 @@ class AffectsEmailCommandTestCase(TestCaseWithFactory):
 
 
 class BugEmailCommandTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_execute_bug_id(self):
@@ -406,7 +404,6 @@ class BugEmailCommandTestCase(TestCaseWithFactory):
 
 
 class PrivateEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
@@ -449,7 +446,6 @@ class PrivateEmailCommandTestCase(TestCaseWithFactory):
 
 
 class SecurityEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
@@ -476,7 +472,6 @@ class SecurityEmailCommandTestCase(TestCaseWithFactory):
 
 
 class InformationTypeEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug_params(self):
@@ -517,7 +512,6 @@ class InformationTypeEmailCommandTestCase(TestCaseWithFactory):
 
 
 class SubscribeEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug_with_user_name(self):
@@ -577,7 +571,6 @@ class SubscribeEmailCommandTestCase(TestCaseWithFactory):
 
 
 class UnsubscribeEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug_with_user_name(self):
@@ -618,7 +611,6 @@ class UnsubscribeEmailCommandTestCase(TestCaseWithFactory):
 
 
 class SummaryEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
@@ -643,7 +635,6 @@ class SummaryEmailCommandTestCase(TestCaseWithFactory):
 
 
 class DuplicateEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
@@ -670,7 +661,6 @@ class DuplicateEmailCommandTestCase(TestCaseWithFactory):
 
 
 class CVEEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):
@@ -698,7 +688,6 @@ class CVEEmailCommandTestCase(TestCaseWithFactory):
 
 
 class TagEmailCommandTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_execute_bug(self):

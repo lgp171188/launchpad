@@ -25,7 +25,6 @@ from lp.translations.interfaces.languagepack import (
 
 @implementer(ILanguagePack)
 class LanguagePack(StormBase):
-
     __storm_table__ = "LanguagePack"
 
     id = Int(primary=True)

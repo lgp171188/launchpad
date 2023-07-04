@@ -29,7 +29,6 @@ from lp.testing.layers import CeleryJobLayer, LaunchpadZopelessLayer
 
 
 class TestPersonCloseAccountJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_close_account_job_valid_username(self):
@@ -113,7 +112,6 @@ class TestPersonCloseAccountJob(TestCaseWithFactory):
 
 
 class TestPersonCloseAccountJobViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_PersonCloseAccountJob(self):

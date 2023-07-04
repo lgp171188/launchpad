@@ -25,7 +25,6 @@ class IFakeService(IService):
 
 @implementer(IFakeService, IHTTPResource)
 class FakeService:
-
     name = "fake_service"
 
 

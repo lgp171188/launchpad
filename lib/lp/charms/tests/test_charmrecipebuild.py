@@ -78,7 +78,6 @@ expected_body = """\
 
 
 class TestCharmRecipeBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -805,7 +804,6 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
 
 
 class TestCharmRecipeBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -868,7 +866,6 @@ class TestCharmRecipeBuildSet(TestCaseWithFactory):
 
 
 class TestCharmRecipeBuildWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

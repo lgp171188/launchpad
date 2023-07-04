@@ -50,7 +50,6 @@ from lp.soyuz.browser.sourceslist import (
 
 
 class DistributionMirrorOverviewMenu(NavigationMenu):
-
     usedfor = IDistributionMirror
     facet = "overview"
     links = ["proberlogs", "edit", "review", "reassign", "delete", "resubmit"]
@@ -174,7 +173,6 @@ class DistributionMirrorView(LaunchpadView):
 
 
 class DistributionMirrorDeleteView(LaunchpadFormView):
-
     schema = IDistributionMirror
     field_names = []
     next_url = None
@@ -271,7 +269,6 @@ class DistributionMirrorAddView(LaunchpadFormView):
 
 
 class DistributionMirrorReviewView(LaunchpadEditFormView):
-
     schema = IDistributionMirror
     field_names = ["status", "whiteboard"]
     next_url = None
@@ -302,7 +299,6 @@ class DistributionMirrorReviewView(LaunchpadEditFormView):
 
 
 class DistributionMirrorEditView(LaunchpadEditFormView):
-
     schema = IDistributionMirror
     field_names = [
         "name",
@@ -342,7 +338,6 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
 
 
 class DistributionMirrorResubmitView(LaunchpadEditFormView):
-
     schema = IDistributionMirror
     field_names = []
     next_url = None

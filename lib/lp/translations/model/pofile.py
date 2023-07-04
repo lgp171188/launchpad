@@ -322,7 +322,6 @@ class POFileMixIn(RosettaStats):
 
 @implementer(IPOFile)
 class POFile(SQLBase, POFileMixIn):
-
     _table = "POFile"
 
     potemplate = ForeignKey(
@@ -1910,7 +1909,7 @@ class POFileToTranslationFileDataAdapter:
                 )
             )
             max_forms = pofile.plural_forms
-            for (pluralform, translation) in forms[:max_forms]:
+            for pluralform, translation in forms[:max_forms]:
                 if translation is not None:
                     msgset.addTranslation(pluralform, translation)
 

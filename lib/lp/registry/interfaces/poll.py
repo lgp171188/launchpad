@@ -47,7 +47,6 @@ from lp.services.fields import ContentNameField
 
 
 class PollNameField(ContentNameField):
-
     errormessage = _("%s is already in use by another poll in this team.")
 
     @property
@@ -475,7 +474,6 @@ class IPollSubset(Interface):
 
 
 class PollOptionNameField(ContentNameField):
-
     errormessage = _("%s is already in use by another option in this poll.")
 
     @property

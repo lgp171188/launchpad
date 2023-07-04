@@ -15,7 +15,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestInlineEditPickerWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getWidget(self, **kwargs):
@@ -65,7 +64,6 @@ class TestInlineEditPickerWidget(TestCaseWithFactory):
 
 
 class TestInlinePersonEditPickerWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getWidget(self, widget_value, show_create_team=False, **kwargs):

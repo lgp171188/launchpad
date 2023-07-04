@@ -33,7 +33,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestBranchHostingClient(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

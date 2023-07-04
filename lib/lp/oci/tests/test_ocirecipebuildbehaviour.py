@@ -126,7 +126,6 @@ class MakeOCIBuildMixin:
 
 
 class TestOCIBuildBehaviour(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -148,7 +147,6 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
 class TestAsyncOCIRecipeBuildBehaviour(
     StatsMixin, MakeOCIBuildMixin, TestCaseWithFactory
 ):
-
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
     )
@@ -1096,7 +1094,6 @@ class TestHandleStatusForOCIRecipeBuild(
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_absolute_filepath(self):
-
         self._createTestFile(
             "manifest.json",
             '[{"Config": "/notvalid/config_file_1.json", '
@@ -1124,7 +1121,6 @@ class TestHandleStatusForOCIRecipeBuild(
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_relative_filepath(self):
-
         self._createTestFile(
             "manifest.json",
             '[{"Config": "../config_file_1.json", '

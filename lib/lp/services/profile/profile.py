@@ -43,7 +43,6 @@ class ProfilingOops(Exception):
 
 
 class Profiler:
-
     profiler_lock = threading.Lock()
     """Global lock used to serialise profiles."""
 
@@ -102,7 +101,6 @@ class Profiler:
 
 
 class Stats:
-
     _callgrind_stats = None
 
     def __init__(self, stats, rawstats, count):
@@ -500,7 +498,7 @@ def end_request(event):
             triggers.items(), key=lambda x: len(x[1]), reverse=True
         )
         top_triggers = []
-        for (key, ixs) in triggers:
+        for key, ixs in triggers:
             if len(ixs) == 1:
                 break
             info = trace[ixs[0] - 1]["app_stack"][-1].copy()

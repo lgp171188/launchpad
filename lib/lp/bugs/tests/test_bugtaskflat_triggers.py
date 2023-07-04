@@ -138,7 +138,6 @@ class BugTaskFlatTestMixin(TestCaseWithFactory):
 
 
 class TestBugTaskFlatten(BugTaskFlatTestMixin):
-
     layer = DatabaseFunctionalLayer
 
     def test_create(self):
@@ -304,7 +303,6 @@ class TestBugTaskFlatten(BugTaskFlatTestMixin):
 
 
 class TestBugTaskFlatTriggers(BugTaskFlatTestMixin):
-
     layer = DatabaseFunctionalLayer
 
     def test_bugtask_create(self):

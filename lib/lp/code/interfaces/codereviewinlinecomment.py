@@ -19,7 +19,6 @@ from lp.registry.interfaces.person import IPerson
 
 
 class ICodeReviewInlineComment(Interface):
-
     previewdiff_id = Attribute(_("The preview diff ID"))
     previewdiff = Reference(
         title=_("The preview diff"),

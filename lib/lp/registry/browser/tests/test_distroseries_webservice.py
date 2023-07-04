@@ -14,7 +14,6 @@ from lp.testing.layers import AppServerLayer
 
 
 class DistroSeriesWebServiceTestCase(TestCaseWithFactory):
-
     layer = AppServerLayer
 
     def assertSameDiffs(self, diffs, ws_diffs):

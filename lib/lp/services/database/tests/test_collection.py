@@ -54,7 +54,6 @@ def get_ids(testtable_objects):
 
 
 class CollectionTest(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_make_table(self):

@@ -22,7 +22,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestTeamReassignmentView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_non_owner_unauthorised(self):
@@ -115,7 +114,6 @@ class TestTeamReassignmentView(TestCaseWithFactory):
 
 
 class TestTeamReassignmentViewErrors(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def _makeTeams(self):

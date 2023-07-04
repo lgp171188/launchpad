@@ -105,7 +105,6 @@ class TestGitCollectionAdaptation(TestCaseWithFactory):
 
 
 class TestGenericGitCollection(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -197,7 +196,6 @@ class TestGenericGitCollection(TestCaseWithFactory):
 
 
 class TestGitCollectionFilters(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -514,7 +512,6 @@ class TestGitCollectionFilters(TestCaseWithFactory):
 
 
 class TestBranchMergeProposals(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -826,7 +823,6 @@ class TestBranchMergeProposalsForReviewer(TestCaseWithFactory):
 
 
 class TestGenericGitCollectionVisibleFilter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1223,7 +1219,6 @@ class TestGitCollectionOwnerCounts(TestCaseWithFactory):
 
 
 class TestGitCollectionConvertListingSortToOrderBy(TestCase):
-
     DEFAULT_LISTING_SORT = [
         Desc(GitRepository.id),
     ]

@@ -34,7 +34,6 @@ from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class TestCanonicalUrlForRecipeBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):

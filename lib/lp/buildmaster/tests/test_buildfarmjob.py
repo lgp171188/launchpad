@@ -31,7 +31,6 @@ from lp.testing.layers import (
 
 
 class TestBuildFarmJobBase:
-
     layer = DatabaseFunctionalLayer  # type: Type[BaseLayer]
 
     def setUp(self, *args, **kwargs):
@@ -225,7 +224,6 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
 
 
 class TestBuildFarmJobSet(TestBuildFarmJobBase, TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

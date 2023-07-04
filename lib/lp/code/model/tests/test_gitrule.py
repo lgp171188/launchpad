@@ -29,7 +29,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestGitRule(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_IGitRule(self):
@@ -744,7 +743,6 @@ class TestGitRule(TestCaseWithFactory):
 
 
 class TestGitRuleGrant(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_IGitRuleGrant(self):

@@ -9,7 +9,6 @@ from lp.testing.views import create_view
 
 
 class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

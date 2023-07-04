@@ -3115,7 +3115,6 @@ class TeamContactMethod(EnumeratedType):
 
 
 class ITeamContactAddressForm(Interface):
-
     contact_address = TextLine(
         title=_("Contact Email Address"), required=False, readonly=False
     )

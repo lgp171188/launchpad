@@ -233,6 +233,7 @@ def builds_and_requests_for_recipe(recipe):
     Builds that the user does not have permission to see are excluded (by
     the model code).
     """
+
     # We need to interleave items of different types, so SQL can't do all
     # the sorting for us.
     def make_sort_key(*date_attrs):
@@ -425,7 +426,6 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
 class BaseCharmRecipeEditView(
     CharmRecipeAuthorizeMixin, LaunchpadEditFormView
 ):
-
     schema = ICharmRecipeEditSchema
     next_url = None
 

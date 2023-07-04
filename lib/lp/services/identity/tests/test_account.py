@@ -15,7 +15,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestAccount(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_account_repr_ansii(self):

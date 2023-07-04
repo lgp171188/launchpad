@@ -21,7 +21,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestDdtpTarball(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

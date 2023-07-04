@@ -684,7 +684,6 @@ class INotification(Interface):
 
 
 class INotificationList(Interface):
-
     created = Datetime(title=_("Time this notification was created"))
 
     def append(notification):
@@ -700,7 +699,6 @@ class INotificationList(Interface):
 
 
 class INotificationRequest(Interface):
-
     notifications = Object(
         description="""
             Notifications received from previous request as well as any

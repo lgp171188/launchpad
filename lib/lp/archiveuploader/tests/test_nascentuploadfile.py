@@ -79,7 +79,6 @@ class NascentUploadFileTestCase(TestCaseWithFactory):
 
 
 class TestNascentUploadFile(NascentUploadFileTestCase):
-
     layer = ZopelessDatabaseLayer
 
     def test_checkSizeAndCheckSum_validates_size(self):

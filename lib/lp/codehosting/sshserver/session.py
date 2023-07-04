@@ -22,12 +22,10 @@ from lp.services.config import config
 
 
 class BazaarSSHStarted(AvatarEvent):
-
     template = "[%(session_id)s] %(username)s started bzr+ssh session."
 
 
 class BazaarSSHClosed(AvatarEvent):
-
     template = "[%(session_id)s] %(username)s closed bzr+ssh session."
 
 

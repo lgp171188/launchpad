@@ -55,7 +55,6 @@ class Version(changelog.Version):
     """
 
     def __init__(self, ver):
-
         ver = str(ver)
         if not len(ver):
             raise BadInputError("Input cannot be empty")

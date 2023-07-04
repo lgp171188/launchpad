@@ -253,7 +253,6 @@ def _get_type(report):
 
 @implementer(IErrorReportingUtility)
 class ErrorReportingUtility:
-
     _ignored_exceptions = {"TranslationUnavailable", "NoReferrerError"}
     _ignored_exceptions_for_offsite_referer = {
         "GoneError",
@@ -477,7 +476,6 @@ globalErrorUtility = ErrorReportingUtility()
 
 @implementer(IErrorReportRequest)
 class ErrorReportRequest:
-
     oopsid = None
 
 

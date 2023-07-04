@@ -34,7 +34,6 @@ from lp.translations.interfaces.translationtemplatesbuild import (
 
 
 class TestgetSpecificJobs(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def createTranslationTemplateBuild(self):
@@ -158,7 +157,6 @@ class BuildCreationMixin:
 
 
 class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
-
     layer = LaunchpadFunctionalLayer
 
     nb_objects = 2

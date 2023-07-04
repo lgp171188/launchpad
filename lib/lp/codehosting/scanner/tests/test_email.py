@@ -153,7 +153,6 @@ class TestBzrSyncEmail(BzrSyncTestCase):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def prepare(self, job_name):
@@ -208,7 +207,6 @@ class TestViaCelery(TestCaseWithFactory):
 
 
 class TestScanBranches(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_queue_tip_changed_email_jobs_subscribed(self):

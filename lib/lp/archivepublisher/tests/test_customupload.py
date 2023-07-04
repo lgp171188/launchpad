@@ -216,7 +216,6 @@ class TestTarfileVerification(TestCase):
 
 
 class TestSigning(TestCaseWithFactory, RunPartsMixin):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 

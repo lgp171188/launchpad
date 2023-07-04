@@ -39,7 +39,6 @@ class IAccessTokenCreateSchema(Interface):
 
 
 class AccessTokensView(LaunchpadFormView):
-
     schema = IAccessTokenCreateSchema
     custom_widget_scopes = LabeledMultiCheckBoxWidget
     custom_widget_date_expires = DateTimeWidget

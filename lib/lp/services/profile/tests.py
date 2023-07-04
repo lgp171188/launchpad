@@ -712,7 +712,6 @@ class TestOOPSRequestEndHandler(BaseRequestEndHandlerTest):
 
 
 class TestBeforeTraverseHandler(TestCleanupProfiler):
-
     layer = layers.DatabaseFunctionalLayer
 
     def test_can_enable_profiling_over_config(self):
@@ -786,7 +785,6 @@ class TestInlineProfiling(BaseRequestEndHandlerTest):
 
 
 class TestSqlLogging(TestCaseWithFactory, BaseRequestEndHandlerTest):
-
     layer = layers.DatabaseFunctionalLayer
 
     def testLogging(self):

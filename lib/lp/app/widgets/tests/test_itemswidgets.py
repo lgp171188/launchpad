@@ -278,7 +278,6 @@ class TestEnumChoiceWidget(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     class ChoiceEnum(DBEnumeratedType):
-
         ITEM_A = DBItem(
             1,
             """

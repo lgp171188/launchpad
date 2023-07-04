@@ -193,7 +193,6 @@ class PrivateArtifactsViewTestCase(BrowserTestCase):
 
 
 class PersonArchiveSubscriptions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_query_count(self):

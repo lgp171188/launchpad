@@ -2343,7 +2343,6 @@ class TestViaCelery(TestCaseWithFactory):
 
 
 class TestPlainPackageCopyJobPermissions(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_extendMetadata_edit_privilege_by_queue_admin(self):

@@ -20,7 +20,6 @@ from lp.testing.views import create_view
 
 
 class TestAddDependency(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_add_dependency_by_url(self):
@@ -42,7 +41,6 @@ class TestAddDependency(BrowserTestCase):
 
 
 class TestDepTree(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_deptree_filters_dependencies(self):

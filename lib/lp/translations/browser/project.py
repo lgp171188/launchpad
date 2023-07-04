@@ -19,7 +19,6 @@ from lp.translations.browser.translations import TranslationsMixin
 
 
 class ProjectTranslationsMenu(NavigationMenu):
-
     usedfor = IProjectGroup
     facet = "translations"
     links = ["products", "settings", "overview"]

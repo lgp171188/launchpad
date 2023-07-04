@@ -275,7 +275,6 @@ class TestSetCommentVisibility(TestCaseWithFactory):
 
 
 class TestQuestionWebServiceSubscription(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_subscribe(self):
@@ -325,7 +324,6 @@ class TestQuestionWebServiceSubscription(TestCaseWithFactory):
 
 
 class TestQuestionSetWebService(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_searchQuestions(self):

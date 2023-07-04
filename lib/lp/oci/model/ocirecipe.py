@@ -122,7 +122,6 @@ def oci_recipe_modified(recipe, event):
 
 @implementer(IOCIRecipe)
 class OCIRecipe(StormBase, WebhookTargetMixin):
-
     __storm_table__ = "OCIRecipe"
 
     id = Int(primary=True)

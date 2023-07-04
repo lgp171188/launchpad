@@ -329,7 +329,6 @@ class TestGetBzrCommitterID(TestCaseWithFactory):
 
 
 class TestStaleLastMirroredID(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_raises_StaleLastMirrored(self):

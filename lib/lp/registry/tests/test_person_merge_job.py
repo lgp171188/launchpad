@@ -57,7 +57,6 @@ def transfer_email(job):
 
 
 class TestPersonMergeJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

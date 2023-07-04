@@ -14,7 +14,6 @@ from lp.app.interfaces.launchpad import IPrivacy
 
 
 class IInformationType(IPrivacy):
-
     information_type = exported(
         Choice(
             title=_("Information Type"),

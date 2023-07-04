@@ -344,7 +344,6 @@ class BugTaskCreationStep(AlsoAffectsStep):
 
 
 class IAddDistroBugTaskForm(IAddBugTaskForm):
-
     sourcepackagename = Choice(
         title=_("Source Package Name"),
         required=False,
@@ -777,7 +776,6 @@ class BugTrackerCreationStep(AlsoAffectsStep):
 
 
 class DistroBugTrackerCreationStep(BugTrackerCreationStep):
-
     _next_step = DistroBugTaskCreationStep
     _field_names = ["distribution", "sourcepackagename", "bug_url"]
     custom_widget_distribution = CustomWidgetFactory(
@@ -793,7 +791,6 @@ class DistroBugTrackerCreationStep(BugTrackerCreationStep):
 
 
 class UpstreamBugTrackerCreationStep(BugTrackerCreationStep):
-
     schema = IAddBugTaskWithUpstreamLinkForm
     _next_step = ProductBugTaskCreationStep
     _field_names = ["product", "bug_url", "link_upstream_how"]

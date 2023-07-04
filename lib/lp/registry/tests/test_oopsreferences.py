@@ -13,7 +13,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestOopsReferences(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -53,7 +53,6 @@ from lp.services.webapp import (
 
 
 class ProductReleaseNavigation(Navigation):
-
     usedfor = IProductRelease
 
     @stepthrough("+download")
@@ -66,7 +65,6 @@ class ProductReleaseNavigation(Navigation):
 
 
 class ProductReleaseContextMenu(ContextMenu):
-
     usedfor = IProductRelease
     links = ("edit", "add_file", "download", "delete")
 

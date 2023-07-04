@@ -631,7 +631,6 @@ class BugView(LaunchpadView, BugViewMixin):
 
 
 class BugActivity(BugView):
-
     page_title = "Activity log"
 
     @cachedproperty
@@ -1186,7 +1185,6 @@ class BugTextView(LaunchpadView):
         ]
 
     def bug_text(self):
-
         """Return the bug information for text display."""
         bug = self.context
 

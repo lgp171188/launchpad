@@ -57,7 +57,6 @@ _first_widget_marker = object()
 
 
 class LaunchpadFormView(LaunchpadView):
-
     # The prefix used for all form inputs.
     prefix = "field"
 
@@ -472,7 +471,6 @@ class LaunchpadFormView(LaunchpadView):
 
 
 class LaunchpadEditFormView(LaunchpadFormView):
-
     render_context = True
 
     def updateContextFromData(self, data, context=None, notify_modified=True):

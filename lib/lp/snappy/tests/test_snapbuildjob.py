@@ -90,7 +90,6 @@ class FileUploaded(MatchesListwise):
 
 
 class TestSnapBuildJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -107,7 +106,6 @@ class TestSnapBuildJob(TestCaseWithFactory):
 
 
 class TestSnapStoreUploadJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

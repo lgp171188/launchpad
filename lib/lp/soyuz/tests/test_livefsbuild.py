@@ -63,7 +63,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestLiveFSBuildFeatureFlag(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_feature_flag_disabled(self):
@@ -100,7 +99,6 @@ expected_body = """\
 
 
 class TestLiveFSBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -427,7 +425,6 @@ class TestLiveFSBuild(TestCaseWithFactory):
 
 
 class TestLiveFSBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -465,7 +462,6 @@ class TestLiveFSBuildSet(TestCaseWithFactory):
 
 
 class TestLiveFSBuildWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

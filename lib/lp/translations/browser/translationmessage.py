@@ -923,7 +923,7 @@ class BaseTranslationView(LaunchpadView):
             # that came with our page request.  The latter take precedence.
             combined_parameters = {}
             combined_parameters.update(parameters)
-            for (key, value) in query_parts:
+            for key, value in query_parts:
                 combined_parameters[key] = value
             parameters = combined_parameters
         else:

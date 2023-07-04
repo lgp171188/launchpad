@@ -33,7 +33,6 @@ class Thing:
 
 
 class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

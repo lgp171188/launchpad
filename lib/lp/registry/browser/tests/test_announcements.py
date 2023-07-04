@@ -24,7 +24,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestAnnouncement(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_announcement_info(self):

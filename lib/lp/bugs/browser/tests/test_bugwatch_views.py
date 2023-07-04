@@ -17,7 +17,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBugWatchEditView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

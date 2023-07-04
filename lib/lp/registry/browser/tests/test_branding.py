@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBrandingChangeView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

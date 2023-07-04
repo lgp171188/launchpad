@@ -321,7 +321,6 @@ class TestSigningKey(TestCaseWithFactory):
 
 
 class TestExternalDependencies(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_external_dependencies_random_user(self):
@@ -406,7 +405,6 @@ class TestExternalDependencies(TestCaseWithFactory):
 
 
 class TestArchiveDependencies(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_addArchiveDependency_random_user(self):

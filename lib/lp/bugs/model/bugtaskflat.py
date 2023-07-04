@@ -14,7 +14,6 @@ from lp.services.database.stormbase import StormBase
 
 
 class BugTaskFlat(StormBase):
-
     __storm_table__ = "BugTaskFlat"
 
     bugtask_id = Int(name="bugtask", primary=True)

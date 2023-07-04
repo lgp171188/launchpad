@@ -35,7 +35,6 @@ def round_to_next_second(dt: datetime) -> datetime:
 
 
 class TestArchiveAPI(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

@@ -24,7 +24,6 @@ from lp.testing.swift import fakeswift
 
 
 class SwiftFixture(TacTestFixture):
-
     tacfile = os.path.join(os.path.dirname(__file__), "fakeswift.tac")
     pidfile = None
     logfile = None

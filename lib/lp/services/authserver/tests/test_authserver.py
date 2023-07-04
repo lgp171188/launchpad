@@ -38,7 +38,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestAuthServerInterfaces(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_application_interface(self):
@@ -137,7 +136,6 @@ class GetUserAndSSHKeysTests(TestCaseWithFactory):
 
 @implementer(IMacaroonIssuer)
 class FakeMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "test"
     issuable_via_authserver = True
     _root_secret = "test"
@@ -164,7 +162,6 @@ class FakeMacaroonIssuer(MacaroonIssuerBase):
 
 
 class MacaroonTests(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

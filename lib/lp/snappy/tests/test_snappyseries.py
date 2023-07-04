@@ -30,7 +30,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestSnappySeries(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -97,7 +96,6 @@ class TestSnappySeries(TestCaseWithFactory):
 
 
 class TestSnappySeriesSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -123,7 +121,6 @@ class TestSnappySeriesSet(TestCaseWithFactory):
 
 
 class TestSnappySeriesWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -254,7 +251,6 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
 
 
 class TestSnappyDistroSeriesSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

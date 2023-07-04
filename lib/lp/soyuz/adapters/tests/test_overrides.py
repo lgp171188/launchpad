@@ -26,7 +26,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestFromExistingOverridePolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_source_overrides(self):
@@ -495,7 +494,6 @@ class TestFromExistingOverridePolicy(TestCaseWithFactory):
 
 
 class TestFromSourceOverridePolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_no_sources(self):
@@ -531,7 +529,6 @@ class TestFromSourceOverridePolicy(TestCaseWithFactory):
 
 
 class TestUnknownOverridePolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_getComponentOverride_default_name(self):
@@ -620,7 +617,6 @@ class TestUnknownOverridePolicy(TestCaseWithFactory):
 
 
 class TestConstantOverridePolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_sources(self):
@@ -684,7 +680,6 @@ class TestConstantOverridePolicy(TestCaseWithFactory):
 
 
 class TestFallbackOverridePolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_fallback_sources(self):

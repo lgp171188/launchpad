@@ -9,7 +9,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class PersonBugsMenuTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_user(self):

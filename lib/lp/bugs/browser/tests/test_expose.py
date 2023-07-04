@@ -347,7 +347,6 @@ class TestStructuralSubscriptionHelpers(TestCase):
 
 
 class TestIntegrationExposeUserSubscriptionsToJS(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_team_admin_subscription(self):

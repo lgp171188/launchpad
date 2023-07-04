@@ -409,7 +409,6 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_job(self):

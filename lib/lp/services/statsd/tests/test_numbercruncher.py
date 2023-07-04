@@ -32,7 +32,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestNumberCruncher(StatsMixin, TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
 

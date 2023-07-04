@@ -49,7 +49,6 @@ class IQuestionJob(Interface):
 
 
 class IQuestionEmailJob(IQuestionJob, IRunnableJob):
-
     user = Attribute("The `IPerson` who triggered the email.")
 
     subject = Attribute("The subject of the email.")

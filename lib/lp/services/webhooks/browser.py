@@ -36,7 +36,6 @@ from lp.services.webhooks.interfaces import IWebhook, IWebhookSet
 
 
 class WebhookNavigation(Navigation):
-
     usedfor = IWebhook
 
     @stepthrough("+delivery")
@@ -78,7 +77,6 @@ class WebhooksView(LaunchpadView):
 
 
 class WebhooksBreadcrumb(Breadcrumb):
-
     text = "Webhooks"
 
     @property
@@ -107,7 +105,6 @@ class WebhookEditSchema(Interface):
 
 
 class WebhookAddView(LaunchpadFormView):
-
     page_title = label = "Add webhook"
 
     schema = WebhookEditSchema
@@ -142,7 +139,6 @@ class WebhookAddView(LaunchpadFormView):
 
 
 class WebhookView(LaunchpadEditFormView):
-
     label = "Manage webhook"
 
     schema = WebhookEditSchema
@@ -183,7 +179,6 @@ class WebhookView(LaunchpadEditFormView):
 
 
 class WebhookDeleteView(LaunchpadFormView):
-
     schema = Interface
     next_url = None
 

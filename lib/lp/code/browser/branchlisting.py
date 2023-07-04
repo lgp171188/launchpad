@@ -814,7 +814,6 @@ class RecentlyChangedBranchesView(NoContextBranchListingView):
 
 
 class PersonBranchesMenu(ApplicationMenu):
-
     usedfor = IPerson
     facet = "branches"
     links = ["branches", "active_reviews", "source_package_recipes", "snaps"]
@@ -847,7 +846,6 @@ class PersonBranchesMenu(ApplicationMenu):
 
 
 class PersonProductBranchesMenu(PersonBranchesMenu):
-
     usedfor = IPersonProduct
     links = ["branches", "active_reviews", "source_package_recipes", "snaps"]
 
@@ -1025,7 +1023,6 @@ class PersonProductCodeSummaryView(PersonCodeSummaryView):
 
 
 class ProductBranchesMenu(ApplicationMenu):
-
     usedfor = IProduct
     facet = "branches"
     links = [

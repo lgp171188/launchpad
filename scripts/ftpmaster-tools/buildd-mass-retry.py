@@ -22,7 +22,6 @@ from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 
 class BuilddMassRetryScript(LaunchpadScript):
-
     dbuser = "fiera"
 
     def add_my_options(self):

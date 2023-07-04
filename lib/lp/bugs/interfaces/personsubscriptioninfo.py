@@ -21,7 +21,6 @@ from lp.services.fields import BugField, PersonChoice
 
 
 class IAbstractSubscriptionInfo(Interface):
-
     bug = BugField(
         title=_("Bug"),
         readonly=True,
@@ -45,7 +44,6 @@ class IAbstractSubscriptionInfo(Interface):
 
 
 class IRealSubscriptionInfo(IAbstractSubscriptionInfo):
-
     subscription = Attribute(
         "The bug subscription.  Important attributes for our uses are the "
         "target and the bug_notification_level."
@@ -66,7 +64,6 @@ class IRealSubscriptionInfo(IAbstractSubscriptionInfo):
 
 
 class IVirtualSubscriptionInfo(IAbstractSubscriptionInfo):
-
     pillar = Attribute(
         """The pillar for the bugtask.  Useful for owner and
         bug_supervisor"""
@@ -76,7 +73,6 @@ class IVirtualSubscriptionInfo(IAbstractSubscriptionInfo):
 
 
 class IAbstractSubscriptionInfoCollection(Interface):
-
     count = Attribute("The total number of contained subscriptions.")
 
     personal = Attribute(

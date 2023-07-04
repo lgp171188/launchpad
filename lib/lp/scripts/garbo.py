@@ -1048,7 +1048,6 @@ class RevisionAuthorEmailLinker(TunableLoop):
 
 
 class PersonPruner(TunableLoop):
-
     maximum_chunk_size = 1000
 
     def __init__(self, log, abort_time=None):
@@ -2283,7 +2282,6 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
         )
 
     def add_my_options(self):
-
         self.parser.add_option(
             "-x",
             "--experimental",

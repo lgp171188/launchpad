@@ -44,7 +44,6 @@ def get_picker_entry(item_subject, context_object, **kwargs):
 
 
 class DefaultPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_css_image_entry_without_icon(self):
@@ -74,7 +73,6 @@ class DefaultPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
 
 
 class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_person_to_pickerentry(self):
@@ -190,7 +188,6 @@ class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
 class TestDistributionSourcePackagePickerEntrySourceAdapter(
     TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def getPickerEntry(self, dsp):
@@ -270,7 +267,6 @@ class TestDistributionSourcePackagePickerEntrySourceAdapter(
 
 
 class TestProductPickerEntrySourceAdapter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getPickerEntry(self, product):
@@ -352,7 +348,6 @@ class TestProductPickerEntrySourceAdapter(TestCaseWithFactory):
 
 
 class TestProjectGroupPickerEntrySourceAdapter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getPickerEntry(self, projectgroup):
@@ -410,7 +405,6 @@ class TestProjectGroupPickerEntrySourceAdapter(TestCaseWithFactory):
 
 
 class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getPickerEntry(self, distribution):
@@ -544,7 +538,6 @@ class TestVocabularyFilter(VocabularyFilter):
 
 
 class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

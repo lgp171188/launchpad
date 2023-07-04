@@ -169,7 +169,6 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
 
 
 class TestSourcePackageView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_register_upstream_forbids_proprietary(self):
@@ -226,7 +225,6 @@ class TestSourcePackageView(BrowserTestCase):
 
 
 class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -298,7 +296,6 @@ class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
 
 
 class TestSourcePackagePackagingLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):
@@ -419,7 +416,6 @@ class TestSourcePackagePackagingLinks(TestCaseWithFactory):
 
 
 class TestSourcePackageChangeUpstreamView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_error_on_proprietary_product(self):

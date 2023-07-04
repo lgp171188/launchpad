@@ -458,7 +458,6 @@ class BranchTraversalMixin:
 
 
 class PersonNavigation(BranchTraversalMixin, Navigation):
-
     usedfor = IPerson
 
     @stepthrough("+expiringmembership")
@@ -630,7 +629,6 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
 
 
 class PersonSetNavigation(Navigation):
-
     usedfor = IPersonSet
 
     def traverse(self, name):
@@ -654,7 +652,6 @@ class PersonSetNavigation(Navigation):
 
 
 class PersonSetContextMenu(ContextMenu, TopLevelMenuMixin):
-
     usedfor = IPersonSet
 
     links = [
@@ -799,7 +796,6 @@ class PersonOverviewMenu(
     HasOCIRecipesMenuMixin,
     HasCharmRecipesMenuMixin,
 ):
-
     usedfor = IPerson
     facet = "overview"
     links = [
@@ -969,7 +965,6 @@ class PPANavigationMenuMixIn:
 
 
 class PersonRelatedSoftwareNavigationMenu(NavigationMenu, CommonMenuLinks):
-
     usedfor = IPersonRelatedSoftwareMenu
     facet = "overview"
     links = (
@@ -1081,7 +1076,6 @@ class DeactivateAccountSchema(Interface):
 
 
 class PersonDeactivateAccountView(LaunchpadFormView):
-
     schema = DeactivateAccountSchema
     label = "Deactivate your Launchpad account"
     custom_widget_comment = CustomWidgetFactory(
@@ -1327,7 +1321,6 @@ class PersonCloseAccountView(LaunchpadFormView):
 
 
 class IAccountAdministerSchema(Interface):
-
     status = copy_field(IAccount["status"], required=True, readonly=False)
     comment = Text(
         title=_("Status change comment"), required=True, readonly=False
@@ -2354,7 +2347,6 @@ class PersonCodeOfConductEditView(LaunchpadView):
 
 
 class PersonEditIRCNicknamesView(LaunchpadFormView):
-
     schema = Interface
 
     @property
@@ -2406,7 +2398,6 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
 
 
 class PersonEditJabberIDsView(LaunchpadFormView):
-
     schema = IJabberID
     field_names = ["jabberid"]
 
@@ -2472,7 +2463,6 @@ class PersonEditJabberIDsView(LaunchpadFormView):
 
 @implementer(IPersonEditMenu)
 class PersonEditSSHKeysView(LaunchpadView):
-
     info_message = None
     error_message = None
 
@@ -2752,7 +2742,6 @@ class PersonGPGView(LaunchpadView):
 
 
 class BasePersonEditView(LaunchpadEditFormView):
-
     schema = IPerson
     field_names = []
 
@@ -2872,7 +2861,6 @@ class PersonEditView(PersonRenameFormMixin, BasePersonEditView):
 
 
 class PersonBrandingView(BrandingChangeView):
-
     field_names = ["logo", "mugshot"]
     schema = IPerson
 
@@ -4386,7 +4374,6 @@ class PersonLiveFSView(LaunchpadView):
 
 
 class PersonTimeZoneForm(Interface):
-
     time_zone = Choice(
         vocabulary="TimezoneName",
         title=_("Time zone"),

@@ -28,7 +28,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
 class TestPackagesetSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -237,7 +236,6 @@ class TestPackagesetSet(TestCaseWithFactory):
 
 
 class TestPackagesetSetPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -271,7 +269,6 @@ class TestPackagesetSetPermissions(TestCaseWithFactory):
 
 
 class TestPackageset(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -725,7 +722,6 @@ class TestPackageset(TestCaseWithFactory):
 
 
 class TestPackagesetPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -792,7 +788,6 @@ class TestPackagesetPermissions(TestCaseWithFactory):
 
 
 class TestArchivePermissionSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

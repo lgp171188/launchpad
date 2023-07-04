@@ -136,7 +136,6 @@ class RetryError(Exception):
 
 
 class RaisingRetryJob(NullJob):
-
     retry_error_types = (RetryError,)
 
     max_retries = 1
@@ -647,7 +646,6 @@ class ShorterStuckJob(StuckJob):
 
 @implementer(IRunnableJob)
 class InitialFailureJob(StaticJobSource):
-
     jobs = [(True,), (False,)]
 
     has_failed = False
@@ -670,7 +668,6 @@ class InitialFailureJob(StaticJobSource):
 
 @implementer(IRunnableJob)
 class ProcessSharingJob(StaticJobSource):
-
     jobs = [(True,), (False,)]
 
     initial_job_was_here = False
@@ -692,7 +689,6 @@ class ProcessSharingJob(StaticJobSource):
 
 @implementer(IRunnableJob)
 class MemoryHogJob(StaticJobSource):
-
     jobs = [()]
 
     done = False
@@ -708,7 +704,6 @@ class MemoryHogJob(StaticJobSource):
 
 
 class NoJobs(StaticJobSource):
-
     done = False
 
     jobs = []
@@ -716,7 +711,6 @@ class NoJobs(StaticJobSource):
 
 @implementer(IRunnableJob)
 class LeaseHeldJob(StaticJobSource):
-
     jobs = [()]
 
     done = False
@@ -730,7 +724,6 @@ class LeaseHeldJob(StaticJobSource):
 
 
 class TestTwistedJobRunner(TestCaseWithFactory):
-
     # Needs AMQP
     layer = LaunchpadZopelessLayer
     run_tests_with = RunIsolatedTest
@@ -898,7 +891,6 @@ class TestTwistedJobRunner(TestCaseWithFactory):
 
 
 class TestCeleryEnabled(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_no_flag(self):

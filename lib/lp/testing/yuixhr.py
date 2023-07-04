@@ -116,7 +116,6 @@ def login_as_person(person):
 
 @implementer(IResult)
 class CloseDbResult:
-
     # This is machinery, not content.  We specify our security checker here
     # directly for clarity.
     __Security_checker__ = NamesChecker(["next", "__iter__"])

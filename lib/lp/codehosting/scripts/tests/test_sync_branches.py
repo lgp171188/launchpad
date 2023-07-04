@@ -58,7 +58,6 @@ class BranchSyncProcessMatches(MatchesListwise):
 
 
 class TestSyncBranches(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

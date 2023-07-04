@@ -191,7 +191,6 @@ class BugTaskSearchParams:
         ignore_privacy=False,
         ociproject=None,
     ):
-
         self.bug = bug
         self.searchtext = searchtext
         self.fast_searchtext = fast_searchtext

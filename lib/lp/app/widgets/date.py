@@ -364,7 +364,7 @@ class DateTimeWidget(TextWidget):
         for fmt in self.supported_input_formats:
             try:
                 datetime.strptime(input.strip(), fmt)
-            except (ValueError) as e:
+            except ValueError as e:
                 if "unconverted data remains" in str(e):
                     return
                 else:

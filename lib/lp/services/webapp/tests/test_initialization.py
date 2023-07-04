@@ -23,7 +23,6 @@ class AnyObject:
 
 
 class TestURLNamespace(TestCase):
-
     layer = FunctionalLayer
 
     def setUp(self):

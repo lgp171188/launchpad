@@ -18,7 +18,6 @@ from lp.testing.script import run_script
 
 
 class TestUpgradeAllBranchesScript(TestCaseWithFactory):
-
     layer = AppServerLayer
 
     def setUp(self):

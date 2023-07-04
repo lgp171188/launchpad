@@ -41,7 +41,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -337,7 +336,6 @@ class FileBugViewMixin:
 
 
 class TestFileBugViewBase(FileBugViewMixin, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_submit_comment_empty_error(self):
@@ -851,7 +849,6 @@ class FileBugViewBaseExtraDataTestCase(FileBugViewMixin, TestCaseWithFactory):
 
 
 class TestFileBugForNonBugSupervisors(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def filebug_via_view(
@@ -914,7 +911,6 @@ class TestFileBugForNonBugSupervisors(TestCaseWithFactory):
 
 
 class TestFileBugSourcePackage(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -995,7 +991,6 @@ class TestFileBugSourcePackage(WithScenarios, TestCaseWithFactory):
 
 
 class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeProjectGroupFileBugView(self, product_name, bug_title, tags=""):

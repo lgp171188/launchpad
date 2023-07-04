@@ -18,7 +18,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class TestSendbranchmail(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def createBranch(self):

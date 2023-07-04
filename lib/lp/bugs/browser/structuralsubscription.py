@@ -54,7 +54,6 @@ from lp.services.webapp.publisher import (
 
 
 class StructuralSubscriptionNavigation(Navigation):
-
     usedfor = IStructuralSubscription
 
     @stepthrough("+filter")

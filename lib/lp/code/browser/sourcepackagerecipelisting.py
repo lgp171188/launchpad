@@ -31,7 +31,6 @@ class HasRecipesMenuMixin:
 
 
 class RecipeListingView(LaunchpadView, FeedsMixin):
-
     feed_types = ()
 
     branch_enabled = True
@@ -45,7 +44,6 @@ class RecipeListingView(LaunchpadView, FeedsMixin):
 
 
 class BranchRecipeListingView(RecipeListingView):
-
     branch_enabled = False
 
     def initialize(self):
@@ -59,7 +57,6 @@ class BranchRecipeListingView(RecipeListingView):
 
 
 class PersonRecipeListingView(RecipeListingView):
-
     owner_enabled = False
 
 

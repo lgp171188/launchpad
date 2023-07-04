@@ -24,7 +24,6 @@ from lp.services.scripts.base import LaunchpadScript
 
 
 class BranchRewriteScript(LaunchpadScript):
-
     # By default, only emit WARNING and above messages to stderr, which
     # will end up in the Apache error log.
     loglevel = WARNING

@@ -15,7 +15,6 @@ from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class TestBuildDepWait(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

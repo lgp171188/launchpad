@@ -205,7 +205,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestParseGitCommits(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_valid(self):
@@ -3333,7 +3332,6 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
 
 
 class TestGitRepositoryRescan(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_rescan(self):
@@ -3405,7 +3403,6 @@ class TestGitRepositoryRescan(TestCaseWithFactory):
 
 
 class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_updates_proposals(self):
@@ -3474,7 +3471,6 @@ class TestGitRepositoryUpdateMergeCommitIDs(TestCaseWithFactory):
 
 
 class TestGitRepositoryUpdateLandingTargets(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_schedules_diff_updates(self):
@@ -3509,7 +3505,6 @@ class TestGitRepositoryUpdateLandingTargets(TestCaseWithFactory):
 
 
 class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_base_repository_recipe(self):
@@ -3624,7 +3619,6 @@ class TestGitRepositoryMarkRecipesStale(TestCaseWithFactory):
 
 
 class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_same_repository(self):
@@ -3677,7 +3671,6 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
 
 
 class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -3731,7 +3724,6 @@ class TestGitRepositoryMarkCharmRecipesStale(TestCaseWithFactory):
 
 
 class TestGitRepositoryFork(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -3881,7 +3873,6 @@ class TestGitRepositoryFork(TestCaseWithFactory):
 
 
 class TestGitRepositoryDetectMerges(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_markProposalMerged(self):
@@ -4008,7 +3999,6 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
 
 
 class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_findByGitRepository_created_with_configuration(self):
@@ -4274,7 +4264,6 @@ class TestGitRepositoryGetBlob(TestCaseWithFactory):
 
 
 class TestGitRepositoryRules(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_rules(self):
@@ -4824,7 +4813,6 @@ class TestGitRepositoryRules(TestCaseWithFactory):
 
 
 class TestGitRepositorySet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -5277,7 +5265,6 @@ class TestGitRepositorySet(TestCaseWithFactory):
 
 
 class TestGitRepositorySetDefaultsMixin:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

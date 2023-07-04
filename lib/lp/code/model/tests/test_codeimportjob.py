@@ -79,7 +79,6 @@ def login_for_code_imports():
 
 
 class TestCodeImportJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

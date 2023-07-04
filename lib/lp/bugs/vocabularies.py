@@ -86,7 +86,6 @@ class UsesBugsDistributionVocabulary(DistributionVocabulary):
 
 
 class BugVocabulary(SQLObjectVocabularyBase):
-
     _table = Bug
     _orderBy = "id"
 

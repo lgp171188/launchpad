@@ -28,7 +28,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class TestNotificationRequiringLibrarian(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_mail_from_unicode_names(self):
@@ -288,7 +287,6 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
 
 
 class TestNotification(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_fetch_information_changes(self):

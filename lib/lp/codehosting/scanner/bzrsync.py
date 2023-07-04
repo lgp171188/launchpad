@@ -292,7 +292,7 @@ class BzrSync:
             ancestry of the branch.  May overlap with added_history.
         """
         start_revno = last_revno - len(added_history) + 1
-        for (revno, revision_id) in enumerate(added_history, start_revno):
+        for revno, revision_id in enumerate(added_history, start_revno):
             yield revision_id, revno
         for revision_id in added_ancestry.difference(added_history):
             yield revision_id, None

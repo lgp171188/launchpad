@@ -29,7 +29,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_landing_candidates_constant_queries(self):
@@ -96,11 +95,9 @@ class TestBranch(TestCaseWithFactory):
 
 
 class TestBranchOperations(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_createMergeProposal_fails_if_reviewers_and_types_mismatch(self):
-
         source = self.factory.makeBranch(name="rock")
         source_url = api_url(source)
 
@@ -193,7 +190,6 @@ class TestBranchOperations(TestCaseWithFactory):
 
 
 class TestBranchDeletes(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -235,7 +231,6 @@ class TestBranchDeletes(TestCaseWithFactory):
 
 
 class TestSlashBranches(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_renders_with_source_package_branch(self):

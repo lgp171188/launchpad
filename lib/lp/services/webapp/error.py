@@ -182,12 +182,10 @@ class ProtocolErrorView(SystemErrorView):
 
 
 class UnexpectedFormDataView(SystemErrorView):
-
     page_title = "Error: Unexpected form data"
 
 
 class NotFoundView(SystemErrorView):
-
     page_title = "Error: Page not found"
 
     response_code = http.client.NOT_FOUND
@@ -225,7 +223,6 @@ class GoneView(NotFoundView):
 
 
 class RequestExpiredView(SystemErrorView):
-
     page_title = "Error: Timeout"
 
     response_code = http.client.SERVICE_UNAVAILABLE
@@ -258,7 +255,6 @@ class InvalidBatchSizeView(SystemErrorView):
 
 
 class TranslationUnavailableView(SystemErrorView):
-
     page_title = "Error: Translation page is not available"
 
     response_code = http.client.SERVICE_UNAVAILABLE
@@ -274,7 +270,6 @@ class NoReferrerErrorView(SystemErrorView):
 
 
 class OpenIdDiscoveryFailureView(SystemErrorView):
-
     response_code = http.client.SERVICE_UNAVAILABLE
 
     def isSystemError(self):
@@ -283,11 +278,9 @@ class OpenIdDiscoveryFailureView(SystemErrorView):
 
 
 class DisconnectionErrorView(SystemErrorView):
-
     response_code = http.client.SERVICE_UNAVAILABLE
     reason = "our database being temporarily offline"
 
 
 class OperationalErrorView(DisconnectionErrorView):
-
     reason = "our database having temporary operational issues"

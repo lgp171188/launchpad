@@ -32,7 +32,6 @@ from lp.testing.layers import ZopelessDatabaseLayer, ZopelessLayer
 
 
 class TestGitLab(TestCase):
-
     layer = ZopelessLayer
 
     def setUp(self):
@@ -292,7 +291,6 @@ class TestGitLab(TestCase):
 
 
 class TestGitLabUpdateBugWatches(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     @responses.activate

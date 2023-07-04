@@ -180,7 +180,6 @@ class FakeTurnipServer(threading.Thread):
 
 
 class TestRequestDailyBuilds(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def setUp(self):

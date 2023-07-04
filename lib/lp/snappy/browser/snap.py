@@ -363,6 +363,7 @@ def builds_and_requests_for_snap(snap):
     Builds that the user does not have permission to see are excluded (by
     the model code).
     """
+
     # We need to interleave items of different types, so SQL can't do all
     # the sorting for us.
     def make_sort_key(*date_attrs):
@@ -801,7 +802,6 @@ class BaseSnapEditView(
     SnapFormMixin,
     LaunchpadEditFormView,
 ):
-
     schema = ISnapEditSchema
     next_url = None
 

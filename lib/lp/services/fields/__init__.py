@@ -808,19 +808,16 @@ class BaseImageUpload(Bytes):
 
 
 class IconImageUpload(BaseImageUpload):
-
     dimensions = (14, 14)
     max_size = 5 * 1024
 
 
 class LogoImageUpload(BaseImageUpload):
-
     dimensions = (64, 64)
     max_size = 50 * 1024
 
 
 class MugshotImageUpload(BaseImageUpload):
-
     dimensions = (192, 192)
     max_size = 100 * 1024
 

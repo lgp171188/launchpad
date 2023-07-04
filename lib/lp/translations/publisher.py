@@ -23,7 +23,6 @@ from lp.services.webapp.servers import (
 
 @implementer(IFacet)
 class TranslationsFacet:
-
     name = "translations"
     rootsite = "translations"
     text = "Translations"

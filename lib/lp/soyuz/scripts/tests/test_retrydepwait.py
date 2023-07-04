@@ -19,7 +19,6 @@ from lp.testing.script import run_script
 
 
 class TestRetryDepwait(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

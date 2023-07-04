@@ -23,7 +23,6 @@ from lp.translations.interfaces.translationimportqueue import (
 class TestTranslationImportQueueEntrySourcePackageNameWidget(
     WithScenarios, TestCaseWithFactory
 ):
-
     layer = LaunchpadFunctionalLayer
 
     scenarios = [

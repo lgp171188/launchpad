@@ -324,7 +324,6 @@ class ViewBugActivity(DelegatedAuthorization):
 
 
 class ViewBugSubscription(AnonymousAuthorization):
-
     usedfor = IBugSubscription
 
 
@@ -350,7 +349,6 @@ class EditBugSubscription(AuthorizationBase):
 
 
 class ViewBugMessage(AnonymousAuthorization):
-
     usedfor = IMessage
 
 

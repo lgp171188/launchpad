@@ -427,7 +427,6 @@ def calculate_bugsummary_rows(target):
 
 
 class BugSummaryRebuildTunableLoop(TunableLoop):
-
     maximum_chunk_size = 100
 
     def __init__(self, log, dry_run, abort_time=None):

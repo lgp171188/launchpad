@@ -99,7 +99,6 @@ class ArchiveSubscriber(StormBase):
         """See `IArchiveSubscriber`."""
         store = Store.of(self)
         if self.subscriber.is_team:
-
             # We get all the people who already have active tokens for
             # this archive (for example, through separate subscriptions).
             auth_token = LeftJoin(

@@ -174,7 +174,6 @@ class TestProductUsageEnums(TestCaseWithFactory, UsageEnumsMixin):
 
 
 class TestProductSeriesUsageEnums(TestCaseWithFactory, SeriesUsageEnumsMixin):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -194,7 +193,6 @@ class TestProductSeriesUsageEnums(TestCaseWithFactory, SeriesUsageEnumsMixin):
 
 
 class TestDistroSeriesUsageEnums(TestCaseWithFactory, SeriesUsageEnumsMixin):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

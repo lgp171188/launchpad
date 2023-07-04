@@ -19,7 +19,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class BugChangeTestCase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -42,7 +41,6 @@ class BugChangeTestCase(TestCaseWithFactory):
 
 
 class BugChangeLevelTestCase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

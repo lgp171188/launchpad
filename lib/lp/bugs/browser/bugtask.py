@@ -1158,7 +1158,6 @@ class BugTaskPrivilegeMixin:
 
 
 class IBugTaskEditForm(IBugTask):
-
     sourcepackagename = copy_field(
         IBugTask["sourcepackagename"],
         vocabularyName="DistributionSourcePackage",

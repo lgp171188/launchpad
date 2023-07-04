@@ -15,7 +15,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class TestUpgradeBranches(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def test_upgrade_branches(self):

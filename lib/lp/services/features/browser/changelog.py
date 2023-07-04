@@ -13,7 +13,6 @@ from lp.services.webapp.publisher import LaunchpadView
 
 
 class FeatureChangeLogView(LaunchpadView):
-
     page_title = label = "Feature flag changelog"
 
     @property

@@ -99,7 +99,6 @@ def execute(logger, command, args=None):
 
 
 class GenerateContentsFiles(LaunchpadCronScript):
-
     distribution = None
 
     def add_my_options(self):

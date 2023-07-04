@@ -78,7 +78,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestCharmRecipeBuildBehaviourBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -160,7 +159,6 @@ class TestCharmRecipeBuildBehaviour(TestCharmRecipeBuildBehaviourBase):
 class TestAsyncCharmRecipeBuildBehaviour(
     StatsMixin, TestCharmRecipeBuildBehaviourBase
 ):
-
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
     )

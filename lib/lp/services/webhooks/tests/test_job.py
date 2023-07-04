@@ -85,7 +85,6 @@ class TestWebhookJob(TestCaseWithFactory):
 
 
 class TestWebhookJobSource(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_deleteByIDs(self):
@@ -916,7 +915,6 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
 
 
 class TestViaCronscript(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_run_from_cronscript(self):
@@ -946,7 +944,6 @@ class TestViaCronscript(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_WebhookDeliveryJob(self):

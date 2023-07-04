@@ -19,7 +19,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestCodeReviewVote(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_create_vote(self):

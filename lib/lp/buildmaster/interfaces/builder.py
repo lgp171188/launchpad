@@ -119,7 +119,6 @@ class IBuilderModerateAttributes(Interface):
 
 
 class IBuilderView(IHasBuildRecords, IHasOwner):
-
     id = Attribute("Builder identifier")
 
     processor = exported(

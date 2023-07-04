@@ -252,7 +252,6 @@ class TestBugLinking(BzrSyncTestCase):
 
 
 class TestSubscription(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_got_new_revision_subscribed(self):

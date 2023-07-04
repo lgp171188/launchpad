@@ -271,7 +271,6 @@ class TestClosingPrivateBugs(TestCaseWithFactory):
 
 
 class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 
@@ -349,7 +348,6 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
 
 
 class TestProcessAcceptedBugsJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 

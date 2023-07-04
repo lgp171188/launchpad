@@ -326,7 +326,6 @@ class PillarNameSet:
 
 @implementer(IPillarName)
 class PillarName(SQLBase):
-
     _table = "PillarName"
     _defaultOrder = "name"
 

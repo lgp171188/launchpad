@@ -27,7 +27,6 @@ from lp.translations.browser.translations import TranslationsMixin
 
 
 class ProductTranslationsMenu(NavigationMenu):
-
     usedfor = IProduct
     facet = "translations"
     links = (
@@ -87,7 +86,6 @@ class ProductSettingsView(TranslationsMixin, ProductConfigureBase):
 
 
 class ProductView(LaunchpadView):
-
     label = "Translation overview"
 
     @cachedproperty

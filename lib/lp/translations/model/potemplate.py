@@ -188,7 +188,6 @@ def get_pofiles_for(potemplates, language):
 
 @implementer(IPOTemplate)
 class POTemplate(SQLBase, RosettaStats):
-
     _table = "POTemplate"
 
     productseries = ForeignKey(
@@ -1595,7 +1594,6 @@ class POTemplateSet:
 
 @implementer(IPOTemplateSharingSubset)
 class POTemplateSharingSubset:
-
     distribution = None
     sourcepackagename = None
     product = None

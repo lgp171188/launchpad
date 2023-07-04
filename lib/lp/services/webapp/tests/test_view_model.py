@@ -84,7 +84,6 @@ class BaseProductModelTestView(LaunchpadView):
 
 
 class TestJsonModelView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

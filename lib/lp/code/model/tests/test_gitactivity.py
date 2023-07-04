@@ -15,7 +15,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestGitActivity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_IGitActivity(self):

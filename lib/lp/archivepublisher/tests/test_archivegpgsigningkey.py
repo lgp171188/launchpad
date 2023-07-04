@@ -50,7 +50,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
@@ -223,7 +222,6 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
 
 
 class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -352,7 +350,6 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
 
 
 class TestArchiveGPGSigningKey(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     # treq.content doesn't close the connection before yielding control back
     # to the test, so we need to spin the reactor at the end to finish

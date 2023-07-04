@@ -25,7 +25,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestImportDetails(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertImportDetailsDisplayed(

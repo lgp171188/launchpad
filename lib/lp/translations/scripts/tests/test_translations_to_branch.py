@@ -36,7 +36,6 @@ class GruesomeException(Exception):
 
 
 class TestExportTranslationsToBranch(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def _filterOutput(self, output):

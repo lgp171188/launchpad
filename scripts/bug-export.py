@@ -15,7 +15,6 @@ from lp.services.scripts.base import LaunchpadScript
 
 
 class BugExportScript(LaunchpadScript):
-
     description = "Export bugs for a Launchpad product as XML"
 
     def add_my_options(self):

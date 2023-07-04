@@ -120,7 +120,6 @@ class TestTeamMembershipSetScripts(TestCaseWithFactory):
 
 
 class TestTeamMembershipSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1324,7 +1323,6 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
 
 
 class TestCheckTeamParticipationScript(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def _runScript(self, *args):
@@ -1528,7 +1526,6 @@ class TestCheckTeamParticipationScript(TestCase):
 
 
 class TestCheckTeamParticipationScriptPerformance(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_queries(self):

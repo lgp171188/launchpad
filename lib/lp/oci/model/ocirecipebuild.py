@@ -77,7 +77,6 @@ from lp.services.webapp.snapshot import notify_modified
 
 @implementer(IOCIFile)
 class OCIFile(StormBase):
-
     __storm_table__ = "OCIFile"
 
     id = Int(name="id", primary=True)
@@ -115,7 +114,6 @@ class OCIFileSet:
 
 @implementer(IOCIRecipeBuild)
 class OCIRecipeBuild(PackageBuildMixin, StormBase):
-
     __storm_table__ = "OCIRecipeBuild"
 
     job_type = BuildFarmJobType.OCIRECIPEBUILD
@@ -630,7 +628,6 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
 @implementer(IMacaroonIssuer)
 class OCIRecipeBuildMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "oci-recipe-build"
     issuable_via_authserver = True
 

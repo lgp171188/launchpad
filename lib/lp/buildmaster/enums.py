@@ -286,7 +286,6 @@ class BuildQueueStatus(DBEnumeratedType):
 
 
 class BuilderCleanStatus(DBEnumeratedType):
-
     CLEAN = DBItem(
         0,
         """
@@ -316,7 +315,6 @@ class BuilderCleanStatus(DBEnumeratedType):
 
 
 class BuilderResetProtocol(DBEnumeratedType):
-
     PROTO_1_1 = DBItem(
         11,
         """

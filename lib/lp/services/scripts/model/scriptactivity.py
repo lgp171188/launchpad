@@ -24,7 +24,6 @@ from lp.services.scripts.metrics import emit_script_activity_metric
 
 @implementer(IScriptActivity)
 class ScriptActivity(StormBase):
-
     __storm_table__ = "ScriptActivity"
 
     id = Int(primary=True)

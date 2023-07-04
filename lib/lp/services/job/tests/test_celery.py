@@ -244,7 +244,6 @@ class TestTimeoutJob(TestJob):
 
 
 class TestCeleryLaneFallback(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_fallback_to_slow_lane(self):

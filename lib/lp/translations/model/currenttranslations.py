@@ -49,7 +49,6 @@ class CurrentTranslations:
         languages: Set[Language],
         sides: Set[int],
     ) -> Dict[CurrentTranslationKey, TranslationMessage]:
-
         if not potmsgsets:
             raise ValueError("potmsgsets must not be empty")
         if not potemplates:
@@ -130,7 +129,6 @@ class CurrentTranslations:
         languages: Iterable[Language],
         sides: Iterable[int],
     ) -> None:
-
         msgsets = set(msgsets)
         current_translations = self.getCurrentTranslations(
             msgsets, set(potemplates), set(languages), set(sides)

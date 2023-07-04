@@ -468,7 +468,6 @@ class TestReadiness(TestCase):
 
 
 class TestUniversalJobSource(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_get_with_merge_proposal_job(self):

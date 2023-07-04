@@ -52,7 +52,6 @@ def _add_rate_limit_response(
 
 
 class TestGitHubRateLimit(TestCase):
-
     layer = ZopelessLayer
 
     def setUp(self):
@@ -130,7 +129,6 @@ class TestGitHubRateLimit(TestCase):
 
 
 class TestGitHub(TestCase):
-
     layer = ZopelessLayer
 
     def setUp(self):
@@ -401,7 +399,6 @@ class TestGitHub(TestCase):
 
 
 class TestGitHubUpdateBugWatches(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     @responses.activate

@@ -101,7 +101,6 @@ class TestFatLocalTransport(TestCaseInTempDir):
 
 
 class TestSFTPAdapter(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):

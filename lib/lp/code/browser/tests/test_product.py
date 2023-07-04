@@ -430,7 +430,6 @@ class TestProductBranchesViewPortlets(ProductTestBase, BrowserTestCase):
 
 
 class TestCanConfigureBranches(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_configure_branches_product_no_edit_permission(self):
@@ -446,7 +445,6 @@ class TestCanConfigureBranches(TestCaseWithFactory):
 
 
 class TestProductOverviewLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self, user=ANONYMOUS):

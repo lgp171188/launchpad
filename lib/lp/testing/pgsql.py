@@ -166,7 +166,6 @@ def uninstallFakeConnect():
 
 
 class PgTestSetup:
-
     # Shared:
     connections = []  # type: List[ConnectionWrapper]
     # Use a dynamically generated dbname:

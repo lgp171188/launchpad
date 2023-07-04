@@ -243,7 +243,6 @@ class VocabularyPickerWidget(SingleDataHelper, ItemsWidgetBase):
 
 
 class PersonPickerWidget(VocabularyPickerWidget):
-
     show_assign_me_button = True
     show_remove_button = False
     picker_type = "person"
@@ -267,7 +266,6 @@ class PersonPickerWidget(VocabularyPickerWidget):
 
 
 class BugTrackerPickerWidget(VocabularyPickerWidget):
-
     __call__ = ViewPageTemplateFile("templates/bugtracker-picker.pt")
     link_template = """
         or (<a id="create-bugtracker-link"

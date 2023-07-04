@@ -32,7 +32,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class LicensesModifiedEventTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_init(self):
@@ -49,7 +48,6 @@ class LicensesModifiedEventTestCase(TestCaseWithFactory):
 
 
 class ProductLicensesModifiedTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def make_product_event(self, licenses):
@@ -92,7 +90,6 @@ class ProductLicensesModifiedTestCase(TestCaseWithFactory):
 
 
 class LicenseNotificationTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def make_product_user(self, licenses):

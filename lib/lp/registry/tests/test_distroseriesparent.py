@@ -121,7 +121,6 @@ class TestDistroSeriesParent(TestCaseWithFactory):
 
 
 class TestDistroSeriesParentSecurity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_random_person_is_unauthorized(self):

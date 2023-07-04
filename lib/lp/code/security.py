@@ -541,7 +541,6 @@ class BranchMergeProposalEdit(AuthorizationBase):
 
 
 class ViewSourcePackageRecipe(DelegatedAuthorization):
-
     permission = "launchpad.View"
     usedfor = ISourcePackageRecipe
 
@@ -550,7 +549,6 @@ class ViewSourcePackageRecipe(DelegatedAuthorization):
 
 
 class DeleteSourcePackageRecipe(AuthorizationBase):
-
     permission = "launchpad.Delete"
     usedfor = ISourcePackageRecipe
 
@@ -561,7 +559,6 @@ class DeleteSourcePackageRecipe(AuthorizationBase):
 
 
 class ViewSourcePackageRecipeBuild(DelegatedAuthorization):
-
     permission = "launchpad.View"
     usedfor = ISourcePackageRecipeBuild
 

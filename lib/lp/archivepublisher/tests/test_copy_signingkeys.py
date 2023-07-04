@@ -21,7 +21,6 @@ from lp.testing.script import run_script
 
 
 class TestCopySigningKeysScript(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeScript(self, test_args=None, archives=None, expect_exit=False):

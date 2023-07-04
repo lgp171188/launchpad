@@ -21,7 +21,6 @@ from lp.testing.xmlrpc import XMLRPCTestTransport
 
 
 class TestGetFeatureFlag(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -19,7 +19,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBugBranchSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_bugbranchset_provides_IBugBranchSet(self):
@@ -148,7 +147,6 @@ class TestBugBranchSet(TestCaseWithFactory):
 
 
 class TestBugBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

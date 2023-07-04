@@ -94,7 +94,6 @@ class SigningKeyType(DBEnumeratedType):
 
 
 class OpenPGPKeyAlgorithm(EnumeratedType):
-
     RSA = Item(
         """
         RSA

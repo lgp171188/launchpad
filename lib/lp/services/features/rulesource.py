@@ -47,7 +47,7 @@ class FeatureRuleSource:
             in descending order by priority.
         """
         d = {}
-        for (flag, scope, priority, value) in self.getAllRulesAsTuples():
+        for flag, scope, priority, value in self.getAllRulesAsTuples():
             d.setdefault(str(flag), []).append((str(scope), priority, value))
         return d
 
@@ -63,7 +63,7 @@ class FeatureRuleSource:
         interface.
         """
         tr = []
-        for (flag, scope, priority, value) in self.getAllRulesAsTuples():
+        for flag, scope, priority, value in self.getAllRulesAsTuples():
             tr.append("\t".join((flag, scope, str(priority), value)))
         tr.append("")
         return "\n".join(tr)
@@ -135,7 +135,7 @@ class StormFeatureRuleSource(FeatureRuleSource):
         # we keep timestamps, and to avoid the direct sql etc -- mbp 20100924
         store = getFeatureStore()
         store.execute("DELETE FROM FeatureFlag")
-        for (flag, scope, priority, value) in new_rules:
+        for flag, scope, priority, value in new_rules:
             store.add(
                 FeatureFlag(
                     scope=six.ensure_text(scope),

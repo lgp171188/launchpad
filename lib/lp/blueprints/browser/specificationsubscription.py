@@ -113,7 +113,6 @@ class SpecificationSubscriptionDeleteView(LaunchpadFormView):
 
 
 class SpecificationSubscriptionEditView(LaunchpadEditFormView):
-
     schema = ISpecificationSubscription
     field_names = ["essential"]
 

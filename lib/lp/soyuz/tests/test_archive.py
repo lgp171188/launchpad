@@ -147,7 +147,6 @@ from lp.testing.views import create_webservice_error_view
 
 
 class TestGetPublicationsInArchive(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeArchivesForOneDistribution(self, count=3):
@@ -279,7 +278,6 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
 
 
 class TestArchiveRepositorySize(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_empty_ppa_has_zero_binaries_size(self):
@@ -2136,7 +2134,6 @@ class TestBuildDebugSymbols(TestCaseWithFactory):
 
 
 class TestAddArchiveDependencies(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_add_hidden_dependency(self):
@@ -2207,7 +2204,6 @@ class TestAddArchiveDependencies(TestCaseWithFactory):
 
 
 class TestArchiveDependencies(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
@@ -2514,7 +2510,6 @@ class TestFindDepCandidates(TestCaseWithFactory):
 
 
 class TestOverlays(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
@@ -2650,7 +2645,6 @@ class TestOverlays(TestCaseWithFactory):
 
 
 class TestComponents(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_no_components_for_arbitrary_person(self):
@@ -2674,7 +2668,6 @@ class TestComponents(TestCaseWithFactory):
 
 
 class TestPockets(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_no_pockets_for_arbitrary_person(self):
@@ -2699,7 +2692,6 @@ class TestPockets(TestCaseWithFactory):
 
 
 class TestValidatePPA(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2919,7 +2911,6 @@ class TestDefaultComponent(TestCaseWithFactory):
 
 
 class TestGetPockets(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getPockets_for_other_archives(self):
@@ -3210,7 +3201,6 @@ class TestGetSourceFileByName(TestCaseWithFactory):
 
 
 class TestGetPoolFileByPath(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_file_name_too_short(self):
@@ -3591,7 +3581,6 @@ class TestGetPoolFileByPath(TestCaseWithFactory):
 
 
 class TestGetPublishedSources(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getPublishedSources_comprehensive(self):
@@ -3850,7 +3839,6 @@ class TestGetPublishedSources(TestCaseWithFactory):
 
 
 class TestGetPublishedSourcesWebService(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def createTestingPPA(self):
@@ -3905,7 +3893,6 @@ class TestGetPublishedSourcesWebService(TestCaseWithFactory):
 
 
 class TestCopyPackage(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def _setup_copy_data(
@@ -4968,7 +4955,6 @@ class TestCopyPackage(TestCaseWithFactory):
 
 
 class TestUploadCIBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeCIBuild(self, distribution, **kwargs):
@@ -5098,7 +5084,6 @@ class TestUploadCIBuild(TestCaseWithFactory):
 
 
 class TestgetAllPublishedBinaries(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_returns_publication(self):
@@ -5225,7 +5210,6 @@ class TestgetAllPublishedBinaries(TestCaseWithFactory):
 
 
 class TestRemovingPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_remove_permission_is_none(self):
@@ -5237,7 +5221,6 @@ class TestRemovingPermissions(TestCaseWithFactory):
 
 
 class TestRemovingCopyNotifications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeJob(self):
@@ -5306,7 +5289,6 @@ class TestRemovingCopyNotifications(TestCaseWithFactory):
 
 
 class TestPublishFlag(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_primary_archive_published_by_default(self):
@@ -5327,7 +5309,6 @@ class TestPublishFlag(TestCaseWithFactory):
 
 
 class TestPPANaming(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_unique_copy_archive_name(self):
@@ -5400,7 +5381,6 @@ class TestPPANaming(TestCaseWithFactory):
 
 
 class TestGetPPAOwnedByPerson(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -5471,7 +5451,6 @@ class TestGetPPAOwnedByPerson(TestCaseWithFactory):
 
 
 class TestPPALookup(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -5521,7 +5500,6 @@ class TestPPALookup(TestCaseWithFactory):
 
 
 class TestArchiveReference(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertReferenceIntegrity(self, reference, archive):
@@ -5570,7 +5548,6 @@ class TestArchiveReference(TestCaseWithFactory):
 
 
 class TestArchiveSetGetByReference(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -5747,7 +5724,6 @@ class TestArchiveSetGetByReference(TestCaseWithFactory):
 
 
 class TestArchiveSetCheckViewPermission(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -5897,7 +5873,6 @@ class TestArchiveSetCheckViewPermission(TestCaseWithFactory):
 
 
 class TestDisplayName(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_default(self):
@@ -6126,7 +6101,6 @@ class TestGetSigningKeyData(TestCaseWithFactory):
 
 
 class TestCountersAndSummaries(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_cprov_build_counters_in_sampledata(self):
@@ -6769,7 +6743,6 @@ class TestArchiveGetOverridePolicy(TestCaseWithFactory):
 
 
 class TestMarkSuiteDirty(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_default_is_none(self):
@@ -6858,7 +6831,6 @@ class TestMarkSuiteDirty(TestCaseWithFactory):
 
 
 class TestArchivePermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_archive_owner_does_not_have_admin(self):

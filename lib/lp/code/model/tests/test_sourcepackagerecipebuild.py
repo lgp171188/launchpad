@@ -511,7 +511,6 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
 
 
 class TestAsBuildmaster(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_notify(self):

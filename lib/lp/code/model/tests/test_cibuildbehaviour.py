@@ -77,7 +77,6 @@ from lp.testing.layers import BaseLayer, ZopelessDatabaseLayer
 
 
 class TestCIBuildBehaviourBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeJob(self, **kwargs):
@@ -152,7 +151,6 @@ _unset = object()
 
 
 class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
-
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
     )

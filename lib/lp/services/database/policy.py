@@ -106,7 +106,6 @@ class BaseDatabasePolicy:
         try:
             store = get_connected_store(name, flavor)
         except DisconnectionError:
-
             # A request for a primary database connection was made
             # and failed. Nothing we can do so reraise the exception.
             if flavor != STANDBY_FLAVOR:

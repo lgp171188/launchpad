@@ -68,7 +68,6 @@ class TestLaunchpadBrowserPublication(TestCase):
 
 
 class TestLaunchpadBrowserPublicationInteractionHandling(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_endRequest_removes_previous_interaction(self):
@@ -301,7 +300,6 @@ class TestBlockingOffsitePosts(TestCase):
 
 
 class TestEncodedReferer(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_not_found(self):
@@ -317,7 +315,6 @@ class TestEncodedReferer(TestCaseWithFactory):
 
 
 class TestUnicodePath(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_non_ascii_url(self):
@@ -332,7 +329,6 @@ class TestUnicodePath(TestCaseWithFactory):
 
 
 class TestPublisherStats(StatsMixin, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

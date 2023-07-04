@@ -17,7 +17,6 @@ from lp.testing import (
 
 
 class TestScopesFromRequest(TestCase):
-
     layer = layers.BaseLayer
 
     def test_pageid_scope_normal(self):
@@ -60,7 +59,6 @@ class TestScopesFromRequest(TestCase):
 
 
 class TestDBScopes(TestCaseWithFactory):
-
     layer = layers.DatabaseFunctionalLayer
 
     def test_team_scope_outside_team(self):
@@ -79,7 +77,6 @@ class TestDBScopes(TestCaseWithFactory):
 
 
 class TestFeaturesIntoOops(TestCaseWithFactory):
-
     layer = layers.DatabaseFunctionalLayer
 
     def test_get_features_into_oops(self):

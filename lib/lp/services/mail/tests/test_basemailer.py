@@ -84,7 +84,6 @@ class RaisingMailControllerFactory:
 
 
 class TestBaseMailer(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_generateEmail_sets_envelope_to(self):

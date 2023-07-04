@@ -104,7 +104,6 @@ def _make_auth_params(
 
 @implementer(IMacaroonIssuer)
 class FakeMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "test"
     _root_secret = "test"
     _verified_user = NO_USER

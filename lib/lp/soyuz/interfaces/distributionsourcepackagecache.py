@@ -11,7 +11,6 @@ from zope.interface import Attribute, Interface
 
 
 class IDistributionSourcePackageCache(Interface):
-
     archive = Attribute("The cache target archive.")
     distribution = Attribute("The cache target distribution.")
     sourcepackagename = Attribute("The source package name.")

@@ -71,7 +71,6 @@ class JobStatus(DBEnumeratedType):
 
 
 class JobType(DBEnumeratedType):
-
     GENERATE_PACKAGE_DIFF = DBItem(
         0,
         """

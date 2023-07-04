@@ -11,7 +11,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestProductBugTaskCreationStep(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

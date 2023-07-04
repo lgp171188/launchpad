@@ -15,7 +15,6 @@ from lp.translations.interfaces.pomsgid import IPOMsgID
 
 @implementer(IPOMsgID)
 class POMsgID(StormBase):
-
     __storm_table__ = "POMsgID"
 
     id = Int(primary=True)

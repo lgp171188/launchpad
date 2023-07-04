@@ -16,7 +16,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestOCIProjectName(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_create(self):
@@ -32,7 +31,6 @@ class TestOCIProjectName(TestCaseWithFactory):
 
 
 class TestOCIProjectNameSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_invalid_name(self):

@@ -523,7 +523,6 @@ class MailingList(StormBase):
 
 @implementer(IMailingListSet)
 class MailingListSet:
-
     title = _("Team mailing lists")
 
     def new(self, team, registrant=None):

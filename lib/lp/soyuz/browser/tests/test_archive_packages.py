@@ -107,7 +107,6 @@ class TestP3APackages(TestCaseWithFactory):
 
 
 class TestPPAPackages(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def getPackagesView(self, query_string=None):
@@ -408,7 +407,6 @@ class TestPPAPackages(TestCaseWithFactory):
 
 
 class TestPPAPackagesJobNotifications(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -611,7 +609,6 @@ class TestPPAPackagesJobNotifications(TestCaseWithFactory):
 
 
 class TestP3APackagesQueryCount(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

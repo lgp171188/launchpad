@@ -21,7 +21,6 @@ from lp.xmlrpc.application import ISelfTest, SelfTest
 
 
 class TestXMLRPCSelfTest(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def make_proxy(self):

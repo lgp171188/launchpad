@@ -76,7 +76,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestOCIFileSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -102,7 +101,6 @@ class TestOCIFileSet(TestCaseWithFactory):
 
 
 class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -663,7 +661,6 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -785,7 +782,6 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
 
 class TestOCIRecipeBuildWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

@@ -56,7 +56,6 @@ class FakeTranslationTemplatesSource(TranslationTemplatesBuild):
 
 
 class TestTranslationTemplatesBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

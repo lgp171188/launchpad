@@ -99,7 +99,7 @@ class FilterPattern:
         # differs from the number of patterns, then they can't match.
         if len(parts) != len(self.patterns):
             return False
-        for (part, pattern) in zip(parts, self.patterns):
+        for part, pattern in zip(parts, self.patterns):
             if not pattern.match(part):
                 return False
         # Everything matches ...
@@ -114,7 +114,7 @@ class FilterPattern:
         # contain any children that match this pattern.
         if len(parts) >= len(self.patterns):
             return False
-        for (part, pattern) in zip(parts, self.patterns):
+        for part, pattern in zip(parts, self.patterns):
             if not pattern.match(part):
                 return False
         # Everything else matches ...

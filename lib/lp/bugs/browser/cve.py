@@ -30,12 +30,10 @@ from lp.services.webapp.batching import BatchNavigator
 
 
 class CveSetNavigation(GetitemNavigation):
-
     usedfor = ICveSet
 
 
 class CveContextMenu(ContextMenu):
-
     usedfor = ICve
     links = ["linkbug", "unlinkbug"]
 
@@ -50,7 +48,6 @@ class CveContextMenu(ContextMenu):
 
 
 class CveSetContextMenu(ContextMenu):
-
     usedfor = ICveSet
     links = ["findcve", "allcve"]
 

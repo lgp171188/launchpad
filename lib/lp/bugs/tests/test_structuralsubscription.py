@@ -36,7 +36,6 @@ RESULT_SETS = ResultSet, EmptyResultSet, DecoratedResultSet
 
 
 class TestStructuralSubscription(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -485,7 +484,6 @@ class TestStructuralSubscriptionFiltersForProductSeries(
 
 
 class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_product_target(self):
@@ -571,7 +569,6 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
 
 
 class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -677,7 +674,6 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
 
 
 class TestGetStructuralSubscriptions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def make_product_with_bug(self):
@@ -772,7 +768,6 @@ class TestGetStructuralSubscriptions(TestCaseWithFactory):
 
 
 class TestGetStructuralSubscribers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def make_product_with_bug(self):

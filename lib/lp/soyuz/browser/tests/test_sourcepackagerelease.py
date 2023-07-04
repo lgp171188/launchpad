@@ -14,7 +14,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestSourcePackageReleaseView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

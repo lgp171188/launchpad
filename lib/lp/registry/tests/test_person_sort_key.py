@@ -55,7 +55,6 @@ class TestPersonSortKeyBase:
 
 
 class TestPersonSortKeyInDatabase(TestPersonSortKeyBase, TestCase):
-
     layer = DatabaseLayer
 
     def setUp(self):

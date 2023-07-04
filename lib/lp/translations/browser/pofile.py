@@ -52,7 +52,6 @@ from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
 
 class POFileNavigation(Navigation):
-
     usedfor = IPOFile
 
     def traverse(self, name):
@@ -873,7 +872,6 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
 
 
 class POExportView(BaseExportView):
-
     page_title = "Download translation"
 
     def getExportFormat(self):

@@ -438,7 +438,6 @@ class MailingListAPIWorkflowTestCase(TestCaseWithFactory):
 
 
 class MailingListAPIMessageTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

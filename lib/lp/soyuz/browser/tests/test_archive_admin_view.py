@@ -15,7 +15,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestArchiveAdminView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

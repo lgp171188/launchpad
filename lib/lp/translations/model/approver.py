@@ -184,7 +184,6 @@ class TranslationBuildApprover:
         distroseries=None,
         sourcepackagename=None,
     ):
-
         # Productseries and distroseries will be asserted in getSubset but
         # not sourcepackagename.
         assert (

@@ -9,7 +9,6 @@ from lp.testing.sampledata import LAUNCHPAD_ADMIN
 
 
 class TestDistroArchSeriesView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

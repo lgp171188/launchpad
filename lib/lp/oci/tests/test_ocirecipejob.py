@@ -22,7 +22,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestOCIRecipeRequestBuildsJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -82,7 +82,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestOCIRecipeNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -141,7 +140,6 @@ class TestOCIRecipeNavigation(TestCaseWithFactory):
 
 
 class BaseTestOCIRecipeView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

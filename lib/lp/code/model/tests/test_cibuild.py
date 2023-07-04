@@ -86,7 +86,6 @@ from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class TestGetAllCommitsForPaths(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_no_refs(self):
@@ -119,7 +118,6 @@ class TestGetAllCommitsForPaths(TestCaseWithFactory):
 
 
 class TestCIBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_implements_interfaces(self):
@@ -689,7 +687,6 @@ class TestCIBuild(TestCaseWithFactory):
 
 
 class TestCIBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_getByBuildFarmJob_works(self):
@@ -1327,7 +1324,6 @@ class TestCIBuildSet(TestCaseWithFactory):
 
 
 class TestDetermineDASesToBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_returns_expected_DASes(self):
@@ -1471,7 +1467,6 @@ class TestDetermineDASesToBuild(TestCaseWithFactory):
 
 
 class TestCIBuildWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

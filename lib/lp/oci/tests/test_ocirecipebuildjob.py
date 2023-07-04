@@ -82,7 +82,6 @@ class FakeOCIBuildJob(OCIRecipeBuildJobDerived):
 
 
 class TestOCIRecipeBuildJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -116,7 +115,6 @@ class TestOCIRecipeBuildJob(TestCaseWithFactory):
 
 
 class TestOCIRecipeBuildJobDerived(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -204,7 +202,6 @@ class MultiArchRecipeMixin:
 class TestOCIRegistryUploadJob(
     TestCaseWithFactory, MultiArchRecipeMixin, StatsMixin
 ):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

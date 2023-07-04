@@ -11,7 +11,6 @@ from lp.testing.views import create_initialized_view
 
 
 class BaseBreadcrumbTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertBreadcrumbs(self, expected, obj, view_name=None, rootsite=None):

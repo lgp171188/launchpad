@@ -48,7 +48,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestLiveFSBuildBehaviourBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -183,7 +182,6 @@ class TestLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
 
 
 class TestAsyncLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     @defer.inlineCallbacks

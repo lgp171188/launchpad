@@ -26,7 +26,6 @@ def make_git_ref(test_case):
 
 
 class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -89,7 +88,6 @@ class TestHasCharmRecipesView(WithScenarios, TestCaseWithFactory):
 
 
 class TestHasCharmRecipesMenu(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

@@ -37,7 +37,6 @@ from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class TestBugTrackerSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_trackers(self):

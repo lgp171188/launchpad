@@ -14,7 +14,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestSnapBuildChannelsWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -164,7 +164,6 @@ class NotificationList(list):
 
 @implementer(INotification)
 class Notification:
-
     level = None
     message = None
 

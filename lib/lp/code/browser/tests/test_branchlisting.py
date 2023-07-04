@@ -101,7 +101,6 @@ class AjaxBatchNavigationMixin:
 class TestPersonOwnedBranchesView(
     TestCaseWithFactory, AjaxBatchNavigationMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -264,7 +263,6 @@ class TestPersonOwnedBranchesView(
 
 
 class TestSimplifiedPersonBranchesView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -410,7 +408,6 @@ class TestSimplifiedPersonProductBranchesView(
 
 
 class TestSourcePackageBranchesView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_distroseries_links(self):
@@ -458,7 +455,6 @@ class TestSourcePackageBranchesView(TestCaseWithFactory):
 
 
 class TestDistributionBranchesView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_git_link(self):
@@ -660,7 +656,6 @@ class TestDevelopmentFocusPackageBranches(TestCaseWithFactory):
 
 
 class TestProductSeriesTemplate(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_product_series_link(self):

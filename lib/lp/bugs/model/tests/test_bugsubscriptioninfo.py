@@ -125,7 +125,6 @@ class TestSubscriptionRelatedSets(TestCaseWithFactory):
 
 
 class TestBugSubscriptionInfo(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -442,7 +441,6 @@ class TestBugSubscriptionInfo(TestCaseWithFactory):
 
 
 class TestBugSubscriptionInfoPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test(self):
@@ -467,7 +465,6 @@ class TestBugSubscriptionInfoPermissions(TestCaseWithFactory):
 
 
 class TestBugSubscriptionInfoQueries(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

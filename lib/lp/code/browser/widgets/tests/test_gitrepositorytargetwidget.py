@@ -45,7 +45,6 @@ class Thing:
 
 
 class TestGitRepositoryTargetWidgetBase:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

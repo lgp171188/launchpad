@@ -17,7 +17,6 @@ from lp.translations.utilities.translationmerger import TranslationMerger
 
 
 class TestMergeExistingPackagings(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def test_merge_translations(self):

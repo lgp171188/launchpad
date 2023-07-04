@@ -672,7 +672,6 @@ class TestNotificationBatches(unittest.TestCase):
 
 
 class EmailNotificationTestBase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -726,7 +725,6 @@ class EmailNotificationTestBase(TestCaseWithFactory):
 
 
 class EmailNotificationsBugMixin:
-
     change_class = None  # type: Optional[Type[Any]]
     change_name = None  # type: Optional[str]
     old = None  # type: Any
@@ -820,7 +818,6 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
 
 
 class EmailNotificationsAddedRemovedMixin:
-
     old = new = added_message = removed_message = b""
 
     def add(self, item):
@@ -854,7 +851,6 @@ class EmailNotificationsAddedRemovedMixin:
 class TestEmailNotificationsBugTitle(
     EmailNotificationsBugMixin, EmailNotificationTestBase
 ):
-
     change_class = BugTitleChange
     change_name = "title"
     old = "Old summary"
@@ -866,7 +862,6 @@ class TestEmailNotificationsBugTitle(
 class TestEmailNotificationsBugTags(
     EmailNotificationsBugMixin, EmailNotificationTestBase
 ):
-
     change_class = BugTagsChange
     change_name = "tags"
     old = ["foo", "bar", "baz"]
@@ -885,7 +880,6 @@ class TestEmailNotificationsBugTags(
 class TestEmailNotificationsBugDuplicate(
     EmailNotificationsBugNotRequiredMixin, EmailNotificationTestBase
 ):
-
     change_class = BugDuplicateChange
     change_name = "duplicateof"
     unexpected_bytes = b"duplicate"
@@ -902,7 +896,6 @@ class TestEmailNotificationsBugDuplicate(
 class TestEmailNotificationsBugTaskStatus(
     EmailNotificationsBugTaskMixin, EmailNotificationTestBase
 ):
-
     change_class = BugTaskStatusChange
     change_name = "status"
     old = BugTaskStatus.TRIAGED
@@ -914,7 +907,6 @@ class TestEmailNotificationsBugTaskStatus(
 class TestEmailNotificationsBugWatch(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
 ):
-
     # Note that this is for bugwatches added to bugs.  Bugwatches added
     # to bugtasks are separate animals AIUI, and we don't try to combine
     # them here for notifications.  Bugtasks have only zero or one
@@ -957,7 +949,6 @@ class TestEmailNotificationsBugWatch(
 class TestEmailNotificationsBranch(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
 ):
-
     added_message = b"** Branch linked:"
     removed_message = b"** Branch unlinked:"
 
@@ -988,7 +979,6 @@ class TestEmailNotificationsBranch(
 class TestEmailNotificationsCVE(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
 ):
-
     added_message = b"** CVE added:"
     removed_message = b"** CVE removed:"
 
@@ -1015,7 +1005,6 @@ class TestEmailNotificationsCVE(
 class TestEmailNotificationsAttachments(
     EmailNotificationsAddedRemovedMixin, EmailNotificationTestBase
 ):
-
     added_message = b"** Attachment added:"
     removed_message = b"** Attachment removed:"
 
@@ -1316,7 +1305,6 @@ class TestEmailNotificationsWithFiltersWhenBugCreated(TestCaseWithFactory):
 
 
 class TestManageNotificationsMessage(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_manage_notifications_message_is_included(self):
@@ -1355,7 +1343,6 @@ class TestNotificationSignatureSeparator(TestCase):
 
 
 class TestExpandedNotificationFooters(EmailNotificationTestBase):
-
     layer = LaunchpadZopelessLayer
 
     def test_expanded_footer(self):
@@ -1392,7 +1379,6 @@ class TestExpandedNotificationFooters(EmailNotificationTestBase):
 
 
 class TestDeferredNotifications(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -1448,7 +1434,6 @@ class BrokenMailer(TestMailer):
 
 
 class TestSendBugNotifications(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -1575,7 +1560,6 @@ class TestSendBugNotifications(TestCaseWithFactory):
         )
 
     def test_team_subscription_with_multiple_filters(self):
-
         team_owner = self.factory.makePerson(email="team-owner@canonical.com")
 
         bug_watcher = self.factory.makePerson(

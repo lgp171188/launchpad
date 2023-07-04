@@ -148,7 +148,6 @@ class RequestMatches(MatchesAll):
 
 
 class TestCharmhubClient(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

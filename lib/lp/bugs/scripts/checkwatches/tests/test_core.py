@@ -78,7 +78,6 @@ class NoBugWatchesByRemoteBugUpdater(RemoteBugUpdater):
 
 
 class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -166,7 +165,6 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
 
 
 class BrokenCheckwatchesMaster(CheckwatchesMaster):
-
     error_code = None
 
     def _getExternalBugTrackersAndWatches(self, bug_tracker, bug_watches):
@@ -176,7 +174,6 @@ class BrokenCheckwatchesMaster(CheckwatchesMaster):
 
 
 class TestCheckwatchesMaster(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

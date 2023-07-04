@@ -421,7 +421,6 @@ def process_queue(transaction_manager, logger):
 
     request = request_set.getRequest()
     while request != no_request:
-
         # This can take a long time.  Make sure we don't open any
         # transactions on the primary store before we really need to.
         transaction_manager.commit()

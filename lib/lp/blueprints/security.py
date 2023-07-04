@@ -26,7 +26,6 @@ from lp.security import ModerateByRegistryExpertsOrAdmins
 
 
 class EditSpecificationBranch(AuthorizationBase):
-
     usedfor = ISpecificationBranch
     permission = "launchpad.Edit"
 
@@ -39,7 +38,6 @@ class EditSpecificationBranch(AuthorizationBase):
 
 
 class ViewSpecificationBranch(EditSpecificationBranch):
-
     permission = "launchpad.View"
 
     def checkUnauthenticated(self):
@@ -62,7 +60,6 @@ class AnonymousAccessToISpecificationPublic(AnonymousAuthorization):
 
 
 class ViewSpecification(AuthorizationBase):
-
     permission = "launchpad.LimitedView"
     usedfor = ISpecificationView
 

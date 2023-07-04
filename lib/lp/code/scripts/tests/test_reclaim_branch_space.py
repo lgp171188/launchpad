@@ -20,7 +20,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class TestReclaimBranchSpaceScript(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     @staticmethod

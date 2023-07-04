@@ -108,7 +108,6 @@ PRIVATE_DISTRIBUTION_TYPES = [InformationType.PROPRIETARY]
 
 
 class TestDistribution(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_pillar_category(self):
@@ -975,7 +974,6 @@ class TestDistribution(TestCaseWithFactory):
 
 
 class TestDistributionBugInformationTypes(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeDistributionWithPolicy(self, bug_sharing_policy):
@@ -1042,7 +1040,6 @@ class TestDistributionBugInformationTypes(TestCaseWithFactory):
 class TestDistributionSpecificationPolicyAndInformationTypes(
     TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def makeDistributionWithPolicy(self, specification_sharing_policy):
@@ -2251,7 +2248,6 @@ class TestDistributionWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
 
 
 class TestDistributionVulnerabilities(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assert_newVulnerability_only_the_required_params(
@@ -2451,7 +2447,6 @@ class TestDistributionVulnerabilities(TestCaseWithFactory):
 
 
 class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_vulnerability_api_url_data(self):
@@ -2816,7 +2811,6 @@ class TestDistributionVulnerabilitiesWebService(TestCaseWithFactory):
 
 
 class TestDistributionPublishedSources(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_has_published_sources_no_sources(self):

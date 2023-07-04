@@ -20,7 +20,6 @@ from lp.testing.layers import AppServerLayer, DatabaseFunctionalLayer
 
 
 class TestTeamJoining(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_restricted_rejects_membership(self):
@@ -63,7 +62,6 @@ class TestTeamJoining(TestCaseWithFactory):
 
 
 class TeamObsoleteAPITestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_newTeam_obsolete_subscription_policy(self):

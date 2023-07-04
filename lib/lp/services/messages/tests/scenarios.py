@@ -10,7 +10,6 @@ from lp.testing import login_person
 
 
 class MessageTypeScenariosMixin(WithScenarios):
-
     scenarios = [
         ("bug", {"message_type": "bug"}),
         ("question", {"message_type": "question"}),

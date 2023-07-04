@@ -214,7 +214,6 @@ class ProductNavigation(
     TargetDefaultVCSNavigationMixin,
     WebhookTargetNavigationMixin,
 ):
-
     usedfor = IProduct
 
     @stepto(".bzr")
@@ -263,7 +262,6 @@ class ProductNavigation(
 
 
 class ProductSetNavigation(Navigation):
-
     usedfor = IProductSet
 
     def traverse(self, name):
@@ -417,7 +415,6 @@ class ProductInvolvementView(PillarInvolvementView):
 
 
 class ProductNavigationMenu(NavigationMenu):
-
     usedfor = IProduct
     facet = "overview"
     links = [
@@ -562,7 +559,6 @@ class ProductOverviewMenu(
     HasSnapsMenuMixin,
     HasCharmRecipesMenuMixin,
 ):
-
     usedfor = IProduct
     facet = "overview"
     links = [
@@ -652,7 +648,6 @@ class ProductOverviewMenu(
 
 
 class ProductBugsMenu(PillarBugsMenu, ProductEditLinksMixin):
-
     usedfor = IProduct
     facet = "bugs"
     configurable_bugtracker = True
@@ -736,6 +731,7 @@ class SortSeriesMixin:
     @property
     def sorted_active_series_list(self):
         """Like `sorted_series_list()` but filters out OBSOLETE series."""
+
         # Callback for the filter which only allows series that have not been
         # marked obsolete.
         def check_active(series):
@@ -1092,7 +1088,7 @@ class ProductView(
             ("External downloads", self.context.downloadurl),
         ]
         links = []
-        for (text, url) in urls:
+        for text, url in urls:
             if url is not None:
                 menu_link = MenuLink(
                     Link(url, text, icon="external-link", enabled=True)

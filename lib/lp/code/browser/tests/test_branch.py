@@ -146,7 +146,6 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
 
 
 class TestBranchView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def testMirrorStatusMessageIsTruncated(self):
@@ -703,7 +702,6 @@ class TestBranchView(BrowserTestCase):
 
 
 class TestBranchDeletionView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -759,7 +757,6 @@ class TestBranchDeletionView(BrowserTestCase):
 
 
 class TestBranchRescanView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_owner_can_see_rescan(self):
@@ -1155,7 +1152,6 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
 
 
 class TestBranchEditView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_branch_target_widget_renders_junk(self):
@@ -1436,7 +1432,6 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
 
 
 class TestBranchUpgradeView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_upgrade_branch_action_cannot_upgrade(self):
@@ -1459,7 +1454,6 @@ class TestBranchUpgradeView(TestCaseWithFactory):
 
 
 class TestBranchPrivacyPortlet(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_information_type_in_ui(self):
@@ -1486,7 +1480,6 @@ class TestBranchPrivacyPortlet(TestCaseWithFactory):
 
 
 class TestBranchDiffView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_feature_disabled(self):

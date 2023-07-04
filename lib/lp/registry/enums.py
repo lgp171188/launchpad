@@ -61,7 +61,6 @@ class SharingPermission(DBEnumeratedType):
 
 
 class BranchSharingPolicy(DBEnumeratedType):
-
     PUBLIC = DBItem(
         1,
         """
@@ -128,7 +127,6 @@ class BranchSharingPolicy(DBEnumeratedType):
 
 
 class BugSharingPolicy(DBEnumeratedType):
-
     PUBLIC = DBItem(
         1,
         """
@@ -188,7 +186,6 @@ class BugSharingPolicy(DBEnumeratedType):
 
 
 class SpecificationSharingPolicy(DBEnumeratedType):
-
     PUBLIC = DBItem(
         1,
         """

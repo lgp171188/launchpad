@@ -1129,7 +1129,6 @@ class SeriesDrivers(AuthorizationBase):
 
 
 class DriveProduct(SeriesDrivers):
-
     permission = "launchpad.Driver"
     usedfor = IProduct
 

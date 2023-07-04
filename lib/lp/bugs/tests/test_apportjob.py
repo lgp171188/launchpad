@@ -334,7 +334,6 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_ProcessApportBlobJob(self):

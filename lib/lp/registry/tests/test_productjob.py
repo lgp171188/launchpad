@@ -528,7 +528,6 @@ class ProductNotificationJobTestCase(TestCaseWithFactory):
 
 
 class CommericialExpirationMixin(CommercialHelpers):
-
     layer = DatabaseFunctionalLayer
 
     EXPIRE_SUBSCRIPTION = False

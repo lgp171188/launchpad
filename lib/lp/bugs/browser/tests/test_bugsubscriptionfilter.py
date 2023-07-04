@@ -49,7 +49,6 @@ class TestBugSubscriptionFilterBase:
 class TestBugSubscriptionFilterNavigation(
     TestBugSubscriptionFilterBase, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -74,7 +73,6 @@ class TestBugSubscriptionFilterNavigation(
 class TestBugSubscriptionFilterAPI(
     TestBugSubscriptionFilterBase, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def test_visible_attributes(self):
@@ -138,7 +136,6 @@ class TestBugSubscriptionFilterAPI(
 class TestBugSubscriptionFilterAPIModifications(
     TestBugSubscriptionFilterBase, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -246,7 +243,6 @@ class TestBugSubscriptionFilterAPIModifications(
 class TestBugSubscriptionFilterView(
     TestBugSubscriptionFilterBase, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -473,7 +469,6 @@ class TestBugSubscriptionFilterView(
 class TestBugSubscriptionFilterEditView(
     TestBugSubscriptionFilterBase, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
 
     def test_view_properties(self):
@@ -587,7 +582,6 @@ class TestBugSubscriptionFilterAdvancedFeatures(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterCreateView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

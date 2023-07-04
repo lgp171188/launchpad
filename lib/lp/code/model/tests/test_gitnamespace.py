@@ -1432,7 +1432,6 @@ class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
 
 
 class BaseValidateNewRepositoryMixin:
-
     layer = DatabaseFunctionalLayer
 
     def _getNamespace(self, owner):

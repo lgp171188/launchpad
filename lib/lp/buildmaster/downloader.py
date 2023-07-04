@@ -25,7 +25,6 @@ from twisted.protocols import amp
 
 
 class DownloadCommand(amp.Command):
-
     arguments = [
         (b"file_url", amp.Unicode()),
         (b"path_to_write", amp.Unicode()),
@@ -39,7 +38,6 @@ class DownloadCommand(amp.Command):
 
 
 class RequestProxyTokenCommand(amp.Command):
-
     arguments = [
         (b"url", amp.Unicode()),
         (b"auth_header", amp.String()),

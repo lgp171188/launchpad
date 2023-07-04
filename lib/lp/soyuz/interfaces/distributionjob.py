@@ -55,7 +55,6 @@ class IDistributionJob(Interface):
 
 
 class DistributionJobType(DBEnumeratedType):
-
     INITIALIZE_SERIES = DBItem(
         1,
         """

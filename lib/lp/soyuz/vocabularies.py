@@ -36,7 +36,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 class ComponentVocabulary(StormVocabularyBase):
-
     _table = Component
     _order_by = "name"
 
@@ -84,7 +83,6 @@ class PackageReleaseVocabulary(SQLObjectVocabularyBase):
 
 @implementer(IHugeVocabulary)
 class PPAVocabulary(SQLObjectVocabularyBase):
-
     _table = Archive
     _orderBy = ["Person.name, Archive.name"]
     _clauseTables = ["Person"]

@@ -110,7 +110,6 @@ class TestCveSet(TestCaseWithFactory):
 
 
 class TestBugLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_link_and_unlink(self):

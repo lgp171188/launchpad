@@ -23,7 +23,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestGitSubscriptionAddOtherView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_subscribe_open_team_to_private_repository(self):
@@ -70,7 +69,6 @@ class TestGitSubscriptionAddOtherView(TestCaseWithFactory):
 
 
 class TestGitSubscriptionAddView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_requires_login(self):

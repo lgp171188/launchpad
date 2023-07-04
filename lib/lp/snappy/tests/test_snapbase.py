@@ -38,7 +38,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestSnapBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_implements_interface(self):
@@ -100,7 +99,6 @@ class TestSnapBase(TestCaseWithFactory):
 
 
 class TestSnapBaseProcessors(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -160,7 +158,6 @@ class TestSnapBaseProcessors(TestCaseWithFactory):
 
 
 class TestSnapBaseSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_getByName(self):
@@ -203,7 +200,6 @@ class TestSnapBaseSet(TestCaseWithFactory):
 
 
 class TestSnapBaseWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_new_unpriv(self):

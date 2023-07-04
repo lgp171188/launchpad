@@ -266,7 +266,6 @@ class File(resource.Resource):
 
 @implementer(IPushProducer)
 class FileProducer:
-
     buffer_size = abstract.FileDescriptor.bufferSize
 
     def __init__(self, request, stream):

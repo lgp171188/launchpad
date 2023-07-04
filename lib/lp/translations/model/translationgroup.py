@@ -291,7 +291,6 @@ class TranslationGroup(StormBase):
 
 @implementer(ITranslationGroupSet)
 class TranslationGroupSet:
-
     title = "Rosetta Translation Groups"
 
     def __iter__(self):

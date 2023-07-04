@@ -357,7 +357,6 @@ class ProductNotificationJob(ProductJobDerived):
 
 
 class CommericialExpirationMixin:
-
     _email_template_name = "product-commercial-subscription-expiration"
     _subject_template = (
         "The commercial subscription for %s in Launchpad is expiring"

@@ -507,7 +507,6 @@ class GitRepository(
         result_summary=None,
         result=None,
     ):
-
         if not getFeatureFlag(REVISION_STATUS_REPORT_ALLOW_CREATE):
             raise RevisionStatusReportsFeatureDisabled()
 
@@ -2458,7 +2457,6 @@ class GitRepositorySet:
 
 @implementer(IMacaroonIssuer)
 class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "git-repository"
     allow_multiple = {"lp.expires"}
 

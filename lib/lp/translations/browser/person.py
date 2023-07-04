@@ -156,7 +156,6 @@ class IPersonTranslationsMenu(Interface):
 
 
 class PersonTranslationsMenu(NavigationMenu):
-
     usedfor = IPersonTranslationsMenu
     facet = "translations"
     links = ("overview", "licensing", "imports", "translations_to_review")

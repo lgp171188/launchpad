@@ -50,7 +50,6 @@ class LibrarianUtils(TestCase):
 
 
 class TestEncodableLibraryFileAlias(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_read_all(self):

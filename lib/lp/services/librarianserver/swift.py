@@ -99,7 +99,6 @@ def to_swift(
     # files that may need to be copied into Swift. We need to follow
     # symlinks as they are being used span disk partitions.
     for dirpath, dirnames, filenames in os.walk(fs_root, followlinks=True):
-
         # Don't recurse if we know this directory contains no matching
         # files.
         if (

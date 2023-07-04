@@ -48,17 +48,14 @@ from lp.services.webapp.publisher import DataDownloadView
 
 
 class SignedCodeOfConductSetNavigation(GetitemNavigation):
-
     usedfor = ISignedCodeOfConductSet
 
 
 class CodeOfConductSetNavigation(GetitemNavigation):
-
     usedfor = ICodeOfConductSet
 
 
 class CodeOfConductOverviewMenu(ApplicationMenu):
-
     usedfor = ICodeOfConduct
     facet = "overview"
     links = ["sign", "download"]
@@ -83,7 +80,6 @@ class CodeOfConductOverviewMenu(ApplicationMenu):
 
 
 class CodeOfConductSetOverviewMenu(ApplicationMenu):
-
     usedfor = ICodeOfConductSet
     facet = "overview"
     links = ["admin"]
@@ -95,7 +91,6 @@ class CodeOfConductSetOverviewMenu(ApplicationMenu):
 
 
 class SignedCodeOfConductSetOverviewMenu(ApplicationMenu):
-
     usedfor = ISignedCodeOfConductSet
     facet = "overview"
     links = ["register"]
@@ -106,7 +101,6 @@ class SignedCodeOfConductSetOverviewMenu(ApplicationMenu):
 
 
 class SignedCodeOfConductOverviewMenu(ApplicationMenu):
-
     usedfor = ISignedCodeOfConduct
     facet = "overview"
     links = ["activation", "adminconsole"]
