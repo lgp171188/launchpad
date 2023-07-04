@@ -592,7 +592,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         fingerprint = key_id + "A" * 32
         keyset = getUtility(IGPGKeySet)
         key = keyset.new(
-            owner.id,
+            owner,
             keyid=key_id,
             fingerprint=fingerprint,
             keysize=self.getUniqueInteger(),

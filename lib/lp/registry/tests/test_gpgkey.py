@@ -24,7 +24,7 @@ class GPGKeySetTests(TestCaseWithFactory):
         person = self.factory.makePerson()
         fingerprint = "DEADBEEF12345678DEADBEEF12345678DEADBEEF"
         keyset.new(
-            person.id,
+            person,
             "F0A432C2",
             fingerprint,
             4096,

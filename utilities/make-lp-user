@@ -170,7 +170,7 @@ def add_gpg_key(person, fingerprint):
 
     can_encrypt = True
     lpkey = gpgkeyset.new(
-        person.id,
+        person,
         key.keyid,
         fingerprint,
         key.keysize,

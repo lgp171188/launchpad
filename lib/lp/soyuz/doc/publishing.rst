@@ -27,7 +27,7 @@ to make sure verifyObject will work.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.gpgkey import GPGKey
     >>> name16 = getUtility(IPersonSet).getByName("name16")
-    >>> fake_signer = GPGKey.selectOneBy(owner=name16)
+    >>> fake_signer = IStore(GPGKey).find(GPGKey, owner=name16).one()
     >>> spph.sourcepackagerelease.signing_key_owner = fake_signer.owner
     >>> spph.sourcepackagerelease.signing_key_fingerprint = (
     ...     fake_signer.fingerprint

@@ -16,10 +16,11 @@ We need to insert some dependent fake data before continuing.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.gpgkey import GPGKey
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.webapp.interfaces import OAuthPermission
     >>> from lp.testing.pages import webservice_for_person
     >>> name16 = getUtility(IPersonSet).getByName("name16")
-    >>> fake_signer = GPGKey.selectOneBy(owner=name16)
+    >>> fake_signer = IStore(GPGKey).find(GPGKey, owner=name16).one()
     >>> cprov_db = getUtility(IPersonSet).getByName("cprov")
     >>> cprov_ppa = cprov_db.archive
     >>> for pub in cprov_ppa.getPublishedSources():
