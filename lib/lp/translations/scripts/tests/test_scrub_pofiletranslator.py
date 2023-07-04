@@ -72,7 +72,7 @@ class TestScrubPOFileTranslator(TestCaseWithFactory):
             pofile = self.factory.makePOFile()
         poft = POFileTranslator(
             pofile=pofile,
-            person=self.factory.makePerson(),
+            person_id=self.factory.makePerson().id,
             date_last_touched=UTC_NOW,
         )
         IStore(poft.pofile).add(poft)

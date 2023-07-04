@@ -1534,8 +1534,8 @@ class DistroSeries(
 
         contributors = IStore(Person).find(
             Person,
-            POFileTranslator.personID == Person.id,
-            POFile.id == POFileTranslator.pofileID,
+            POFileTranslator.person_id == Person.id,
+            POFile.id == POFileTranslator.pofile_id,
             POFile.language == language,
             POTemplate.id == POFile.potemplateID,
             POTemplate.distroseries == self,

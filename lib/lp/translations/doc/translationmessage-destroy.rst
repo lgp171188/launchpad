@@ -63,7 +63,7 @@ translation, we get two POFileTranslator records for each of the POFiles.
     ...     IStore(POFileTranslator)
     ...     .find(
     ...         POFileTranslator,
-    ...         POFileTranslator.pofileID.is_in(
+    ...         POFileTranslator.pofile_id.is_in(
     ...             (devel_sr_pofile.id, stable_sr_pofile.id)
     ...         ),
     ...     )
