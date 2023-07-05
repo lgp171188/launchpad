@@ -109,6 +109,7 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
             "importance": Equals(bugtask.importance.title),
             "assignee": Equals(assignee),
             "date_created": Equals(bugtask.datecreated.isoformat()),
+            "tags": Equals(bugtask.bug.tags),
         }
 
         expected_payload = {
@@ -224,4 +225,36 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
 
         self._assert_last_webhook_delivery(
             comment_hook, "bug:comment:0.1", c_exptd_payload
+        )
+
+    def test_tagging_bug_triggers_webhooks(self):
+        """Adding bug tags will trigger webhook"""
+        bug = self.bugtask.bug
+        with person_logged_in(self.owner), notify_modified(
+            bug, ["tags"], user=self.owner
+        ):
+            bug.tags = ["foo", "bar"]
+        expected_payload = self._build_bugtask_expected_payload(
+            self.bugtask, "tags-changed", {"tags": []}
+        )
+        self._assert_last_webhook_delivery(
+            self.hook, "bug:0.1", expected_payload
+        )
+
+    def test_tags_changed_triggers_webhooks(self):
+        """Modifying the bug tags will trigger webhook"""
+        bug = self.bugtask.bug
+
+        with person_logged_in(bug.owner):
+            bug.tags = ["foo"]
+
+        with person_logged_in(self.owner), notify_modified(
+            bug, ["tags"], user=self.owner
+        ):
+            bug.tags = ["bar", "test"]
+        expected_payload = self._build_bugtask_expected_payload(
+            self.bugtask, "tags-changed", {"tags": ["foo"]}
+        )
+        self._assert_last_webhook_delivery(
+            self.hook, "bug:0.1", expected_payload
         )
