@@ -10,7 +10,6 @@ import transaction
 from testtools.matchers import MatchesAll, MatchesStructure, Not
 from zope.component import getUtility
 
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -187,14 +186,12 @@ class BugUpdateTestHelpersBase:
 
 class ProductTestHelpers(BugUpdateTestHelpersBase):
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeProduct(owner=owner)
 
 
 class DistributionTestHelpers(BugUpdateTestHelpersBase):
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeDistribution(owner=owner)
 
@@ -204,7 +201,6 @@ class DistributionSourcePackageTestHelpers(BugUpdateTestHelpersBase):
         return self.target.distribution.owner
 
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         return self.factory.makeDistributionSourcePackage()
 
 

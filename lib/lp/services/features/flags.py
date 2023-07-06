@@ -296,9 +296,10 @@ flag_info = sorted(
             "",
         ),
         (
-            "bugs.webhooks.enabled",
+            "bugs.webhooks.disabled",
             "boolean",
-            "If true, allow adding webhooks to bug updates and comments",
+            "If true, disable webhooks from being triggered for bug updates "
+            "and comments.",
             "",
             "",
             "",
