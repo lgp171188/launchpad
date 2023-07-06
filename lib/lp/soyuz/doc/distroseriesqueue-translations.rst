@@ -76,7 +76,7 @@ queue:
     ...     distroseries=dapper.id,
     ...     sourcepackagerelease=source_package_release.id,
     ...     sourcepackagename=source_package_release.sourcepackagename,
-    ...     _format=source_package_release.format,
+    ...     format=source_package_release.format,
     ...     component=source_package_release.component.id,
     ...     section=source_package_release.section.id,
     ...     status=PackagePublishingStatus.PUBLISHED,

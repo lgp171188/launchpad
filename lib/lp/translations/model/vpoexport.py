@@ -59,7 +59,7 @@ class VPOExportSet:
                     SourcePackagePublishingHistory.distroseries == series,
                     SourcePackagePublishingHistory.component == Component.id,
                     POTemplate.sourcepackagename
-                    == SourcePackagePublishingHistory.sourcepackagenameID,
+                    == SourcePackagePublishingHistory.sourcepackagename_id,
                     Component.name == component,
                     SourcePackagePublishingHistory.dateremoved == None,
                     SourcePackagePublishingHistory.archive

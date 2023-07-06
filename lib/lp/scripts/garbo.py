@@ -494,10 +494,11 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
             Join(
                 SourcePackageName,
                 SourcePackageName.id
-                == SourcePackagePublishingHistory.sourcepackagenameID,
+                == SourcePackagePublishingHistory.sourcepackagename_id,
             ),
             Join(
-                Archive, Archive.id == SourcePackagePublishingHistory.archiveID
+                Archive,
+                Archive.id == SourcePackagePublishingHistory.archive_id,
             ),
         ]
         rows = self.store.using(*origin).find(
@@ -624,11 +625,11 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
             Join(
                 spph,
                 And(
-                    spph.sourcepackagereleaseID == SourcePackageRelease.id,
-                    spph.archiveID == SourcePackageRelease.upload_archiveID,
+                    spph.sourcepackagerelease_id == SourcePackageRelease.id,
+                    spph.archive_id == SourcePackageRelease.upload_archiveID,
                 ),
             ),
-            Join(Archive, Archive.id == spph.archiveID),
+            Join(Archive, Archive.id == spph.archive_id),
         ]
         rs = (
             self.store.using(*origin)
@@ -2197,7 +2198,7 @@ class BinaryPackagePublishingHistorySPNPopulator(BulkPruner):
         update = Returning(
             BulkUpdate(
                 {
-                    BPPH.sourcepackagenameID: (
+                    BPPH.sourcepackagename_id: (
                         SourcePackageRelease.sourcepackagenameID
                     )
                 },

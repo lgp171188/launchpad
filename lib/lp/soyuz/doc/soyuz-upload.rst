@@ -498,7 +498,7 @@ These packages must now be in the publishing history. Let's check it.
     >>> for name in package_names:
     ...     spn = SourcePackageName.selectOneBy(name=name)
     ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
-    ...     sspph = SSPPH.selectOneBy(sourcepackagereleaseID=spr.id)
+    ...     sspph = IStore(SSPPH).find(SSPPH, sourcepackagerelease=spr).one()
     ...     if sspph:
     ...         print(name, sspph.status.title)
     ...     else:
@@ -604,9 +604,13 @@ component 'multiverse'.
 
 Check if we have new pending publishing record as expected
 
-    >>> for pub in SSPPH.selectBy(
-    ...     sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
-    ...     orderBy=["id"],
+    >>> for pub in (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH,
+    ...         sourcepackagerelease=etherwake_drspr.sourcepackagerelease,
+    ...     )
+    ...     .order_by(SSPPH.id)
     ... ):
     ...     print(pub.status.name, pub.component.name, pub.pocket.name)
     PUBLISHED universe RELEASE
@@ -636,9 +640,13 @@ already on disk, verify the contents are as expected.
 
 Check the publishing history again
 
-    >>> for pub in SSPPH.selectBy(
-    ...     sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
-    ...     orderBy=["id"],
+    >>> for pub in (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH,
+    ...         sourcepackagerelease=etherwake_drspr.sourcepackagerelease,
+    ...     )
+    ...     .order_by(SSPPH.id)
     ... ):
     ...     print(pub.status.name, pub.component.name, pub.pocket.name)
     SUPERSEDED universe RELEASE

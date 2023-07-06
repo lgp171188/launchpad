@@ -784,9 +784,9 @@ class DistroSeries(
         self.sourcecount = (
             IStore(SourcePackagePublishingHistory)
             .find(
-                SourcePackagePublishingHistory.sourcepackagenameID,
+                SourcePackagePublishingHistory.sourcepackagename_id,
                 SourcePackagePublishingHistory.distroseries == self,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 SourcePackagePublishingHistory.status.is_in(
@@ -802,11 +802,11 @@ class DistroSeries(
         self.binarycount = (
             IStore(BinaryPackagePublishingHistory)
             .find(
-                BinaryPackagePublishingHistory.binarypackagenameID,
+                BinaryPackagePublishingHistory.binarypackagename_id,
                 DistroArchSeries.distroseries == self,
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 BinaryPackagePublishingHistory.status.is_in(
@@ -1121,8 +1121,8 @@ class DistroSeries(
             IStore(SourcePackagePublishingHistory)
             .find(
                 SourcePackagePublishingHistory,
-                SourcePackagePublishingHistory.distroseriesID == self.id,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.distroseries_id == self.id,
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
             )
@@ -1136,9 +1136,9 @@ class DistroSeries(
             .find(
                 BinaryPackagePublishingHistory,
                 DistroArchSeries.distroseriesID == self.id,
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
             )
@@ -1812,7 +1812,7 @@ class DistroSeriesSet:
                 == series
             ),
             [],
-            SourcePackagePublishingHistory.distroseriesID,
+            SourcePackagePublishingHistory.distroseries_id,
         )
         result = {}
         for spr, series_id in releases:

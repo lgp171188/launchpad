@@ -7,6 +7,7 @@ quiet mode over it.
 
 Get the current counts of stuff in the database:
 
+    >>> from storm.locals import Desc
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from lp.soyuz.interfaces.publishing import active_publishing_status
@@ -24,16 +25,20 @@ Get the current counts of stuff in the database:
     >>> SBPPH = BinaryPackagePublishingHistory
 
     >>> orig_spr_count = SourcePackageRelease.select().count()
-    >>> orig_sspph_count = SSPPH.select().count()
+    >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = TeamParticipation.select().count()
     >>> orig_email_count = EmailAddress.select().count()
     >>> orig_bpr_count = BinaryPackageRelease.select().count()
     >>> orig_build_count = BinaryPackageBuild.select().count()
-    >>> orig_sbpph_count = SBPPH.select().count()
-    >>> orig_sspph_main_count = SSPPH.selectBy(
-    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE
-    ... ).count()
+    >>> orig_sbpph_count = IStore(SBPPH).find(SBPPH).count()
+    >>> orig_sspph_main_count = (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH, component_id=1, pocket=PackagePublishingPocket.RELEASE
+    ...     )
+    ...     .count()
+    ... )
 
 Create a distribution release and an arch release for breezy:
 
@@ -367,8 +372,10 @@ Testing Source Package Publishing
 
 We check that the source package publishing override facility works:
 
-    >>> for pub in SSPPH.selectBy(
-    ...     sourcepackagereleaseID=db1.id, orderBy="distroseries"
+    >>> for pub in (
+    ...     IStore(SSPPH)
+    ...     .find(SSPPH, sourcepackagerelease=db1)
+    ...     .order_by(SSPPH.distroseries_id)
     ... ):
     ...     print(
     ...         "%s %s %s"
@@ -390,12 +397,16 @@ successfully processed.
     - We had 2 errors (out of 10 Sources stanzas) in breezy: python-sqllite
       and util-linux (again, poor thing).
 
-    >>> print(SSPPH.select().count() - orig_sspph_count)
+    >>> print(IStore(SSPPH).find(SSPPH).count() - orig_sspph_count)
     21
 
-    >>> new_count = SSPPH.selectBy(
-    ...     component_id=1, pocket=PackagePublishingPocket.RELEASE
-    ... ).count()
+    >>> new_count = (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH, component_id=1, pocket=PackagePublishingPocket.RELEASE
+    ...     )
+    ...     .count()
+    ... )
     >>> print(new_count - orig_sspph_main_count)
     21
 
@@ -415,7 +426,7 @@ work.
     40
     >>> BinaryPackageBuild.select().count() - orig_build_count
     13
-    >>> SBPPH.select().count() - orig_sbpph_count
+    >>> IStore(SBPPH).find(SBPPH).count() - orig_sbpph_count
     46
 
 Check that the shlibs parsing and bin-only-NMU version handling works as
@@ -455,8 +466,12 @@ priority was correctly munged to "extra":
 
 We now check if the Breezy publication record has the correct priority:
 
-    >>> ed_pub = SBPPH.selectOneBy(
-    ...     binarypackagereleaseID=ed.id, distroarchseriesID=breezy_i386.id
+    >>> ed_pub = (
+    ...     IStore(SBPPH)
+    ...     .find(
+    ...         SBPPH, binarypackagerelease=ed, distroarchseries=breezy_i386
+    ...     )
+    ...     .one()
     ... )
     >>> print(ed_pub.priority)
     Standard
@@ -637,51 +652,53 @@ changed, etc.
 
 But the overrides do generate extra publishing entries:
 
-    >>> SBPPH.select().count() - orig_sbpph_count
+    >>> IStore(SBPPH).find(SBPPH).count() - orig_sbpph_count
     47
-    >>> print(SSPPH.select().count() - orig_sspph_count)
+    >>> IStore(SSPPH).find(SSPPH).count() - orig_sspph_count
     23
 
 Check that the overrides we did were correctly issued. We can't use
-selectOneBy because, of course, there may be multiple rows published for that
+``.one()`` because, of course, there may be multiple rows published for that
 package -- that's what overrides actually do.
 
-    >>> from lp.services.database.sqlbase import sqlvalues
-    >>> x11_pub = SSPPH.select(
-    ...     """
-    ...     sourcepackagerelease = %s AND
-    ...     distroseries = %s AND
-    ...     status in %s
-    ...     """
-    ...     % sqlvalues(x11p, breezy, active_publishing_status),
-    ...     orderBy=["-datecreated"],
-    ... )[0]
+    >>> x11_pub = (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH,
+    ...         SSPPH.sourcepackagerelease == x11p,
+    ...         SSPPH.distroseries == breezy,
+    ...         SSPPH.status.is_in(active_publishing_status),
+    ...     )
+    ...     .order_by(Desc(SSPPH.datecreated))[0]
+    ... )
     >>> print(x11_pub.section.name)
     net
-    >>> ed_pub = SBPPH.select(
-    ...     """
-    ...     binarypackagerelease = %s AND
-    ...     distroarchseries = %s AND
-    ...     status in %s
-    ...     """
-    ...     % sqlvalues(ed, breezy_i386, active_publishing_status),
-    ...     orderBy=["-datecreated"],
-    ... )[0]
+    >>> ed_pub = (
+    ...     IStore(SBPPH)
+    ...     .find(
+    ...         SBPPH,
+    ...         SBPPH.binarypackagerelease == ed,
+    ...         SBPPH.distroarchseries == breezy_i386,
+    ...         SBPPH.status.is_in(active_publishing_status),
+    ...     )
+    ...     .order_by(Desc(SBPPH.datecreated))[0]
+    ... )
     >>> print(ed_pub.priority)
     Extra
     >>> n = SourcePackageName.selectOneBy(name="archive-copier")
     >>> ac = SourcePackageRelease.selectOneBy(
     ...     sourcepackagenameID=n.id, version="0.3.6"
     ... )
-    >>> ac_pub = SSPPH.select(
-    ...     """
-    ...     sourcepackagerelease = %s AND
-    ...     distroseries = %s AND
-    ...     status in %s
-    ...     """
-    ...     % sqlvalues(ac, breezy, active_publishing_status),
-    ...     orderBy=["-datecreated"],
-    ... )[0]
+    >>> ac_pub = (
+    ...     IStore(SSPPH)
+    ...     .find(
+    ...         SSPPH,
+    ...         SSPPH.sourcepackagerelease == ac,
+    ...         SSPPH.distroseries == breezy,
+    ...         SSPPH.status.is_in(active_publishing_status),
+    ...     )
+    ...     .order_by(Desc(SSPPH.datecreated))[0]
+    ... )
     >>> print(ac_pub.component.name)
     universe
 
@@ -699,11 +716,11 @@ First get a set of existing publishings for both source and binary:
     >>> hoary = ubuntu["hoary"]
     >>> hoary_i386 = hoary["i386"]
     >>> partner_source_set = set(
-    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary))
+    ...     IStore(SSPPH).find(SSPPH, distroseries=hoary)
     ... )
 
     >>> partner_binary_set = set(
-    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386))
+    ...     IStore(SBPPH).find(SBPPH, distroarchseries=hoary_i386)
     ... )
 
 Now run gina to import packages and convert them to partner:
@@ -719,11 +736,11 @@ Now run gina to import packages and convert them to partner:
 There will now be a number of publishings in the partner archive:
 
     >>> partner_source_set_after = set(
-    ...     SSPPH.select("distroseries = %s" % sqlvalues(hoary))
+    ...     IStore(SSPPH).find(SSPPH, distroseries=hoary)
     ... )
 
     >>> partner_binary_set_after = set(
-    ...     SBPPH.select("distroarchseries = %s" % sqlvalues(hoary_i386))
+    ...     IStore(SBPPH).find(SBPPH, distroarchseries=hoary_i386)
     ... )
 
     >>> source_difference = partner_source_set_after - partner_source_set
@@ -818,7 +835,9 @@ We will also store the number of binaries already published in debian
 PRIMARY archive, so we can check later it was unaffected by the
 import.
 
-    >>> debian_binaries = SBPPH.selectBy(archive=debian.main_archive)
+    >>> debian_binaries = IStore(SBPPH).find(
+    ...     SBPPH, archive=debian.main_archive
+    ... )
     >>> number_of_debian_binaries = debian_binaries.count()
 
 Commit the changes and run the importer script.
@@ -837,7 +856,7 @@ Commit the changes and run the importer script.
 There is now a number of source publications in PUBLISHED status for the
 targeted distroseries, 'lenny'.
 
-    >>> lenny_sources = SSPPH.select("distroseries = %s" % sqlvalues(lenny))
+    >>> lenny_sources = IStore(SSPPH).find(SSPPH, distroseries=lenny)
     >>> lenny_sources.count()
     12
 
@@ -850,11 +869,15 @@ As mentioned before, lenny/i386 is empty, no binaries were imported.
 Also, the number of binaries published in the whole debian distribution
 hasn't changed.
 
-    >>> lenny_binaries = SBPPH.selectBy(distroarchseries=lenny_i386)
+    >>> lenny_binaries = IStore(SBPPH).find(
+    ...     SBPPH, distroarchseries=lenny_i386
+    ... )
     >>> lenny_binaries.count()
     0
 
-    >>> debian_binaries = SBPPH.selectBy(archive=debian.main_archive)
+    >>> debian_binaries = IStore(SBPPH).find(
+    ...     SBPPH, archive=debian.main_archive
+    ... )
     >>> debian_binaries.count() == number_of_debian_binaries
     True
 

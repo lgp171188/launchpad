@@ -290,7 +290,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             archive.getAllPublishedBinaries(only_unpublished=True)
         )
         load_related(
-            DistroArchSeries, pending_binaries, ["distroarchseriesID"]
+            DistroArchSeries, pending_binaries, ["distroarchseries_id"]
         )
         return {
             pub.distroseries.name + pocketsuffix[pub.pocket]

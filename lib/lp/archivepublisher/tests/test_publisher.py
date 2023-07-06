@@ -71,6 +71,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.log.logger import BufferLogger, DevNullLogger
@@ -302,8 +303,8 @@ class TestPublisherSeries(TestNativePublishingBase):
         self._publish(pocket=pocket)
 
         # source and binary PUBLISHED in database.
-        pub_source.sync()
-        pub_bin.sync()
+        IStore(pub_source).flush()
+        IStore(pub_bin).flush()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
         self.assertEqual(pub_bin.status, PackagePublishingStatus.PUBLISHED)
 
@@ -847,7 +848,7 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(False)
         self.layer.txn.commit()
 
-        pub_source.sync()
+        IStore(pub_source).flush()
         self.assertEqual({"breezy-autotest"}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
 
@@ -1122,8 +1123,8 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(force_publishing=False)
         self.layer.txn.commit()
 
-        pub_source.sync()
-        pub_source2.sync()
+        IStore(pub_source).flush()
+        IStore(pub_source2).flush()
         self.assertEqual({"hoary-test"}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source2.status)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source.status)
@@ -1156,8 +1157,8 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(force_publishing=False)
         self.layer.txn.commit()
 
-        pub_source.sync()
-        pub_source2.sync()
+        IStore(pub_source).flush()
+        IStore(pub_source2).flush()
         self.assertEqual({"breezy-autotest-updates"}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
         self.assertEqual(PackagePublishingStatus.PENDING, pub_source2.status)
@@ -1284,7 +1285,7 @@ class TestPublisher(TestPublisherBase):
         publisher.A_publish(False)
         self.layer.txn.commit()
 
-        pub_source.sync()
+        IStore(pub_source).flush()
         self.assertEqual({"breezy-autotest"}, publisher.dirty_suites)
         self.assertEqual(PackagePublishingStatus.PUBLISHED, pub_source.status)
 
@@ -4326,7 +4327,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.name": ["hello"],
                 "deb.version": ["1.0"],
                 "launchpad.release-id": [
-                    "source:%d" % source.sourcepackagereleaseID
+                    "source:%d" % source.sourcepackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4347,7 +4348,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.component": ["main"],
                 "deb.distribution": ["breezy-autotest"],
                 "launchpad.release-id": [
-                    "binary:%d" % binary.binarypackagereleaseID
+                    "binary:%d" % binary.binarypackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4429,7 +4430,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.name": ["hello"],
                 "deb.version": ["1.0"],
                 "launchpad.release-id": [
-                    "source:%d" % source.sourcepackagereleaseID
+                    "source:%d" % source.sourcepackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4445,7 +4446,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.name": ["hello"],
                 "deb.version": ["1.0"],
                 "launchpad.release-id": [
-                    "source:%d" % source.sourcepackagereleaseID
+                    "source:%d" % source.sourcepackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4460,7 +4461,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.component": ["main"],
                 "deb.distribution": ["breezy-autotest", "hoary-test"],
                 "launchpad.release-id": [
-                    "binary:%d" % binary.binarypackagereleaseID
+                    "binary:%d" % binary.binarypackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4538,7 +4539,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                     "deb.name": ["hello"],
                     "deb.version": ["1.0-2"],
                     "launchpad.release-id": [
-                        "source:%d" % spph.sourcepackagereleaseID
+                        "source:%d" % spph.sourcepackagerelease_id
                     ],
                     "launchpad.source-name": ["hello"],
                     "launchpad.source-version": ["1.0-2"],
@@ -4600,7 +4601,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
                 "deb.name": ["hello"],
                 "deb.version": ["1.0"],
                 "launchpad.release-id": [
-                    "source:%d" % source.sourcepackagereleaseID
+                    "source:%d" % source.sourcepackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],
@@ -4612,7 +4613,7 @@ class TestArtifactoryPublishing(TestPublisherBase):
         self.assertEqual(
             {
                 "launchpad.release-id": [
-                    "binary:%d" % binary.binarypackagereleaseID
+                    "binary:%d" % binary.binarypackagerelease_id
                 ],
                 "launchpad.source-name": ["hello"],
                 "launchpad.source-version": ["1.0"],

@@ -134,7 +134,7 @@ class BinarySourceReferenceSet:
                     )
                 )
             values.append(
-                (bpr.id, closest_spph.sourcepackagereleaseID, reference_type)
+                (bpr.id, closest_spph.sourcepackagerelease_id, reference_type)
             )
 
         return create(

@@ -131,8 +131,8 @@ def copy_distroseries_translations(
                     status=active_publishing_status,
                 )
                 .config(distinct=True)
-                .order_by(SourcePackagePublishingHistory.sourcepackagenameID)
-                .values(SourcePackagePublishingHistory.sourcepackagenameID),
+                .order_by(SourcePackagePublishingHistory.sourcepackagename_id)
+                .values(SourcePackagePublishingHistory.sourcepackagename_id),
             )
         else:
             spns = None

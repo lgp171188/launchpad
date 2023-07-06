@@ -274,7 +274,7 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
             removeSecurityProxy(spr).sourcepackagename = gedit_name
             IStore(SourcePackagePublishingHistory).find(
                 SourcePackagePublishingHistory, sourcepackagerelease=spr
-            ).set(sourcepackagenameID=gedit_name.id)
+            ).set(sourcepackagename_id=gedit_name.id)
 
         # Set them as successfully built
         for build in self.builds:

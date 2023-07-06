@@ -20,7 +20,7 @@ from pathlib import Path
 from storm.databases.postgres import JSON
 from storm.expr import And, Cast, Desc, Join, LeftJoin, Not, Or, Sum
 from storm.info import ClassAlias
-from storm.properties import Int
+from storm.properties import DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
 from storm.zope import IResultSet
@@ -39,12 +39,10 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.channels import channel_list_to_string, channel_string_to_list
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import IsDistinctFrom
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -236,14 +234,17 @@ class ArchivePublisherBase:
 
 
 @implementer(ISourcePackagePublishingHistory)
-class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
+class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
     """A source package release publishing record."""
 
-    sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName", dbName="sourcepackagename"
-    )
-    sourcepackagerelease = ForeignKey(
-        foreignKey="SourcePackageRelease", dbName="sourcepackagerelease"
+    __storm_table__ = "SourcePackagePublishingHistory"
+
+    id = Int(primary=True)
+    sourcepackagename_id = Int(name="sourcepackagename")
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    sourcepackagerelease_id = Int(name="sourcepackagerelease")
+    sourcepackagerelease = Reference(
+        sourcepackagerelease_id, "SourcePackageRelease.id"
     )
     _format = DBEnum(
         name="format",
@@ -251,7 +252,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         default=SourcePackageType.DPKG,
         allow_none=True,
     )
-    distroseries = ForeignKey(foreignKey="DistroSeries", dbName="distroseries")
+    distroseries_id = Int(name="distroseries")
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
     component_id = Int(name="component", allow_none=True)
     component = Reference(component_id, "Component.id")
@@ -259,15 +261,14 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
     section_id = Int(name="section", allow_none=True)
     section = Reference(section_id, "Section.id")
     status = DBEnum(enum=PackagePublishingStatus)
-    scheduleddeletiondate = UtcDateTimeCol(default=None)
-    datepublished = UtcDateTimeCol(default=None)
-    datecreated = UtcDateTimeCol(default=UTC_NOW)
-    datesuperseded = UtcDateTimeCol(default=None)
-    supersededby = ForeignKey(
-        foreignKey="SourcePackageRelease", dbName="supersededby", default=None
-    )
-    datemadepending = UtcDateTimeCol(default=None)
-    dateremoved = UtcDateTimeCol(default=None)
+    scheduleddeletiondate = DateTime(default=None, tzinfo=timezone.utc)
+    datepublished = DateTime(default=None, tzinfo=timezone.utc)
+    datecreated = DateTime(default=UTC_NOW, tzinfo=timezone.utc)
+    datesuperseded = DateTime(default=None, tzinfo=timezone.utc)
+    supersededby_id = Int(name="supersededby", default=None)
+    supersededby = Reference(supersededby_id, "SourcePackageRelease.id")
+    datemadepending = DateTime(default=None, tzinfo=timezone.utc)
+    dateremoved = DateTime(default=None, tzinfo=timezone.utc)
     pocket = DBEnum(
         name="pocket",
         enum=PackagePublishingPocket,
@@ -275,38 +276,76 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         allow_none=False,
     )
     _channel = JSON(name="channel", allow_none=True)
-    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
-    copied_from_archive = ForeignKey(
-        dbName="copied_from_archive", foreignKey="Archive", notNull=False
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
+    copied_from_archive_id = Int(name="copied_from_archive", allow_none=True)
+    copied_from_archive = Reference(copied_from_archive_id, "Archive.id")
+    removed_by_id = Int(
+        name="removed_by", validator=validate_public_person, default=None
     )
-    removed_by = ForeignKey(
-        dbName="removed_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
+    removed_by = Reference(removed_by_id, "Person.id")
+    removal_comment = Unicode(name="removal_comment", default=None)
+    ancestor_id = Int(name="ancestor", default=None)
+    ancestor = Reference(ancestor_id, "SourcePackagePublishingHistory.id")
+    creator_id = Int(
+        name="creator",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    removal_comment = StringCol(dbName="removal_comment", default=None)
-    ancestor = ForeignKey(
-        dbName="ancestor",
-        foreignKey="SourcePackagePublishingHistory",
+    creator = Reference(creator_id, "Person.id")
+    sponsor_id = Int(
+        name="sponsor",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    creator = ForeignKey(
-        dbName="creator",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-        default=None,
-    )
-    sponsor = ForeignKey(
-        dbName="sponsor",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-        default=None,
-    )
+    sponsor = Reference(sponsor_id, "Person.id")
     packageupload_id = Int(name="packageupload", allow_none=True, default=None)
     packageupload = Reference(packageupload_id, "PackageUpload.id")
+
+    def __init__(
+        self,
+        sourcepackagename,
+        sourcepackagerelease,
+        format,
+        distroseries,
+        pocket,
+        status,
+        archive,
+        component=None,
+        section=None,
+        scheduleddeletiondate=None,
+        datepublished=None,
+        datecreated=None,
+        dateremoved=None,
+        channel=None,
+        copied_from_archive=None,
+        ancestor=None,
+        creator=None,
+        sponsor=None,
+        packageupload=None,
+    ):
+        super().__init__()
+        self.sourcepackagename = sourcepackagename
+        self.sourcepackagerelease = sourcepackagerelease
+        self._format = format
+        self.distroseries = distroseries
+        self.pocket = pocket
+        self.status = status
+        self.archive = archive
+        self.component = component
+        self.section = section
+        self.scheduleddeletiondate = scheduleddeletiondate
+        self.datepublished = datepublished
+        self.datecreated = datecreated
+        self.dateremoved = dateremoved
+        self._channel = channel
+        self.copied_from_archive = copied_from_archive
+        self.ancestor = ancestor
+        self.creator = creator
+        self.sponsor = sponsor
+        self.packageupload = packageupload
 
     @property
     def format(self):
@@ -359,22 +398,22 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             Store.of(self)
             .find(
                 BinaryPackagePublishingHistory,
-                BinaryPackagePublishingHistory.binarypackagereleaseID
+                BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageRelease.id,
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archiveID == self.archiveID,
+                BinaryPackagePublishingHistory.archive == self.archive_id,
                 BinaryPackagePublishingHistory.pocket == self.pocket,
                 BinaryPackageBuild.id == BinaryPackageRelease.buildID,
                 BinaryPackageBuild.source_package_release_id
-                == self.sourcepackagereleaseID,
-                DistroArchSeries.distroseriesID == self.distroseriesID,
+                == self.sourcepackagerelease_id,
+                DistroArchSeries.distroseriesID == self.distroseries_id,
             )
             .order_by(Desc(BinaryPackagePublishingHistory.id))
         )
 
         # Preload attached BinaryPackageReleases.
-        bpr_ids = {pub.binarypackagereleaseID for pub in binary_publications}
+        bpr_ids = {pub.binarypackagerelease_id for pub in binary_publications}
         list(
             Store.of(self).find(
                 BinaryPackageRelease, BinaryPackageRelease.id.is_in(bpr_ids)
@@ -662,7 +701,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
-            == self.sourcepackagereleaseID,
+            == self.sourcepackagerelease_id,
         )
         source_urls = proxied_source_urls(
             [source for source, _ in sources], self
@@ -746,21 +785,23 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
 
 
 @implementer(IBinaryPackagePublishingHistory)
-class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
+class BinaryPackagePublishingHistory(StormBase, ArchivePublisherBase):
     """A binary package publishing record."""
 
-    binarypackagename = ForeignKey(
-        foreignKey="BinaryPackageName", dbName="binarypackagename"
-    )
-    binarypackagerelease = ForeignKey(
-        foreignKey="BinaryPackageRelease", dbName="binarypackagerelease"
+    __storm_table__ = "BinaryPackagePublishingHistory"
+
+    id = Int(primary=True)
+    binarypackagename_id = Int(name="binarypackagename")
+    binarypackagename = Reference(binarypackagename_id, "BinaryPackageName.id")
+    binarypackagerelease_id = Int(name="binarypackagerelease")
+    binarypackagerelease = Reference(
+        binarypackagerelease_id, "BinaryPackageRelease.id"
     )
     _binarypackageformat = DBEnum(
         name="binarypackageformat", enum=BinaryPackageFormat, allow_none=True
     )
-    distroarchseries = ForeignKey(
-        foreignKey="DistroArchSeries", dbName="distroarchseries"
-    )
+    distroarchseries_id = Int(name="distroarchseries")
+    distroarchseries = Reference(distroarchseries_id, "DistroArchSeries.id")
     # DB constraint: non-nullable for BinaryPackageFormat.{DEB,UDEB,DDEB}.
     component_id = Int(name="component", allow_none=True)
     component = Reference(component_id, "Component.id")
@@ -772,43 +813,80 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         name="priority", enum=PackagePublishingPriority, allow_none=True
     )
     status = DBEnum(name="status", enum=PackagePublishingStatus)
-    phased_update_percentage = IntCol(
-        dbName="phased_update_percentage", notNull=False, default=None
+    phased_update_percentage = Int(
+        name="phased_update_percentage", allow_none=True, default=None
     )
-    scheduleddeletiondate = UtcDateTimeCol(default=None)
-    creator = ForeignKey(
-        dbName="creator",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    scheduleddeletiondate = DateTime(default=None, tzinfo=timezone.utc)
+    creator_id = Int(
+        name="creator",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    datepublished = UtcDateTimeCol(default=None)
-    datecreated = UtcDateTimeCol(default=UTC_NOW)
-    datesuperseded = UtcDateTimeCol(default=None)
-    supersededby = ForeignKey(
-        foreignKey="BinaryPackageBuild", dbName="supersededby", default=None
-    )
-    datemadepending = UtcDateTimeCol(default=None)
-    dateremoved = UtcDateTimeCol(default=None)
+    creator = Reference(creator_id, "Person.id")
+    datepublished = DateTime(default=None, tzinfo=timezone.utc)
+    datecreated = DateTime(default=UTC_NOW, tzinfo=timezone.utc)
+    datesuperseded = DateTime(default=None, tzinfo=timezone.utc)
+    supersededby_id = Int(name="supersededby", default=None)
+    supersededby = Reference(supersededby_id, "BinaryPackageBuild.id")
+    datemadepending = DateTime(default=None, tzinfo=timezone.utc)
+    dateremoved = DateTime(default=None, tzinfo=timezone.utc)
     pocket = DBEnum(name="pocket", enum=PackagePublishingPocket)
     _channel = JSON(name="channel", allow_none=True)
-    archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
-    copied_from_archive = ForeignKey(
-        dbName="copied_from_archive", foreignKey="Archive", notNull=False
+    archive_id = Int(name="archive", allow_none=False)
+    archive = Reference(archive_id, "Archive.id")
+    copied_from_archive_id = Int(name="copied_from_archive", allow_none=True)
+    copied_from_archive = Reference(copied_from_archive_id, "Archive.id")
+    removed_by_id = Int(
+        name="removed_by", validator=validate_public_person, default=None
     )
-    removed_by = ForeignKey(
-        dbName="removed_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
-    )
-    removal_comment = StringCol(dbName="removal_comment", default=None)
-    sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="sourcepackagename",
-        notNull=False,
-    )
+    removed_by = Reference(removed_by_id, "Person.id")
+    removal_comment = Unicode(name="removal_comment", default=None)
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=True)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+
+    def __init__(
+        self,
+        binarypackagename,
+        binarypackagerelease,
+        binarypackageformat,
+        distroarchseries,
+        pocket,
+        status,
+        archive,
+        sourcepackagename,
+        component=None,
+        section=None,
+        priority=None,
+        phased_update_percentage=None,
+        scheduleddeletiondate=None,
+        creator=None,
+        datepublished=None,
+        datecreated=None,
+        dateremoved=None,
+        channel=None,
+        copied_from_archive=None,
+    ):
+        super().__init__()
+        self.binarypackagename = binarypackagename
+        self.binarypackagerelease = binarypackagerelease
+        self._binarypackageformat = binarypackageformat
+        self.distroarchseries = distroarchseries
+        self.pocket = pocket
+        self.status = status
+        self.archive = archive
+        self.sourcepackagename = sourcepackagename
+        self.component = component
+        self.section = section
+        self.priority = priority
+        self.phased_update_percentage = phased_update_percentage
+        self.scheduleddeletiondate = scheduleddeletiondate
+        self.creator = creator
+        self.datepublished = datepublished
+        self.datecreated = datecreated
+        self.dateremoved = dateremoved
+        self._channel = channel
+        self.copied_from_archive = copied_from_archive
 
     @property
     def binarypackageformat(self):
@@ -961,7 +1039,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status
             ),
-            BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+            BinaryPackagePublishingHistory.distroarchseries_id.is_in(
                 available_architectures
             ),
             binarypackagerelease=self.binarypackagerelease,
@@ -1130,7 +1208,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             BinaryPackagePublishingHistory(
                 binarypackagename=debug.binarypackagename,
                 binarypackagerelease=debug.binarypackagerelease,
-                _binarypackageformat=debug.binarypackageformat,
+                binarypackageformat=debug.binarypackageformat,
                 distroarchseries=debug.distroarchseries,
                 status=PackagePublishingStatus.PENDING,
                 datecreated=UTC_NOW,
@@ -1141,15 +1219,15 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 creator=creator,
                 archive=debug.archive,
                 phased_update_percentage=new_phased_update_percentage,
-                _channel=removeSecurityProxy(debug)._channel,
+                channel=removeSecurityProxy(debug)._channel,
                 sourcepackagename=debug.sourcepackagename,
             )
 
         # Append the modified package publishing entry
-        return BinaryPackagePublishingHistory(
+        bpph = BinaryPackagePublishingHistory(
             binarypackagename=bpr.binarypackagename,
             binarypackagerelease=bpr,
-            _binarypackageformat=bpr.binpackageformat,
+            binarypackageformat=bpr.binpackageformat,
             distroarchseries=self.distroarchseries,
             status=PackagePublishingStatus.PENDING,
             datecreated=UTC_NOW,
@@ -1160,13 +1238,15 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             archive=self.archive,
             creator=creator,
             phased_update_percentage=new_phased_update_percentage,
-            _channel=self._channel,
+            channel=self._channel,
             sourcepackagename=(
                 bpr.build.source_package_name
                 if bpr.build is not None
                 else None
             ),
         )
+        IStore(bpph).flush()
+        return bpph
 
     def copyTo(self, distroseries, pocket, archive):
         """See `BinaryPackagePublishingHistory`."""
@@ -1257,7 +1337,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease
-            == self.binarypackagereleaseID,
+            == self.binarypackagerelease_id,
         )
         binary_urls = proxied_urls(
             [binary for binary, _ in binaries], self.archive
@@ -1351,10 +1431,10 @@ class PublishingSet:
         # conflicting binaries from other sources.
         def make_package_condition(archive, das, bpr):
             return And(
-                BinaryPackagePublishingHistory.archiveID == archive.id,
-                BinaryPackagePublishingHistory.distroarchseriesID == das.id,
-                BinaryPackagePublishingHistory.binarypackagenameID
-                == bpr.binarypackagenameID,
+                BinaryPackagePublishingHistory.archive == archive,
+                BinaryPackagePublishingHistory.distroarchseries == das,
+                BinaryPackagePublishingHistory.binarypackagename
+                == bpr.binarypackagename,
                 Cast(BinaryPackageRelease.version, "text") == bpr.version,
             )
 
@@ -1366,7 +1446,7 @@ class PublishingSet:
             IPrimaryStore(BinaryPackagePublishingHistory)
             .find(
                 (
-                    BinaryPackagePublishingHistory.distroarchseriesID,
+                    BinaryPackagePublishingHistory.distroarchseries_id,
                     BinaryPackageRelease.binarypackagenameID,
                     BinaryPackageRelease.version,
                 ),
@@ -1381,7 +1461,7 @@ class PublishingSet:
                     active_publishing_status
                 ),
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
                 Or(*candidates),
             )
             .config(distinct=True)
@@ -1610,7 +1690,7 @@ class PublishingSet:
             archive=archive,
             sourcepackagename=sourcepackagerelease.sourcepackagename,
             sourcepackagerelease=sourcepackagerelease,
-            _format=sourcepackagerelease.format,
+            format=sourcepackagerelease.format,
             component=get_component(archive, distroseries, component),
             section=section,
             status=PackagePublishingStatus.PENDING,
@@ -1619,7 +1699,7 @@ class PublishingSet:
             creator=creator,
             sponsor=sponsor,
             packageupload=packageupload,
-            _channel=channel,
+            channel=channel,
         )
         DistributionSourcePackage.ensure(pub)
 
@@ -1655,9 +1735,9 @@ class PublishingSet:
         # We'll be looking for builds in the same distroseries as the
         # SPPH for the same release.
         builds_for_distroseries_expr = (
-            SourcePackagePublishingHistory.distroseriesID
+            SourcePackagePublishingHistory.distroseries_id
             == BinaryPackageBuild.distro_series_id,
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == BinaryPackageBuild.source_package_release_id,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
             DistroArchSeries.id == BinaryPackageBuild.distro_arch_series_id,
@@ -1669,7 +1749,7 @@ class PublishingSet:
             BinaryPackageBuild,
             builds_for_distroseries_expr,
             (
-                SourcePackagePublishingHistory.archiveID
+                SourcePackagePublishingHistory.archive_id
                 == BinaryPackageBuild.archive_id
             ),
             *extra_exprs,
@@ -1682,11 +1762,11 @@ class PublishingSet:
             BinaryPackageBuild,
             builds_for_distroseries_expr,
             (
-                SourcePackagePublishingHistory.archiveID
+                SourcePackagePublishingHistory.archive_id
                 != BinaryPackageBuild.archive_id
             ),
             BinaryPackagePublishingHistory.archive
-            == SourcePackagePublishingHistory.archiveID,
+            == SourcePackagePublishingHistory.archive_id,
             BinaryPackagePublishingHistory.binarypackagerelease
             == BinaryPackageRelease.id,
             BinaryPackageRelease.build == BinaryPackageBuild.id,
@@ -1768,20 +1848,20 @@ class PublishingSet:
     ):
         """Return the join linking sources with binaries."""
         join = [
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == BinaryPackageBuild.source_package_release_id,
             BinaryPackageRelease.build == BinaryPackageBuild.id,
             BinaryPackageRelease.binarypackagenameID == BinaryPackageName.id,
-            SourcePackagePublishingHistory.distroseriesID
+            SourcePackagePublishingHistory.distroseries_id
             == DistroArchSeries.distroseriesID,
-            BinaryPackagePublishingHistory.distroarchseriesID
+            BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
             BinaryPackagePublishingHistory.binarypackagerelease
             == BinaryPackageRelease.id,
             BinaryPackagePublishingHistory.pocket
             == SourcePackagePublishingHistory.pocket,
-            BinaryPackagePublishingHistory.archiveID
-            == SourcePackagePublishingHistory.archiveID,
+            BinaryPackagePublishingHistory.archive_id
+            == SourcePackagePublishingHistory.archive_id,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
         ]
 
@@ -1852,12 +1932,12 @@ class PublishingSet:
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
             BinaryPackageRelease.buildID == BinaryPackageBuild.id,
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == BinaryPackageBuild.source_package_release_id,
-            BinaryPackagePublishingHistory.binarypackagereleaseID
+            BinaryPackagePublishingHistory.binarypackagerelease_id
             == BinaryPackageRelease.id,
-            BinaryPackagePublishingHistory.archiveID
-            == SourcePackagePublishingHistory.archiveID,
+            BinaryPackagePublishingHistory.archive_id
+            == SourcePackagePublishingHistory.archive_id,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
         )
 
@@ -1879,7 +1959,7 @@ class PublishingSet:
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
-            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            == SourcePackagePublishingHistory.sourcepackagerelease_id,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
         )
 
@@ -1953,10 +2033,10 @@ class PublishingSet:
             BinaryPackageBuild.source_package_release_id
             == sourcepackagerelease.id,
             BinaryPackageRelease.build == BinaryPackageBuild.id,
-            BinaryPackagePublishingHistory.binarypackagereleaseID
+            BinaryPackagePublishingHistory.binarypackagerelease_id
             == BinaryPackageRelease.id,
-            BinaryPackagePublishingHistory.archiveID == archive.id,
-            BinaryPackagePublishingHistory.distroarchseriesID
+            BinaryPackagePublishingHistory.archive == archive,
+            BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
             DistroArchSeries.distroseriesID == distroseries.id,
             BinaryPackagePublishingHistory.pocket == pocket,
@@ -1998,7 +2078,7 @@ class PublishingSet:
             # build_source_stanza_fields.
             bulk.load_related(Section, spphs, ["section_id"])
             sprs = bulk.load_related(
-                SourcePackageRelease, spphs, ["sourcepackagereleaseID"]
+                SourcePackageRelease, spphs, ["sourcepackagerelease_id"]
             )
             bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
             spr_ids = set(map(attrgetter("id"), sprs))
@@ -2057,7 +2137,7 @@ class PublishingSet:
             # build_binary_stanza_fields.
             bulk.load_related(Section, bpphs, ["section_id"])
             bprs = bulk.load_related(
-                BinaryPackageRelease, bpphs, ["binarypackagereleaseID"]
+                BinaryPackageRelease, bpphs, ["binarypackagerelease_id"]
             )
             bpbs = bulk.load_related(BinaryPackageBuild, bprs, ["buildID"])
             sprs = bulk.load_related(
@@ -2107,7 +2187,7 @@ class PublishingSet:
             PackageUploadSource.sourcepackagerelease
             == SourcePackageRelease.id,
             SourcePackageRelease.id
-            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            == SourcePackagePublishingHistory.sourcepackagerelease_id,
             SourcePackagePublishingHistory.id.is_in(source_publication_ids),
         )
 
@@ -2259,7 +2339,7 @@ class PublishingSet:
         affected_pubs.set(
             status=PackagePublishingStatus.DELETED,
             datesuperseded=UTC_NOW,
-            removed_byID=removed_by_id,
+            removed_by_id=removed_by_id,
             removal_comment=removal_comment,
         )
 
@@ -2277,7 +2357,7 @@ class PublishingSet:
             ).set(
                 status=PackagePublishingStatus.DELETED,
                 datesuperseded=UTC_NOW,
-                removed_byID=removed_by_id,
+                removed_by_id=removed_by_id,
                 removal_comment=removal_comment,
             )
 
@@ -2290,11 +2370,11 @@ class PublishingSet:
             deb_bpph,
             Join(
                 BinaryPackageRelease,
-                deb_bpph.binarypackagereleaseID == BinaryPackageRelease.id,
+                deb_bpph.binarypackagerelease_id == BinaryPackageRelease.id,
             ),
             Join(
                 debug_bpph,
-                debug_bpph.binarypackagereleaseID
+                debug_bpph.binarypackagerelease_id
                 == BinaryPackageRelease.debug_packageID,
             ),
         ]
@@ -2305,8 +2385,8 @@ class PublishingSet:
                 debug_bpph,
                 deb_bpph.id.is_in(ids),
                 debug_bpph.status.is_in(active_publishing_status),
-                deb_bpph.archiveID == debug_bpph.archiveID,
-                deb_bpph.distroarchseriesID == debug_bpph.distroarchseriesID,
+                deb_bpph.archive_id == debug_bpph.archive_id,
+                deb_bpph.distroarchseries_id == debug_bpph.distroarchseries_id,
                 deb_bpph.pocket == debug_bpph.pocket,
                 deb_bpph.component_id == debug_bpph.component_id,
                 deb_bpph.section_id == debug_bpph.section_id,
@@ -2393,10 +2473,10 @@ def get_current_source_releases(
     series_clauses = []
     for context, package_names in context_sourcepackagenames.items():
         clause = And(
-            SourcePackagePublishingHistory.sourcepackagenameID.is_in(
+            SourcePackagePublishingHistory.sourcepackagename_id.is_in(
                 map(attrgetter("id"), package_names)
             ),
-            SourcePackagePublishingHistory.archiveID.is_in(
+            SourcePackagePublishingHistory.archive_id.is_in(
                 archive_ids_func(context)
             ),
             package_clause_func(context),
@@ -2409,7 +2489,7 @@ def get_current_source_releases(
         IStore(SourcePackageRelease)
         .find(
             (SourcePackageRelease, key_col),
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == SourcePackageRelease.id,
             SourcePackagePublishingHistory.status.is_in(
                 active_publishing_status

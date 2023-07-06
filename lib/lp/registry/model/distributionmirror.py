@@ -981,7 +981,7 @@ class MirrorDistroArchSeries(StormBase, _MirrorSeriesMixIn):
         if deb_only:
             clauses.extend(
                 [
-                    BinaryPackagePublishingHistory.binarypackagereleaseID
+                    BinaryPackagePublishingHistory.binarypackagerelease_id
                     == BinaryPackageFile.binarypackagerelease_id,
                     BinaryPackageFile.filetype == BinaryPackageFileType.DEB,
                 ]

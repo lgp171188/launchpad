@@ -101,7 +101,7 @@ def join_spph_spn():
     SPPH = SourcePackagePublishingHistory
     SPN = SourcePackageName
 
-    return SPN.id == SPPH.sourcepackagenameID
+    return SPN.id == SPPH.sourcepackagename_id
 
 
 def join_spph_spr():
@@ -109,7 +109,7 @@ def join_spph_spr():
     SPPH = SourcePackagePublishingHistory
     SPR = SourcePackageRelease
 
-    return SPR.id == SPPH.sourcepackagereleaseID
+    return SPR.id == SPPH.sourcepackagerelease_id
 
 
 class SourcePublicationTraits:
@@ -118,9 +118,6 @@ class SourcePublicationTraits:
     Used by `GeneralizedPublication` to hide the differences from
     `BinaryPackagePublishingHistory`.
     """
-
-    release_class = SourcePackageRelease
-    release_reference_name = "sourcepackagereleaseID"
 
     @staticmethod
     def getPackageName(spph):
@@ -139,9 +136,6 @@ class BinaryPublicationTraits:
     Used by `GeneralizedPublication` to hide the differences from
     `SourcePackagePublishingHistory`.
     """
-
-    release_class = BinaryPackageRelease
-    release_reference_name = "binarypackagereleaseID"
 
     @staticmethod
     def getPackageName(bpph):
@@ -654,13 +648,13 @@ class Dominator:
             BPPH.pocket == pocket,
         ]
         candidate_binary_names = Select(
-            BPPH.binarypackagenameID,
+            BPPH.binarypackagename_id,
             And(*bpph_location_clauses),
-            group_by=(BPPH.binarypackagenameID, BPPH._channel),
+            group_by=(BPPH.binarypackagename_id, BPPH._channel),
             having=(Count() > 1),
         )
         main_clauses = bpph_location_clauses + [
-            BPR.id == BPPH.binarypackagereleaseID,
+            BPR.id == BPPH.binarypackagerelease_id,
             BPR.binarypackagenameID.is_in(candidate_binary_names),
             BPR.binpackageformat != BinaryPackageFormat.DDEB,
         ]
@@ -672,7 +666,7 @@ class Dominator:
         # the join would complicate the query.
         query = IStore(BPPH).find((BPPH, BPR), *main_clauses)
         bpphs = list(DecoratedResultSet(query, itemgetter(0)))
-        load_related(BinaryPackageName, bpphs, ["binarypackagenameID"])
+        load_related(BinaryPackageName, bpphs, ["binarypackagename_id"])
         return bpphs
 
     def dominateBinaries(self, distroseries, pocket):
@@ -814,9 +808,9 @@ class Dominator:
             distroseries, pocket
         )
         candidate_source_names = Select(
-            SPPH.sourcepackagenameID,
+            SPPH.sourcepackagename_id,
             And(join_spph_spr(), spph_location_clauses),
-            group_by=(SPPH.sourcepackagenameID, SPPH._channel),
+            group_by=(SPPH.sourcepackagename_id, SPPH._channel),
             having=(Count() > 1),
         )
 
@@ -829,11 +823,11 @@ class Dominator:
         query = IStore(SPPH).find(
             (SPPH, SPR),
             join_spph_spr(),
-            SPPH.sourcepackagenameID.is_in(candidate_source_names),
+            SPPH.sourcepackagename_id.is_in(candidate_source_names),
             spph_location_clauses,
         )
         spphs = DecoratedResultSet(query, itemgetter(0))
-        load_related(SourcePackageName, spphs, ["sourcepackagenameID"])
+        load_related(SourcePackageName, spphs, ["sourcepackagename_id"])
         return spphs
 
     def dominateSources(self, distroseries, pocket):

@@ -43,6 +43,7 @@ from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.services.channels import channel_string_to_list
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import BufferLogger, DevNullLogger
 from lp.soyuz.enums import (
@@ -340,7 +341,7 @@ class SoyuzTestPublisher:
             distroseries=distroseries,
             sourcepackagerelease=spr,
             sourcepackagename=spr.sourcepackagename,
-            _format=spr.format,
+            format=spr.format,
             component=spr.component,
             section=spr.section,
             status=status,
@@ -351,7 +352,7 @@ class SoyuzTestPublisher:
             pocket=pocket,
             archive=archive,
             creator=creator,
-            _channel=channel,
+            channel=channel,
         )
 
         return spph
@@ -642,7 +643,7 @@ class SoyuzTestPublisher:
                 distroarchseries=arch,
                 binarypackagerelease=binarypackagerelease,
                 binarypackagename=binarypackagerelease.binarypackagename,
-                _binarypackageformat=binarypackagerelease.binpackageformat,
+                binarypackageformat=binarypackagerelease.binpackageformat,
                 component=binarypackagerelease.component,
                 section=binarypackagerelease.section,
                 priority=binarypackagerelease.priority,
@@ -653,7 +654,7 @@ class SoyuzTestPublisher:
                 pocket=pocket,
                 archive=archive,
                 phased_update_percentage=phased_update_percentage,
-                _channel=channel,
+                channel=channel,
                 sourcepackagename=(
                     binarypackagerelease.build.source_package_name
                 ),
@@ -1010,7 +1011,7 @@ class TestNativePublishing(TestNativePublishingBase):
         self.layer.commit()
 
         foo_name = "%s/main/f/foo/foo_666.dsc" % self.pool_dir
-        pub_source.sync()
+        IStore(pub_source).flush()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
         with open(foo_name) as foo:
             self.assertEqual(foo.read().strip(), "foo is happy")
@@ -1022,7 +1023,7 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source2.publish(self.disk_pool, self.logger)
         self.layer.commit()
 
-        pub_source2.sync()
+        IStore(pub_source2).flush()
         self.assertEqual(pub_source2.status, PackagePublishingStatus.PENDING)
         with open(foo_name) as foo:
             self.assertEqual(foo.read().strip(), "foo is happy")
@@ -1041,7 +1042,7 @@ class TestNativePublishing(TestNativePublishingBase):
         bar_name = "%s/main/b/bar/bar_666.dsc" % self.pool_dir
         with open(bar_name) as bar:
             self.assertEqual(bar.read().strip(), "bar is good")
-        pub_source.sync()
+        IStore(pub_source).flush()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
 
         pub_source2 = self.getPubSource(
@@ -1049,7 +1050,7 @@ class TestNativePublishing(TestNativePublishingBase):
         )
         pub_source2.publish(self.disk_pool, self.logger)
         self.layer.commit()
-        pub_source2.sync()
+        IStore(pub_source2).flush()
         self.assertEqual(pub_source2.status, PackagePublishingStatus.PUBLISHED)
 
     def testPublishingSymlink(self):
@@ -1068,8 +1069,8 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source2.publish(self.disk_pool, self.logger)
         self.layer.commit()
 
-        pub_source.sync()
-        pub_source2.sync()
+        IStore(pub_source).flush()
+        IStore(pub_source2).flush()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
         self.assertEqual(pub_source2.status, PackagePublishingStatus.PUBLISHED)
 
@@ -1089,7 +1090,7 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source3.publish(self.disk_pool, self.logger)
         self.layer.commit()
 
-        pub_source3.sync()
+        IStore(pub_source3).flush()
         self.assertEqual(pub_source3.status, PackagePublishingStatus.PENDING)
 
     def testPublishInAnotherArchive(self):
@@ -1113,7 +1114,7 @@ class TestNativePublishing(TestNativePublishingBase):
         pub_source.publish(test_disk_pool, self.logger)
         self.layer.commit()
 
-        pub_source.sync()
+        IStore(pub_source).flush()
         self.assertEqual(pub_source.status, PackagePublishingStatus.PUBLISHED)
         self.assertEqual(
             pub_source.sourcepackagerelease.upload_archive, cprov.archive

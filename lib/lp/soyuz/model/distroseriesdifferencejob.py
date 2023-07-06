@@ -77,7 +77,7 @@ def create_multiple_jobs(derived_series, parent_series):
     """
     store = IStore(SourcePackagePublishingHistory)
     spn_ids = store.find(
-        SourcePackagePublishingHistory.sourcepackagenameID,
+        SourcePackagePublishingHistory.sourcepackagename_id,
         SourcePackagePublishingHistory.distroseries == derived_series.id,
         SourcePackagePublishingHistory.status.is_in(active_publishing_status),
     )

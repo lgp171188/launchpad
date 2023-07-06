@@ -210,7 +210,7 @@ class DistributionSourcePackage(
                 DistroSeries.distribution == self.distribution,
                 SourcePackagePublishingHistory.sourcepackagename
                 == self.sourcepackagename,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 Not(
@@ -245,7 +245,7 @@ class DistributionSourcePackage(
                 SourcePackageRelease,
                 SourcePackagePublishingHistory.distroseries == DistroSeries.id,
                 DistroSeries.distribution == self.distribution,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 SourcePackagePublishingHistory.sourcepackagerelease
@@ -384,15 +384,15 @@ class DistributionSourcePackage(
 
     def _getPublishingHistoryQuery(self, status=None):
         conditions = [
-            SourcePackagePublishingHistory.archiveID.is_in(
+            SourcePackagePublishingHistory.archive_id.is_in(
                 self.distribution.all_distro_archive_ids
             ),
-            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id,
+            SourcePackagePublishingHistory.distroseries_id == DistroSeries.id,
             DistroSeries.distribution == self.distribution,
             SourcePackagePublishingHistory.sourcepackagename
             == self.sourcepackagename,
             SourcePackageRelease.id
-            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            == SourcePackagePublishingHistory.sourcepackagerelease_id,
         ]
 
         if status is not None:
@@ -412,7 +412,7 @@ class DistributionSourcePackage(
         pub_constraints = (
             DistroSeries.distribution == self.distribution,
             SourcePackagePublishingHistory.distroseries == DistroSeries.id,
-            SourcePackagePublishingHistory.archiveID.is_in(
+            SourcePackagePublishingHistory.archive_id.is_in(
                 self.distribution.all_distro_archive_ids
             ),
             SourcePackagePublishingHistory.sourcepackagename
@@ -423,11 +423,11 @@ class DistributionSourcePackage(
         spr_ids = (
             Store.of(self.distribution)
             .find(
-                SourcePackagePublishingHistory.sourcepackagereleaseID,
+                SourcePackagePublishingHistory.sourcepackagerelease_id,
                 *pub_constraints,
             )
             .order_by(
-                Desc(SourcePackagePublishingHistory.sourcepackagereleaseID)
+                Desc(SourcePackagePublishingHistory.sourcepackagerelease_id)
             )
             .config(distinct=True)
         )
@@ -442,7 +442,7 @@ class DistributionSourcePackage(
             sprs_by_id = {
                 spr: list(pubs)
                 for (spr, pubs) in itertools.groupby(
-                    pubs, attrgetter("sourcepackagereleaseID")
+                    pubs, attrgetter("sourcepackagerelease_id")
                 )
             }
             return [

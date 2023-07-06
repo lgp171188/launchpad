@@ -77,7 +77,7 @@ needs to be removed.
     >>> pe = BinaryPackagePublishingHistory(
     ...     binarypackagerelease=bpr.id,
     ...     binarypackagename=bpr.binarypackagename,
-    ...     _binarypackageformat=bpr.binpackageformat,
+    ...     binarypackageformat=bpr.binpackageformat,
     ...     component=main_component.id,
     ...     section=misc_section.id,
     ...     priority=priority,
@@ -86,10 +86,6 @@ needs to be removed.
     ...     datecreated=UTC_NOW,
     ...     datepublished=UTC_NOW,
     ...     pocket=PackagePublishingPocket.RELEASE,
-    ...     datesuperseded=None,
-    ...     supersededby=None,
-    ...     datemadepending=None,
-    ...     dateremoved=None,
     ...     archive=hoary_i386.main_archive,
     ...     sourcepackagename=bpr.build.source_package_name,
     ... )
@@ -126,7 +122,7 @@ needs to be removed.
     >>> pe = BinaryPackagePublishingHistory(
     ...     binarypackagerelease=bpr.id,
     ...     binarypackagename=bpr.binarypackagename,
-    ...     _binarypackageformat=bpr.binpackageformat,
+    ...     binarypackageformat=bpr.binpackageformat,
     ...     component=main_component.id,
     ...     section=misc_section.id,
     ...     priority=priority,
@@ -135,10 +131,6 @@ needs to be removed.
     ...     datecreated=UTC_NOW,
     ...     datepublished=UTC_NOW,
     ...     pocket=PackagePublishingPocket.RELEASE,
-    ...     datesuperseded=None,
-    ...     supersededby=None,
-    ...     datemadepending=None,
-    ...     dateremoved=None,
     ...     archive=hoary_i386.main_archive,
     ...     sourcepackagename=bpr.build.source_package_name,
     ... )
