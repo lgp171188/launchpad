@@ -1,0 +1,60 @@
+options:
+  active:
+    type: boolean
+    description: If true, enable jobs that may change the database.
+    default: true
+  artifactory_read_credentials:
+    type: string
+    description: >
+      Credentials for reading from Artifactory repositories (formatted as
+      "user:token").
+    default: ""
+  builder_proxy_auth_api_admin_secret:
+    type: string
+    description: >
+      Admin secret for requesting tokens from the builder proxy service.
+    default: ""
+  builder_proxy_auth_api_admin_username:
+    type: string
+    description: Admin username for the builder proxy service.
+    default: ""
+  builder_proxy_auth_api_endpoint:
+    type: string
+    description: Endpoint for builder proxy authentication service.
+    default: ""
+  builder_proxy_host:
+    type: string
+    description: Builder HTTP proxy host.
+    default: ""
+  builder_proxy_port:
+    type: int
+    description: Builder HTTP proxy port.
+    default: 3128
+  builder_reset_private_ssh_key:
+    type: string
+    description: >
+      Base64-encoded private SSH key, used to request builder resets.
+    default: ""
+  builder_reset_public_ssh_key:
+    type: string
+    description: >
+      Base64-encoded public SSH key, used to request builder resets.
+    default: ""
+  cibuild_config:
+    type: string
+    description: >
+      YAML-encoded dictionary mapping pillars to dictionaries of
+      configuration items to set for CI builds of those pillars.
+    default: ""
+  socket_timeout:
+    type: int
+    description: >
+      The time in seconds that buildd-manager will wait for a reply from
+      non-virtualized builders.
+    default: 40
+  virtualized_socket_timeout:
+    type: int
+    description: >
+      The time in seconds that buildd-manager will wait for a reply from
+      non-virtualized builders.
+    default: 30

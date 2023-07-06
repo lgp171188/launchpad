@@ -1,0 +1,16 @@
+{{ logs_dir }}/*.log
+{
+    rotate 90
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 {{ user }} {{ user }}
+    sharedscripts
+    postrotate
+        systemctl reload buildd-manager.service
+    endscript
+}
+
