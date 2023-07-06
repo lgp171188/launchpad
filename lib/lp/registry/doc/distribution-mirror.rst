@@ -741,14 +741,14 @@ First we need to run the http server that's going to answer our requests.
     >>> http_server.setUp()
 
     >>> import subprocess
-    >>> def run_prober(arguments):
-    ...     cmd = (
-    ...         "cronscripts/distributionmirror-prober.py %s "
-    ...         "--no-remote-hosts" % arguments
-    ...     )
+    >>> def run_prober(*arguments):
+    ...     cmd = [
+    ...         "cronscripts/distributionmirror-prober.py",
+    ...         "--no-remote-hosts",
+    ...     ]
+    ...     cmd.extend(arguments)
     ...     prober = subprocess.Popen(
     ...         cmd,
-    ...         shell=True,
     ...         stdin=subprocess.PIPE,
     ...         stdout=subprocess.PIPE,
     ...         stderr=subprocess.PIPE,
@@ -811,7 +811,9 @@ probed again.
 But we can override the default behaviour and tell the prober to check
 all official mirrors independently if they were probed recently or not.
 
-    >>> prober, stdout, stderr = run_prober("--content-type=cdimage --force")
+    >>> prober, stdout, stderr = run_prober(
+    ...     "--content-type=cdimage", "--force"
+    ... )
     >>> print(stdout)
     <BLANKLINE>
     >>> print(stderr)
@@ -834,7 +836,9 @@ we'll enable them again.
     True
     >>> cdimage_mirror.enabled = False
     >>> transaction.commit()
-    >>> prober, stdout, stderr = run_prober("--content-type=cdimage --force")
+    >>> prober, stdout, stderr = run_prober(
+    ...     "--content-type=cdimage", "--force"
+    ... )
     >>> print(stderr)
     INFO    Creating lockfile:
             /var/lock/launchpad-distributionmirror-prober.lock

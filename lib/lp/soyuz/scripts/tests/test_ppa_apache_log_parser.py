@@ -116,8 +116,7 @@ class TestScriptRunning(TestCaseWithFactory):
         )
 
         process = subprocess.Popen(
-            "cronscripts/parse-ppa-apache-access-logs.py",
-            shell=True,
+            ["cronscripts/parse-ppa-apache-access-logs.py"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

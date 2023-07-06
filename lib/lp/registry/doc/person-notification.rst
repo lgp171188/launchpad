@@ -92,8 +92,7 @@ This includes notifications to teams owned by other teams.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/send-person-notifications.py -q",
-    ...     shell=True,
+    ...     ["cronscripts/send-person-notifications.py", "-q"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

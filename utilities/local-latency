@@ -6,35 +6,68 @@ import sys
 from script_commands import UserError, helps, run_subcommand
 
 
-def tc(command):
+def tc(*arguments):
     """Run a tc command under sudo.
 
-    :param tc: The remainder of the command (leaving out tc).
+    :param arguments: The remainder of the command (leaving out tc).
     """
-    subprocess.call("sudo tc " + command, shell=True)
+    subprocess.call(["sudo", "tc"] + arguments)
 
 
 @helps(
-    delay="Length of delay in miliseconds (each way).",
+    delay="Length of delay in milliseconds (each way).",
     port="Port to induce delay on.",
 )
 def start(delay=500, port=443):
     """Add artificial latency to the lo interface on the specified port."""
-    tc("qdisc add dev lo root handle 1: prio")
-    tc("qdisc add dev lo parent 1:3 handle 30: netem delay %dms" % delay)
+    qdisc_add = ["qdisc", "add", "dev", "lo"]
+    tc(*qdisc_add, "root", "handle", "1:", "prio")
     tc(
-        "filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip"
-        " dport %d 0xffff flowid 1:3" % port
+        *qdisc_add,
+        "parent",
+        "1:3",
+        "handle",
+        "30:",
+        "netem",
+        "delay",
+        "%dms" % delay,
+    )
+    filter_add_ip = ["filter", "add", "dev", "lo", "protocol", "ip"]
+    tc(
+        *filter_add_ip,
+        "parent",
+        "1:0",
+        "prio",
+        "3",
+        "u32",
+        "match",
+        "ip",
+        "dport",
+        str(port),
+        "0xffff",
+        "flowid",
+        "1:3",
     )
     tc(
-        "filter add dev lo protocol ip parent 1:0 prio 3 u32 match ip"
-        " sport %d 0xffff flowid 1:3" % port
+        *filter_add_ip,
+        "parent",
+        "1:0",
+        "prio",
+        "3",
+        "u32",
+        "match",
+        "ip",
+        "sport",
+        str(port),
+        "0xffff",
+        "flowid",
+        "1:3",
     )
 
 
 def stop():
     """Remove latency from the lo."""
-    tc("qdisc del dev lo root")
+    tc("qdisc", "del", "dev", "lo", "root")
 
 
 subcommands = {
