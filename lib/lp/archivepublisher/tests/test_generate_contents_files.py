@@ -20,11 +20,11 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.log.logger import DevNullLogger
 from lp.services.osutils import write_file
 from lp.services.scripts.base import LaunchpadScriptFailure
-from lp.services.scripts.tests import run_script
 from lp.services.utils import file_exists
 from lp.testing import TestCaseWithFactory
 from lp.testing.faketransaction import FakeTransaction
 from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
+from lp.testing.script import run_script
 
 
 def fake_overrides(script, distroseries):
@@ -337,6 +337,7 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         # The script will run stand-alone.
         self.layer.force_dirty_database()
         retval, out, err = run_script(
-            "cronscripts/generate-contents-files.py", ["-d", "ubuntu", "-q"]
+            "cronscripts/generate-contents-files.py",
+            args=["-d", "ubuntu", "-q"],
         )
         self.assertEqual(0, retval)

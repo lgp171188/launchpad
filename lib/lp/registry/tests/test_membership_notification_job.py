@@ -3,8 +3,6 @@
 
 """Tests of `MembershipNotificationJob`."""
 
-import os
-
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -113,12 +111,10 @@ class MembershipNotificationJobTest(TestCaseWithFactory):
         )
         job_repr = repr(job)
         transaction.commit()
-        env = os.environ.copy()
-        env["LP_DEBUG_SQL"] = "1"
         exit_code, out, err = run_script(
             "cronscripts/process-job-source.py",
             args=["-vv", IMembershipNotificationJobSource.getName()],
-            env=env,
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))

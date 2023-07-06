@@ -14,9 +14,9 @@ from lp.code.model.branchjob import BranchJob, BranchJobType
 from lp.codehosting.vfs import branch_id_to_path
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class TestReclaimBranchSpaceScript(TestCaseWithFactory):

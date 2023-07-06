@@ -61,7 +61,7 @@ def run_command(
 def run_script(
     script: str,
     args: Optional[List[str]] = None,
-    env: Optional[Dict[str, str]] = None,
+    extra_env: Optional[Dict[str, str]] = None,
     cwd: Optional[str] = None,
     input: Optional[Union[bytes, str]] = None,
     universal_newlines: bool = True,
@@ -70,19 +70,20 @@ def run_script(
 
     :param script: Python script to run.
     :param args: optional list of command-line arguments.
-    :param env: optional environment dict; if none is given, the script will
-        get a copy of the environment of the calling process.  In either
-        case, `PYTHONPATH` is removed since inheriting it may break some
-        scripts.
-    :param env: optional, passed to `subprocess.Popen`.
+    :param extra_env: optional dict of extra environment variables to pass
+        to the script, in addition to those in the environment of the
+        calling process.  Regardless of whether this is passed, the
+        `PYTHONPATH` environment variable is removed since inheriting it may
+        break some scripts.
     :param cwd: optional, passed to `subprocess.Popen`.
     :param input: optional string to feed to standard input.
     :param universal_newlines: passed to `subprocess.Popen`, defaulting to
         True.
     :return: tuple of return value, standard output, and standard error.
     """
-    if env is None:
-        env = os.environ.copy()
+    env = os.environ.copy()
+    if extra_env is not None:
+        env.update(extra_env)
     env.pop("PYTHONPATH", None)
 
     return run_command(

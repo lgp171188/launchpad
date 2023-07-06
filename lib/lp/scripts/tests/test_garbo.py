@@ -105,7 +105,6 @@ from lp.services.librarian.model import TimeLimitedToken
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
-from lp.services.scripts.tests import run_script
 from lp.services.session.model import SessionData, SessionPkgData
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.model.logintoken import LoginToken
@@ -144,6 +143,7 @@ from lp.testing.layers import (
     ZopelessDatabaseLayer,
 )
 from lp.testing.mail_helpers import pop_notifications
+from lp.testing.script import run_script
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.translationtemplateitem import (
@@ -158,18 +158,20 @@ class TestGarboScript(TestCase):
 
     def test_daily_script(self):
         """Ensure garbo-daily.py actually runs."""
-        rv, out, err = run_script(
-            "cronscripts/garbo-daily.py", ["-q"], expect_returncode=0
+        exit_code, out, err = run_script(
+            "cronscripts/garbo-daily.py", args=["-q"]
         )
+        self.assertEqual(0, exit_code)
         self.assertFalse(out.strip(), "Output to stdout: %s" % out)
         self.assertFalse(err.strip(), "Output to stderr: %s" % err)
         DatabaseLayer.force_dirty_database()
 
     def test_hourly_script(self):
         """Ensure garbo-hourly.py actually runs."""
-        rv, out, err = run_script(
-            "cronscripts/garbo-hourly.py", ["-q"], expect_returncode=0
+        exit_code, out, err = run_script(
+            "cronscripts/garbo-hourly.py", args=["-q"]
         )
+        self.assertEqual(0, exit_code)
         self.assertFalse(out.strip(), "Output to stdout: %s" % out)
         self.assertFalse(err.strip(), "Output to stderr: %s" % err)
         DatabaseLayer.force_dirty_database()

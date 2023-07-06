@@ -7,10 +7,8 @@ __all__ = [
 
 
 import os
-import subprocess
 
 import lp
-from lp.services.config import config
 
 LP_TREE = os.path.dirname(os.path.dirname(os.path.dirname(lp.__file__)))
 
@@ -37,40 +35,3 @@ def find_lp_scripts():
                     continue
                 scripts.append(script_path)
     return sorted(scripts)
-
-
-def run_script(
-    script_relpath,
-    args,
-    expect_returncode=0,
-    extra_env=None,
-    universal_newlines=True,
-):
-    """Run a script for testing purposes.
-
-    :param script_relpath: The relative path to the script, from the tree
-        root.
-    :param args: Arguments to provide to the script.
-    :param expect_returncode: The return code expected.  If a different value
-        is returned, and exception will be raised.
-    :param extra_env: A dictionary of extra environment variables to provide
-        to the script, or None.
-    :param universal_newlines: Passed to `subprocess.Popen`, defaulting to
-        True.
-    """
-    script = os.path.join(config.root, script_relpath)
-    args = [script] + args
-    env = dict(os.environ)
-    if extra_env is not None:
-        env.update(extra_env)
-    process = subprocess.Popen(
-        args,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        env=env,
-        universal_newlines=universal_newlines,
-    )
-    stdout, stderr = process.communicate()
-    if process.returncode != expect_returncode:
-        raise AssertionError("Failed:\n%s\n%s" % (stdout, stderr))
-    return (process.returncode, stdout, stderr)

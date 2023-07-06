@@ -6,9 +6,9 @@
 
 import transaction
 
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 from lp.translations.tests.test_translationpackagingjob import (
     count_translations,
     make_translation_merge_job,
@@ -29,10 +29,9 @@ class TestMergeExistingPackagings(TestCaseWithFactory):
         self.assertEqual(2, count_translations(job))
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            "scripts/rosetta/merge-existing-packagings.py",
-            [],
-            expect_returncode=0,
+            "scripts/rosetta/merge-existing-packagings.py"
         )
+        self.assertEqual(0, retcode)
         merge_message = "INFO    Merging %s/%s and %s/%s.\n" % (
             job.productseries.product.name,
             job.productseries.name,

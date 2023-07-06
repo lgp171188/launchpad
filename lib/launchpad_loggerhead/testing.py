@@ -18,8 +18,8 @@ from lp.services.osutils import (
     remove_if_exists,
 )
 from lp.services.pidfile import pidfile_path
-from lp.services.scripts.tests import run_script
 from lp.testing.layers import BaseLayer, LayerProcessController
+from lp.testing.script import run_script
 
 
 class LoggerheadFixtureException(Exception):
@@ -43,14 +43,19 @@ class LoggerheadFixture(Fixture):
         self.logfile = os.path.join(config.codebrowse.log_folder, "debug.log")
         remove_if_exists(self.logfile)
         self.addCleanup(kill_by_pidfile, pidfile)
-        run_script(
-            os.path.join("scripts", "start-loggerhead.py"),
-            ["--daemon"],
+        exit_code, out, err = run_script(
+            os.path.join(config.root, "scripts", "start-loggerhead.py"),
+            args=["--daemon"],
             # The testrunner-appserver config provides the correct
             # openid_provider_root URL.
             extra_env={"LPCONFIG": BaseLayer.appserver_config_name},
             universal_newlines=False,
         )
+        if exit_code != 0:
+            raise AssertionError(
+                "Starting loggerhead failed with exit code %d:\n%s\n%s"
+                % (exit_code, out, err)
+            )
         self._waitForStartup()
 
     def _hasStarted(self):

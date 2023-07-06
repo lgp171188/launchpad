@@ -5,9 +5,9 @@ The translations-export-to-branch script visits all ProductSeries with a
 translations_branch set, and for each, exports the series' translations
 to that branch.
 
-    >>> from lp.services.scripts.tests import run_script
+    >>> from lp.testing.script import run_script
     >>> ret_code, stdout, stderr = run_script(
-    ...     "cronscripts/translations-export-to-branch.py", []
+    ...     "cronscripts/translations-export-to-branch.py"
     ... )
     >>> ret_code
     0

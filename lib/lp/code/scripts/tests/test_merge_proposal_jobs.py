@@ -5,6 +5,8 @@
 
 """Test the sendbranchmail script"""
 
+import os.path
+
 import transaction
 from testtools.matchers import MatchesRegex
 
@@ -12,9 +14,10 @@ from lp.code.model.tests.test_branchmergeproposaljobs import (
     make_runnable_incremental_diff_job,
 )
 from lp.code.model.tests.test_diff import DiffTestCase
+from lp.services.config import config
 from lp.services.job.interfaces.job import JobStatus
-from lp.services.scripts.tests import run_script
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class TestMergeProposalJobScript(DiffTestCase):
@@ -25,8 +28,8 @@ class TestMergeProposalJobScript(DiffTestCase):
         job = make_runnable_incremental_diff_job(self)
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py",
-            ["--log-twisted", "IBranchMergeProposalJobSource"],
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["--log-twisted", "IBranchMergeProposalJobSource"],
         )
         self.assertEqual(0, retcode)
         self.assertEqual("", stdout)

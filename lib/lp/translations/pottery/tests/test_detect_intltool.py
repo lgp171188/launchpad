@@ -7,8 +7,9 @@ from textwrap import dedent
 
 from breezy.controldir import ControlDir
 
-from lp.services.scripts.tests import run_script
+from lp.services.config import config
 from lp.testing import TestCase
+from lp.testing.script import run_script
 from lp.translations.pottery.detect_intltool import is_intltool_structure
 
 
@@ -57,9 +58,15 @@ class SetupTestPackageMixin:
         self.prepare_package("intltool_POTFILES_in_2")
 
         return_code, stdout, stderr = run_script(
-            "scripts/rosetta/pottery-generate-intltool.py", []
+            os.path.join(
+                config.root,
+                "scripts",
+                "rosetta",
+                "pottery-generate-intltool.py",
+            )
         )
 
+        self.assertEqual(0, return_code)
         self.assertEqual(
             dedent(
                 """\

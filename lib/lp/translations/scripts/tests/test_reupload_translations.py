@@ -14,12 +14,12 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.services.librarian.model import LibraryFileAliasSet
-from lp.services.scripts.tests import run_script
 from lp.soyuz.model.packagetranslationsuploadjob import (
     _filter_ubuntu_translation_file,
 )
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.script import run_script
 from lp.translations.model.translationimportqueue import TranslationImportQueue
 from lp.translations.scripts.reupload_translations import (
     ReuploadPackageTranslations,
@@ -193,7 +193,7 @@ class TestReuploadScript(TestCaseWithFactory):
         """Test a run of the script."""
         retcode, stdout, stderr = run_script(
             "scripts/rosetta/reupload-translations.py",
-            [
+            args=[
                 "-d",
                 self.distroseries.distribution.name,
                 "-s",

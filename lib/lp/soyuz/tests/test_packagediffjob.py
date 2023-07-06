@@ -1,8 +1,6 @@
 # Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import os
-
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -78,12 +76,10 @@ class TestPackageDiffJob(TestCaseWithFactory):
     def test_smoke(self):
         diff = create_proper_job(self.factory)
         transaction.commit()
-        env = os.environ.copy()
-        env["LP_DEBUG_SQL"] = "1"
         exit_code, out, err = run_script(
             "cronscripts/process-job-source.py",
             args=["-vv", IPackageDiffJobSource.getName()],
-            env=env,
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

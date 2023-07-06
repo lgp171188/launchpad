@@ -14,7 +14,6 @@ from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import block_on_job
-from lp.services.scripts.tests import run_script
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.distributionjob import (
     IInitializeDistroSeriesJobSource,
@@ -37,6 +36,7 @@ from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadZopelessLayer,
 )
+from lp.testing.script import run_script
 
 
 class InitializeDistroSeriesJobTests(TestCaseWithFactory):
@@ -401,10 +401,11 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
         self.assertEqual("amd64", child.nominatedarchindep.architecturetag)
 
     def test_cronscript(self):
-        run_script(
+        exit_code, _, _ = run_script(
             "cronscripts/process-job-source.py",
-            ["IInitializeDistroSeriesJobSource"],
+            args=["IInitializeDistroSeriesJobSource"],
         )
+        self.assertEqual(0, exit_code)
         DatabaseLayer.force_dirty_database()
 
 

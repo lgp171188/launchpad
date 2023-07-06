@@ -725,12 +725,10 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             archive2.newComponentUploader(requester, "main")
         transaction.commit()
 
-        env = os.environ.copy()
-        env["LP_DEBUG_SQL"] = "1"
         exit_code, out, err = run_script(
             "cronscripts/process-job-source.py",
             args=["-vv", IPlainPackageCopyJobSource.getName()],
-            env=env,
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

@@ -17,10 +17,10 @@ from lp.registry.interfaces.teammembership import (
 from lp.services.config import config
 from lp.services.job.scripts import process_job_source
 from lp.services.scripts.base import LOCK_PATH
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCase, TestCaseWithFactory, login_person
 from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
+from lp.testing.script import run_script
 
 
 class ProcessSingleJobSourceConfigTest(TestCase):
@@ -55,9 +55,8 @@ class ProcessJobSourceTest(TestCaseWithFactory):
     def test_missing_argument(self):
         # The script should display usage info when called without any
         # arguments.
-        returncode, output, error = run_script(
-            self.script, [], expect_returncode=1
-        )
+        returncode, output, error = run_script(self.script)
+        self.assertEqual(1, returncode)
         self.assertIn("Usage:", output)
         self.assertIn("process-job-source.py [options] JOB_SOURCE", output)
 
@@ -65,8 +64,9 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         # The script should just create a lockfile and exit if no jobs
         # are in the queue.
         returncode, output, error = run_script(
-            self.script, ["IMembershipNotificationJobSource"]
+            self.script, args=["IMembershipNotificationJobSource"]
         )
+        self.assertEqual(0, returncode)
         expected = (
             "INFO    Creating lockfile: .*launchpad-process-job-"
             "source-IMembershipNotificationJobSource.lock.*"
@@ -85,10 +85,9 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         lock.acquire()
         try:
             returncode, output, error = run_script(
-                self.script,
-                ["IMembershipNotificationJobSource"],
-                expect_returncode=1,
+                self.script, args=["IMembershipNotificationJobSource"]
             )
+            self.assertEqual(1, returncode)
             expected = dedent(
                 """\
                 INFO    Creating lockfile: {lock}
@@ -111,8 +110,9 @@ class ProcessJobSourceTest(TestCaseWithFactory):
         tm.setStatus(TeamMembershipStatus.ADMIN, team.teamowner)
         transaction.commit()
         returncode, output, error = run_script(
-            self.script, ["-v", "IMembershipNotificationJobSource"]
+            self.script, args=["-v", "IMembershipNotificationJobSource"]
         )
+        self.assertEqual(0, returncode)
         self.assertIn(
             (
                 "INFO    Running <MembershipNotificationJob "
@@ -149,9 +149,8 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
     def test_missing_argument(self):
         # The script should display usage info when called without any
         # arguments.
-        returncode, output, error = run_script(
-            self.script, [], expect_returncode=1
-        )
+        returncode, output, error = run_script(self.script)
+        self.assertEqual(1, returncode)
         self.assertIn(
             (
                 "Usage: process-job-source-groups.py "
@@ -167,7 +166,8 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         # The script should just run over each job source class, and then
         # exit if no jobs are in the queue.  It should not create its own
         # lockfile.
-        returncode, output, error = run_script(self.script, ["MAIN"])
+        returncode, output, error = run_script(self.script, args=["MAIN"])
+        self.assertEqual(0, returncode)
         expected = (
             ".*Creating lockfile:.*launchpad-process-job-"
             "source-IMembershipNotificationJobSource.lock.*"
@@ -186,7 +186,10 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         tm = membership_set.getByPersonAndTeam(person, team)
         tm.setStatus(TeamMembershipStatus.ADMIN, team.teamowner)
         transaction.commit()
-        returncode, output, error = run_script(self.script, ["-v", "MAIN"])
+        returncode, output, error = run_script(
+            self.script, args=["-v", "MAIN"]
+        )
+        self.assertEqual(0, returncode)
         self.assertTextMatchesExpressionIgnoreWhitespace(
             (
                 "INFO Running <MembershipNotificationJob "
@@ -202,7 +205,8 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         args = ["MAIN"]
         for source in self.getJobSources("MAIN"):
             args.extend(("--exclude", source))
-        returncode, output, error = run_script(self.script, args)
+        returncode, output, error = run_script(self.script, args=args)
+        self.assertEqual(0, returncode)
         self.assertEqual("", error)
 
     def test_exclude_non_existing_group(self):
@@ -212,6 +216,7 @@ class ProcessJobSourceGroupsTest(TestCaseWithFactory):
         for source in self.getJobSources("MAIN"):
             args.extend(("--exclude", source))
         args.extend(("--exclude", "BobbyDazzler"))
-        returncode, output, error = run_script(self.script, args)
+        returncode, output, error = run_script(self.script, args=args)
+        self.assertEqual(0, returncode)
         expected = "INFO    'BobbyDazzler' is not in MAIN\n"
         self.assertThat(error, DocTestMatches(expected))

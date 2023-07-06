@@ -3,8 +3,6 @@
 
 """Tests of `PersonMergeJob`."""
 
-import os
-
 import transaction
 from testtools.content import text_content
 from zope.component import getUtility
@@ -143,12 +141,10 @@ class TestPersonMergeJob(TestCaseWithFactory):
         )
         transaction.commit()
 
-        env = os.environ.copy()
-        env["LP_DEBUG_SQL"] = "1"
         exit_code, out, err = run_script(
             "cronscripts/process-job-source.py",
             args=["-vv", IPersonMergeJobSource.getName()],
-            env=env,
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))
