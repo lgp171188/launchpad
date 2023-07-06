@@ -9,10 +9,8 @@ from testtools.matchers import Equals, MatchesDict, MatchesStructure
 from zope.event import notify
 
 from lp.bugs.interfaces.bug import IBug
-from lp.bugs.interfaces.bugtarget import DISABLE_BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.subscribers.bugactivity import what_changed
-from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import TestCaseWithFactory, person_logged_in
@@ -60,13 +58,6 @@ class TestBugWebhooksTriggered(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(
-            FeatureFixture(
-                {
-                    DISABLE_BUG_WEBHOOKS_FEATURE_FLAG: "on",
-                }
-            )
-        )
         self.target = self.factory.makeProduct()
         self.owner = self.target.owner
         self.bugtask = self.factory.makeBugTask(target=self.target)
