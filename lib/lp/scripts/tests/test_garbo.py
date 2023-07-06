@@ -158,16 +158,20 @@ class TestGarboScript(TestCase):
 
     def test_daily_script(self):
         """Ensure garbo-daily.py actually runs."""
-        rv, out, err = run_script("cronscripts/garbo-daily.py", args=["-q"])
-        self.assertEqual(0, rv)
+        exit_code, out, err = run_script(
+            "cronscripts/garbo-daily.py", args=["-q"]
+        )
+        self.assertEqual(0, exit_code)
         self.assertFalse(out.strip(), "Output to stdout: %s" % out)
         self.assertFalse(err.strip(), "Output to stderr: %s" % err)
         DatabaseLayer.force_dirty_database()
 
     def test_hourly_script(self):
         """Ensure garbo-hourly.py actually runs."""
-        rv, out, err = run_script("cronscripts/garbo-hourly.py", args=["-q"])
-        self.assertEqual(0, rv)
+        exit_code, out, err = run_script(
+            "cronscripts/garbo-hourly.py", args=["-q"]
+        )
+        self.assertEqual(0, exit_code)
         self.assertFalse(out.strip(), "Output to stdout: %s" % out)
         self.assertFalse(err.strip(), "Output to stderr: %s" % err)
         DatabaseLayer.force_dirty_database()
