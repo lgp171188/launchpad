@@ -1,0 +1,8 @@
+start-services:
+  description: Start celery workers. Usually run after maintenance.
+stop-services:
+  description: |
+    Stop celery workers. Usually run in preparation for maintenance. (Note that
+    this does not stop services in a way that will persist across a reboot. It
+    also doesn't disable cron jobs, since those are handled by the cron-control
+    mechanism instead. see lp.services.scripts.base.cronscript_enabled.)

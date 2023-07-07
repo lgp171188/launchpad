@@ -1,0 +1,11 @@
+options:
+  active:
+    type: boolean
+    description: Should the cron jobs and the celery services be active?
+    default: true
+  internal_branch_by_id_root:
+    type: string
+    description: |
+      The URL prefix for where branches are served by URLs based on the
+      branch ID.
+    default:

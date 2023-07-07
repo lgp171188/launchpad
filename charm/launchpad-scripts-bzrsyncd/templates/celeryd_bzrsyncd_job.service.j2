@@ -1,0 +1,24 @@
+[Unit]
+Description=Celery service for Launchpad bzrsyncd jobs
+After=network.target
+
+[Service]
+Type=exec
+User=launchpad
+Group=launchpad
+Environment=LPCONFIG=launchpad-scripts-bzrsyncd
+WorkingDirectory={{ code_dir }}
+ExecStart={{ code_dir }}/bin/celery worker \
+    --queue bzrsyncd_job \
+    --config=lp.services.job.celeryconfig \
+    --hostname=launchpad_bzrsyncd_job \
+    --loglevel=DEBUG \
+    --logfile={{ logs_dir }}/celeryd_launchpad_bzrsyncd_job.log
+ExecStop=/bin/kill -TERM $MAINPID
+ExecReload=/bin/kill -HUP $MAINPID
+PrivateTmp=true
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
