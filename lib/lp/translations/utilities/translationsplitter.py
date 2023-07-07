@@ -103,13 +103,13 @@ class TranslationSplitter(TranslationSplitterBase):
         UbuntuTemplate = ClassAlias(POTemplate, "UbuntuTemplate")
         return store.find(
             (UpstreamItem, UbuntuItem),
-            UpstreamItem.potmsgsetID == UbuntuItem.potmsgsetID,
-            UbuntuItem.potemplateID == UbuntuTemplate.id,
+            UpstreamItem.potmsgset_id == UbuntuItem.potmsgset_id,
+            UbuntuItem.potemplate_id == UbuntuTemplate.id,
             UbuntuTemplate.sourcepackagenameID
             == self.sourcepackage.sourcepackagename.id,
             UbuntuTemplate.distroseriesID
             == self.sourcepackage.distroseries.id,
-            UpstreamItem.potemplateID == UpstreamTemplate.id,
+            UpstreamItem.potemplate_id == UpstreamTemplate.id,
             UpstreamTemplate.productseriesID == self.productseries.id,
         )
 
@@ -151,7 +151,7 @@ class TranslationTemplateSplitter(TranslationSplitterBase):
         OtherItem = ClassAlias(TranslationTemplateItem, "OtherItem")
         return Store.of(self.potemplate).find(
             (OtherItem, ThisItem),
-            ThisItem.potemplateID == self.potemplate.id,
-            OtherItem.potmsgsetID == ThisItem.potmsgsetID,
-            Not(OtherItem.potemplateID.is_in(sharing_ids)),
+            ThisItem.potemplate_id == self.potemplate.id,
+            OtherItem.potmsgset_id == ThisItem.potmsgset_id,
+            Not(OtherItem.potemplate_id.is_in(sharing_ids)),
         )

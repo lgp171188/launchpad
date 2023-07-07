@@ -68,8 +68,8 @@ def get_potmsgset_ids(potemplate_id):
     store = IStore(POTemplate)
     return set(
         store.find(
-            TranslationTemplateItem.potmsgsetID,
-            TranslationTemplateItem.potemplateID == potemplate_id,
+            TranslationTemplateItem.potmsgset_id,
+            TranslationTemplateItem.potemplate_id == potemplate_id,
             TranslationTemplateItem.sequence > 0,
         )
     )

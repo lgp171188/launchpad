@@ -5,25 +5,33 @@ __all__ = [
     "TranslationTemplateItem",
 ]
 
+from storm.locals import Int, Reference, Store
 from zope.interface import implementer
 
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, IntCol
+from lp.services.database.stormbase import StormBase
 from lp.translations.interfaces.translationtemplateitem import (
     ITranslationTemplateItem,
 )
 
 
 @implementer(ITranslationTemplateItem)
-class TranslationTemplateItem(SQLBase):
+class TranslationTemplateItem(StormBase):
     """See `ITranslationTemplateItem`."""
 
-    _table = "TranslationTemplateItem"
+    __storm_table__ = "TranslationTemplateItem"
 
-    potemplate = ForeignKey(
-        foreignKey="POTemplate", dbName="potemplate", notNull=True
-    )
-    sequence = IntCol(dbName="sequence", notNull=True)
-    potmsgset = ForeignKey(
-        foreignKey="POTMsgSet", dbName="potmsgset", notNull=True
-    )
+    id = Int(primary=True)
+    potemplate_id = Int(name="potemplate", allow_none=False)
+    potemplate = Reference(potemplate_id, "POTemplate.id")
+    sequence = Int(name="sequence", allow_none=False)
+    potmsgset_id = Int(name="potmsgset", allow_none=False)
+    potmsgset = Reference(potmsgset_id, "POTMsgSet.id")
+
+    def __init__(self, potemplate, sequence, potmsgset):
+        super().__init__()
+        self.potemplate = potemplate
+        self.sequence = sequence
+        self.potmsgset = potmsgset
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
