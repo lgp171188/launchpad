@@ -906,8 +906,10 @@ class Product(
     @cachedproperty
     def _cached_licenses(self):
         """Get the licenses as a tuple."""
-        product_licenses = ProductLicense.selectBy(
-            product=self, orderBy="license"
+        product_licenses = (
+            IStore(ProductLicense)
+            .find(ProductLicense, product=self)
+            .order_by(ProductLicense.license)
         )
         return tuple(
             product_license.license for product_license in product_licenses
@@ -939,8 +941,10 @@ class Product(
                 raise ValueError("%s is not a License." % license)
 
         for license in old_licenses.difference(licenses):
-            product_license = ProductLicense.selectOneBy(
-                product=self, license=license
+            product_license = (
+                IStore(ProductLicense)
+                .find(ProductLicense, product=self, license=license)
+                .one()
             )
             product_license.destroySelf()
 
@@ -1696,9 +1700,9 @@ def get_precached_products(
         cache.commercial_subscription = subscription
     if need_licences:
         for license in IStore(ProductLicense).find(
-            ProductLicense, ProductLicense.productID.is_in(product_ids)
+            ProductLicense, ProductLicense.product_id.is_in(product_ids)
         ):
-            cache = caches[license.productID]
+            cache = caches[license.product_id]
             if license.license not in cache._cached_licenses:
                 cache._cached_licenses.append(license.license)
     if need_projectgroups:
@@ -2140,7 +2144,7 @@ class ProductSet:
                         1,
                         tables=[ProductLicense],
                         where=And(
-                            ProductLicense.productID == Product.id,
+                            ProductLicense.product_id == Product.id,
                             ProductLicense.license.is_in(licenses),
                         ),
                     )
