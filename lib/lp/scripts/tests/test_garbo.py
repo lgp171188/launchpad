@@ -1399,7 +1399,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         test_ids = list(potmsgset_pofile)
         obsolete_msgsets = store.find(
             POTMsgSet,
-            In(TranslationTemplateItem.potmsgsetID, test_ids),
+            In(TranslationTemplateItem.potmsgset_id, test_ids),
             TranslationTemplateItem.sequence == 0,
         )
         self.assertEqual(4, obsolete_msgsets.count())
@@ -1420,7 +1420,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         pruner(2)
         self.assertEqual(0, obsolete_msgsets.count())
         preserved_msgsets = store.find(
-            POTMsgSet, In(TranslationTemplateItem.potmsgsetID, test_ids)
+            POTMsgSet, In(TranslationTemplateItem.potmsgset_id, test_ids)
         )
         self.assertEqual(1, preserved_msgsets.count())
 

@@ -148,9 +148,9 @@ class MigrateCurrentFlagProcess:
             TranslationMessage.is_current_upstream == False,
             (
                 TranslationMessage.potmsgsetID
-                == TranslationTemplateItem.potmsgsetID
+                == TranslationTemplateItem.potmsgset_id
             ),
-            TranslationTemplateItem.potemplateID == POTemplate.id,
+            TranslationTemplateItem.potemplate_id == POTemplate.id,
             POTemplate.productseriesID == ProductSeries.id,
             ProductSeries.productID == product.id,
         ).config(distinct=True)
