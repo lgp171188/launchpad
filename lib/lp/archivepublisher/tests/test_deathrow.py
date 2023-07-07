@@ -9,17 +9,24 @@ from pathlib import Path
 
 from zope.component import getUtility
 
+from lp.archivepublisher.artifactory import ArtifactoryPool
 from lp.archivepublisher.deathrow import DeathRow
 from lp.archivepublisher.diskpool import DiskPool
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.log.logger import BufferLogger
+from lp.soyuz.enums import (
+    ArchivePublishingMethod,
+    ArchivePurpose,
+    ArchiveRepositoryFormat,
+)
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import TestCase
+from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-class TestDeathRow(TestCase):
+class TestDeathRow(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def getTestPublisher(self, distroseries):
@@ -137,3 +144,30 @@ class TestDeathRow(TestCase):
 
         self.assertDoesNotExist(main_dsc_path)
         self.assertDoesNotExist(universe_dsc_path)
+
+    def test_skips_conda_source_packages(self):
+        root_url = "https://foo.example.com/artifactory/repository"
+        distroseries = self.factory.makeDistroSeries()
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution,
+            purpose=ArchivePurpose.PPA,
+            publishing_method=ArchivePublishingMethod.ARTIFACTORY,
+            repository_format=ArchiveRepositoryFormat.CONDA,
+        )
+        stp = self.getTestPublisher(distroseries)
+        logger = BufferLogger()
+        pool = ArtifactoryPool(archive, root_url, logger)
+        deathrow = DeathRow(archive, pool, logger)
+        pub_source = stp.getPubSource(
+            filecontent=b"Hello world",
+            archive=archive,
+            format=SourcePackageType.CI_BUILD,
+            user_defined_fields=[("bogus_field", "instead_of_subdir")],
+        )
+        pub_source.publish(pool, logger)
+        pub_source.requestObsolescence()
+        self.layer.commit()
+
+        self.assertIsNone(pub_source.dateremoved)
+        deathrow.reap()
+        self.assertIsNotNone(pub_source.dateremoved)
