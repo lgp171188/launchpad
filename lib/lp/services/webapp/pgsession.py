@@ -106,7 +106,6 @@ class PGSessionDataContainer(PGSessionBase):
 
 @implementer(ISessionData)
 class PGSessionData(PGSessionBase):
-
     session_data_container = None
 
     _have_ensured_client_id = False

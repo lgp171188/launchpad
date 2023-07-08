@@ -16,7 +16,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class GPGKeySetTests(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_can_add_keys_for_test(self):
@@ -24,7 +23,7 @@ class GPGKeySetTests(TestCaseWithFactory):
         person = self.factory.makePerson()
         fingerprint = "DEADBEEF12345678DEADBEEF12345678DEADBEEF"
         keyset.new(
-            person.id,
+            person,
             "F0A432C2",
             fingerprint,
             4096,

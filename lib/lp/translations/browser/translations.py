@@ -110,7 +110,6 @@ class RosettaStatsView(LaunchpadView):
 
 
 class RosettaApplicationNavigation(Navigation):
-
     usedfor = IRosettaApplication
 
     newlayer = TranslationsLayer

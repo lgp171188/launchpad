@@ -108,7 +108,6 @@ from lp.services.webapp.menu import ALL_LINKS, NavigationMenu
 class ProjectNavigation(
     Navigation, StructuralSubscriptionTargetTraversalMixin
 ):
-
     usedfor = IProjectGroup
 
     def traverse(self, name):
@@ -134,7 +133,6 @@ class ProjectNavigation(
 
 
 class ProjectSetNavigation(Navigation):
-
     usedfor = IProjectGroupSet
 
     def traverse(self, name):
@@ -152,7 +150,6 @@ class ProjectSetBreadcrumb(Breadcrumb):
 
 
 class ProjectSetContextMenu(ContextMenu):
-
     usedfor = IProjectGroupSet
     links = ["register", "listall"]
 
@@ -210,7 +207,6 @@ class ProjectEditMenuMixin(ProjectAdminMenuMixin):
 
 
 class ProjectOverviewMenu(ProjectEditMenuMixin, ApplicationMenu):
-
     usedfor = IProjectGroup
     facet = "overview"
     links = [
@@ -267,7 +263,6 @@ class IProjectGroupActionMenu(Interface):
 class ProjectActionMenu(
     ProjectAdminMenuMixin, StructuralSubscriptionMenuMixin, NavigationMenu
 ):
-
     usedfor = IProjectGroupActionMenu
     facet = "overview"
     title = "Action menu"
@@ -317,7 +312,6 @@ class ProjectAnswersMenu(QuestionCollectionAnswersMenu):
 
 
 class ProjectBugsMenu(StructuralSubscriptionMenuMixin, ApplicationMenu):
-
     usedfor = IProjectGroup
     facet = "bugs"
 
@@ -420,7 +414,6 @@ class ProjectEditView(LaunchpadEditFormView):
 
 
 class ProjectReviewView(ProjectEditView):
-
     label = "Review upstream project group details"
     default_field_names = ["name", "owner", "active", "reviewed"]
 
@@ -601,7 +594,6 @@ class ProjectSetView(LaunchpadView):
 
 
 class ProjectAddView(LaunchpadFormView):
-
     schema = IProjectGroup
     field_names = [
         "name",
@@ -641,7 +633,6 @@ class ProjectAddView(LaunchpadFormView):
 
 
 class ProjectBrandingView(BrandingChangeView):
-
     schema = IProjectGroup
     field_names = ["icon", "logo", "mugshot"]
 
@@ -724,7 +715,6 @@ class ProjectAddQuestionView(QuestionAddView):
 
 
 class ProjectSeriesSpecificationsMenu(ApplicationMenu):
-
     usedfor = IProjectGroupSeries
     facet = "specifications"
     links = ["listall", "doc", "assignments"]

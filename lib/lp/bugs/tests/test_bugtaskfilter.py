@@ -12,7 +12,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestFilterBugTasksByContext(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_simple_case(self):

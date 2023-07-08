@@ -46,7 +46,6 @@ class IArchiveUploadPolicy(Interface):
 
 
 class ArchiveUploadType(EnumeratedType):
-
     SOURCE_ONLY = Item("Source only")
     BINARY_ONLY = Item("Binary only")
     MIXED_ONLY = Item("Mixed only")

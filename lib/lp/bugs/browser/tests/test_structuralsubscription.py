@@ -239,7 +239,6 @@ class TestSourcePackageStructuralSubscribersPortletView(
 
 
 class TestStructuralSubscriptionAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

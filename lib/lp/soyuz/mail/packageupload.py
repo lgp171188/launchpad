@@ -317,7 +317,6 @@ def build_summary(spr, files, action):
 
 
 class PackageUploadMailer(BaseMailer):
-
     app = "soyuz"
 
     @classmethod

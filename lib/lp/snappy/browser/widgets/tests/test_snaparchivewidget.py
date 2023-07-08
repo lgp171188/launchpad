@@ -42,7 +42,6 @@ def make_git_repository(test_case):
 
 
 class TestSnapArchiveWidget(WithScenarios, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [

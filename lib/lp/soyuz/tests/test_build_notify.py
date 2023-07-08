@@ -41,7 +41,6 @@ REASONS = {
 
 
 class TestBuildNotify(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

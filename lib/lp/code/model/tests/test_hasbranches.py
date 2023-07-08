@@ -43,7 +43,6 @@ class TestIHasBranches(TestCaseWithFactory):
 
 
 class TestHasMergeProposalsWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_constant_query_count(self):

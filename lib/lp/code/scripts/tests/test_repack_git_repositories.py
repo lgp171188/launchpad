@@ -61,7 +61,6 @@ class FakeTurnipServer(threading.Thread):
 
 
 class TestRequestGitRepack(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def setUp(self):

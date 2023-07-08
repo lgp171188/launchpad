@@ -111,7 +111,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
+from lp.bugs.interfaces.bugtarget import DISABLE_BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import RESOLVED_BUGTASK_STATUSES
 from lp.charms.browser.hascharmrecipes import HasCharmRecipesMenuMixin
 from lp.code.browser.branchref import BranchRef
@@ -214,7 +214,6 @@ class ProductNavigation(
     TargetDefaultVCSNavigationMixin,
     WebhookTargetNavigationMixin,
 ):
-
     usedfor = IProduct
 
     @stepto(".bzr")
@@ -263,7 +262,6 @@ class ProductNavigation(
 
 
 class ProductSetNavigation(Navigation):
-
     usedfor = IProductSet
 
     def traverse(self, name):
@@ -417,7 +415,6 @@ class ProductInvolvementView(PillarInvolvementView):
 
 
 class ProductNavigationMenu(NavigationMenu):
-
     usedfor = IProduct
     facet = "overview"
     links = [
@@ -521,7 +518,7 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
             "+webhooks",
             "Manage webhooks",
             icon="edit",
-            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+            enabled=not getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG),
         )
 
 
@@ -562,7 +559,6 @@ class ProductOverviewMenu(
     HasSnapsMenuMixin,
     HasCharmRecipesMenuMixin,
 ):
-
     usedfor = IProduct
     facet = "overview"
     links = [
@@ -652,7 +648,6 @@ class ProductOverviewMenu(
 
 
 class ProductBugsMenu(PillarBugsMenu, ProductEditLinksMixin):
-
     usedfor = IProduct
     facet = "bugs"
     configurable_bugtracker = True
@@ -736,6 +731,7 @@ class SortSeriesMixin:
     @property
     def sorted_active_series_list(self):
         """Like `sorted_series_list()` but filters out OBSOLETE series."""
+
         # Callback for the filter which only allows series that have not been
         # marked obsolete.
         def check_active(series):
@@ -1092,7 +1088,7 @@ class ProductView(
             ("External downloads", self.context.downloadurl),
         ]
         links = []
-        for (text, url) in urls:
+        for text, url in urls:
             if url is not None:
                 menu_link = MenuLink(
                     Link(url, text, icon="external-link", enabled=True)

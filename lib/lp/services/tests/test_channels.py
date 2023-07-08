@@ -9,7 +9,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestChannels(TestCase):
-
     layer = BaseLayer
 
     def test_channel_string_to_list_no_track_or_branch(self):

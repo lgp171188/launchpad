@@ -24,7 +24,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -189,7 +188,6 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
 
 
 class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

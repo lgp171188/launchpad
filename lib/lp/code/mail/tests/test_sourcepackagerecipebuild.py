@@ -39,7 +39,6 @@ superseded_body = """\
 
 
 class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeStatusEmail(self, build):

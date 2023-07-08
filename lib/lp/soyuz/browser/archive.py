@@ -2235,7 +2235,6 @@ class ArchiveBuildsView(ArchiveViewBase, BuildRecordsView):
 
 
 class BaseArchiveEditView(LaunchpadEditFormView, ArchiveViewBase):
-
     schema = IArchive
     field_names = []
     next_url = None
@@ -2317,7 +2316,6 @@ class EnableProcessorsMixin:
 
 
 class ArchiveEditView(BaseArchiveEditView, EnableProcessorsMixin):
-
     field_names = [
         "displayname",
         "description",
@@ -2371,7 +2369,6 @@ class ArchiveEditView(BaseArchiveEditView, EnableProcessorsMixin):
 
 
 class ArchiveAdminView(BaseArchiveEditView, EnableProcessorsMixin):
-
     field_names = [
         "enabled",
         "private",

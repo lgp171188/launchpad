@@ -1544,7 +1544,6 @@ class TestProduct(TestCaseWithFactory):
 
 
 class TestProductBugInformationTypes(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeProductWithPolicy(self, bug_sharing_policy):
@@ -1604,7 +1603,6 @@ class TestProductBugInformationTypes(TestCaseWithFactory):
 
 
 class TestProductSpecificationPolicyAndInformationTypes(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeProductWithPolicy(self, specification_sharing_policy):
@@ -1698,7 +1696,6 @@ class TestProductSpecificationPolicyAndInformationTypes(TestCaseWithFactory):
 
 
 class ProductPermissionTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_owner_can_edit(self):
@@ -2326,7 +2323,6 @@ def get_specs(product, user=None, **kwargs):
 
 
 class TestSpecifications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -2615,7 +2611,6 @@ class TestWebService(WebServiceTestCase):
 
 
 class TestProductSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeAllInformationTypes(self):

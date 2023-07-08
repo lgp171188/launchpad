@@ -18,7 +18,6 @@ from lp.testing.keyserver.web import GREETING
 
 
 class TestInProcessKeyServerFixture(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
     )

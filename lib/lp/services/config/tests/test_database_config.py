@@ -8,7 +8,6 @@ from lp.testing.layers import DatabaseLayer
 
 
 class TestDatabaseConfig(TestCase):
-
     layer = DatabaseLayer
 
     def test_override(self):

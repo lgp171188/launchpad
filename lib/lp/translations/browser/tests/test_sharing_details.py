@@ -589,7 +589,6 @@ class TestSourcePackageTranslationSharingDetailsView(
 class TestSourcePackageTranslationSharingDetailsViewPackagingLinks(
     WithScenarios, TestCaseWithFactory
 ):
-
     layer = DatabaseFunctionalLayer
     scenarios = [
         (
@@ -666,7 +665,6 @@ class TestSourcePackageTranslationSharingDetailsViewPackagingLinks(
         }
 
     def test_packaging_links(self):
-
         expected_set_upstream = self._getExpectedPackagingLink(
             id="set-packaging",
             url="+edit-packaging",

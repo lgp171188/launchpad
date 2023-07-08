@@ -100,7 +100,6 @@ class TestStrippableText(TestCase):
 
 
 class TestWorkItemsTextValidation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -537,7 +536,6 @@ class TestWorkItemsText(TestCase):
 
 
 class TestBlocklistableContentNameField(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -545,7 +545,6 @@ class BaseBinaryUploadFile(PackageUploadFile):
         policy,
         logger,
     ):
-
         PackageUploadFile.__init__(
             self,
             filepath,

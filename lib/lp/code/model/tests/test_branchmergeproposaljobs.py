@@ -95,7 +95,6 @@ class GitMixin:
 
 
 class TestBranchMergeProposalJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_providesInterface(self):
@@ -135,7 +134,6 @@ class TestBranchMergeProposalJobDerived(TestCaseWithFactory):
 
 
 class TestMergeProposalNeedsReviewEmailJobMixin:
-
     layer = LaunchpadZopelessLayer
 
     def test_providesInterface(self):
@@ -224,7 +222,6 @@ class TestMergeProposalNeedsReviewEmailJobGit(
 
 
 class TestUpdatePreviewDiffJob(DiffTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def test_implement_interface(self):
@@ -443,7 +440,6 @@ def make_runnable_incremental_diff_job(test_case):
 
 
 class TestGenerateIncrementalDiffJob(DiffTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def test_implement_interface(self):
@@ -493,7 +489,6 @@ class TestGenerateIncrementalDiffJob(DiffTestCase):
 
 
 class TestBranchMergeProposalJobSource(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -708,7 +703,6 @@ class TestBranchMergeProposalJobSource(TestCaseWithFactory):
 
 
 class TestCodeReviewCommentEmailJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_implement_interface(self):
@@ -733,7 +727,6 @@ class TestCodeReviewCommentEmailJob(TestCaseWithFactory):
 
 
 class TestReviewRequestedEmailJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_implement_interface(self):
@@ -767,7 +760,6 @@ class TestReviewRequestedEmailJob(TestCaseWithFactory):
 
 
 class TestMergeProposalUpdatedEmailJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_class_implements_interface(self):
@@ -796,7 +788,6 @@ class TestMergeProposalUpdatedEmailJob(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_MergeProposalNeedsReviewEmailJob(self):
@@ -857,7 +848,6 @@ class TestViaCelery(TestCaseWithFactory):
 
 
 class TestViaBzrsyncdCelery(DiffTestCase):
-
     layer = CeleryBzrsyncdJobLayer
 
     def test_UpdatePreviewDiffJob(self):

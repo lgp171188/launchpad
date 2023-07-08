@@ -11,7 +11,6 @@ from zope.interface import Attribute, Interface
 
 
 class IDistroSeriesPackageCache(Interface):
-
     archive = Attribute("The cache target archive.")
     distroseries = Attribute("The cache target distroseries.")
     binarypackagename = Attribute("The binary package name.")

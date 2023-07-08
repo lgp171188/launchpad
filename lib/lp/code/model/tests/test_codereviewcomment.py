@@ -16,7 +16,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class TestCodeReviewComment(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

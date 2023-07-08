@@ -19,7 +19,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSnapArchitecture(WithScenarios, TestCase):
-
     scenarios = [
         (
             "lists",
@@ -92,7 +91,6 @@ class TestSnapArchitecture(WithScenarios, TestCase):
 
 
 class TestSnapBuildInstance(WithScenarios, TestCase):
-
     # Single-item scenarios taken from the architectures document:
     # https://forum.snapcraft.io/t/architectures/4972
     scenarios = [

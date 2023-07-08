@@ -119,7 +119,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_feature_flag_disabled(self):
@@ -140,7 +139,6 @@ class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
 
 
 class TestCharmRecipe(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1020,7 +1018,6 @@ class TestCharmRecipe(TestCaseWithFactory):
 
 
 class TestCharmRecipeAuthorization(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1215,7 +1212,6 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
 
 
 class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -1333,7 +1329,6 @@ class TestCharmRecipeDeleteWithBuilds(TestCaseWithFactory):
 
 
 class TestCharmRecipeSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1830,7 +1825,6 @@ class TestCharmRecipeSet(TestCaseWithFactory):
 
 
 class TestCharmRecipeWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

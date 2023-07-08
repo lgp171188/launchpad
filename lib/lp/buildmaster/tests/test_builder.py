@@ -417,7 +417,6 @@ class TestFindBuildCandidatesGeneralCases(TestFindBuildCandidatesBase):
 
 
 class TestFindBuildCandidatesPPABase(TestFindBuildCandidatesBase):
-
     ppa_joe_private = False
     ppa_jim_private = False
 
@@ -531,7 +530,6 @@ class TestFindBuildCandidatesPPA(TestFindBuildCandidatesPPABase):
 
 
 class TestFindBuildCandidatesPrivatePPA(TestFindBuildCandidatesPPABase):
-
     ppa_joe_private = True
 
     def test_findBuildCandidate_for_private_ppa(self):

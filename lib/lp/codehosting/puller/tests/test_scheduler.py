@@ -436,7 +436,6 @@ class TestPullerMonitorProtocol(ProcessTestsMixin, TestCase):
 
 
 class TestPullerMaster(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
@@ -553,7 +552,6 @@ class TestPullerMaster(TestCase):
 
 
 class TestPullerMasterSpawning(TestCase):
-
     run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):

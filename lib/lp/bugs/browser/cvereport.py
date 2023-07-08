@@ -84,7 +84,6 @@ class CVEReportView(LaunchpadView):
 
     @cachedproperty
     def _bugtaskcves(self) -> BugTaskCves:
-
         bugtaskcves = BugTaskCves(open=[], resolved=[])
 
         search_params = BugTaskSearchParams(self.user, has_cve=True)

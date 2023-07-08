@@ -56,7 +56,6 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 class SourcePackageRecipeBuild(
     SpecificBuildFarmJobSourceMixin, PackageBuildMixin, StormBase
 ):
-
     __storm_table__ = "SourcePackageRecipeBuild"
 
     job_type = BuildFarmJobType.RECIPEBRANCHBUILD

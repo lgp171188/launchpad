@@ -13,7 +13,6 @@ from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 
 class ListTeamMembersScript(LaunchpadScript):
-
     description = "Create a list of members of a team."
     usage = (
         "usage: %s [-e|--email-only|-f|--full-details|-s|--ssh-keys] "
@@ -49,7 +48,6 @@ class ListTeamMembersScript(LaunchpadScript):
         )
 
     def main(self):
-
         display_option = self.options.format
         teamnames = self.args
 

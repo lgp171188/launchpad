@@ -34,7 +34,6 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 class DistroArchSeriesNavigation(GetitemNavigation):
-
     usedfor = IDistroArchSeries
 
     @stepto("+source-filter")
@@ -97,7 +96,6 @@ class DistroArchSeriesAddSchema(IDistroArchSeries):
 
 
 class DistroArchSeriesAddView(LaunchpadFormView):
-
     schema = DistroArchSeriesAddSchema
     field_names = ["architecturetag", "processor", "official"]
     next_url = None

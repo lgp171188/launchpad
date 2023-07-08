@@ -38,7 +38,6 @@ from lp.testing import (
     TestCaseWithFactory,
     celebrity_logged_in,
     person_logged_in,
-    run_script,
     verifyObject,
 )
 from lp.testing.fakemethod import FakeMethod
@@ -47,6 +46,7 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
 )
+from lp.testing.script import run_script
 
 
 class TestBugIDsFromChangesFile(TestCaseWithFactory):
@@ -270,7 +270,6 @@ class TestClosingPrivateBugs(TestCaseWithFactory):
 
 
 class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 
@@ -348,7 +347,6 @@ class TestCloseBugIDsForSourcePackageRelease(TestCaseWithFactory):
 
 
 class TestProcessAcceptedBugsJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     dbuser = config.IProcessAcceptedBugsJobSource.dbuser
 
@@ -447,9 +445,10 @@ class TestProcessAcceptedBugsJob(TestCaseWithFactory):
         self.makeJob(spr=spr, bug_ids=[bug.id])
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IProcessAcceptedBugsJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IProcessAcceptedBugsJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

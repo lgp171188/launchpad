@@ -59,7 +59,7 @@ def import_public_key(email_addr):
     # Insert the key into the database.
     keyset = getUtility(IGPGKeySet)
     key = keyset.new(
-        ownerID=person.id,
+        owner=person,
         keyid=key.keyid,
         fingerprint=key.fingerprint,
         keysize=key.keysize,

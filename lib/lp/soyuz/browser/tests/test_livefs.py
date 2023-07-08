@@ -48,7 +48,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestLiveFSNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -141,7 +140,6 @@ class TestLiveFSNavigation(TestCaseWithFactory):
 
 
 class TestLiveFSViewsFeatureFlag(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_feature_flag_disabled(self):
@@ -156,7 +154,6 @@ class TestLiveFSViewsFeatureFlag(TestCaseWithFactory):
 
 
 class TestLiveFSAddView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -257,7 +254,6 @@ class TestLiveFSAddView(BrowserTestCase):
 
 
 class TestLiveFSAdminView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -321,7 +317,6 @@ class TestLiveFSAdminView(BrowserTestCase):
 
 
 class TestLiveFSEditView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -421,7 +416,6 @@ class TestLiveFSEditView(BrowserTestCase):
 
 
 class TestLiveFSDeleteView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -481,7 +475,6 @@ class TestLiveFSDeleteView(BrowserTestCase):
 
 
 class TestLiveFSView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

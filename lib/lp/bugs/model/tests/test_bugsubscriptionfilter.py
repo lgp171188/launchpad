@@ -30,7 +30,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBugSubscriptionFilter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -391,7 +390,6 @@ class TestBugSubscriptionFilter(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -466,7 +464,6 @@ class TestBugSubscriptionFilterPermissions(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterImportance(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -503,7 +500,6 @@ class TestBugSubscriptionFilterImportance(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterStatus(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -538,7 +534,6 @@ class TestBugSubscriptionFilterStatus(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterTag(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -586,7 +581,6 @@ class TestBugSubscriptionFilterTag(TestCaseWithFactory):
 
 
 class TestBugSubscriptionFilterInformationType(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

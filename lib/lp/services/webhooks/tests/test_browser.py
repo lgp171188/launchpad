@@ -10,7 +10,6 @@ import transaction
 from testtools.matchers import MatchesAll, MatchesStructure, Not
 from zope.component import getUtility
 
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -61,7 +60,6 @@ batch_nav_tag = soupmatchers.Tag(
 
 
 class GitRepositoryTestHelpers:
-
     event_type = "git:push:0.1"
     expected_event_types = [
         ("ci:build:0.1", "CI build"),
@@ -77,7 +75,6 @@ class GitRepositoryTestHelpers:
 
 
 class BranchTestHelpers:
-
     event_type = "bzr:push:0.1"
     expected_event_types = [
         ("bzr:push:0.1", "Bazaar push"),
@@ -92,7 +89,6 @@ class BranchTestHelpers:
 
 
 class SnapTestHelpers:
-
     event_type = "snap:build:0.1"
     expected_event_types = [
         ("snap:build:0.1", "Snap build"),
@@ -150,7 +146,6 @@ class OCIRecipeTestHelpers:
 
 
 class CharmRecipeTestHelpers:
-
     event_type = "charm-recipe:build:0.1"
     expected_event_types = [
         ("charm-recipe:build:0.1", "Charm recipe build"),
@@ -176,7 +171,6 @@ class CharmRecipeTestHelpers:
 
 
 class BugUpdateTestHelpersBase:
-
     # Overriding this since product webhooks don't have breadcrumbs
     _webhook_listing = soupmatchers.HTMLContains(add_webhook_tag)
 
@@ -192,14 +186,12 @@ class BugUpdateTestHelpersBase:
 
 class ProductTestHelpers(BugUpdateTestHelpersBase):
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeProduct(owner=owner)
 
 
 class DistributionTestHelpers(BugUpdateTestHelpersBase):
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeDistribution(owner=owner)
 
@@ -209,7 +201,6 @@ class DistributionSourcePackageTestHelpers(BugUpdateTestHelpersBase):
         return self.target.distribution.owner
 
     def makeTarget(self):
-        self.useFixture(FeatureFixture({BUG_WEBHOOKS_FEATURE_FLAG: "on"}))
         return self.factory.makeDistributionSourcePackage()
 
 
@@ -252,7 +243,6 @@ class WebhookTargetViewTestHelpers:
 
 
 class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
     _webhook_listing = webhook_listing_constants
 
@@ -348,7 +338,6 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
 class TestWebhooksViewGitRepository(
     TestWebhooksViewBase, GitRepositoryTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
@@ -361,42 +350,36 @@ class TestWebhooksViewBranch(
 class TestWebhooksViewSnap(
     TestWebhooksViewBase, SnapTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhooksViewLiveFS(
     TestWebhooksViewBase, LiveFSTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhooksViewOCIRecipe(
     TestWebhooksViewBase, OCIRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhooksViewCharmRecipe(
     TestWebhooksViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhooksViewProductBugUpdate(
     ProductTestHelpers, TestWebhooksViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhooksViewDistributionBugUpdate(
     DistributionTestHelpers, TestWebhooksViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
@@ -405,12 +388,10 @@ class TestWebhooksViewDistributionSourcePackageBugUpdate(
     TestWebhooksViewBase,
     TestCaseWithFactory,
 ):
-
     pass
 
 
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -519,56 +500,48 @@ class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
 class TestWebhookAddViewGitRepository(
     TestWebhookAddViewBase, GitRepositoryTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewBranch(
     TestWebhookAddViewBase, BranchTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewSnap(
     TestWebhookAddViewBase, SnapTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewLiveFS(
     TestWebhookAddViewBase, LiveFSTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewOCIRecipe(
     TestWebhookAddViewBase, OCIRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewCharmRecipe(
     TestWebhookAddViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewProductBugUpdate(
     ProductTestHelpers, TestWebhookAddViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookAddViewDistributionBugUpdate(
     DistributionTestHelpers, TestWebhookAddViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
@@ -577,7 +550,6 @@ class TestWebhookAddViewDistributionSourcePackageBugUpdate(
     TestWebhookAddViewBase,
     TestCaseWithFactory,
 ):
-
     pass
 
 
@@ -605,7 +577,6 @@ class WebhookViewTestHelpers:
 
 
 class TestWebhookViewBase(WebhookViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -695,47 +666,40 @@ class TestWebhookViewBase(WebhookViewTestHelpers):
 class TestWebhookViewGitRepository(
     TestWebhookViewBase, GitRepositoryTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookViewBranch(
     TestWebhookViewBase, BranchTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookViewSnap(
     TestWebhookViewBase, SnapTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookViewLiveFS(
     TestWebhookViewBase, LiveFSTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookViewOCIRecipe(
     TestWebhookViewBase, OCIRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookViewCharmRecipe(
     TestWebhookViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -784,56 +748,48 @@ class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 class TestWebhookDeleteViewGitRepository(
     TestWebhookDeleteViewBase, GitRepositoryTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewBranch(
     TestWebhookDeleteViewBase, BranchTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewSnap(
     TestWebhookDeleteViewBase, SnapTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewLiveFS(
     TestWebhookDeleteViewBase, LiveFSTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewOCIRecipe(
     TestWebhookDeleteViewBase, OCIRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewCharmRecipe(
     TestWebhookDeleteViewBase, CharmRecipeTestHelpers, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewProductBugUpdate(
     ProductTestHelpers, TestWebhookDeleteViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
 class TestWebhookDeleteViewDistributionBugUpdate(
     DistributionTestHelpers, TestWebhookDeleteViewBase, TestCaseWithFactory
 ):
-
     pass
 
 
@@ -842,5 +798,4 @@ class TestWebhookDeleteViewDistributionSourcePackageBugUpdate(
     TestWebhookDeleteViewBase,
     TestCaseWithFactory,
 ):
-
     pass

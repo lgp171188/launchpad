@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestSuiteSourcePackage(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_construction(self):

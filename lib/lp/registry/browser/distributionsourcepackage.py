@@ -42,7 +42,7 @@ from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionTargetTraversalMixin,
     expose_structural_subscription_data_to_js,
 )
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
+from lp.bugs.interfaces.bugtarget import DISABLE_BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
@@ -141,7 +141,6 @@ class DistributionSourcePackageBreadcrumb(Breadcrumb):
 
 
 class DistributionSourcePackageFacets(StandardLaunchpadFacets):
-
     usedfor = IDistributionSourcePackage
     enable_only = [
         "overview",
@@ -179,14 +178,13 @@ class DistributionSourcePackageLinksMixin:
             "+webhooks",
             "Manage webhooks",
             icon="edit",
-            enabled=bool(getFeatureFlag(BUG_WEBHOOKS_FEATURE_FLAG)),
+            enabled=not getFeatureFlag(DISABLE_BUG_WEBHOOKS_FEATURE_FLAG),
         )
 
 
 class DistributionSourcePackageOverviewMenu(
     ApplicationMenu, DistributionSourcePackageLinksMixin
 ):
-
     usedfor = IDistributionSourcePackage
     facet = "overview"
     links = ["new_bugs", "open_questions"]
@@ -197,7 +195,6 @@ class DistributionSourcePackageBugsMenu(
     StructuralSubscriptionMenuMixin,
     DistributionSourcePackageLinksMixin,
 ):
-
     usedfor = IDistributionSourcePackage
     facet = "bugs"
 
@@ -210,7 +207,6 @@ class DistributionSourcePackageBugsMenu(
 
 
 class DistributionSourcePackageAnswersMenu(QuestionTargetAnswersMenu):
-
     usedfor = IDistributionSourcePackage
     facet = "answers"
 
@@ -229,7 +225,6 @@ class DistributionSourcePackageNavigation(
     StructuralSubscriptionTargetTraversalMixin,
     WebhookTargetNavigationMixin,
 ):
-
     usedfor = IDistributionSourcePackage
 
     @redirection("+editbugcontact")

@@ -726,7 +726,6 @@ def delete_unwanted_disk_files(con):
     for dirpath, dirnames, filenames in os.walk(
         get_storage_root(), followlinks=True
     ):
-
         # Ignore known and harmless noise in the Librarian storage area.
         if "incoming" in dirnames:
             dirnames.remove("incoming")
@@ -777,7 +776,6 @@ def delete_unwanted_disk_files(con):
                 next_wanted_content_id is not None
                 and content_id > next_wanted_content_id
             ):
-
                 next_wanted_content_id = get_next_wanted_content_id()
 
                 if (
@@ -930,7 +928,6 @@ def delete_unwanted_swift_files(con):
             next_wanted_content_id is not None
             and content_id > next_wanted_content_id
         ):
-
             next_wanted_content_id = get_next_wanted_content_id()
 
             if (

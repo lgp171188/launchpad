@@ -34,7 +34,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSnapJob(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_provides_interface(self):
@@ -46,7 +45,6 @@ class TestSnapJob(TestCaseWithFactory):
 
 
 class TestSnapRequestBuildsJob(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_provides_interface(self):

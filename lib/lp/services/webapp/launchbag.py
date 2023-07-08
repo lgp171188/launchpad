@@ -33,7 +33,6 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 @implementer(IOpenLaunchBag)
 class LaunchBag:
-
     # Map Interface to attribute name.
     _registry = {
         IPerson: "person",

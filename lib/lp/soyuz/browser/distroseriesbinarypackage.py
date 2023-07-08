@@ -17,7 +17,6 @@ from lp.soyuz.interfaces.distroseriesbinarypackage import (
 
 
 class DistroSeriesBinaryPackageNavigation(Navigation):
-
     usedfor = IDistroSeriesBinaryPackage
 
 

@@ -18,6 +18,5 @@ class TestSomething(TestCase):
 
     # XXX: Sample test.  Replace with your own test methods.
     def test_baseline(self):
-
         # XXX: Assertions take expected value first, actual value second.
         self.assertEqual(4, 2 + 2)

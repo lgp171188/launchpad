@@ -25,7 +25,6 @@ testdata = [
 
 
 class TestFeatureFlags(TestCase):
-
     layer = layers.DatabaseFunctionalLayer
 
     def setUp(self):
@@ -249,7 +248,6 @@ flag2   default     0\ton
 
 
 class TestStormFeatureRuleSource(FeatureRuleSourceTestsMixin, TestCase):
-
     layer = layers.DatabaseFunctionalLayer
 
     def makeSource(self):
@@ -257,7 +255,6 @@ class TestStormFeatureRuleSource(FeatureRuleSourceTestsMixin, TestCase):
 
 
 class TestMemoryFeatureRuleSource(FeatureRuleSourceTestsMixin, TestCase):
-
     layer = layers.FunctionalLayer
 
     def makeSource(self):

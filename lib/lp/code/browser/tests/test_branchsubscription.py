@@ -10,7 +10,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBranchSubscriptionAddOtherView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_subscribe_open_team_to_private_branch(self):

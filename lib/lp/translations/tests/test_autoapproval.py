@@ -1294,7 +1294,6 @@ class TestAutoApprovalNewPOFile(TestCaseWithFactory, GardenerDbUserMixin):
 
 
 class TestAutoBlocking(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

@@ -58,7 +58,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class TestArchiveJob(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_instantiate(self):
@@ -84,7 +83,6 @@ class TestArchiveJob(TestCaseWithFactory):
 
 
 class TestArchiveJobDerived(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_create_explodes(self):
@@ -95,7 +93,6 @@ class TestArchiveJobDerived(TestCaseWithFactory):
 
 
 class TestPackageUploadNotificationJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_getOopsVars(self):
@@ -164,7 +161,6 @@ class TestPackageUploadNotificationJob(TestCaseWithFactory):
 
 
 class TestCIBuildUploadJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeCIBuild(self, distribution, **kwargs):
@@ -1729,7 +1725,6 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_PackageUploadNotificationJob(self):

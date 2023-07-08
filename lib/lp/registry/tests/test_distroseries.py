@@ -195,7 +195,6 @@ class TestDistroSeriesCurrentSourceReleases(
 
 
 class TestDistroSeries(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getSuite_release_pocket(self):
@@ -451,7 +450,6 @@ class TestDistroSeries(TestCaseWithFactory):
 
 
 class TestDistroSeriesPackaging(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -669,7 +667,6 @@ class TestDistroSeriesPackaging(TestCaseWithFactory):
 
 
 class TestDistroSeriesWebservice(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_language_pack_full_export_requested_not_translations_admin(self):
@@ -750,7 +747,6 @@ class TestDistroSeriesWebservice(TestCaseWithFactory):
 
 
 class TestDistroSeriesSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def _get_translatables(self):

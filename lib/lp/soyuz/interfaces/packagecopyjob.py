@@ -115,7 +115,6 @@ class IPackageCopyJob(IPackageCopyJobPublic, IPackageCopyJobEdit):
 
 
 class PackageCopyJobType(DBEnumeratedType):
-
     PLAIN = DBItem(
         1,
         """

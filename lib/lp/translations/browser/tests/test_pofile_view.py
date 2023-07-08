@@ -25,7 +25,6 @@ from lp.translations.interfaces.translationsperson import ITranslationsPerson
 
 
 class TestQueryCount(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_query_count(self):
@@ -362,7 +361,6 @@ class TestPOFileTranslateViewDocumentation(TestCaseWithFactory):
 
 
 class TestBrowser(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_unwritable_translation_credits(self):

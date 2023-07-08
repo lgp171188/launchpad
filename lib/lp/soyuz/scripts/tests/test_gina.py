@@ -57,7 +57,6 @@ class FakePackagesMap:
 
 
 class TestGina(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def assertPublishingStates(self, spphs, states):
@@ -272,7 +271,6 @@ class TestArchiveFilesystemInfo(TestCase):
 
 
 class TestSourcePackageData(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_unpack_dsc_with_vendor(self):
@@ -459,7 +457,6 @@ class TestSourcePackageData(TestCaseWithFactory):
 
 
 class TestSourcePackageHandler(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_user_defined_fields(self):
@@ -508,7 +505,6 @@ class TestSourcePackageHandler(TestCaseWithFactory):
 
 
 class TestSourcePackagePublisher(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_publish_creates_published_publication(self):
@@ -537,7 +533,6 @@ class TestSourcePackagePublisher(TestCaseWithFactory):
 
 
 class TestBinaryPackageData(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_checksum_fields(self):
@@ -565,7 +560,6 @@ class TestBinaryPackageData(TestCaseWithFactory):
 
 
 class TestBinaryPackageHandler(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_user_defined_fields(self):
@@ -695,7 +689,6 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
 
 
 class TestBinaryPackagePublisher(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_publish_creates_published_publication(self):
@@ -729,7 +722,6 @@ class TestBinaryPackagePublisher(TestCaseWithFactory):
 
 
 class TestRunner(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_import_sourcepackages_skip(self):

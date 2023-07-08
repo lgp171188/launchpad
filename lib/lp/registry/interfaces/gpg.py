@@ -51,14 +51,13 @@ class IGPGKey(IHasOwner):
         title=_("Key can be used for encryption"), required=True
     )
     owner = Int(title=_("Person"), required=True, readonly=True)
-    ownerID = Int(title=_("Owner ID"), required=True, readonly=True)
 
 
 class IGPGKeySet(Interface):
     """The set of GPGKeys."""
 
     def new(
-        ownerID,
+        owner,
         keyid,
         fingerprint,
         keysize,

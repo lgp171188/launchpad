@@ -917,7 +917,6 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
 
 
 class TestMergeMailingListSubscriptions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -27,7 +27,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestGitGranteeWidgetBase:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

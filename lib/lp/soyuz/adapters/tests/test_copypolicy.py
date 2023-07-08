@@ -11,7 +11,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestCopyPolicy(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def _getUploadCriteria(self, archive_purpose, status=None, pocket=None):

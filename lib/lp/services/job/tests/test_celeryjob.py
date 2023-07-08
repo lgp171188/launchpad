@@ -23,7 +23,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class TestRunMissingJobs(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def setUp(self):

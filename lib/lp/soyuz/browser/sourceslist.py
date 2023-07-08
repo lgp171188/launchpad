@@ -117,7 +117,6 @@ class SourcesListEntriesView(LaunchpadView):
         )
 
         if version_number is not None:
-
             # Finally, check if this version is one of the available
             # distroseries for this archive:
             for term in self.terms:

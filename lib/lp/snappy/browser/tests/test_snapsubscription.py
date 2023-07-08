@@ -22,7 +22,6 @@ from lp.testing.pages import (
 
 
 class BaseTestSnapView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

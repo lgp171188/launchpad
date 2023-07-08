@@ -11,7 +11,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBugTrackerVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -94,7 +93,6 @@ class TestBugTrackerVocabulary(TestCaseWithFactory):
 
 
 class TestWebBugTrackerVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

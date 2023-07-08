@@ -69,7 +69,6 @@ class ArtifactoryPoolTestingFile(PoolTestingFile):
 
 
 class TestArtifactoryPool(TestCase):
-
     layer = BaseLayer
 
     def setUp(self):
@@ -492,7 +491,6 @@ class TestArtifactoryPool(TestCase):
 
 
 class TestArtifactoryPoolFromLibrarian(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

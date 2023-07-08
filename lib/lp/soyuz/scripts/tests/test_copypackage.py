@@ -948,7 +948,6 @@ class CopyCheckerDifferentArchiveHarness(
 
 
 class CopyCheckerTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -1224,7 +1223,6 @@ class CopyCheckerTestCase(TestCaseWithFactory):
 
 
 class BaseDoCopyTests:
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

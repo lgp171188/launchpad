@@ -65,7 +65,6 @@ class BinaryPackageBuildRecipientReason(RecipientReason):
 
 
 class BinaryPackageBuildMailer(BaseMailer):
-
     app = "soyuz"
 
     @classmethod

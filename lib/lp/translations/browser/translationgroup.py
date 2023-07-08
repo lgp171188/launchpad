@@ -35,12 +35,10 @@ from lp.translations.interfaces.translator import ITranslator, ITranslatorSet
 
 
 class TranslationGroupNavigation(GetitemNavigation):
-
     usedfor = ITranslationGroup
 
 
 class TranslationGroupSetNavigation(GetitemNavigation):
-
     usedfor = ITranslationGroupSet
 
 

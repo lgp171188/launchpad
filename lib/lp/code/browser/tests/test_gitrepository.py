@@ -92,7 +92,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestGitRepositoryNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeRevisionStatusArtifact(self, report, artifact_type=None):
@@ -133,7 +132,6 @@ class TestGitRepositoryNavigation(TestCaseWithFactory):
 
 
 class TestGitRepositoryView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -782,7 +780,6 @@ class TestGitRepositoryView(BrowserTestCase):
 
 
 class TestGitRepositoryRescanView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_owner_can_see_rescan(self):
@@ -1012,7 +1009,6 @@ class TestGitRepositoryBranches(BrowserTestCase):
 
 
 class TestGitRepositoryEditReviewerView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_initial_reviewer_not_set(self):
@@ -1072,7 +1068,6 @@ class TestGitRepositoryEditReviewerView(TestCaseWithFactory):
 
 
 class TestGitRepositoryEditBuilderConstraintsView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_unauthorized(self):
@@ -1122,7 +1117,6 @@ class TestGitRepositoryEditBuilderConstraintsView(BrowserTestCase):
 
 
 class TestGitRepositoryEditView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_repository_target_widget_read_only(self):
@@ -1624,7 +1618,6 @@ class TestGitRepositoryEditViewInformationTypes(TestCaseWithFactory):
 
 
 class TestGitRepositoryDiffView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_render(self):
@@ -1701,7 +1694,6 @@ class TestGitRepositoryDiffView(BrowserTestCase):
 
 
 class TestGitRepositoryPermissionsView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_rules_properties(self):
@@ -2610,7 +2602,6 @@ class TestGitRepositoryPermissionsView(BrowserTestCase):
 
 
 class TestGitRepositoryDeletionView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_repository_has_delete_link(self):
@@ -2698,7 +2689,6 @@ class TestGitRepositoryDeletionView(BrowserTestCase):
 
 
 class TestGitRepositoryActivityView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_render(self):
@@ -2782,7 +2772,6 @@ class TestGitRepositoryActivityView(BrowserTestCase):
 
 
 class TestGitRepositoryForkView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

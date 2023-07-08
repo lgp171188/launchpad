@@ -12,7 +12,6 @@ from lp.testing.layers import LibrarianLayer
 
 
 class SIGDUMPMEMTestCase(TestCase):
-
     layer = LibrarianLayer
 
     def test_sigdumpmem(self):

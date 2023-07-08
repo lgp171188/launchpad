@@ -25,7 +25,6 @@ TOP_CONTRIBUTORS_LIMIT = 20
 
 
 class KarmaActionSetNavigation(Navigation):
-
     usedfor = IKarmaActionSet
 
     def traverse(self, name):
@@ -39,7 +38,6 @@ class KarmaActionView(LaunchpadView):
 
 
 class KarmaActionEditView(LaunchpadEditFormView):
-
     schema = IKarmaAction
     field_names = ["name", "category", "points", "title", "summary"]
     next_url = None

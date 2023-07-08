@@ -20,6 +20,7 @@ __all__ = [
 from lazr.restful.interface import copy_field, use_template
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
+from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import Interface, implementer
 from zope.schema import TextLine
 from zope.security.interfaces import Unauthorized
@@ -32,9 +33,7 @@ from lp.app.browser.launchpadform import (
 )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
-from lp.charms.browser.widgets.charmrecipebuildchannels import (
-    CharmRecipeBuildChannelsWidget,
-)
+from lp.app.widgets.snapbuildchannels import SnapBuildChannelsWidget
 from lp.charms.interfaces.charmhubclient import BadRequestPackageUploadResponse
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
@@ -234,6 +233,7 @@ def builds_and_requests_for_recipe(recipe):
     Builds that the user does not have permission to see are excluded (by
     the model code).
     """
+
     # We need to interleave items of different types, so SQL can't do all
     # the sorting for us.
     def make_sort_key(*date_attrs):
@@ -321,7 +321,13 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
     schema = ICharmRecipeEditSchema
 
     custom_widget_git_ref = GitRefWidget
-    custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
+    custom_widget_auto_build_channels = CustomWidgetFactory(
+        SnapBuildChannelsWidget,
+        hint=(
+            "The channels to use for build tools when building the charm "
+            "recipe."
+        ),
+    )
     custom_widget_store_channels = StoreChannelsWidget
 
     next_url = None
@@ -420,7 +426,6 @@ class CharmRecipeAddView(CharmRecipeAuthorizeMixin, LaunchpadFormView):
 class BaseCharmRecipeEditView(
     CharmRecipeAuthorizeMixin, LaunchpadEditFormView
 ):
-
     schema = ICharmRecipeEditSchema
     next_url = None
 
@@ -526,7 +531,13 @@ class CharmRecipeEditView(BaseCharmRecipeEditView):
         "store_channels",
     ]
     custom_widget_git_ref = GitRefWidget
-    custom_widget_auto_build_channels = CharmRecipeBuildChannelsWidget
+    custom_widget_auto_build_channels = CustomWidgetFactory(
+        SnapBuildChannelsWidget,
+        hint=(
+            "The channels to use for build tools when building the charm "
+            "recipe."
+        ),
+    )
     custom_widget_store_channels = StoreChannelsWidget
 
     def validate(self, data):
@@ -665,7 +676,13 @@ class CharmRecipeRequestBuildsView(LaunchpadFormView):
             required=True,
         )
 
-    custom_widget_channels = CharmRecipeBuildChannelsWidget
+    custom_widget_channels = CustomWidgetFactory(
+        SnapBuildChannelsWidget,
+        hint=(
+            "The channels to use for build tools when building the charm "
+            "recipe."
+        ),
+    )
 
     @property
     def cancel_url(self):

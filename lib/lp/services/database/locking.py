@@ -20,7 +20,6 @@ class AdvisoryLockHeld(Exception):
 
 
 class LockType(DBEnumeratedType):
-
     BRANCH_SCAN = DBItem(
         0,
         """Branch scan.

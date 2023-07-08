@@ -26,7 +26,6 @@ class FakeEncryptedContainer(NaClEncryptedContainerBase):
 
 
 class TestNaClEncryptedContainerBase(TestCase):
-
     layer = ZopelessLayer
 
     def test_public_key_valid(self):

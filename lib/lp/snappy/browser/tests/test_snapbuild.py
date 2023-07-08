@@ -41,7 +41,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForSnapBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -57,7 +56,6 @@ class TestCanonicalUrlForSnapBuild(TestCaseWithFactory):
 
 
 class TestSnapBuildView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_files(self):
@@ -342,7 +340,6 @@ class TestSnapBuildView(TestCaseWithFactory):
 
 
 class TestSnapBuildOperations(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

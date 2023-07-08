@@ -29,7 +29,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestCharmBaseConfiguration(WithScenarios, TestCase):
-
     scenarios = [
         (
             "expanded",
@@ -118,7 +117,6 @@ class TestCharmBaseConfiguration(WithScenarios, TestCase):
 
 
 class TestDetermineInstancesToBuild(WithScenarios, TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     # Scenarios taken from the charmcraft build providers specification:

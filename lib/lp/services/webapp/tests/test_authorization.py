@@ -515,7 +515,6 @@ class ILoneObject(Interface):
 
 @implementer(ILoneObject)
 class LoneObject(LaunchpadContainer):
-
     _id_counter = count(1)
 
     def __init__(self):
@@ -528,7 +527,6 @@ class LoneObject(LaunchpadContainer):
 
 @implementer(ICanonicalUrlData)
 class LoneObjectURL:
-
     rootsite = None
     inside = None
 

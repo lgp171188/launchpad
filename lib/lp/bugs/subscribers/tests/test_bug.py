@@ -23,7 +23,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class BugSubscriberTestCase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

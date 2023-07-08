@@ -223,7 +223,6 @@ class PlaceholderTranslationMessage(TranslationMessageMixIn):
 
 @implementer(ITranslationMessage)
 class TranslationMessage(SQLBase, TranslationMessageMixIn):
-
     _table = "TranslationMessage"
 
     browser_pofile = None
@@ -681,17 +680,17 @@ class TranslationMessageSet:
             IStore(POFile)
             .find(
                 (
-                    TranslationTemplateItem.potmsgsetID,
+                    TranslationTemplateItem.potmsgset_id,
                     POFile.id,
                     TranslationTemplateItem.sequence,
                 ),
-                TranslationTemplateItem.potmsgsetID.is_in(
+                TranslationTemplateItem.potmsgset_id.is_in(
                     message.potmsgsetID for message in messages
                 ),
-                POFile.potemplateID == TranslationTemplateItem.potemplateID,
+                POFile.potemplateID == TranslationTemplateItem.potemplate_id,
                 *pofile_constraints,
             )
-            .config(distinct=(TranslationTemplateItem.potmsgsetID,))
+            .config(distinct=(TranslationTemplateItem.potmsgset_id,))
         )
         potmsgset_map = {
             potmsgset_id: (pofile_id, sequence)

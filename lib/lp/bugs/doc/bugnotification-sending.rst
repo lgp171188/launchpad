@@ -661,8 +661,7 @@ makes it write out the emails it sends.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/send-bug-notifications.py -v",
-    ...     shell=True,
+    ...     ["cronscripts/send-bug-notifications.py", "-v"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

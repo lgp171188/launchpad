@@ -61,7 +61,7 @@ from storm.expr import (
     With,
 )
 from storm.info import ClassAlias
-from storm.locals import Int, Reference, ReferenceSet
+from storm.locals import Int, Reference, ReferenceSet, Unicode
 from storm.store import EmptyResultSet, Store
 from twisted.conch.ssh.common import getNS
 from twisted.conch.ssh.keys import Key
@@ -209,7 +209,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
 )
@@ -372,6 +371,7 @@ def readonly_settings(message, interface):
 
     When you write, the message is raised in a NotImplementedError.
     """
+
     # We will make a class that has properties for each field on the
     # interface (we expect every name on the interface to correspond to a
     # zope.schema field).  Each property will have a getter that will
@@ -548,7 +548,7 @@ class Person(
         storm_validator=validate_public_person,
     )
 
-    sshkeys = SQLMultipleJoin("SSHKey", joinColumn="person")
+    sshkeys = ReferenceSet("id", "SSHKey.person_id")
 
     renewal_policy = DBEnum(
         enum=TeamMembershipRenewalPolicy,
@@ -584,8 +584,8 @@ class Person(
     verbose_bugnotifications = BoolCol(notNull=True, default=True)
 
     signedcocs = ReferenceSet("<primary key>", "SignedCodeOfConduct.owner_id")
-    _ircnicknames = SQLMultipleJoin("IrcID", joinColumn="person")
-    jabberids = SQLMultipleJoin("JabberID", joinColumn="person")
+    _ircnicknames = ReferenceSet("id", "IrcID.person_id")
+    jabberids = ReferenceSet("id", "JabberID.person_id")
 
     visibility = DBEnum(
         enum=PersonVisibility,
@@ -5071,15 +5071,23 @@ class PersonLanguage(StormBase):
 
 
 @implementer(ISSHKey)
-class SSHKey(SQLBase):
-    _defaultOrder = ["person", "keytype", "keytext"]
+class SSHKey(StormBase):
+    __storm_table__ = "SSHKey"
+    __storm_order__ = ["person", "keytype", "keytext"]
 
-    _table = "SSHKey"
-
-    person = ForeignKey(foreignKey="Person", dbName="person", notNull=True)
+    id = Int(primary=True)
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
     keytype = DBEnum(name="keytype", allow_none=False, enum=SSHKeyType)
-    keytext = StringCol(dbName="keytext", notNull=True)
-    comment = StringCol(dbName="comment", notNull=True)
+    keytext = Unicode(name="keytext", allow_none=False)
+    comment = Unicode(name="comment", allow_none=False)
+
+    def __init__(self, person, keytype, keytext, comment):
+        super().__init__()
+        self.person = person
+        self.keytype = keytype
+        self.keytext = keytext
+        self.comment = comment
 
     def destroySelf(self, send_notification=True):
         if send_notification:
@@ -5098,7 +5106,7 @@ class SSHKey(SQLBase):
                 "SSH key removed from your Launchpad account.",
                 change_description,
             )
-        super().destroySelf()
+        IStore(self).remove(self)
 
     def getFullKeyText(self):
         try:
@@ -5163,26 +5171,22 @@ class SSHKeySet:
             )
 
         if not dry_run:
-            return SSHKey(
+            ssh_key = SSHKey(
                 person=person,
                 keytype=keytype,
                 keytext=keytext,
                 comment=comment,
             )
+            IStore(ssh_key).flush()
+            return ssh_key
 
     def getByID(self, id, default=None):
-        try:
-            return SSHKey.get(id)
-        except SQLObjectNotFound:
-            return default
+        return IStore(SSHKey).get(SSHKey, int(id))
 
     def getByPeople(self, people):
         """See `ISSHKeySet`"""
-        return SSHKey.select(
-            """
-            SSHKey.person IN %s
-            """
-            % sqlvalues([person.id for person in people])
+        return IStore(SSHKey).find(
+            SSHKey, SSHKey.person_id.is_in(person.id for person in people)
         )
 
     def getByPersonAndKeyText(self, person, sshkey):
@@ -5216,41 +5220,59 @@ class SSHKeySet:
 
 
 @implementer(IWikiName)
-class WikiName(SQLBase, HasOwnerMixin):
+class WikiName(StormBase, HasOwnerMixin):
+    __storm_table__ = "WikiName"
 
-    _table = "WikiName"
+    id = Int(primary=True)
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    wiki = Unicode(name="wiki", allow_none=False)
+    wikiname = Unicode(name="wikiname", allow_none=False)
 
-    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
-    wiki = StringCol(dbName="wiki", notNull=True)
-    wikiname = StringCol(dbName="wikiname", notNull=True)
+    def __init__(self, person, wiki, wikiname):
+        super().__init__()
+        self.person = person
+        self.wiki = wiki
+        self.wikiname = wikiname
 
     @property
     def url(self):
         return self.wiki + self.wikiname
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IWikiNameSet)
 class WikiNameSet:
     def get(self, id):
         """See `IWikiNameSet`."""
-        try:
-            return WikiName.get(id)
-        except SQLObjectNotFound:
-            return None
+        return IStore(WikiName).get(WikiName, int(id))
 
     def new(self, person, wiki, wikiname):
         """See `IWikiNameSet`."""
-        return WikiName(person=person, wiki=wiki, wikiname=wikiname)
+        wiki_name = WikiName(person=person, wiki=wiki, wikiname=wikiname)
+        IStore(wiki_name).flush()
+        return wiki_name
 
 
 @implementer(IJabberID)
-class JabberID(SQLBase, HasOwnerMixin):
+class JabberID(StormBase, HasOwnerMixin):
+    __storm_table__ = "JabberID"
+    __storm_order__ = ["jabberid"]
 
-    _table = "JabberID"
-    _defaultOrder = ["jabberid"]
+    id = Int(primary=True)
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    jabberid = Unicode(name="jabberid", allow_none=False)
 
-    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
-    jabberid = StringCol(dbName="jabberid", notNull=True)
+    def __init__(self, person, jabberid):
+        super().__init__()
+        self.person = person
+        self.jabberid = jabberid
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IJabberIDSet)
@@ -5261,22 +5283,33 @@ class JabberIDSet:
 
     def getByJabberID(self, jabberid):
         """See `IJabberIDSet`"""
-        return JabberID.selectOneBy(jabberid=jabberid)
+        return IStore(JabberID).find(JabberID, jabberid=jabberid).one()
 
     def getByPerson(self, person):
         """See `IJabberIDSet`"""
-        return JabberID.selectBy(person=person)
+        return IStore(JabberID).find(JabberID, person=person)
 
 
 @implementer(IIrcID)
-class IrcID(SQLBase, HasOwnerMixin):
+class IrcID(StormBase, HasOwnerMixin):
     """See `IIrcID`"""
 
-    _table = "IrcID"
+    __storm_table__ = "IrcID"
 
-    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
-    network = StringCol(dbName="network", notNull=True)
-    nickname = StringCol(dbName="nickname", notNull=True)
+    id = Int(primary=True)
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    network = Unicode(name="network", allow_none=False)
+    nickname = Unicode(name="nickname", allow_none=False)
+
+    def __init__(self, person, network, nickname):
+        super().__init__()
+        self.person = person
+        self.network = network
+        self.nickname = nickname
+
+    def destroySelf(self):
+        IStore(self).remove(self)
 
 
 @implementer(IIrcIDSet)
@@ -5285,14 +5318,13 @@ class IrcIDSet:
 
     def get(self, id):
         """See `IIrcIDSet`"""
-        try:
-            return IrcID.get(id)
-        except SQLObjectNotFound:
-            return None
+        return IStore(IrcID).get(IrcID, int(id))
 
     def new(self, person, network, nickname):
         """See `IIrcIDSet`"""
-        return IrcID(person=person, network=network, nickname=nickname)
+        irc_id = IrcID(person=person, network=network, nickname=nickname)
+        IStore(irc_id).flush()
+        return irc_id
 
 
 class NicknameGenerationError(Exception):

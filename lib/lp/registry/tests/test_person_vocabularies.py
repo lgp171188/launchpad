@@ -33,7 +33,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class VocabularyTestBase:
-
     vocabulary_name = None
 
     def setUp(self):

@@ -30,7 +30,6 @@ class BranchRef:
 
 
 class BranchRefNavigation(Navigation):
-
     usedfor = IBranchRef
 
     @stepto("branch-format")

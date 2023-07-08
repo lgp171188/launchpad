@@ -40,7 +40,6 @@ from lp.translations.model.translationpackagingjob import (
 
 
 class TestRosettaTranslations(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeTranslationsLFA(self, tar_content=None, filename=None):

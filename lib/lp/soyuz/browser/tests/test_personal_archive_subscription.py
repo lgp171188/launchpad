@@ -18,7 +18,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestPersonArchiveSubscriptionView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_personal_archive_subscription_adapts_to_privacy(self):

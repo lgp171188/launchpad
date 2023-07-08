@@ -9,7 +9,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestSourcePackageRecipeListing(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_project_branch_recipe_listing(self):

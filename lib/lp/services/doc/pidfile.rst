@@ -67,8 +67,7 @@ the correct PID is stored in it.
     ...     int(open(pidfile_path('nuts')).read().strip() == str(os.getpid()))
     ...     )
     ... '''
-    >>> cmd = '%s -c "%s"' % (sys.executable, cmd)
-    >>> subprocess.call(cmd, shell=True)
+    >>> subprocess.call([sys.executable, "-c", cmd])
     1
 
 Moreover, the pidfile has been removed.

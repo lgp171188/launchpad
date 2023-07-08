@@ -86,7 +86,6 @@ class SpyProxyCallsMixin:
 class TestOCIRegistryClient(
     OCIConfigHelperMixin, SpyProxyCallsMixin, TestCaseWithFactory
 ):
-
     layer = LaunchpadZopelessLayer
     retry_count = 0
 

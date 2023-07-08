@@ -147,8 +147,13 @@ Certify the key is imported:
 Verify that the key was imported with the "can encrypt" flag set:
 
     >>> from lp.registry.model.gpgkey import GPGKey
-    >>> key = GPGKey.selectOneBy(
-    ...     fingerprint="A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+    >>> from lp.services.database.interfaces import IStore
+    >>> key = (
+    ...     IStore(GPGKey)
+    ...     .find(
+    ...         GPGKey, fingerprint="A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+    ...     )
+    ...     .one()
     ... )
     >>> print(key.owner.name)
     name12

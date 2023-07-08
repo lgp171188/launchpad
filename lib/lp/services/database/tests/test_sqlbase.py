@@ -16,7 +16,6 @@ from lp.testing.layers import DatabaseLayer, ZopelessDatabaseLayer
 
 
 class TestConnect(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     @staticmethod

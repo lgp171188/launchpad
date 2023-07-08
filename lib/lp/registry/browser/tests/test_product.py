@@ -62,7 +62,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestProductNavigation(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def assertRedirects(self, url, expected_url):
@@ -800,7 +799,6 @@ class TestProductView(BrowserTestCase):
 
 
 class TestProductPackagesPortletView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_query_count(self):
@@ -1177,7 +1175,6 @@ class TestProductRdfView(BrowserTestCase):
 
 
 class TestProductSet(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def makeAllInformationTypes(self):
@@ -1356,7 +1353,6 @@ class TestProductSet(BrowserTestCase):
 
 
 class TestProductSetBranchView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_git_ssh_url(self):
@@ -1377,7 +1373,6 @@ class TestProductSetBranchView(TestCaseWithFactory):
 
 
 class TestBrowserProductSetBranchView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     editsshkeys_tag = Tag(

@@ -22,7 +22,6 @@ from lp.xmlrpc import faults
 
 
 class TestWSGIArchiveAuth(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def setUp(self):

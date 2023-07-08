@@ -333,6 +333,7 @@ menu, and a "Subscribers" portlet.
     Subscribe to bug mail
     Edit bug mail
     Configure bug tracker
+    Manage webhooks
 
     >>> print(
     ...     extract_text(find_tag_by_id(user_browser.contents, "involvement"))

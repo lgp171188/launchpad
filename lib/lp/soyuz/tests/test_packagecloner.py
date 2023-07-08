@@ -35,7 +35,6 @@ class PackageInfo:
 
 
 class PackageClonerTests(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def checkCopiedSources(self, archive, distroseries, expected):

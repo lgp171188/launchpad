@@ -469,7 +469,6 @@ class IArchivePublic(IPrivacy, IHasOwner):
 
 
 class IArchiveSubscriberView(Interface):
-
     archive_url = Attribute("External archive URL.")
     dependencies = exported(
         CollectionField(

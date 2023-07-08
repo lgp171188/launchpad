@@ -132,7 +132,6 @@ class TestLaunchpadCookieClientIdManager(TestCase):
 
 
 class TestSessionRelatedFunctions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setupLoggedInRequest(self, user, request, when=None):

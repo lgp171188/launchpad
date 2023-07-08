@@ -29,7 +29,6 @@ class PouringLoop:
         logger,
         batch_pouring_callback=None,
     ):
-
         self.from_table = str(from_table)
         self.to_table = str(to_table)
         self.transaction_manager = transaction_manager

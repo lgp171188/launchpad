@@ -36,7 +36,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForLiveFSBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -68,7 +67,6 @@ class TestCanonicalUrlForLiveFSBuild(TestCaseWithFactory):
 
 
 class TestLiveFSBuildView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -112,7 +110,6 @@ class TestLiveFSBuildView(TestCaseWithFactory):
 
 
 class TestLiveFSBuildOperations(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

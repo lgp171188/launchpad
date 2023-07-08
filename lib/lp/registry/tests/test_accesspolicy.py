@@ -618,7 +618,6 @@ class TestAccessPolicyGrantSource(TestCaseWithFactory):
 
 
 class TestAccessPolicyGrantFlatSource(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -855,7 +854,6 @@ class TestAccessPolicyGrantFlatSource(TestCaseWithFactory):
 
 
 class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertPoliciesForBug(self, policy_tuples, bug):

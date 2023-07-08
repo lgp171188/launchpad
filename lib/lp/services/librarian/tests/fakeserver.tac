@@ -12,7 +12,6 @@ from lp.services.daemons import readyservice
 
 
 class FakeResource(resource.Resource):
-
     isLeaf = True
 
     def render_GET(self, request):

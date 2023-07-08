@@ -19,18 +19,13 @@ from lp.registry.model.persontransferjob import MembershipNotificationJob
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job, pop_remote_notifications
-from lp.testing import (
-    TestCaseWithFactory,
-    login_person,
-    person_logged_in,
-    run_script,
-)
+from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import CeleryJobLayer, DatabaseFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
+from lp.testing.script import run_script
 
 
 class MembershipNotificationJobTest(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -116,9 +111,10 @@ class MembershipNotificationJobTest(TestCaseWithFactory):
         )
         job_repr = repr(job)
         transaction.commit()
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IMembershipNotificationJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IMembershipNotificationJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))
@@ -128,7 +124,6 @@ class MembershipNotificationJobTest(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_smoke_admining_team(self):

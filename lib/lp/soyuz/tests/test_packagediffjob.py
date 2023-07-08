@@ -18,13 +18,13 @@ from lp.soyuz.interfaces.packagediffjob import (
 )
 from lp.soyuz.model.packagediffjob import PackageDiffJob
 from lp.soyuz.tests.test_packagediff import create_proper_job
-from lp.testing import TestCaseWithFactory, run_script, verifyObject
+from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import CeleryJobLayer, LaunchpadZopelessLayer
+from lp.testing.script import run_script
 
 
 class TestPackageDiffJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeJob(self):
@@ -76,9 +76,10 @@ class TestPackageDiffJob(TestCaseWithFactory):
     def test_smoke(self):
         diff = create_proper_job(self.factory)
         transaction.commit()
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPackageDiffJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPackageDiffJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

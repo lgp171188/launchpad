@@ -424,7 +424,6 @@ def report_oops(file_alias_url=None, error_msg=None):
 
 
 def handleMail(trans=transaction, signature_timestamp_checker=None):
-
     log = logging.getLogger("process-mail")
     mailbox = getUtility(IMailBox)
     log.info("Opening the mail box.")

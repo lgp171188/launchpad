@@ -27,7 +27,6 @@ from lp.services.webapp.servers import (
 
 @implementer(IFacet)
 class BranchesFacet:
-
     name = "branches"
     rootsite = "code"
     text = "Code"

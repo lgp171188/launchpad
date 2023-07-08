@@ -21,7 +21,6 @@ from lp.testing.pages import (
 
 
 class BaseTestOCIRecipeView(OCIConfigHelperMixin, BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

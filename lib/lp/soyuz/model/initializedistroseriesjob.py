@@ -33,7 +33,6 @@ from lp.soyuz.scripts.initialize_distroseries import (
 @implementer(IInitializeDistroSeriesJob)
 @provider(IInitializeDistroSeriesJobSource)
 class InitializeDistroSeriesJob(DistributionJobDerived):
-
     class_job_type = DistributionJobType.INITIALIZE_SERIES
 
     user_error_types = (InitializationError,)

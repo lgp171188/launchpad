@@ -19,7 +19,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, ZopelessDatabaseLayer
 
 
 class TestDistroArchSeriesFilter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implements_interfaces(self):
@@ -81,7 +80,6 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
 
 
 class TestDistroArchSeriesFilterSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_class_implements_interface(self):

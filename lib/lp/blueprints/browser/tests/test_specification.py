@@ -55,7 +55,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestSpecificationSearch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_search_with_percent(self):
@@ -67,7 +66,6 @@ class TestSpecificationSearch(TestCaseWithFactory):
 
 
 class TestBranchTraversal(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -227,7 +225,6 @@ class TestSpecificationView(BrowserTestCase):
 
 
 class TestSpecificationSet(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_index_with_proprietary(self):
@@ -264,7 +261,6 @@ class TestSpecificationSet(BrowserTestCase):
 
 
 class TestSpecificationInformationType(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     portlet_tag = soupmatchers.Tag(
@@ -398,7 +394,6 @@ NEW_SPEC_FROM_ROOT_URL = "http://blueprints.launchpad.test/specs/+new"
 
 
 class NewSpecificationTests:
-
     expected_keys = {"PROPRIETARY", "PUBLIC", "EMBARGOED"}
 
     def _create_form_data(self, context):
@@ -445,7 +440,6 @@ class NewSpecificationTests:
 class TestNewSpecificationFromRootView(
     TestCaseWithFactory, NewSpecificationTests
 ):
-
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
@@ -466,7 +460,6 @@ class TestNewSpecificationFromRootView(
 class TestNewSpecificationFromSprintView(
     TestCaseWithFactory, NewSpecificationTests
 ):
-
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
@@ -487,7 +480,6 @@ class TestNewSpecificationFromSprintView(
 class TestNewSpecificationFromProjectGroupView(
     TestCaseWithFactory, NewSpecificationTests
 ):
-
     layer = DatabaseFunctionalLayer
 
     def createInitializedView(self):
@@ -508,7 +500,6 @@ class TestNewSpecificationFromProjectGroupView(
 class TestNewSpecificationFromProductView(
     TestCaseWithFactory, NewSpecificationTests
 ):
-
     layer = DatabaseFunctionalLayer
 
     expected_keys = {"PROPRIETARY", "EMBARGOED"}
@@ -530,7 +521,6 @@ class TestNewSpecificationFromProductView(
 class TestNewSpecificationFromDistributionView(
     TestCaseWithFactory, NewSpecificationTests
 ):
-
     layer = DatabaseFunctionalLayer
 
     expected_keys = {"PUBLIC"}
@@ -541,7 +531,6 @@ class TestNewSpecificationFromDistributionView(
 
 
 class TestNewSpecificationInformationType(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -628,7 +617,6 @@ class TestNewSpecificationInformationType(BrowserTestCase):
 
 
 class BaseNewSpecificationInformationTypeDefaultMixin:
-
     layer = DatabaseFunctionalLayer
 
     def _setUp(self):
@@ -917,7 +905,6 @@ class TestSecificationHelpers(unittest.TestCase):
 
 
 class TestSpecificationFieldXHTMLRepresentations(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_starter_empty(self):

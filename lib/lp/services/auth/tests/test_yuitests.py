@@ -10,7 +10,6 @@ from lp.testing.layers import YUITestLayer
 
 
 class AuthYUIUnitTestCase(YUIUnitTestCase):
-
     layer = YUITestLayer
     suite_name = "AuthYUIUnitTests"
 

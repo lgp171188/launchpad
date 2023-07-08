@@ -17,7 +17,6 @@ from lp.testing.layers import FunctionalLayer
 
 
 class LaunchpadFormTest(unittest.TestCase):
-
     layer = FunctionalLayer
 
     def test_formLayout(self):

@@ -177,7 +177,6 @@ class TestProposedTeamMembersEditView(TestCaseWithFactory):
 
 
 class TestTeamPersonRenameFormMixin:
-
     view_name = None
 
     def test_cannot_rename_team_with_active_ppa(self):
@@ -256,7 +255,6 @@ class TestTeamPersonRenameFormMixin:
 
 
 class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
     view_name = "+edit"
 
@@ -490,7 +488,6 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
 
 
 class TestTeamAddView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
     view_name = "+newteam"
 
@@ -605,7 +602,6 @@ class TestTeamAddView(TestCaseWithFactory):
 
 
 class TestSimpleTeamAddView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
     view_name = "+simplenewteam"
 
@@ -631,7 +627,6 @@ class TestSimpleTeamAddView(TestCaseWithFactory):
 
 
 class TestTeamMenu(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -727,7 +722,6 @@ class TestTeamMenu(TestCaseWithFactory):
 
 
 class TestMailingListArchiveView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_no_messages(self):
@@ -765,7 +759,6 @@ class TestMailingListArchiveView(TestCaseWithFactory):
 
 
 class TestModeration(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_held_messages_is_batch_navigator(self):
@@ -792,7 +785,6 @@ class TestModeration(TestCaseWithFactory):
 
 
 class TestTeamMemberAddView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -886,7 +878,6 @@ class TestTeamMemberAddView(TestCaseWithFactory):
 
 
 class TeamMembershipViewTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_init(self):
@@ -897,7 +888,6 @@ class TeamMembershipViewTestCase(TestCaseWithFactory):
 
 
 class TestTeamIndexView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1057,7 +1047,6 @@ class TestTeamIndexView(TestCaseWithFactory):
 
 
 class TestPersonIndexVisibilityView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def createTeams(self):
@@ -1133,7 +1122,6 @@ class TestPersonIndexVisibilityView(TestCaseWithFactory):
 
 
 class TestTeamContactAddressView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_team_change_contact_address_to_existing_address(self):

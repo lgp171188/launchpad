@@ -939,7 +939,6 @@ def jumble(ordered_list):
 
 
 class TestDominatorMethods(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeDominator(self, publications):

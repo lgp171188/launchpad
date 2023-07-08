@@ -1,0 +1,14 @@
+includes:
+  - layer:launchpad-db
+  - interface:memcache
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - branchscanner
+          - merge-proposal-jobs
+          - request-daily-builds
+          - send-branch-mail
+          - translationsbranchscanner

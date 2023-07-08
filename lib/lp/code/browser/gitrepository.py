@@ -149,7 +149,6 @@ class GitRepositoryURL:
 
 
 class GitRepositoriesBreadcrumb(Breadcrumb):
-
     text = "Git"
 
     @property
@@ -172,7 +171,6 @@ class GitRepositoryBreadcrumb(Breadcrumb):
 
 
 class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
-
     usedfor = IGitRepository
 
     @stepthrough("+status")
@@ -550,7 +548,6 @@ class GitRepositoryView(
 
 
 class GitRepositoryForkView(LaunchpadEditFormView):
-
     schema = Interface
     field_names = []
     next_url = None
@@ -594,7 +591,6 @@ class GitRepositoryForkView(LaunchpadEditFormView):
 
 
 class GitRepositoryRescanView(LaunchpadEditFormView):
-
     schema = Interface
     field_names = []
     next_url = None
@@ -942,7 +938,6 @@ class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):
 
 @implementer(IBrowserPublisher)
 class GitRepositoryDiffView(DataDownloadView):
-
     content_type = "text/x-patch"
     charset = "UTF-8"
 
@@ -985,7 +980,6 @@ def decode_form_field_id(encoded):
 
 
 class GitRulePatternField(UniqueField):
-
     errormessage = _("%s is already in use by another rule")
     attribute = "ref_pattern"
     _content_iface = IGitRepository
@@ -1551,7 +1545,6 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
 
 
 class GitRepositoryDeletionView(LaunchpadFormView):
-
     schema = IGitRepository
     field_names = []
     next_url = None
@@ -1646,7 +1639,6 @@ class GitRepositoryDeletionView(LaunchpadFormView):
 
 
 class GitRepositoryActivityView(LaunchpadView):
-
     page_title = "Activity"
 
     @property

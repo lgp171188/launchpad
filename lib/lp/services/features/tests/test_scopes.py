@@ -17,7 +17,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class FakeScope(BaseScope):
-
     pattern = r"fake:"
 
     def __init__(self, name):
@@ -28,7 +27,6 @@ class FakeScope(BaseScope):
 
 
 class TestScopes(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_ScriptScope_lookup_matches_script_scope(self):
@@ -74,7 +72,6 @@ class TestScopes(TestCaseWithFactory):
 
 
 class FakePerson:
-
     id = 7
 
 
@@ -97,7 +94,6 @@ class TestUserSliceScope(TestCase):
 
 
 class TestUserSliceScopeIntegration(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_user_slice_from_rules(self):

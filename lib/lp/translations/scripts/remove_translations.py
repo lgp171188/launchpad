@@ -389,7 +389,7 @@ def warn_about_deleting_current_messages(cur, from_text, where_text, logger):
         rows = cur.fetchall()
         if cur.rowcount > 0:
             logger.warning("Deleting messages currently in use:")
-            for (id, is_current_upstream, is_current_ubuntu) in rows:
+            for id, is_current_upstream, is_current_ubuntu in rows:
                 current = []
                 if is_current_upstream:
                     current.append("upstream")
@@ -562,7 +562,7 @@ def remove_translations(
         if cur.rowcount > 0:
             logger.debug("Sample of messages to be deleted follows.")
             logger.debug("%10s %10s" % ("[message]", "[unmasks]"))
-            for (doomed, unmasked) in rows:
+            for doomed, unmasked in rows:
                 if unmasked is None:
                     unmasked = "--"
                 logger.debug("%10s %10s" % (doomed, unmasked))

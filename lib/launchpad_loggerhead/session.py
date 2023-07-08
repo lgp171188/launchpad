@@ -13,7 +13,6 @@ from lp.services.config import config
 
 
 class LaunchpadSecureCookie(SecureCookie):
-
     # The default of sha1 is a bit too weak.
     hash_method = staticmethod(hashlib.sha256)
 

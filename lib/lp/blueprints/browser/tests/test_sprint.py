@@ -22,7 +22,6 @@ from lp.testing.matchers import BrowsesWithQueryLimit, HasQueryCount
 
 
 class TestSprintIndex(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_query_count(self):
@@ -64,7 +63,6 @@ class TestSprintIndex(BrowserTestCase):
 
 
 class TestSprintDeleteView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def makePopulatedSprint(self):

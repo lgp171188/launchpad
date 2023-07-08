@@ -45,7 +45,6 @@ class MatchesSourcePackageNameTerms(Matcher):
 
 
 class TestSourcePackageNameVocabulary(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

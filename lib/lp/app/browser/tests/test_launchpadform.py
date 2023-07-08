@@ -38,7 +38,6 @@ class TestView(LaunchpadFormView):
 
 
 class TestHasStructuredDoc(TestCase):
-
     layer = FunctionalLayer
 
     def _widget_annotation(self, widget):
@@ -55,7 +54,6 @@ class TestHasStructuredDoc(TestCase):
 
 
 class TestQueryTalesForHasStructuredDoc(TestCase):
-
     layer = FunctionalLayer
 
     def test_query_tales(self):
@@ -102,7 +100,6 @@ class TestHelpLinksView(LaunchpadFormView):
 
 
 class TestHelpLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_help_links_on_widget(self):

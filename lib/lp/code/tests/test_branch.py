@@ -22,7 +22,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class PermissionTest(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertPermission(self, can_access, person, secure_object, permission):
@@ -355,7 +354,6 @@ class TestWriteToBranch(PermissionTest):
 
 
 class TestComposePublicURL(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -18,7 +18,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestMetaData(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_ubuntu_ppa(self):

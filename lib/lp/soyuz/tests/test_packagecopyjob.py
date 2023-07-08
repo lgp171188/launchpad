@@ -18,7 +18,6 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.bugs.interfaces.bugtarget import BUG_WEBHOOKS_FEATURE_FLAG
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -63,7 +62,6 @@ from lp.testing import (
     TestCaseWithFactory,
     admin_logged_in,
     person_logged_in,
-    run_script,
     verifyObject,
 )
 from lp.testing.dbuser import dbuser, switch_dbuser
@@ -76,6 +74,7 @@ from lp.testing.layers import (
 )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import Provides
+from lp.testing.script import run_script
 
 
 def get_dsd_comments(dsd):
@@ -726,9 +725,10 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             archive2.newComponentUploader(requester, "main")
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPlainPackageCopyJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPlainPackageCopyJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))
@@ -1664,16 +1664,6 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
     def test_copying_closes_bugs_with_webhooks(self):
         # Copying a package into a primary archive closes any bugs mentioned
         # in its recent changelog, including triggering their webhooks.
-
-        # Set bug webhooks feature flag on for the purpose of this test
-        self.useFixture(
-            FeatureFixture(
-                {
-                    BUG_WEBHOOKS_FEATURE_FLAG: "on",
-                }
-            )
-        )
-
         target_archive = self.factory.makeArchive(
             self.distroseries.distribution, purpose=ArchivePurpose.PRIMARY
         )
@@ -2340,7 +2330,6 @@ class TestViaCelery(TestCaseWithFactory):
 
 
 class TestPlainPackageCopyJobPermissions(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_extendMetadata_edit_privilege_by_queue_admin(self):

@@ -188,7 +188,6 @@ def get_pofiles_for(potemplates, language):
 
 @implementer(IPOTemplate)
 class POTemplate(SQLBase, RosettaStats):
-
     _table = "POTemplate"
 
     productseries = ForeignKey(
@@ -489,8 +488,8 @@ class POTemplate(SQLBase, RosettaStats):
         """Return SQL clauses for finding POTMsgSets which belong
         to this POTemplate."""
         clauses = [
-            TranslationTemplateItem.potemplateID == self.id,
-            TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
+            TranslationTemplateItem.potemplate_id == self.id,
+            TranslationTemplateItem.potmsgset_id == POTMsgSet.id,
         ]
         return clauses
 
@@ -698,17 +697,17 @@ class POTemplate(SQLBase, RosettaStats):
         POTMsgSet, look through sharing templates as well.
         """
         clauses = [
-            TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
+            TranslationTemplateItem.potmsgset_id == POTMsgSet.id,
             POTMsgSet.msgid_singular == msgid_singular,
             POTMsgSet.msgid_plural == msgid_plural,
             POTMsgSet.context == context,
         ]
         if sharing_templates:
             clauses.append(
-                TranslationTemplateItem.potemplateID.is_in(self._sharing_ids)
+                TranslationTemplateItem.potemplate_id.is_in(self._sharing_ids)
             )
         else:
-            clauses.append(TranslationTemplateItem.potemplateID == self.id)
+            clauses.append(TranslationTemplateItem.potemplate_id == self.id)
 
         # If there are multiple messages, make the one from the
         # current POTemplate be returned first.
@@ -1138,7 +1137,7 @@ class POTemplate(SQLBase, RosettaStats):
         rows = source.find(
             (TranslationTemplateItem, POTMsgSet, Singular, Plural),
             TranslationTemplateItem.potemplate == self,
-            POTMsgSet.id == TranslationTemplateItem.potmsgsetID,
+            POTMsgSet.id == TranslationTemplateItem.potmsgset_id,
         )
 
         rows = rows.order_by(TranslationTemplateItem.sequence)
@@ -1595,7 +1594,6 @@ class POTemplateSet:
 
 @implementer(IPOTemplateSharingSubset)
 class POTemplateSharingSubset:
-
     distribution = None
     sourcepackagename = None
     product = None

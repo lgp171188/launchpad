@@ -95,7 +95,6 @@ from lp.testing.pages import webservice_for_person
 
 
 class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1273,7 +1272,6 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1465,7 +1463,6 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

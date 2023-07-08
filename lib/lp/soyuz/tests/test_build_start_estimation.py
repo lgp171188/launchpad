@@ -15,7 +15,6 @@ from lp.testing.sampledata import ADMIN_EMAIL, BOB_THE_BUILDER_NAME
 
 
 class TestBuildStartEstimation(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

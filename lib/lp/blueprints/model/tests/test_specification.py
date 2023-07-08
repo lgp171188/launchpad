@@ -151,7 +151,6 @@ class TestSpecificationDependencies(TestCaseWithFactory):
 
 
 class TestSpecificationSubscriptionSort(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_subscribers(self):
@@ -174,7 +173,6 @@ class TestSpecificationSubscriptionSort(TestCaseWithFactory):
 
 
 class TestSpecificationValidation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_specurl_validation_duplicate(self):
@@ -746,7 +744,6 @@ class TestSpecificationWorkItems(TestCaseWithFactory):
 
 
 class TestSpecificationInformationType(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_transitionToInformationType(self):

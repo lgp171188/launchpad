@@ -32,7 +32,6 @@ from lp.testing.matchers import HasQueryCount
 
 
 class TestCodeReviewComments(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_display_comment_provides_icodereviewdisplaycomment(self):
@@ -138,7 +137,6 @@ class TestCodeReviewCommentInlineComments(TestCaseWithFactory):
 
 
 class TestCodeReviewCommentHtmlMixin:
-
     layer = DatabaseFunctionalLayer
 
     def test_comment_page_has_meta_description(self):

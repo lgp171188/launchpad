@@ -24,7 +24,6 @@ from lp.testing.pages import find_main_content, find_tag_by_id
 
 
 class TestFeatureControlPage(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

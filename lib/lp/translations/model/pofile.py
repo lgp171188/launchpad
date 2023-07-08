@@ -155,7 +155,7 @@ class POFileMixIn(RosettaStats):
                         Join(
                             TranslationTemplateItem,
                             tm_ids.potmsgsetID
-                            == TranslationTemplateItem.potmsgsetID,
+                            == TranslationTemplateItem.potmsgset_id,
                         ),
                     ),
                     where=And(
@@ -181,7 +181,7 @@ class POFileMixIn(RosettaStats):
                 Join(
                     TranslationTemplateItem,
                     TranslationMessage.potmsgset
-                    == TranslationTemplateItem.potmsgsetID,
+                    == TranslationTemplateItem.potmsgset_id,
                 ),
             ),
             where=And(
@@ -322,7 +322,6 @@ class POFileMixIn(RosettaStats):
 
 @implementer(IPOFile)
 class POFile(SQLBase, POFileMixIn):
-
     _table = "POFile"
 
     potemplate = ForeignKey(
@@ -390,7 +389,7 @@ class POFile(SQLBase, POFileMixIn):
             TranslationMessage.potemplateID, self.potemplate.id
         )
         clauses = [
-            TranslationTemplateItem.potmsgsetID
+            TranslationTemplateItem.potmsgset_id
             == TranslationMessage.potmsgsetID,
             TranslationTemplateItem.potemplate == self.potemplate,
             TranslationMessage.language == self.language,
@@ -536,7 +535,7 @@ class POFile(SQLBase, POFileMixIn):
         clauses = [
             TranslationTemplateItem.potemplate == self.potemplate,
             (
-                TranslationTemplateItem.potmsgsetID
+                TranslationTemplateItem.potmsgset_id
                 == TranslationMessage.potmsgsetID
             ),
             TranslationMessage.language == self.language,
@@ -613,7 +612,7 @@ class POFile(SQLBase, POFileMixIn):
         """See `IPOFile`."""
         clauses, clause_tables = self._getTranslatedMessagesQuery()
         query = And(
-            TranslationTemplateItem.potmsgsetID == POTMsgSet.id, *clauses
+            TranslationTemplateItem.potmsgset_id == POTMsgSet.id, *clauses
         )
         clause_tables.insert(0, POTMsgSet)
         return self._getOrderedPOTMsgSets(clause_tables, query)
@@ -632,17 +631,17 @@ class POFile(SQLBase, POFileMixIn):
                 # staging we get more than a 10x speed improvement: from
                 # 8s to 0.7s).  We also need to put it before any other
                 # clauses to be actually useful.
-                TranslationTemplateItem.potmsgsetID
-                == TranslationTemplateItem.potmsgsetID,
-                POTMsgSet.id == TranslationTemplateItem.potmsgsetID,
+                TranslationTemplateItem.potmsgset_id
+                == TranslationTemplateItem.potmsgset_id,
+                POTMsgSet.id == TranslationTemplateItem.potmsgset_id,
                 *translated_clauses,
             ),
         )
         clauses = [
-            TranslationTemplateItem.potemplateID == self.potemplate.id,
-            TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
+            TranslationTemplateItem.potemplate_id == self.potemplate.id,
+            TranslationTemplateItem.potmsgset_id == POTMsgSet.id,
             TranslationTemplateItem.sequence > 0,
-            Not(TranslationTemplateItem.potmsgsetID.is_in(translated_query)),
+            Not(TranslationTemplateItem.potmsgset_id.is_in(translated_query)),
         ]
         return self._getOrderedPOTMsgSets(
             [POTMsgSet, TranslationTemplateItem], And(*clauses)
@@ -664,7 +663,7 @@ class POFile(SQLBase, POFileMixIn):
         )
         clauses.extend(
             [
-                TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
+                TranslationTemplateItem.potmsgset_id == POTMsgSet.id,
                 Not(getattr(TranslationMessage, flag_name)),
                 msgstr_clause,
             ]
@@ -719,8 +718,8 @@ class POFile(SQLBase, POFileMixIn):
                     distinct=True,
                 )
             ),
-            POTMsgSet.id == TranslationTemplateItem.potmsgsetID,
-            TranslationTemplateItem.potemplateID == self.potemplate.id,
+            POTMsgSet.id == TranslationTemplateItem.potmsgset_id,
+            TranslationTemplateItem.potemplate_id == self.potemplate.id,
         )
         return self._getOrderedPOTMsgSets(
             [POTMsgSet, TranslationTemplateItem], query
@@ -740,7 +739,7 @@ class POFile(SQLBase, POFileMixIn):
         )
         clauses.extend(
             [
-                TranslationTemplateItem.potmsgsetID == POTMsgSet.id,
+                TranslationTemplateItem.potmsgset_id == POTMsgSet.id,
                 Not(getattr(TranslationMessage, other_side_flag_name)),
             ]
         )
@@ -1627,8 +1626,8 @@ class POFileSet:
         from lp.translations.model.potemplate import POTemplate
 
         clauses = [
-            TranslationTemplateItem.potemplateID == POFile.potemplateID,
-            POTMsgSet.id == TranslationTemplateItem.potmsgsetID,
+            TranslationTemplateItem.potemplate_id == POFile.potemplateID,
+            POTMsgSet.id == TranslationTemplateItem.potmsgset_id,
             POTMsgSet.msgid_singular == POMsgID.id,
             POMsgID.msgid.is_in(POTMsgSet.credits_message_ids),
         ]
@@ -1910,7 +1909,7 @@ class POFileToTranslationFileDataAdapter:
                 )
             )
             max_forms = pofile.plural_forms
-            for (pluralform, translation) in forms[:max_forms]:
+            for pluralform, translation in forms[:max_forms]:
                 if translation is not None:
                     msgset.addTranslation(pluralform, translation)
 

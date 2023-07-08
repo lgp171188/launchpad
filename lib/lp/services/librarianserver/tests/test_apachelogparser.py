@@ -152,8 +152,7 @@ class TestScriptRunning(TestCase):
         self.assertEqual(libraryfile_set[3].hits, 0)
 
         process = subprocess.Popen(
-            "cronscripts/parse-librarian-apache-access-logs.py",
-            shell=True,
+            ["cronscripts/parse-librarian-apache-access-logs.py"],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

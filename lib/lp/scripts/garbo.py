@@ -1048,7 +1048,6 @@ class RevisionAuthorEmailLinker(TunableLoop):
 
 
 class PersonPruner(TunableLoop):
-
     maximum_chunk_size = 1000
 
     def __init__(self, log, abort_time=None):
@@ -1619,7 +1618,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
         store = IPrimaryStore(POTMsgSet)
         related_ttis = store.find(
             TranslationTemplateItem,
-            In(TranslationTemplateItem.potmsgsetID, msgset_ids_to_remove),
+            In(TranslationTemplateItem.potmsgset_id, msgset_ids_to_remove),
         )
         related_ttis.remove()
         # Remove related TranslationMessages.
@@ -2283,7 +2282,6 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
         )
 
     def add_my_options(self):
-
         self.parser.add_option(
             "-x",
             "--experimental",

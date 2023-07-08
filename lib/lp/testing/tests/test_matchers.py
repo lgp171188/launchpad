@@ -332,7 +332,6 @@ class TestQueryMatching(TestCase):
 
 
 class TestBrowserQueryMatching(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_smoke(self):

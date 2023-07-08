@@ -228,6 +228,7 @@ def estimate_job_delay(bq, builder_stats):
     :return: An integer value holding the sum of delays (in seconds)
         caused by the jobs that are ahead of and competing with the JOI.
     """
+
     # XXX: This is broken with multi-Processor buildds, as it only
     # considers competition from the same processor.
     def jobs_compete_for_builders(a, b):

@@ -16,7 +16,6 @@ from lp.testing.layers import BaseLayer, DatabaseLayer
 
 
 class TestLibrarianServerFixture(TestCase):
-
     layer = DatabaseLayer
 
     def skip_if_persistent(self, fixture):

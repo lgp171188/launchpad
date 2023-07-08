@@ -986,7 +986,6 @@ class FileBugAdvancedView(LaunchpadView):
 
 
 class IDistroBugAddForm(IBugAddForm):
-
     packagename = copy_field(
         IBugAddForm["packagename"], vocabularyName="DistributionSourcePackage"
     )
@@ -1076,7 +1075,6 @@ class FilebugShowSimilarBugsView(FileBugViewBase):
 
 
 class FileBugGuidedView(FilebugShowSimilarBugsView):
-
     page_title = "Report a bug"
 
     _SEARCH_FOR_DUPES = ViewPageTemplateFile(

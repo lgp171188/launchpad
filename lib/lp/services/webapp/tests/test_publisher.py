@@ -34,7 +34,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestLaunchpadView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

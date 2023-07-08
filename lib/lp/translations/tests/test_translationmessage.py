@@ -1005,7 +1005,6 @@ class TestTranslationMessageFindIdenticalMessage(TestCaseWithFactory):
 
 
 class TestShareIfPossible(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeUnsharedTranslation(
@@ -1184,7 +1183,6 @@ class TestShareIfPossible(TestCaseWithFactory):
 
 
 class TestPreloading(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_preloadDetails_handles_orphaned_message(self):

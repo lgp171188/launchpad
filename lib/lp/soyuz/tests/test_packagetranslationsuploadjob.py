@@ -18,15 +18,11 @@ from lp.soyuz.interfaces.packagetranslationsuploadjob import (
 from lp.soyuz.model.packagetranslationsuploadjob import (
     PackageTranslationsUploadJob,
 )
-from lp.testing import (
-    TestCaseWithFactory,
-    person_logged_in,
-    run_script,
-    verifyObject,
-)
+from lp.testing import TestCaseWithFactory, person_logged_in, verifyObject
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import CeleryJobLayer, LaunchpadZopelessLayer
+from lp.testing.script import run_script
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
 )
@@ -75,7 +71,6 @@ class LocalTestHelper(TestCaseWithFactory):
 
 
 class TestPackageTranslationsUploadJob(LocalTestHelper):
-
     layer = LaunchpadZopelessLayer
 
     def test_job_implements_IPackageTranslationsUploadJob(self):
@@ -132,9 +127,10 @@ class TestPackageTranslationsUploadJob(LocalTestHelper):
         }
         spr, sp, job = self.makeJob(tar_content=tar_content)
         transaction.commit()
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IPackageTranslationsUploadJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IPackageTranslationsUploadJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
 
         self.addDetail("stdout", text_content(out))

@@ -208,7 +208,6 @@ class RootApp:
         )
         lp_server.start_server()
         try:
-
             try:
                 branchfs = self.get_branchfs()
                 transport_type, info, trail = branchfs.translatePath(

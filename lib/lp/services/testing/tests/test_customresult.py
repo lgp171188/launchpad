@@ -29,7 +29,6 @@ class FakeTestCase(unittest.TestCase):
 
 
 class TestFilterTests(TestCase):
-
     layer = BaseLayer
 
     def writeFile(self, f, contents):

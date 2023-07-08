@@ -37,7 +37,6 @@ def get_ppa_reference(ppa):
 
 
 class PlainTempFile:
-
     # Enumerated identifier.
     compression_type = IndexCompressionType.UNCOMPRESSED
     # Filename suffix.

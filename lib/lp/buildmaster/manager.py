@@ -166,7 +166,6 @@ class PrefetchedBuildCandidates:
 
 
 class BaseBuilderFactory:
-
     date_updated = None
 
     def update(self):

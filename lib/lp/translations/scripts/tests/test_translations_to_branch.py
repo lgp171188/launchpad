@@ -3,6 +3,7 @@
 
 """Acceptance test for the translations-export-to-branch script."""
 
+import os.path
 import re
 from datetime import datetime, timedelta, timezone
 from textwrap import dedent
@@ -22,10 +23,10 @@ from lp.registry.model.productseries import ProductSeries
 from lp.services.config import config
 from lp.services.database.interfaces import IStandbyStore
 from lp.services.log.logger import BufferLogger
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory, map_branch_contents
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 from lp.translations.scripts.translations_to_branch import (
     ExportTranslationsToBranch,
 )
@@ -36,7 +37,6 @@ class GruesomeException(Exception):
 
 
 class TestExportTranslationsToBranch(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def _filterOutput(self, output):
@@ -93,7 +93,10 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
 
         # Run The Script.
         retcode, stdout, stderr = run_script(
-            "cronscripts/translations-export-to-branch.py", ["-vvv"]
+            os.path.join(
+                config.root, "cronscripts", "translations-export-to-branch.py"
+            ),
+            args=["-vvv"],
         )
 
         self.assertEqual("", stdout)
@@ -145,8 +148,10 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         # anything because it sees that the POFile has not been changed
         # since the last export.
         retcode, stdout, stderr = run_script(
-            "cronscripts/translations-export-to-branch.py",
-            ["-vvv", "--no-fudge"],
+            os.path.join(
+                config.root, "cronscripts", "translations-export-to-branch.py"
+            ),
+            args=["-vvv", "--no-fudge"],
         )
         self.assertEqual(0, retcode)
         self.assertIn("Last commit was at", stderr)

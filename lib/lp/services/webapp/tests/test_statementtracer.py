@@ -44,7 +44,6 @@ def stderr():
 
 
 class StubTime:
-
     time = 1000.0
 
     def __call__(self):

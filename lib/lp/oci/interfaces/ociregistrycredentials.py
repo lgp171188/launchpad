@@ -42,7 +42,6 @@ class OCIRegistryCredentialsNotOwner(Unauthorized):
 
 
 class IOCIRegistryCredentialsView(Interface):
-
     id = Int(title=_("ID"), required=True, readonly=True)
 
     def getCredentials():
@@ -64,7 +63,6 @@ class IOCIRegistryCredentialsView(Interface):
 
 
 class IOCIRegistryCredentialsEditableAttributes(IHasOwner):
-
     owner = PersonChoice(
         title=_("Owner"),
         required=True,

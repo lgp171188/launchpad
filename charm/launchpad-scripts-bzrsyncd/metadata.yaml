@@ -1,0 +1,18 @@
+name: launchpad-scripts-bzrsyncd
+display-name: launchpad-scripts-bzrsyncd
+summary: Launchpad scripts - bzrsyncd
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm sets up the cron jobs to run the scripts needed for 'bzrsyncd'.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false
+requires:
+  memcache:
+    interface: memcache

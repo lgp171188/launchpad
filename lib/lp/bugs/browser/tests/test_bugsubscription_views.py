@@ -37,7 +37,6 @@ from lp.testing.views import create_initialized_view
 
 
 class BugsubscriptionPrivacyTests(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -77,7 +76,6 @@ class BugsubscriptionPrivacyTests(TestCaseWithFactory):
 
 
 class BugSubscriptionAdvancedFeaturesTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

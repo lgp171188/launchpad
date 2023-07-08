@@ -808,19 +808,16 @@ class BaseImageUpload(Bytes):
 
 
 class IconImageUpload(BaseImageUpload):
-
     dimensions = (14, 14)
     max_size = 5 * 1024
 
 
 class LogoImageUpload(BaseImageUpload):
-
     dimensions = (64, 64)
     max_size = 50 * 1024
 
 
 class MugshotImageUpload(BaseImageUpload):
-
     dimensions = (192, 192)
     max_size = 100 * 1024
 
@@ -1015,7 +1012,7 @@ class InlineObject(Object):
 class SnapBuildChannelsField(Dict):
     """A field that holds source snap channels for builds."""
 
-    _core_snap_names = ["core", "core18", "core20", "core22"]
+    _core_snap_names = ["core", "core18", "core20", "core22", "core24"]
 
     def __init__(
         self,

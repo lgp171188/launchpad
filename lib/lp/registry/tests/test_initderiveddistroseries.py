@@ -22,7 +22,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
 
 
 class TestDeriveDistroSeries(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -65,7 +64,6 @@ class TestDeriveDistroSeries(TestCaseWithFactory):
 
 
 class TestDeriveDistroSeriesMultipleParents(InitializationHelperTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def setUpParents(self, packages1, packages2):

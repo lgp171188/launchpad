@@ -27,7 +27,6 @@ from lp.soyuz.vocabularies import make_archive_vocabulary
 
 @implementer(IHugeVocabulary)
 class BuildableDistroSeries(SQLObjectVocabularyBase):
-
     _table = DistroSeries
 
     def toTerm(self, obj):

@@ -79,7 +79,6 @@ class FakeGPGHandlerNotFound:
 
 
 class IncomingTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_invalid_signature(self):
@@ -343,7 +342,6 @@ class IncomingTestCase(TestCaseWithFactory):
 
 
 class AuthenticateEmailTestCase(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_bad_signature_timestamp(self):
@@ -382,7 +380,6 @@ class AuthenticateEmailTestCase(TestCaseWithFactory):
 
 
 class TestExtractAddresses(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_original_to(self):

@@ -24,7 +24,6 @@ from lp.services.webapp.servers import (
 
 @implementer(IFacet)
 class AnswersFacet:
-
     name = "answers"
     rootsite = "answers"
     text = "Questions"

@@ -25,7 +25,6 @@ from lp.services.webapp.servers import (
 
 @implementer(IFacet)
 class BugsFacet:
-
     name = "bugs"
     rootsite = "bugs"
     text = "Bugs"

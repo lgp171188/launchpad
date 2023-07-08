@@ -44,7 +44,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 
 
 class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_implements_interface(self):
@@ -1082,7 +1081,6 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
 
 
 class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeDifferencesForAllDifferenceTypes(self, derived_series):
@@ -1490,7 +1488,6 @@ class DistroSeriesDifferenceSourceTestCase(TestCaseWithFactory):
 
 
 class TestMostRecentComments(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_most_recent_comments(self):
@@ -1512,7 +1509,6 @@ class TestMostRecentComments(TestCaseWithFactory):
 
 
 class TestMostRecentPublications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def create_difference(self, derived_series):

@@ -36,7 +36,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestMilestoneViews(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_distroseries_milestone(self):
@@ -166,7 +165,6 @@ class TestMilestoneViews(BrowserTestCase):
 
 
 class TestAddMilestoneViews(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -233,7 +231,6 @@ class TestAddMilestoneViews(TestCaseWithFactory):
 
 
 class TestMilestoneEditView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -388,7 +385,6 @@ class TestQueryCountBase(TestCaseWithFactory):
 
 
 class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -521,7 +517,6 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
 
 
 class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -580,7 +575,6 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
 
 
 class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -639,7 +633,6 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
 
 
 class TestMilestoneTagView(TestQueryCountBase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

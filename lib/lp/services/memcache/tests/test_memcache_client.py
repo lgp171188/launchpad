@@ -19,7 +19,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class MemcacheClientTestCase(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -130,7 +129,6 @@ class MemcacheClientTestCase(TestCase):
 
 
 class MemcacheClientFactoryTestCase(TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def test_with_timeline(self):

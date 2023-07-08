@@ -28,7 +28,6 @@ from lp.services.webapp.interfaces import ISingleLineWidgetLayout
 
 @implementer(ISingleLineWidgetLayout, IInputWidget)
 class OCICredentialsWidget(BrowserWidget, InputWidget):
-
     template = ViewPageTemplateFile("templates/ocicredentialswidget.pt")
     _widgets_set_up = False
 

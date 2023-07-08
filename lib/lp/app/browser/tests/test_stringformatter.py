@@ -167,7 +167,6 @@ class TestLinkifyingBugs(TestCase):
 
 
 class TestLinkifyingProtocols(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_normal_set(self):
@@ -484,7 +483,6 @@ class TestParseDiff(TestCase):
 
 
 class TestParseDiffErrors(TestCaseWithFactory):
-
     layer = ZopelessLayer
 
     def assertParses(self, expected, diff):

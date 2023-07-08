@@ -70,7 +70,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestPersonTeams(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -392,7 +391,6 @@ class TestPersonTeams(TestCaseWithFactory):
 
 
 class TestPerson(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_title_user(self):
@@ -906,7 +904,6 @@ class TestPerson(TestCaseWithFactory):
 
 
 class TestPersonStates(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1156,7 +1153,6 @@ class TestPersonStates(TestCaseWithFactory):
 
 
 class TestPersonRelatedBugTaskSearch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1345,7 +1341,6 @@ class KarmaTestMixin:
 
 
 class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1445,7 +1440,6 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
 
 
 class TestAPIParticipation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_participation_query_count(self):
@@ -2092,7 +2086,6 @@ def get_specs(context, user=None, **kwargs):
 
 
 class TestSpecifications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

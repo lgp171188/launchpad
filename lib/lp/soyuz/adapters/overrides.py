@@ -400,7 +400,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
             pre_iter_hook=eager_load,
         )
         overrides = {}
-        for (name, das, comp, sect, prio, status, ver) in already_published:
+        for name, das, comp, sect, prio, status, ver in already_published:
             # These details can always fulfill their own archtag, and may
             # satisfy a None archtag if the DAS is nominatedarchindep.
             if not self.any_arch:

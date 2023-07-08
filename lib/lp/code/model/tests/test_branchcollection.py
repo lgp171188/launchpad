@@ -86,7 +86,6 @@ class TestBranchCollectionAdaptation(TestCaseWithFactory):
 
 
 class TestGenericBranchCollection(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -248,7 +247,6 @@ class TestGenericBranchCollection(TestCaseWithFactory):
 
 
 class TestBranchCollectionFilters(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -706,7 +704,6 @@ class TestBranchCollectionFilters(TestCaseWithFactory):
 
 
 class TestGenericBranchCollectionVisibleFilter(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -862,7 +859,6 @@ class TestGenericBranchCollectionVisibleFilter(TestCaseWithFactory):
 
 
 class TestExtendedBranchRevisionDetails(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -969,7 +965,6 @@ class TestExtendedBranchRevisionDetails(TestCaseWithFactory):
 
 
 class TestBranchMergeProposals(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -1505,7 +1500,6 @@ class TestBranchCollectionOwnerCounts(TestCaseWithFactory):
 
 
 class TestBranchCollectionConvertListingSortToOrderBy(TestCase):
-
     DEFAULT_BRANCH_LISTING_SORT = [
         Asc(Product.name),
         Desc(Branch.lifecycle_status),

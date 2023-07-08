@@ -170,7 +170,6 @@ class DiffTestCase(TestCaseWithFactory):
 
 
 class TestDiff(DiffTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def test_providesInterface(self):
@@ -258,7 +257,6 @@ class TestDiff(DiffTestCase):
 
 
 class TestDiffInScripts(DiffTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def test_mergePreviewFromBranches(self):

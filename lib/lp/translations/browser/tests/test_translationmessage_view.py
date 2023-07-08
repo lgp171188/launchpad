@@ -225,7 +225,6 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
 
 
 class TestCurrentTranslationMessageView(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
@@ -532,7 +531,6 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
 
 
 class TestHelpers(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_contains_translations_is_false_for_empty_dict(self):
@@ -635,7 +633,6 @@ class TestHelpers(TestCaseWithFactory):
 
 
 class TestBadSubmission(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def getSubmission(self, good=True):

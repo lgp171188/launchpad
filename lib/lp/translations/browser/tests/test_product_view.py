@@ -110,7 +110,6 @@ class TestProduct(TestCaseWithFactory):
 
 
 class TestCanConfigureTranslations(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_configure_translations_product_no_edit_permission(self):

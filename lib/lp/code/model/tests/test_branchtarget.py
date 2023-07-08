@@ -63,7 +63,6 @@ class BaseBranchTargetTests:
 
 
 class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -241,7 +240,6 @@ class TestPackageBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
 
 
 class TestPersonBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -333,7 +331,6 @@ class TestPersonBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
 
 
 class TestProductBranchTarget(TestCaseWithFactory, BaseBranchTargetTests):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

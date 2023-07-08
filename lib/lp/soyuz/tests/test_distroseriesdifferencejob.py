@@ -21,7 +21,6 @@ from lp.services.database.interfaces import IPrimaryStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
-from lp.services.scripts.tests import run_script
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.interfaces.distributionjob import (
     DistributionJobType,
@@ -43,6 +42,7 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
 )
+from lp.testing.script import run_script
 
 
 def find_dsd_for(dsp, package):
@@ -573,10 +573,10 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
         transaction.commit()
         return_code, stdout, stderr = run_script(
             "cronscripts/process-job-source.py",
-            ["-v", "IDistroSeriesDifferenceJobSource"],
+            args=["-v", "IDistroSeriesDifferenceJobSource"],
         )
         # The cronscript ran how we expected it to.
-        self.assertEqual(return_code, 0)
+        self.assertEqual(0, return_code)
         self.assertIn("INFO    Ran 1 DistroSeriesDifferenceJob jobs.", stderr)
         # And it did what we expected.
         jobs = find_waiting_jobs(
@@ -690,7 +690,6 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
 
 
 class TestDistroSeriesDifferenceJobEndToEnd(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -1086,7 +1085,6 @@ class TestDistroSeriesDifferenceJobPermissions(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_DerivedDistroseriesDifferenceJob(self):

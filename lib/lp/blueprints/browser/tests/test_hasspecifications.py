@@ -7,7 +7,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestPersonSpecWorkloadView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

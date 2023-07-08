@@ -10,7 +10,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrl(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_canonical_url(self):
@@ -25,7 +24,6 @@ class TestCanonicalUrl(TestCaseWithFactory):
 
 
 class TestPersonGPGView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_edit_pgp_keys_login_redirect(self):

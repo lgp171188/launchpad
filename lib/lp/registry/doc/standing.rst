@@ -248,8 +248,7 @@ standing untouched.
 
     >>> import subprocess
     >>> process = subprocess.Popen(
-    ...     "cronscripts/update-standing.py",
-    ...     shell=True,
+    ...     ["cronscripts/update-standing.py"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,
@@ -284,8 +283,7 @@ update-standing script bumps his standing to Good too.
     >>> LaunchpadZopelessLayer.txn.commit()
 
     >>> process = subprocess.Popen(
-    ...     "cronscripts/update-standing.py",
-    ...     shell=True,
+    ...     ["cronscripts/update-standing.py"],
     ...     stdin=subprocess.PIPE,
     ...     stdout=subprocess.PIPE,
     ...     stderr=subprocess.PIPE,

@@ -1038,7 +1038,6 @@ class BranchMergeProposalVoteView(LaunchpadView):
 
 
 class BranchMergeProposalScheduleUpdateDiffView(LaunchpadEditFormView):
-
     schema = Interface
     field_names = []
     next_url = None
@@ -1130,7 +1129,6 @@ class MergeProposalEditView(
 
 
 class ResubmitSchema(IBranchMergeProposal):
-
     break_link = Bool(
         title="Start afresh",
         description=(
@@ -1423,7 +1421,6 @@ class BranchMergeProposalSubscribersView(LaunchpadView):
 class BranchMergeProposalChangeStatusView(
     MergeProposalEditView, BranchMergeProposalStatusMixin
 ):
-
     page_title = label = "Change merge proposal status"
     schema = IBranchMergeProposal
     field_names = []

@@ -1128,9 +1128,9 @@ class IDistroSeriesPublic(
 
     @export_read_operation()
     @operation_for_version("devel")
-    def getTranslationTemplateStatistics() -> typing.List[
-        DistroSeriesTranslationTemplateStatistics
-    ]:
+    def getTranslationTemplateStatistics() -> (
+        typing.List[DistroSeriesTranslationTemplateStatistics]
+    ):
         """Return statistics for translation templates in this series.
 
         The return value is a list of dicts for each template in the series,

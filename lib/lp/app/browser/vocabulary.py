@@ -377,7 +377,6 @@ class ProductPickerEntrySourceAdapter(TargetPickerEntrySourceAdapter):
 
 @adapter(IDistribution)
 class DistributionPickerEntrySourceAdapter(TargetPickerEntrySourceAdapter):
-
     target_type = "distribution"
 
     def getMaintainer(self, target):

@@ -38,7 +38,6 @@ from lp.testing.pages import extract_text, find_tags_by_class
 
 
 class TestExtractCandidCaveat(TestCase):
-
     layer = BaseLayer
 
     def setUp(self):
@@ -75,7 +74,6 @@ class TestExtractCandidCaveat(TestCase):
 
 
 class TestRequestCandidDischarge(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_unconfigured(self):
@@ -317,7 +315,6 @@ class TestRequestCandidDischarge(TestCaseWithFactory):
 
 
 class TestCandidCallbackView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

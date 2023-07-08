@@ -123,7 +123,6 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
 
 
 class TestAssignments(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -217,7 +216,6 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
 
 
 class TestHasSpecificationsConfiguration(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_configure_blueprints_product_no_edit_permission(self):
@@ -320,7 +318,6 @@ class SpecificationSetViewTestCase(TestCaseWithFactory):
 
 
 class TestPrivacy(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_product_specs(self):

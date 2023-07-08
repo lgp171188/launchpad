@@ -17,7 +17,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestFeatureFlags(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_set_feature_flags_raises_if_not_available(self):

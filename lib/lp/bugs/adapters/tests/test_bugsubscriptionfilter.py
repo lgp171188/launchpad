@@ -14,7 +14,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class BugSubscriptionFilterTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_bugsubscriptionfilter_to_product_with_product(self):

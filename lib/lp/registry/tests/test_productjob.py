@@ -46,13 +46,14 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.log.logger import BufferLogger
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.publisher import canonical_url
-from lp.testing import TestCaseWithFactory, person_logged_in, run_script
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessAppServerLayer,
 )
 from lp.testing.mail_helpers import pop_notifications
+from lp.testing.script import run_script
 
 
 class CommercialHelpers:
@@ -150,7 +151,7 @@ class DailyProductJobsTestCase(TestCaseWithFactory, CommercialHelpers):
         # ProductJobManagerTestCase.test_createAllDailyJobs
         self.make_test_products()
         transaction.commit()
-        stdout, stderr, retcode = run_script(
+        retcode, stdout, stderr = run_script(
             "cronscripts/daily_product_jobs.py"
         )
         self.addDetail("stdout", text_content(stdout))
@@ -526,7 +527,6 @@ class ProductNotificationJobTestCase(TestCaseWithFactory):
 
 
 class CommericialExpirationMixin(CommercialHelpers):
-
     layer = DatabaseFunctionalLayer
 
     EXPIRE_SUBSCRIPTION = False
@@ -621,9 +621,10 @@ class CommericialExpirationMixin(CommercialHelpers):
         proprietary_job = self.JOB_CLASS.create(proprietary_product, reviewer)
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % self.JOB_SOURCE_INTERFACE.getName()
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", self.JOB_SOURCE_INTERFACE.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))

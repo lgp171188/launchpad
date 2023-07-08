@@ -28,7 +28,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

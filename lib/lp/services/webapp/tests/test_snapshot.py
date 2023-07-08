@@ -20,7 +20,6 @@ from lp.testing.matchers import Provides
 
 
 class IThing(Interface):
-
     attr = Int()
 
 
@@ -31,7 +30,6 @@ class Thing:
 
 
 class TestNotifyModified(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_generates_notification(self):

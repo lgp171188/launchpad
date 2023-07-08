@@ -20,7 +20,6 @@ from lp.testopenid.interfaces.server import get_server_url
 
 
 class TestGetMacaroonNS(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -50,7 +49,6 @@ class TestGetMacaroonNS(TestCase):
 
 
 class TestMacaroonRequest(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -109,7 +107,6 @@ class TestMacaroonRequest(TestCaseWithFactory):
 
 
 class TestMacaroonResponse(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def test_init(self):

@@ -53,7 +53,6 @@ from lp.testing.mail_helpers import pop_notifications
 
 
 class TestRecipeBuilderBase(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeJob(
@@ -179,7 +178,6 @@ class TestRecipeBuilder(TestRecipeBuilderBase):
 
 
 class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
-
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 
     def _setBuilderConfig(self):
@@ -447,7 +445,6 @@ class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
 
 
 class TestBuildNotifications(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=30)
 

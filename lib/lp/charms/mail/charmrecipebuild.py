@@ -12,7 +12,6 @@ from lp.services.webapp import canonical_url
 
 
 class CharmRecipeBuildMailer(BaseMailer):
-
     app = "charms"
 
     @classmethod

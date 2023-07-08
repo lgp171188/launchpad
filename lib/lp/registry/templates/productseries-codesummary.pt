@@ -32,7 +32,7 @@
             <tt class="command">
               bzr push lp:~<tal:user replace="view/user/name"/>/<tal:products replace="context/product/name"/>/<tal:series replace="context/name"/>
             </tt>
-            <tal:no-keys condition="not:view/user/sshkeys">
+            <tal:no-keys condition="view/user/sshkeys/is_empty">
               <br/>To authenticate with the Launchpad branch upload service,
               you need to
               <a tal:attributes="href string:${view/user/fmt:url}/+editsshkeys">

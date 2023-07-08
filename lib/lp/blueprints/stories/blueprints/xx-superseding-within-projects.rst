@@ -1,5 +1,5 @@
-Superseeding blueprints
-=======================
+Superseding blueprints
+======================
 
 Bueprints can only be superseded by other blueprints in the same project.
 The user interface code for the superseding form passes blueprints by their

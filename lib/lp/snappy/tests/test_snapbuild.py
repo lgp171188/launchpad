@@ -81,7 +81,6 @@ expected_body = """\
 
 
 class TestSnapBuild(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -803,7 +802,6 @@ class TestSnapBuild(TestCaseWithFactory):
 
 
 class TestSnapBuildSet(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -839,7 +837,6 @@ class TestSnapBuildSet(TestCaseWithFactory):
 
 
 class TestSnapBuildWebservice(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

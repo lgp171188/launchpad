@@ -25,7 +25,6 @@ from lp.services.webapp.menu import NavigationMenu
 
 
 class MaloneApplicationNavigation(Navigation):
-
     usedfor = IMaloneApplication
 
     newlayer = BugsLayer
@@ -66,7 +65,6 @@ class MaloneApplicationNavigation(Navigation):
 
 
 class MaloneRelatedPages(NavigationMenu):
-
     facet = "bugs"
     title = "Related pages"
     usedfor = MaloneView

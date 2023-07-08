@@ -181,7 +181,7 @@ class TestSharingService(
         grantee_data["web_link"] = absoluteURL(grantee, browser_request)
         shared_items_exist = False
         permissions = {}
-        for (policy, permission) in policy_permissions:
+        for policy, permission in policy_permissions:
             permissions[policy.name] = six.ensure_text(permission.name)
             if permission == SharingPermission.SOME:
                 shared_items_exist = True

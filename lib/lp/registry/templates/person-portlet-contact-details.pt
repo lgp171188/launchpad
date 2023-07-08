@@ -69,7 +69,7 @@
           <span tal:replace="jabberid/jabberid/fmt:obfuscate-email"
             /><span tal:condition="not: repeat/jabberid/end">,</span>
         </tal:block>
-        <div tal:condition="not: context/jabberids">
+        <div tal:condition="context/jabberids/is_empty">
           No Jabber IDs registered.
         </div>
       </dd>
@@ -163,7 +163,7 @@
           </a>
           <br />
         </tal:keys>
-        <div tal:condition="not: context/sshkeys">
+        <div tal:condition="context/sshkeys/is_empty">
           No SSH keys registered.
         </div>
       </dd>

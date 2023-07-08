@@ -28,7 +28,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestDistributionSourcePackageFormatterAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_link(self):
@@ -43,7 +42,6 @@ class TestDistributionSourcePackageFormatterAPI(TestCaseWithFactory):
 
 
 class TestDistributionSourcePackageChangelogView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_packagediff_query_count(self):
@@ -65,7 +63,6 @@ class TestDistributionSourcePackageChangelogView(TestCaseWithFactory):
 
 
 class TestDistributionSourcePackagePublishingHistoryView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def test_publishinghistory_query_count(self):
@@ -171,7 +168,6 @@ class TestDistributionSourcePackagePublishingHistoryView(TestCaseWithFactory):
 
 
 class TestDistributionSourceView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -23,7 +23,6 @@ from lp.services.database.stormbase import StormBase
 
 @implementer(IOCIPushRule)
 class OCIPushRule(StormBase):
-
     __storm_table__ = "OCIPushRule"
 
     id = Int(primary=True)

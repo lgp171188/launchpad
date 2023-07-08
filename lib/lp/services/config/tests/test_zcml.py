@@ -19,7 +19,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestIncludeLaunchpadOverrides(ConfigTestCase):
-
     layer = BaseLayer
 
     def test_includes_overrides(self):

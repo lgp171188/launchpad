@@ -27,7 +27,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class BugNominationTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_implementation(self):
@@ -307,7 +306,6 @@ class TestBugCanBeNominatedForDistroSeries(
 
 
 class TestCanApprove(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_normal_user_cannot_approve(self):
@@ -458,7 +456,6 @@ class TestCanApprove(TestCaseWithFactory):
 
 
 class BugNominationSetTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_get(self):

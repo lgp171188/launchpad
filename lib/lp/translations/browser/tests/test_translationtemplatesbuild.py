@@ -29,7 +29,6 @@ def now():
 
 
 class TestTranslationTemplatesBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def _makeBuild(self, branch=None):

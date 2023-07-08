@@ -68,8 +68,8 @@ def get_potmsgset_ids(potemplate_id):
     store = IStore(POTemplate)
     return set(
         store.find(
-            TranslationTemplateItem.potmsgsetID,
-            TranslationTemplateItem.potemplateID == potemplate_id,
+            TranslationTemplateItem.potmsgset_id,
+            TranslationTemplateItem.potemplate_id == potemplate_id,
             TranslationTemplateItem.sequence > 0,
         )
     )
@@ -135,8 +135,8 @@ def get_pofiletranslators(pofile_ids):
     store = IStore(POFileTranslator)
     pofts = {pofile_id: set() for pofile_id in pofile_ids}
     for pofile_id, person_id in store.find(
-        (POFileTranslator.pofileID, POFileTranslator.personID),
-        POFileTranslator.pofileID.is_in(pofile_ids),
+        (POFileTranslator.pofile_id, POFileTranslator.person_id),
+        POFileTranslator.pofile_id.is_in(pofile_ids),
     ):
         pofts[pofile_id].add(person_id)
     return pofts
@@ -152,8 +152,8 @@ def remove_pofiletranslators(logger, pofile, person_ids):
     store = IStore(pofile)
     pofts = store.find(
         POFileTranslator,
-        POFileTranslator.pofileID == pofile.id,
-        POFileTranslator.personID.is_in(person_ids),
+        POFileTranslator.pofile == pofile,
+        POFileTranslator.person_id.is_in(person_ids),
     )
     pofts.remove()
 
@@ -178,7 +178,7 @@ def create_missing_pofiletranslators(logger, pofile, pofts, contribs):
         store.add(
             POFileTranslator(
                 pofile=pofile,
-                personID=missing_contributor,
+                person_id=missing_contributor,
                 date_last_touched=contribs[missing_contributor],
             )
         )

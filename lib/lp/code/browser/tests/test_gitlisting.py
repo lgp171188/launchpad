@@ -28,7 +28,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestTargetGitListingView:
-
     layer = DatabaseFunctionalLayer
 
     def setDefaultRepository(self, target, repository):
@@ -234,7 +233,6 @@ class TestTargetGitListingView:
 
 
 class TestPersonTargetGitListingView:
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -554,7 +552,6 @@ class TestPersonOCIProjectGitListingView(
 
 
 class TestPlainGitListingView:
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):

@@ -1,0 +1,34 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-scripts-bzrsyncd
+
+{%- if active %}
+
+{%- if domain_bzr %}
+# cleanup /tmp/bzr-limbo-* leftovers
+0 1 * * * find /tmp -maxdepth 1 -name 'bzr-limbo-??????' -type d -mtime +1|xargs -r -I@ rm -rf '@'
+{%- endif %}
+
+# branch scanner
+* * * * * {{ code_dir }}/cronscripts/process-job-source.py IBranchScanJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IBranchScanJobSource.log
+
+# Branch Updates - emailed out
+# set hard memory limit as per https://bugs.launchpad.net/launchpad/+bug/585126
+* * * * * ulimit -v 1843200; {{ code_dir }}/cronscripts/process-job-source.py IRevisionMailJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IRevisionMailJobSource.log
+* * * * * ulimit -v 1843200; {{ code_dir}}/cronscripts/process-job-source.py IRevisionsAddedJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IRevisionsAddedJobSource.log
+
+# processes code branches that have new translations imports pending
+*/10 * * * * {{ code_dir }}/cronscripts/process-job-source.py IRosettaUploadJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IRosettaUploadJobSource.log
+
+# Update or create preview diffs for branch merge proposals &
+# Send email about new merge proposals, generating a diff first if needed
+* * * * * {{ code_dir }}/cronscripts/process-job-source.py IBranchMergeProposalJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IBranchMergeProposalJobSource.log
+
+# Script requests builds for source package recipes that have "build daily" enabled
+*/15 * * * * {{ code_dir }}/cronscripts/request_daily_builds.py -v >> {{ logs_dir }}/request_daily_builds.log 2>&1
+
+{%- endif %}
+
+# OOPS amqp
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

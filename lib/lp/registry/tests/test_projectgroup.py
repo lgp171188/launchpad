@@ -63,7 +63,6 @@ class TestProjectGroup(TestCaseWithFactory):
 
 
 class ProjectGroupSearchTestCase(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -160,7 +159,6 @@ class ProjectGroupSearchTestCase(TestCaseWithFactory):
 
 
 class TestProjectGroupPermissions(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -185,7 +183,6 @@ class TestProjectGroupPermissions(TestCaseWithFactory):
 
 
 class TestMilestones(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_milestones_privacy(self):
@@ -220,7 +217,6 @@ class TestMilestones(TestCaseWithFactory):
 
 
 class TestLaunchpadlibAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_inappropriate_deactivation_does_not_cause_an_OOPS(self):

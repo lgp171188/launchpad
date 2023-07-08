@@ -242,8 +242,8 @@ From the Expired state:
 
 From the Expired state, the other possibility is the less probable
 explaining that the owner solved their problem. Again, to minimize
-confusion, the outoing notification contain a footer explaining what
-will happen if one reply to the message.
+confusion, the outgoing notification contain a footer explaining what
+will happen if one replies to the message.
 
 Solved and Invalid
 ..................

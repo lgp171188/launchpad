@@ -268,7 +268,6 @@ class TestRequestPeopleMergeHiddenEmailAddresses(RequestPeopleMergeMixin):
 
 
 class TestValidatingMergeView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -42,7 +42,6 @@ from lp.translations.scripts.po_import import TranslationsImport
 class TestDistroSeriesQueueRosettaTranslationsTarball(
     TestNativePublishingBase
 ):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

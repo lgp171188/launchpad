@@ -17,7 +17,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 # XXX cjwatson 2022-04-01: Most functional tests currently live in
 # lib/lp/soyuz/doc/package-cache-script.rst, but should be moved here.
 class TestPackageCacheUpdater(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     dbuser = "update-pkg-cache"
 

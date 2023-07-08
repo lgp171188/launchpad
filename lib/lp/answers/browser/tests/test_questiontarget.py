@@ -28,7 +28,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestSearchQuestionsView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_matching_faqs_url__handles_non_ascii(self):
@@ -65,7 +64,6 @@ class TestSearchQuestionsView(TestCaseWithFactory):
 
 
 class TestSearchQuestionsViewCanConfigureAnswers(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_configure_answers_product_no_edit_permission(self):

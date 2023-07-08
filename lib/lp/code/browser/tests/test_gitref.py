@@ -46,7 +46,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestGitRefNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url_branch(self):
@@ -95,7 +94,6 @@ class MissingCommitsNote(soupmatchers.Tag):
 
 
 class TestGitRefView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

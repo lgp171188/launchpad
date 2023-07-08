@@ -87,7 +87,6 @@ BRANCH_MERGE_PROPOSAL_OBSOLETE_STATES = (
 
 
 class IBranchMergeProposalPublic(IPrivacy):
-
     id = Int(
         title=_("DB ID"),
         required=True,
@@ -277,7 +276,6 @@ class IBranchMergeProposalPublic(IPrivacy):
 
 
 class IBranchMergeProposalView(Interface):
-
     registrant = exported(
         PublicPersonChoice(
             title=_("Person"),

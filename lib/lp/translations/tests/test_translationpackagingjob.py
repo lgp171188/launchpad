@@ -172,7 +172,6 @@ class JobFinder:
 
 
 class TestTranslationPackagingJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_interface(self):
@@ -181,7 +180,6 @@ class TestTranslationPackagingJob(TestCaseWithFactory):
 
 
 class TestTranslationMergeJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_interface(self):
@@ -302,7 +300,6 @@ class TestTranslationMergeJob(TestCaseWithFactory):
 
 
 class TestTranslationSplitJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_run_splits_translations(self):
@@ -337,7 +334,6 @@ class TestTranslationSplitJob(TestCaseWithFactory):
 
 
 class TestTranslationTemplateChangeJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_modifyPOTemplate_makes_job(self):
@@ -405,7 +401,6 @@ class TestTranslationTemplateChangeJob(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_TranslationMergeJob(self):

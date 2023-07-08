@@ -62,7 +62,6 @@ class TestTranslationGroupView(TestCaseWithFactory):
 
 
 class TestTranslationGroupViewPermissions(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def _assertLinksFound(self, contents, links_found):

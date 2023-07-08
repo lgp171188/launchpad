@@ -304,7 +304,6 @@ class TestVhostWebserviceFactory(WebServiceTestCase):
 
 
 class TestWebServiceRequestTraversal(WebServiceTestCase):
-
     testmodule_objects = [IGenericEntry, IGenericCollection]
 
     def setUp(self):

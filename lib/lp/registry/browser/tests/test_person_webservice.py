@@ -34,7 +34,6 @@ from lp.testing.pages import LaunchpadWebServiceCaller, webservice_for_person
 
 
 class TestPersonEmailSecurity(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -71,7 +70,6 @@ class TestPersonEmailSecurity(TestCaseWithFactory):
 
 
 class TestPersonAccountStatus(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_account_status_history_restricted(self):
@@ -149,7 +147,6 @@ class TestPersonAccountStatus(TestCaseWithFactory):
 
 
 class TestPersonRepresentation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -179,7 +176,6 @@ class TestPersonRepresentation(TestCaseWithFactory):
 
 
 class PersonWebServiceTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_deactivated_members_query_count(self):
@@ -278,7 +274,6 @@ class PersonWebServiceTests(TestCaseWithFactory):
 
 
 class PersonSetWebServiceTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

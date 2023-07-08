@@ -22,7 +22,6 @@ from lp.services.webapp.batching import BatchNavigator
 
 
 class CharmRecipeListingView(LaunchpadView, FeedsMixin):
-
     feed_types = ()
 
     source_enabled = True
@@ -54,7 +53,6 @@ class CharmRecipeListingView(LaunchpadView, FeedsMixin):
 
 
 class GitCharmRecipeListingView(CharmRecipeListingView):
-
     source_enabled = False
 
     @property
@@ -65,7 +63,6 @@ class GitCharmRecipeListingView(CharmRecipeListingView):
 
 
 class PersonCharmRecipeListingView(CharmRecipeListingView):
-
     owner_enabled = False
 
 

@@ -56,7 +56,7 @@ class PackageCloner:
         # Are we also supposed to clone binary packages from origin to
         # destination distroarchseries pairs?
         if distroarchseries_list is not None:
-            for (origin_das, destination_das) in distroarchseries_list:
+            for origin_das, destination_das in distroarchseries_list:
                 self._clone_binary_packages(
                     origin,
                     destination,

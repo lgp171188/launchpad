@@ -18,7 +18,6 @@ from lp.translations.interfaces.translationsoverview import (
 
 @implementer(ITranslationsOverview)
 class TranslationsOverview:
-
     # Project weights will be scaled into [MINIMUM_SIZE, MAXIMUM_SIZE] range.
     MINIMUM_SIZE = 10
     MAXIMUM_SIZE = 18
@@ -37,7 +36,7 @@ class TranslationsOverview:
             real_minimum = self.MINIMUM_SIZE
 
         normalized_sizes = []
-        for (pillar, size) in pillars:
+        for pillar, size in pillars:
             new_size = round_half_up(
                 real_minimum + (size - offset - real_minimum) * multiplier
             )
@@ -89,7 +88,7 @@ class TranslationsOverview:
         # them to appropriate font size values.
         minimum = None
         maximum = None
-        for (name, product_id, distro_id, relative_karma) in cur.fetchall():
+        for name, product_id, distro_id, relative_karma in cur.fetchall():
             if minimum is None or relative_karma < minimum:
                 minimum = relative_karma
             if maximum is None or relative_karma > maximum:

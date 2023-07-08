@@ -43,7 +43,6 @@ from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 
 @implementer(IBuildFarmJobBehaviour)
 class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
-
     builder_type = "oci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 

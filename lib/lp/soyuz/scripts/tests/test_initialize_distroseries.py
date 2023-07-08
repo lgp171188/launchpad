@@ -261,7 +261,6 @@ class InitializationHelperTestCase(TestCaseWithFactory):
 
 
 class TestInitializeDistroSeries(InitializationHelperTestCase):
-
     layer = LaunchpadZopelessLayer
 
     def test_failure_for_already_released_distroseries(self):

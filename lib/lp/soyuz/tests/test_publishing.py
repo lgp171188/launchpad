@@ -888,7 +888,7 @@ class TestNativePublishing(TestNativePublishingBase):
             filecontent=b"Hello world",
             archive=archive,
             format=SourcePackageType.CI_BUILD,
-            user_defined_fields=[("bogus_filed", "instead_of_subdir")],
+            user_defined_fields=[("bogus_field", "instead_of_subdir")],
         )
         pub_source.publish(pool, self.logger)
         self.assertFalse(mock.called)
@@ -1128,7 +1128,6 @@ class TestNativePublishing(TestNativePublishingBase):
 
 
 class PublishingSetTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1195,7 +1194,6 @@ class PublishingSetTests(TestCaseWithFactory):
 
 
 class TestPublishingSetLite(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -1892,7 +1890,6 @@ class TestGetBuiltBinaries(TestNativePublishingBase):
 
 
 class TestGetActiveArchSpecificPublications(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def makeSPR(self):

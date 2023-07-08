@@ -25,7 +25,6 @@ from lp.translations.browser.translations import TranslationsMixin
 
 
 class DistributionTranslationsMenu(NavigationMenu):
-
     usedfor = IDistribution
     facet = "translations"
     links = ["overview", "settings", "language_pack_admin", "imports"]

@@ -12,7 +12,6 @@ from lp.testing.views import create_view
 
 
 class TestRootRDF(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_root_rdf(self):

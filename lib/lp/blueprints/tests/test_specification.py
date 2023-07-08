@@ -52,7 +52,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class SpecificationTests(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_target_driver_has_edit_rights(self):
@@ -721,7 +720,6 @@ class SpecificationTests(TestCaseWithFactory):
 
 
 class TestSpecificationSet(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -776,7 +774,6 @@ def list_result(context, filter=None, user=None):
 
 
 class TestSpecifications(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1055,7 +1052,6 @@ class TestSpecifications(TestCaseWithFactory):
 
 
 class TestBugLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_link_and_unlink(self):

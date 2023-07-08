@@ -3,19 +3,20 @@
 
 """Test the upgrade_branches script."""
 
+import os.path
 
 import transaction
 from breezy.branch import Branch as BzrBranch
 
 from lp.code.model.branch import BranchFormat, RepositoryFormat
 from lp.code.model.branchjob import BranchUpgradeJob
-from lp.services.scripts.tests import run_script
+from lp.services.config import config
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class TestUpgradeBranches(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def test_upgrade_branches(self):
@@ -34,10 +35,10 @@ class TestUpgradeBranches(TestCaseWithFactory):
         transaction.commit()
 
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py",
-            ["IBranchUpgradeJobSource"],
-            expect_returncode=0,
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IBranchUpgradeJobSource"],
         )
+        self.assertEqual(0, retcode)
         self.assertEqual("", stdout)
         self.assertIn("INFO    Ran 1 BranchUpgradeJob jobs.\n", stderr)
 
@@ -66,10 +67,10 @@ class TestUpgradeBranches(TestCaseWithFactory):
         transaction.commit()
 
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py",
-            ["IBranchUpgradeJobSource"],
-            expect_returncode=0,
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IBranchUpgradeJobSource"],
         )
+        self.assertEqual(0, retcode)
         self.assertEqual("", stdout)
         self.assertIn("INFO    Ran 1 BranchUpgradeJob jobs.\n", stderr)
 

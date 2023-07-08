@@ -858,10 +858,10 @@ class SharingService:
                 grantee_ids, need_icon=True, need_validity=True
             )
         )
-        for (grantee, permissions, shared_artifact_types) in grant_permissions:
+        for grantee, permissions, shared_artifact_types in grant_permissions:
             some_things_shared = len(shared_artifact_types) > 0
             grantee_permissions = {}
-            for (policy, permission) in permissions.items():
+            for policy, permission in permissions.items():
                 grantee_permissions[policy.type.name] = permission.name
             shared_artifact_type_names = [
                 info_type.name for info_type in shared_artifact_types

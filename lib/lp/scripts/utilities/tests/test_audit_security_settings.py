@@ -9,7 +9,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestAuditSecuritySettings(TestCase):
-
     layer = BaseLayer
 
     def setUp(self):

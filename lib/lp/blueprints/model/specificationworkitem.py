@@ -24,7 +24,6 @@ from lp.services.helpers import backslashreplace
 
 @implementer(ISpecificationWorkItem)
 class SpecificationWorkItem(StormBase):
-
     __storm_table__ = "SpecificationWorkItem"
     __storm_order__ = "id"
 

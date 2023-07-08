@@ -385,7 +385,6 @@ number of command-line arguments is wrong.
     >>> def get_subprocess(command):
     ...     return subprocess.Popen(
     ...         command,
-    ...         shell=True,
     ...         stdin=subprocess.PIPE,
     ...         stdout=subprocess.PIPE,
     ...         stderr=subprocess.PIPE,
@@ -393,7 +392,7 @@ number of command-line arguments is wrong.
     ...     )
     ...
 
-    >>> proc = get_subprocess("cronscripts/language-pack-exporter.py")
+    >>> proc = get_subprocess(["cronscripts/language-pack-exporter.py"])
     >>> (out, err) = proc.communicate()
     >>> print(err)
     Traceback (most recent call last):
@@ -416,7 +415,7 @@ into the lockfilename to allow multiple exports to run concurrently for
 different distribution and series combinations.
 
     >>> proc = get_subprocess(
-    ...     "cronscripts/language-pack-exporter.py ubuntu hoary"
+    ...     ["cronscripts/language-pack-exporter.py", "ubuntu", "hoary"]
     ... )
     >>> (out, err) = proc.communicate()
     >>> print(err)

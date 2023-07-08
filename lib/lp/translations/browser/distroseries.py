@@ -216,7 +216,6 @@ class DistroSeriesTemplatesView(BaseSeriesTemplatesView):
 
 
 class DistroSeriesView(LaunchpadView, TranslationsMixin):
-
     label = "Translation status by language"
 
     def initialize(self):
@@ -294,7 +293,6 @@ class DistroSeriesView(LaunchpadView, TranslationsMixin):
 
 
 class DistroSeriesTranslationsMenu(NavigationMenu):
-
     usedfor = IDistroSeries
     facet = "translations"
     links = [

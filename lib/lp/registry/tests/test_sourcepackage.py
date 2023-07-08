@@ -41,7 +41,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestSourcePackage(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_interface_consistency(self):

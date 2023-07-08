@@ -15,7 +15,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBugTrackerView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_related_projects(self):
@@ -53,7 +52,6 @@ class TestBugTrackerView(TestCaseWithFactory):
 
 
 class TestBugTrackerSetView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_trackers_are_batch_navigators(self):

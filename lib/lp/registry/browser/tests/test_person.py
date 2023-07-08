@@ -109,7 +109,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestPersonNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def assertRedirect(self, path, redirect):
@@ -347,7 +346,6 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
 
 
 class TestPersonIndexView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_isMergePending(self):
@@ -679,7 +677,6 @@ class TestPersonIndexView(BrowserTestCase):
 
 
 class TestPersonViewKarma(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -740,7 +737,6 @@ class TestPersonViewKarma(TestCaseWithFactory):
 
 
 class TestShouldShowPpaSection(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -881,7 +877,6 @@ class TestPersonRenameFormMixin:
 
 
 class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -1187,7 +1182,6 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
 
 
 class TestPersonParticipationView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -1675,7 +1669,6 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
 class TestPersonOCIRegistryCredentialsView(
     WithScenarios, BrowserTestCase, OCIConfigHelperMixin
 ):
-
     layer = DatabaseFunctionalLayer
 
     scenarios = [
@@ -2460,7 +2453,6 @@ class TestTeamInvitationView(TestCaseWithFactory):
 
 
 class TestSubscriptionsView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

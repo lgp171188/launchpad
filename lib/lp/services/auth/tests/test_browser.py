@@ -38,7 +38,6 @@ token_listing_tag = soupmatchers.Tag(
 
 
 class TestAccessTokenViewBase:
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

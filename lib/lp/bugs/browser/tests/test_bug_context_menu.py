@@ -16,7 +16,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestBugContextMenu(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

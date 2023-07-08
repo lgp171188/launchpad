@@ -46,7 +46,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestCharmRecipeJob(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):
@@ -63,7 +62,6 @@ class TestCharmRecipeJob(TestCaseWithFactory):
 
 
 class TestCharmRecipeRequestBuildsJob(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

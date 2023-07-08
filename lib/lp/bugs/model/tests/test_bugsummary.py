@@ -23,7 +23,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestBugSummary(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

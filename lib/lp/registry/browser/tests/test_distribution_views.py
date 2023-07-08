@@ -754,7 +754,6 @@ class TestDistributionMirrorsViewMixin:
 class TestDistributionArchiveMirrorsView(
     TestDistributionMirrorsViewMixin, TestCaseWithFactory
 ):
-
     view = "+archivemirrors"
 
     def configureMirror(self, mirror):
@@ -765,7 +764,6 @@ class TestDistributionArchiveMirrorsView(
 class TestDistributionSeriesMirrorsView(
     TestDistributionMirrorsViewMixin, TestCaseWithFactory
 ):
-
     view = "+cdmirrors"
 
     def configureMirror(self, mirror):
@@ -777,7 +775,6 @@ class TestDistributionSeriesMirrorsView(
 class TestDistributionDisabledMirrorsView(
     TestDistributionMirrorsViewMixin, TestCaseWithFactory
 ):
-
     view = "+disabledmirrors"
 
     def configureMirror(self, mirror):
@@ -788,7 +785,6 @@ class TestDistributionDisabledMirrorsView(
 class TestDistributionUnofficialMirrorsView(
     TestDistributionMirrorsViewMixin, TestCaseWithFactory
 ):
-
     view = "+unofficialmirrors"
 
     def configureMirror(self, mirror):
@@ -798,7 +794,6 @@ class TestDistributionUnofficialMirrorsView(
 class TestDistributionPendingReviewMirrorsView(
     TestDistributionMirrorsViewMixin, TestCaseWithFactory
 ):
-
     view = "+pendingreviewmirrors"
 
     def configureMirror(self, mirror):

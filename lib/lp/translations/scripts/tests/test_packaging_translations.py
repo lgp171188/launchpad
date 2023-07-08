@@ -9,16 +9,15 @@ from textwrap import dedent
 import transaction
 from testtools.matchers import MatchesRegex
 
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory, admin_logged_in
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 from lp.translations.tests.test_translationpackagingjob import (
     make_translation_merge_job,
 )
 
 
 class TestMergeTranslations(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def test_merge_translations(self):
@@ -26,9 +25,9 @@ class TestMergeTranslations(TestCaseWithFactory):
         transaction.commit()
         retcode, stdout, stderr = run_script(
             "cronscripts/process-job-source.py",
-            ["ITranslationPackagingJobSource"],
-            expect_returncode=0,
+            args=["ITranslationPackagingJobSource"],
         )
+        self.assertEqual(0, retcode)
         matcher = MatchesRegex(
             dedent(
                 """\
@@ -53,9 +52,9 @@ class TestMergeTranslations(TestCaseWithFactory):
         transaction.commit()
         retcode, stdout, stderr = run_script(
             "cronscripts/process-job-source.py",
-            ["ITranslationPackagingJobSource"],
-            expect_returncode=0,
+            args=["ITranslationPackagingJobSource"],
         )
+        self.assertEqual(0, retcode)
         matcher = MatchesRegex(
             dedent(
                 """\

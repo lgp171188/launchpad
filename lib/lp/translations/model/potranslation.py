@@ -15,7 +15,6 @@ from lp.translations.interfaces.potranslation import IPOTranslation
 
 @implementer(IPOTranslation)
 class POTranslation(StormBase):
-
     __storm_table__ = "POTranslation"
 
     id = Int(primary=True)

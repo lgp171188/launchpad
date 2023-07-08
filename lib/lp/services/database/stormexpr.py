@@ -184,14 +184,12 @@ class Array(ComparableExpr):
 
 
 class TryAdvisoryLock(NamedFunc):
-
     __slots__ = ()
 
     name = "PG_TRY_ADVISORY_LOCK"
 
 
 class AdvisoryUnlock(NamedFunc):
-
     __slots__ = ()
 
     name = "PG_ADVISORY_UNLOCK"

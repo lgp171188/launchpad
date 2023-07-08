@@ -95,7 +95,6 @@ class FileUploaded(MatchesListwise):
 
 
 class TestCharmRecipeBuildJob(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -114,7 +113,6 @@ class TestCharmRecipeBuildJob(TestCaseWithFactory):
 
 
 class TestCharmhubUploadJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

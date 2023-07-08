@@ -28,7 +28,6 @@ from lp.services.webapp.interfaces import ILaunchBag
 
 
 class BugNominationView(LaunchpadFormView):
-
     schema = IBugNominationForm
     initial_focus_widget = None
     custom_widget_nominatable_series = LabeledMultiCheckBoxWidget

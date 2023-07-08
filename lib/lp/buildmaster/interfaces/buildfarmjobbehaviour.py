@@ -149,7 +149,6 @@ BuildArgs = TypedDict(
 
 
 class IBuildFarmJobBehaviour(Interface):
-
     builder_type = Attribute(
         "The name of the builder type to use for this build, corresponding "
         "to a launchpad-buildd build manager tag."

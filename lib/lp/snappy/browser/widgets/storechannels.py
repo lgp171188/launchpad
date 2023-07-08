@@ -30,7 +30,6 @@ from lp.snappy.interfaces.snap import ISnap
 
 @implementer(ISingleLineWidgetLayout, IAlwaysSubmittedWidget, IInputWidget)
 class StoreChannelsWidget(BrowserWidget, InputWidget):
-
     template = ViewPageTemplateFile("templates/storechannels.pt")
     _default_track = "latest"
     _widgets_set_up = False

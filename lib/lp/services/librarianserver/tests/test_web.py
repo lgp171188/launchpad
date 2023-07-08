@@ -53,7 +53,6 @@ def uri_path_replace(url, old, new):
 
 
 class LibrarianWebTestMixin:
-
     layer = LaunchpadFunctionalLayer
 
     def commit(self):
@@ -91,7 +90,6 @@ class LibrarianWebTestMixin:
 
 
 class LibrarianZopelessWebTestMixin(LibrarianWebTestMixin):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
@@ -513,7 +511,6 @@ class LibrarianZopelessWebTestCase(
 
 
 class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
-
     layer = AppServerLayer
 
     def setUp(self):
@@ -576,12 +573,10 @@ class LibrarianWebMacaroonTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 class LibrarianZopelessWebMacaroonTestCase(
     LibrarianZopelessWebTestMixin, LibrarianWebMacaroonTestCase
 ):
-
     layer = ZopelessAppServerLayer
 
 
 class DeletedContentTestCase(unittest.TestCase):
-
     layer = LaunchpadZopelessLayer
 
     def setUp(self):

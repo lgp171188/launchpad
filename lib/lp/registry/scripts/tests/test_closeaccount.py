@@ -1187,7 +1187,6 @@ class TestCloseAccount(TestCaseWithFactory):
                     self.assertRemoved(account_id, person_id)
 
     def test_skip_product_releases_from_inactive_products(self):
-
         active_product = self.factory.makeProduct()
         inactive_product = self.factory.makeProduct()
         inactive_product.active = False
@@ -1226,7 +1225,6 @@ class TestCloseAccount(TestCaseWithFactory):
                     self.assertRemoved(account_id, person_id)
 
     def test_skip_product_releases_files_from_inactive_products(self):
-
         active_product = self.factory.makeProduct()
         inactive_product = self.factory.makeProduct()
         inactive_product.active = False

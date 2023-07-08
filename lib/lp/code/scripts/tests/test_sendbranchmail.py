@@ -3,6 +3,8 @@
 
 """Test the sendbranchmail script"""
 
+import os.path
+
 import transaction
 
 from lp.code.enums import (
@@ -11,14 +13,14 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
 )
 from lp.code.model.branchjob import RevisionMailJob, RevisionsAddedJob
+from lp.services.config import config
 from lp.services.osutils import override_environ
-from lp.services.scripts.tests import run_script
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
+from lp.testing.script import run_script
 
 
 class TestSendbranchmail(TestCaseWithFactory):
-
     layer = ZopelessAppServerLayer
 
     def createBranch(self):
@@ -48,7 +50,8 @@ class TestSendbranchmail(TestCaseWithFactory):
         )
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py", ["IRevisionMailJobSource"]
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IRevisionMailJobSource"],
         )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             "INFO    "
@@ -77,7 +80,8 @@ class TestSendbranchmail(TestCaseWithFactory):
         )
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            "cronscripts/process-job-source.py", ["IRevisionsAddedJobSource"]
+            os.path.join(config.root, "cronscripts", "process-job-source.py"),
+            args=["IRevisionsAddedJobSource"],
         )
         self.assertTextMatchesExpressionIgnoreWhitespace(
             "INFO    "

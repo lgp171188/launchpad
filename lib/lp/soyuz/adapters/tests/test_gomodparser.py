@@ -9,7 +9,6 @@ from lp.testing.layers import BaseLayer
 
 
 class TestParseGoMod(TestCase):
-
     layer = BaseLayer
 
     def test_module_identifier(self):

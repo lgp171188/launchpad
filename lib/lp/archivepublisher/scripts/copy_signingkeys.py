@@ -20,7 +20,6 @@ from lp.soyuz.interfaces.archive import IArchiveSet
 
 
 class CopySigningKeysScript(LaunchpadScript):
-
     usage = "Usage: %prog [options] FROM_ARCHIVE TO_ARCHIVE"
     description = "Copy signing keys between archives."
 

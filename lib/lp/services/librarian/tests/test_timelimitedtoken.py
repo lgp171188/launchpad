@@ -11,7 +11,6 @@ from lp.testing.layers import LaunchpadFunctionalLayer
 
 
 class TestLibraryFileAlias(testtools.TestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def test_allocate(self):

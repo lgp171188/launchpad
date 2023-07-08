@@ -117,7 +117,6 @@ class NameBlocklistSetView(LaunchpadView):
 
 
 class NameBlocklistSetNavigation(Navigation):
-
     usedfor = INameBlocklistSet
 
     def traverse(self, name):

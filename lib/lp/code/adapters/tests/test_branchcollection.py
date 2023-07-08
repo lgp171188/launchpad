@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestPersonProduct(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_person_product(self):

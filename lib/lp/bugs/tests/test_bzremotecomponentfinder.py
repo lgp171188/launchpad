@@ -33,7 +33,6 @@ def read_test_file(name):
 
 
 class TestBugzillaRemoteComponentScraper(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -89,7 +88,6 @@ class TestBugzillaRemoteComponentScraper(TestCaseWithFactory):
 
 
 class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

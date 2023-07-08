@@ -275,7 +275,6 @@ class TestGetByPath(TestGetByLPPath):
 
 
 class TestGetByUrl(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeProductBranch(self):
@@ -804,7 +803,6 @@ class TestGetByLPPath(TestCaseWithFactory):
 
 
 class PerformLookupTestCase(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def makeProductBranch(self):

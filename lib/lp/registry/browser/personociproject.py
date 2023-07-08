@@ -27,7 +27,6 @@ from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 class PersonOCIProjectNavigation(
     PersonTargetDefaultVCSNavigationMixin, Navigation
 ):
-
     usedfor = IPersonOCIProject
 
     @stepthrough("+recipe")

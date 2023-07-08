@@ -118,7 +118,6 @@ class IProductSeriesPublic(Interface):
 
 
 class IProductSeriesLimitedView(Interface):
-
     name = exported(
         ProductSeriesNameField(
             title=_("Name"),

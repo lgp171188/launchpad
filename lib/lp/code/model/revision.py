@@ -193,7 +193,6 @@ class Revision(StormBase):
 
 @implementer(IRevisionAuthor)
 class RevisionAuthor(StormBase):
-
     __storm_table__ = "RevisionAuthor"
 
     id = Int(primary=True)

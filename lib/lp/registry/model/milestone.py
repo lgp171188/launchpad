@@ -78,7 +78,6 @@ def milestone_sort_key(milestone):
 
 @implementer(IHasMilestones)
 class HasMilestonesMixin:
-
     _milestone_order = (
         "milestone_sort_key(Milestone.dateexpected, Milestone.name) DESC"
     )
@@ -226,7 +225,6 @@ class MilestoneData:
 class Milestone(
     SQLBase, MilestoneData, StructuralSubscriptionTargetMixin, HasBugsBase
 ):
-
     active = BoolCol(notNull=True, default=True)
 
     # XXX: EdwinGrubbs 2009-02-06 bug=326384:

@@ -27,7 +27,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestBugTaskSearchListingPage(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def _makeDistributionSourcePackage(self):
@@ -314,7 +313,6 @@ class BugTargetTestCase(TestCaseWithFactory):
 
 
 class TestBugTaskSearchListingViewProduct(BugTargetTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_external_bugtracker_is_none(self):
@@ -409,7 +407,6 @@ class TestBugTaskSearchListingViewProduct(BugTargetTestCase):
 
 
 class TestBugTaskSearchListingViewDSP(BugTargetTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def _getBugTarget(self, obj):

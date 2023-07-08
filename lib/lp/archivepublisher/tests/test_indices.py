@@ -39,7 +39,6 @@ def get_field(stanza_fields, name):
 
 
 class TestNativeArchiveIndexes(TestNativePublishingBase):
-
     deb_md5 = "008409e7feb1c24a6ccab9f6a62d24c5"
     deb_sha1 = "30b7b4e583fa380772c5a40e428434628faef8cf"
     deb_sha256 = (

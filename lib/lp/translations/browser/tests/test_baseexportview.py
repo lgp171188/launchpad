@@ -172,7 +172,6 @@ class TestSourcePackage(BaseExportViewMixin):
 
 
 class TestPOExportQueueStatusDescriptions(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

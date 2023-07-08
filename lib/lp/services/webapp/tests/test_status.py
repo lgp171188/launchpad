@@ -15,7 +15,6 @@ from lp.testing.pages import http
 
 
 class TestStatusView(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     # The successful case of traversal is tested in TestStatusCheckView.
@@ -31,7 +30,6 @@ class TestStatusView(TestCase):
 
 
 class TestStatusCheckView(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_ok(self):

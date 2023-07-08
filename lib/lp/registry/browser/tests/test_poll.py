@@ -15,7 +15,6 @@ from lp.testing.views import create_view
 
 
 class TestPollVoteView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -50,7 +49,6 @@ class TestPollVoteView(TestCaseWithFactory):
 
 
 class TestPollAddView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

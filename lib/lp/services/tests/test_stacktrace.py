@@ -59,7 +59,6 @@ class BadString:
 
 
 class TestStacktrace(TestCase):
-
     layer = BaseLayer
 
     def test_get_frame_helper(self):

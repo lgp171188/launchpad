@@ -23,7 +23,6 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.scripts.tests import run_script
 from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryStorageManager,
 )
@@ -34,6 +33,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
 )
+from lp.testing.script import run_script
 from lp.testing.views import create_initialized_view
 
 
@@ -304,9 +304,9 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
 
         retcode, stdout, stderr = run_script(
             "cronscripts/process-job-source.py",
-            ["IProcessApportBlobJobSource"],
-            expect_returncode=0,
+            args=["IProcessApportBlobJobSource"],
         )
+        self.assertEqual(0, retcode)
         self.assertEqual("", stdout)
         self.assertIn("INFO    Ran 1 ProcessApportBlobJob jobs.\n", stderr)
 
@@ -334,7 +334,6 @@ class ProcessApportBlobJobTestCase(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_ProcessApportBlobJob(self):

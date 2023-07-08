@@ -1,0 +1,18 @@
+[Unit]
+Description=Launchpad build farm manager
+After=network.target
+ConditionPathExists=!{{ code_dir }}/maintenance.txt
+
+[Service]
+User={{ user }}
+Group={{ user }}
+WorkingDirectory={{ code_dir }}
+Environment=LPCONFIG=launchpad-buildd-manager
+ExecStart={{ code_dir }}/bin/twistd --python={{ code_dir }}/daemons/buildd-manager.tac --logfile={{ logs_dir }}/buildd-manager.log --pidfile= --nodaemon --umask=0022
+ExecReload=/bin/kill -USR1 $MAINPID
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+

@@ -146,7 +146,6 @@ class TestUploadPolicy_validateUploadType(TestCase):
 
 
 class TestUploadPolicy(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_getUtility_returns_class(self):

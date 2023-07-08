@@ -6,7 +6,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestQuestionBugLinks(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_link_and_unlink(self):

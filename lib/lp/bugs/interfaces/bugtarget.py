@@ -15,7 +15,7 @@ __all__ = [
     "ISeriesBugTarget",
     "BUG_POLICY_ALLOWED_TYPES",
     "BUG_POLICY_DEFAULT_TYPES",
-    "BUG_WEBHOOKS_FEATURE_FLAG",
+    "DISABLE_BUG_WEBHOOKS_FEATURE_FLAG",
 ]
 
 
@@ -157,7 +157,7 @@ BUG_POLICY_DEFAULT_TYPES = {
 }
 
 
-BUG_WEBHOOKS_FEATURE_FLAG = "bugs.webhooks.enabled"
+DISABLE_BUG_WEBHOOKS_FEATURE_FLAG = "bugs.webhooks.disabled"
 
 
 @exported_as_webservice_entry(as_of="beta")

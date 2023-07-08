@@ -18,7 +18,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestProductSeriesLinkedBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_branch(self):
@@ -55,7 +54,6 @@ class TestProductSeriesLinkedBranch(TestCaseWithFactory):
 
 
 class TestProductLinkedBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_branch(self):
@@ -88,7 +86,6 @@ class TestProductLinkedBranch(TestCaseWithFactory):
 
 
 class TestSuiteSourcePackageLinkedBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_branch(self):
@@ -135,7 +132,6 @@ class TestSuiteSourcePackageLinkedBranch(TestCaseWithFactory):
 
 
 class TestDistributionSourcePackageLinkedBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_branch(self):
@@ -212,7 +208,6 @@ class TestDistributionSourcePackageLinkedBranch(TestCaseWithFactory):
 
 
 class TestProjectLinkedBranch(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_cannot_have_linked_branch(self):
@@ -224,7 +219,6 @@ class TestProjectLinkedBranch(TestCaseWithFactory):
 
 
 class TestLinkedBranchSorting(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_sorting_different_types(self):

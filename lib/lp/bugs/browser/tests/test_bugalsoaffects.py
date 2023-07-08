@@ -12,7 +12,6 @@ from lp.testing.pages import get_feedback_messages
 
 
 class TestBugAlsoAffectsDistribution(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -846,7 +846,6 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
 
 @implementer(IMacaroonIssuer)
 class CIBuildMacaroonIssuer(MacaroonIssuerBase):
-
     identifier = "ci-build"
     issuable_via_authserver = True
 

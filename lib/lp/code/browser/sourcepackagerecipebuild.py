@@ -32,7 +32,6 @@ from lp.services.webapp import (
 
 
 class SourcePackageRecipeBuildNavigation(Navigation, FileNavigationMixin):
-
     usedfor = ISourcePackageRecipeBuild
 
 

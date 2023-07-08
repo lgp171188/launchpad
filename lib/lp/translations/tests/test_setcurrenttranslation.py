@@ -1431,7 +1431,6 @@ class TestSetCurrentTranslation_Ubuntu(
 class TestSetCurrentTranslation_Upstream(
     SetCurrentTranslationTestMixin, TestCaseWithFactory
 ):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

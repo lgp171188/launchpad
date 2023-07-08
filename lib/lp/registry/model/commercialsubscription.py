@@ -23,7 +23,6 @@ from lp.services.database.stormbase import StormBase
 
 @implementer(ICommercialSubscription)
 class CommercialSubscription(StormBase):
-
     __storm_table__ = "CommercialSubscription"
 
     id = Int(primary=True)

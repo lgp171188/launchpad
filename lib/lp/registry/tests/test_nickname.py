@@ -12,7 +12,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestNicknameGeneration(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_rejects_invalid_emails(self):

@@ -56,7 +56,6 @@ class TestPgTestSetup(testtools.TestCase, TestWithFixtures):
 
 
 class TestPgTestSetupTuning(testtools.TestCase, TestWithFixtures):
-
     layer = BaseLayer
 
     def testOptimization(self):

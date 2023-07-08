@@ -107,7 +107,6 @@ class TestBranchJob(TestCaseWithFactory):
 
 
 class TestBranchJobDerived(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_getOopsMailController(self):
@@ -1370,7 +1369,6 @@ class TestRosettaUploadJob(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryBzrsyncdJobLayer
 
     def test_RosettaUploadJob(self):
@@ -1410,7 +1408,6 @@ class TestViaCelery(TestCaseWithFactory):
 
 
 class TestReclaimBranchSpaceJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def cleanBranchArea(self):

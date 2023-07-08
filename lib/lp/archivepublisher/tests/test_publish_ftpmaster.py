@@ -45,9 +45,10 @@ from lp.soyuz.enums import (
     PackageUploadCustomFormat,
 )
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
-from lp.testing import TestCase, TestCaseWithFactory, run_script
+from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.script import run_script
 
 
 def path_exists(*path_components):
@@ -229,7 +230,9 @@ class TestPublishFTPMasterScript(
     def test_script_runs_successfully(self):
         self.prepareUbuntu()
         self.layer.txn.commit()
-        stdout, stderr, retval = run_script(self.SCRIPT_PATH + " -d ubuntu")
+        retval, stdout, stderr = run_script(
+            self.SCRIPT_PATH, args=["-d", "ubuntu"]
+        )
         self.assertEqual(0, retval, "Script failure:\n" + stderr)
 
     def test_getConfigs_maps_distro_and_purpose_to_matching_config(self):

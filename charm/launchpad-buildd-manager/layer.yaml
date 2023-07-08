@@ -1,0 +1,12 @@
+includes:
+  - layer:launchpad-db
+repo: https://git.launchpad.net/launchpad
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - buildd_manager
+          - process_upload
+          - retry_depwait

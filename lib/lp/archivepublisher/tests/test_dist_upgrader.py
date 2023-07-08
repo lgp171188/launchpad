@@ -31,7 +31,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

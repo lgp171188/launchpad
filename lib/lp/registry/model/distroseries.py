@@ -1534,8 +1534,8 @@ class DistroSeries(
 
         contributors = IStore(Person).find(
             Person,
-            POFileTranslator.personID == Person.id,
-            POFile.id == POFileTranslator.pofileID,
+            POFileTranslator.person_id == Person.id,
+            POFile.id == POFileTranslator.pofile_id,
             POFile.language == language,
             POTemplate.id == POFile.potemplateID,
             POTemplate.distroseries == self,
@@ -1843,5 +1843,4 @@ class DistroSeriesSet:
         if orderBy is not None:
             return DistroSeries.select(where_clause, orderBy=orderBy)
         else:
-
             return DistroSeries.select(where_clause)

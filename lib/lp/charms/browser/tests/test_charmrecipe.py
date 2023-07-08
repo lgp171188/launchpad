@@ -76,7 +76,6 @@ from lp.testing.views import create_initialized_view, create_view
 
 
 class TestCharmRecipeNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -104,7 +103,6 @@ class TestCharmRecipeNavigation(TestCaseWithFactory):
 
 
 class BaseTestCharmRecipeView(BrowserTestCase):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -1684,6 +1682,7 @@ class TestCharmRecipeRequestBuildsView(BaseTestCharmRecipeView):
             core18
             core20
             core22
+            core24
             The channels to use for build tools when building the charm
             recipe.
             or

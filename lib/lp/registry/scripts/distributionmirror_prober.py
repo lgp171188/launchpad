@@ -84,7 +84,6 @@ class LoggingMixin:
 
 
 class RequestManager:
-
     # Yes, I want a mutable class attribute because I want changes done in an
     # instance to be visible in other instances as well.
     host_locks = {}
@@ -473,7 +472,6 @@ class ProberFactory(protocol.ClientFactory):
 
 
 class RedirectAwareProberFactory(ProberFactory):
-
     protocol = RedirectAwareProberProtocol
     redirection_count = 0
 
@@ -657,7 +655,6 @@ class CallScheduler:
 
 
 class ArchiveMirrorProberCallbacks(LoggingMixin):
-
     expected_failures = (
         BadResponseCode,
         ProberTimeout,
@@ -829,7 +826,6 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
 
 
 class MirrorCDImageProberCallbacks(LoggingMixin):
-
     expected_failures = (
         BadResponseCode,
         ConnectionSkipped,

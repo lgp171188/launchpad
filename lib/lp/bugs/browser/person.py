@@ -63,7 +63,6 @@ def get_package_search_url(dsp_bugs_url, extra_params=None):
 
 
 class PersonBugsMenu(NavigationMenu):
-
     usedfor = IPerson
     facet = "bugs"
     links = [
@@ -159,7 +158,6 @@ class RelevantMilestonesMixin:
 
 
 class BugSubscriberPackageBugsOverView(LaunchpadView):
-
     label = "Subscribed packages"
 
     @cachedproperty

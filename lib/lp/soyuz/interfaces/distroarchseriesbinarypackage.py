@@ -17,7 +17,6 @@ from lp.registry.interfaces.distributionsourcepackage import (
 
 
 class IDistroArchSeriesBinaryPackage(Interface):
-
     distroarchseries = Attribute("The distribution architecture series.")
     binarypackagename = Attribute("The binary package name.")
 

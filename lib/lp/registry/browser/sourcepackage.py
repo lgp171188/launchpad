@@ -122,7 +122,6 @@ class SourcePackageFormatterAPI(CustomizableFormatter):
 
 
 class SourcePackageNavigation(Navigation, BugTargetTraversalMixin):
-
     usedfor = ISourcePackage
 
     @stepto("+pots")
@@ -190,7 +189,6 @@ class SourcePackageBreadcrumb(Breadcrumb):
 
 
 class SourcePackageOverviewMenu(ApplicationMenu):
-
     usedfor = ISourcePackage
     facet = "overview"
     links = [

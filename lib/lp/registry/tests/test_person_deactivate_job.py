@@ -16,7 +16,6 @@ from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestPersonDeactivateJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def makeJob(self):

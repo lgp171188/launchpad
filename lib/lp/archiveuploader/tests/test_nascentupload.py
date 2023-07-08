@@ -120,7 +120,6 @@ class TestOverrideDDEBs(TestMatchDDEBs):
 
 
 class TestNascentUpload(TestCase):
-
     layer = ZopelessDatabaseLayer
 
     def test_hash_mismatch_rejects(self):

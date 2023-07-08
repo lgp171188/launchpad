@@ -280,7 +280,6 @@ class LiveFSAddView(LiveFSMetadataValidatorMixin, LaunchpadFormView):
 
 
 class BaseLiveFSEditView(LaunchpadEditFormView):
-
     schema = ILiveFSEditSchema
     next_url = None
 

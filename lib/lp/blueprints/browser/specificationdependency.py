@@ -23,7 +23,6 @@ from lp.services.webapp import LaunchpadView, canonical_url
 
 
 class AddSpecificationDependencySchema(Interface):
-
     dependency = copy_field(
         ISpecificationDependency["dependency"],
         readonly=False,
@@ -89,7 +88,6 @@ class SpecificationDependencyRemoveView(LaunchpadFormView):
 
 
 class SpecificationDependencyTreeView(LaunchpadView):
-
     label = "Blueprint dependency tree"
 
     @property

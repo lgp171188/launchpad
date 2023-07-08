@@ -12,7 +12,6 @@ from lp.services.scripts.base import LaunchpadScript
 
 
 class UCTExportScript(LaunchpadScript):
-
     usage = "usage: %prog [options] BUG_ID OUTPUT_DIR"
     description = "Export bugs from to CVE entries used in ubuntu-cve-tracker."
     loglevel = logging.INFO

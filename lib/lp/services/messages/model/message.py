@@ -288,7 +288,6 @@ def get_parent_msgids(parsed_message):
 
 @implementer(IMessageSet)
 class MessageSet:
-
     extra_encoding_aliases = {
         "macintosh": "mac_roman",
     }
@@ -551,7 +550,6 @@ class MessageSet:
                 and no_attachment
                 and part.get_filename() is None
             ):
-
                 # Get the charset for the message part. If one isn't
                 # specified, default to latin-1 to prevent
                 # UnicodeDecodeErrors.

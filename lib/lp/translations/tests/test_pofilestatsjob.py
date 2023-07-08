@@ -19,7 +19,6 @@ from lp.translations.model.pofilestatsjob import POFileStatsJob
 
 
 class TestPOFileStatsJob(TestCaseWithFactory):
-
     layer = LaunchpadZopelessLayer
 
     def test_job_interface(self):
@@ -194,7 +193,6 @@ class TestPOFileStatsJob(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_run(self):

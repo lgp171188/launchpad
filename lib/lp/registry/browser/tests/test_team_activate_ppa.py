@@ -10,7 +10,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestTeamActivatePPA(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def create_view(self, team):

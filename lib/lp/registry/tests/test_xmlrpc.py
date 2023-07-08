@@ -27,7 +27,6 @@ from lp.testing.xmlrpc import XMLRPCTestTransport
 
 
 class TestCanonicalSSOApplication(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -89,7 +88,6 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
 
 
 class TestMailingListXMLRPC(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -152,7 +150,6 @@ class TestMailingListXMLRPC(TestCaseWithFactory):
 
 
 class TestMailingListXMLRPCMessage(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

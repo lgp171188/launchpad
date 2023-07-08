@@ -226,10 +226,6 @@ def determine_architectures_to_build(
         # architecture; this is ambiguous and forbidden by snapcraft prior
         # to core22. Checking this here means that we don't get duplicate
         # supported_arch results below.
-
-        # XXX andrey-fedoseev 2022-08-22: we should use the `SnapBase` model
-        # to store the specific features of each base rather than hard-coding
-        # the base names here
         build_ons = Counter()
         for arch in architectures:
             build_ons.update(arch.build_on)

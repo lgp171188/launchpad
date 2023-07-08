@@ -113,7 +113,6 @@ class _BranchSubscriptionView(LaunchpadFormView):
 
 
 class BranchSubscriptionAddView(_BranchSubscriptionView):
-
     page_title = label = "Subscribe to branch"
 
     @action("Subscribe")

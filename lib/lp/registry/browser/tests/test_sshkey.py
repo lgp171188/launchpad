@@ -18,7 +18,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrl(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -34,7 +33,6 @@ class TestCanonicalUrl(TestCaseWithFactory):
 
 
 class TestSSHKeyView(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_escaped_message_when_removing_key(self):

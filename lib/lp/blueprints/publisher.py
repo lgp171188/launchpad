@@ -24,7 +24,6 @@ from lp.services.webapp.servers import (
 
 @implementer(IFacet)
 class SpecificationsFacet:
-
     name = "specifications"
     rootsite = "blueprints"
     text = "Blueprints"

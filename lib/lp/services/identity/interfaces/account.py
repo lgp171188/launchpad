@@ -427,7 +427,6 @@ class IAccountViewRestricted(Interface):
 
 
 class IAccountModerateRestricted(Interface):
-
     status_history = Text(
         title=_("Account status comments"), required=False, readonly=True
     )

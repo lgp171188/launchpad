@@ -11,7 +11,6 @@ from lp.testing.views import create_view
 
 
 class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
-
     layer = DatabaseFunctionalLayer
 
     def test_pagetitle_top_level(self):
@@ -109,7 +108,6 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
 
 
 class TestPillarFormatterAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     FORMATTER_CSS_CLASS = "sprite product"

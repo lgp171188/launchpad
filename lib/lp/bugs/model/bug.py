@@ -2082,6 +2082,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def getNominations(self, target=None, nominations=None):
         """See `IBug`."""
+
         # Define the function used as a sort key.
         def by_bugtargetdisplayname(nomination):
             """Return the friendly sort key version of displayname."""

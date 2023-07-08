@@ -34,7 +34,6 @@ from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
 
 
 class OCIRecipeBuildNavigation(Navigation, FileNavigationMixin):
-
     usedfor = IOCIRecipeBuild
 
 

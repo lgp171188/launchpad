@@ -26,9 +26,10 @@ from lp.services.mail import stub
 from lp.services.mail.sendmail import format_address, format_address_for_person
 from lp.services.scripts import log
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.testing import TestCaseWithFactory, person_logged_in, run_script
+from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import CeleryJobLayer, DatabaseFunctionalLayer
+from lp.testing.script import run_script
 
 
 class QuestionJobTestCase(TestCaseWithFactory):
@@ -352,9 +353,10 @@ class QuestionEmailJobTestCase(TestCaseWithFactory):
             question.target.addAnswerContact(user, user)
         transaction.commit()
 
-        out, err, exit_code = run_script(
-            "LP_DEBUG_SQL=1 cronscripts/process-job-source.py -vv %s"
-            % (IQuestionEmailJobSource.getName())
+        exit_code, out, err = run_script(
+            "cronscripts/process-job-source.py",
+            args=["-vv", IQuestionEmailJobSource.getName()],
+            extra_env={"LP_DEBUG_SQL": "1"},
         )
         self.addDetail("stdout", text_content(out))
         self.addDetail("stderr", text_content(err))
@@ -372,7 +374,6 @@ class QuestionEmailJobTestCase(TestCaseWithFactory):
 
 
 class TestViaCelery(TestCaseWithFactory):
-
     layer = CeleryJobLayer
 
     def test_run(self):

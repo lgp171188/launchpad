@@ -41,7 +41,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForCharmRecipeBuild(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -67,7 +66,6 @@ class TestCanonicalUrlForCharmRecipeBuild(TestCaseWithFactory):
 
 
 class TestCharmRecipeBuildView(TestCaseWithFactory):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
@@ -198,7 +196,6 @@ class TestCharmRecipeBuildView(TestCaseWithFactory):
 
 
 class TestCharmRecipeBuildOperations(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

@@ -17,6 +17,7 @@ CHARMS := \
 	launchpad-admin \
 	launchpad-appserver \
 	launchpad-assets \
+	launchpad-buildd-manager \
 	launchpad-debian-importer \
 	launchpad-librarian
 

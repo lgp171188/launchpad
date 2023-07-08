@@ -45,7 +45,6 @@ from lp.testing.views import create_initialized_view
 
 
 class TestOCIProjectFormatterAPI(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_link(self):
@@ -62,7 +61,6 @@ class TestOCIProjectFormatterAPI(TestCaseWithFactory):
 
 
 class TestOCIProjectNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
@@ -85,7 +83,6 @@ class TestOCIProjectNavigation(TestCaseWithFactory):
 
 
 class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -433,7 +430,6 @@ class TestOCIProjectView(OCIConfigHelperMixin, BrowserTestCase):
 
 
 class TestOCIProjectEditView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def submitEditForm(self, browser, name):
@@ -585,7 +581,6 @@ class TestOCIProjectEditView(BrowserTestCase):
 
 
 class TestOCIProjectAddView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def test_create_oci_project(self):
@@ -678,7 +673,6 @@ class TestOCIProjectAddView(BrowserTestCase):
 
 
 class TestOCIProjectSearchView(BrowserTestCase):
-
     layer = DatabaseFunctionalLayer
 
     def assertPaginationIsPresent(

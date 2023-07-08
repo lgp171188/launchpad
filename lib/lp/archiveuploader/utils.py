@@ -52,7 +52,6 @@ class UploadWarning(Warning):
 
 
 class DpkgSourceError(Exception):
-
     _fmt = "Unable to unpack source package (%(result)s): %(output)s"
 
     def __init__(self, command, output, result):
@@ -310,7 +309,7 @@ def merge_file_lists(files, checksums_sha1, checksums_sha256, changes=True):
     # that we see.
     file_hashes = defaultdict(dict)
     hash_files = defaultdict(lambda: defaultdict(int))
-    for (algo, checksums) in [
+    for algo, checksums in [
         ("SHA1", checksums_sha1),
         ("SHA256", checksums_sha256),
     ]:

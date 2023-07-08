@@ -63,7 +63,6 @@ class FakeGPGHandlerGood:
 
 
 class TestSignedCodeOfConductSet(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def test_verifyAndStore_bad_signature(self):

@@ -38,7 +38,6 @@ def builders_homepage_render():
 
 
 class TestBuilderSetNavigation(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_binary_package_build_api_redirects(self):
@@ -122,7 +121,6 @@ class TestBuilderSetNavigation(TestCaseWithFactory):
 
 
 class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
-
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):

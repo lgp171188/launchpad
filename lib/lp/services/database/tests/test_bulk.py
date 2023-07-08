@@ -69,7 +69,6 @@ class TestBasicFunctions(TestCase):
 
 
 class TestLoaders(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_gen_reload_queries_with_empty_list(self):
@@ -277,7 +276,6 @@ class TestLoaders(TestCaseWithFactory):
 
 
 class TestCreate(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_references_and_enums(self):

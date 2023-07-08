@@ -31,7 +31,6 @@ class FakeExportedTranslationFile:
 
 
 class TestExportResult(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
 
     def setUp(self):

@@ -10,7 +10,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestComposeWebhookPayload(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def test_serialises(self):

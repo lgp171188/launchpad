@@ -17,7 +17,6 @@ from lp.testing.layers import DatabaseFunctionalLayer, DatabaseLayer
 
 
 class TestLaunchpadDatabase(TestCase):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

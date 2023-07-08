@@ -44,7 +44,6 @@ class ITest(Interface, metaclass=TestMetaClass):
 
 
 class TestVocabularyPickerWidget(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

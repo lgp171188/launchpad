@@ -41,7 +41,6 @@ from lp.testing.layers import ZopelessAppServerLayer
 
 
 class SSHServerLayer(ZopelessAppServerLayer):
-
     _tac_handler = None
 
     @classmethod

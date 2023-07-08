@@ -20,7 +20,6 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBinarySourceReference(TestCaseWithFactory):
-
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

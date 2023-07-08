@@ -11,7 +11,6 @@ __all__ = []  # type: List[str]
 
 
 class BugsYUIUnitTestCase(YUIUnitTestCase):
-
     layer = YUITestLayer
     suite_name = "BugsYUIUnitTests"
 
