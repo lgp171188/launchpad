@@ -80,9 +80,9 @@ class TranslationGroupVocabulary(NamedStormVocabulary):
     _table = TranslationGroup
 
 
-class TranslationMessageVocabulary(SQLObjectVocabularyBase):
+class TranslationMessageVocabulary(StormVocabularyBase):
     _table = TranslationMessage
-    _orderBy = "date_created"
+    _order_by = "date_created"
 
     def toTerm(self, obj):
         translation = ""

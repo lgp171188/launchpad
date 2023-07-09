@@ -9,6 +9,7 @@ but we test it here to be sure it appears in our public interface.
 
 We will need extra permissions to use this method.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.translationmessage import (
     ...     TranslationMessage,
     ... )
@@ -17,15 +18,16 @@ We will need extra permissions to use this method.
 
 Select an existing ITranslationMessage and try to remove it.
 
-    >>> translationmessage = TranslationMessage.get(1)
+    >>> translationmessage = IStore(TranslationMessage).get(
+    ...     TranslationMessage, 1
+    ... )
     >>> translationmessage.destroySelf()
 
 It should not exist now.
 
-    >>> translationmessage = TranslationMessage.get(1)
-    Traceback (most recent call last):
-    ...
-    storm.sqlobject.SQLObjectNotFound: ...
+    >>> translationmessage = IStore(TranslationMessage).get(
+    ...     TranslationMessage, 1
+    ... )
 
 
 POFileTranslator update on remove
@@ -37,7 +39,6 @@ translation, we get two POFileTranslator records for each of the POFiles.
     # We need to be able to create persons and projects so let's just use
     # a global 'postgres' permission which allows everything.
     >>> switch_dbuser("postgres")
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> from lp.translations.model.pofiletranslator import POFileTranslator

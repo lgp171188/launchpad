@@ -7,7 +7,7 @@ __all__ = [
     "make_translationmessage_for_context",
 ]
 
-from storm.expr import Or
+from storm.expr import Desc, Or
 from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -82,7 +82,6 @@ def make_translationmessage(
     new_message = TranslationMessage(
         potmsgset=potmsgset,
         potemplate=potemplate,
-        pofile=None,
         language=pofile.language,
         origin=origin,
         submitter=submitter,
@@ -115,7 +114,7 @@ def get_all_translations_diverged_anywhere(pofile, potmsgset):
         TranslationMessage.potemplate != pofile.potemplate,
         TranslationMessage.language == pofile.language,
     )
-    return result.order_by(-TranslationMessage.potemplateID)
+    return result.order_by(Desc(TranslationMessage.potemplate_id))
 
 
 def summarize_current_translations(pofile, potmsgset):
