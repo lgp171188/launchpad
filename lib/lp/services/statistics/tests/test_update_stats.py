@@ -8,7 +8,7 @@ import subprocess
 import unittest
 from datetime import timedelta
 
-from storm.expr import Cast, Max, Select
+from storm.expr import Cast, Is, Max, Select
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
@@ -17,7 +17,6 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormexpr import IsTrue
 from lp.services.statistics.model.statistics import LaunchpadStatistic
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.services.worlddata.model.language import Language
@@ -134,7 +133,7 @@ class UpdateStatsTest(unittest.TestCase):
                 store.find(
                     DistroSeriesLanguage,
                     DistroSeriesLanguage.language == Language.id,
-                    IsTrue(Language.visible),
+                    Is(Language.visible, True),
                     term,
                 ).count(),
             )

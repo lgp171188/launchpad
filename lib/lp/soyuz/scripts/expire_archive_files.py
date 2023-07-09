@@ -3,12 +3,12 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from storm.expr import And, Cast, Except, Not, Or, Select
+from storm.expr import And, Cast, Except, Is, Not, Or, Select
 
 from lp.registry.model.person import Person
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.stormexpr import Concatenate, IsTrue
+from lp.services.database.stormexpr import Concatenate
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.scripts.base import LaunchpadCronScript
 from lp.soyuz.enums import ArchivePurpose
@@ -190,7 +190,7 @@ class ArchiveExpirer(LaunchpadCronScript):
                         Archive.purpose == ArchivePurpose.PPA,
                     ),
                     And(
-                        IsTrue(Archive.private),
+                        Is(Archive.private, True),
                         Not(full_archive_name.is_in(self.always_expire)),
                     ),
                     Not(Archive.purpose.is_in(archive_types)),

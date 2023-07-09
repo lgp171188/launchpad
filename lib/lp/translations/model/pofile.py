@@ -22,12 +22,10 @@ from storm.expr import (
     Exists,
     Join,
     LeftJoin,
-    Like,
     Not,
     Or,
     Select,
     Union,
-    like_escape,
 )
 from storm.info import ClassAlias
 from storm.store import EmptyResultSet, Store
@@ -167,11 +165,8 @@ class POFileMixIn(RosettaStats):
                     distinct=True,
                 )
             ),
-            Like(
-                POTranslation.translation,
-                "%" + text.translate(like_escape) + "%",
-                "!",
-                case_sensitive=False,
+            POTranslation.translation.contains_string(
+                text, case_sensitive=False
             ),
         ]
         return Select(
@@ -221,12 +216,7 @@ class POFileMixIn(RosettaStats):
                         ),
                     )
                 ),
-                Like(
-                    POMsgID.msgid,
-                    "%" + text.translate(like_escape) + "%",
-                    "!",
-                    case_sensitive=False,
-                ),
+                POMsgID.msgid.contains_string(text, case_sensitive=False),
             ]
             return Select(
                 POTMsgSet.id,
