@@ -8,6 +8,7 @@ from typing import List
 
 import responses
 import transaction
+from responses.matchers import query_string_matcher
 
 from lp.bugs.scripts.bzremotecomponentfinder import (
     BugzillaRemoteComponentFinder,
@@ -168,8 +169,8 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
         finder = BugzillaRemoteComponentFinder(logger=BufferLogger())
         responses.add(
             "GET",
-            re.compile(r".*/query\.cgi\?format=advanced"),
-            match_querystring=True,
+            re.compile(r".*/query\.cgi"),
+            match=[query_string_matcher("format=advanced")],
             content_type="text/html",
             body=read_test_file("bugzilla-fdo-advanced-query.html"),
         )
@@ -202,8 +203,8 @@ class TestBugzillaRemoteComponentFinder(TestCaseWithFactory):
         )
         responses.add(
             "GET",
-            re.compile(r".*/newquery\.cgi\?format=advanced"),
-            match_querystring=True,
+            re.compile(r".*/newquery\.cgi"),
+            match=[query_string_matcher("format=advanced")],
             content_type="text/html",
             body=read_test_file("bugzilla-fdo-advanced-query.html"),
         )
