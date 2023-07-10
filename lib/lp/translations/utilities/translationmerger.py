@@ -642,7 +642,9 @@ class TranslationMerger:
 
                 for ids in tm_ids:
                     for id in ids:
-                        message = TranslationMessage.get(id)
+                        message = IStore(TranslationMessage).get(
+                            TranslationMessage, id
+                        )
                         removeSecurityProxy(message).shareIfPossible()
 
                 self.tm.endTransaction(intermediate=True)
@@ -671,7 +673,7 @@ class TranslationMerger:
             for form in range(TranslationConstants.MAX_PLURAL_FORMS)
         )
 
-        return (tm.potemplateID, tm.languageID) + msgstr_ids
+        return (tm.potemplate_id, tm.language_id) + msgstr_ids
 
     @staticmethod
     def _partitionTranslationMessageIds(potmsgset):
@@ -687,10 +689,10 @@ class TranslationMerger:
         """
         ids_per_language = {}
         tms = potmsgset.getAllTranslationMessages().order_by(
-            TranslationMessage.languageID
+            TranslationMessage.language_id
         )
         for tm in tms:
-            language = removeSecurityProxy(tm).languageID
+            language = removeSecurityProxy(tm).language_id
             if language not in ids_per_language:
                 ids_per_language[language] = []
             ids_per_language[language].append(tm.id)
@@ -719,7 +721,7 @@ class TranslationMerger:
             translations = {}
 
             for tm_id in ids:
-                tm = TranslationMessage.get(tm_id)
+                tm = IStore(TranslationMessage).get(TranslationMessage, tm_id)
                 key = self._getPOTMsgSetTranslationMessageKey(tm)
 
                 if key in translations:

@@ -4,6 +4,7 @@ TranslationMessage View
 On this section, we are going to test the view class for an
 ITranslationMessage object.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.translations.model.pofile import POFile
     >>> from lp.translations.model.translationmessage import (
@@ -24,7 +25,9 @@ No plural forms
 We are going to see what happens if we get an entry for a language
 without the plural form information.
 
-    >>> translationmessage = TranslationMessage.get(1)
+    >>> translationmessage = IStore(TranslationMessage).get(
+    ...     TranslationMessage, 1
+    ... )
     >>> pofile = POFile.get(1)
     >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode("tlh")
     >>> pofile_tlh = pofile.potemplate.getPlaceholderPOFile(language_tlh)

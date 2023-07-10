@@ -1624,7 +1624,7 @@ class UnusedPOTMsgSetPruner(TunableLoop):
         # Remove related TranslationMessages.
         related_translation_messages = store.find(
             TranslationMessage,
-            In(TranslationMessage.potmsgsetID, msgset_ids_to_remove),
+            In(TranslationMessage.potmsgset_id, msgset_ids_to_remove),
         )
         related_translation_messages.remove()
         store.find(POTMsgSet, In(POTMsgSet.id, msgset_ids_to_remove)).remove()

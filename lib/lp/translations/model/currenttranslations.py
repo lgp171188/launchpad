@@ -59,8 +59,10 @@ class CurrentTranslations:
             raise ValueError("sides must not be empty")
 
         clauses = [
-            TranslationMessage.potmsgsetID.is_in(s.id for s in potmsgsets),
-            TranslationMessage.languageID.is_in(lang.id for lang in languages),
+            TranslationMessage.potmsgset_id.is_in(s.id for s in potmsgsets),
+            TranslationMessage.language_id.is_in(
+                lang.id for lang in languages
+            ),
         ]
 
         side_clauses = []
@@ -78,7 +80,7 @@ class CurrentTranslations:
             clauses.append(
                 Or(
                     TranslationMessage.potemplate == None,
-                    TranslationMessage.potemplateID.is_in(
+                    TranslationMessage.potemplate_id.is_in(
                         t.id for t in potemplates if t is not None
                     ),
                 )
@@ -92,9 +94,9 @@ class CurrentTranslations:
                 if not trait.getFlag(message):
                     continue
                 key = CurrentTranslationKey(
-                    message.potmsgsetID,
-                    message.potemplateID,
-                    message.languageID,
+                    message.potmsgset_id,
+                    message.potemplate_id,
+                    message.language_id,
                     side,
                 )
                 messages_by_key[key] = message

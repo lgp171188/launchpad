@@ -154,7 +154,7 @@ class POFileMixIn(RosettaStats):
                         tm_ids,
                         Join(
                             TranslationTemplateItem,
-                            tm_ids.potmsgsetID
+                            tm_ids.potmsgset_id
                             == TranslationTemplateItem.potmsgset_id,
                         ),
                     ),
@@ -162,7 +162,7 @@ class POFileMixIn(RosettaStats):
                         TranslationTemplateItem.potemplate
                         == pofile.potemplate,
                         TranslationTemplateItem.sequence > 0,
-                        tm_ids.languageID == pofile.languageID,
+                        tm_ids.language_id == pofile.languageID,
                     ),
                     distinct=True,
                 )
@@ -175,7 +175,7 @@ class POFileMixIn(RosettaStats):
             ),
         ]
         return Select(
-            TranslationMessage.potmsgsetID,
+            TranslationMessage.potmsgset_id,
             tables=(
                 TranslationMessage,
                 Join(
@@ -386,11 +386,11 @@ class POFile(SQLBase, POFileMixIn):
     def getTranslationMessages(self, condition=None):
         """See `IPOFile`."""
         applicable_template = Coalesce(
-            TranslationMessage.potemplateID, self.potemplate.id
+            TranslationMessage.potemplate_id, self.potemplate.id
         )
         clauses = [
             TranslationTemplateItem.potmsgset_id
-            == TranslationMessage.potmsgsetID,
+            == TranslationMessage.potmsgset_id,
             TranslationTemplateItem.potemplate == self.potemplate,
             TranslationMessage.language == self.language,
             applicable_template == self.potemplate.id,
@@ -536,7 +536,7 @@ class POFile(SQLBase, POFileMixIn):
             TranslationTemplateItem.potemplate == self.potemplate,
             (
                 TranslationTemplateItem.potmsgset_id
-                == TranslationMessage.potmsgsetID
+                == TranslationMessage.potmsgset_id
             ),
             TranslationMessage.language == self.language,
         ]
@@ -580,23 +580,23 @@ class POFile(SQLBase, POFileMixIn):
         #  * (it's diverged AND non-empty)
         #     OR (it's shared AND non-empty AND no diverged one exists)
         diverged_translation_clause = (
-            TranslationMessage.potemplateID == self.potemplate.id,
+            TranslationMessage.potemplate_id == self.potemplate.id,
         )
 
         Diverged = ClassAlias(TranslationMessage, "Diverged")
         shared_translation_clause = And(
-            TranslationMessage.potemplateID == None,
+            TranslationMessage.potemplate_id == None,
             Not(
                 Exists(
                     Select(
                         1,
                         tables=[Diverged],
                         where=And(
-                            Diverged.potmsgsetID
-                            == TranslationMessage.potmsgsetID,
-                            Diverged.languageID == self.language.id,
+                            Diverged.potmsgset_id
+                            == TranslationMessage.potmsgset_id,
+                            Diverged.language_id == self.language.id,
                             getattr(Diverged, flag_name),
-                            Diverged.potemplateID == self.potemplate.id,
+                            Diverged.potemplate_id == self.potemplate.id,
                         ),
                     )
                 )
@@ -674,10 +674,10 @@ class POFile(SQLBase, POFileMixIn):
             Coalesce(Diverged.date_reviewed, Diverged.date_created),
             tables=[Diverged],
             where=And(
-                Diverged.potmsgsetID == POTMsgSet.id,
-                Diverged.languageID == self.language.id,
+                Diverged.potmsgset_id == POTMsgSet.id,
+                Diverged.language_id == self.language.id,
                 getattr(Diverged, flag_name),
-                Diverged.potemplateID == self.potemplate.id,
+                Diverged.potemplate_id == self.potemplate.id,
             ),
         )
 
@@ -686,10 +686,10 @@ class POFile(SQLBase, POFileMixIn):
             Coalesce(Shared.date_reviewed, Shared.date_created),
             tables=[Shared],
             where=And(
-                Shared.potmsgsetID == POTMsgSet.id,
-                Shared.languageID == self.language.id,
+                Shared.potmsgset_id == POTMsgSet.id,
+                Shared.language_id == self.language.id,
                 getattr(Shared, flag_name),
-                Shared.potemplateID == None,
+                Shared.potemplate_id == None,
             ),
         )
 
@@ -708,7 +708,7 @@ class POFile(SQLBase, POFileMixIn):
         query = And(
             POTMsgSet.id.is_in(
                 Select(
-                    TranslationMessage.potmsgsetID,
+                    TranslationMessage.potmsgset_id,
                     tables=[
                         TranslationMessage,
                         TranslationTemplateItem,
@@ -753,22 +753,23 @@ class POFile(SQLBase, POFileMixIn):
                     tables=[Diverged],
                     where=And(
                         Diverged.id != Imported.id,
-                        Diverged.potmsgsetID == TranslationMessage.potmsgsetID,
-                        Diverged.languageID == self.language.id,
+                        Diverged.potmsgset_id
+                        == TranslationMessage.potmsgset_id,
+                        Diverged.language_id == self.language.id,
                         getattr(Diverged, other_side_flag_name),
-                        Diverged.potemplateID == self.potemplate.id,
+                        Diverged.potemplate_id == self.potemplate.id,
                     ),
                 )
             )
         )
         imported_clauses = [
             Imported.id != TranslationMessage.id,
-            Imported.potmsgsetID == POTMsgSet.id,
-            Imported.languageID == self.language.id,
+            Imported.potmsgset_id == POTMsgSet.id,
+            Imported.language_id == self.language.id,
             getattr(Imported, other_side_flag_name),
             Or(
-                Imported.potemplateID == self.potemplate.id,
-                And(Imported.potemplateID == None, imported_no_diverged),
+                Imported.potemplate_id == self.potemplate.id,
+                And(Imported.potemplate_id == None, imported_no_diverged),
             ),
         ]
         imported_clauses.extend(
@@ -1635,9 +1636,9 @@ class POFileSet:
             message_select = Select(
                 True,
                 And(
-                    TranslationMessage.potmsgsetID == POTMsgSet.id,
+                    TranslationMessage.potmsgset_id == POTMsgSet.id,
                     TranslationMessage.potemplate == None,
-                    POFile.languageID == TranslationMessage.languageID,
+                    POFile.languageID == TranslationMessage.language_id,
                     Or(
                         And(
                             POTemplate.productseries == None,
