@@ -81,7 +81,7 @@ def get_bugtask_attributes(bugtask: IBugTask, bug: IBug):
     data = compose_webhook_payload(
         IBug,
         bug,
-        ["title", "description", "owner"],
+        ["title", "description", "owner", "tags"],
         preferred_names={"owner": "reporter"},
     )
     data.update(

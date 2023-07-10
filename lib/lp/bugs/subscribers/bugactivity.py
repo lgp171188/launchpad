@@ -57,6 +57,8 @@ def get_string_representation(obj):
         return obj
     elif isinstance(obj, bool):
         return str(obj)
+    elif isinstance(obj, list):
+        return ", ".join(obj)
     else:
         return None
 
