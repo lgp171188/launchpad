@@ -76,6 +76,7 @@ from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
 )
+from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.code.interfaces.cibuild import (
     CI_WEBHOOKS_FEATURE_FLAG,
     ICIBuild,
@@ -103,7 +104,6 @@ from lp.code.interfaces.revisionstatus import (
     IRevisionStatusArtifactSet,
     IRevisionStatusReportSet,
 )
-from lp.code.model.branchmergeproposal import BranchMergeProposal
 from lp.code.model.branchmergeproposaljob import (
     BranchMergeProposalJob,
     BranchMergeProposalJobType,
@@ -156,7 +156,6 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import get_transaction_timestamp
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.job.interfaces.job import JobStatus
@@ -1553,10 +1552,12 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         # break_references.
         merge_proposal1, merge_proposal2 = self.makeMergeProposals()
         merge_proposal1_id = merge_proposal1.id
-        BranchMergeProposal.get(merge_proposal1_id)
+        getUtility(IBranchMergeProposalGetter).get(merge_proposal1_id)
         self.repository.destroySelf(break_references=True)
         self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposal.get, merge_proposal1_id
+            NotFoundError,
+            getUtility(IBranchMergeProposalGetter).get,
+            merge_proposal1_id,
         )
 
     def test_delete_merge_proposal_target(self):
@@ -1564,12 +1565,14 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         # break_references.
         merge_proposal1, merge_proposal2 = self.makeMergeProposals()
         merge_proposal1_id = merge_proposal1.id
-        BranchMergeProposal.get(merge_proposal1_id)
+        getUtility(IBranchMergeProposalGetter).get(merge_proposal1_id)
         merge_proposal1.target_git_repository.destroySelf(
             break_references=True
         )
         self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposal.get, merge_proposal1_id
+            NotFoundError,
+            getUtility(IBranchMergeProposalGetter).get,
+            merge_proposal1_id,
         )
 
     def test_delete_merge_proposal_prerequisite(self):
@@ -1728,7 +1731,9 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
             merge_proposal, "blah", merge_proposal.deleteProposal
         )()
         self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposal.get, merge_proposal_id
+            NotFoundError,
+            getUtility(IBranchMergeProposalGetter).get,
+            merge_proposal_id,
         )
 
     def test_DeleteCodeImport(self):

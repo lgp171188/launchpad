@@ -1417,7 +1417,7 @@ class GitRepository(
         }
         updated = set()
         for kind in ("source", "target", "prerequisite"):
-            repository_name = "%s_git_repositoryID" % kind
+            repository_name = "%s_git_repository_id" % kind
             path_name = "%s_git_path" % kind
             commit_sha1_name = "%s_git_commit_sha1" % kind
             old_column = partial(getattr, BranchMergeProposal)
@@ -1958,8 +1958,8 @@ class GitRepository(
                 seen_merge_proposal_ids.add(merge_proposal.id)
         # Cannot use self.landing_candidates, because it ignores merged
         # merge proposals.
-        for merge_proposal in BranchMergeProposal.selectBy(
-            target_git_repository=self
+        for merge_proposal in Store.of(self).find(
+            BranchMergeProposal, target_git_repository=self
         ):
             if merge_proposal.id not in seen_merge_proposal_ids:
                 deletion_operations.append(
@@ -1973,8 +1973,8 @@ class GitRepository(
                     )
                 )
                 seen_merge_proposal_ids.add(merge_proposal.id)
-        for merge_proposal in BranchMergeProposal.selectBy(
-            prerequisite_git_repository=self
+        for merge_proposal in Store.of(self).find(
+            BranchMergeProposal, prerequisite_git_repository=self
         ):
             if merge_proposal.id not in seen_merge_proposal_ids:
                 alteration_operations.append(

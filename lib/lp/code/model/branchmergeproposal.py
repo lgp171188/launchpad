@@ -11,12 +11,13 @@ __all__ = [
 
 import sys
 from collections import defaultdict
+from datetime import timezone
 from email.utils import make_msgid
 from operator import attrgetter
 
 from lazr.lifecycle.event import ObjectCreatedEvent, ObjectDeletedEvent
 from storm.expr import SQL, And, Desc, Join, LeftJoin, Not, Or, Select
-from storm.locals import Int, Reference
+from storm.locals import DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
@@ -82,11 +83,10 @@ from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load, load_referencing, load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, quote
-from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
+from lp.services.database.sqlbase import quote
+from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -160,65 +160,62 @@ class TooManyRelatedBugs(Exception):
 
 
 @implementer(IBranchMergeProposal, IHasBranchTarget)
-class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
+class BranchMergeProposal(StormBase, BugLinkTargetMixin):
     """A relationship between a person and a branch."""
 
-    _table = "BranchMergeProposal"
-    _defaultOrder = ["-date_created", "id"]
+    __storm_table__ = "BranchMergeProposal"
+    __storm_order__ = ("-date_created", "id")
 
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
-    )
+    id = Int(primary=True)
 
-    source_branch = ForeignKey(
-        dbName="source_branch", foreignKey="Branch", notNull=False
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    source_git_repositoryID = Int(
+    registrant = Reference(registrant_id, "Person.id")
+
+    source_branch_id = Int(name="source_branch", allow_none=True)
+    source_branch = Reference(source_branch_id, "Branch.id")
+    source_git_repository_id = Int(
         name="source_git_repository", allow_none=True
     )
     source_git_repository = Reference(
-        source_git_repositoryID, "GitRepository.id"
+        source_git_repository_id, "GitRepository.id"
     )
-    source_git_path = StringCol(
-        dbName="source_git_path", default=None, notNull=False
+    source_git_path = Unicode(
+        name="source_git_path", default=None, allow_none=True
     )
-    source_git_commit_sha1 = StringCol(
-        dbName="source_git_commit_sha1", default=None, notNull=False
+    source_git_commit_sha1 = Unicode(
+        name="source_git_commit_sha1", default=None, allow_none=True
     )
 
-    target_branch = ForeignKey(
-        dbName="target_branch", foreignKey="Branch", notNull=False
-    )
-    target_git_repositoryID = Int(
+    target_branch_id = Int(name="target_branch", allow_none=True)
+    target_branch = Reference(target_branch_id, "Branch.id")
+    target_git_repository_id = Int(
         name="target_git_repository", allow_none=True
     )
     target_git_repository = Reference(
-        target_git_repositoryID, "GitRepository.id"
+        target_git_repository_id, "GitRepository.id"
     )
-    target_git_path = StringCol(
-        dbName="target_git_path", default=None, notNull=False
+    target_git_path = Unicode(
+        name="target_git_path", default=None, allow_none=True
     )
-    target_git_commit_sha1 = StringCol(
-        dbName="target_git_commit_sha1", default=None, notNull=False
+    target_git_commit_sha1 = Unicode(
+        name="target_git_commit_sha1", default=None, allow_none=True
     )
 
-    prerequisite_branch = ForeignKey(
-        dbName="dependent_branch", foreignKey="Branch", notNull=False
-    )
-    prerequisite_git_repositoryID = Int(
+    prerequisite_branch_id = Int(name="dependent_branch", allow_none=True)
+    prerequisite_branch = Reference(prerequisite_branch_id, "Branch.id")
+    prerequisite_git_repository_id = Int(
         name="dependent_git_repository", allow_none=True
     )
     prerequisite_git_repository = Reference(
-        prerequisite_git_repositoryID, "GitRepository.id"
+        prerequisite_git_repository_id, "GitRepository.id"
     )
-    prerequisite_git_path = StringCol(
-        dbName="dependent_git_path", default=None, notNull=False
+    prerequisite_git_path = Unicode(
+        name="dependent_git_path", default=None, allow_none=True
     )
-    prerequisite_git_commit_sha1 = StringCol(
-        dbName="dependent_git_commit_sha1", default=None, notNull=False
+    prerequisite_git_commit_sha1 = Unicode(
+        name="dependent_git_commit_sha1", default=None, allow_none=True
     )
 
     @property
@@ -303,9 +300,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         else:
             return self.source_git_repository
 
-    description = StringCol(default=None)
+    description = Unicode(default=None)
 
-    whiteboard = StringCol(default=None)
+    whiteboard = Unicode(default=None)
 
     queue_status = DBEnum(
         enum=BranchMergeProposalStatus,
@@ -326,13 +323,13 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             for obj in objects
         )
 
-    reviewer = ForeignKey(
-        dbName="reviewer",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
+    reviewer_id = Int(
+        name="reviewer",
+        validator=validate_person,
+        allow_none=True,
         default=None,
     )
+    reviewer = Reference(reviewer_id, "Person.id")
 
     @property
     def next_preview_diff_job(self):
@@ -356,13 +353,13 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         else:
             return None
 
-    reviewed_revision_id = StringCol(default=None)
+    reviewed_revision_id = Unicode(default=None)
 
-    commit_message = StringCol(default=None)
+    commit_message = Unicode(default=None)
 
-    date_merged = UtcDateTimeCol(default=None)
-    merged_revno = IntCol(default=None)
-    merged_revision_id = StringCol(default=None)
+    date_merged = DateTime(default=None, tzinfo=timezone.utc)
+    merged_revno = Int(default=None)
+    merged_revision_id = Unicode(default=None)
 
     @property
     def merged_revision(self):
@@ -372,13 +369,56 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         else:
             return self.merged_revision_id
 
-    merge_reporter = ForeignKey(
-        dbName="merge_reporter",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    merge_reporter_id = Int(
+        name="merge_reporter",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    merge_reporter = Reference(merge_reporter_id, "Person.id")
+
+    def __init__(
+        self,
+        registrant,
+        source_branch=None,
+        source_git_repository=None,
+        source_git_path=None,
+        source_git_commit_sha1=None,
+        target_branch=None,
+        target_git_repository=None,
+        target_git_path=None,
+        target_git_commit_sha1=None,
+        prerequisite_branch=None,
+        prerequisite_git_repository=None,
+        prerequisite_git_path=None,
+        prerequisite_git_commit_sha1=None,
+        description=None,
+        whiteboard=None,
+        queue_status=DEFAULT,
+        commit_message=None,
+        date_created=DEFAULT,
+        date_review_requested=None,
+    ):
+        super().__init__()
+        self.registrant = registrant
+        self.source_branch = source_branch
+        self.source_git_repository = source_git_repository
+        self.source_git_path = source_git_path
+        self.source_git_commit_sha1 = source_git_commit_sha1
+        self.target_branch = target_branch
+        self.target_git_repository = target_git_repository
+        self.target_git_path = target_git_path
+        self.target_git_commit_sha1 = target_git_commit_sha1
+        self.prerequisite_branch = prerequisite_branch
+        self.prerequisite_git_repository = prerequisite_git_repository
+        self.prerequisite_git_path = prerequisite_git_path
+        self.prerequisite_git_commit_sha1 = prerequisite_git_commit_sha1
+        self.description = description
+        self.whiteboard = whiteboard
+        self.queue_status = queue_status
+        self.commit_message = commit_message
+        self.date_created = date_created
+        self.date_review_requested = date_review_requested
 
     @property
     def bugs(self):
@@ -557,22 +597,24 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
     def address(self):
         return "mp+%d@%s" % (self.id, config.launchpad.code_domain)
 
-    superseded_by = ForeignKey(
-        dbName="superseded_by",
-        foreignKey="BranchMergeProposal",
-        notNull=False,
-        default=None,
-    )
+    superseded_by_id = Int(name="superseded_by", allow_none=True, default=None)
+    superseded_by = Reference(superseded_by_id, "BranchMergeProposal.id")
 
-    _supersedes = Reference("<primary key>", "superseded_by", on_remote=True)
+    _supersedes = Reference("id", "superseded_by_id", on_remote=True)
 
     @cachedproperty
     def supersedes(self):
         return self._supersedes
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    date_review_requested = UtcDateTimeCol(notNull=False, default=None)
-    date_reviewed = UtcDateTimeCol(notNull=False, default=None)
+    date_created = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
+    date_review_requested = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
+    date_reviewed = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
 
     @property
     def target(self):
@@ -584,7 +626,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
             # although it has similar semantics.
             return self.source_git_repository.namespace
 
-    root_message_id = StringCol(default=None)
+    root_message_id = Unicode(default=None)
 
     @property
     def title(self):
@@ -923,10 +965,10 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         self._transitionToState(
             BranchMergeProposalStatus.SUPERSEDED, registrant
         )
-        # This sync update is needed as the add landing target does
-        # a database query to identify if there are any active proposals
-        # with the same source and target branches.
-        self.syncUpdate()
+        # This flush is needed as the add landing target does a database
+        # query to identify if there are any active proposals with the same
+        # source and target branches.
+        Store.of(self).flush()
         review_requests = list(
             {(vote.reviewer, vote.review_type) for vote in self.votes}
         )
@@ -941,10 +983,10 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         )
         if not break_link:
             self.superseded_by = proposal
-        # This sync update is needed to ensure that the transitive
-        # properties of supersedes and superseded_by are visible to
-        # the old and the new proposal.
-        self.syncUpdate()
+        # This flush is needed to ensure that the transitive properties of
+        # supersedes and superseded_by are visible to the old and the new
+        # proposal.
+        Store.of(self).flush()
         return proposal
 
     def _normalizeReviewType(self, review_type):
@@ -1068,7 +1110,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         ):
             job.destroySelf()
         self._preview_diffs.remove()
-        self.destroySelf()
+        Store.of(self).remove(self)
 
     def getUnlandedSourceBranchRevisions(self):
         """See `IBranchMergeProposal`."""
@@ -1513,24 +1555,24 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         person_ids = set()
         for mp in branch_merge_proposals:
             ids.add(mp.id)
-            if mp.source_branchID is not None:
-                source_branch_ids.add(mp.source_branchID)
-            if mp.source_git_repositoryID is not None:
+            if mp.source_branch_id is not None:
+                source_branch_ids.add(mp.source_branch_id)
+            if mp.source_git_repository_id is not None:
                 git_ref_keys.add(
-                    (mp.source_git_repositoryID, mp.source_git_path)
+                    (mp.source_git_repository_id, mp.source_git_path)
                 )
                 git_ref_keys.add(
-                    (mp.target_git_repositoryID, mp.target_git_path)
+                    (mp.target_git_repository_id, mp.target_git_path)
                 )
-                if mp.prerequisite_git_repositoryID is not None:
+                if mp.prerequisite_git_repository_id is not None:
                     git_ref_keys.add(
                         (
-                            mp.prerequisite_git_repositoryID,
+                            mp.prerequisite_git_repository_id,
                             mp.prerequisite_git_path,
                         )
                     )
-            person_ids.add(mp.registrantID)
-            person_ids.add(mp.merge_reporterID)
+            person_ids.add(mp.registrant_id)
+            person_ids.add(mp.merge_reporter_id)
         git_repository_ids = {
             repository_id for repository_id, _ in git_ref_keys
         }
@@ -1538,15 +1580,15 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         branches = load_related(
             Branch,
             branch_merge_proposals,
-            ("target_branchID", "prerequisite_branchID", "source_branchID"),
+            ("target_branch_id", "prerequisite_branch_id", "source_branch_id"),
         )
         repositories = load_related(
             GitRepository,
             branch_merge_proposals,
             (
-                "target_git_repositoryID",
-                "prerequisite_git_repositoryID",
-                "source_git_repositoryID",
+                "target_git_repository_id",
+                "prerequisite_git_repository_id",
+                "source_git_repository_id",
             ),
         )
         load(GitRef, git_ref_keys)
@@ -1579,9 +1621,9 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
         # Preload other merge proposals that supersede these.
         supersedes_map = {}
         for other_mp in load_referencing(
-            BranchMergeProposal, branch_merge_proposals, ["superseded_byID"]
+            BranchMergeProposal, branch_merge_proposals, ["superseded_by_id"]
         ):
-            supersedes_map[other_mp.superseded_byID] = other_mp
+            supersedes_map[other_mp.superseded_by_id] = other_mp
         for mp in branch_merge_proposals:
             get_property_cache(mp).supersedes = supersedes_map.get(mp.id)
 
@@ -1643,7 +1685,10 @@ class BranchMergeProposalGetter:
     @staticmethod
     def get(id):
         """See `IBranchMergeProposalGetter`."""
-        return BranchMergeProposal.get(id)
+        mp = IStore(BranchMergeProposal).get(BranchMergeProposal, id)
+        if mp is None:
+            raise NotFoundError(id)
+        return mp
 
     @staticmethod
     def getProposalsForContext(context, status=None, visible_by_user=None):
@@ -1666,7 +1711,7 @@ class BranchMergeProposalGetter:
         """See `IBranchMergeProposalGetter`."""
         registrant_select = Select(
             BranchMergeProposal.id,
-            BranchMergeProposal.registrantID == participant.id,
+            BranchMergeProposal.registrant_id == participant.id,
         )
 
         review_select = Select(

@@ -367,7 +367,7 @@ class GenericGitCollection:
                     BranchMergeProposal,
                     And(
                         GitRepository.id
-                        == BranchMergeProposal.source_git_repositoryID,
+                        == BranchMergeProposal.source_git_repository_id,
                         *(
                             self._filter_expressions
                             + self._asymmetric_filter_expressions
@@ -376,7 +376,7 @@ class GenericGitCollection:
                 ),
                 Join(
                     Target,
-                    Target.id == BranchMergeProposal.target_git_repositoryID,
+                    Target.id == BranchMergeProposal.target_git_repository_id,
                 ),
             ]
         )
@@ -451,7 +451,8 @@ class GenericGitCollection:
             # Need to filter on GitRepository beyond the with constraints.
             expressions += self._asymmetric_filter_expressions
             expressions.append(
-                BranchMergeProposal.source_git_repositoryID == GitRepository.id
+                BranchMergeProposal.source_git_repository_id
+                == GitRepository.id
             )
             tables.append(GitRepository)
             tables.extend(self._asymmetric_tables.values())
@@ -507,14 +508,14 @@ class GenericGitCollection:
 
         expressions = [
             CodeReviewVoteReference.reviewer == reviewer,
-            BranchMergeProposal.source_git_repositoryID.is_in(
+            BranchMergeProposal.source_git_repository_id.is_in(
                 self._getRepositorySelect()
             ),
         ]
         visibility = self._getRepositoryVisibilityExpression()
         if visibility:
             expressions.append(
-                BranchMergeProposal.target_git_repositoryID.is_in(
+                BranchMergeProposal.target_git_repository_id.is_in(
                     Select(GitRepository.id, visibility)
                 )
             )
