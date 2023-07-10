@@ -395,14 +395,16 @@ class LoginTokenSet:
                 "tokentype is not an item of LoginTokenType: %s" % tokentype
             )
         token = create_token(20)
-        return LoginToken(
-            requester=requester,
-            requesteremail=requesteremail,
-            email=email,
-            token=token,
-            tokentype=tokentype,
-            fingerprint=fingerprint,
-            redirection_url=redirection_url,
+        return IStore(LoginToken).add(
+            LoginToken(
+                requester=requester,
+                requesteremail=requesteremail,
+                email=email,
+                token=token,
+                tokentype=tokentype,
+                fingerprint=fingerprint,
+                redirection_url=redirection_url,
+            )
         )
 
     def __getitem__(self, tokentext):
