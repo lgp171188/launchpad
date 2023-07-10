@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlsplit, urlunsplit
 
 import responses
 import transaction
+from responses.matchers import query_string_matcher
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -300,10 +301,9 @@ class TestGitLabUpdateBugWatches(TestCaseWithFactory):
         ]
         responses.add(
             "GET",
-            "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
-            "iids%5B%5D=1234",
+            "https://gitlab.com/api/v4/projects/user%2Frepository/issues",
             json=remote_bug,
-            match_querystring=True,
+            match=[query_string_matcher("iids%5B%5D=1234")],
         )
         bug = self.factory.makeBug()
         bug_tracker = self.factory.makeBugTracker(

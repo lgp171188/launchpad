@@ -81,11 +81,24 @@ Define some request mocks so that we don't try to access SourceForge.
     ...     with open(file_path) as test_file:
     ...         return (200, {}, test_file.read())
     ...
+    >>> def match_group_id(request):
+    ...     request_query = urlsplit(request.url).query
+    ...     if re.match(r"group_id=[0-9]+.*", request_query) is not None:
+    ...         return True, ""
+    ...     else:
+    ...         return (
+    ...             False,
+    ...             "Query string doesn't match. "
+    ...             "{} doesn't match group_id=[0-9]+.*".format(
+    ...                 request_query
+    ...             ),
+    ...         )
+    ...
     >>> def add_tracker_response(requests_mock):
     ...     requests_mock.add_callback(
     ...         "GET",
-    ...         re.compile(r".*/tracker/\?group_id=[0-9]+"),
-    ...         match_querystring=True,
+    ...         re.compile(r".*/tracker/"),
+    ...         match=[match_group_id],
     ...         callback=tracker_callback,
     ...     )
     ...
