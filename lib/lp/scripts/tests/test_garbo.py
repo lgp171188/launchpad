@@ -2609,15 +2609,17 @@ class TestGarboTasks(TestCaseWithFactory):
             email="whatever", tokentype=LoginTokenType.NEWACCOUNT
         )
         old_token.date_created = now - timedelta(days=666)
-        old_token_id = old_token.id
         store.add(old_token)
+        store.flush()
+        old_token_id = old_token.id
 
         # Create a token that will not be pruned.
         current_token = LoginToken(
             email="whatever", tokentype=LoginTokenType.NEWACCOUNT
         )
-        current_token_id = current_token.id
         store.add(current_token)
+        store.flush()
+        current_token_id = current_token.id
 
         # Run the pruner. Batching is tested by the BulkPruner tests so
         # no need to repeat here.
