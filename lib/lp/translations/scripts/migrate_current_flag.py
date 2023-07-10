@@ -64,20 +64,20 @@ class TranslationMessageImportedFlagUpdater:
             where=And(
                 PreviousImported.is_current_upstream == True,
                 (
-                    PreviousImported.potmsgsetID
-                    == CurrentTranslation.potmsgsetID
+                    PreviousImported.potmsgset_id
+                    == CurrentTranslation.potmsgset_id
                 ),
                 Or(
                     And(
-                        PreviousImported.potemplateID == None,
-                        CurrentTranslation.potemplateID == None,
+                        PreviousImported.potemplate_id == None,
+                        CurrentTranslation.potemplate_id == None,
                     ),
                     (
-                        PreviousImported.potemplateID
-                        == CurrentTranslation.potemplateID
+                        PreviousImported.potemplate_id
+                        == CurrentTranslation.potemplate_id
                     ),
                 ),
-                PreviousImported.languageID == CurrentTranslation.languageID,
+                PreviousImported.language_id == CurrentTranslation.language_id,
                 CurrentTranslation.id.is_in(tm_ids),
             ),
         )
@@ -147,7 +147,7 @@ class MigrateCurrentFlagProcess:
             TranslationMessage.is_current_ubuntu == True,
             TranslationMessage.is_current_upstream == False,
             (
-                TranslationMessage.potmsgsetID
+                TranslationMessage.potmsgset_id
                 == TranslationTemplateItem.potmsgset_id
             ),
             TranslationTemplateItem.potemplate_id == POTemplate.id,

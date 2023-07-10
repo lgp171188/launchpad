@@ -12,25 +12,20 @@ __all__ = [
 from datetime import datetime, timezone
 
 from storm.expr import And
-from storm.locals import SQL, Int, Reference
+from storm.locals import SQL, Bool, DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.registry.interfaces.person import IPersonSet, validate_public_person
 from lp.services.database.bulk import load, load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, quote, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.translations.interfaces.currenttranslations import ICurrentTranslations
 from lp.translations.interfaces.potemplate import IPOTemplateSet
@@ -222,41 +217,40 @@ class PlaceholderTranslationMessage(TranslationMessageMixIn):
 
 
 @implementer(ITranslationMessage)
-class TranslationMessage(SQLBase, TranslationMessageMixIn):
-    _table = "TranslationMessage"
+class TranslationMessage(StormBase, TranslationMessageMixIn):
+    __storm_table__ = "TranslationMessage"
 
+    id = Int(primary=True)
     browser_pofile = None
-    potemplate = ForeignKey(
-        foreignKey="POTemplate",
-        dbName="potemplate",
-        notNull=False,
+    potemplate_id = Int(name="potemplate", allow_none=True, default=None)
+    potemplate = Reference(potemplate_id, "POTemplate.id")
+    language_id = Int(name="language", allow_none=True, default=None)
+    language = Reference(language_id, "Language.id")
+    potmsgset_id = Int(name="potmsgset", allow_none=False)
+    potmsgset = Reference(potmsgset_id, "POTMsgSet.id")
+    date_created = DateTime(
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
+    )
+    submitter_id = Int(
+        name="submitter", validator=validate_public_person, allow_none=False
+    )
+    submitter = Reference(submitter_id, "Person.id")
+    date_reviewed = DateTime(
+        name="date_reviewed",
+        allow_none=True,
+        default=None,
+        tzinfo=timezone.utc,
+    )
+    reviewer_id = Int(
+        name="reviewer",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    language = ForeignKey(
-        foreignKey="Language", dbName="language", notNull=False, default=None
-    )
-    potmsgset = ForeignKey(
-        foreignKey="POTMsgSet", dbName="potmsgset", notNull=True
-    )
-    date_created = UtcDateTimeCol(
-        dbName="date_created", notNull=True, default=UTC_NOW
-    )
-    submitter = ForeignKey(
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        dbName="submitter",
-        notNull=True,
-    )
-    date_reviewed = UtcDateTimeCol(
-        dbName="date_reviewed", notNull=False, default=None
-    )
-    reviewer = ForeignKey(
-        dbName="reviewer",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-        default=None,
-    )
+    reviewer = Reference(reviewer_id, "Person.id")
 
     assert TranslationConstants.MAX_PLURAL_FORMS == 6, (
         "Change this code to support %d plural forms."
@@ -276,7 +270,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
     msgstr5_id = Int(name="msgstr5", allow_none=True, default=DEFAULT)
     msgstr5 = Reference(msgstr5_id, "POTranslation.id")
 
-    comment = StringCol(dbName="comment", notNull=False, default=None)
+    comment = Unicode(name="comment", allow_none=True, default=None)
     origin = DBEnum(
         name="origin", allow_none=False, enum=RosettaTranslationOrigin
     )
@@ -285,15 +279,58 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         allow_none=False,
         enum=TranslationValidationStatus,
     )
-    is_current_ubuntu = BoolCol(
-        dbName="is_current_ubuntu", notNull=True, default=False
+    is_current_ubuntu = Bool(
+        name="is_current_ubuntu", allow_none=False, default=False
     )
-    is_current_upstream = BoolCol(
-        dbName="is_current_upstream", notNull=True, default=False
+    is_current_upstream = Bool(
+        name="is_current_upstream", allow_none=False, default=False
     )
-    was_obsolete_in_last_import = BoolCol(
-        dbName="was_obsolete_in_last_import", notNull=True, default=False
+    was_obsolete_in_last_import = Bool(
+        name="was_obsolete_in_last_import", allow_none=False, default=False
     )
+
+    def __init__(
+        self,
+        potmsgset,
+        submitter,
+        potemplate=None,
+        language=None,
+        date_created=DEFAULT,
+        date_reviewed=None,
+        reviewer=None,
+        msgstr0=None,
+        msgstr1=None,
+        msgstr2=None,
+        msgstr3=None,
+        msgstr4=None,
+        msgstr5=None,
+        comment=None,
+        origin=None,
+        validation_status=DEFAULT,
+        is_current_ubuntu=DEFAULT,
+        is_current_upstream=DEFAULT,
+        was_obsolete_in_last_import=DEFAULT,
+    ):
+        super().__init__()
+        self.potmsgset = potmsgset
+        self.submitter = submitter
+        self.potemplate = potemplate
+        self.language = language
+        self.date_created = date_created
+        self.date_reviewed = date_reviewed
+        self.reviewer = reviewer
+        self.msgstr0 = msgstr0
+        self.msgstr1 = msgstr1
+        self.msgstr2 = msgstr2
+        self.msgstr3 = msgstr3
+        self.msgstr4 = msgstr4
+        self.msgstr5 = msgstr5
+        self.comment = comment
+        self.origin = origin
+        self.validation_status = validation_status
+        self.is_current_ubuntu = is_current_ubuntu
+        self.is_current_upstream = is_current_upstream
+        self.was_obsolete_in_last_import = was_obsolete_in_last_import
 
     # XXX jamesh 2008-05-02:
     # This method is not being called anymore.  The Storm
@@ -436,7 +473,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
                     FROM TranslationTemplateItem
                     WHERE potmsgset = %s AND sequence > 0
                     LIMIT 1)"""
-                    % sqlvalues(self.potmsgsetID)
+                    % sqlvalues(self.potmsgset_id)
                 ),
                 POFile.language == self.language,
             )
@@ -453,22 +490,22 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
     def getSharedEquivalent(self):
         """See `ITranslationMessage`."""
         clauses = [
-            "potemplate IS NULL",
-            "potmsgset = %s" % sqlvalues(self.potmsgset),
-            "language = %s" % sqlvalues(self.language),
+            TranslationMessage.potemplate == None,
+            TranslationMessage.potmsgset == self.potmsgset,
+            TranslationMessage.language == self.language,
         ]
 
         for form in range(TranslationConstants.MAX_PLURAL_FORMS):
-            msgstr_name = "msgstr%d" % form
-            msgstr = getattr(self, "msgstr%d_id" % form)
+            msgstr_name = "msgstr%d_id" % form
+            msgstr_property = getattr(TranslationMessage, msgstr_name)
+            msgstr = getattr(self, msgstr_name)
             if msgstr is None:
-                form_clause = "%s IS NULL" % msgstr_name
+                form_clause = msgstr_property == None
             else:
-                form_clause = "%s = %s" % (msgstr_name, quote(msgstr))
+                form_clause = msgstr_property == msgstr
             clauses.append(form_clause)
 
-        where_clause = SQL(" AND ".join(clauses))
-        return Store.of(self).find(TranslationMessage, where_clause).one()
+        return Store.of(self).find(TranslationMessage, *clauses).one()
 
     def shareIfPossible(self):
         """See `ITranslationMessage`."""
@@ -537,8 +574,8 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
 
         forms_match = TranslationMessage.msgstr0_id == self.msgstr0_id
         for form in range(1, TranslationConstants.MAX_PLURAL_FORMS):
-            form_name = "msgstr%d" % form
-            form_value = getattr(self, "msgstr%d_id" % form)
+            form_name = "msgstr%d_id" % form
+            form_value = getattr(self, form_name)
             forms_match = And(
                 forms_match,
                 getattr(TranslationMessage, form_name) == form_value,
@@ -580,6 +617,9 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         )
         return clone
 
+    def destroySelf(self):
+        Store.of(self).remove(self)
+
 
 @implementer(ITranslationMessageSet)
 class TranslationMessageSet:
@@ -587,10 +627,10 @@ class TranslationMessageSet:
 
     def getByID(self, ID):
         """See `ITranslationMessageSet`."""
-        try:
-            return TranslationMessage.get(ID)
-        except SQLObjectNotFound:
-            return None
+        tm = IStore(TranslationMessage).get(TranslationMessage, ID)
+        if tm is None:
+            raise NotFoundError(ID)
+        return tm
 
     def preloadDetails(
         self,
@@ -636,12 +676,12 @@ class TranslationMessageSet:
                 ],
             )
         if need_potmsgset:
-            load_related(POTMsgSet, tms, ["potmsgsetID"])
+            load_related(POTMsgSet, tms, ["potmsgset_id"])
         if need_people:
             list(
                 getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                    [tm.submitterID for tm in tms]
-                    + [tm.reviewerID for tm in tms]
+                    [tm.submitter_id for tm in tms]
+                    + [tm.reviewer_id for tm in tms]
                 )
             )
         if need_potmsgset_current_message:
@@ -685,7 +725,7 @@ class TranslationMessageSet:
                     TranslationTemplateItem.sequence,
                 ),
                 TranslationTemplateItem.potmsgset_id.is_in(
-                    message.potmsgsetID for message in messages
+                    message.potmsgset_id for message in messages
                 ),
                 POFile.potemplateID == TranslationTemplateItem.potemplate_id,
                 *pofile_constraints,
@@ -700,6 +740,6 @@ class TranslationMessageSet:
         for message in messages:
             assert message.language == language
             pofile_id, sequence = potmsgset_map.get(
-                message.potmsgsetID, (None, None)
+                message.potmsgset_id, (None, None)
             )
             message.setPOFile(IStore(POFile).get(POFile, pofile_id), sequence)

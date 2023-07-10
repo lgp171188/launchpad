@@ -11,6 +11,7 @@ standby database.
 We need to get a POTMsgSet object to perform this test.
 
     >>> from zope.component import getUtility
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.translationmessage import (
     ...     TranslationMessage,
     ... )
@@ -284,7 +285,9 @@ isTranslationNewerThan
 This method tells us whether the active translation was reviewed after
 the given timestamp.
 
-    >>> translationmessage = TranslationMessage.get(2)
+    >>> translationmessage = IStore(TranslationMessage).get(
+    ...     TranslationMessage, 2
+    ... )
     >>> potmsgset = translationmessage.potmsgset
     >>> from lp.translations.model.pofile import POFile
     >>> pofile = POFile.get(1)

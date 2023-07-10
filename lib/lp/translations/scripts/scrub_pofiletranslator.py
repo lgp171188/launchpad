@@ -84,11 +84,11 @@ def summarize_contributors(potemplate_id, language_ids, potmsgset_ids):
     store = IStore(POFile)
     contribs = {language_id: set() for language_id in language_ids}
     for language_id, submitter_id in store.find(
-        (TranslationMessage.languageID, TranslationMessage.submitterID),
-        TranslationMessage.potmsgsetID.is_in(potmsgset_ids),
-        TranslationMessage.languageID.is_in(language_ids),
+        (TranslationMessage.language_id, TranslationMessage.submitter_id),
+        TranslationMessage.potmsgset_id.is_in(potmsgset_ids),
+        TranslationMessage.language_id.is_in(language_ids),
         TranslationMessage.msgstr0 != None,
-        Coalesce(TranslationMessage.potemplateID, potemplate_id)
+        Coalesce(TranslationMessage.potemplate_id, potemplate_id)
         == potemplate_id,
     ).config(distinct=True):
         contribs[language_id].add(submitter_id)
@@ -114,15 +114,15 @@ def get_contributions(pofile, potmsgset_ids):
     language_id = pofile.language.id
     template_id = pofile.potemplate.id
     contribs = store.find(
-        (TranslationMessage.submitterID, TranslationMessage.date_created),
-        TranslationMessage.potmsgsetID.is_in(potmsgset_ids),
-        TranslationMessage.languageID == language_id,
+        (TranslationMessage.submitter_id, TranslationMessage.date_created),
+        TranslationMessage.potmsgset_id.is_in(potmsgset_ids),
+        TranslationMessage.language_id == language_id,
         TranslationMessage.msgstr0 != None,
-        Coalesce(TranslationMessage.potemplateID, template_id) == template_id,
+        Coalesce(TranslationMessage.potemplate_id, template_id) == template_id,
     )
-    contribs = contribs.config(distinct=(TranslationMessage.submitterID,))
+    contribs = contribs.config(distinct=(TranslationMessage.submitter_id,))
     contribs = contribs.order_by(
-        TranslationMessage.submitterID, Desc(TranslationMessage.date_created)
+        TranslationMessage.submitter_id, Desc(TranslationMessage.date_created)
     )
     return dict(contribs)
 

@@ -4231,7 +4231,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 translation_message
             )
             naked_translation_message.date_created = date_created
-            naked_translation_message.sync()
+            IStore(naked_translation_message).flush()
         return ProxyFactory(translation_message)
 
     def makeCurrentTranslationMessage(

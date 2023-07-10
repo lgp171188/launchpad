@@ -398,19 +398,19 @@ class POTMsgSet(SQLBase):
         lang_used = []
         if both_languages:
             lang_used.append(
-                TranslationMessage.languageID.is_in(both_languages)
+                TranslationMessage.language_id.is_in(both_languages)
             )
         if used_languages:
             lang_used.append(
                 And(
-                    TranslationMessage.languageID.is_in(used_languages),
+                    TranslationMessage.language_id.is_in(used_languages),
                     in_use_clause,
                 )
             )
         if suggested_languages:
             lang_used.append(
                 And(
-                    TranslationMessage.languageID.is_in(suggested_languages),
+                    TranslationMessage.language_id.is_in(suggested_languages),
                     Not(in_use_clause),
                 )
             )
@@ -626,9 +626,9 @@ class POTMsgSet(SQLBase):
         # Prefer either shared or diverged messages, depending on
         # arguments.
         if prefer_shared:
-            order = [NullsFirst(TranslationMessage.potemplateID)]
+            order = [NullsFirst(TranslationMessage.potemplate_id)]
         else:
-            order = [NullsLast(TranslationMessage.potemplateID)]
+            order = [NullsLast(TranslationMessage.potemplate_id)]
 
         # Normally at most one message should match.  But if there is
         # more than one, prefer the one that adds the fewest extraneous
@@ -829,7 +829,6 @@ class POTMsgSet(SQLBase):
         return TranslationMessage(
             potmsgset=self,
             potemplate=potemplate,
-            pofile=pofile,
             language=pofile.language,
             origin=origin,
             submitter=submitter,
