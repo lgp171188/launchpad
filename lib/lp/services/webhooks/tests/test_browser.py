@@ -222,7 +222,7 @@ class WebhookTargetViewTestHelpers:
         # in create_view instead, but that approach needs care to avoid
         # adding an extra query to tests that might be sensitive to that.
         principal = getUtility(IPlacelessAuthUtility).getPrincipal(
-            self.owner.accountID
+            self.owner.account_id
         )
         view = create_view(
             self.target,

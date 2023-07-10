@@ -1245,7 +1245,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
             """
             UPDATE OpenIdIdentifier SET account=%s WHERE account=%s
             """
-            % sqlvalues(to_person.accountID, from_person.accountID)
+            % sqlvalues(to_person.account_id, from_person.account_id)
         )
 
     if delete:

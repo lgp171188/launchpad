@@ -14,6 +14,7 @@ implements the IAccountSet interface.
 
     >>> from zope.interface.verify import verifyObject
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.interfaces.account import (
     ...     IAccount,
     ...     IAccountSet,
@@ -116,8 +117,12 @@ database. Only an admin can change the status.
     >>> login("admin@canonical.com")
     >>> account.setStatus(AccountStatus.SUSPENDED, None, "spammer")
 
-    # Shouldn't be necessary with Storm!
-    >>> removeSecurityProxy(account).sync()
+date_status_set is maintained by a DB trigger, so we need to flush the
+status change and force the Account row to be reloaded from the database in
+order to check that the trigger works.
+
+    >>> IStore(account).flush()
+    >>> IStore(account).autoreload(account)
     >>> account.date_status_set > original_date_status_set
     True
 
