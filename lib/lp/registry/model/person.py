@@ -469,7 +469,8 @@ class Person(
     _visibility_warning_cache_key = None
     _visibility_warning_cache = None
 
-    account = ForeignKey(dbName="account", foreignKey="Account", default=None)
+    account_id = Int(name="account", default=None)
+    account = Reference(account_id, "Account.id")
 
     def _validate_name(self, attr, value):
         """Check that rename is allowed."""
@@ -717,9 +718,9 @@ class Person(
         )
         # Teams don't have Account records
         if self.account is not None:
-            account_id = self.account.id
+            account = self.account
             self.account = None
-            Account.delete(account_id)
+            Store.of(account).remove(account)
         self.creation_rationale = None
         self.teamowner = team_owner
         alsoProvides(self, ITeam)
@@ -2246,7 +2247,7 @@ class Person(
             LeftJoin(
                 account_table,
                 And(
-                    person_table.accountID == account_table.id,
+                    person_table.account_id == account_table.id,
                     account_table.status == AccountStatus.ACTIVE,
                 ),
             )
@@ -4256,7 +4257,7 @@ class PersonSet:
         person = Person(
             name=name,
             display_name=displayname,
-            accountID=account_id,
+            account_id=account_id,
             creation_rationale=rationale,
             creation_comment=comment,
             hide_email_addresses=hide_email_addresses,
@@ -4296,7 +4297,7 @@ class PersonSet:
 
     def getByAccount(self, account):
         """See `IPersonSet`."""
-        return Person.selectOne(Person.q.accountID == account.id)
+        return IStore(Person).find(Person, account_id=account.id).one()
 
     def updateStatistics(self):
         """See `IPersonSet`."""
@@ -5509,7 +5510,7 @@ def _get_recipients_for_team(team):
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
             ),
         ),
-        LeftJoin(Account, Person.accountID == Account.id),
+        LeftJoin(Account, Person.account_id == Account.id),
     )
     pending_team_ids = [team.id]
     recipient_ids = set()

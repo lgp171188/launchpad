@@ -49,7 +49,7 @@ def transfer_email(job):
     """
     from_email = removeSecurityProxy(job.from_person.preferredemail)
     from_email.personID = job.to_person.id
-    from_email.accountID = job.to_person.accountID
+    from_email.account_id = job.to_person.account_id
     from_email.status = EmailAddressStatus.NEW
     IStore(from_email).flush()
 

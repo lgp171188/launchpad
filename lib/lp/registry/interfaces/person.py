@@ -849,7 +849,7 @@ class IPersonViewRestricted(
     """IPerson attributes that require launchpad.View permission."""
 
     account = Object(schema=IAccount)
-    accountID = Int(title=_("Account ID"), required=True, readonly=True)
+    account_id = Int(title=_("Account ID"), required=True, readonly=True)
     karma = exported(
         Int(
             title=_("Karma"),

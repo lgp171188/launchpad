@@ -681,7 +681,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         # To make the person someone valid in Launchpad, validate the
         # email.
         if email_address_status == EmailAddressStatus.PREFERRED:
-            account = IPrimaryStore(Account).get(Account, person.accountID)
+            account = IPrimaryStore(Account).get(Account, person.account_id)
             account.status = AccountStatus.ACTIVE
             person.setPreferredEmail(email)
 
@@ -757,7 +757,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         if set_preferred_email:
             # setPreferredEmail no longer activates the account
             # automatically.
-            account = IPrimaryStore(Account).get(Account, person.accountID)
+            account = IPrimaryStore(Account).get(Account, person.account_id)
             account.reactivate("Activated by factory.makePersonByName")
             person.setPreferredEmail(email)
 
@@ -768,7 +768,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 person.mailing_list_auto_subscribe_policy = (
                     MailingListAutoSubscribePolicy.NEVER
                 )
-        account = IPrimaryStore(Account).get(Account, person.accountID)
+        account = IPrimaryStore(Account).get(Account, person.account_id)
         getUtility(IEmailAddressSet).new(
             alternative_address, person, EmailAddressStatus.VALIDATED
         )

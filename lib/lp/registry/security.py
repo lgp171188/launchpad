@@ -168,7 +168,7 @@ class EditAccountBySelfOrAdmin(AuthorizationBase):
     usedfor = IAccount
 
     def checkAuthenticated(self, user):
-        return user.in_admin or user.person.accountID == self.obj.id
+        return user.in_admin or user.person.account == self.obj
 
 
 class ViewAccount(EditAccountBySelfOrAdmin):

@@ -8,17 +8,15 @@ __all__ = [
     "AccountSet",
 ]
 
-import datetime
+from datetime import datetime, timezone
 
-from storm.locals import ReferenceSet
+from storm.locals import DateTime, Int, ReferenceSet, Unicode
 from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.helpers import backslashreplace
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
@@ -38,12 +36,21 @@ class AccountStatusDBEnum(DBEnum):
 
 
 @implementer(IAccount)
-class Account(SQLBase):
+class Account(StormBase):
     """An Account."""
 
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    __storm_table__ = "Account"
 
-    displayname = StringCol(dbName="displayname", notNull=True)
+    id = Int(primary=True)
+
+    date_created = DateTime(
+        name="date_created",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
+    )
+
+    displayname = Unicode(name="displayname", allow_none=False)
 
     creation_rationale = DBEnum(
         name="creation_rationale",
@@ -51,14 +58,32 @@ class Account(SQLBase):
         allow_none=False,
     )
     status = AccountStatusDBEnum(
-        enum=AccountStatus, default=AccountStatus.NOACCOUNT, allow_none=False
+        name="status",
+        enum=AccountStatus,
+        default=AccountStatus.NOACCOUNT,
+        allow_none=False,
     )
-    date_status_set = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    status_history = StringCol(dbName="status_comment", default=None)
+    date_status_set = DateTime(
+        name="date_status_set",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
+    )
+    status_history = Unicode(name="status_comment", default=None)
 
     openid_identifiers = ReferenceSet(
         "Account.id", OpenIdIdentifier.account_id
     )
+
+    _creating = False
+
+    def __init__(self, displayname, creation_rationale, status):
+        super().__init__()
+        self._creating = True
+        self.displayname = displayname
+        self.creation_rationale = creation_rationale
+        self.status = status
+        del self._creating
 
     def __repr__(self):
         displayname = backslashreplace(self.displayname)
@@ -70,7 +95,7 @@ class Account(SQLBase):
 
     def addStatusComment(self, user, comment):
         """See `IAccountModerateRestricted`."""
-        prefix = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        prefix = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         if user is not None:
             prefix += " %s" % user.name
         old_lines = (
@@ -112,6 +137,8 @@ class AccountSet:
             creation_rationale=rationale,
             status=status,
         )
+        IStore(Account).add(account)
+        IStore(Account).flush()
 
         # Create an OpenIdIdentifier record if requested.
         if openid_identifier is not None:
