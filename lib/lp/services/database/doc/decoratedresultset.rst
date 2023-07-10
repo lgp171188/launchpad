@@ -117,7 +117,7 @@ config option (https://bugs.launchpad.net/storm/+bug/217644):
     >>> results = store.find(
     ...     BinaryPackageRelease,
     ...     BinaryPackageRelease.id
-    ...     == BinaryPackagePublishingHistory.binarypackagereleaseID,
+    ...     == BinaryPackagePublishingHistory.binarypackagerelease_id,
     ... )
     >>> results = results.config(distinct=True)
     >>> len(list(results))

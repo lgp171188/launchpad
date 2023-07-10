@@ -242,7 +242,7 @@ class SourcePackage(
                 == self.sourcepackagename,
                 SourcePackagePublishingHistory.distroseries
                 == self.distroseries,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
             ]
@@ -383,13 +383,13 @@ class SourcePackage(
                 SourcePackageRelease,
                 Join(
                     SourcePackagePublishingHistory,
-                    SourcePackagePublishingHistory.sourcepackagereleaseID
+                    SourcePackagePublishingHistory.sourcepackagerelease_id
                     == SourcePackageRelease.id,
                 ),
             )
             .find(
                 SourcePackageRelease,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 SourcePackagePublishingHistory.distroseries

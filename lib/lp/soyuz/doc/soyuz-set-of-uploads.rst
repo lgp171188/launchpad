@@ -214,6 +214,9 @@ it into the accepted queue
 Finally, as a very simplistic publishing process, we may need to punt any
 given upload into the published state, so here's a very simplistic publisher
 
+    >>> from lp.registry.model.distroseries import DistroSeries
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.publishing import (
     ...     SourcePackagePublishingHistory as SPPH,
     ...     BinaryPackagePublishingHistory as BPPH,
@@ -221,29 +224,20 @@ given upload into the published state, so here's a very simplistic publisher
     >>> from lp.soyuz.enums import PackagePublishingStatus as PPS
     >>> from lp.services.database.constants import UTC_NOW
     >>> def simple_publish(distro):
-    ...     srcs_to_publish = SPPH.select(
-    ...         """
-    ...         SourcePackagePublishingHistory.distroseries = DistroSeries.id
-    ...     AND DistroSeries.distribution = Distribution.id
-    ...     AND Distribution.name = '%s'
-    ...     AND SourcePackagePublishingHistory.status = 1"""
-    ...         % distro,
-    ...         clauseTables=["DistroSeries", "Distribution"],
+    ...     srcs_to_publish = IStore(SPPH).find(
+    ...         SPPH,
+    ...         SPPH.distroseries == DistroSeries.id,
+    ...         DistroSeries.distribution == Distribution.id,
+    ...         Distribution.name == distro,
+    ...         SPPH.status == PPS.PENDING,
     ...     )
-    ...     bins_to_publish = BPPH.select(
-    ...         """
-    ...         BinaryPackagePublishingHistory.distroarchseries =
-    ...             DistroArchSeries.id
-    ...     AND DistroArchSeries.distroseries = DistroSeries.id
-    ...     AND DistroSeries.distribution = Distribution.id
-    ...     AND Distribution.name = '%s'
-    ...     AND BinaryPackagePublishingHistory.status = 1"""
-    ...         % distro,
-    ...         clauseTables=[
-    ...             "DistroArchSeries",
-    ...             "DistroSeries",
-    ...             "Distribution",
-    ...         ],
+    ...     bins_to_publish = IStore(BPPH).find(
+    ...         BPPH,
+    ...         BPPH.distroarchseries == DistroArchSeries.id,
+    ...         DistroArchSeries.distroseries == DistroSeries.id,
+    ...         DistroSeries.distribution == Distribution.id,
+    ...         Distribution.name == distro,
+    ...         BPPH.status == PPS.PENDING,
     ...     )
     ...     published_one = False
     ...     for src in srcs_to_publish:

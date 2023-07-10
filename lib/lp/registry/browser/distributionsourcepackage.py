@@ -641,7 +641,7 @@ class PublishingHistoryViewMixin:
     def _preload_people(self, pubs):
         ids = set()
         for spph in pubs:
-            ids.update((spph.removed_byID, spph.creatorID, spph.sponsorID))
+            ids.update((spph.removed_by_id, spph.creator_id, spph.sponsor_id))
         ids.discard(None)
         if ids:
             list(

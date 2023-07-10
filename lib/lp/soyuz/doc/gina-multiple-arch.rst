@@ -3,6 +3,7 @@ Gina over Multiple Architectures (and Pockets, and Components)
 
 Get the current counts of stuff in the database:
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.model.emailaddress import EmailAddress
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.teammembership import TeamParticipation
@@ -17,13 +18,13 @@ Get the current counts of stuff in the database:
     >>> SBPPH = BinaryPackagePublishingHistory
 
     >>> orig_spr_count = SourcePackageRelease.select().count()
-    >>> orig_sspph_count = SSPPH.select().count()
+    >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = TeamParticipation.select().count()
     >>> orig_email_count = EmailAddress.select().count()
     >>> orig_bpr_count = BinaryPackageRelease.select().count()
     >>> orig_build_count = BinaryPackageBuild.select().count()
-    >>> orig_sbpph_count = SBPPH.select().count()
+    >>> orig_sbpph_count = IStore(SBPPH).find(SBPPH).count()
 
 Create a distribution series and an arch series for dapper:
 
@@ -127,7 +128,7 @@ breezy:
 
     >>> SourcePackageRelease.select().count() - orig_spr_count
     2
-    >>> print(SSPPH.select().count() - orig_sspph_count)
+    >>> print(IStore(SSPPH).find(SSPPH).count() - orig_sspph_count)
     2
 
 Each source package has its own maintainer (in this case, fabbione and
@@ -148,7 +149,7 @@ distroarchseries:
     4
     >>> BinaryPackageBuild.select().count() - orig_build_count
     2
-    >>> SBPPH.select().count() - orig_sbpph_count
+    >>> IStore(SBPPH).find(SBPPH).count() - orig_sbpph_count
     4
 
 Check that the source package was correctly imported:
@@ -228,8 +229,10 @@ Check that we publishing bdftopcf into the correct distroarchseries:
     ... )
     >>> print(dar.architecturetag)
     i386
-    >>> for entry in SBPPH.selectBy(
-    ...     distroarchseriesID=dar.id, orderBy="binarypackagerelease"
+    >>> for entry in (
+    ...     IStore(SBPPH)
+    ...     .find(SBPPH, distroarchseries=dar)
+    ...     .order_by("binarypackagerelease")
     ... ):
     ...     package = entry.binarypackagerelease
     ...     print(package.binarypackagename.name, package.version)

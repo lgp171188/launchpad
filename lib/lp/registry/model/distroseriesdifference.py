@@ -104,10 +104,10 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
     )
     conditions = And(
         DistroSeriesDifference.id.is_in(dsd.id for dsd in dsds),
-        SourcePackagePublishingHistory.archiveID == archive_subselect,
-        SourcePackagePublishingHistory.distroseriesID == series_col,
+        SourcePackagePublishingHistory.archive_id == archive_subselect,
+        SourcePackagePublishingHistory.distroseries_id == series_col,
         SourcePackagePublishingHistory.status.is_in(statuses),
-        SourcePackagePublishingHistory.sourcepackagenameID
+        SourcePackagePublishingHistory.sourcepackagename_id
         == (DistroSeriesDifference.source_package_name_id),
     )
     # Do we match on DistroSeriesDifference.(parent_)source_version?
@@ -115,7 +115,7 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
         conditions = And(
             conditions,
             SourcePackageRelease.id
-            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            == SourcePackagePublishingHistory.sourcepackagerelease_id,
             Cast(SourcePackageRelease.version, "text") == version_col,
         )
     # The sort order is critical so that the DISTINCT ON clause selects the
@@ -284,7 +284,7 @@ def eager_load_dsds(dsds):
             source_pubs_for_release.values(),
             parent_source_pubs_for_release.values(),
         ),
-        ("sourcepackagereleaseID",),
+        ("sourcepackagerelease_id",),
     )
 
     # Get packagesets and parent_packagesets for each DSD.
@@ -501,9 +501,9 @@ class DistroSeriesDifference(StormBase):
             # the already established differences.
             differences_changed_by_conditions = And(
                 basic_conditions,
-                SPPH.archiveID == distro_series.main_archive.id,
-                SPPH.distroseriesID == distro_series.id,
-                SPPH.sourcepackagereleaseID == SPR.id,
+                SPPH.archive == distro_series.main_archive,
+                SPPH.distroseries == distro_series,
+                SPPH.sourcepackagerelease_id == SPR.id,
                 SPPH.status.is_in(active_publishing_status),
                 SPR.creatorID == TP.personID,
                 SPR.sourcepackagenameID == DSD.source_package_name_id,

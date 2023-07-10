@@ -269,32 +269,32 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
         already_published = DecoratedResultSet(
             store.find(
                 (
-                    SourcePackagePublishingHistory.sourcepackagenameID,
+                    SourcePackagePublishingHistory.sourcepackagename_id,
                     SourcePackagePublishingHistory.component_id,
                     SourcePackagePublishingHistory.section_id,
                     SourcePackagePublishingHistory.status,
                     SourcePackageRelease.version,
                 ),
                 SourcePackageRelease.id
-                == SourcePackagePublishingHistory.sourcepackagereleaseID,
-                SourcePackagePublishingHistory.archiveID == self.archive.id,
-                SourcePackagePublishingHistory.distroseriesID
-                == self.distroseries.id,
+                == SourcePackagePublishingHistory.sourcepackagerelease_id,
+                SourcePackagePublishingHistory.archive == self.archive,
+                SourcePackagePublishingHistory.distroseries
+                == self.distroseries,
                 SourcePackagePublishingHistory.status.is_in(
                     self.getExistingPublishingStatuses(self.include_deleted)
                 ),
-                SourcePackagePublishingHistory.sourcepackagenameID.is_in(
+                SourcePackagePublishingHistory.sourcepackagename_id.is_in(
                     spn.id for spn in spns
                 ),
                 *other_conditions,
             )
             .order_by(
-                SourcePackagePublishingHistory.sourcepackagenameID,
+                SourcePackagePublishingHistory.sourcepackagename_id,
                 Desc(SourcePackagePublishingHistory.datecreated),
                 Desc(SourcePackagePublishingHistory.id),
             )
             .config(
-                distinct=(SourcePackagePublishingHistory.sourcepackagenameID,)
+                distinct=(SourcePackagePublishingHistory.sourcepackagename_id,)
             ),
             id_resolver((SourcePackageName, Component, Section, None, None)),
             pre_iter_hook=eager_load,
@@ -334,16 +334,15 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
             archtags = set()
             for bpn, archtag in binaries.keys():
                 candidates.append(
-                    BinaryPackagePublishingHistory.binarypackagenameID
+                    BinaryPackagePublishingHistory.binarypackagename_id
                     == bpn.id
                 )
                 archtags.add(archtag)
             other_conditions.extend(
                 [
-                    BinaryPackagePublishingHistory.archiveID
-                    == self.archive.id,
+                    BinaryPackagePublishingHistory.archive == self.archive,
                     DistroArchSeries.distroseriesID == self.distroseries.id,
-                    BinaryPackagePublishingHistory.distroarchseriesID
+                    BinaryPackagePublishingHistory.distroarchseries_id
                     == DistroArchSeries.id,
                 ]
             )
@@ -358,8 +357,8 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
         already_published = DecoratedResultSet(
             store.find(
                 (
-                    BinaryPackagePublishingHistory.binarypackagenameID,
-                    BinaryPackagePublishingHistory.distroarchseriesID,
+                    BinaryPackagePublishingHistory.binarypackagename_id,
+                    BinaryPackagePublishingHistory.distroarchseries_id,
                     BinaryPackagePublishingHistory.component_id,
                     BinaryPackagePublishingHistory.section_id,
                     BinaryPackagePublishingHistory.priority,
@@ -367,7 +366,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                     BinaryPackageRelease.version,
                 ),
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
                 BinaryPackagePublishingHistory.status.is_in(
                     self.getExistingPublishingStatuses(self.include_deleted)
                 ),
@@ -375,15 +374,15 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
                 *other_conditions,
             )
             .order_by(
-                BinaryPackagePublishingHistory.distroarchseriesID,
-                BinaryPackagePublishingHistory.binarypackagenameID,
+                BinaryPackagePublishingHistory.distroarchseries_id,
+                BinaryPackagePublishingHistory.binarypackagename_id,
                 Desc(BinaryPackagePublishingHistory.datecreated),
                 Desc(BinaryPackagePublishingHistory.id),
             )
             .config(
                 distinct=(
-                    BinaryPackagePublishingHistory.distroarchseriesID,
-                    BinaryPackagePublishingHistory.binarypackagenameID,
+                    BinaryPackagePublishingHistory.distroarchseries_id,
+                    BinaryPackagePublishingHistory.binarypackagename_id,
                 )
             ),
             id_resolver(
@@ -597,9 +596,9 @@ def calculate_target_das(distroseries, binaries):
 
 def make_package_condition(archive, das, bpn):
     return And(
-        BinaryPackagePublishingHistory.archiveID == archive.id,
-        BinaryPackagePublishingHistory.distroarchseriesID == das.id,
-        BinaryPackagePublishingHistory.binarypackagenameID == bpn.id,
+        BinaryPackagePublishingHistory.archive == archive,
+        BinaryPackagePublishingHistory.distroarchseries == das,
+        BinaryPackagePublishingHistory.binarypackagename == bpn,
     )
 
 

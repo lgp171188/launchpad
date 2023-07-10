@@ -212,13 +212,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         required=True,
         readonly=True,
     )
-    sourcepackagenameID = Int(
+    sourcepackagename_id = Int(
         title=_("The DB id for the sourcepackagename."),
         required=False,
         readonly=False,
     )
     sourcepackagename = Attribute("The source package name being published")
-    sourcepackagereleaseID = Int(
+    sourcepackagerelease_id = Int(
         title=_("The DB id for the sourcepackagerelease."),
         required=False,
         readonly=False,
@@ -241,7 +241,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             readonly=False,
         )
     )
-    distroseriesID = Attribute("DB ID for distroseries.")
+    distroseries_id = Attribute("DB ID for distroseries.")
     distroseries = exported(
         Reference(
             IDistroSeries,
@@ -358,7 +358,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         ),
         exported_as="date_removed",
     )
-    removed_byID = Attribute("DB ID for removed_by.")
+    removed_by_id = Attribute("DB ID for removed_by.")
     removed_by = exported(
         Reference(
             IPerson,
@@ -438,7 +438,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         readonly=True,
     )
 
-    creatorID = Attribute("DB ID for creator.")
+    creator_id = Attribute("DB ID for creator.")
     creator = exported(
         Reference(
             IPerson,
@@ -449,7 +449,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         )
     )
 
-    sponsorID = Attribute("DB ID for sponsor.")
+    sponsor_id = Attribute("DB ID for sponsor.")
     sponsor = exported(
         Reference(
             IPerson,
@@ -692,13 +692,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
     """A binary package publishing record."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    binarypackagenameID = Int(
+    binarypackagename_id = Int(
         title=_("The DB id for the binarypackagename."),
         required=False,
         readonly=False,
     )
     binarypackagename = Attribute("The binary package name being published")
-    binarypackagereleaseID = Int(
+    binarypackagerelease_id = Int(
         title=_("The DB id for the binarypackagerelease."),
         required=False,
         readonly=False,
@@ -734,7 +734,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             readonly=True,
         )
     )
-    distroarchseriesID = Int(
+    distroarchseries_id = Int(
         title=_("The DB id for the distroarchseries."),
         required=False,
         readonly=False,

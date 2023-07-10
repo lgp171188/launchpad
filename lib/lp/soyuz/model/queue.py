@@ -1891,9 +1891,9 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     load_related(Component, sprs, ["component_id"])
     load_related(LibraryFileAlias, uploads, ["changes_file_id"])
     publications = load_referencing(
-        SourcePackagePublishingHistory, sprs, ["sourcepackagereleaseID"]
+        SourcePackagePublishingHistory, sprs, ["sourcepackagerelease_id"]
     )
-    load_related(Archive, publications, ["archiveID"])
+    load_related(Archive, publications, ["archive_id"])
     diffs = getUtility(IPackageDiffSet).getDiffsToReleases(
         sprs, preload_for_display=True
     )

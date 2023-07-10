@@ -1622,7 +1622,7 @@ class Distribution(
             origin.append(
                 Join(
                     SourcePackagePublishingHistory,
-                    SourcePackagePublishingHistory.sourcepackagenameID
+                    SourcePackagePublishingHistory.sourcepackagename_id
                     == DistributionSourcePackageCache.sourcepackagename_id,
                 )
             )
@@ -1630,7 +1630,7 @@ class Distribution(
                 [
                     SourcePackagePublishingHistory.distroseries
                     == publishing_distroseries,
-                    SourcePackagePublishingHistory.archiveID.is_in(
+                    SourcePackagePublishingHistory.archive_id.is_in(
                         self.all_distro_archive_ids
                     ),
                 ]
@@ -1764,7 +1764,7 @@ class Distribution(
                     # archive data. (There are many, many PPAs to consider
                     # and PostgreSQL picks a bad query plan resulting in
                     # timeouts).
-                    SourcePackagePublishingHistory.archiveID.is_in(
+                    SourcePackagePublishingHistory.archive_id.is_in(
                         self.all_distro_archive_ids
                     ),
                     SourcePackagePublishingHistory.sourcepackagename
@@ -1804,7 +1804,7 @@ class Distribution(
                     # See comment above for rationale for using an extra query
                     # instead of an inner join. (Bottom line, it would time out
                     # otherwise.)
-                    BinaryPackagePublishingHistory.archiveID.is_in(
+                    BinaryPackagePublishingHistory.archive_id.is_in(
                         self.all_distro_archive_ids
                     ),
                     BinaryPackagePublishingHistory.binarypackagename
@@ -2163,7 +2163,7 @@ class Distribution(
             Store.of(self)
             .find(
                 SourcePackagePublishingHistory,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.all_distro_archive_ids
                 ),
             )
@@ -2456,7 +2456,10 @@ class DistributionSet:
             distro_source_packagenames,
             lambda distro: distro.all_distro_archive_ids,
             lambda distro: DistroSeries.distribution == distro,
-            [SourcePackagePublishingHistory.distroseriesID == DistroSeries.id],
+            [
+                SourcePackagePublishingHistory.distroseries_id
+                == DistroSeries.id
+            ],
             DistroSeries.distributionID,
         )
         result = {}

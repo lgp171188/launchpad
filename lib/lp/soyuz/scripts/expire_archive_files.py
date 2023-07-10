@@ -115,13 +115,13 @@ class ArchiveExpirer(LaunchpadCronScript):
             eligible_clauses.extend(
                 [
                     BPF.libraryfile == LFA.id,
-                    BPF.binarypackagerelease == BPPH.binarypackagereleaseID,
+                    BPF.binarypackagerelease == BPPH.binarypackagerelease_id,
                     BPPH.archive == Archive.id,
                 ]
             )
             denied_clauses.extend(
                 [
-                    BPF.binarypackagerelease == BPPH.binarypackagereleaseID,
+                    BPF.binarypackagerelease == BPPH.binarypackagerelease_id,
                     BPPH.archive == Archive.id,
                 ]
             )
@@ -133,13 +133,13 @@ class ArchiveExpirer(LaunchpadCronScript):
             eligible_clauses.extend(
                 [
                     SPRF.libraryfile == LFA.id,
-                    SPRF.sourcepackagerelease == SPPH.sourcepackagereleaseID,
+                    SPRF.sourcepackagerelease == SPPH.sourcepackagerelease_id,
                     SPPH.archive == Archive.id,
                 ]
             )
             denied_clauses.extend(
                 [
-                    SPRF.sourcepackagerelease == SPPH.sourcepackagereleaseID,
+                    SPRF.sourcepackagerelease == SPPH.sourcepackagerelease_id,
                     SPPH.archive == Archive.id,
                 ]
             )

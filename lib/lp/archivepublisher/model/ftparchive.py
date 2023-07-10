@@ -306,7 +306,7 @@ class FTPArchiveHandler:
             Join(
                 SourcePackageRelease,
                 SourcePackageRelease.id
-                == SourcePackagePublishingHistory.sourcepackagereleaseID,
+                == SourcePackagePublishingHistory.sourcepackagerelease_id,
             ),
             Join(
                 SourcePackageName,
@@ -356,7 +356,7 @@ class FTPArchiveHandler:
             Join(
                 BinaryPackageRelease,
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
             ),
             Join(
                 BinaryPackageName,
@@ -366,7 +366,7 @@ class FTPArchiveHandler:
             Join(
                 DistroArchSeries,
                 DistroArchSeries.id
-                == BinaryPackagePublishingHistory.distroarchseriesID,
+                == BinaryPackagePublishingHistory.distroarchseries_id,
             ),
         )
 
@@ -376,7 +376,7 @@ class FTPArchiveHandler:
 
         conditions = [
             BinaryPackagePublishingHistory.archive == self.publisher.archive,
-            BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+            BinaryPackagePublishingHistory.distroarchseries_id.is_in(
                 architectures_ids
             ),
             BinaryPackagePublishingHistory.pocket == pocket,
@@ -672,15 +672,15 @@ class FTPArchiveHandler:
         )
         join_conditions = [
             SourcePackageReleaseFile.sourcepackagerelease_id
-            == SourcePackagePublishingHistory.sourcepackagereleaseID,
+            == SourcePackagePublishingHistory.sourcepackagerelease_id,
             SourcePackageName.id
-            == SourcePackagePublishingHistory.sourcepackagenameID,
+            == SourcePackagePublishingHistory.sourcepackagename_id,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             Component.id == SourcePackagePublishingHistory.component_id,
         ]
         select_conditions = [
             SourcePackagePublishingHistory.archive == self.publisher.archive,
-            SourcePackagePublishingHistory.distroseriesID == distroseries.id,
+            SourcePackagePublishingHistory.distroseries_id == distroseries.id,
             SourcePackagePublishingHistory.pocket == pocket,
             SourcePackagePublishingHistory.status
             == PackagePublishingStatus.PUBLISHED,
@@ -712,14 +712,14 @@ class FTPArchiveHandler:
         )
         join_conditions = [
             BinaryPackageRelease.id
-            == BinaryPackagePublishingHistory.binarypackagereleaseID,
+            == BinaryPackagePublishingHistory.binarypackagerelease_id,
             BinaryPackageFile.binarypackagerelease_id
-            == BinaryPackagePublishingHistory.binarypackagereleaseID,
+            == BinaryPackagePublishingHistory.binarypackagerelease_id,
             BinaryPackageBuild.id == BinaryPackageRelease.buildID,
             SourcePackageName.id == BinaryPackageBuild.source_package_name_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             DistroArchSeries.id
-            == BinaryPackagePublishingHistory.distroarchseriesID,
+            == BinaryPackagePublishingHistory.distroarchseries_id,
             Component.id == BinaryPackagePublishingHistory.component_id,
         ]
         select_conditions = [

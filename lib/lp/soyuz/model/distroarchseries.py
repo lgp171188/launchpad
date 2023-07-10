@@ -115,7 +115,7 @@ class DistroArchSeries(SQLBase):
             .find(
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.distroarchseries == self,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distroseries.distribution.all_distro_archive_ids
                 ),
                 BinaryPackagePublishingHistory.status
@@ -302,7 +302,7 @@ class DistroArchSeries(SQLBase):
 
         clauses = [
             BinaryPackagePublishingHistory.distroarchseries == self,
-            BinaryPackagePublishingHistory.archiveID.is_in(archives),
+            BinaryPackagePublishingHistory.archive_id.is_in(archives),
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status
             ),

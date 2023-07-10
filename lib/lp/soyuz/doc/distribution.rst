@@ -278,7 +278,7 @@ Celso's PPA.
     ...     archive=cprov.archive, status=PackagePublishingStatus.PUBLISHED
     ... )
     >>> spr = cprov_bin.binarypackagerelease.build.source_package_release
-    >>> spr.publishings[0].setPublished()
+    >>> spr.publishings.first().setPublished()
     >>> pending_binaries = cprov_bin.copyTo(
     ...     warty, pocket_release, cprov.archive
     ... )

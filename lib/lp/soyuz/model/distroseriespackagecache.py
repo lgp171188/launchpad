@@ -63,8 +63,8 @@ class DistroSeriesPackageCache(StormBase):
         bpn_ids = (
             IStore(BinaryPackagePublishingHistory)
             .find(
-                BinaryPackagePublishingHistory.binarypackagenameID,
-                BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+                BinaryPackagePublishingHistory.binarypackagename_id,
+                BinaryPackagePublishingHistory.distroarchseries_id.is_in(
                     Select(
                         DistroArchSeries.id,
                         tables=[DistroArchSeries],
@@ -80,7 +80,7 @@ class DistroSeriesPackageCache(StormBase):
             # Not necessary for correctness, but useful for testability; and
             # at the time of writing the sort only adds perhaps 10-20 ms to
             # the query time on staging.
-            .order_by(BinaryPackagePublishingHistory.binarypackagenameID)
+            .order_by(BinaryPackagePublishingHistory.binarypackagename_id)
         )
         return bulk.load(BinaryPackageName, bpn_ids)
 
@@ -155,11 +155,11 @@ class DistroSeriesPackageCache(StormBase):
                     Max(BinaryPackageRelease.datecreated),
                 ),
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
-                BinaryPackagePublishingHistory.binarypackagenameID.is_in(
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
+                BinaryPackagePublishingHistory.binarypackagename_id.is_in(
                     [bpn.id for bpn in binarypackagenames]
                 ),
-                BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+                BinaryPackagePublishingHistory.distroarchseries_id.is_in(
                     Select(
                         DistroArchSeries.id,
                         tables=[DistroArchSeries],

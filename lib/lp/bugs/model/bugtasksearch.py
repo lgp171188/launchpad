@@ -649,10 +649,10 @@ def _build_query(params):
         extra_clauses.append(
             BugTaskFlat.sourcepackagename_id.is_in(
                 Select(
-                    SourcePackagePublishingHistory.sourcepackagenameID,
+                    SourcePackagePublishingHistory.sourcepackagename_id,
                     tables=[SourcePackagePublishingHistory],
                     where=And(
-                        SourcePackagePublishingHistory.archiveID.is_in(
+                        SourcePackagePublishingHistory.archive_id.is_in(
                             archive_ids
                         ),
                         SourcePackagePublishingHistory.distroseries

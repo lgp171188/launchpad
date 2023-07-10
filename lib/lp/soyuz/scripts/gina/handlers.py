@@ -1038,7 +1038,7 @@ class BinaryPackagePublisher:
         BinaryPackagePublishingHistory(
             binarypackagerelease=binarypackage.id,
             binarypackagename=binarypackage.binarypackagename,
-            _binarypackageformat=binarypackage.binpackageformat,
+            binarypackageformat=binarypackage.binpackageformat,
             component=component.id,
             section=section.id,
             priority=priority,
@@ -1047,10 +1047,6 @@ class BinaryPackagePublisher:
             datecreated=UTC_NOW,
             datepublished=UTC_NOW,
             pocket=self.pocket,
-            datesuperseded=None,
-            supersededby=None,
-            datemadepending=None,
-            dateremoved=None,
             archive=archive,
             sourcepackagename=binarypackage.build.source_package_name,
         )

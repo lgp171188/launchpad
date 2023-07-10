@@ -88,12 +88,12 @@ class BinaryPackageNameSet:
                 BinaryPackagePublishingHistory,
                 Join(
                     BinaryPackageName,
-                    BinaryPackagePublishingHistory.binarypackagenameID
+                    BinaryPackagePublishingHistory.binarypackagename_id
                     == BinaryPackageName.id,
                 ),
                 Join(
                     DistroArchSeries,
-                    BinaryPackagePublishingHistory.distroarchseriesID
+                    BinaryPackagePublishingHistory.distroarchseries_id
                     == DistroArchSeries.id,
                 ),
             )
@@ -103,8 +103,8 @@ class BinaryPackageNameSet:
                 BinaryPackagePublishingHistory.status.is_in(
                     active_publishing_status
                 ),
-                BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
-                BinaryPackagePublishingHistory.binarypackagenameID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(archive_ids),
+                BinaryPackagePublishingHistory.binarypackagename_id.is_in(
                     name_ids
                 ),
             )

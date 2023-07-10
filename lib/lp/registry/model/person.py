@@ -3358,17 +3358,19 @@ class Person(
         )
         tables = (
             SourcePackageRelease,
-            Join(spph, spph.sourcepackagereleaseID == SourcePackageRelease.id),
-            Join(Archive, Archive.id == spph.archiveID),
-            Join(ancestor_spph, ancestor_spph.id == spph.ancestorID),
+            Join(
+                spph, spph.sourcepackagerelease_id == SourcePackageRelease.id
+            ),
+            Join(Archive, Archive.id == spph.archive_id),
+            Join(ancestor_spph, ancestor_spph.id == spph.ancestor_id),
         )
         rs = (
             Store.of(self)
             .using(*tables)
             .find(
                 spph.id,
-                spph.creatorID == self.id,
-                ancestor_spph.archiveID != spph.archiveID,
+                spph.creator_id == self.id,
+                ancestor_spph.archive_id != spph.archive_id,
                 Archive.purpose == ArchivePurpose.PRIMARY,
             )
         )
@@ -3391,28 +3393,28 @@ class Person(
                             SourcePackageRelease,
                             Join(
                                 spph,
-                                spph.sourcepackagereleaseID
+                                spph.sourcepackagerelease_id
                                 == SourcePackageRelease.id,
                             ),
-                            Join(Archive, Archive.id == spph.archiveID),
+                            Join(Archive, Archive.id == spph.archive_id),
                             Join(
                                 ancestor_spph,
-                                ancestor_spph.id == spph.ancestorID,
+                                ancestor_spph.id == spph.ancestor_id,
                             ),
                         ],
                         where=And(
-                            spph.creatorID == self.id,
-                            ancestor_spph.archiveID != spph.archiveID,
+                            spph.creator_id == self.id,
+                            ancestor_spph.archive_id != spph.archive_id,
                             Archive.purpose == ArchivePurpose.PRIMARY,
                         ),
                         order_by=[
-                            spph.distroseriesID,
+                            spph.distroseries_id,
                             SourcePackageRelease.sourcepackagenameID,
                             Desc(spph.datecreated),
                             Desc(spph.id),
                         ],
                         distinct=(
-                            spph.distroseriesID,
+                            spph.distroseries_id,
                             SourcePackageRelease.sourcepackagenameID,
                         ),
                     )
@@ -3426,9 +3428,9 @@ class Person(
 
         def load_related_objects(rows):
             bulk.load_related(
-                SourcePackageRelease, rows, ["sourcepackagereleaseID"]
+                SourcePackageRelease, rows, ["sourcepackagerelease_id"]
             )
-            bulk.load_related(Archive, rows, ["archiveID"])
+            bulk.load_related(Archive, rows, ["archive_id"])
 
         return DecoratedResultSet(rs, pre_iter_hook=load_related_objects)
 
