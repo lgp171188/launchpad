@@ -17,7 +17,7 @@ from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 from pymacaroons.serializers import JsonSerializer
 from storm.databases.postgres import JSON
-from storm.expr import Cast, Coalesce, Except
+from storm.expr import Cast, Coalesce, Except, Is
 from storm.locals import (
     And,
     Bool,
@@ -112,12 +112,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import (
-    Greatest,
-    IsTrue,
-    JSONExtract,
-    NullsLast,
-)
+from lp.services.database.stormexpr import Greatest, JSONExtract, NullsLast
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -1190,8 +1185,8 @@ class CharmRecipeSet:
             minutes=config.charms.auto_build_frequency
         )
         stale_clauses = [
-            IsTrue(CharmRecipe.is_stale),
-            IsTrue(CharmRecipe.auto_build),
+            Is(CharmRecipe.is_stale, True),
+            Is(CharmRecipe.auto_build, True),
         ]
         recent_clauses = [
             CharmRecipeJob.recipe_id == CharmRecipe.id,

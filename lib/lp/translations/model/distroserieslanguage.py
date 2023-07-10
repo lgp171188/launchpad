@@ -12,7 +12,7 @@ __all__ = [
 from datetime import datetime, timezone
 from operator import itemgetter
 
-from storm.expr import LeftJoin
+from storm.expr import Is, LeftJoin
 from storm.locals import DateTime, Desc, Int, Join, Reference
 from zope.interface import implementer
 
@@ -21,7 +21,6 @@ from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import IsTrue
 from lp.translations.interfaces.distroserieslanguage import (
     IDistroSeriesLanguage,
     IDistroSeriesLanguageSet,
@@ -86,7 +85,7 @@ class DistroSeriesLanguage(StormBase, RosettaStats):
                 (POFile, SourcePackageName),
                 POFile.language == self.language,
                 POTemplate.distroseries == self.distroseries,
-                IsTrue(POTemplate.iscurrent),
+                Is(POTemplate.iscurrent, True),
             )
             .order_by(Desc(POTemplate.priority), POFile.id)
         )

@@ -17,7 +17,7 @@ from typing import List
 
 import apt_pkg
 from lazr.delegates import delegate_to
-from storm.expr import SQL, And, Column, Desc, Join, Or, Select, Table
+from storm.expr import SQL, And, Column, Desc, Is, Join, Or, Select, Table
 from storm.locals import JSON, Int, Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
@@ -77,7 +77,7 @@ from lp.services.database.sqlobject import (
     SQLObjectNotFound,
     StringCol,
 )
-from lp.services.database.stormexpr import IsTrue, WithMaterialized, fti_search
+from lp.services.database.stormexpr import WithMaterialized, fti_search
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.mail.signedmessage import signed_message_from_bytes
@@ -760,7 +760,7 @@ class DistroSeries(
                 DistroSeriesLanguage,
                 DistroSeriesLanguage.language == Language.id,
                 DistroSeriesLanguage.distroseries == self,
-                IsTrue(Language.visible),
+                Is(Language.visible, True),
             )
             .order_by(Language.englishname)
         )
@@ -1009,12 +1009,12 @@ class DistroSeries(
             IStore(Language)
             .find(
                 Language,
-                IsTrue(Language.visible),
+                Is(Language.visible, True),
                 Language.id == POFile.languageID,
                 Language.code != "en",
                 POFile.potemplateID == POTemplate.id,
                 POTemplate.distroseries == self,
-                IsTrue(POTemplate.iscurrent),
+                Is(POTemplate.iscurrent, True),
             )
             .config(distinct=True)
         )

@@ -17,7 +17,7 @@ from io import BytesIO
 from operator import attrgetter
 from textwrap import dedent
 
-from storm.expr import SQL, Alias, And, Func, Or, Select
+from storm.expr import SQL, Alias, And, Func, Is, Or, Select
 from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from zope.component import getUtility, queryAdapter
 from zope.interface import implementer
@@ -42,7 +42,6 @@ from lp.services.database.interfaces import (
 )
 from lp.services.database.sqlbase import quote
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import IsFalse
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.translations.enums import RosettaImportStatus
@@ -1477,7 +1476,7 @@ class TranslationImportQueue:
                 [
                     TranslationImportQueueEntry.distroseries
                     == DistroSeries.id,
-                    IsFalse(DistroSeries.defer_translation_imports),
+                    Is(DistroSeries.defer_translation_imports, False),
                 ]
             )
 

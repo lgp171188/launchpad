@@ -16,8 +16,6 @@ __all__ = [
     "get_where_for_reference",
     "ImmutablePgJSON",
     "IsDistinctFrom",
-    "IsFalse",
-    "IsTrue",
     "JSONContains",
     "JSONExtract",
     "NullCount",
@@ -229,28 +227,6 @@ class ArrayIntersects(CompoundOper):
 
     __slots__ = ()
     oper = "&&"
-
-
-class IsTrue(SuffixExpr):
-    """True iff the input Boolean expression is `TRUE`.
-
-    Unlike `expr` or `expr == True`, this returns `FALSE` when
-    `expr IS NULL`.
-    """
-
-    __slots__ = ()
-    suffix = "IS TRUE"
-
-
-class IsFalse(SuffixExpr):
-    """True iff the input Boolean expression is `FALSE`.
-
-    Unlike `Not(expr)` or `expr == False`, this returns `FALSE` when
-    `expr IS NULL`.
-    """
-
-    __slots__ = ()
-    suffix = "IS FALSE"
 
 
 class IsDistinctFrom(CompoundOper):
