@@ -49,6 +49,7 @@ from storm.expr import (
     Desc,
     Exists,
     In,
+    Is,
     Join,
     LeftJoin,
     Min,
@@ -3178,16 +3179,22 @@ class Person(
     @property
     def unvalidatedemails(self):
         """See `IPerson`."""
-        query = """
-            requester = %s
-            AND (tokentype=%s OR tokentype=%s)
-            AND date_consumed IS NULL
-            """ % sqlvalues(
-            self.id,
-            LoginTokenType.VALIDATEEMAIL,
-            LoginTokenType.VALIDATETEAMEMAIL,
+        return sorted(
+            {
+                token.email
+                for token in IStore(LoginToken).find(
+                    LoginToken,
+                    LoginToken.requester == self,
+                    LoginToken.tokentype.is_in(
+                        (
+                            LoginTokenType.VALIDATEEMAIL,
+                            LoginTokenType.VALIDATETEAMEMAIL,
+                        )
+                    ),
+                    Is(LoginToken.date_consumed, None),
+                )
+            }
         )
-        return sorted({token.email for token in LoginToken.select(query)})
 
     @property
     def guessedemails(self):

@@ -227,13 +227,14 @@ token to a fixed value:
     >>> from datetime import datetime, timezone
     >>> import hashlib
     >>> from lp.services.verification.model.logintoken import LoginToken
-    >>> logintoken = LoginToken.selectOneBy(
-    ...     _token=hashlib.sha256(token_value).hexdigest()
+    >>> logintoken = (
+    ...     IStore(LoginToken)
+    ...     .find(LoginToken, _token=hashlib.sha256(token_value).hexdigest())
+    ...     .one()
     ... )
     >>> logintoken.date_created = datetime(
     ...     2005, 4, 1, 12, 0, 0, tzinfo=timezone.utc
     ... )
-    >>> logintoken.sync()
 
 Back to Sample User. They visit the token URL and is asked to sign some
 text to prove they own the key.
@@ -317,8 +318,10 @@ If they sign the text correctly, they are redirected to their home page.
 
 Now that the key has been validated, the login token is consumed:
 
-    >>> consumed_token = LoginToken.selectOneBy(
-    ...     _token=hashlib.sha256(token_value).hexdigest()
+    >>> consumed_token = (
+    ...     IStore(LoginToken)
+    ...     .find(LoginToken, _token=hashlib.sha256(token_value).hexdigest())
+    ...     .one()
     ... )
     >>> consumed_token.date_consumed is not None
     True
