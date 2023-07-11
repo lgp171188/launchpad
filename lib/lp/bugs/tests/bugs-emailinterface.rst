@@ -297,7 +297,11 @@ includes commands, the email has to be OpenPGP-signed.
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> bug_one = bugset.get(1)
     >>> added_message = getUtility(IMessageSet).get("<yada-yada-test1>")[0]
-    >>> added_message in bug_one.messages
+
+We use set() here because the DecoratedResultSet used by Bug.messages
+doesn't currently support __contains__.
+
+    >>> added_message in set(bug_one.messages)
     True
     >>> print(bug_one.title)
     Better summary
@@ -522,7 +526,7 @@ to the bug:
 
     >>> added_message = getUtility(IMessageSet).get("<yada-yada-test3>")[0]
     >>> bug_one = bugset.get(1)
-    >>> added_message in bug_one.messages
+    >>> added_message in set(bug_one.messages)
     True
 
 In these tests, every time we log in, we're fully trusted again:
@@ -2962,7 +2966,7 @@ Attachments sent in replies to existing bugs are stored too.
     >>> new_message = getUtility(IMessageSet).get("comment-with-attachment")[
     ...     0
     ... ]
-    >>> new_message in bug_one.messages
+    >>> new_message in set(bug_one.messages)
     True
     >>> print_attachments(new_message.bugattachments)
     LibraryFileAlias attachment.txt text/plain UNSPECIFIED
