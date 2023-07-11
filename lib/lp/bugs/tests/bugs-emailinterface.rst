@@ -297,6 +297,10 @@ includes commands, the email has to be OpenPGP-signed.
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> bug_one = bugset.get(1)
     >>> added_message = getUtility(IMessageSet).get("<yada-yada-test1>")[0]
+
+We use set() here because the DecoratedResultSet used by Bug.messages
+doesn't currently support __contains__.
+
     >>> added_message in set(bug_one.messages)
     True
     >>> print(bug_one.title)
