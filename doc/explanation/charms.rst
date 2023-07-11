@@ -136,7 +136,7 @@ these guidelines to build your charm for Launchpad:
    charm, if your charm is based on other layers. The actual values that will
    be running in each environment (production, dogfood, staging, qastaging),
    should later be set in the ``lp/bundle.yaml`` file within the
-   `launchpad-mojo-specs <https://code.launchpad.net/launchpad-mojo-specs>`
+   `launchpad-mojo-specs <https://git.launchpad.net/launchpad-mojo-specs>`_
    repo (you should only worry about these specs after your charm is ready).
 
 5. **Write your reactive code:** Start adding code that it might need
