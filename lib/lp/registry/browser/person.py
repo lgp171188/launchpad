@@ -627,6 +627,14 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             raise NotFoundError(name)
         return snap
 
+    @stepthrough("+ssh-keys")
+    def traverse_ssh_keys(self, id):
+        """Traverse to this person's SSH keys."""
+        ssh_key = getUtility(ISSHKeySet).getByID(id)
+        if ssh_key is None or ssh_key.person != self.context:
+            return None
+        return ssh_key
+
 
 class PersonSetNavigation(Navigation):
     usedfor = IPersonSet
