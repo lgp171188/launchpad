@@ -181,7 +181,6 @@ from lp.services.database.sqlobject import (
     IntCol,
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
 )
 from lp.services.database.stormbase import StormBase
@@ -390,14 +389,6 @@ class Bug(SQLBase, InformationTypeMixin):
 
     # useful Joins
     activity = ReferenceSet("id", BugActivity.bug_id, order_by=BugActivity.id)
-    messages = SQLRelatedJoin(
-        "Message",
-        joinColumn="bug_id",
-        otherColumn="message_id",
-        intermediateTable="BugMessage",
-        prejoins=["owner"],
-        orderBy=["datecreated", "id"],
-    )
     bug_messages = ReferenceSet(
         "id", BugMessage.bug_id, order_by=BugMessage.index
     )
@@ -522,6 +513,21 @@ class Bug(SQLBase, InformationTypeMixin):
             Specification,
             Specification.id.is_in(spec.id for spec in specifications),
             *get_specification_privacy_filter(user),
+        )
+
+    @property
+    def messages(self):
+        """See `IBug`."""
+        return DecoratedResultSet(
+            IStore(Message)
+            .find(
+                (Message, Person),
+                BugMessage.bug == self,
+                BugMessage.message_id == Message.id,
+                Message.owner_id == Person.id,
+            )
+            .order_by(Message.datecreated, Message.id),
+            result_decorator=operator.itemgetter(0),
         )
 
     @property
@@ -679,7 +685,7 @@ class Bug(SQLBase, InformationTypeMixin):
             # in storm with very large bugs by not joining and instead
             # querying a second time. If this starts to show high db
             # time, we can left outer join instead.
-            owner_ids = {message.ownerID for message in messages}
+            owner_ids = {message.owner_id for message in messages}
             owner_ids.discard(None)
             if not owner_ids:
                 return
@@ -692,12 +698,12 @@ class Bug(SQLBase, InformationTypeMixin):
             # for the message content.
             message_ids = {message.id for message in messages}
             chunks = store.find(
-                MessageChunk, MessageChunk.messageID.is_in(message_ids)
+                MessageChunk, MessageChunk.message_id.is_in(message_ids)
             )
             chunks.order_by(MessageChunk.id)
             chunk_map = {}
             for chunk in chunks:
-                message_chunks = chunk_map.setdefault(chunk.messageID, [])
+                message_chunks = chunk_map.setdefault(chunk.message_id, [])
                 message_chunks.append(chunk)
             for message in messages:
                 if message.id not in chunk_map:
@@ -1546,7 +1552,7 @@ class Bug(SQLBase, InformationTypeMixin):
         self, message, bugwatch=None, user=None, remote_comment_id=None
     ):
         """See `IBug`."""
-        if message not in self.messages:
+        if IStore(self).find(BugMessage, bug=self, message=message).is_empty():
             if user is None:
                 user = message.owner
             result = BugMessage(
@@ -1953,7 +1959,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # Since "soft-deleted" messages will have 0 chunks, we should use
         # left join here.
         message_join = LeftJoin(
-            Message, MessageChunk, Message.id == MessageChunk.messageID
+            Message, MessageChunk, Message.id == MessageChunk.message_id
         )
         query = Store.of(self).using(BugMessage, message_join)
         result = query.find(
@@ -1967,7 +1973,7 @@ class Bug(SQLBase, InformationTypeMixin):
         def eager_load_owners(rows):
             owners = set()
             for row in rows:
-                owners.add(row[1].ownerID)
+                owners.add(row[1].owner_id)
             owners.discard(None)
             if not owners:
                 return
@@ -3300,10 +3306,7 @@ class BugSet:
                 datecreated=params.datecreated,
             )
             MessageChunk(
-                message=params.msg,
-                sequence=1,
-                content=params.comment,
-                blob=None,
+                message=params.msg, sequence=1, content=params.comment
             )
 
         # Extract the details needed to create the bug and optional msg.

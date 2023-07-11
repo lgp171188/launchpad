@@ -39,7 +39,7 @@
             interface="lp.services.messages.interfaces.messagerevision.IMessageRevisionEdit"/>
     </class>
 
-    <!-- MessageChunk -->
+    <!-- MessageRevisionChunk -->
     <class
         class="lp.services.messages.model.messagerevision.MessageRevisionChunk">
         <allow

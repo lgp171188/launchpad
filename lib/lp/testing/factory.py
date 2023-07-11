@@ -4569,7 +4569,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         `Message` table already.
         """
         msg_id = make_msgid("launchpad")
-        while not Message.selectBy(rfc822msgid=msg_id).is_empty():
+        while not IStore(Message).find(Message, rfc822msgid=msg_id).is_empty():
             msg_id = make_msgid("launchpad")
         return msg_id
 

@@ -86,7 +86,7 @@ the 'awaiting synchronization' mark goes away.
     >>> from lp.bugs.interfaces.bugmessage import IBugMessageSet
     >>> login("foo.bar@canonical.com")
     >>> bug_15 = getUtility(IBugSet).get(15)
-    >>> message = bug_15.messages[-1]
+    >>> message = bug_15.messages.last()
     >>> print(message.text_contents)
     A reply comment.
     >>> bug_message = getUtility(IBugMessageSet).getByBugAndMessage(

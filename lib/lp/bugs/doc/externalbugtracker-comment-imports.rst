@@ -169,7 +169,7 @@ invalid.
     >>> joe = getUtility(IPersonSet).getByEmail(
     ...     "joe.bloggs@example.com", filter_status=False
     ... )
-    >>> bug.messages[-1].owner == joe
+    >>> bug.messages.last().owner == joe
     True
 
     >>> print(joe.displayname)
@@ -201,7 +201,7 @@ is associated with the existing person.
     >>> bugwatch_updater.importBugComments()
     INFO Imported 1 comments for remote bug 123456 on ...
 
-    >>> print(bug.messages[-1].owner.name)
+    >>> print(bug.messages.last().owner.name)
     no-priv
 
 It's also possible for Launchpad to create Persons from remote
@@ -220,10 +220,10 @@ used to create a Person based on the displayname alone.
     >>> bugwatch_updater.importBugComments()
     INFO Imported 1 comments for remote bug 123456 on ...
 
-    >>> print(bug.messages[-1].owner.name)
+    >>> print(bug.messages.last().owner.name)
     noemail-bugzilla-checkwatches-1
 
-    >>> print(bug.messages[-1].owner.preferredemail)
+    >>> print(bug.messages.last().owner.preferredemail)
     None
 
 A BugTrackerPerson record will have been created to map the new Person
@@ -248,7 +248,7 @@ imported.
     or display name found. (OOPS-...)
     INFO Imported 0 comments for remote bug 123456 on ...
 
-    >>> print(bug.messages[-1].text_contents)
+    >>> print(bug.messages.last().text_contents)
     Yet another comment.
 
 Let's delete that comment now so that it doesn't break later tests.

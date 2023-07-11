@@ -22,6 +22,7 @@ import six
 from lazr.config import as_timedelta
 from storm.locals import (
     And,
+    Bool,
     DateTime,
     Int,
     Max,
@@ -41,17 +42,8 @@ from lp.registry.interfaces.person import (
     validate_public_person,
 )
 from lp.services.config import config
-from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLRelatedJoin,
-    StringCol,
-)
+from lp.services.database.constants import DEFAULT, UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.messages.interfaces.message import (
@@ -88,49 +80,64 @@ def utcdatetime_from_field(field_value):
 
 
 @implementer(IMessage)
-class Message(SQLBase):
+class Message(StormBase):
     """A message. This is an RFC822-style message, typically it would be
     coming into the bug system, or coming in from a mailing list.
     """
 
-    _table = "Message"
-    _defaultOrder = "-id"
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_deleted = UtcDateTimeCol(notNull=False, default=None)
-    date_last_edited = UtcDateTimeCol(notNull=False, default=None)
-    subject = StringCol(notNull=False, default=None)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    __storm_table__ = "Message"
+    __storm_order__ = "-id"
+    id = Int(primary=True)
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
-    parent = ForeignKey(
-        foreignKey="Message", dbName="parent", notNull=False, default=None
+    date_deleted = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
+    date_last_edited = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
     )
-    rfc822msgid = StringCol(notNull=True)
-    bugs = SQLRelatedJoin(
-        "Bug",
-        joinColumn="message_id",
-        otherColumn="bug_id",
-        intermediateTable="BugMessage",
+    subject = Unicode(allow_none=True, default=None)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=True
     )
-    _chunks = SQLMultipleJoin("MessageChunk", joinColumn="message")
+    owner = Reference(owner_id, "Person.id")
+    parent_id = Int(name="parent", allow_none=True, default=None)
+    parent = Reference(parent_id, "Message.id")
+    rfc822msgid = Unicode(allow_none=False)
+    bugs = ReferenceSet(
+        "id", "BugMessage.message_id", "BugMessage.bug_id", "Bug.id"
+    )
+    _chunks = ReferenceSet("id", "MessageChunk.message_id")
 
     @cachedproperty
     def chunks(self):
         return list(self._chunks)
 
-    raw = ForeignKey(foreignKey="LibraryFileAlias", dbName="raw", default=None)
-    _bugattachments = ReferenceSet(
-        "<primary key>", "BugAttachment._message_id"
-    )
+    raw_id = Int(name="raw", default=None)
+    raw = Reference(raw_id, "LibraryFileAlias.id")
+    _bugattachments = ReferenceSet("id", "BugAttachment._message_id")
 
     @cachedproperty
     def bugattachments(self):
         return list(self._bugattachments)
 
-    visible = BoolCol(notNull=True, default=True)
+    visible = Bool(allow_none=False, default=True)
+
+    def __init__(
+        self,
+        rfc822msgid,
+        datecreated=DEFAULT,
+        subject=None,
+        owner=None,
+        parent=None,
+        raw=None,
+    ):
+        super().__init__()
+        self.rfc822msgid = rfc822msgid
+        self.datecreated = datecreated
+        self.subject = subject
+        self.owner = owner
+        self.parent = parent
+        self.raw = raw
 
     def __repr__(self):
         return "<Message id=%s>" % self.id
@@ -293,7 +300,7 @@ class MessageSet:
     }
 
     def get(self, rfc822msgid):
-        messages = list(Message.selectBy(rfc822msgid=rfc822msgid))
+        messages = list(IStore(Message).find(Message, rfc822msgid=rfc822msgid))
         if len(messages) == 0:
             raise NotFoundError(rfc822msgid)
         return messages
@@ -313,6 +320,7 @@ class MessageSet:
             owner=owner,
             datecreated=datecreated,
         )
+        IStore(Message).add(message)
         MessageChunk(message=message, sequence=1, content=content)
         # XXX 2008-05-27 jamesh:
         # Ensure that BugMessages get flushed in same order as they
@@ -608,24 +616,30 @@ class MessageSet:
 
 
 @implementer(IMessageChunk)
-class MessageChunk(SQLBase):
+class MessageChunk(StormBase):
     """One part of a possibly multipart Message"""
 
-    _table = "MessageChunk"
-    _defaultOrder = "sequence"
+    __storm_table__ = "MessageChunk"
+    __storm_order__ = "sequence"
 
-    message = ForeignKey(foreignKey="Message", dbName="message", notNull=True)
+    id = Int(primary=True)
 
-    sequence = IntCol(notNull=True)
+    message_id = Int(name="message", allow_none=False)
+    message = Reference(message_id, "Message.id")
 
-    content = StringCol(notNull=False, default=None)
+    sequence = Int(allow_none=False)
 
-    blob = ForeignKey(
-        foreignKey="LibraryFileAlias",
-        dbName="blob",
-        notNull=False,
-        default=None,
-    )
+    content = Unicode(allow_none=True, default=None)
+
+    blob_id = Int(name="blob", allow_none=True, default=None)
+    blob = Reference(blob_id, "LibraryFileAlias.id")
+
+    def __init__(self, message, sequence, content=None, blob=None):
+        super().__init__()
+        self.message = message
+        self.sequence = sequence
+        self.content = content
+        self.blob = blob
 
     def __str__(self):
         """Return a text representation of this chunk.
