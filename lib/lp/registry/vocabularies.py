@@ -694,7 +694,7 @@ class ValidPersonOrTeamVocabulary(
                 SQL("MatchingPerson"),
                 Person,
                 LeftJoin(EmailAddress, EmailAddress.person == Person.id),
-                LeftJoin(Account, Account.id == Person.accountID),
+                LeftJoin(Account, Account.id == Person.account_id),
             ]
             tables.extend(self.extra_tables)
 

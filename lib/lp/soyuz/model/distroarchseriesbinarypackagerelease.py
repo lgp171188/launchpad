@@ -93,7 +93,7 @@ class DistroArchSeriesBinaryPackageRelease:
             == self.binarypackagerelease,
             BinaryPackagePublishingHistory.distroarchseries
             == self.distroarchseries,
-            BinaryPackagePublishingHistory.archiveID.is_in(
+            BinaryPackagePublishingHistory.archive_id.is_in(
                 self.distribution.all_distro_archive_ids
             ),
         ]
@@ -122,7 +122,7 @@ class DistroArchSeriesBinaryPackageRelease:
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.distroarchseries
                 == self.distroarchseries,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 BinaryPackagePublishingHistory.binarypackagerelease

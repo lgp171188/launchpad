@@ -730,7 +730,7 @@ class Archive(SQLBase):
         only_unpublished=False,
     ):
         """See `IArchive`."""
-        clauses = [SourcePackagePublishingHistory.archiveID == self.id]
+        clauses = [SourcePackagePublishingHistory.archive == self]
 
         if order_by_date:
             order_by = [
@@ -745,7 +745,7 @@ class Archive(SQLBase):
 
         if not order_by_date or name is not None:
             clauses.append(
-                SourcePackagePublishingHistory.sourcepackagenameID
+                SourcePackagePublishingHistory.sourcepackagename_id
                 == SourcePackageName.id
             )
 
@@ -762,7 +762,7 @@ class Archive(SQLBase):
 
         if not order_by_date or version is not None:
             clauses.append(
-                SourcePackagePublishingHistory.sourcepackagereleaseID
+                SourcePackagePublishingHistory.sourcepackagerelease_id
                 == SourcePackageRelease.id
             )
 
@@ -797,8 +797,7 @@ class Archive(SQLBase):
 
         if distroseries is not None:
             clauses.append(
-                SourcePackagePublishingHistory.distroseriesID
-                == distroseries.id
+                SourcePackagePublishingHistory.distroseries == distroseries
             )
 
         if pocket is not None:
@@ -837,7 +836,7 @@ class Archive(SQLBase):
             # \o/ circular imports.
             from lp.registry.model.distroseries import DistroSeries
 
-            ids = set(map(attrgetter("distroseriesID"), rows))
+            ids = set(map(attrgetter("distroseries_id"), rows))
             ids.discard(None)
             if ids:
                 list(store.find(DistroSeries, DistroSeries.id.is_in(ids)))
@@ -845,7 +844,7 @@ class Archive(SQLBase):
             ids.discard(None)
             if ids:
                 list(store.find(Section, Section.id.is_in(ids)))
-            ids = set(map(attrgetter("sourcepackagereleaseID"), rows))
+            ids = set(map(attrgetter("sourcepackagerelease_id"), rows))
             ids.discard(None)
             if not ids:
                 return
@@ -868,10 +867,10 @@ class Archive(SQLBase):
         # rather than linking through BPB, BPR and BPPH since we don't condemn
         # sources until their binaries are all gone due to GPL compliance.
         clauses = [
-            SourcePackagePublishingHistory.archiveID == self.id,
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.archive == self,
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == SourcePackageRelease.id,
-            SourcePackagePublishingHistory.sourcepackagenameID
+            SourcePackagePublishingHistory.sourcepackagename_id
             == SourcePackageName.id,
             SourcePackagePublishingHistory.scheduleddeletiondate == None,
         ]
@@ -885,8 +884,7 @@ class Archive(SQLBase):
 
         if distroseries:
             clauses.append(
-                SourcePackagePublishingHistory.distroseriesID
-                == distroseries.id
+                SourcePackagePublishingHistory.distroseries == distroseries
             )
 
         if name:
@@ -904,7 +902,7 @@ class Archive(SQLBase):
 
         def eager_load(rows):
             load_related(
-                SourcePackageRelease, rows, ["sourcepackagereleaseID"]
+                SourcePackageRelease, rows, ["sourcepackagerelease_id"]
             )
 
         return DecoratedResultSet(sources, pre_iter_hook=eager_load)
@@ -927,7 +925,7 @@ class Archive(SQLBase):
             ),
             SourcePackagePublishingHistory.archive == self.id,
             SourcePackagePublishingHistory.dateremoved == None,
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == SourcePackageReleaseFile.sourcepackagerelease_id,
             SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
@@ -968,7 +966,7 @@ class Archive(SQLBase):
 
         Returns a list of 'clauses' (to be joined in the callsite).
         """
-        clauses = [BinaryPackagePublishingHistory.archiveID == self.id]
+        clauses = [BinaryPackagePublishingHistory.archive == self]
 
         if order_by_date:
             ordered = False
@@ -991,7 +989,7 @@ class Archive(SQLBase):
 
         if ordered or name is not None:
             clauses.append(
-                BinaryPackagePublishingHistory.binarypackagenameID
+                BinaryPackagePublishingHistory.binarypackagename_id
                 == BinaryPackageName.id
             )
 
@@ -1003,7 +1001,7 @@ class Archive(SQLBase):
 
         if need_bpr or ordered or version is not None:
             clauses.append(
-                BinaryPackagePublishingHistory.binarypackagereleaseID
+                BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageRelease.id
             )
 
@@ -1034,7 +1032,7 @@ class Archive(SQLBase):
             except TypeError:
                 distroarchseries = (distroarchseries,)
             clauses.append(
-                BinaryPackagePublishingHistory.distroarchseriesID.is_in(
+                BinaryPackagePublishingHistory.distroarchseries_id.is_in(
                     [d.id for d in distroarchseries]
                 )
             )
@@ -1111,7 +1109,7 @@ class Archive(SQLBase):
 
         def eager_load_api(bpphs):
             bprs = load_related(
-                BinaryPackageRelease, bpphs, ["binarypackagereleaseID"]
+                BinaryPackageRelease, bpphs, ["binarypackagerelease_id"]
             )
             load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
             bpbs = load_related(BinaryPackageBuild, bprs, ["buildID"])
@@ -1122,7 +1120,7 @@ class Archive(SQLBase):
             load_related(Component, bpphs, ["component_id"])
             load_related(Section, bpphs, ["section_id"])
             dases = load_related(
-                DistroArchSeries, bpphs, ["distroarchseriesID"]
+                DistroArchSeries, bpphs, ["distroarchseries_id"]
             )
             load_related(DistroSeries, dases, ["distroseriesID"])
 
@@ -1156,7 +1154,7 @@ class Archive(SQLBase):
 
         clauses.extend(
             [
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
                 DistroArchSeries.distroseriesID == DistroSeries.id,
             ]
@@ -1170,7 +1168,7 @@ class Archive(SQLBase):
         # architecture-specific built for 'nominatedarchindep'.
         nominated_arch_independent_clauses = clauses + [
             DistroSeries.nominatedarchindepID
-            == BinaryPackagePublishingHistory.distroarchseriesID,
+            == BinaryPackagePublishingHistory.distroarchseries_id,
         ]
         nominated_arch_independents = store.find(
             BinaryPackagePublishingHistory, *nominated_arch_independent_clauses
@@ -1180,7 +1178,7 @@ class Archive(SQLBase):
         # 'nominatedarchindep' (already included in the previous query).
         no_nominated_arch_independent_clauses = clauses + [
             DistroSeries.nominatedarchindepID
-            != BinaryPackagePublishingHistory.distroarchseriesID,
+            != BinaryPackagePublishingHistory.distroarchseries_id,
             BinaryPackageRelease.architecturespecific == True,
         ]
         no_nominated_arch_independents = store.find(
@@ -1216,7 +1214,7 @@ class Archive(SQLBase):
             ),
             BinaryPackagePublishingHistory.archive == self.id,
             BinaryPackagePublishingHistory.dateremoved == None,
-            BinaryPackagePublishingHistory.binarypackagereleaseID
+            BinaryPackagePublishingHistory.binarypackagerelease_id
             == BinaryPackageFile.binarypackagerelease_id,
             BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
             LibraryFileAlias.contentID == LibraryFileContent.id,
@@ -1342,7 +1340,7 @@ class Archive(SQLBase):
         archive_clause = Or(
             [
                 And(
-                    BinaryPackagePublishingHistory.archiveID == archive.id,
+                    BinaryPackagePublishingHistory.archive == archive,
                     BinaryPackagePublishingHistory.pocket == pocket,
                     Component.name.is_in(components),
                 )
@@ -2009,21 +2007,21 @@ class Archive(SQLBase):
         if re_issource.match(filename):
             clauses = (
                 SourcePackagePublishingHistory.archive == self.id,
-                SourcePackagePublishingHistory.sourcepackagereleaseID
+                SourcePackagePublishingHistory.sourcepackagerelease_id
                 == SourcePackageReleaseFile.sourcepackagerelease_id,
                 SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
             )
         elif re_isadeb.match(filename):
             clauses = (
                 BinaryPackagePublishingHistory.archive == self.id,
-                BinaryPackagePublishingHistory.binarypackagereleaseID
+                BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageFile.binarypackagerelease_id,
                 BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
             )
         elif filename.endswith(".changes"):
             clauses = (
                 SourcePackagePublishingHistory.archive == self.id,
-                SourcePackagePublishingHistory.sourcepackagereleaseID
+                SourcePackagePublishingHistory.sourcepackagerelease_id
                 == PackageUploadSource.sourcepackagerelease_id,
                 PackageUploadSource.packageupload_id == PackageUpload.id,
                 PackageUpload.status == PackageUploadStatus.DONE,
@@ -2048,7 +2046,7 @@ class Archive(SQLBase):
             if filename.endswith(".diff.gz"):
                 clauses = (
                     SourcePackagePublishingHistory.archive == self.id,
-                    SourcePackagePublishingHistory.sourcepackagereleaseID
+                    SourcePackagePublishingHistory.sourcepackagerelease_id
                     == PackageDiff.to_source_id,
                     PackageDiff.diff_content_id == LibraryFileAlias.id,
                 )
@@ -2065,7 +2063,7 @@ class Archive(SQLBase):
         result = IStore(LibraryFileAlias).find(
             LibraryFileAlias,
             SourcePackagePublishingHistory.archive == self,
-            SourcePackagePublishingHistory.sourcepackagereleaseID
+            SourcePackagePublishingHistory.sourcepackagerelease_id
             == SourcePackageRelease.id,
             SourcePackageRelease.sourcepackagename == SourcePackageName.id,
             SourcePackageName.name == name,
@@ -2170,7 +2168,7 @@ class Archive(SQLBase):
                 BinaryPackageRelease,
                 BinaryPackagePublishingHistory.archive == self,
                 BinaryPackagePublishingHistory.binarypackagename == name,
-                BinaryPackagePublishingHistory.binarypackagereleaseID
+                BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageRelease.id,
                 Cast(BinaryPackageRelease.version, "text") == version,
                 BinaryPackageBuild.id == BinaryPackageRelease.buildID,
@@ -2194,7 +2192,7 @@ class Archive(SQLBase):
                 BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
                 LibraryFileAlias.filename == filename,
                 BinaryPackagePublishingHistory.archive == self,
-                BinaryPackagePublishingHistory.binarypackagereleaseID
+                BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageRelease.id,
             )
             .order_by(Desc(BinaryPackagePublishingHistory.id))

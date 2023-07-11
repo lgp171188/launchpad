@@ -25,7 +25,7 @@ is now set to be hidden.
     >>> from lp.bugs.interfaces.bugmessage import IBugMessageSet
     >>> login("foo.bar@canonical.com")
     >>> bug_11 = getUtility(IBugSet).get(11)
-    >>> message = bug_11.messages[-1]
+    >>> message = bug_11.messages.last()
     >>> print(message.text_contents)
     This comment will not be visible when the test completes.
     >>> bug_message = getUtility(IBugMessageSet).getByBugAndMessage(

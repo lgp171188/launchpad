@@ -1170,7 +1170,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
                 Join(
                     BinaryPackageRelease,
                     BinaryPackageRelease.id
-                    == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                    == BinaryPackagePublishingHistory.binarypackagerelease_id,
                 ),
             ),
             where=And(

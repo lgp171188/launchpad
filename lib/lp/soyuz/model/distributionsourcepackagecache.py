@@ -89,7 +89,7 @@ class DistributionSourcePackageCache(StormBase):
             )
         else:
             spn_ids = IStore(SourcePackagePublishingHistory).find(
-                SourcePackagePublishingHistory.sourcepackagenameID,
+                SourcePackagePublishingHistory.sourcepackagename_id,
                 SourcePackagePublishingHistory.archive == archive,
                 SourcePackagePublishingHistory.status.is_in(
                     active_publishing_status
@@ -174,8 +174,8 @@ class DistributionSourcePackageCache(StormBase):
                     SourcePackageRelease.version,
                 ),
                 SourcePackageRelease.id
-                == SourcePackagePublishingHistory.sourcepackagereleaseID,
-                SourcePackagePublishingHistory.sourcepackagenameID.is_in(
+                == SourcePackagePublishingHistory.sourcepackagerelease_id,
+                SourcePackagePublishingHistory.sourcepackagename_id.is_in(
                     [spn.id for spn in sourcepackagenames]
                 ),
                 SourcePackagePublishingHistory.archive == archive,

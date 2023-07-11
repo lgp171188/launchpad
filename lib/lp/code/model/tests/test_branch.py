@@ -60,6 +60,7 @@ from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES as FINAL_STATES,
 )
+from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.code.interfaces.branchnamespace import (
     IBranchNamespacePolicy,
     IBranchNamespaceSet,
@@ -87,7 +88,6 @@ from lp.code.model.branchjob import (
     BranchScanJob,
     ReclaimBranchSpaceJob,
 )
-from lp.code.model.branchmergeproposal import BranchMergeProposal
 from lp.code.model.branchrevision import BranchRevision
 from lp.code.model.codereviewcomment import CodeReviewComment
 from lp.code.model.revision import Revision
@@ -110,7 +110,6 @@ from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
@@ -1701,20 +1700,24 @@ class TestBranchDeletionConsequences(TestCase):
         """Merge proposal source branches can be deleted with break_links."""
         merge_proposal1, merge_proposal2 = self.makeMergeProposals()
         merge_proposal1_id = merge_proposal1.id
-        BranchMergeProposal.get(merge_proposal1_id)
+        getUtility(IBranchMergeProposalGetter).get(merge_proposal1_id)
         self.branch.destroySelf(break_references=True)
         self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposal.get, merge_proposal1_id
+            NotFoundError,
+            getUtility(IBranchMergeProposalGetter).get,
+            merge_proposal1_id,
         )
 
     def test_deleteMergeProposalTarget(self):
         """Merge proposal target branches can be deleted with break_links."""
         merge_proposal1, merge_proposal2 = self.makeMergeProposals()
         merge_proposal1_id = merge_proposal1.id
-        BranchMergeProposal.get(merge_proposal1_id)
+        getUtility(IBranchMergeProposalGetter).get(merge_proposal1_id)
         merge_proposal1.target_branch.destroySelf(break_references=True)
         self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposal.get, merge_proposal1_id
+            NotFoundError,
+            getUtility(IBranchMergeProposalGetter).get,
+            merge_proposal1_id,
         )
 
     def test_deleteMergeProposalDependent(self):

@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 import responses
 import transaction
 from lazr.lifecycle.snapshot import Snapshot
+from responses.matchers import query_string_matcher
 from storm.store import Store
 from testtools.matchers import Equals, MatchesListwise, MatchesStructure
 from zope.component import getUtility
@@ -288,9 +289,12 @@ class TestMantis(TestCaseWithFactory):
         )
         responses.add(
             "GET",
-            "http://mantis.example.com/login.php?"
-            "username=guest&password=guest&return=%2Fsome%2Fpage",
-            match_querystring=True,
+            "http://mantis.example.com/login.php",
+            match=[
+                query_string_matcher(
+                    "username=guest&password=guest&return=%2Fsome%2Fpage"
+                )
+            ],
             status=200,
             body="sentinel",
         )

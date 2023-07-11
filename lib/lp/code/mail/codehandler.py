@@ -10,12 +10,12 @@ from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 
+from lp.app.errors import NotFoundError
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import CodeReviewVote
 from lp.code.errors import UserNotBranchReviewer
 from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.services.config import config
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.mail.commands import EmailCommand, EmailCommandCollection
 from lp.services.mail.helpers import (
     IncomingEmailError,
@@ -42,7 +42,7 @@ class InvalidBranchMergeProposalAddress(BadBranchMergeProposalAddress):
     """The user-supplied address is not an acceptable value."""
 
 
-class NonExistantBranchMergeProposalAddress(BadBranchMergeProposalAddress):
+class NonExistentBranchMergeProposalAddress(BadBranchMergeProposalAddress):
     """The BranchMergeProposal specified by the address does not exist."""
 
 
@@ -310,7 +310,7 @@ class CodeHandler:
         user = getUtility(ILaunchBag).user
         try:
             merge_proposal = self.getBranchMergeProposal(email_addr)
-        except NonExistantBranchMergeProposalAddress:
+        except NonExistentBranchMergeProposalAddress:
             send_process_error_notification(
                 str(user.preferredemail.email),
                 "Submit Request Failure",
@@ -375,5 +375,5 @@ class CodeHandler:
         getter = getUtility(IBranchMergeProposalGetter)
         try:
             return getter.get(merge_proposal_id)
-        except SQLObjectNotFound:
-            raise NonExistantBranchMergeProposalAddress(email_addr)
+        except NotFoundError:
+            raise NonExistentBranchMergeProposalAddress(email_addr)

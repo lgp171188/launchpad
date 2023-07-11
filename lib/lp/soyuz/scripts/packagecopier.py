@@ -163,12 +163,14 @@ def check_copy_permissions(
 
     if len(sources) > 1:
         # Bulk-load the data we'll need from each source publication.
-        load_related(SourcePackageRelease, sources, ["sourcepackagereleaseID"])
+        load_related(
+            SourcePackageRelease, sources, ["sourcepackagerelease_id"]
+        )
         if move:
             # Bulk-load at least some of the data we'll need for permission
             # checks on each source archive.  Not all of this is currently
             # preloadable.
-            archives = load_related(Archive, sources, ["archiveID"])
+            archives = load_related(Archive, sources, ["archive_id"])
             load_related(Person, archives, ["ownerID"])
 
     # If there is a requester, check that they have upload permission into

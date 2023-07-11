@@ -1580,7 +1580,7 @@ class QuestionTargetMixin:
         # messages about the bug.
         question.createBugLink(bug)
         # Copy the last message that explains why the bug is a question.
-        message = bug.messages[-1]
+        message = bug.messages.last()
         question.addComment(
             message.owner,
             message.text_contents,

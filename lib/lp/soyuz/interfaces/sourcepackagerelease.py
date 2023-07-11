@@ -117,7 +117,7 @@ class ISourcePackageRelease(Interface):
         "The distroseries in which this package "
         "was first uploaded in Launchpad"
     )
-    publishings = Attribute("MultipleJoin on SourcepackagePublishing")
+    publishings = Attribute("Publishing records that link to this release")
 
     user_defined_fields = List(
         title=_("Sequence of user-defined fields as key-value pairs.")

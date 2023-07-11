@@ -134,7 +134,7 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
+from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
 from lp.services.database.stormexpr import Array, ArrayAgg, ArrayIntersects
 from lp.services.helpers import shortlist
@@ -559,12 +559,14 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
     @property
     def dependent_branches(self):
         """See `IBranch`."""
-        return BranchMergeProposal.select(
-            """
-            BranchMergeProposal.dependent_branch = %s AND
-            BranchMergeProposal.queue_status NOT IN %s
-            """
-            % sqlvalues(self, BRANCH_MERGE_PROPOSAL_FINAL_STATES)
+        return Store.of(self).find(
+            BranchMergeProposal,
+            BranchMergeProposal.prerequisite_branch == self,
+            Not(
+                BranchMergeProposal.queue_status.is_in(
+                    BRANCH_MERGE_PROPOSAL_FINAL_STATES
+                )
+            ),
         )
 
     def getMergeProposals(
@@ -942,7 +944,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             )
         # Cannot use self.landing_candidates, because it ignores merged
         # merge proposals.
-        for merge_proposal in BranchMergeProposal.selectBy(target_branch=self):
+        for merge_proposal in Store.of(self).find(
+            BranchMergeProposal, target_branch=self
+        ):
             deletion_operations.append(
                 DeletionCallable(
                     merge_proposal,
@@ -953,8 +957,8 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
                     merge_proposal.deleteProposal,
                 )
             )
-        for merge_proposal in BranchMergeProposal.selectBy(
-            prerequisite_branch=self
+        for merge_proposal in Store.of(self).find(
+            BranchMergeProposal, prerequisite_branch=self
         ):
             alteration_operations.append(ClearDependentBranch(merge_proposal))
 

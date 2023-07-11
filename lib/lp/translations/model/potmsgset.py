@@ -16,6 +16,8 @@ from storm.expr import (
     Coalesce,
     Column,
     Desc,
+    Is,
+    IsNot,
     Join,
     Not,
     Or,
@@ -36,7 +38,6 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormexpr import (
-    IsTrue,
     NullsFirst,
     NullsLast,
     WithMaterialized,
@@ -325,8 +326,8 @@ class POTMsgSet(SQLBase):
     ):
         """See `IPOTMsgSet`."""
         clauses = [
-            Not(IsTrue(TranslationMessage.is_current_ubuntu)),
-            Not(IsTrue(TranslationMessage.is_current_upstream)),
+            IsNot(TranslationMessage.is_current_ubuntu, True),
+            IsNot(TranslationMessage.is_current_upstream, True),
             TranslationMessage.potmsgset == self,
             TranslationMessage.language == language,
             SQL(make_plurals_sql_fragment("msgstr%(form)d IS NOT NULL", "OR")),
@@ -384,8 +385,8 @@ class POTMsgSet(SQLBase):
         # a way so that indexes are indeed hit when the query is executed.
         # Also note that there is a NOT(in_use_clause) index.
         in_use_clause = Or(
-            IsTrue(TranslationMessage.is_current_ubuntu),
-            IsTrue(TranslationMessage.is_current_upstream),
+            Is(TranslationMessage.is_current_ubuntu, True),
+            Is(TranslationMessage.is_current_upstream, True),
         )
         # Present a list of language + usage constraints to sql. A language
         # can either be unconstrained, used, or suggested depending on which

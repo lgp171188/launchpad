@@ -115,9 +115,9 @@ class DeathRow:
             1,
             tables=[OtherSPPH],
             where=And(
-                SourcePackagePublishingHistory.sourcepackagereleaseID
-                == OtherSPPH.sourcepackagereleaseID,
-                OtherSPPH.archiveID == self.archive.id,
+                SourcePackagePublishingHistory.sourcepackagerelease_id
+                == OtherSPPH.sourcepackagerelease_id,
+                OtherSPPH.archive_id == self.archive.id,
                 Not(OtherSPPH.status.is_in(inactive_publishing_status)),
             ),
         )
@@ -139,9 +139,9 @@ class DeathRow:
             1,
             tables=[OtherBPPH],
             where=And(
-                BinaryPackagePublishingHistory.binarypackagereleaseID
-                == OtherBPPH.binarypackagereleaseID,
-                OtherBPPH.archiveID == self.archive.id,
+                BinaryPackagePublishingHistory.binarypackagerelease_id
+                == OtherBPPH.binarypackagerelease_id,
+                OtherBPPH.archive_id == self.archive.id,
                 Not(OtherBPPH.status.is_in(inactive_publishing_status)),
             ),
         )

@@ -39,11 +39,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-)
+from lp.services.database.sqlobject import ForeignKey, StringCol
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES
@@ -142,13 +138,6 @@ class SourcePackageRelease(SQLBase):
     # DB constraint: non-nullable for SourcePackageType.DPKG.
     dsc_format = StringCol(dbName="dsc_format")
     dsc_binaries = StringCol(dbName="dsc_binaries")
-
-    # MultipleJoins
-    publishings = SQLMultipleJoin(
-        "SourcePackagePublishingHistory",
-        joinColumn="sourcepackagerelease",
-        orderBy="-datecreated",
-    )
 
     _user_defined_fields = StringCol(dbName="user_defined_fields")
 
@@ -281,12 +270,36 @@ class SourcePackageRelease(SQLBase):
     def title(self):
         return "%s - %s" % (self.sourcepackagename.name, self.version)
 
+    @property
+    def publishings(self):
+        # Circular import.
+        from lp.soyuz.model.publishing import SourcePackagePublishingHistory
+
+        return (
+            IStore(self)
+            .find(
+                SourcePackagePublishingHistory,
+                SourcePackagePublishingHistory.sourcepackagerelease == self,
+            )
+            .order_by(Desc(SourcePackagePublishingHistory.datecreated))
+        )
+
     @cachedproperty
     def published_archives(self):
-        archives = {
-            pub.archive for pub in self.publishings.prejoin(["archive"])
-        }
-        return sorted(archives, key=operator.attrgetter("id"))
+        # Circular imports.
+        from lp.soyuz.model.archive import Archive
+        from lp.soyuz.model.publishing import SourcePackagePublishingHistory
+
+        return list(
+            IStore(self)
+            .find(
+                Archive,
+                SourcePackagePublishingHistory.sourcepackagerelease == self,
+                SourcePackagePublishingHistory.archive == Archive.id,
+            )
+            .config(distinct=True)
+            .order_by(Archive.id)
+        )
 
     def addFile(self, file, filetype=None):
         """See ISourcePackageRelease."""

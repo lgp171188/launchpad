@@ -522,7 +522,7 @@ class Publisher:
             SourcePackagePublishingHistory, *clauses
         )
         return publications.order_by(
-            SourcePackagePublishingHistory.distroseriesID,
+            SourcePackagePublishingHistory.distroseries_id,
             SourcePackagePublishingHistory.pocket,
             Desc(SourcePackagePublishingHistory.id),
         )
@@ -571,7 +571,7 @@ class Publisher:
         """Return the specific group of binary records to be published."""
         clauses = [
             BinaryPackagePublishingHistory.archive == self.archive,
-            BinaryPackagePublishingHistory.distroarchseriesID
+            BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status
@@ -678,7 +678,7 @@ class Publisher:
         # Make the source publications query.
         conditions = base_conditions(SourcePackagePublishingHistory)
         conditions.append(
-            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id
+            SourcePackagePublishingHistory.distroseries_id == DistroSeries.id
         )
         source_suites = (
             IStore(SourcePackagePublishingHistory)
@@ -694,7 +694,7 @@ class Publisher:
         conditions = base_conditions(BinaryPackagePublishingHistory)
         conditions.extend(
             [
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
                 DistroArchSeries.distroseriesID == DistroSeries.id,
             ]
@@ -794,15 +794,15 @@ class Publisher:
         for spph in publishing_set.getSourcesForPublishing(
             archive=self.archive
         ):
-            spphs_by_spr[spph.sourcepackagereleaseID].append(spph)
-            release_id = "source:%d" % spph.sourcepackagereleaseID
+            spphs_by_spr[spph.sourcepackagerelease_id].append(spph)
+            release_id = "source:%d" % spph.sourcepackagerelease_id
             releases_by_id.setdefault(release_id, spph.sourcepackagerelease)
             pubs_by_id[release_id].append(spph)
         for bpph in publishing_set.getBinariesForPublishing(
             archive=self.archive
         ):
-            bpphs_by_bpr[bpph.binarypackagereleaseID].append(bpph)
-            release_id = "binary:%d" % bpph.binarypackagereleaseID
+            bpphs_by_bpr[bpph.binarypackagerelease_id].append(bpph)
+            release_id = "binary:%d" % bpph.binarypackagerelease_id
             releases_by_id.setdefault(release_id, bpph.binarypackagerelease)
             pubs_by_id[release_id].append(bpph)
         artifacts = self._diskpool.getAllArtifacts(

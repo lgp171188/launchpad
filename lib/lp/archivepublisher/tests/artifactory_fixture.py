@@ -46,7 +46,6 @@ class FakeArtifactoryFixture(Fixture):
                 method="GET",
                 url=repo_url_regex,
                 callback=self._handle_download,
-                stream=True,
             )
         )
         self.requests_mock.add_callback(

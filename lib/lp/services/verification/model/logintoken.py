@@ -10,7 +10,9 @@ import hashlib
 from datetime import timezone
 
 import six
-from storm.expr import And
+from storm.expr import And, Is
+from storm.properties import DateTime, Int, Unicode
+from storm.references import Reference
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -20,15 +22,9 @@ from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.sendmail import format_address, simple_sendmail
@@ -44,35 +40,51 @@ MAIL_APP = "services/verification"
 
 
 @implementer(ILoginToken)
-class LoginToken(SQLBase):
-    _table = "LoginToken"
+class LoginToken(StormBase):
+    __storm_table__ = "LoginToken"
 
-    redirection_url = StringCol(default=None)
-    requester = ForeignKey(dbName="requester", foreignKey="Person")
-    requesteremail = StringCol(
-        dbName="requesteremail", notNull=False, default=None
+    id = Int(primary=True)
+    redirection_url = Unicode(default=None)
+    requester_id = Int(name="requester")
+    requester = Reference(requester_id, "Person.id")
+    requesteremail = Unicode(
+        name="requesteremail", allow_none=True, default=None
     )
-    email = StringCol(dbName="email", notNull=True)
+    email = Unicode(name="email", allow_none=False)
 
     # The hex SHA-256 hash of the token.
-    _token = StringCol(dbName="token", unique=True)
+    _token = Unicode(name="token")
 
     tokentype = DBEnum(name="tokentype", allow_none=False, enum=LoginTokenType)
-    date_created = UtcDateTimeCol(dbName="created", notNull=True)
-    fingerprint = StringCol(dbName="fingerprint", notNull=False, default=None)
-    date_consumed = UtcDateTimeCol(default=None)
+    date_created = DateTime(
+        name="created", allow_none=False, tzinfo=timezone.utc
+    )
+    fingerprint = Unicode(name="fingerprint", allow_none=True, default=None)
+    date_consumed = DateTime(default=None, tzinfo=timezone.utc)
     password = ""  # Quick fix for Bug #2481
 
     title = "Launchpad Email Verification"
 
-    def __init__(self, *args, **kwargs):
-        token = kwargs.pop("token", None)
+    def __init__(
+        self,
+        email,
+        tokentype,
+        redirection_url=None,
+        requester=None,
+        requesteremail=None,
+        token=None,
+        fingerprint=None,
+    ):
+        super().__init__()
+        self.email = email
+        self.tokentype = tokentype
+        self.redirection_url = redirection_url
+        self.requester = requester
+        self.requesteremail = requesteremail
         if token is not None:
             self._plaintext_token = token
-            kwargs["_token"] = hashlib.sha256(
-                token.encode("UTF-8")
-            ).hexdigest()
-        super().__init__(*args, **kwargs)
+            self._token = hashlib.sha256(token.encode("UTF-8")).hexdigest()
+        self.fingerprint = fingerprint
 
     _plaintext_token = None
 
@@ -267,6 +279,10 @@ class LoginToken(SQLBase):
         self.consume()
         return lpkey, new
 
+    def destroySelf(self):
+        """See `ILoginToken`."""
+        IStore(self).remove(self)
+
 
 @implementer(ILoginTokenSet)
 class LoginTokenSet:
@@ -275,10 +291,10 @@ class LoginTokenSet:
 
     def get(self, id, default=None):
         """See ILoginTokenSet."""
-        try:
-            return LoginToken.get(id)
-        except SQLObjectNotFound:
+        token = IStore(LoginToken).get(LoginToken, id)
+        if token is None:
             return default
+        return token
 
     def searchByEmailRequesterAndType(
         self, email, requester, type, consumed=None
@@ -337,18 +353,20 @@ class LoginTokenSet:
 
     def getPendingGPGKeys(self, requesterid=None):
         """See ILoginTokenSet."""
-        query = (
-            "date_consumed IS NULL AND "
-            "(tokentype = %s OR tokentype = %s) "
-            % sqlvalues(
-                LoginTokenType.VALIDATEGPG, LoginTokenType.VALIDATESIGNONLYGPG
-            )
-        )
+        clauses = [
+            Is(LoginToken.date_consumed, None),
+            LoginToken.tokentype.is_in(
+                (
+                    LoginTokenType.VALIDATEGPG,
+                    LoginTokenType.VALIDATESIGNONLYGPG,
+                )
+            ),
+        ]
 
         if requesterid:
-            query += "AND requester=%s" % requesterid
+            clauses.append(LoginToken.requester == requesterid)
 
-        return LoginToken.select(query)
+        return IStore(LoginToken).find(LoginToken, *clauses)
 
     def deleteByFingerprintRequesterAndType(
         self, fingerprint, requester, type
@@ -377,15 +395,16 @@ class LoginTokenSet:
                 "tokentype is not an item of LoginTokenType: %s" % tokentype
             )
         token = create_token(20)
-        return LoginToken(
-            requester=requester,
-            requesteremail=requesteremail,
-            email=email,
-            token=token,
-            tokentype=tokentype,
-            created=UTC_NOW,
-            fingerprint=fingerprint,
-            redirection_url=redirection_url,
+        return IStore(LoginToken).add(
+            LoginToken(
+                requester=requester,
+                requesteremail=requesteremail,
+                email=email,
+                token=token,
+                tokentype=tokentype,
+                fingerprint=fingerprint,
+                redirection_url=redirection_url,
+            )
         )
 
     def __getitem__(self, tokentext):

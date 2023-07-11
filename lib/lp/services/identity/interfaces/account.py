@@ -355,7 +355,7 @@ class AccountStatusChoice(Choice):
         if not IAccount.providedBy(self.context):
             # Not an account, eg. validating Person.setAccountStatus.
             return True
-        if removeSecurityProxy(self.context)._SO_creating:
+        if removeSecurityProxy(self.context)._creating:
             # This object is initializing.
             return True
         if self.context.status == value:

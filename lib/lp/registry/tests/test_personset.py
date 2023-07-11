@@ -344,13 +344,15 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         )
 
     def makeAccount(self):
-        return self.store.add(
+        account = self.store.add(
             Account(
                 displayname="Displayname",
                 creation_rationale=AccountCreationRationale.UNKNOWN,
                 status=AccountStatus.ACTIVE,
             )
         )
+        self.store.flush()
+        return account
 
     def makePerson(self, account):
         return self.store.add(

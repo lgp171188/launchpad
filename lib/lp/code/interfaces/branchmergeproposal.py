@@ -93,16 +93,16 @@ class IBranchMergeProposalPublic(IPrivacy):
         readonly=True,
         description=_("The tracking number for this merge proposal."),
     )
-    source_branchID = Int(
+    source_branch_id = Int(
         title=_("Source branch ID"), required=False, readonly=True
     )
-    source_git_repositoryID = Int(
+    source_git_repository_id = Int(
         title=_("Source Git repository ID"), required=False, readonly=True
     )
-    prerequisite_branchID = Int(
+    prerequisite_branch_id = Int(
         title=_("Prerequisite branch ID"), required=False, readonly=True
     )
-    prerequisite_git_repositoryID = Int(
+    prerequisite_git_repository_id = Int(
         title=_("Prerequisite Git repository ID"),
         required=False,
         readonly=True,

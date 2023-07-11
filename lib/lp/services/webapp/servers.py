@@ -1244,7 +1244,7 @@ class WebServicePublication(
         alsoProvides(request, IAccessTokenVerifiedRequest)
         get_interaction_extras().access_token = access_token
         return getUtility(IPlacelessLoginSource).getPrincipal(
-            access_token.owner.accountID
+            access_token.owner.account_id
         )
 
     def _getPrincipalFromOAuth(self, request):

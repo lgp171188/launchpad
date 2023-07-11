@@ -431,14 +431,16 @@ class GenericBranchCollection:
                 Join(
                     BranchMergeProposal,
                     And(
-                        Branch.id == BranchMergeProposal.source_branchID,
+                        Branch.id == BranchMergeProposal.source_branch_id,
                         *(
                             self._branch_filter_expressions
                             + self._asymmetric_filter_expressions
                         ),
                     ),
                 ),
-                Join(Target, Target.id == BranchMergeProposal.target_branchID),
+                Join(
+                    Target, Target.id == BranchMergeProposal.target_branch_id
+                ),
             ]
         )
         expressions = self._getBranchVisibilityExpression()
@@ -446,7 +448,7 @@ class GenericBranchCollection:
         if for_branches is not None:
             branch_ids = [branch.id for branch in for_branches]
             expressions.append(
-                BranchMergeProposal.source_branchID.is_in(branch_ids)
+                BranchMergeProposal.source_branch_id.is_in(branch_ids)
             )
         if target_branch is not None:
             expressions.append(
@@ -467,7 +469,7 @@ class GenericBranchCollection:
                     == BranchRevision.sequence,
                     BranchRevision.revision_id == Revision.id,
                     BranchRevision.branch_id
-                    == BranchMergeProposal.target_branchID,
+                    == BranchMergeProposal.target_branch_id,
                     Revision.revision_id == merged_revision,
                 ]
             )
@@ -512,7 +514,7 @@ class GenericBranchCollection:
             # Need to filter on Branch beyond the with constraints.
             expressions += self._asymmetric_filter_expressions
             expressions.append(
-                BranchMergeProposal.source_branchID == Branch.id
+                BranchMergeProposal.source_branch_id == Branch.id
             )
             tables.append(Branch)
             tables.extend(self._asymmetric_tables.values())
@@ -568,12 +570,14 @@ class GenericBranchCollection:
 
         expressions = [
             CodeReviewVoteReference.reviewer == reviewer,
-            BranchMergeProposal.source_branchID.is_in(self._getBranchSelect()),
+            BranchMergeProposal.source_branch_id.is_in(
+                self._getBranchSelect()
+            ),
         ]
         visibility = self._getBranchVisibilityExpression()
         if visibility:
             expressions.append(
-                BranchMergeProposal.target_branchID.is_in(
+                BranchMergeProposal.target_branch_id.is_in(
                     Select(Branch.id, visibility)
                 )
             )

@@ -646,7 +646,7 @@ class MailingListSet:
         tables = (
             EmailAddress,
             Join(Person, Person.id == EmailAddress.personID),
-            Join(Account, Account.id == Person.accountID),
+            Join(Account, Account.id == Person.account_id),
             Join(TeamParticipation, TeamParticipation.personID == Person.id),
             Join(
                 MailingListSubscription,
@@ -701,7 +701,7 @@ class MailingListSet:
         Team = ClassAlias(Person)
         tables = (
             Person,
-            Join(Account, Account.id == Person.accountID),
+            Join(Account, Account.id == Person.account_id),
             Join(EmailAddress, EmailAddress.personID == Person.id),
             Join(TeamParticipation, TeamParticipation.personID == Person.id),
             Join(MailingList, MailingList.team_id == TeamParticipation.teamID),
@@ -725,7 +725,7 @@ class MailingListSet:
         # for three global approvals.
         tables = (
             Person,
-            Join(Account, Account.id == Person.accountID),
+            Join(Account, Account.id == Person.account_id),
             Join(EmailAddress, EmailAddress.personID == Person.id),
             Join(MessageApproval, MessageApproval.posted_by_id == Person.id),
             Join(

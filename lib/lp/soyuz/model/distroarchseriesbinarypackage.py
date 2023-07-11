@@ -115,12 +115,12 @@ class DistroArchSeriesBinaryPackage:
         return [
             BinaryPackagePublishingHistory.distroarchseries
             == self.distroarchseries,
-            BinaryPackagePublishingHistory.archiveID.is_in(
+            BinaryPackagePublishingHistory.archive_id.is_in(
                 self.distribution.all_distro_archive_ids
             ),
             BinaryPackagePublishingHistory.binarypackagename
             == self.binarypackagename,
-            BinaryPackagePublishingHistory.binarypackagereleaseID
+            BinaryPackagePublishingHistory.binarypackagerelease_id
             == BinaryPackageRelease.id,
         ]
 

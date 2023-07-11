@@ -119,7 +119,7 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
             SourcePackagePublishingHistory.distroseries == distroseries,
             SourcePackagePublishingHistory.status
             == PackagePublishingStatus.PUBLISHED,
-            SourcePackagePublishingHistory.archiveID.is_in(
+            SourcePackagePublishingHistory.archive_id.is_in(
                 self.main_archive_ids
             ),
         )
@@ -130,7 +130,7 @@ class TestObsoleteDistroseries(TestCaseWithFactory):
             DistroArchSeries.distroseries == distroseries,
             BinaryPackagePublishingHistory.status
             == PackagePublishingStatus.PUBLISHED,
-            BinaryPackagePublishingHistory.archiveID.is_in(
+            BinaryPackagePublishingHistory.archive_id.is_in(
                 self.main_archive_ids
             ),
         )

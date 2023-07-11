@@ -49,6 +49,7 @@ from storm.expr import (
     Desc,
     Exists,
     In,
+    Is,
     Join,
     LeftJoin,
     Min,
@@ -468,7 +469,8 @@ class Person(
     _visibility_warning_cache_key = None
     _visibility_warning_cache = None
 
-    account = ForeignKey(dbName="account", foreignKey="Account", default=None)
+    account_id = Int(name="account", default=None)
+    account = Reference(account_id, "Account.id")
 
     def _validate_name(self, attr, value):
         """Check that rename is allowed."""
@@ -716,9 +718,9 @@ class Person(
         )
         # Teams don't have Account records
         if self.account is not None:
-            account_id = self.account.id
+            account = self.account
             self.account = None
-            Account.delete(account_id)
+            Store.of(account).remove(account)
         self.creation_rationale = None
         self.teamowner = team_owner
         alsoProvides(self, ITeam)
@@ -2245,7 +2247,7 @@ class Person(
             LeftJoin(
                 account_table,
                 And(
-                    person_table.accountID == account_table.id,
+                    person_table.account_id == account_table.id,
                     account_table.status == AccountStatus.ACTIVE,
                 ),
             )
@@ -3178,16 +3180,22 @@ class Person(
     @property
     def unvalidatedemails(self):
         """See `IPerson`."""
-        query = """
-            requester = %s
-            AND (tokentype=%s OR tokentype=%s)
-            AND date_consumed IS NULL
-            """ % sqlvalues(
-            self.id,
-            LoginTokenType.VALIDATEEMAIL,
-            LoginTokenType.VALIDATETEAMEMAIL,
+        return sorted(
+            {
+                token.email
+                for token in IStore(LoginToken).find(
+                    LoginToken,
+                    LoginToken.requester == self,
+                    LoginToken.tokentype.is_in(
+                        (
+                            LoginTokenType.VALIDATEEMAIL,
+                            LoginTokenType.VALIDATETEAMEMAIL,
+                        )
+                    ),
+                    Is(LoginToken.date_consumed, None),
+                )
+            }
         )
-        return sorted({token.email for token in LoginToken.select(query)})
 
     @property
     def guessedemails(self):
@@ -3350,17 +3358,19 @@ class Person(
         )
         tables = (
             SourcePackageRelease,
-            Join(spph, spph.sourcepackagereleaseID == SourcePackageRelease.id),
-            Join(Archive, Archive.id == spph.archiveID),
-            Join(ancestor_spph, ancestor_spph.id == spph.ancestorID),
+            Join(
+                spph, spph.sourcepackagerelease_id == SourcePackageRelease.id
+            ),
+            Join(Archive, Archive.id == spph.archive_id),
+            Join(ancestor_spph, ancestor_spph.id == spph.ancestor_id),
         )
         rs = (
             Store.of(self)
             .using(*tables)
             .find(
                 spph.id,
-                spph.creatorID == self.id,
-                ancestor_spph.archiveID != spph.archiveID,
+                spph.creator_id == self.id,
+                ancestor_spph.archive_id != spph.archive_id,
                 Archive.purpose == ArchivePurpose.PRIMARY,
             )
         )
@@ -3383,28 +3393,28 @@ class Person(
                             SourcePackageRelease,
                             Join(
                                 spph,
-                                spph.sourcepackagereleaseID
+                                spph.sourcepackagerelease_id
                                 == SourcePackageRelease.id,
                             ),
-                            Join(Archive, Archive.id == spph.archiveID),
+                            Join(Archive, Archive.id == spph.archive_id),
                             Join(
                                 ancestor_spph,
-                                ancestor_spph.id == spph.ancestorID,
+                                ancestor_spph.id == spph.ancestor_id,
                             ),
                         ],
                         where=And(
-                            spph.creatorID == self.id,
-                            ancestor_spph.archiveID != spph.archiveID,
+                            spph.creator_id == self.id,
+                            ancestor_spph.archive_id != spph.archive_id,
                             Archive.purpose == ArchivePurpose.PRIMARY,
                         ),
                         order_by=[
-                            spph.distroseriesID,
+                            spph.distroseries_id,
                             SourcePackageRelease.sourcepackagenameID,
                             Desc(spph.datecreated),
                             Desc(spph.id),
                         ],
                         distinct=(
-                            spph.distroseriesID,
+                            spph.distroseries_id,
                             SourcePackageRelease.sourcepackagenameID,
                         ),
                     )
@@ -3418,9 +3428,9 @@ class Person(
 
         def load_related_objects(rows):
             bulk.load_related(
-                SourcePackageRelease, rows, ["sourcepackagereleaseID"]
+                SourcePackageRelease, rows, ["sourcepackagerelease_id"]
             )
-            bulk.load_related(Archive, rows, ["archiveID"])
+            bulk.load_related(Archive, rows, ["archive_id"])
 
         return DecoratedResultSet(rs, pre_iter_hook=load_related_objects)
 
@@ -4249,7 +4259,7 @@ class PersonSet:
         person = Person(
             name=name,
             display_name=displayname,
-            accountID=account_id,
+            account_id=account_id,
             creation_rationale=rationale,
             creation_comment=comment,
             hide_email_addresses=hide_email_addresses,
@@ -4289,7 +4299,7 @@ class PersonSet:
 
     def getByAccount(self, account):
         """See `IPersonSet`."""
-        return Person.selectOne(Person.q.accountID == account.id)
+        return IStore(Person).find(Person, account_id=account.id).one()
 
     def updateStatistics(self):
         """See `IPersonSet`."""
@@ -5502,7 +5512,7 @@ def _get_recipients_for_team(team):
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
             ),
         ),
-        LeftJoin(Account, Person.accountID == Account.id),
+        LeftJoin(Account, Person.account_id == Account.id),
     )
     pending_team_ids = [team.id]
     recipient_ids = set()

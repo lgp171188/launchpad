@@ -114,7 +114,7 @@ class DistroSeriesBinaryPackage:
             == BinaryPackageRelease.id,
             BinaryPackagePublishingHistory.binarypackagename
             == self.binarypackagename,
-            BinaryPackagePublishingHistory.archiveID.is_in(
+            BinaryPackagePublishingHistory.archive_id.is_in(
                 self.distribution.all_distro_archive_ids
             ),
             BinaryPackagePublishingHistory.dateremoved == None,

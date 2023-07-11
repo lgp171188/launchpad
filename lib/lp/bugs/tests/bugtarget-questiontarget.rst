@@ -105,7 +105,9 @@ bug.
     >>> len(question.messages) == bug.messages.count() - 1
     True
 
-    >>> question.messages[-1].text_contents == bug.messages[-1].text_contents
+    >>> question.messages[
+    ...     -1
+    ... ].text_contents == bug.messages.last().text_contents
     True
 
     >>> print(question.messages[-1].text_contents)

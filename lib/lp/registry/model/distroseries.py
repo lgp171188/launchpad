@@ -17,7 +17,7 @@ from typing import List
 
 import apt_pkg
 from lazr.delegates import delegate_to
-from storm.expr import SQL, And, Column, Desc, Join, Or, Select, Table
+from storm.expr import SQL, And, Column, Desc, Is, Join, Or, Select, Table
 from storm.locals import JSON, Int, Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
@@ -77,7 +77,7 @@ from lp.services.database.sqlobject import (
     SQLObjectNotFound,
     StringCol,
 )
-from lp.services.database.stormexpr import IsTrue, WithMaterialized, fti_search
+from lp.services.database.stormexpr import WithMaterialized, fti_search
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.mail.signedmessage import signed_message_from_bytes
@@ -760,7 +760,7 @@ class DistroSeries(
                 DistroSeriesLanguage,
                 DistroSeriesLanguage.language == Language.id,
                 DistroSeriesLanguage.distroseries == self,
-                IsTrue(Language.visible),
+                Is(Language.visible, True),
             )
             .order_by(Language.englishname)
         )
@@ -784,9 +784,9 @@ class DistroSeries(
         self.sourcecount = (
             IStore(SourcePackagePublishingHistory)
             .find(
-                SourcePackagePublishingHistory.sourcepackagenameID,
+                SourcePackagePublishingHistory.sourcepackagename_id,
                 SourcePackagePublishingHistory.distroseries == self,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 SourcePackagePublishingHistory.status.is_in(
@@ -802,11 +802,11 @@ class DistroSeries(
         self.binarycount = (
             IStore(BinaryPackagePublishingHistory)
             .find(
-                BinaryPackagePublishingHistory.binarypackagenameID,
+                BinaryPackagePublishingHistory.binarypackagename_id,
                 DistroArchSeries.distroseries == self,
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 BinaryPackagePublishingHistory.status.is_in(
@@ -1009,12 +1009,12 @@ class DistroSeries(
             IStore(Language)
             .find(
                 Language,
-                IsTrue(Language.visible),
+                Is(Language.visible, True),
                 Language.id == POFile.languageID,
                 Language.code != "en",
                 POFile.potemplateID == POTemplate.id,
                 POTemplate.distroseries == self,
-                IsTrue(POTemplate.iscurrent),
+                Is(POTemplate.iscurrent, True),
             )
             .config(distinct=True)
         )
@@ -1121,8 +1121,8 @@ class DistroSeries(
             IStore(SourcePackagePublishingHistory)
             .find(
                 SourcePackagePublishingHistory,
-                SourcePackagePublishingHistory.distroseriesID == self.id,
-                SourcePackagePublishingHistory.archiveID.is_in(
+                SourcePackagePublishingHistory.distroseries_id == self.id,
+                SourcePackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
             )
@@ -1136,9 +1136,9 @@ class DistroSeries(
             .find(
                 BinaryPackagePublishingHistory,
                 DistroArchSeries.distroseriesID == self.id,
-                BinaryPackagePublishingHistory.distroarchseriesID
+                BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
             )
@@ -1812,7 +1812,7 @@ class DistroSeriesSet:
                 == series
             ),
             [],
-            SourcePackagePublishingHistory.distroseriesID,
+            SourcePackagePublishingHistory.distroseries_id,
         )
         result = {}
         for spr, series_id in releases:

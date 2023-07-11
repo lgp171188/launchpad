@@ -49,17 +49,17 @@ class DistributionSourcePackageRelease:
 
         res = Store.of(distribution).find(
             SourcePackagePublishingHistory,
-            SourcePackagePublishingHistory.archiveID.is_in(
+            SourcePackagePublishingHistory.archive_id.is_in(
                 distribution.all_distro_archive_ids
             ),
-            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id,
+            SourcePackagePublishingHistory.distroseries_id == DistroSeries.id,
             DistroSeries.distribution == distribution,
-            SourcePackagePublishingHistory.sourcepackagereleaseID.is_in(
+            SourcePackagePublishingHistory.sourcepackagerelease_id.is_in(
                 spr.id for spr in sprs
             ),
         )
         return res.order_by(
-            Desc(SourcePackagePublishingHistory.sourcepackagereleaseID),
+            Desc(SourcePackagePublishingHistory.sourcepackagerelease_id),
             Desc(SourcePackagePublishingHistory.datecreated),
             Desc(SourcePackagePublishingHistory.id),
         )
@@ -118,7 +118,7 @@ class DistributionSourcePackageRelease:
                 BinaryPackageRelease.build == BinaryPackageBuild.id,
                 BinaryPackagePublishingHistory.binarypackagerelease
                 == BinaryPackageRelease.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(
+                BinaryPackagePublishingHistory.archive_id.is_in(
                     self.distribution.all_distro_archive_ids
                 ),
                 *clauses,
@@ -165,7 +165,7 @@ class DistributionSourcePackageRelease:
             Join(
                 DistroArchSeries,
                 DistroArchSeries.id
-                == BinaryPackagePublishingHistory.distroarchseriesID,
+                == BinaryPackagePublishingHistory.distroarchseries_id,
             ),
             Join(
                 DistroSeries,
@@ -174,7 +174,7 @@ class DistributionSourcePackageRelease:
             Join(
                 BinaryPackageRelease,
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
             ),
             Join(
                 BinaryPackageName,
@@ -202,7 +202,7 @@ class DistributionSourcePackageRelease:
             .find(
                 result_row,
                 DistroSeries.distribution == self.distribution,
-                BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
+                BinaryPackagePublishingHistory.archive_id.is_in(archive_ids),
                 BinaryPackageBuild.source_package_release
                 == self.sourcepackagerelease,
             )
@@ -236,12 +236,12 @@ class DistributionSourcePackageRelease:
             Join(
                 BinaryPackagePublishingHistory,
                 BinaryPackageRelease.id
-                == BinaryPackagePublishingHistory.binarypackagereleaseID,
+                == BinaryPackagePublishingHistory.binarypackagerelease_id,
             ),
             Join(
                 DistroArchSeries,
                 DistroArchSeries.id
-                == BinaryPackagePublishingHistory.distroarchseriesID,
+                == BinaryPackagePublishingHistory.distroarchseries_id,
             ),
             Join(
                 BinaryPackageName,
@@ -254,7 +254,7 @@ class DistributionSourcePackageRelease:
             result_row,
             And(
                 DistroArchSeries.distroseriesID == distroseries.id,
-                BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
+                BinaryPackagePublishingHistory.archive_id.is_in(archive_ids),
                 BinaryPackageBuild.source_package_release
                 == self.sourcepackagerelease,
             ),

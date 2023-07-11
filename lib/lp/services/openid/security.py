@@ -14,4 +14,4 @@ class ViewOpenIdIdentifierBySelfOrAdmin(AuthorizationBase):
     usedfor = IOpenIdIdentifier
 
     def checkAuthenticated(self, user):
-        return user.in_admin or user.person.accountID == self.obj.accountID
+        return user.in_admin or user.person.account_id == self.obj.account_id
