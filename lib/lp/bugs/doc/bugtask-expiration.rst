@@ -616,7 +616,7 @@ primary and replica bugtasks were expired.
     >>> hoary_bugtask.bug.messages.count()
     3
 
-    >>> message = hoary_bugtask.bug.messages[-1]
+    >>> message = hoary_bugtask.bug.messages.last()
     >>> print(message.owner.name)
     janitor
 

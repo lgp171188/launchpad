@@ -151,8 +151,8 @@ class BugNotificationSet:
                 last_omitted_notification = notification
             elif (
                 last_omitted_notification is not None
-                and notification.message.ownerID
-                == last_omitted_notification.message.ownerID
+                and notification.message.owner_id
+                == last_omitted_notification.message.owner_id
                 and notification.bug_id == last_omitted_notification.bug_id
                 and last_omitted_notification.message.datecreated
                 - notification.message.datecreated
@@ -162,7 +162,7 @@ class BugNotificationSet:
             if last_omitted_notification != notification:
                 last_omitted_notification = None
                 pending_notifications.append(notification)
-                people_ids.add(notification.message.ownerID)
+                people_ids.add(notification.message.owner_id)
                 bug_ids.add(notification.bug_id)
         # Now we do some calls that are purely for caching.
         # Converting these into lists forces the queries to execute.

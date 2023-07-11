@@ -122,7 +122,7 @@ added as a comment from the janitor.
 
     >>> switch_dbuser("launchpad")
     >>> pmount_bug = getUtility(IBugSet).get(pmount_bug_id)
-    >>> last_comment = pmount_bug.messages[-1]
+    >>> last_comment = pmount_bug.messages.last()
     >>> print(pmount_release.creator.displayname)
     Mark Shuttleworth
     >>> print(last_comment.owner.displayname)

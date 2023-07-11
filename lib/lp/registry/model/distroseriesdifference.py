@@ -220,12 +220,12 @@ def message_chunks(messages):
     """
     store = IStore(MessageChunk)
     chunks = store.find(
-        MessageChunk, MessageChunk.messageID.is_in(m.id for m in messages)
+        MessageChunk, MessageChunk.message_id.is_in(m.id for m in messages)
     )
 
     grouped = defaultdict(list)
     for chunk in chunks:
-        grouped[chunk.messageID].append(chunk)
+        grouped[chunk.message_id].append(chunk)
     return grouped
 
 
@@ -332,7 +332,7 @@ def eager_load_dsds(dsds):
     # Load DistroSeriesDifferenceComment owners, SourcePackageRecipeBuild
     # requesters, GPGKey owners, and SourcePackageRelease creators.
     person_ids = set().union(
-        (dsdc.message.ownerID for dsdc in latest_comments),
+        (dsdc.message.owner_id for dsdc in latest_comments),
         (sprb.requester_id for sprb in sprbs),
         (spr.creatorID for spr in sprs),
         (spr.signing_key_owner_id for spr in sprs),

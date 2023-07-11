@@ -2566,7 +2566,7 @@ class TestAutoConfirmBugTasks(TestCaseWithFactory):
                 self.assertEqual(
                     "Status changed to 'Confirmed' because the bug affects "
                     "multiple users.",
-                    bug.messages[-1].text_contents,
+                    bug.messages.last().text_contents,
                 )
 
     def test_do_not_confirm_bugwatch_tasks(self):
