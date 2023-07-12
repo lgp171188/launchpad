@@ -71,11 +71,13 @@ class POExportRequestSet:
             )
 
         potemplate_ids = ", ".join(
-            [quote(template) for template in potemplates]
+            [quote(template.id) for template in potemplates]
         )
         # A null pofile stands for the template itself.  We represent it in
         # SQL as -1, because that's how it's indexed in the request table.
-        pofile_ids = ", ".join([quote(pofile) for pofile in pofiles] + ["-1"])
+        pofile_ids = ", ".join(
+            [quote(pofile.id) for pofile in pofiles] + ["-1"]
+        )
 
         query_params = {
             "person": quote(person),

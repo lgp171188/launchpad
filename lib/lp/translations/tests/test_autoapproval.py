@@ -183,9 +183,7 @@ class TestGuessPOFileCustomLanguageCode(
 
     def _makePOFile(self, language_code):
         """Create a translation file."""
-        file = self.template.newPOFile(language_code)
-        file.syncUpdate()
-        return file
+        return self.template.newPOFile(language_code)
 
     def _makeQueueEntry(self, language_code):
         """Create translation import queue entry."""

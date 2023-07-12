@@ -6,6 +6,7 @@ from zope.interface.verify import verifyObject
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
+from lp.services.database.interfaces import IStore
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -124,7 +125,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         naked_pofile.rosettacount = new
         naked_pofile.unreviewed_count = unreviewed
         naked_pofile.date_changed = date_changed
-        naked_pofile.sync()
+        IStore(naked_pofile).flush()
 
     def setUp(self):
         # Create a productseries that uses translations.

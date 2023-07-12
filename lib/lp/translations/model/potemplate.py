@@ -21,6 +21,7 @@ from psycopg2.extensions import TransactionRollbackError
 from storm.expr import SQL, And, Desc, Join, LeftJoin, Or
 from storm.info import ClassAlias
 from storm.properties import Int
+from storm.references import ReferenceSet
 from storm.store import Store
 from zope.component import getAdapter, getUtility
 from zope.interface import implementer
@@ -43,7 +44,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLMultipleJoin,
     StringCol,
 )
 from lp.services.helpers import shortlist
@@ -169,7 +169,7 @@ def get_pofiles_for(potemplates, language):
     pofiles = Store.of(potemplates[0]).find(
         POFile,
         And(
-            POFile.potemplateID.is_in(template_ids),
+            POFile.potemplate_id.is_in(template_ids),
             POFile.language == language,
         ),
     )
@@ -251,7 +251,7 @@ class POTemplate(SQLBase, RosettaStats):
     )
 
     # joins
-    pofiles = SQLMultipleJoin("POFile", joinColumn="potemplate")
+    pofiles = ReferenceSet("<primary key>", "POFile.potemplate_id")
 
     # In-memory cache: maps language_code to list of POFiles
     # translating this template to that language.
@@ -447,7 +447,7 @@ class POTemplate(SQLBase, RosettaStats):
                 Language,
                 POFile.language == Language.id,
                 POFile.currentcount + POFile.rosettacount > 0,
-                POFile.potemplateID == self.id,
+                POFile.potemplate_id == self.id,
             )
             .config(distinct=True)
             .count()
@@ -591,9 +591,9 @@ class POTemplate(SQLBase, RosettaStats):
             Store.of(self)
             .find(
                 Language,
-                POFile.languageID == Language.id,
+                POFile.language_id == Language.id,
                 Language.code != "en",
-                POFile.potemplateID == self.id,
+                POFile.potemplate_id == self.id,
             )
             .config(distinct=True)
         )
@@ -616,8 +616,8 @@ class POTemplate(SQLBase, RosettaStats):
             Store.of(self)
             .find(
                 POFile,
-                POFile.potemplateID == self.id,
-                POFile.languageID == Language.id,
+                POFile.potemplate_id == self.id,
+                POFile.language_id == Language.id,
                 Language.code == language_code,
             )
             .one()
@@ -1880,7 +1880,7 @@ class TranslationTemplatesCollection(Collection):
         :return: A `TranslationTemplatesCollection` with an added inner
             join to `POFile`.
         """
-        return self.joinInner(POFile, POTemplate.id == POFile.potemplateID)
+        return self.joinInner(POFile, POTemplate.id == POFile.potemplate_id)
 
     def joinOuterPOFile(self, language=None):
         """Outer-join `POFile` into the collection.
@@ -1892,9 +1892,11 @@ class TranslationTemplatesCollection(Collection):
             return self.joinOuter(
                 POFile,
                 And(
-                    POTemplate.id == POFile.potemplateID,
-                    POFile.languageID == language.id,
+                    POTemplate.id == POFile.potemplate_id,
+                    POFile.language_id == language.id,
                 ),
             )
         else:
-            return self.joinOuter(POFile, POTemplate.id == POFile.potemplateID)
+            return self.joinOuter(
+                POFile, POTemplate.id == POFile.potemplate_id
+            )

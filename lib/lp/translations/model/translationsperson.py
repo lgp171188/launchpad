@@ -150,7 +150,7 @@ class TranslationsPerson:
                 Join(
                     POTemplate,
                     And(
-                        POTemplate.id == POFile.potemplateID,
+                        POTemplate.id == POFile.potemplate_id,
                         POTemplate.iscurrent == True,
                     ),
                 ),
@@ -238,7 +238,7 @@ class TranslationsPerson:
         conditions = And(conditions, not_reviewer)
 
         if languages is not None:
-            conditions = And(conditions, POFile.languageID.is_in(languages))
+            conditions = And(conditions, POFile.language_id.is_in(languages))
 
         return Store.of(self.person).using(*tables).find(POFile, conditions)
 
@@ -379,7 +379,7 @@ class TranslationsPerson:
         POTemplateJoin = Join(
             POTemplate,
             And(
-                POTemplate.id == POFile.potemplateID,
+                POTemplate.id == POFile.potemplate_id,
                 POTemplate.iscurrent == True,
             ),
         )
@@ -433,7 +433,7 @@ class TranslationsPerson:
         # Look up translation team.
         translatorjoin_conditions = And(
             Translator.translationgroup_id == TranslationGroup.id,
-            Translator.language_id == POFile.languageID,
+            Translator.language_id == POFile.language_id,
         )
         if expect_reviewer_status:
             TranslatorJoin = Join(Translator, translatorjoin_conditions)

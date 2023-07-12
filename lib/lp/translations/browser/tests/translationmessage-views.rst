@@ -28,7 +28,7 @@ without the plural form information.
     >>> translationmessage = IStore(TranslationMessage).get(
     ...     TranslationMessage, 1
     ... )
-    >>> pofile = POFile.get(1)
+    >>> pofile = IStore(POFile).get(POFile, 1)
     >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode("tlh")
     >>> pofile_tlh = pofile.potemplate.getPlaceholderPOFile(language_tlh)
     >>> potmsgset = pofile_tlh.potemplate.getPOTMsgSetByMsgIDText(

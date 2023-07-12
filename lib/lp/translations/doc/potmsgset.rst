@@ -290,7 +290,7 @@ the given timestamp.
     ... )
     >>> potmsgset = translationmessage.potmsgset
     >>> from lp.translations.model.pofile import POFile
-    >>> pofile = POFile.get(1)
+    >>> pofile = IStore(POFile).get(POFile, 1)
     >>> translationmessage.date_reviewed.isoformat()
     '2005-04-07T13:19:17.601068+00:00'
     >>> potmsgset.isTranslationNewerThan(
