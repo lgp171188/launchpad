@@ -125,5 +125,5 @@ class POFileTranslatorSet:
         return Store.of(potemplate).find(
             POFileTranslator,
             POFileTranslator.pofile_id == POFile.id,
-            POFile.potemplateID == potemplate.id,
+            POFile.potemplate_id == potemplate.id,
         )

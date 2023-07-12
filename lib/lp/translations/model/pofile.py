@@ -28,6 +28,8 @@ from storm.expr import (
     Union,
 )
 from storm.info import ClassAlias
+from storm.properties import Bool, DateTime, Int, Unicode
+from storm.references import Reference
 from storm.store import EmptyResultSet, Store
 from zope.component import getAdapter, getUtility
 from zope.interface import implementer
@@ -36,15 +38,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, flush_database_updates, quote
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
+from lp.services.database.sqlbase import flush_database_updates, quote
+from lp.services.database.stormbase import StormBase
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
@@ -160,7 +156,7 @@ class POFileMixIn(RosettaStats):
                         TranslationTemplateItem.potemplate
                         == pofile.potemplate,
                         TranslationTemplateItem.sequence > 0,
-                        tm_ids.language_id == pofile.languageID,
+                        tm_ids.language_id == pofile.language_id,
                     ),
                     distinct=True,
                 )
@@ -311,55 +307,76 @@ class POFileMixIn(RosettaStats):
 
 
 @implementer(IPOFile)
-class POFile(SQLBase, POFileMixIn):
-    _table = "POFile"
+class POFile(StormBase, POFileMixIn):
+    __storm_table__ = "POFile"
 
-    potemplate = ForeignKey(
-        foreignKey="POTemplate", dbName="potemplate", notNull=True
-    )
-    language = ForeignKey(
-        foreignKey="Language", dbName="language", notNull=True
-    )
-    description = StringCol(dbName="description", notNull=False, default=None)
-    topcomment = StringCol(dbName="topcomment", notNull=False, default=None)
-    header = StringCol(dbName="header", notNull=False, default=None)
-    fuzzyheader = BoolCol(dbName="fuzzyheader", notNull=True)
-    lasttranslator = ForeignKey(
-        dbName="lasttranslator",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    id = Int(primary=True)
+    potemplate_id = Int(name="potemplate", allow_none=False)
+    potemplate = Reference(potemplate_id, "POTemplate.id")
+    language_id = Int(name="language", allow_none=False)
+    language = Reference(language_id, "Language.id")
+    description = Unicode(name="description", allow_none=True, default=None)
+    topcomment = Unicode(name="topcomment", allow_none=True, default=None)
+    header = Unicode(name="header", allow_none=True, default=None)
+    fuzzyheader = Bool(name="fuzzyheader", allow_none=False)
+    lasttranslator_id = Int(
+        "lasttranslator",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    lasttranslator = Reference(lasttranslator_id, "Person.id")
 
-    date_changed = UtcDateTimeCol(
-        dbName="date_changed", notNull=True, default=UTC_NOW
+    date_changed = DateTime(
+        name="date_changed",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
 
-    currentcount = IntCol(dbName="currentcount", notNull=True, default=0)
-    updatescount = IntCol(dbName="updatescount", notNull=True, default=0)
-    rosettacount = IntCol(dbName="rosettacount", notNull=True, default=0)
-    unreviewed_count = IntCol(
-        dbName="unreviewed_count", notNull=True, default=0
+    currentcount = Int(name="currentcount", allow_none=False, default=0)
+    updatescount = Int(name="updatescount", allow_none=False, default=0)
+    rosettacount = Int(name="rosettacount", allow_none=False, default=0)
+    unreviewed_count = Int(
+        name="unreviewed_count", allow_none=False, default=0
     )
-    lastparsed = UtcDateTimeCol(
-        dbName="lastparsed", notNull=False, default=None
+    lastparsed = DateTime(
+        name="lastparsed", allow_none=True, default=None, tzinfo=timezone.utc
     )
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    path = StringCol(dbName="path", notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    owner = Reference(owner_id, "Person.id")
+    path = Unicode(name="path", allow_none=False)
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
-    from_sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="from_sourcepackagename",
-        notNull=False,
-        default=None,
+    from_sourcepackagename_id = Int(
+        name="from_sourcepackagename", allow_none=True, default=None
     )
+    from_sourcepackagename = Reference(
+        from_sourcepackagename_id, "SourcePackageName.id"
+    )
+
+    def __init__(
+        self,
+        potemplate,
+        language,
+        fuzzyheader,
+        owner,
+        path,
+        topcomment=None,
+        header=None,
+    ):
+        super().__init__()
+        self.potemplate = potemplate
+        self.language = language
+        self.fuzzyheader = fuzzyheader
+        self.owner = owner
+        self.path = path
+        self.topcomment = topcomment
+        self.header = header
 
     @property
     def translation_messages(self):
@@ -1617,7 +1634,7 @@ class POFileSet:
         from lp.translations.model.potemplate import POTemplate
 
         clauses = [
-            TranslationTemplateItem.potemplate_id == POFile.potemplateID,
+            TranslationTemplateItem.potemplate_id == POFile.potemplate_id,
             POTMsgSet.id == TranslationTemplateItem.potmsgset_id,
             POTMsgSet.msgid_singular == POMsgID.id,
             POMsgID.msgid.is_in(POTMsgSet.credits_message_ids),
@@ -1628,7 +1645,7 @@ class POFileSet:
                 And(
                     TranslationMessage.potmsgset_id == POTMsgSet.id,
                     TranslationMessage.potemplate == None,
-                    POFile.languageID == TranslationMessage.language_id,
+                    POFile.language_id == TranslationMessage.language_id,
                     Or(
                         And(
                             POTemplate.productseries == None,
@@ -1642,7 +1659,7 @@ class POFileSet:
                 ),
                 (TranslationMessage),
             )
-            clauses.append(POTemplate.id == POFile.potemplateID)
+            clauses.append(POTemplate.id == POFile.potemplate_id)
             clauses.append(Not(Exists(message_select)))
         result = IPrimaryStore(POFile).find((POFile, POTMsgSet), clauses)
         return result.order_by("POFile.id")
@@ -1693,8 +1710,8 @@ class POFileSet:
         OtherPOFileJoin = Join(
             OtherPOFile,
             And(
-                OtherPOFile.languageID == POFile.languageID,
-                OtherPOFile.potemplateID == OtherPOT.id,
+                OtherPOFile.language_id == POFile.language_id,
+                OtherPOFile.potemplate_id == OtherPOT.id,
             ),
         )
 

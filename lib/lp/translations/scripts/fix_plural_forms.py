@@ -84,7 +84,7 @@ def fix_plurals_in_all_pofiles(ztm, logger):
     (max_pofile_id,) = cur.fetchall()[0]
     for pofile_id in range(1, max_pofile_id):
         try:
-            pofile = POFile.get(pofile_id)
+            pofile = IStore(POFile).get(POFile, pofile_id)
             fix_pofile_plurals(pofile, logger, ztm)
         except SQLObjectNotFound:
             pass

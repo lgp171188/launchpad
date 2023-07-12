@@ -467,7 +467,7 @@ class TranslationMessage(StormBase, TranslationMessageMixIn):
             IStore(self)
             .find(
                 POFile,
-                POFile.potemplateID
+                POFile.potemplate_id
                 == SQL(
                     """(SELECT potemplate
                     FROM TranslationTemplateItem
@@ -662,7 +662,7 @@ class TranslationMessageSet:
             pots = load_related(
                 POTemplate,
                 (removeSecurityProxy(pofile) for pofile in pofiles),
-                ["potemplateID"],
+                ["potemplate_id"],
             )
         if need_potemplate_context:
             getUtility(IPOTemplateSet).preloadPOTemplateContexts(pots)
@@ -727,7 +727,7 @@ class TranslationMessageSet:
                 TranslationTemplateItem.potmsgset_id.is_in(
                     message.potmsgset_id for message in messages
                 ),
-                POFile.potemplateID == TranslationTemplateItem.potemplate_id,
+                POFile.potemplate_id == TranslationTemplateItem.potemplate_id,
                 *pofile_constraints,
             )
             .config(distinct=(TranslationTemplateItem.potmsgset_id,))
