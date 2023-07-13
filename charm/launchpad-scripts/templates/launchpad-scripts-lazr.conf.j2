@@ -22,6 +22,9 @@ dbuser: {{ db_session_user }}
 [librarianlogparser]
 logs_root: {{ librarian_logs_dir }}/for_parsing
 
+[malone]
+debbugs_db_location: {{ var_dir }}/debbugs-mirror
+
 [memcache]
 servers: {{ memcache_servers }}
 
