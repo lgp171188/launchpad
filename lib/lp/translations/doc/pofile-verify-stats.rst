@@ -66,8 +66,9 @@ Reports and correction
 If for any reason any POFiles' statistics are found to be wrong, the script
 reports this giving both the wrong and the corrected statistics.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.pofile import POFile
-    >>> pofile = POFile.get(34)
+    >>> pofile = IStore(POFile).get(POFile, 34)
     >>> pofile.getStatistics()
     (0, 0, 3, 0)
 

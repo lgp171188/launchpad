@@ -25,6 +25,7 @@ from lp.translations.interfaces.poexportrequest import (
     IPOExportRequest,
     IPOExportRequestSet,
 )
+from lp.translations.interfaces.pofile import IPOFile
 from lp.translations.interfaces.potemplate import IPOTemplate
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
@@ -71,11 +72,24 @@ class POExportRequestSet:
             )
 
         potemplate_ids = ", ".join(
-            [quote(template) for template in potemplates]
+            [
+                str(
+                    template.id
+                    if IPOTemplate.providedBy(template)
+                    else template
+                )
+                for template in potemplates
+            ]
         )
         # A null pofile stands for the template itself.  We represent it in
         # SQL as -1, because that's how it's indexed in the request table.
-        pofile_ids = ", ".join([quote(pofile) for pofile in pofiles] + ["-1"])
+        pofile_ids = ", ".join(
+            [
+                str(pofile.id if IPOFile.providedBy(pofile) else pofile)
+                for pofile in pofiles
+            ]
+            + ["-1"]
+        )
 
         query_params = {
             "person": quote(person),

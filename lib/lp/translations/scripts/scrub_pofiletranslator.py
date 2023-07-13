@@ -39,10 +39,10 @@ def get_pofile_ids():
     store = IStore(POFile)
     query = store.find(
         POFile.id,
-        POFile.potemplateID == POTemplate.id,
+        POFile.potemplate_id == POTemplate.id,
         POTemplate.iscurrent == True,
     )
-    return query.order_by(POTemplate.name, POFile.languageID)
+    return query.order_by(POTemplate.name, POFile.language_id)
 
 
 def summarize_pofiles(pofile_ids):
@@ -57,7 +57,7 @@ def summarize_pofiles(pofile_ids):
     """
     store = IStore(POFile)
     rows = store.find(
-        (POFile.id, POFile.potemplateID, POFile.languageID),
+        (POFile.id, POFile.potemplate_id, POFile.language_id),
         POFile.id.is_in(pofile_ids),
     )
     return {row[0]: row[1:] for row in rows}
@@ -249,8 +249,8 @@ def preload_work_items(work_items):
         respective `POFile` objects.
     """
     pofiles = load(POFile, [work_item.pofile_id for work_item in work_items])
-    load_related(Language, pofiles, ["languageID"])
-    templates = load_related(POTemplate, pofiles, ["potemplateID"])
+    load_related(Language, pofiles, ["language_id"])
+    templates = load_related(POTemplate, pofiles, ["potemplate_id"])
     distroseries = load_related(DistroSeries, templates, ["distroseriesID"])
     load_related(Distribution, distroseries, ["distributionID"])
     productseries = load_related(ProductSeries, templates, ["productseriesID"])

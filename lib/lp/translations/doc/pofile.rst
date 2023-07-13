@@ -442,8 +442,9 @@ This method serializes an IPOFile as a .po file.
 
 Get a concrete POFile we know doesn't have a UTF-8 encoding.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.pofile import POFile
-    >>> pofile = POFile.get(24)
+    >>> pofile = IStore(POFile).get(POFile, 24)
     >>> print(pofile.header)
     Project-Id-Version: PACKAGE VERSION
     ...
@@ -652,7 +653,7 @@ can use the getPOFileContributorsByLanguage() method of IDistroSeries.
     # We can see that there is another translator that doesn't appear in
     # previous list because the template they translated is not current.
 
-    >>> non_current_pofile = POFile.get(31)
+    >>> non_current_pofile = IStore(POFile).get(POFile, 31)
     >>> non_current_pofile.potemplate.iscurrent
     False
 

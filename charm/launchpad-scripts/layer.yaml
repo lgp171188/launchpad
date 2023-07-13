@@ -48,6 +48,7 @@ options:
           - reclaim-branch-space
           - revisionkarma
           - rosettaadmin
+          - run_missing_ready
           - send-branch-mail
           - sharing-jobs
           - snap-build-job

@@ -182,9 +182,7 @@ Let's try requesting an export in MO format:
     >>> from lp.translations.interfaces.translationfileformat import (
     ...     TranslationFileFormat,
     ... )
-    >>> request_set.addRequest(
-    ...     person, None, [cs, cs.potemplate], TranslationFileFormat.MO
-    ... )
+    >>> request_set.addRequest(person, None, [cs], TranslationFileFormat.MO)
     >>> transaction.commit()
     >>> process_queue(transaction, FakeLogger())
     DEBUG Exporting objects for Happy Downloader, related to template pmount

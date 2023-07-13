@@ -201,17 +201,16 @@ class LaunchpadStatisticSet:
         )
         self.update("potemplate_count", POTemplate.select().count())
         ztm.commit()
-        self.update("pofile_count", POFile.select().count())
+        self.update("pofile_count", IStore(POFile).find(POFile).count())
         ztm.commit()
         self.update("pomsgid_count", IStore(POMsgID).find(POMsgID).count())
         ztm.commit()
         self.update(
             "language_count",
-            Language.select(
-                "POFile.language=Language.id",
-                clauseTables=["POFile"],
-                distinct=True,
-            ).count(),
+            IStore(Language)
+            .find(Language, POFile.language == Language.id)
+            .config(distinct=True)
+            .count(),
         )
         ztm.commit()
 

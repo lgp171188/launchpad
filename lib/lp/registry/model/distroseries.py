@@ -1010,9 +1010,9 @@ class DistroSeries(
             .find(
                 Language,
                 Is(Language.visible, True),
-                Language.id == POFile.languageID,
+                Language.id == POFile.language_id,
                 Language.code != "en",
-                POFile.potemplateID == POTemplate.id,
+                POFile.potemplate_id == POTemplate.id,
                 POTemplate.distroseries == self,
                 Is(POTemplate.iscurrent, True),
             )
@@ -1537,7 +1537,7 @@ class DistroSeries(
             POFileTranslator.person_id == Person.id,
             POFile.id == POFileTranslator.pofile_id,
             POFile.language == language,
-            POTemplate.id == POFile.potemplateID,
+            POTemplate.id == POFile.potemplate_id,
             POTemplate.distroseries == self,
             POTemplate.iscurrent == True,
         )

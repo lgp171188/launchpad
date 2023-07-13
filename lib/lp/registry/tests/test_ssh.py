@@ -12,9 +12,16 @@ from lp.registry.interfaces.ssh import (
     ISSHKeySet,
     SSHKeyAdditionError,
 )
-from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
+from lp.services.webapp.interfaces import OAuthPermission
+from lp.testing import (
+    TestCaseWithFactory,
+    admin_logged_in,
+    api_url,
+    person_logged_in,
+)
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
+from lp.testing.pages import webservice_for_person
 
 
 class TestSSHKey(TestCaseWithFactory):
@@ -298,3 +305,22 @@ class TestSSHKeySet(TestCaseWithFactory):
         self.assertContentEqual(
             [person1_key1, person1_key2, person2_key1], keys
         )
+
+
+class TestSSHKeyWebservice(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def test_getFullKeyText(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            key = self.factory.makeSSHKey(person, "ssh-rsa")
+            key_url = api_url(key)
+        expected = "ssh-rsa %s %s" % (key.keytext, key.comment)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.READ_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_get(key_url, "getFullKeyText")
+        self.assertEqual(200, response.status)
+        self.assertEqual(expected, response.jsonBody())

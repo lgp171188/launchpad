@@ -16,8 +16,10 @@ import http.client
 from lazr.enum import DBEnumeratedType, DBItem
 from lazr.restful.declarations import (
     error_status,
+    export_read_operation,
     exported,
     exported_as_webservice_entry,
+    operation_for_version,
 )
 from zope.interface import Interface
 from zope.schema import Choice, Int, TextLine
@@ -107,6 +109,8 @@ class ISSHKey(Interface):
     def destroySelf():
         """Remove this SSHKey from the database."""
 
+    @export_read_operation()
+    @operation_for_version("devel")
     def getFullKeyText():
         """Get the full text of the SSH key."""
 
