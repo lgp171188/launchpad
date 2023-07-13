@@ -938,8 +938,8 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
         self.assertEqual(
             "ERROR Failed to request CI builds for %s: "
-            "Job test would run on amd64,but the previous job "
-            "lintin the same pipeline would not\n" % ref.commit_sha1,
+            "Job test would run on amd64, but the previous job "
+            "lint in the same pipeline would not\n" % ref.commit_sha1,
             logger.getLogBuffer(),
         )
 
