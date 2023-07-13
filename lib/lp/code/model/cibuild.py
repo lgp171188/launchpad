@@ -7,6 +7,7 @@ __all__ = [
     "CIBuild",
 ]
 
+from collections import defaultdict
 from copy import copy
 from datetime import timedelta, timezone
 from operator import itemgetter
@@ -22,6 +23,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.archivepublisher.debversion import Version
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
@@ -86,17 +88,34 @@ from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 def get_stages(configuration):
     """Extract the job stages for this configuration."""
-    stages = []
+    stages = defaultdict(list)
     if not configuration.pipeline:
         raise CannotBuild("No pipeline stages defined")
+    previous_job = ""
     for stage in configuration.pipeline:
-        jobs = []
         for job_name in stage:
+            jobs = defaultdict(list)
             if job_name not in configuration.jobs:
                 raise CannotBuild("No job definition for %r" % job_name)
             for i in range(len(configuration.jobs[job_name])):
-                jobs.append((job_name, i))
-        stages.append(jobs)
+                for arch in configuration.jobs[job_name][i]["architectures"]:
+                    # Making sure that the previous job is present
+                    # in the pipeline for a given arch.
+                    if previous_job != "":
+                        if (
+                            len(stages[arch]) == 0
+                            or previous_job not in stages[arch][-1][0]
+                        ):
+                            raise CannotBuild(
+                                f"Job {job_name} would run on {arch},"
+                                + f"but the previous job {previous_job}"
+                                + "in the same pipeline would not"
+                            )
+                    jobs[arch].append((job_name, i))
+
+            for arch, value in jobs.items():
+                stages[arch].append(value)
+            previous_job = job_name
     return stages
 
 
@@ -118,16 +137,25 @@ def determine_DASes_to_build(configuration, logger=None):
     # the .launchpad.yaml format doesn't currently support other
     # distributions (although nor does the Launchpad build farm).
     distribution = getUtility(ILaunchpadCelebrities).ubuntu
-    for series_name, architecture_names in architectures_by_series.items():
+
+    series_list = []
+    for series_name in architectures_by_series.keys():
         try:
             series = distribution[series_name]
+            series_list.append(series)
         except NotFoundError:
             if logger is not None:
                 logger.error("Unknown Ubuntu series name %s" % series_name)
             continue
+
+    if len(series_list) != 0:
+        latest_series = max(series_list, key=lambda x: Version(x.version))
         architectures = {
-            das.architecturetag: das for das in series.buildable_architectures
+            das.architecturetag: das
+            for das in latest_series.buildable_architectures
         }
+
+        architecture_names = architectures_by_series[latest_series.name]
         for architecture_name in architecture_names:
             try:
                 das = architectures[architecture_name]
@@ -135,7 +163,7 @@ def determine_DASes_to_build(configuration, logger=None):
                 if logger is not None:
                     logger.error(
                         "%s is not a buildable architecture name in "
-                        "Ubuntu %s" % (architecture_name, series_name)
+                        "Ubuntu %s" % (architecture_name, latest_series.name)
                     )
                 continue
             yield das
@@ -776,13 +804,14 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                         e,
                     )
                 continue
+
             for das in determine_DASes_to_build(configuration, logger=logger):
                 self._tryToRequestBuild(
                     git_repository,
                     commit["sha1"],
                     configuration,
                     das,
-                    stages,
+                    stages[das.architecturetag],
                     logger,
                 )
 
