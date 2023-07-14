@@ -29,7 +29,9 @@ Get the current counts of stuff in the database:
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = TeamParticipation.select().count()
     >>> orig_email_count = EmailAddress.select().count()
-    >>> orig_bpr_count = BinaryPackageRelease.select().count()
+    >>> orig_bpr_count = (
+    ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
+    ... )
     >>> orig_build_count = BinaryPackageBuild.select().count()
     >>> orig_sbpph_count = IStore(SBPPH).find(SBPPH).count()
     >>> orig_sspph_main_count = (
@@ -422,7 +424,10 @@ We have 23 binary packages in breezy. db1-compat, ed, the 3 libcap packages
 and python-pam is unchanged.  python-sqlite fails. The 5 ubuntu-meta packages
 work.
 
-    >>> BinaryPackageRelease.select().count() - orig_bpr_count
+    >>> (
+    ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
+    ...     - orig_bpr_count
+    ... )
     40
     >>> BinaryPackageBuild.select().count() - orig_build_count
     13
@@ -434,7 +439,11 @@ expected:
 
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> n = BinaryPackageName.selectOneBy(name="rioutil")
-    >>> rio = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id)
+    >>> rio = (
+    ...     IStore(BinaryPackageRelease)
+    ...     .find(BinaryPackageRelease, binarypackagename=n)
+    ...     .one()
+    ... )
     >>> print(rio.shlibdeps)
     librioutil 1 rioutil
     >>> print(rio.version)
@@ -446,7 +455,11 @@ Test all the data got to the ed BPR intact, and that the missing
 priority was correctly munged to "extra":
 
     >>> n = BinaryPackageName.selectOneBy(name="ed")
-    >>> ed = BinaryPackageRelease.selectOneBy(binarypackagenameID=n.id)
+    >>> ed = (
+    ...     IStore(BinaryPackageRelease)
+    ...     .find(BinaryPackageRelease, binarypackagename=n)
+    ...     .one()
+    ... )
     >>> print(ed.version)
     0.2-20
     >>> print(ed.build.processor.name)
@@ -480,8 +493,12 @@ Check binary package libgjc-dev in Breezy. Its version number must differ from
 its source version number.
 
     >>> n = BinaryPackageName.selectOneBy(name="libgcj-dev")
-    >>> lib = BinaryPackageRelease.selectOneBy(
-    ...     binarypackagenameID=n.id, version="4:4.0.1-3"
+    >>> lib = (
+    ...     IStore(BinaryPackageRelease)
+    ...     .find(
+    ...         BinaryPackageRelease, binarypackagename=n, version="4:4.0.1-3"
+    ...     )
+    ...     .one()
     ... )
     >>> print(lib.version)
     4:4.0.1-3
@@ -493,8 +510,10 @@ its source version number.
 Check if the udeb was properly parsed and identified:
 
     >>> n = BinaryPackageName.selectOneBy(name="archive-copier")
-    >>> ac = BinaryPackageRelease.selectOneBy(
-    ...     binarypackagenameID=n.id, version="0.1.5"
+    >>> ac = (
+    ...     IStore(BinaryPackageRelease)
+    ...     .find(BinaryPackageRelease, binarypackagename=n, version="0.1.5")
+    ...     .one()
     ... )
     >>> print(ac.version)
     0.1.5
@@ -512,8 +531,12 @@ Check if the udeb was properly parsed and identified:
 We check that the binary package publishing override facility works:
 
     >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
-    >>> db1 = BinaryPackageRelease.selectOneBy(
-    ...     binarypackagenameID=n.id, version="2.1.3-7"
+    >>> db1 = (
+    ...     IStore(BinaryPackageRelease)
+    ...     .find(
+    ...         BinaryPackageRelease, binarypackagename=n, version="2.1.3-7"
+    ...     )
+    ...     .one()
     ... )
     >>> for pub in (
     ...     IStore(BinaryPackagePublishingHistory)
@@ -645,7 +668,10 @@ changed, etc.
     13
     >>> print(EmailAddress.select().count() - orig_email_count)
     13
-    >>> BinaryPackageRelease.select().count() - orig_bpr_count
+    >>> (
+    ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
+    ...     - orig_bpr_count
+    ... )
     40
     >>> BinaryPackageBuild.select().count() - orig_build_count
     13

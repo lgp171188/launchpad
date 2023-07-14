@@ -2,10 +2,13 @@ BinaryPackageRelease Pages
 ==========================
 
     >>> from zope.component import getMultiAdapter
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
-    >>> pmount_bin = BinaryPackageRelease.get(15)
+    >>> pmount_bin = IStore(BinaryPackageRelease).get(
+    ...     BinaryPackageRelease, 15
+    ... )
     >>> print(pmount_bin.name)
     pmount
     >>> print(pmount_bin.version)

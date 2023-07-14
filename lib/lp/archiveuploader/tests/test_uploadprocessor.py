@@ -1161,8 +1161,10 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
 
         # Find the binarypackagerelease and check its component.
         foocomm_binname = BinaryPackageName.selectOneBy(name="foocomm")
-        foocomm_bpr = BinaryPackageRelease.selectOneBy(
-            binarypackagename=foocomm_binname
+        foocomm_bpr = (
+            IStore(BinaryPackageRelease)
+            .find(BinaryPackageRelease, binarypackagename=foocomm_binname)
+            .one()
         )
         self.assertEqual(foocomm_bpr.component.name, "partner")
 

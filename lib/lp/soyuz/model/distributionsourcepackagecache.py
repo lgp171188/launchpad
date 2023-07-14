@@ -235,12 +235,12 @@ class DistributionSourcePackageCache(StormBase):
             all_binaries = list(
                 IStore(BinaryPackageRelease).find(
                     (
-                        BinaryPackageRelease.buildID,
-                        BinaryPackageRelease.binarypackagenameID,
+                        BinaryPackageRelease.build_id,
+                        BinaryPackageRelease.binarypackagename_id,
                         BinaryPackageRelease.summary,
                         BinaryPackageRelease.description,
                     ),
-                    BinaryPackageRelease.buildID.is_in(
+                    BinaryPackageRelease.build_id.is_in(
                         [row[1] for row in all_builds]
                     ),
                 )

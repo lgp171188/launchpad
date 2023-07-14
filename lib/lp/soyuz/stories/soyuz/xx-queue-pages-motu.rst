@@ -74,6 +74,7 @@ permission to manipulate them.
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet,
     ... )
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.interfaces.binarypackagename import (
     ...     IBinaryPackageNameSet,
     ... )
@@ -92,11 +93,12 @@ permission to manipulate them.
     ...     sourcepackagename=alsa_utils
     ... ):
     ...     source.component = universe
-    >>> for binary in BinaryPackageRelease.selectBy(binarypackagename=pmount):
+    >>> for binary in IStore(BinaryPackageRelease).find(
+    ...     BinaryPackageRelease, binarypackagename=pmount
+    ... ):
     ...     binary.component = universe
-    ...
-    >>> for binary in BinaryPackageRelease.selectBy(
-    ...     binarypackagename=mozilla
+    >>> for binary in IStore(BinaryPackageRelease).find(
+    ...     BinaryPackageRelease, binarypackagename=mozilla
     ... ):
     ...     binary.component = universe
     >>> import transaction

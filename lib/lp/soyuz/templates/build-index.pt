@@ -33,7 +33,7 @@
 
       </div> <!-- yui-g  -->
 
-      <tal:binaries condition="context/binarypackages">
+      <tal:binaries condition="not: context/binarypackages/is_empty">
 
         <div id="binaries" class="portlet">
           <div metal:use-macro="template/macros/binaries" />
