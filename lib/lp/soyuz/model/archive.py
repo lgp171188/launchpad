@@ -1111,8 +1111,8 @@ class Archive(SQLBase):
             bprs = load_related(
                 BinaryPackageRelease, bpphs, ["binarypackagerelease_id"]
             )
-            load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
-            bpbs = load_related(BinaryPackageBuild, bprs, ["buildID"])
+            load_related(BinaryPackageName, bprs, ["binarypackagename_id"])
+            bpbs = load_related(BinaryPackageBuild, bprs, ["build_id"])
             sprs = load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
@@ -2171,7 +2171,7 @@ class Archive(SQLBase):
                 BinaryPackagePublishingHistory.binarypackagerelease_id
                 == BinaryPackageRelease.id,
                 Cast(BinaryPackageRelease.version, "text") == version,
-                BinaryPackageBuild.id == BinaryPackageRelease.buildID,
+                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
                 DistroArchSeries.id
                 == BinaryPackageBuild.distro_arch_series_id,
                 DistroArchSeries.architecturetag == archtag,

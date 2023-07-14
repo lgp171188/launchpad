@@ -392,7 +392,7 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
                 == DistroArchSeries.id,
                 BinaryPackagePublishingHistory.archive == self.archive_id,
                 BinaryPackagePublishingHistory.pocket == self.pocket,
-                BinaryPackageBuild.id == BinaryPackageRelease.buildID,
+                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
                 BinaryPackageBuild.source_package_release_id
                 == self.sourcepackagerelease_id,
                 DistroArchSeries.distroseriesID == self.distroseries_id,
@@ -1449,7 +1449,7 @@ class PublishingSet:
             .find(
                 (
                     BinaryPackagePublishingHistory.distroarchseries_id,
-                    BinaryPackageRelease.binarypackagenameID,
+                    BinaryPackageRelease.binarypackagename_id,
                     BinaryPackageRelease.version,
                 ),
                 BinaryPackagePublishingHistory.pocket == pocket,
@@ -1473,7 +1473,7 @@ class PublishingSet:
         needed = [
             (das, bpr, overrides)
             for (das, bpr, overrides) in expanded
-            if (das.id, bpr.binarypackagenameID, bpr.version)
+            if (das.id, bpr.binarypackagename_id, bpr.version)
             not in already_published
         ]
         if not needed:
@@ -1853,7 +1853,7 @@ class PublishingSet:
             SourcePackagePublishingHistory.sourcepackagerelease_id
             == BinaryPackageBuild.source_package_release_id,
             BinaryPackageRelease.build == BinaryPackageBuild.id,
-            BinaryPackageRelease.binarypackagenameID == BinaryPackageName.id,
+            BinaryPackageRelease.binarypackagename_id == BinaryPackageName.id,
             SourcePackagePublishingHistory.distroseries_id
             == DistroArchSeries.distroseriesID,
             BinaryPackagePublishingHistory.distroarchseries_id
@@ -1933,7 +1933,7 @@ class PublishingSet:
             LibraryFileContent.id == LibraryFileAlias.contentID,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
-            BinaryPackageRelease.buildID == BinaryPackageBuild.id,
+            BinaryPackageRelease.build_id == BinaryPackageBuild.id,
             SourcePackagePublishingHistory.sourcepackagerelease_id
             == BinaryPackageBuild.source_package_release_id,
             BinaryPackagePublishingHistory.binarypackagerelease_id
@@ -2141,7 +2141,7 @@ class PublishingSet:
             bprs = bulk.load_related(
                 BinaryPackageRelease, bpphs, ["binarypackagerelease_id"]
             )
-            bpbs = bulk.load_related(BinaryPackageBuild, bprs, ["buildID"])
+            bpbs = bulk.load_related(BinaryPackageBuild, bprs, ["build_id"])
             sprs = bulk.load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
@@ -2158,7 +2158,9 @@ class PublishingSet:
             )
             bulk.load_related(LibraryFileContent, lfas, ["contentID"])
             bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
-            bulk.load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
+            bulk.load_related(
+                BinaryPackageName, bprs, ["binarypackagename_id"]
+            )
 
         return DecoratedResultSet(bpphs, pre_iter_hook=eager_load)
 
@@ -2377,7 +2379,7 @@ class PublishingSet:
             Join(
                 debug_bpph,
                 debug_bpph.binarypackagerelease_id
-                == BinaryPackageRelease.debug_packageID,
+                == BinaryPackageRelease.debug_package_id,
             ),
         ]
         return (

@@ -179,11 +179,11 @@ class DistributionSourcePackageRelease:
             Join(
                 BinaryPackageName,
                 BinaryPackageName.id
-                == BinaryPackageRelease.binarypackagenameID,
+                == BinaryPackageRelease.binarypackagename_id,
             ),
             Join(
                 BinaryPackageBuild,
-                BinaryPackageBuild.id == BinaryPackageRelease.buildID,
+                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
             ),
             LeftJoin(
                 DistroSeriesPackageCache,
@@ -231,7 +231,7 @@ class DistributionSourcePackageRelease:
             BinaryPackageRelease,
             Join(
                 BinaryPackageBuild,
-                BinaryPackageBuild.id == BinaryPackageRelease.buildID,
+                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
             ),
             Join(
                 BinaryPackagePublishingHistory,
@@ -246,7 +246,7 @@ class DistributionSourcePackageRelease:
             Join(
                 BinaryPackageName,
                 BinaryPackageName.id
-                == BinaryPackageRelease.binarypackagenameID,
+                == BinaryPackageRelease.binarypackagename_id,
             ),
         )
         archive_ids = list(self.distribution.all_distro_archive_ids)

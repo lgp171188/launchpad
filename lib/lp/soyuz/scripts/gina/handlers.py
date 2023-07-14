@@ -862,8 +862,8 @@ class BinaryPackageHandler:
         to_upload = check_not_in_librarian([fname], bin.archive_root, fdir)
         fname, path = to_upload[0]
 
-        componentID = self.distro_handler.getComponentByName(bin.component).id
-        sectionID = self.distro_handler.ensureSection(bin.section).id
+        component = self.distro_handler.getComponentByName(bin.component)
+        section = self.distro_handler.ensureSection(bin.section)
         architecturespecific = bin.architecture != "all"
 
         bin_name = getUtility(IBinaryPackageNameSet).ensure(bin.package)
@@ -874,14 +874,14 @@ class BinaryPackageHandler:
         if bin._user_defined:
             kwargs["user_defined_fields"] = bin._user_defined
         binpkg = BinaryPackageRelease(
-            binarypackagename=bin_name.id,
-            component=componentID,
+            binarypackagename=bin_name,
+            component=component,
             version=bin.version,
             description=bin.description,
             summary=bin.summary,
             build=build.id,
             binpackageformat=getBinaryPackageFormat(bin.filename),
-            section=sectionID,
+            section=section,
             priority=prioritymap[bin.priority],
             shlibdeps=bin.shlibs,
             depends=bin.depends,

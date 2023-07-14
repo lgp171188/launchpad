@@ -6,7 +6,7 @@ __all__ = ["DistroArchSeries", "PocketChroot"]
 import hashlib
 from io import BytesIO
 
-from storm.locals import Int, Join, Or, Reference
+from storm.locals import Int, Join, Or, Reference, ReferenceSet
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
@@ -25,7 +25,6 @@ from lp.services.database.sqlobject import (
     ForeignKey,
     IntCol,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
 )
 from lp.services.database.stormexpr import fti_search, rank_by_fti
@@ -74,11 +73,11 @@ class DistroArchSeries(SQLBase):
     package_count = IntCol(notNull=True, default=DEFAULT)
     enabled = BoolCol(notNull=False, default=True)
 
-    packages = SQLRelatedJoin(
-        "BinaryPackageRelease",
-        joinColumn="distroarchseries",
-        intermediateTable="BinaryPackagePublishing",
-        otherColumn="binarypackagerelease",
+    packages = ReferenceSet(
+        "<primary key>",
+        "BinaryPackagePublishingHistory.distroarchseries_id",
+        "BinaryPackagePublishingHistory.binarypackagerelease_id",
+        "BinaryPackageRelease.id",
     )
 
     def __getitem__(self, name):

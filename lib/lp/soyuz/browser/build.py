@@ -215,8 +215,9 @@ class BuildView(LaunchpadView):
         """Whether or not binaries were already published for this build."""
         # Binaries imported by gina (missing `PackageUpload` record)
         # are always published.
-        imported_binaries = self.package_upload is None and bool(
-            self.context.binarypackages
+        imported_binaries = (
+            self.package_upload is None
+            and not self.context.binarypackages.is_empty()
         )
         # Binaries uploaded from the buildds are published when the
         # corresponding `PackageUpload` status is DONE.
