@@ -107,9 +107,10 @@ def get_stages(configuration):
                             or previous_job not in stages[arch][-1][0]
                         ):
                             raise CannotBuild(
-                                f"Job {job_name} would run on {arch},"
-                                + f"but the previous job {previous_job}"
-                                + "in the same pipeline would not"
+                                "Job %s would run on %s, "
+                                "but the previous job %s "
+                                "in the same pipeline would not"
+                                % (job_name, arch, previous_job),
                             )
                     jobs[arch].append((job_name, i))
 
