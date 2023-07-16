@@ -4165,7 +4165,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             potmsgset.sourcecomment = sourcecomment
         if flagscomment is not None:
             potmsgset.flagscomment = flagscomment
-        removeSecurityProxy(potmsgset).sync()
+        IStore(potmsgset).flush()
         return ProxyFactory(potmsgset)
 
     def makePOFileAndPOTMsgSet(

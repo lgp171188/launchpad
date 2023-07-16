@@ -481,7 +481,9 @@ class TranslationMerger:
         self.tm.endTransaction(intermediate=True)
 
         for representative_id in representatives.values():
-            representative = POTMsgSet.get(representative_id)
+            representative = IStore(POTMsgSet).get(
+                POTMsgSet, representative_id
+            )
             self._scrubPOTMsgSetTranslations(representative)
             self.tm.endTransaction(intermediate=True)
 
@@ -599,7 +601,7 @@ class TranslationMerger:
                     representative,
                     representative_templates[representative],
                 )
-                removeSecurityProxy(subordinate).destroySelf()
+                Store.of(subordinate).remove(subordinate)
                 potmsgset_deletions += 1
 
                 self.tm.endTransaction(intermediate=True)
@@ -635,7 +637,7 @@ class TranslationMerger:
             order_check.check(template)
             potmsgset_ids = self._getPOTMsgSetIds(template)
             for potmsgset_id in potmsgset_ids:
-                potmsgset = POTMsgSet.get(potmsgset_id)
+                potmsgset = IStore(POTMsgSet).get(POTMsgSet, potmsgset_id)
 
                 tm_ids = self._partitionTranslationMessageIds(potmsgset)
                 before = sum((len(sublist) for sublist in tm_ids), 0)
