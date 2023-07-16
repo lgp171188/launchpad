@@ -1665,7 +1665,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
             person_ids.update(vote.reviewer_id for vote in votes)
 
             # we also provide a summary of diffs, so load them
-            load_related(LibraryFileAlias, diffs, ["diff_textID"])
+            load_related(LibraryFileAlias, diffs, ["diff_text_id"])
 
         # Pre-load Person and ValidPersonCache.
         list(
