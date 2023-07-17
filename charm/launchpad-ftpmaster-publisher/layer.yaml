@@ -1,0 +1,13 @@
+includes:
+  - layer:launchpad-db
+  - layer:launchpad-publisher-parts
+repo: https://git.launchpad.net/launchpad
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - generate_contents_files
+          - process_death_row
+          - publish_ftpmaster

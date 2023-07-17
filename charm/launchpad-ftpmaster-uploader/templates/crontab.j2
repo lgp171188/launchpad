@@ -1,0 +1,24 @@
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-ftpmaster-uploader
+
+{% if active -%}
+* * * * * {{ code_dir }}/scripts/process-upload.py -C insecure -q {{ ubuntu_queue_dir }}/  --log-file=DEBUG:{{ logs_dir }}/process-upload.log
+
+{% endif -%}
+
+# Per bug https://bugs.launchpad.net/launchpad/+bug/62612
+# Files in that directory older than 7 days
+00 00 * * * find {{ ubuntu_queue_dir }}/accepted -maxdepth 1 -type f -mtime +7 -exec rm -f {} \; > /dev/null 2>&1
+# Directories older than 7 days (we want to treat the
+# directories as one distinct unit)
+00 00 * * * find {{ ubuntu_queue_dir }}/accepted -type d -mtime +7 -exec rm -rf {} \; > /dev/null 2>&1
+
+# Other directories older than 6 months
+00 00 * * * find {{ ubuntu_queue_dir }}/failed -maxdepth 1 -type f -mtime +180 -exec rm -f {} \; > /dev/null 2>&1
+00 00 * * * find {{ ubuntu_queue_dir }}/failed -type d -mtime +180 -exec rm -rf {} \; > /dev/null 2>&1
+00 00 * * * find {{ ubuntu_queue_dir }}/rejected -maxdepth 1 -type f -mtime +180 -exec rm -f {} \; > /dev/null 2>&1
+00 00 * * * find {{ ubuntu_queue_dir }}/rejected -type d -mtime +180 -exec rm -rf {} \; > /dev/null 2>&1
+
+# OOPS amqp
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
