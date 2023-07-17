@@ -13,14 +13,13 @@ import re
 from datetime import datetime, timezone
 
 import apt_pkg
-import six
 from debian.changelog import (
     Changelog,
     ChangelogCreateError,
     ChangelogParseError,
 )
-from storm.expr import Join
-from storm.locals import Desc, Int, Reference, Unicode
+from storm.expr import Coalesce, Join, Sum
+from storm.locals import DateTime, Desc, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -33,13 +32,11 @@ from lp.registry.interfaces.sourcepackage import (
     SourcePackageType,
     SourcePackageUrgency,
 )
-from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES
@@ -54,32 +51,26 @@ from lp.soyuz.model.queue import PackageUpload, PackageUploadSource
 
 
 @implementer(ISourcePackageRelease)
-class SourcePackageRelease(SQLBase):
-    _table = "SourcePackageRelease"
+class SourcePackageRelease(StormBase):
+    __storm_table__ = "SourcePackageRelease"
 
+    id = Int(primary=True)
     # DB constraint: non-nullable for SourcePackageType.DPKG.
     section_id = Int(name="section", allow_none=True)
     section = Reference(section_id, "Section.id")
-    creator = ForeignKey(
-        dbName="creator",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    creator_id = Int(
+        name="creator", validator=validate_public_person, allow_none=False
     )
+    creator = Reference(creator_id, "Person.id")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
     component_id = Int(name="component", allow_none=True)
     component = Reference(component_id, "Component.id")
-    sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="sourcepackagename",
-        notNull=True,
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=False)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    maintainer_id = Int(
+        name="maintainer", validator=validate_public_person, allow_none=True
     )
-    maintainer = ForeignKey(
-        dbName="maintainer",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-    )
+    maintainer = Reference(maintainer_id, "Person.id")
     signing_key_owner_id = Int(name="signing_key_owner")
     signing_key_owner = Reference(signing_key_owner_id, "Person.id")
     signing_key_fingerprint = Unicode()
@@ -90,32 +81,37 @@ class SourcePackageRelease(SQLBase):
         default=SourcePackageUrgency.LOW,
         allow_none=True,
     )
-    dateuploaded = UtcDateTimeCol(
-        dbName="dateuploaded", notNull=True, default=UTC_NOW
+    dateuploaded = DateTime(
+        name="dateuploaded",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
-    dsc = StringCol(dbName="dsc")
-    version = StringCol(dbName="version", notNull=True)
-    changelog = ForeignKey(foreignKey="LibraryFileAlias", dbName="changelog")
-    changelog_entry = StringCol(dbName="changelog_entry")
-    buildinfo = ForeignKey(foreignKey="LibraryFileAlias", dbName="buildinfo")
-    builddepends = StringCol(dbName="builddepends")
-    builddependsindep = StringCol(dbName="builddependsindep")
-    build_conflicts = StringCol(dbName="build_conflicts")
-    build_conflicts_indep = StringCol(dbName="build_conflicts_indep")
-    architecturehintlist = StringCol(dbName="architecturehintlist")
-    homepage = StringCol(dbName="homepage")
+    dsc = Unicode(name="dsc")
+    version = Unicode(name="version", allow_none=False)
+    changelog_id = Int(name="changelog")
+    changelog = Reference(changelog_id, "LibraryFileAlias.id")
+    changelog_entry = Unicode(name="changelog_entry")
+    buildinfo_id = Int(name="buildinfo")
+    buildinfo = Reference(buildinfo_id, "LibraryFileAlias.id")
+    builddepends = Unicode(name="builddepends")
+    builddependsindep = Unicode(name="builddependsindep")
+    build_conflicts = Unicode(name="build_conflicts")
+    build_conflicts_indep = Unicode(name="build_conflicts_indep")
+    architecturehintlist = Unicode(
+        name="architecturehintlist", allow_none=False
+    )
+    homepage = Unicode(name="homepage")
     format = DBEnum(
         name="format",
         enum=SourcePackageType,
         default=SourcePackageType.DPKG,
         allow_none=False,
     )
-    upload_distroseries = ForeignKey(
-        foreignKey="DistroSeries", dbName="upload_distroseries"
-    )
-    upload_archive = ForeignKey(
-        foreignKey="Archive", dbName="upload_archive", notNull=True
-    )
+    upload_distroseries_id = Int(name="upload_distroseries", allow_none=False)
+    upload_distroseries = Reference(upload_distroseries_id, "DistroSeries.id")
+    upload_archive_id = Int(name="upload_archive", allow_none=False)
+    upload_archive = Reference(upload_archive_id, "Archive.id")
 
     # DB constraint: at most one of source_package_recipe_build and ci_build
     # is non-NULL.
@@ -128,36 +124,84 @@ class SourcePackageRelease(SQLBase):
     ci_build_id = Int(name="ci_build", allow_none=True)
     ci_build = Reference(ci_build_id, "CIBuild.id")
 
-    # XXX cprov 2006-09-26: Those fields are set as notNull and required in
-    # ISourcePackageRelease, however they can't be not NULL in DB since old
-    # records doesn't satisfy this condition. We will sort it before using
-    # 'NoMoreAptFtparchive' implementation for PRIMARY archive. For PPA
-    # (primary target) we don't need to populate old records.
-    dsc_maintainer_rfc822 = StringCol(dbName="dsc_maintainer_rfc822")
-    dsc_standards_version = StringCol(dbName="dsc_standards_version")
+    dsc_maintainer_rfc822 = Unicode(name="dsc_maintainer_rfc822")
+    dsc_standards_version = Unicode(name="dsc_standards_version")
     # DB constraint: non-nullable for SourcePackageType.DPKG.
-    dsc_format = StringCol(dbName="dsc_format")
-    dsc_binaries = StringCol(dbName="dsc_binaries")
+    dsc_format = Unicode(name="dsc_format")
+    dsc_binaries = Unicode(name="dsc_binaries")
 
-    _user_defined_fields = StringCol(dbName="user_defined_fields")
+    _user_defined_fields = Unicode(name="user_defined_fields")
 
-    def __init__(self, *args, **kwargs):
-        if "user_defined_fields" in kwargs:
-            kwargs["_user_defined_fields"] = json.dumps(
-                kwargs["user_defined_fields"]
-            )
-            del kwargs["user_defined_fields"]
-        # copyright isn't on the Storm class, since we don't want it
-        # loaded every time. Set it separately.
-        if "copyright" in kwargs:
-            copyright = kwargs.pop("copyright")
-        super().__init__(*args, **kwargs)
-        # PostgreSQL text columns can't contain null
-        # characters, so remove them as this is only
-        # used for display
+    def __init__(
+        self,
+        creator,
+        sourcepackagename,
+        version,
+        architecturehintlist,
+        format,
+        upload_distroseries,
+        upload_archive,
+        section=None,
+        component=None,
+        maintainer=None,
+        signing_key_owner=None,
+        signing_key_fingerprint=None,
+        urgency=None,
+        dateuploaded=DEFAULT,
+        dsc=None,
+        changelog=None,
+        changelog_entry=None,
+        buildinfo=None,
+        builddepends=None,
+        builddependsindep=None,
+        build_conflicts=None,
+        build_conflicts_indep=None,
+        homepage=None,
+        source_package_recipe_build=None,
+        ci_build=None,
+        dsc_maintainer_rfc822=None,
+        dsc_standards_version=None,
+        dsc_format=None,
+        dsc_binaries=None,
+        user_defined_fields=None,
+        copyright=None,
+    ):
+        super().__init__()
+        self.creator = creator
+        self.sourcepackagename = sourcepackagename
+        self.version = version
+        self.architecturehintlist = architecturehintlist
+        self.format = format
+        self.upload_distroseries = upload_distroseries
+        self.upload_archive = upload_archive
+        self.section = section
+        self.component = component
+        self.maintainer = maintainer
+        self.signing_key_owner = signing_key_owner
+        self.signing_key_fingerprint = signing_key_fingerprint
+        self.urgency = urgency
+        self.dateuploaded = dateuploaded
+        self.dsc = dsc
+        self.changelog = changelog
+        self.changelog_entry = changelog_entry
+        self.buildinfo = buildinfo
+        self.builddepends = builddepends
+        self.builddependsindep = builddependsindep
+        self.build_conflicts = build_conflicts
+        self.build_conflicts_indep = build_conflicts_indep
+        self.homepage = homepage
+        self.source_package_recipe_build = source_package_recipe_build
+        self.ci_build = ci_build
+        self.dsc_maintainer_rfc822 = dsc_maintainer_rfc822
+        self.dsc_standards_version = dsc_standards_version
+        self.dsc_format = dsc_format
+        self.dsc_binaries = dsc_binaries
+        if user_defined_fields is not None:
+            self._user_defined_fields = json.dumps(user_defined_fields)
         if copyright is not None:
-            copyright = copyright.replace("\0", "")
-        self.copyright = copyright
+            # PostgreSQL text columns can't contain null characters, so
+            # remove them as this is only used for display.
+            self.copyright = copyright.replace("\0", "")
 
     def __repr__(self):
         """Returns an informative representation of a SourcePackageRelease."""
@@ -183,8 +227,6 @@ class SourcePackageRelease(SQLBase):
         """See `ISourcePackageRelease`."""
         store = Store.of(self)
         store.flush()
-        if content is not None:
-            content = six.ensure_text(content)
         store.execute(
             "UPDATE sourcepackagerelease SET copyright=%s WHERE id=%s",
             (content, self.id),
@@ -344,33 +386,31 @@ class SourcePackageRelease(SQLBase):
 
     def getPackageSize(self):
         """See ISourcePackageRelease."""
-        size_query = """
-            SELECT
-                SUM(LibraryFileContent.filesize)/1024.0
-            FROM
-                SourcePackagereLease
-                JOIN SourcePackageReleaseFile ON
-                    SourcePackageReleaseFile.sourcepackagerelease =
-                    SourcePackageRelease.id
-                JOIN LibraryFileAlias ON
-                    SourcePackageReleaseFile.libraryfile =
-                    LibraryFileAlias.id
-                JOIN LibraryFileContent ON
-                    LibraryFileAlias.content = LibraryFileContent.id
-            WHERE
-                SourcePackageRelease.id = %s
-            """ % sqlvalues(
-            self
+        return float(
+            Store.of(self)
+            .using(
+                SourcePackageRelease,
+                Join(
+                    SourcePackageReleaseFile,
+                    SourcePackageReleaseFile.sourcepackagerelease
+                    == SourcePackageRelease.id,
+                ),
+                Join(
+                    LibraryFileAlias,
+                    SourcePackageReleaseFile.libraryfile
+                    == LibraryFileAlias.id,
+                ),
+                Join(
+                    LibraryFileContent,
+                    LibraryFileAlias.content == LibraryFileContent.id,
+                ),
+            )
+            .find(
+                Coalesce(Sum(LibraryFileContent.filesize) / 1024.0, 0.0),
+                SourcePackageRelease.id == self.id,
+            )
+            .one()
         )
-
-        cur = cursor()
-        cur.execute(size_query)
-        results = cur.fetchone()
-
-        if len(results) == 1 and results[0] is not None:
-            return float(results[0])
-        else:
-            return 0.0
 
     def override(self, component=None, section=None, urgency=None):
         """See ISourcePackageRelease."""
@@ -533,5 +573,4 @@ class SourcePackageRelease(SQLBase):
         except ChangelogParseError:
             return None
 
-        output = "\n\n".join(chunks)
-        return six.ensure_text(output, "utf-8", "replace")
+        return "\n\n".join(chunks)

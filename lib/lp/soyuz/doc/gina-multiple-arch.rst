@@ -17,7 +17,9 @@ Get the current counts of stuff in the database:
     >>> SSPPH = SourcePackagePublishingHistory
     >>> SBPPH = BinaryPackagePublishingHistory
 
-    >>> orig_spr_count = SourcePackageRelease.select().count()
+    >>> orig_spr_count = (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ... )
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = (
@@ -132,7 +134,10 @@ Check the quantities that were returned. We have:
 We have two source packages, and we're only really publishing into
 breezy:
 
-    >>> SourcePackageRelease.select().count() - orig_spr_count
+    >>> (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ...     - orig_spr_count
+    ... )
     2
     >>> print(IStore(SSPPH).find(SSPPH).count() - orig_sspph_count)
     2
@@ -174,8 +179,14 @@ Check that the source package was correctly imported:
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> n = SourcePackageName.selectOneBy(name="ekg")
-    >>> ekg = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="1:1.5-4ubuntu1.2"
+    >>> ekg = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=n,
+    ...         version="1:1.5-4ubuntu1.2",
+    ...     )
+    ...     .one()
     ... )
     >>> print(ekg.section.name)
     net

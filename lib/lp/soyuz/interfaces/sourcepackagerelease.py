@@ -19,9 +19,9 @@ class ISourcePackageRelease(Interface):
     """A source package release, e.g. apache-utils 2.0.48-3"""
 
     id = Attribute("SourcePackageRelease identifier")
-    creatorID = Attribute("DB ID of creator")
+    creator_id = Attribute("DB ID of creator")
     creator = Attribute("Person that created this release")
-    maintainerID = Attribute("DB ID of the maintainer")
+    maintainer_id = Attribute("DB ID of the maintainer")
     maintainer = Attribute(
         "The person in general responsible for this " "release"
     )
@@ -112,7 +112,7 @@ class ISourcePackageRelease(Interface):
         "IBinaryPackageFile entries for this " "sourcepackagerelease"
     )
     sourcepackagename = Attribute("SourcePackageName table reference")
-    sourcepackagenameID = Attribute("SourcePackageName id.")
+    sourcepackagename_id = Attribute("SourcePackageName id.")
     upload_distroseries = Attribute(
         "The distroseries in which this package "
         "was first uploaded in Launchpad"

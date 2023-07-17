@@ -43,8 +43,9 @@ Commit, so uploaded contents are available in the current test.
 We will use an arbitrary source package release from the sampledata, and
 create a PackageUpload with it.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> spr_test = SourcePackageRelease.get(20)
+    >>> spr_test = IStore(SourcePackageRelease).get(SourcePackageRelease, 20)
     >>> sp_test = spr_test.upload_distroseries.getSourcePackage(
     ...     spr_test.sourcepackagename
     ... )

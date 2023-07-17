@@ -118,7 +118,7 @@ class ArchiveSourcePublications:
         # batch load the used source package names.
         spn_ids = set()
         for spph in self._source_publications:
-            spn_ids.add(spph.sourcepackagerelease.sourcepackagenameID)
+            spn_ids.add(spph.sourcepackagerelease.sourcepackagename_id)
         list(
             IStore(SourcePackageName).find(
                 SourcePackageName, SourcePackageName.id.is_in(spn_ids)

@@ -89,9 +89,12 @@ have a SourcePackageName object for it.
     >>> IDistributionSourcePackage.providedBy(evo_ubuntu)
     True
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=evo.id, version="1.0"
+    >>> sourcepackagerelease = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=evo, version="1.0")
+    ...     .one()
     ... )
     >>> print(sourcepackagerelease.name)
     evolution

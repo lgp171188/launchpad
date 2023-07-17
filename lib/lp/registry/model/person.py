@@ -3416,13 +3416,13 @@ class Person(
                         ),
                         order_by=[
                             spph.distroseries_id,
-                            SourcePackageRelease.sourcepackagenameID,
+                            SourcePackageRelease.sourcepackagename_id,
                             Desc(spph.datecreated),
                             Desc(spph.id),
                         ],
                         distinct=(
                             spph.distroseries_id,
-                            SourcePackageRelease.sourcepackagenameID,
+                            SourcePackageRelease.sourcepackagename_id,
                         ),
                     )
                 ),

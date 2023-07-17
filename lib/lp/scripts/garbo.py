@@ -626,7 +626,7 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
                 spph,
                 And(
                     spph.sourcepackagerelease_id == SourcePackageRelease.id,
-                    spph.archive_id == SourcePackageRelease.upload_archiveID,
+                    spph.archive_id == SourcePackageRelease.upload_archive_id,
                 ),
             ),
             Join(Archive, Archive.id == spph.archive_id),
@@ -636,12 +636,12 @@ class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
             .find(
                 (
                     SourcePackageRelease.id,
-                    SourcePackageRelease.creatorID,
-                    SourcePackageRelease.maintainerID,
-                    SourcePackageRelease.upload_archiveID,
+                    SourcePackageRelease.creator_id,
+                    SourcePackageRelease.maintainer_id,
+                    SourcePackageRelease.upload_archive_id,
                     Archive.purpose,
-                    SourcePackageRelease.upload_distroseriesID,
-                    SourcePackageRelease.sourcepackagenameID,
+                    SourcePackageRelease.upload_distroseries_id,
+                    SourcePackageRelease.sourcepackagename_id,
                     SourcePackageRelease.dateuploaded,
                     spph.id,
                 ),
@@ -2199,7 +2199,7 @@ class BinaryPackagePublishingHistorySPNPopulator(BulkPruner):
             BulkUpdate(
                 {
                     BPPH.sourcepackagename_id: (
-                        SourcePackageRelease.sourcepackagenameID
+                        SourcePackageRelease.sourcepackagename_id
                     )
                 },
                 table=BPPH,

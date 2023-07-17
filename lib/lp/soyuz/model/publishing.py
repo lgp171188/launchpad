@@ -2108,7 +2108,9 @@ class PublishingSet:
             sprs = bulk.load_related(
                 SourcePackageRelease, spphs, ["sourcepackagerelease_id"]
             )
-            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(
+                SourcePackageName, sprs, ["sourcepackagename_id"]
+            )
             spr_ids = set(map(attrgetter("id"), sprs))
             sprfs = list(
                 IStore(SourcePackageReleaseFile)
@@ -2183,7 +2185,9 @@ class PublishingSet:
                 LibraryFileAlias, bpfs, ["libraryfile_id"]
             )
             bulk.load_related(LibraryFileContent, lfas, ["contentID"])
-            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(
+                SourcePackageName, sprs, ["sourcepackagename_id"]
+            )
             bulk.load_related(
                 BinaryPackageName, bprs, ["binarypackagename_id"]
             )
@@ -2212,8 +2216,8 @@ class PublishingSet:
             PackageUpload.id == PackageUploadSource.packageupload_id,
             PackageUpload.status == PackageUploadStatus.DONE,
             PackageUpload.distroseries
-            == SourcePackageRelease.upload_distroseriesID,
-            PackageUpload.archive == SourcePackageRelease.upload_archiveID,
+            == SourcePackageRelease.upload_distroseries_id,
+            PackageUpload.archive == SourcePackageRelease.upload_archive_id,
             PackageUploadSource.sourcepackagerelease
             == SourcePackageRelease.id,
             SourcePackageRelease.id
@@ -2527,9 +2531,9 @@ def get_current_source_releases(
             Or(*series_clauses),
             *extra_clauses,
         )
-        .config(distinct=(SourcePackageRelease.sourcepackagenameID, key_col))
+        .config(distinct=(SourcePackageRelease.sourcepackagename_id, key_col))
         .order_by(
-            SourcePackageRelease.sourcepackagenameID,
+            SourcePackageRelease.sourcepackagename_id,
             key_col,
             Desc(SourcePackagePublishingHistory.id),
         )
