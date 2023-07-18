@@ -128,7 +128,7 @@ class CachedProperty:
 def cachedproperty(name_or_function):
     """Decorator to create a cached property.
 
-    See `doc/propertycache.rst` for usage.
+    See `lib/lp/services/doc/propertycache.rst` for usage.
     """
     if isinstance(name_or_function, str):
         name = name_or_function
