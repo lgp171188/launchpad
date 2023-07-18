@@ -90,8 +90,10 @@ LPCONFIG=launchpad-scripts
 # Person notifications
 */5 * * * * {{ code_dir }}/cronscripts/send-person-notifications.py -q --log-file=INFO:{{ logs_dir }}/send-person-notifications.log
 
+{%- if process_inbound_email_host and process_inbound_email_user and process_inbound_email_password %}
 # Process inbound email
 */3 * * * * {{ code_dir }}/cronscripts/process-mail.py -q --log-file=DEBUG:{{ logs_dir }}/process-mail.log
+{%- endif %}
 
 {%- if mirror_prober_active %}
 # Mirror prober
