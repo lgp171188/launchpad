@@ -220,7 +220,16 @@ class TestDiff(DiffTestCase):
         # or 2. If there is not 2 seconds left in the request, the number will
         # be 0.01 smaller or the actual remaining time.
         class DiffWithFakeText(Diff):
-            diff_text = FakeMethod()
+            _diff_text = FakeMethod()
+
+            @property
+            def diff_text(self):
+                return self._diff_text
+
+            @diff_text.setter
+            def diff_text(self, value):
+                # Ignore attempts to set diff_text (e.g. by Diff.__init__).
+                pass
 
         diff = DiffWithFakeText()
         diff.diff_text.open = FakeMethod()

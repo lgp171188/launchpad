@@ -13,6 +13,7 @@ import io
 import json
 import sys
 from contextlib import ExitStack
+from datetime import timezone
 from operator import attrgetter
 from uuid import uuid1
 
@@ -23,7 +24,7 @@ from breezy.merge import Merge3Merger
 from breezy.patches import Patch, parse_patches
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
-from storm.locals import Int, Reference, Unicode
+from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
@@ -34,9 +35,7 @@ from lp.code.interfaces.githosting import IGitHostingClient
 from lp.codehosting.bzrutils import read_locked
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
@@ -47,16 +46,22 @@ from lp.services.timeout import get_default_timeout_function, reduced_timeout
 
 
 @implementer(IDiff)
-class Diff(SQLBase):
+class Diff(StormBase):
     """See `IDiff`."""
 
-    diff_text = ForeignKey(foreignKey="LibraryFileAlias")
+    __storm_table__ = "Diff"
 
-    diff_lines_count = IntCol()
+    id = Int(primary=True)
 
-    _diffstat = StringCol(dbName="diffstat")
+    diff_text_id = Int(name="diff_text", allow_none=True)
+    diff_text = Reference(diff_text_id, "LibraryFileAlias.id")
 
-    def _get_diffstat(self):
+    diff_lines_count = Int(name="diff_lines_count", allow_none=True)
+
+    _diffstat = Unicode(name="diffstat", allow_none=True)
+
+    @property
+    def diffstat(self):
         if self._diffstat is None:
             return None
         return {
@@ -64,7 +69,8 @@ class Diff(SQLBase):
             for key, value in json.loads(self._diffstat).items()
         }
 
-    def _set_diffstat(self, diffstat):
+    @diffstat.setter
+    def diffstat(self, diffstat):
         if diffstat is None:
             self._diffstat = None
             return
@@ -72,11 +78,24 @@ class Diff(SQLBase):
         assert isinstance(diffstat, dict)
         self._diffstat = json.dumps(diffstat)
 
-    diffstat = property(_get_diffstat, _set_diffstat)
+    added_lines_count = Int(name="added_lines_count", allow_none=True)
 
-    added_lines_count = IntCol()
+    removed_lines_count = Int(name="removed_lines_count", allow_none=True)
 
-    removed_lines_count = IntCol()
+    def __init__(
+        self,
+        diff_text=None,
+        diff_lines_count=None,
+        diffstat=None,
+        added_lines_count=None,
+        removed_lines_count=None,
+    ):
+        super().__init__()
+        self.diff_text = diff_text
+        self.diff_lines_count = diff_lines_count
+        self.diffstat = diffstat
+        self.added_lines_count = added_lines_count
+        self.removed_lines_count = removed_lines_count
 
     @property
     def text(self):
@@ -274,13 +293,14 @@ class Diff(SQLBase):
             for path, (added, removed) in diffstat.items():
                 added_lines_count += added
                 removed_lines_count += removed
-        return cls(
+        diff = cls(
             diff_text=diff_text,
             diff_lines_count=diff_lines_count,
             diffstat=diffstat,
             added_lines_count=added_lines_count,
             removed_lines_count=removed_lines_count,
         )
+        return IStore(Diff).add(diff)
 
     @staticmethod
     def generateDiffstat(diff_bytes, strip_prefix_segments=0):
@@ -389,8 +409,11 @@ class PreviewDiff(StormBase):
         branch_merge_proposal_id, "BranchMergeProposal.id"
     )
 
-    date_created = UtcDateTimeCol(
-        dbName="date_created", default=UTC_NOW, notNull=True
+    date_created = DateTime(
+        name="date_created",
+        default=UTC_NOW,
+        allow_none=False,
+        tzinfo=timezone.utc,
     )
 
     conflicts = Unicode()
