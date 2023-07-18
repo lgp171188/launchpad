@@ -23,6 +23,11 @@ dbconfig.override(dbuser="buildd_manager", isolation_level="read_committed")
 # Should be removed from callsites verified to not need it.
 set_immediate_mail_delivery(True)
 
+# Allow use of feature flags.  Do this before setting up the Twisted
+# application, in order to ensure that we switch to the correct database
+# role before starting any threads.
+setup_feature_controller("buildd-manager")
+
 # ampoule uses five file descriptors per subprocess (i.e.
 # 5 * config.builddmaster.download_connections); we also need at least three
 # per active builder for resuming virtualized builders or making XML-RPC
@@ -46,6 +51,3 @@ readyservice.ReadyService().setServiceParent(application)
 # Service for scanning buildd workers.
 service = BuilddManager()
 service.setServiceParent(application)
-
-# Allow use of feature flags.
-setup_feature_controller("buildd-manager")

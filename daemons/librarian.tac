@@ -45,6 +45,11 @@ execute_zcml_for_scripts(
     scriptzcmlfilename="librarian.zcml", setup_interaction=False
 )
 
+# Allow use of feature flags.  Do this before setting up the Twisted
+# application, in order to ensure that we switch to the correct database
+# role before starting any threads.
+setup_feature_controller("librarian")
+
 if os.environ.get("LP_TEST_INSTANCE"):
     # Running in ephemeral mode: get the root dir from the environment and
     # dynamically allocate ports.
@@ -120,9 +125,6 @@ options.parseOptions()
 logfile = options.get("logfile")
 observer = set_up_oops_reporting("librarian", "librarian", logfile)
 application.addComponent(observer, ignoreClass=1)
-
-# Allow use of feature flags.
-setup_feature_controller("librarian")
 
 
 # Setup a signal handler to dump the process' memory upon 'kill -44'.
