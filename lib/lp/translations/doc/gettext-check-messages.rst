@@ -24,7 +24,6 @@ points that would otherwise be in the output.
 
     >>> from zope.security.proxy import removeSecurityProxy
 
-    >>> from lp.services.database.sqlbase import quote
     >>> from lp.translations.scripts.gettext_check_messages import (
     ...     GettextCheckMessages,
     ... )
@@ -103,7 +102,7 @@ The gettext_check_message script goes through a given set of messages
 and re-does the gettext check.  Which messages it checks is specified as
 a plain SQL WHERE clause.
 
-    >>> run_checker(["-vv", "-w id=%s" % quote(ubuntu_message.id)])
+    >>> run_checker(["-vv", "-w", "id=%d" % ubuntu_message.id])
     DEBUG Checking messages matching:  id=...
     DEBUG Checking message ...
     DEBUG Commit point.
@@ -127,7 +126,7 @@ detects the problem when it checks that message.
     >>> from lp.services.propertycache import get_property_cache
     >>> get_property_cache(ubuntu_message).translations = ["%s c"]
 
-    >>> run_checker(["-w id=%s" % quote(ubuntu_message.id)])
+    >>> run_checker(["-w", "id=%d" % ubuntu_message.id])
     DEBUG Checking messages matching:  id=...
     DEBUG Checking message ...
     INFO ... (ubuntu): format specifications ... are not the same
@@ -159,7 +158,7 @@ happens to produce validation errors.
 In this example we'd like to see a nicely predictable ordering, so we
 add a sort order using the -o option.
 
-    >>> run_checker(["-w", "potmsgset=%s" % quote(potmsgset), "-o", "id"])
+    >>> run_checker(["-w", "potmsgset=%d" % potmsgset.id, "-o", "id"])
     DEBUG Checking messages matching:  potmsgset=...
     DEBUG Checking message ...
     INFO ... (unused): format specifications ... are not the same
@@ -179,7 +178,7 @@ The script also notes when a message is shared between upstream and Ubuntu.
 
     >>> upstream_message.is_current_ubuntu = True
     >>> upstream_message.is_current_upstream = True
-    >>> run_checker(["-w id=%s" % quote(upstream_message.id)])
+    >>> run_checker(["-w", "id=%d" % upstream_message.id])
     DEBUG ...
     INFO ... (ubuntu, upstream): number of format specifications ...
 
@@ -191,7 +190,7 @@ The --dry-run option makes the script abort all its database changes.
 
     >>> ubuntu_message.is_current_ubuntu = True
 
-    >>> run_checker(["-w id=%s" % quote(ubuntu_message.id), "--dry-run"])
+    >>> run_checker(["-w", "id=%d" % ubuntu_message.id, "--dry-run"])
     INFO Dry run.  Not making any changes.
     DEBUG Checking messages matching:  id=...
     DEBUG Checking message ...
@@ -216,7 +215,7 @@ purpose of this test we count messages checked.  If we set the commit
 interval to 1, we get a commit after every message plus one at the end
 to close things off neatly.
 
-    >>> run_checker(["-w potmsgset=%s" % quote(potmsgset)], commit_interval=1)
+    >>> run_checker(["-w", "potmsgset=%d" % potmsgset.id], commit_interval=1)
     DEBUG Checking messages matching:  potmsgset=...
     DEBUG Checking message ...
     INFO ... (...): number of format specifications ...

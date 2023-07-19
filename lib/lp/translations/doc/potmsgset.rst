@@ -761,8 +761,12 @@ is a fuzzily matched message" or "this message follows C format-string
 rules."  These flags are set in a comment starting with a comma, and
 flags are separated by further commas.
 
+    >>> from lp.translations.model.pomsgid import POMsgID
     >>> from lp.translations.model.potmsgset import POTMsgSet
-    >>> flagged_potmsgset = POTMsgSet(flagscomment=", fuzzy, c-format")
+    >>> flagged_potmsgset = POTMsgSet(
+    ...     msgid_singular=POMsgID(factory.getUniqueUnicode()),
+    ...     flagscomment=", fuzzy, c-format",
+    ... )
 
 The flags property produces these as a neat list of flags.
 
@@ -779,5 +783,7 @@ The flags property produces these as a neat list of flags.
 
 If the message has no flags, that list is empty.
 
-    >>> print_flags(POTMsgSet())
+    >>> print_flags(
+    ...     POTMsgSet(msgid_singular=POMsgID(factory.getUniqueUnicode()))
+    ... )
     .

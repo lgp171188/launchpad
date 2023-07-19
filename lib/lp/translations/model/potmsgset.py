@@ -24,7 +24,7 @@ from storm.expr import (
     Select,
     Table,
 )
-from storm.locals import Int, Reference
+from storm.locals import Int, Reference, Unicode
 from storm.store import EmptyResultSet, Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -33,10 +33,8 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
-from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     NullsFirst,
     NullsLast,
@@ -121,28 +119,46 @@ def dictify_translations(translations):
 
 
 @implementer(IPOTMsgSet)
-class POTMsgSet(SQLBase):
-    _table = "POTMsgSet"
+class POTMsgSet(StormBase):
+    __storm_table__ = "POTMsgSet"
 
-    context = StringCol(dbName="context", notNull=False)
+    id = Int(primary=True)
     msgid_singular_id = Int(name="msgid_singular", allow_none=False)
     msgid_singular = Reference(msgid_singular_id, "POMsgID.id")
-    msgid_plural_id = Int(
-        name="msgid_plural", allow_none=True, default=DEFAULT
-    )
+    msgid_plural_id = Int(name="msgid_plural", allow_none=True, default=None)
     msgid_plural = Reference(msgid_plural_id, "POMsgID.id")
-    commenttext = StringCol(dbName="commenttext", notNull=False)
-    filereferences = StringCol(dbName="filereferences", notNull=False)
-    sourcecomment = StringCol(dbName="sourcecomment", notNull=False)
-    flagscomment = StringCol(dbName="flagscomment", notNull=False)
+    context = Unicode(name="context", allow_none=True)
+    commenttext = Unicode(name="commenttext", allow_none=True)
+    filereferences = Unicode(name="filereferences", allow_none=True)
+    sourcecomment = Unicode(name="sourcecomment", allow_none=True)
+    flagscomment = Unicode(name="flagscomment", allow_none=True)
 
     credits_message_ids = credits_message_info.keys()
 
+    def __init__(
+        self,
+        msgid_singular,
+        msgid_plural=None,
+        context=None,
+        commenttext=None,
+        filereferences=None,
+        sourcecomment=None,
+        flagscomment=None,
+    ):
+        super().__init__()
+        self.msgid_singular = msgid_singular
+        self.msgid_plural = msgid_plural
+        self.context = context
+        self.commenttext = commenttext
+        self.filereferences = filereferences
+        self.sourcecomment = sourcecomment
+        self.flagscomment = flagscomment
+
     def clone(self):
         return POTMsgSet(
-            context=self.context,
             msgid_singular=self.msgid_singular,
             msgid_plural=self.msgid_plural,
+            context=self.context,
             commenttext=self.commenttext,
             filereferences=self.filereferences,
             sourcecomment=self.sourcecomment,
@@ -649,9 +665,9 @@ class POTMsgSet(SQLBase):
         if len(matches) > 0:
             if len(matches) > 1:
                 logging.info(
-                    "Translation for POTMsgSet %s into %s "
-                    "matches %s existing translations."
-                    % sqlvalues(self, pofile.language.code, len(matches))
+                    "Translation for POTMsgSet %r into %s "
+                    "matches %d existing translations."
+                    % (self, pofile.language.code, len(matches))
                 )
             return matches[0]
         else:
