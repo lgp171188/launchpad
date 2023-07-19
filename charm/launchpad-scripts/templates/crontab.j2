@@ -31,10 +31,10 @@ LPCONFIG=launchpad-scripts
 27 07 * * 3 {{ code_dir }}/cronscripts/rosetta-pofile-stats.py -q --log-file=INFO:{{ logs_dir }}/rosetta-pofile-stats.log
 
 # Debian bugs mirroring, used by checkwatches
-4,19,34,49 * * * * {{ code_dir }}/scripts/debbugs-sync >>{{ logs_dir }}/debbugs-sync.log 2>&1
+4,19,34,49 * * * * {{ code_dir }}/scripts/debbugs-sync {{ var_dir }}/debbugs-mirror >> {{ logs_dir }}/debbugs-sync.log 2>&1
 
-# NB. checkwatches requires access to /srv/bugs-mirror.debian.org/
-# Reverted to doing ten at a time (--jobs=10) as https://bugs.launchpad.net/bugs/435952 should be fixed
+# NB. The checkwatches script requires access to {{ var_dir }}/debbugs-mirror
+# It does one job at a time (--jobs=1) because of https://bugs.launchpad.net/launchpad/+bug/435952
 */10 * * * * {{ code_dir }}/cronscripts/checkwatches.py --jobs=1 -q --log-file=INFO:{{ logs_dir }}/checkwatches/`date '+\%Y-\%m-\%d'`.log
 # Compress old checkwatches logs
 5 0 * * * find {{ logs_dir }}/checkwatches -maxdepth 1 -name '*.log' -type f -mtime +5 -print0 | xargs -0 -r nice gzip

@@ -340,7 +340,7 @@ def find_live_binary_versions_pass_2(sorted_pubs, cache):
     bpbs = load_related(
         BinaryPackageBuild,
         [pub.binarypackagerelease for pub in arch_indep_pubs],
-        ["buildID"],
+        ["build_id"],
     )
     load_related(SourcePackageRelease, bpbs, ["source_package_release_id"])
 
@@ -655,7 +655,7 @@ class Dominator:
         )
         main_clauses = bpph_location_clauses + [
             BPR.id == BPPH.binarypackagerelease_id,
-            BPR.binarypackagenameID.is_in(candidate_binary_names),
+            BPR.binarypackagename_id.is_in(candidate_binary_names),
             BPR.binpackageformat != BinaryPackageFormat.DDEB,
         ]
 

@@ -8,25 +8,16 @@ __all__ = [
 
 import json
 import re
+from datetime import timezone
 from operator import attrgetter
-from typing import Any
 
-from storm.locals import Date, Int, Reference, Store
+from storm.locals import Bool, Date, DateTime, Int, Reference, Store, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name_pattern as debian_name_pattern
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
 from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.soyuz.enums import (
@@ -35,13 +26,13 @@ from lp.soyuz.enums import (
     BinarySourceReferenceType,
     PackagePublishingPriority,
 )
+from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
 from lp.soyuz.interfaces.binarypackagerelease import (
     BinaryPackageReleaseNameLinkageError,
     IBinaryPackageRelease,
     IBinaryPackageReleaseDownloadCount,
 )
 from lp.soyuz.interfaces.binarysourcereference import IBinarySourceReferenceSet
-from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.files import BinaryPackageFile
 
 # https://packaging.python.org/en/latest/specifications/core-metadata/#id6
@@ -60,70 +51,54 @@ wheel_name_pattern = re.compile(
 conda_name_pattern = re.compile(r"^[a-z0-9_][a-z0-9.+_-]*$")
 
 
-def _validate_bpr_name(obj: IBinaryPackageRelease, attr: str, value: Any):
+def _validate_bpr_name(bpr: IBinaryPackageRelease, bpn: IBinaryPackageName):
     """Validate that a BPR's BinaryPackageName is appropriate for its format.
 
     The constraints that apply to binary package names vary depending on the
     package format, so we enforce them when creating a
     `BinaryPackageRelease` since at that point we know the format.
 
-    The interface of this function is as required by Storm's property
-    validator system, although this function is currently called manually by
-    `BinaryPackageRelease.__init__` until such time as we port
-    `BinaryPackageRelease` to the native Storm model style in order that we
-    can control initialization order.
-
-    :param obj: The context `IBinaryPackageRelease`.
-    :param attr: The name of the attribute being checked.
-    :param value: The ID of the `BinaryPackageName` being set.
+    :param bpr: The context `IBinaryPackageRelease`.
+    :param bpn: The `IBinaryPackageName` being set.
     """
-    if not isinstance(value, int):
-        raise AssertionError(
-            "Expected int for BinaryPackageName foreign key reference, got %r"
-            % type(value)
-        )
-
-    name = IStore(BinaryPackageName).get(BinaryPackageName, value).name
-    if obj.binpackageformat == BinaryPackageFormat.WHL:
-        if not wheel_name_pattern.match(name):
+    if bpr.binpackageformat == BinaryPackageFormat.WHL:
+        if not wheel_name_pattern.match(bpn.name):
             raise BinaryPackageReleaseNameLinkageError(
                 "Invalid Python wheel name '%s'; must match /%s/i"
-                % (name, wheel_name_pattern.pattern)
+                % (bpn.name, wheel_name_pattern.pattern)
             )
-    elif obj.binpackageformat in (
+    elif bpr.binpackageformat in (
         BinaryPackageFormat.CONDA_V1,
         BinaryPackageFormat.CONDA_V2,
     ):
-        if not conda_name_pattern.match(name):
+        if not conda_name_pattern.match(bpn.name):
             raise BinaryPackageReleaseNameLinkageError(
                 "Invalid Conda package name '%s'; must match /%s/"
-                % (name, conda_name_pattern.pattern)
+                % (bpn.name, conda_name_pattern.pattern)
             )
     else:
         # Fall back to Launchpad's traditional name validation, which
         # coincides with the rules for Debian-format package names.
-        if not debian_name_pattern.match(name):
+        if not debian_name_pattern.match(bpn.name):
             raise BinaryPackageReleaseNameLinkageError(
                 "Invalid package name '%s'; must match /%s/"
-                % (name, debian_name_pattern.pattern)
+                % (bpn.name, debian_name_pattern.pattern)
             )
 
 
 @implementer(IBinaryPackageRelease)
-class BinaryPackageRelease(SQLBase):
-    _table = "BinaryPackageRelease"
-    binarypackagename = ForeignKey(
-        dbName="binarypackagename",
-        notNull=True,
-        foreignKey="BinaryPackageName",
-    )
-    version = StringCol(dbName="version", notNull=True)
-    summary = StringCol(dbName="summary", notNull=True, default="")
-    description = StringCol(dbName="description", notNull=True)
+class BinaryPackageRelease(StormBase):
+    __storm_table__ = "BinaryPackageRelease"
+
+    id = Int(primary=True)
+    binarypackagename_id = Int(name="binarypackagename", allow_none=False)
+    binarypackagename = Reference(binarypackagename_id, "BinaryPackageName.id")
+    version = Unicode(name="version", allow_none=False)
+    summary = Unicode(name="summary", allow_none=False, default="")
+    description = Unicode(name="description", allow_none=False)
     # DB constraint: exactly one of build and ci_build is non-NULL.
-    build = ForeignKey(
-        dbName="build", foreignKey="BinaryPackageBuild", notNull=False
-    )
+    build_id = Int(name="build", allow_none=True)
+    build = Reference(build_id, "BinaryPackageBuild.id")
     ci_build_id = Int(name="ci_build", allow_none=True)
     ci_build = Reference(ci_build_id, "CIBuild.id")
     binpackageformat = DBEnum(
@@ -139,42 +114,93 @@ class BinaryPackageRelease(SQLBase):
     priority = DBEnum(
         name="priority", allow_none=True, enum=PackagePublishingPriority
     )
-    shlibdeps = StringCol(dbName="shlibdeps")
-    depends = StringCol(dbName="depends")
-    recommends = StringCol(dbName="recommends")
-    suggests = StringCol(dbName="suggests")
-    conflicts = StringCol(dbName="conflicts")
-    replaces = StringCol(dbName="replaces")
-    provides = StringCol(dbName="provides")
-    pre_depends = StringCol(dbName="pre_depends")
-    enhances = StringCol(dbName="enhances")
-    breaks = StringCol(dbName="breaks")
-    essential = BoolCol(dbName="essential", default=False)
-    installedsize = IntCol(dbName="installedsize")
-    architecturespecific = BoolCol(dbName="architecturespecific", notNull=True)
-    homepage = StringCol(dbName="homepage")
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    debug_package = ForeignKey(
-        dbName="debug_package", foreignKey="BinaryPackageRelease"
+    shlibdeps = Unicode(name="shlibdeps")
+    depends = Unicode(name="depends")
+    recommends = Unicode(name="recommends")
+    suggests = Unicode(name="suggests")
+    conflicts = Unicode(name="conflicts")
+    replaces = Unicode(name="replaces")
+    provides = Unicode(name="provides")
+    pre_depends = Unicode(name="pre_depends")
+    enhances = Unicode(name="enhances")
+    breaks = Unicode(name="breaks")
+    essential = Bool(name="essential", default=False)
+    installedsize = Int(name="installedsize")
+    architecturespecific = Bool(name="architecturespecific", allow_none=False)
+    homepage = Unicode(name="homepage")
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
+    debug_package_id = Int(name="debug_package")
+    debug_package = Reference(debug_package_id, "BinaryPackageRelease.id")
 
-    _user_defined_fields = StringCol(dbName="user_defined_fields")
+    _user_defined_fields = Unicode(name="user_defined_fields")
 
-    def __init__(self, *args, **kwargs):
-        if "user_defined_fields" in kwargs:
-            kwargs["_user_defined_fields"] = json.dumps(
-                kwargs["user_defined_fields"]
-            )
-            del kwargs["user_defined_fields"]
-        super().__init__(*args, **kwargs)
-        # XXX cjwatson 2022-06-21: Ideally we'd set this up as a Storm
-        # validator, but that's difficult to arrange with SQLBase since we
-        # can't guarantee that self.binpackageformat will be set before
-        # self.binarypackagename, so just call it by hand here using the
-        # calling convention for validators.
-        _validate_bpr_name(
-            self, "binarypackagename", self.binarypackagename.id
-        )
+    def __init__(
+        self,
+        binarypackagename,
+        version,
+        binpackageformat,
+        description,
+        architecturespecific,
+        summary="",
+        build=None,
+        ci_build=None,
+        component=None,
+        section=None,
+        priority=None,
+        shlibdeps=None,
+        depends=None,
+        recommends=None,
+        suggests=None,
+        conflicts=None,
+        replaces=None,
+        provides=None,
+        pre_depends=None,
+        enhances=None,
+        breaks=None,
+        essential=False,
+        installedsize=None,
+        homepage=None,
+        debug_package=None,
+        user_defined_fields=None,
+    ):
+        super().__init__()
+        self.binarypackagename = binarypackagename
+        self.version = version
+        self.binpackageformat = binpackageformat
+        self.description = description
+        self.architecturespecific = architecturespecific
+        self.summary = summary
+        self.build = build
+        self.ci_build = ci_build
+        self.component = component
+        self.section = section
+        self.priority = priority
+        self.shlibdeps = shlibdeps
+        self.depends = depends
+        self.recommends = recommends
+        self.suggests = suggests
+        self.conflicts = conflicts
+        self.replaces = replaces
+        self.provides = provides
+        self.pre_depends = pre_depends
+        self.enhances = enhances
+        self.breaks = breaks
+        self.essential = essential
+        self.installedsize = installedsize
+        self.homepage = homepage
+        self.debug_package = debug_package
+        if user_defined_fields is not None:
+            self._user_defined_fields = json.dumps(user_defined_fields)
+
+        # Validate the package name.  We can't use Storm's validator
+        # mechanism for this, because we need to validate the combination of
+        # binpackageformat and binarypackagename, and the way validators
+        # work for references mean that the validator would have to make a
+        # database query while the row is in an incomplete state of
+        # construction.
+        _validate_bpr_name(self, self.binarypackagename)
 
     @cachedproperty
     def built_using_references(self):

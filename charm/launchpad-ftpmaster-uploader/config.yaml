@@ -1,0 +1,5 @@
+options:
+  active:
+    type: boolean
+    default: true
+    description: If true, enable jobs that may change the database.

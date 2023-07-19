@@ -16,6 +16,11 @@ from lp.services.twistedsupport.loggingsupport import RotatableFileLogObserver
 
 execute_zcml_for_scripts()
 
+# Allow use of feature flags.  Do this before setting up the Twisted
+# application, in order to ensure that we switch to the correct database
+# role before starting any threads.
+setup_feature_controller("number-cruncher")
+
 options = ServerOptions()
 options.parseOptions()
 
@@ -31,6 +36,3 @@ readyservice.ReadyService().setServiceParent(application)
 # Service for updating statsd receivers.
 service = NumberCruncher()
 service.setServiceParent(application)
-
-# Allow use of feature flags.
-setup_feature_controller("number-cruncher")

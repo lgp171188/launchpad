@@ -1,0 +1,11 @@
+includes:
+  - layer:launchpad-db
+  - interface:upload-queue-processor
+repo: https://git.launchpad.net/launchpad
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - process_upload

@@ -149,7 +149,7 @@ class DistroSeriesPackageCache(StormBase):
             IStore(BinaryPackageRelease)
             .find(
                 (
-                    BinaryPackageRelease.binarypackagenameID,
+                    BinaryPackageRelease.binarypackagename_id,
                     BinaryPackageRelease.summary,
                     BinaryPackageRelease.description,
                     Max(BinaryPackageRelease.datecreated),
@@ -172,12 +172,12 @@ class DistroSeriesPackageCache(StormBase):
                 ),
             )
             .group_by(
-                BinaryPackageRelease.binarypackagenameID,
+                BinaryPackageRelease.binarypackagename_id,
                 BinaryPackageRelease.summary,
                 BinaryPackageRelease.description,
             )
             .order_by(
-                BinaryPackageRelease.binarypackagenameID,
+                BinaryPackageRelease.binarypackagename_id,
                 Desc(Max(BinaryPackageRelease.datecreated)),
             )
         )

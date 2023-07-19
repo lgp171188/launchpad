@@ -81,9 +81,11 @@ from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.soyuz.mail.binarypackagebuild import BinaryPackageBuildMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
+from lp.soyuz.model.component import Component
 from lp.soyuz.model.files import BinaryPackageFile, SourcePackageReleaseFile
 from lp.soyuz.model.packageset import Packageset
 from lp.soyuz.model.queue import PackageUpload, PackageUploadBuild
+from lp.soyuz.model.section import Section
 
 SCORE_BY_POCKET = {
     PackagePublishingPocket.BACKPORTS: 0,
@@ -417,7 +419,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             (BinaryPackageRelease, BinaryPackageName),
             BinaryPackageRelease.build == self,
             BinaryPackageRelease.binarypackagename == BinaryPackageName.id,
-            BinaryPackageName.id == BinaryPackageRelease.binarypackagenameID,
+            BinaryPackageName.id == BinaryPackageRelease.binarypackagename_id,
         )
         return result.order_by(
             [BinaryPackageName.name, BinaryPackageRelease.id]
@@ -446,15 +448,29 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     @property
     def binarypackages(self):
         """See `IBuild`."""
-        return BinaryPackageRelease.select(
-            """
-            BinaryPackageRelease.build = %s AND
-            BinaryPackageRelease.binarypackagename = BinaryPackageName.id
-            """
-            % sqlvalues(self),
-            clauseTables=["BinaryPackageName"],
-            orderBy=["BinaryPackageName.name", "BinaryPackageRelease.id"],
-            prejoins=["binarypackagename", "component", "section"],
+        return DecoratedResultSet(
+            Store.of(self)
+            .using(
+                BinaryPackageRelease,
+                LeftJoin(
+                    BinaryPackageName,
+                    BinaryPackageRelease.binarypackagename_id
+                    == BinaryPackageName.id,
+                ),
+                LeftJoin(
+                    Component,
+                    BinaryPackageRelease.component_id == Component.id,
+                ),
+                LeftJoin(
+                    Section, BinaryPackageRelease.section_id == Section.id
+                ),
+            )
+            .find(
+                (BinaryPackageRelease, BinaryPackageName, Component, Section),
+                BinaryPackageRelease.build == self,
+            )
+            .order_by(BinaryPackageName.name, BinaryPackageRelease.id),
+            result_decorator=itemgetter(0),
         )
 
     @property

@@ -1,0 +1,16 @@
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-ftpmaster-publisher
+
+{% if active -%}
+03-58/5 * * * * umask 022; {{ code_dir }}/cronscripts/publish-ftpmaster.py -v -d ubuntu >> {{ logs_dir }}/publish-ftpmaster.log 2>&1
+02 4 * * * {{ code_dir }}/cronscripts/generate-contents-files.py -v --distribution=ubuntu >> {{ logs_dir }}/generate-contents-files.log 2>&1
+
+# cprov 2008-02-07: parallel run of death-row, at :10 it will run simultaneously with apt-ftparchive.
+10 */6 * * * {{ code_dir }}/scripts/process-death-row.py -d ubuntu -q --log-file=DEBUG:{{ logs_dir }}/process-death-row.log
+
+{% endif -%}
+
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

@@ -927,12 +927,6 @@ class POTemplate(SQLBase, RosettaStats):
             context=context,
             msgid_singular=msgid_singular,
             msgid_plural=msgid_plural,
-            sequence=0,
-            potemplate=None,
-            commenttext=None,
-            filereferences=None,
-            sourcecomment=None,
-            flagscomment=None,
         )
 
         potmsgset.setSequence(self, sequence)

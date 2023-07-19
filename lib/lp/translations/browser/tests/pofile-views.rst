@@ -263,8 +263,9 @@ situations, like when this set of actions happen:
 The problem here is that some of the messages on that form are disabled so
 their sequence is 0.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.potmsgset import POTMsgSet
-    >>> potmsgset = POTMsgSet.get(161)
+    >>> potmsgset = IStore(POTMsgSet).get(POTMsgSet, 161)
     >>> item = potmsgset.setSequence(pofile_es.potemplate, 0)
     >>> potmsgset.getSequence(pofile_es.potemplate)
     0

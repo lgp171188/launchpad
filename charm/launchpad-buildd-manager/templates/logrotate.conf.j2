@@ -10,7 +10,7 @@
     create 0644 {{ user }} {{ user }}
     sharedscripts
     postrotate
-        systemctl reload buildd-manager.service
+        systemctl reload launchpad-buildd-manager.service
     endscript
 }
 

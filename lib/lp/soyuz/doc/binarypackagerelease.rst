@@ -5,12 +5,15 @@ BinaryPackageRelease stores unique versions of binarypackagenames
 across build records.
 
     >>> from lp.testing import verifyObject
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.interfaces.binarypackagerelease import (
     ...     IBinaryPackageRelease,
     ... )
     >>> from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
-    >>> firefox_bin_release = BinaryPackageRelease.get(12)
+    >>> firefox_bin_release = IStore(BinaryPackageRelease).get(
+    ...     BinaryPackageRelease, 12
+    ... )
     >>> verifyObject(IBinaryPackageRelease, firefox_bin_release)
     True
 
@@ -42,7 +45,9 @@ be quickly ascertained through a set operation.
     ...     IBinaryPackageNameSet,
     ... )
     >>> foobar_name = getUtility(IBinaryPackageNameSet)["foobar"]
-    >>> pmount_bin_release = BinaryPackageRelease.get(20)
+    >>> pmount_bin_release = IStore(BinaryPackageRelease).get(
+    ...     BinaryPackageRelease, 20
+    ... )
     >>> name_ids = (
     ...     foobar_name.id,
     ...     pmount_bin_release.binarypackagename.id,

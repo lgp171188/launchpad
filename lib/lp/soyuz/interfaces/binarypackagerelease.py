@@ -34,7 +34,7 @@ class BinaryPackageReleaseNameLinkageError(ValueError):
 class IBinaryPackageRelease(Interface):
     id = Int(title=_("ID"), required=True)
     binarypackagename = Int(required=True)
-    binarypackagenameID = Int(required=True)
+    binarypackagename_id = Int(required=True)
     version = TextLine(required=True, constraint=valid_debian_version)
     summary = Text(required=True)
     description = Text(required=True)

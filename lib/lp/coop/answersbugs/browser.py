@@ -26,7 +26,7 @@ class QuestionMakeBugView(LaunchpadFormView):
             # we can't make a bug when we have linked bugs
             self.request.response.addErrorNotification(
                 _(
-                    "You cannot create a bug report from a question"
+                    "You cannot create a bug report from a question "
                     "that already has bugs linked to it."
                 )
             )

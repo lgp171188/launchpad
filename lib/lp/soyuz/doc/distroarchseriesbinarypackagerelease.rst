@@ -1,6 +1,7 @@
 Distro Arch Release Binary Package Release
 ==========================================
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
     ...     DistroArchSeriesBinaryPackageRelease as DARBPR,
     ... )
@@ -16,11 +17,11 @@ Grab the relevant DARs and BPRs:
     >>> print(hoary.distroseries.name)
     hoary
 
-    >>> mf = BinaryPackageRelease.get(12)
+    >>> mf = IStore(BinaryPackageRelease).get(BinaryPackageRelease, 12)
     >>> print(mf.binarypackagename.name)
     mozilla-firefox
 
-    >>> pm = BinaryPackageRelease.get(15)
+    >>> pm = IStore(BinaryPackageRelease).get(BinaryPackageRelease, 15)
     >>> print(pm.binarypackagename.name)
     pmount
 

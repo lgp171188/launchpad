@@ -5,7 +5,7 @@
 
 set -e
 
-TO=/srv/bugs-mirror.debian.org
+TO=${1:-/srv/bugs-mirror.debian.org}
 FROM=bugs-mirror.debian.org
 
 umask 002

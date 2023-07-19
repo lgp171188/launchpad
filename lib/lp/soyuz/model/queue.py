@@ -1882,8 +1882,8 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     binary_sprs = load_related(
         SourcePackageRelease, bpbs, ["source_package_release_id"]
     )
-    bprs = load_referencing(BinaryPackageRelease, bpbs, ["buildID"])
-    load_related(BinaryPackageName, bprs, ["binarypackagenameID"])
+    bprs = load_referencing(BinaryPackageRelease, bpbs, ["build_id"])
+    load_related(BinaryPackageName, bprs, ["binarypackagename_id"])
     sprs = source_sprs + binary_sprs
 
     load_related(SourcePackageName, sprs, ["sourcepackagenameID"])

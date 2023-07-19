@@ -361,7 +361,7 @@ class FTPArchiveHandler:
             Join(
                 BinaryPackageName,
                 BinaryPackageName.id
-                == BinaryPackageRelease.binarypackagenameID,
+                == BinaryPackageRelease.binarypackagename_id,
             ),
             Join(
                 DistroArchSeries,
@@ -715,7 +715,7 @@ class FTPArchiveHandler:
             == BinaryPackagePublishingHistory.binarypackagerelease_id,
             BinaryPackageFile.binarypackagerelease_id
             == BinaryPackagePublishingHistory.binarypackagerelease_id,
-            BinaryPackageBuild.id == BinaryPackageRelease.buildID,
+            BinaryPackageBuild.id == BinaryPackageRelease.build_id,
             SourcePackageName.id == BinaryPackageBuild.source_package_name_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             DistroArchSeries.id
