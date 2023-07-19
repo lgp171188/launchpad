@@ -12,6 +12,7 @@ import ipaddress
 import re
 import socket
 from datetime import datetime, timedelta, timezone
+from fnmatch import fnmatch
 from urllib.parse import urlsplit
 
 import iso8601
@@ -66,6 +67,15 @@ def webhook_modified(webhook, event):
         removeSecurityProxy(webhook).date_last_modified = UTC_NOW
 
 
+def check_webhook_git_ref_pattern(webhook: IWebhook, git_ref: str):
+    """Check if a given git ref matches against the webhook's
+    `git_ref_pattern` if it has one (only Git Repository webhooks can have
+    a `git_ref_pattern` value)"""
+    if not webhook.git_ref_pattern:
+        return True
+    return fnmatch(git_ref, webhook.git_ref_pattern)
+
+
 @implementer(IWebhook)
 class Webhook(StormBase):
     """See `IWebhook`."""
@@ -113,6 +123,8 @@ class Webhook(StormBase):
     secret = Unicode(allow_none=True)
 
     json_data = JSON(name="json_data")
+
+    git_ref_pattern = Unicode(allow_none=True)
 
     @property
     def target(self):
@@ -192,7 +204,14 @@ class WebhookSet:
     """See `IWebhookSet`."""
 
     def new(
-        self, target, registrant, delivery_url, event_types, active, secret
+        self,
+        target,
+        registrant,
+        delivery_url,
+        event_types,
+        active,
+        secret,
+        git_ref_pattern=None,
     ):
         from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
@@ -233,6 +252,7 @@ class WebhookSet:
         hook.delivery_url = delivery_url
         hook.active = active
         hook.secret = secret
+        hook.git_ref_pattern = git_ref_pattern
         hook.event_types = event_types
         IStore(Webhook).add(hook)
         IStore(Webhook).flush()
@@ -346,10 +366,22 @@ class WebhookTargetMixin:
         return self.valid_webhook_event_types
 
     def newWebhook(
-        self, registrant, delivery_url, event_types, active=True, secret=None
+        self,
+        registrant,
+        delivery_url,
+        event_types,
+        active=True,
+        secret=None,
+        git_ref_pattern=None,
     ):
         return getUtility(IWebhookSet).new(
-            self, registrant, delivery_url, event_types, active, secret
+            self,
+            registrant,
+            delivery_url,
+            event_types,
+            active,
+            secret,
+            git_ref_pattern,
         )
 
 

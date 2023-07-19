@@ -94,7 +94,7 @@ class TestGetAllCommitsForPaths(TestCaseWithFactory):
 
         rv = get_all_commits_for_paths(repository, ref_paths)
 
-        self.assertEqual([], rv)
+        self.assertEqual({}, rv)
 
     def test_one_ref_one_path(self):
         repository = self.factory.makeGitRepository()
@@ -104,7 +104,7 @@ class TestGetAllCommitsForPaths(TestCaseWithFactory):
         rv = get_all_commits_for_paths(repository, ref_paths)
 
         self.assertEqual(1, len(rv))
-        self.assertEqual(ref.commit_sha1, rv[0])
+        self.assertIn(ref.commit_sha1, rv)
 
     def test_multiple_refs_and_paths(self):
         repository = self.factory.makeGitRepository()
@@ -781,6 +781,56 @@ class TestCIBuildSet(TestCaseWithFactory):
         self.assertIsNone(build_queue.builder_constraints)
         self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
 
+    def test_requestCIBuild_with_git_refs(self):
+        # requestBuild creates a new CIBuild with the given git_refs
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        das = self.factory.makeBuildableDistroArchSeries()
+        stages = [[("build", 0)]]
+
+        git_refs = ["ref/test", "ref/foo"]
+        build = getUtility(ICIBuildSet).requestBuild(
+            repository, commit_sha1, das, stages, git_refs
+        )
+
+        self.assertTrue(ICIBuild.providedBy(build))
+        self.assertThat(
+            build,
+            MatchesStructure.byEquality(
+                git_repository=repository,
+                commit_sha1=commit_sha1,
+                distro_arch_series=das,
+                stages=stages,
+                status=BuildStatus.NEEDSBUILD,
+            ),
+        )
+        store = Store.of(build)
+        store.flush()
+        build_queue = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id
+            == removeSecurityProxy(build).build_farm_job_id,
+        ).one()
+        self.assertProvides(build_queue, IBuildQueue)
+        self.assertTrue(build_queue.virtualized)
+        self.assertIsNone(build_queue.builder_constraints)
+        self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
+        self.assertEqual(git_refs, build.git_refs)
+
+        # Rescheduling a build for the same commit_sha1 raises an error, but
+        # git_refs of the build are updated
+        self.assertRaises(
+            CIBuildAlreadyRequested,
+            getUtility(ICIBuildSet).requestBuild,
+            repository,
+            commit_sha1,
+            das,
+            stages,
+            ["ref/bar"],
+        )
+        git_refs.append("ref/bar")
+        self.assertEqual(git_refs, build.git_refs)
+
     def test_requestBuild_score(self):
         # CI builds have an initial queue score of 2600.
         repository = self.factory.makeGitRepository()
@@ -1022,6 +1072,7 @@ class TestCIBuildSet(TestCaseWithFactory):
                 )
             ),
         )
+        self.assertEqual(build.git_refs, ref_paths)
 
     def test_requestBuildsForRefs_multiple_architectures(self):
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu

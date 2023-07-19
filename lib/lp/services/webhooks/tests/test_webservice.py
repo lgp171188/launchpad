@@ -78,6 +78,7 @@ class TestWebhook(TestCaseWithFactory):
                 "self_link",
                 "target_link",
                 "web_link",
+                "git_ref_pattern",
             ),
         )
 

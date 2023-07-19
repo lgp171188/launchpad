@@ -105,6 +105,15 @@ class ICIBuildView(IPackageBuildView, IPrivacy):
         )
     )
 
+    git_refs = exported(
+        List(
+            TextLine(),
+            title=_("The git references that originated this CI Build."),
+            required=False,
+            readonly=True,
+        )
+    )
+
     distro_arch_series = exported(
         Reference(
             IDistroArchSeries,
@@ -274,6 +283,7 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
         distro_arch_series,
         stages,
         date_created=DEFAULT,
+        git_refs=None,
     ):
         """Create an `ICIBuild`."""
 
@@ -285,7 +295,9 @@ class ICIBuildSet(ISpecificBuildFarmJobSource):
             these Git commit IDs.
         """
 
-    def requestBuild(git_repository, commit_sha1, distro_arch_series, stages):
+    def requestBuild(
+        git_repository, commit_sha1, distro_arch_series, stages, git_refs=None
+    ):
         """Request a CI build.
 
         This checks that the architecture is allowed and that there isn't
