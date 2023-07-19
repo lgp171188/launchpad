@@ -9,10 +9,15 @@ __all__ = [
 ]
 
 import os
+from datetime import timezone
 from io import BufferedIOBase, BytesIO
+from operator import itemgetter
 
-from storm.expr import And, Desc
-from storm.store import EmptyResultSet
+from storm.expr import And, Desc, Join, LeftJoin
+from storm.info import ClassAlias
+from storm.properties import DateTime, Int, Unicode
+from storm.references import Reference, ReferenceSet
+from storm.store import EmptyResultSet, Store
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -30,16 +35,12 @@ from lp.registry.interfaces.productrelease import (
     UpstreamFileType,
 )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLMultipleJoin,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import (
     get_raw_form_value_from_current_request,
@@ -47,33 +48,51 @@ from lp.services.webapp.publisher import (
 
 
 @implementer(IProductRelease)
-class ProductRelease(SQLBase):
+class ProductRelease(StormBase):
     """A release of a product."""
 
-    _table = "ProductRelease"
-    _defaultOrder = ["-datereleased"]
+    __storm_table__ = "ProductRelease"
+    __storm_order__ = ("-datereleased",)
 
-    datereleased = UtcDateTimeCol(notNull=True)
-    release_notes = StringCol(notNull=False, default=None)
-    changelog = StringCol(notNull=False, default=None)
-    datecreated = UtcDateTimeCol(
-        dbName="datecreated", notNull=True, default=UTC_NOW
+    id = Int(primary=True)
+    datereleased = DateTime(allow_none=False, tzinfo=timezone.utc)
+    release_notes = Unicode(allow_none=True, default=None)
+    changelog = Unicode(allow_none=True, default=None)
+    datecreated = DateTime(
+        name="datecreated",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=True,
-    )
-    milestone = ForeignKey(dbName="milestone", foreignKey="Milestone")
+    owner_id = Int(name="owner", validator=validate_person, allow_none=False)
+    owner = Reference(owner_id, "Person.id")
+    milestone_id = Int(name="milestone", allow_none=False)
+    milestone = Reference(milestone_id, "Milestone.id")
 
-    _files = SQLMultipleJoin(
-        "ProductReleaseFile",
-        joinColumn="productrelease",
-        orderBy="-date_uploaded",
-        prejoins=["productrelease"],
+    _files = ReferenceSet(
+        "id",
+        "ProductReleaseFile.productrelease_id",
+        order_by=Desc("ProductReleaseFile.date_uploaded"),
     )
 
+    def __init__(
+        self,
+        datereleased,
+        owner,
+        milestone,
+        release_notes=None,
+        changelog=None,
+    ):
+        super().__init__()
+        self.owner = owner
+        self.milestone = milestone
+        self.datereleased = datereleased
+        self.release_notes = release_notes
+        self.changelog = changelog
+
+    # This is cached so that
+    # lp.registry.model.product.get_precached_products can populate the
+    # cache from a bulk query.
     @cachedproperty
     def files(self):
         return self._files
@@ -119,7 +138,7 @@ class ProductRelease(SQLBase):
             "You can't delete a product release which has files associated "
             "with it."
         )
-        SQLBase.destroySelf(self)
+        Store.of(self).remove(self)
 
     def _getFileObjectAndSize(self, file_or_data):
         """Return an object and length for file_or_data.
@@ -232,20 +251,21 @@ class ProductRelease(SQLBase):
 
 
 @implementer(IProductReleaseFile)
-class ProductReleaseFile(SQLBase):
+class ProductReleaseFile(StormBase):
     """A file of a product release."""
 
-    _table = "ProductReleaseFile"
+    __storm_table__ = "ProductReleaseFile"
 
-    productrelease = ForeignKey(
-        dbName="productrelease", foreignKey="ProductRelease", notNull=True
-    )
+    id = Int(primary=True)
 
-    libraryfile = ForeignKey(
-        dbName="libraryfile", foreignKey="LibraryFileAlias", notNull=True
-    )
+    productrelease_id = Int(name="productrelease", allow_none=False)
+    productrelease = Reference(productrelease_id, "ProductRelease.id")
 
-    signature = ForeignKey(dbName="signature", foreignKey="LibraryFileAlias")
+    libraryfile_id = Int(name="libraryfile", allow_none=False)
+    libraryfile = Reference(libraryfile_id, "LibraryFileAlias.id")
+
+    signature_id = Int(name="signature", allow_none=True)
+    signature = Reference(signature_id, "LibraryFileAlias.id")
 
     filetype = DBEnum(
         name="filetype",
@@ -254,16 +274,37 @@ class ProductReleaseFile(SQLBase):
         default=UpstreamFileType.CODETARBALL,
     )
 
-    description = StringCol(notNull=False, default=None)
+    description = Unicode(name="description", allow_none=True, default=None)
 
-    uploader = ForeignKey(
-        dbName="uploader",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    uploader_id = Int(
+        name="uploader", validator=validate_public_person, allow_none=False
+    )
+    uploader = Reference(uploader_id, "Person.id")
+
+    date_uploaded = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
 
-    date_uploaded = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    def __init__(
+        self,
+        productrelease,
+        libraryfile,
+        filetype,
+        uploader,
+        signature=None,
+        description=None,
+    ):
+        super().__init__()
+        self.productrelease = productrelease
+        self.libraryfile = libraryfile
+        self.filetype = filetype
+        self.uploader = uploader
+        self.signature = signature
+        self.description = description
+
+    def destroySelf(self):
+        """See `IProductReleaseFile`."""
+        Store.of(self).remove(self)
 
 
 @implementer(IProductReleaseSet)
@@ -313,16 +354,42 @@ class ProductReleaseSet:
         releases = list(releases)
         if len(releases) == 0:
             return EmptyResultSet()
-        return ProductReleaseFile.select(
-            """ProductReleaseFile.productrelease IN %s"""
-            % (sqlvalues([release.id for release in releases])),
-            orderBy="-date_uploaded",
-            prejoins=[
-                "libraryfile",
-                "libraryfile.content",
-                "productrelease",
-                "signature",
-            ],
+        SignatureAlias = ClassAlias(LibraryFileAlias)
+        return DecoratedResultSet(
+            IStore(ProductReleaseFile)
+            .using(
+                ProductReleaseFile,
+                Join(
+                    LibraryFileAlias,
+                    ProductReleaseFile.libraryfile_id == LibraryFileAlias.id,
+                ),
+                LeftJoin(
+                    LibraryFileContent,
+                    LibraryFileAlias.contentID == LibraryFileContent.id,
+                ),
+                Join(
+                    ProductRelease,
+                    ProductReleaseFile.productrelease_id == ProductRelease.id,
+                ),
+                LeftJoin(
+                    SignatureAlias,
+                    ProductReleaseFile.signature_id == SignatureAlias.id,
+                ),
+            )
+            .find(
+                (
+                    ProductReleaseFile,
+                    LibraryFileAlias,
+                    LibraryFileContent,
+                    ProductRelease,
+                    SignatureAlias,
+                ),
+                ProductReleaseFile.productrelease_id.is_in(
+                    [release.id for release in releases]
+                ),
+            )
+            .order_by(Desc(ProductReleaseFile.date_uploaded)),
+            result_decorator=itemgetter(0),
         )
 
 

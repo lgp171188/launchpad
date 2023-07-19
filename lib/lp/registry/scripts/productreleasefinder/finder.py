@@ -172,9 +172,9 @@ class ProductReleaseFinder:
             Product.name == product_name,
             Product.id == ProductSeries.productID,
             Milestone.productseriesID == ProductSeries.id,
-            ProductRelease.milestoneID == Milestone.id,
-            ProductReleaseFile.productreleaseID == ProductRelease.id,
-            LibraryFileAlias.id == ProductReleaseFile.libraryfileID,
+            ProductRelease.milestone_id == Milestone.id,
+            ProductReleaseFile.productrelease_id == ProductRelease.id,
+            LibraryFileAlias.id == ProductReleaseFile.libraryfile_id,
         )
         file_names = set(found_names)
         return file_names

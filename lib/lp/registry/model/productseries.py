@@ -10,6 +10,7 @@ __all__ = [
 ]
 
 import datetime
+from operator import itemgetter
 
 from lazr.delegates import delegate_to
 from storm.expr import Max, Sum
@@ -222,17 +223,13 @@ class ProductSeries(
 
         # The Milestone is cached too because most uses of a ProductRelease
         # need it. The decorated resultset returns just the ProductRelease.
-        def decorate(row):
-            product_release, milestone = row
-            return product_release
-
         result = store.find(
             (ProductRelease, Milestone),
             Milestone.productseries == self,
             ProductRelease.milestone == Milestone.id,
         )
         result = result.order_by(Desc("datereleased"))
-        return DecoratedResultSet(result, decorate)
+        return DecoratedResultSet(result, result_decorator=itemgetter(0))
 
     @cachedproperty
     def _cached_releases(self):
