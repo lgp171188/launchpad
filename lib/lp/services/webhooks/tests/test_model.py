@@ -112,6 +112,7 @@ class TestWebhookPermissions(TestCaseWithFactory):
                 "secret",
                 "setSecret",
                 "target",
+                "git_ref_pattern",
             },
         }
         webhook = self.factory.makeWebhook()
@@ -128,6 +129,7 @@ class TestWebhookPermissions(TestCaseWithFactory):
                 "event_types",
                 "registrant_id",
                 "secret",
+                "git_ref_pattern",
             },
         }
         webhook = self.factory.makeWebhook()

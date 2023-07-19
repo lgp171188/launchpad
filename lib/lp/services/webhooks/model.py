@@ -114,6 +114,8 @@ class Webhook(StormBase):
 
     json_data = JSON(name="json_data")
 
+    git_ref_pattern = Unicode(allow_none=True)
+
     @property
     def target(self):
         if self.git_repository is not None:
@@ -192,7 +194,14 @@ class WebhookSet:
     """See `IWebhookSet`."""
 
     def new(
-        self, target, registrant, delivery_url, event_types, active, secret
+        self,
+        target,
+        registrant,
+        delivery_url,
+        event_types,
+        active,
+        secret,
+        git_ref_pattern=None,
     ):
         from lp.charms.interfaces.charmrecipe import ICharmRecipe
         from lp.code.interfaces.branch import IBranch
@@ -233,6 +242,7 @@ class WebhookSet:
         hook.delivery_url = delivery_url
         hook.active = active
         hook.secret = secret
+        hook.git_ref_pattern = git_ref_pattern
         hook.event_types = event_types
         IStore(Webhook).add(hook)
         IStore(Webhook).flush()
@@ -346,10 +356,22 @@ class WebhookTargetMixin:
         return self.valid_webhook_event_types
 
     def newWebhook(
-        self, registrant, delivery_url, event_types, active=True, secret=None
+        self,
+        registrant,
+        delivery_url,
+        event_types,
+        active=True,
+        secret=None,
+        git_ref_pattern=None,
     ):
         return getUtility(IWebhookSet).new(
-            self, registrant, delivery_url, event_types, active, secret
+            self,
+            registrant,
+            delivery_url,
+            event_types,
+            active,
+            secret,
+            git_ref_pattern,
         )
 
 

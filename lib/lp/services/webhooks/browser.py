@@ -134,6 +134,7 @@ class WebhookAddView(LaunchpadFormView):
             event_types=data["event_types"],
             active=data["active"],
             secret=data["secret"],
+            git_ref_pattern=data.get("git_ref_pattern"),
         )
         self.next_url = canonical_url(webhook)
 
