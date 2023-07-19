@@ -2,6 +2,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import base64
+import json
 import os.path
 import subprocess
 
@@ -98,6 +99,7 @@ def configure():
         base.base_dir(), "buildd-manager"
     )
     config["cibuild_config"] = yaml.safe_load(config["cibuild_config"])
+    config["json"] = json
     host.mkdir(
         config["buildd_manager_dir"],
         owner=base.user(),
