@@ -12,6 +12,7 @@ import ipaddress
 import re
 import socket
 from datetime import datetime, timedelta, timezone
+from fnmatch import fnmatch
 from urllib.parse import urlsplit
 
 import iso8601
@@ -64,6 +65,15 @@ def webhook_modified(webhook, event):
     """
     if event.edited_fields:
         removeSecurityProxy(webhook).date_last_modified = UTC_NOW
+
+
+def check_webhook_git_ref_pattern(webhook: IWebhook, git_ref: str):
+    """Check if a given git ref matches against the webhook's
+    `git_ref_pattern` if it has one (only Git Repository webhooks can have
+    a `git_ref_pattern` value)"""
+    if not webhook.git_ref_pattern:
+        return True
+    return fnmatch(git_ref, webhook.git_ref_pattern)
 
 
 @implementer(IWebhook)

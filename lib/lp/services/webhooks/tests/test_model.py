@@ -20,7 +20,11 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.interfaces import IWebhookSet
-from lp.services.webhooks.model import WebhookJob, WebhookSet
+from lp.services.webhooks.model import (
+    WebhookJob,
+    WebhookSet,
+    check_webhook_git_ref_pattern,
+)
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
     LIVEFS_WEBHOOKS_FEATURE_FLAG,
@@ -70,6 +74,40 @@ class TestWebhook(TestCaseWithFactory):
             with ExpectedException(AssertionError, ".*"):
                 webhook.event_types = ["foo", [1]]
             self.assertContentEqual([], webhook.event_types)
+
+    def test_check_webhook_git_ref_pattern(self):
+        # See lib/lp/code/templates/gitrepository-permissions.pt for an
+        # explanation of the wildcards logic
+        git_ref = "refs/heads/foo-test"
+        expected_results = {
+            None: True,
+            "": True,
+            "*": True,
+            "*foo*": True,
+            "foo": False,
+            "foo-test": False,  # it needs to match the full git ref
+            "foo*": False,
+            "*foo": False,
+            "*foo?test": True,
+            "*foo[-_.]test": True,
+            "*foo![-]test": False,
+            "*bar*": False,
+            "refs/heads/*": True,  # this should match all branches (not tags)
+            "refs/heads/foo*": True,
+            "refs/heads/bar*": False,
+            "refs/heads/*-test": True,
+        }
+
+        results = dict()
+        webhook = self.factory.makeWebhook()
+        with admin_logged_in():
+            for pattern in expected_results:
+                webhook.git_ref_pattern = pattern
+                results[pattern] = check_webhook_git_ref_pattern(
+                    webhook, git_ref
+                )
+
+        self.assertEqual(expected_results, results)
 
 
 class TestWebhookPermissions(TestCaseWithFactory):
