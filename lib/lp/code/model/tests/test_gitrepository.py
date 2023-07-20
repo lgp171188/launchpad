@@ -4249,6 +4249,74 @@ class TestGitRepositoryRequestCIBuilds(TestCaseWithFactory):
                 ),
             )
 
+    def _webhook_trigger_for_git_ref_pattern(
+        self, git_ref_pattern, expect_delivery
+    ):
+        self.useFixture(FeatureFixture({CI_WEBHOOKS_FEATURE_FLAG: "on"}))
+        repository = self.factory.makeGitRepository()
+        hook = self.factory.makeWebhook(
+            target=repository,
+            event_types=["ci:build:0.1"],
+            git_ref_pattern=git_ref_pattern,
+        )
+        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
+        das = self.factory.makeBuildableDistroArchSeries(
+            distroseries=distroseries
+        )
+        configuration = dedent(
+            """\
+            pipeline: [test]
+            jobs:
+                test:
+                    series: {series}
+                    architectures: [{architecture}]
+            """.format(
+                series=distroseries.name, architecture=das.architecturetag
+            )
+        ).encode()
+        new_commit = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        self.useFixture(
+            GitHostingFixture(
+                commits=[
+                    {
+                        "sha1": new_commit,
+                        "blobs": {".launchpad.yaml": configuration},
+                    },
+                ]
+            )
+        )
+        with dbuser("branchscanner"):
+            repository.createOrUpdateRefs(
+                {
+                    "refs/heads/test": {
+                        "sha1": new_commit,
+                        "type": GitObjectType.COMMIT,
+                    }
+                }
+            )
+
+        getUtility(ICIBuildSet).findByGitRepository(repository)
+        delivery = hook.deliveries.one()
+
+        if expect_delivery:
+            self.assertIsNotNone(delivery)
+        else:
+            self.assertIsNone(delivery)
+
+    def test_triggers_webhooks_when_git_ref_pattern_matches(self):
+        # Requesting CI builds triggers webhooks when git ref pattern matches
+        self._webhook_trigger_for_git_ref_pattern(
+            git_ref_pattern="refs/heads/*", expect_delivery=True
+        )
+
+    def test_doesnt_trigger_webhooks_when_git_ref_pattern_doesnt_matches(self):
+        # Requesting CI builds doesnt trigger relevant webhooks when git ref
+        # pattern doesn't match.
+        self._webhook_trigger_for_git_ref_pattern(
+            git_ref_pattern="non-matching-pattern", expect_delivery=False
+        )
+
 
 class TestGitRepositoryGetBlob(TestCaseWithFactory):
     """Tests for retrieving files from a Git repository."""
