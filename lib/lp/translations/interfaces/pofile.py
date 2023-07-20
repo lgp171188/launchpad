@@ -424,12 +424,3 @@ class IPOFileSet(Interface):
         :param untranslated: Look only for `POFile`s with a credits
             message that is not translated.
         """
-
-    def getPOFilesTouchedSince(date):
-        """Return IDs for PO files that might have been updated since `date`.
-
-        :param date: A datetime object to use as the starting date.
-
-        :return: a ResultSet over POFile IDs for directly and indirectly
-            (through sharing POFiles) touched POFiles since `date`.
-        """
