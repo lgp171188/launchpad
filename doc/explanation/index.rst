@@ -16,3 +16,4 @@ Explanation
    charms
    codeimport
    performance
+   security
