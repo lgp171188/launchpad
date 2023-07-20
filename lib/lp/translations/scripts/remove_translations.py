@@ -471,7 +471,8 @@ def remove_translations(
             " = TranslationMessage.potmsgset"
         )
         conditions.add(
-            "TranslationTemplateItem.potemplate = %s" % sqlvalues(potemplate)
+            "TranslationTemplateItem.potemplate = %s"
+            % sqlvalues(potemplate.id)
         )
 
     if language_code is not None:

@@ -411,11 +411,12 @@ class TranslationMerger:
         ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         result = store.find(
             Packaging,
-            Packaging.productseries == POTemplate.productseriesID,
-            Packaging.distroseries == PackageTemplate.distroseriesID,
+            Packaging.productseries == POTemplate.productseries_id,
+            Packaging.distroseries == PackageTemplate.distroseries_id,
             Packaging.distroseries == DistroSeries.id,
             DistroSeries.distribution == ubuntu.id,
-            Packaging.sourcepackagename == PackageTemplate.sourcepackagenameID,
+            Packaging.sourcepackagename
+            == PackageTemplate.sourcepackagename_id,
         )
         result.config(distinct=True)
         return result

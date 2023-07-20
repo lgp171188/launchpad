@@ -132,7 +132,7 @@ class IPOTemplate(IRosettaStats):
         vocabulary="SourcePackageName",
     )
 
-    sourcepackagenameID = Int(
+    sourcepackagename_id = Int(
         title=_("Source Package Name ID"),
         description=_("The ID of the source package that uses this template."),
         required=False,
