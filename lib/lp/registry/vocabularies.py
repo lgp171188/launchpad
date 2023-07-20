@@ -1200,7 +1200,7 @@ class AllUserTeamsParticipationPlusSelfSimpleDisplayVocabulary(
 
 
 @implementer(IHugeVocabulary)
-class ProductReleaseVocabulary(SQLObjectVocabularyBase):
+class ProductReleaseVocabulary(StormVocabularyBase):
     """All `IProductRelease` objects vocabulary."""
 
     displayname = "Select a Product Release"
@@ -1210,8 +1210,12 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
     # Sorting by version won't give the expected results, because it's just a
     # text field.  e.g. ["1.0", "2.0", "11.0"] would be sorted as ["1.0",
     # "11.0", "2.0"].
-    _orderBy = [Product.q.name, ProductSeries.q.name, Milestone.q.name]
-    _clauseTables = ["Product", "ProductSeries"]
+    _order_by = [Product.name, ProductSeries.name, Milestone.name]
+    _clauses = [
+        ProductRelease.milestone_id == Milestone.id,
+        Milestone.productseriesID == ProductSeries.id,
+        ProductSeries.productID == Product.id,
+    ]
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -1240,14 +1244,17 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
         except ValueError:
             raise LookupError(token)
 
-        obj = ProductRelease.selectOne(
-            AND(
-                ProductRelease.q.milestoneID == Milestone.q.id,
-                Milestone.q.productseriesID == ProductSeries.q.id,
-                ProductSeries.q.productID == Product.q.id,
-                Product.q.name == productname,
-                ProductSeries.q.name == productseriesname,
+        obj = (
+            IStore(ProductRelease)
+            .find(
+                ProductRelease,
+                ProductRelease.milestone_id == Milestone.id,
+                Milestone.productseriesID == ProductSeries.id,
+                ProductSeries.productID == Product.id,
+                Product.name == productname,
+                ProductSeries.name == productseriesname,
             )
+            .one()
         )
         try:
             return self.toTerm(obj)
@@ -1259,21 +1266,21 @@ class ProductReleaseVocabulary(SQLObjectVocabularyBase):
         if not query:
             return self.emptySelectResults()
 
-        query = six.ensure_text(query).lower()
-        objs = self._table.select(
-            AND(
-                Milestone.q.id == ProductRelease.q.milestoneID,
-                ProductSeries.q.id == Milestone.q.productseriesID,
-                Product.q.id == ProductSeries.q.productID,
-                OR(
-                    CONTAINSSTRING(Product.q.name, query),
-                    CONTAINSSTRING(ProductSeries.q.name, query),
+        query = query.lower()
+        return (
+            IStore(self._table)
+            .find(
+                self._table,
+                ProductRelease.milestone_id == Milestone.id,
+                Milestone.productseriesID == ProductSeries.id,
+                ProductSeries.productID == Product.id,
+                Or(
+                    Product.name.contains_string(query),
+                    ProductSeries.name.contains_string(query),
                 ),
-            ),
-            orderBy=self._orderBy,
+            )
+            .order_by(self._order_by)
         )
-
-        return objs
 
 
 @implementer(IHugeVocabulary)

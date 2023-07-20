@@ -6163,6 +6163,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         secret=None,
         active=True,
         event_types=None,
+        git_ref_pattern=None,
     ):
         if target is None:
             target = self.makeGitRepository()
@@ -6175,6 +6176,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             event_types or [],
             active,
             secret,
+            git_ref_pattern,
         )
 
     def makeSnap(

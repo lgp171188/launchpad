@@ -176,6 +176,18 @@ class IWebhook(Interface):
         )
     )
 
+    git_ref_pattern = exported(
+        TextLine(
+            title=_("Git ref pattern"),
+            required=False,
+            description=_(
+                "Pattern to match against git-ref/branch name of an event, "
+                "to filter webhook triggers"
+            ),
+            max_length=200,
+        )
+    )
+
     def getDelivery(id):
         """Retrieve a delivery by ID, or None if it doesn't exist."""
 
@@ -197,7 +209,15 @@ class IWebhook(Interface):
 
 
 class IWebhookSet(Interface):
-    def new(target, registrant, delivery_url, event_types, active, secret):
+    def new(
+        target,
+        registrant,
+        delivery_url,
+        event_types,
+        active,
+        secret,
+        git_ref_pattern=None,
+    ):
         """Create a new webhook."""
 
     def delete(hooks):
@@ -250,7 +270,12 @@ class IWebhookTarget(Interface):
     )
     @operation_for_version("devel")
     def newWebhook(
-        registrant, delivery_url, event_types, active=True, secret=None
+        registrant,
+        delivery_url,
+        event_types,
+        active=True,
+        secret=None,
+        git_ref_pattern=None,
     ):
         """Create a new webhook."""
 
