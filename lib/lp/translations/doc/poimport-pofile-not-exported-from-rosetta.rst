@@ -22,6 +22,7 @@ Here are some imports we need to get this test running.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue,
@@ -46,7 +47,7 @@ Here's the person who'll be doing the import.
 Now, is time to create the new potemplate
 
     >>> from lp.registry.model.productrelease import ProductRelease
-    >>> release = ProductRelease.get(3)
+    >>> release = IStore(ProductRelease).get(ProductRelease, 3)
     >>> print(release.milestone.productseries.product.name)
     firefox
     >>> series = release.milestone.productseries
@@ -140,10 +141,9 @@ We should also be sure that we don't block any import that is coming from
 upstream. That kind of import is not blocked if they lack the
 'X-Rosetta-Export-Date' header.
 
-We need to fetch again some SQLObjects because we did a transaction
-commit.
+We need to fetch some rows again because we committed a transaction.
 
-    >>> release = ProductRelease.get(3)
+    >>> release = IStore(ProductRelease).get(ProductRelease, 3)
     >>> series = release.milestone.productseries
     >>> subset = POTemplateSubset(productseries=series)
     >>> potemplate = subset.getPOTemplateByName("firefox")
