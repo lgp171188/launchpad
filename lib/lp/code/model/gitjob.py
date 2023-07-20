@@ -253,8 +253,12 @@ class GitRefScanJob(GitJobDerived):
                     upserted_refs,
                     removed_refs,
                 )
+                git_refs = list(payload["ref_changes"].keys())
                 getUtility(IWebhookSet).trigger(
-                    self.repository, "git:push:0.1", payload
+                    self.repository,
+                    "git:push:0.1",
+                    payload,
+                    git_refs=git_refs,
                 )
         except LostObjectError:
             log.info(
