@@ -1105,10 +1105,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         # or not they have completed.
         from lp.code.model.branchmergeproposaljob import BranchMergeProposalJob
 
-        for job in BranchMergeProposalJob.selectBy(
-            branch_merge_proposal=self.id
-        ):
-            job.destroySelf()
+        IStore(BranchMergeProposalJob).find(
+            BranchMergeProposalJob, branch_merge_proposal=self
+        ).remove()
         self._preview_diffs.remove()
         Store.of(self).remove(self)
 

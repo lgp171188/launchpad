@@ -32,6 +32,7 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer, provider
 
+from lp.app.errors import NotFoundError
 from lp.code.adapters.branch import BranchMergeProposalDelta
 from lp.code.enums import BranchType
 from lp.code.errors import BranchHasPendingWrites, UpdatePreviewDiffNotReady
@@ -63,7 +64,6 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import EnumeratedSubclass, Job
@@ -182,25 +182,14 @@ class BranchMergeProposalJob(StormBase):
         Store.of(self).remove(self)
 
     @classmethod
-    def selectBy(klass, **kwargs):
-        """Return selected instances of this class.
-
-        At least one pair of keyword arguments must be supplied.
-        foo=bar is interpreted as 'select all instances of
-        BranchMergeProposalJob whose property "foo" is equal to "bar"'.
-        """
-        assert len(kwargs) > 0
-        return IStore(klass).find(klass, **kwargs)
-
-    @classmethod
     def get(klass, key):
         """Return the instance of this class whose key is supplied.
 
-        :raises: SQLObjectNotFound
+        :raises: NotFoundError
         """
         instance = IStore(klass).get(klass, key)
         if instance is None:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 "No occurrence of %s has key %s" % (klass.__name__, key)
             )
         return instance
@@ -236,6 +225,7 @@ class BranchMergeProposalJobDerived(
         base_job = BranchMergeProposalJob(bmp, cls.class_job_type, metadata)
         job = cls(base_job)
         job.celeryRunOnCommit()
+        IStore(BranchMergeProposalJob).flush()
         return job
 
     @classmethod
@@ -244,12 +234,12 @@ class BranchMergeProposalJobDerived(
 
         :return: the BranchMergeProposalJob with the specified id, as the
             current BranchMergeProposalJobDereived subclass.
-        :raises: SQLObjectNotFound if there is no job with the specified id,
+        :raises: NotFoundError if there is no job with the specified id,
             or its job_type does not match the desired subclass.
         """
         job = BranchMergeProposalJob.get(job_id)
         if job.job_type != cls.class_job_type:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 "No object found with id %d and type %s"
                 % (job_id, cls.class_job_type.title)
             )
@@ -659,7 +649,7 @@ class BranchMergeProposalJobSource(BaseRunnableJobSource):
 
         :return: the BranchMergeProposalJob with the specified id, as the
             current BranchMergeProposalJobDereived subclass.
-        :raises: SQLObjectNotFound if there is no job with the specified id,
+        :raises: NotFoundError if there is no job with the specified id,
             or its job_type does not match the desired subclass.
         """
         job = BranchMergeProposalJob.get(job_id)

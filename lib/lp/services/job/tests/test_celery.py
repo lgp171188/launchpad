@@ -45,6 +45,7 @@ class TestJob(BaseRunnableJob):
             self.job = store.find(Job, id=job_id)[0]
         else:
             self.job = Job(max_retries=2, scheduled_start=scheduled_start)
+            IStore(Job).flush()
 
     def run(self):
         pass

@@ -174,6 +174,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
+        IStore(OCIRecipeJob).flush()
         return job
 
     @classmethod

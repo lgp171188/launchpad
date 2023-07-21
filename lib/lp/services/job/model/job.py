@@ -18,16 +18,14 @@ from datetime import datetime, timezone
 import transaction
 from lazr.jobrunner.jobrunner import LeaseHeld
 from storm.expr import And, Or, Select
-from storm.locals import JSON, Int, Reference
+from storm.locals import JSON, DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.services.database import bulk
-from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import IJob, JobStatus, JobType
 
 
@@ -43,24 +41,28 @@ class InvalidTransition(Exception):
 
 
 @implementer(IJob)
-class Job(SQLBase):
+class Job(StormBase):
     """See `IJob`."""
+
+    __storm_table__ = "Job"
 
     @property
     def job_id(self):
         return self.id
 
-    scheduled_start = UtcDateTimeCol()
+    id = Int(primary=True)
 
-    date_created = UtcDateTimeCol()
+    scheduled_start = DateTime(tzinfo=timezone.utc)
 
-    date_started = UtcDateTimeCol()
+    date_created = DateTime(tzinfo=timezone.utc)
 
-    date_finished = UtcDateTimeCol()
+    date_started = DateTime(tzinfo=timezone.utc)
 
-    lease_expires = UtcDateTimeCol()
+    date_finished = DateTime(tzinfo=timezone.utc)
 
-    log = StringCol()
+    lease_expires = DateTime(tzinfo=timezone.utc)
+
+    log = Unicode()
 
     _status = DBEnum(
         enum=JobStatus,
@@ -105,6 +107,28 @@ class Job(SQLBase):
         self._status = status
 
     status = property(lambda x: x._status)
+
+    def __init__(
+        self,
+        scheduled_start=None,
+        date_finished=None,
+        lease_expires=None,
+        max_retries=DEFAULT,
+        requester=None,
+        base_json_data=None,
+        base_job_type=None,
+        status=JobStatus.WAITING,
+    ):
+        super().__init__()
+        self.scheduled_start = scheduled_start
+        self.date_finished = date_finished
+        self.lease_expires = lease_expires
+        self.max_retries = max_retries
+        self.requester = requester
+        self.base_json_data = base_json_data
+        self.base_job_type = base_job_type
+        self._status = status
+        IStore(Job).add(self)
 
     @property
     def is_pending(self):
@@ -216,6 +240,9 @@ class Job(SQLBase):
             raise InvalidTransition(self._status, JobStatus.WAITING)
         self._set_status(JobStatus.WAITING)
         self.lease_expires = None
+
+    def destroySelf(self):
+        IStore(Job).remove(self)
 
 
 class EnumeratedSubclass(type):

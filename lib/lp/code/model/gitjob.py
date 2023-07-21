@@ -207,6 +207,7 @@ class GitRefScanJob(GitJobDerived):
         git_job = GitJob(repository, cls.class_job_type, {})
         job = cls(git_job)
         job.celeryRunOnCommit()
+        IStore(GitJob).flush()
         return job
 
     @staticmethod
@@ -292,6 +293,7 @@ class ReclaimGitRepositorySpaceJob(GitJobDerived):
         )
         job = cls(git_job)
         job.celeryRunOnCommit()
+        IStore(GitJob).flush()
         return job
 
     @property
@@ -393,6 +395,7 @@ class GitRepositoryModifiedMailJob(GitJobDerived):
         git_job = GitJob(repository, cls.class_job_type, metadata)
         job = cls(git_job)
         job.celeryRunOnCommit()
+        IStore(GitJob).flush()
         return job
 
     @property

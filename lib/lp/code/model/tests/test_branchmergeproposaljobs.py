@@ -22,6 +22,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import BranchMergeProposalStatus
 from lp.code.interfaces.branchmergeproposal import (
@@ -53,7 +54,6 @@ from lp.code.model.branchmergeproposaljob import (
 from lp.code.model.tests.test_diff import DiffTestCase
 from lp.code.subscribers.branchmergeproposal import merge_proposal_modified
 from lp.services.config import config
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
@@ -118,7 +118,7 @@ class TestBranchMergeProposalJobDerived(TestCaseWithFactory):
         It's an error to call get on BranchMergeProposalJobDerived-- it must
         be called on a subclass.  An object is returned only if the job id
         and job type match the request.  If no suitable object can be found,
-        SQLObjectNotFound is raised.
+        NotFoundError is raised.
         """
         bmp = self.factory.makeBranchMergeProposal()
         job = MergeProposalNeedsReviewEmailJob.create(bmp)
@@ -126,9 +126,9 @@ class TestBranchMergeProposalJobDerived(TestCaseWithFactory):
         self.assertRaises(
             AttributeError, BranchMergeProposalJobDerived.get, job.id
         )
-        self.assertRaises(SQLObjectNotFound, UpdatePreviewDiffJob.get, job.id)
+        self.assertRaises(NotFoundError, UpdatePreviewDiffJob.get, job.id)
         self.assertRaises(
-            SQLObjectNotFound, MergeProposalNeedsReviewEmailJob.get, job.id + 1
+            NotFoundError, MergeProposalNeedsReviewEmailJob.get, job.id + 1
         )
         self.assertEqual(job, MergeProposalNeedsReviewEmailJob.get(job.id))
 

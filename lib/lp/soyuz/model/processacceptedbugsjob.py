@@ -260,6 +260,7 @@ class ProcessAcceptedBugsJob(StormBase, BaseRunnableJob):
             distroseries, sourcepackagerelease, bug_ids
         )
         IPrimaryStore(ProcessAcceptedBugsJob).add(job)
+        IPrimaryStore(ProcessAcceptedBugsJob).flush()
         job.celeryRunOnCommit()
         return job
 

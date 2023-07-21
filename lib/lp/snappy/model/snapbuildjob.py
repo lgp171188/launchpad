@@ -188,6 +188,7 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         snap_build_job = SnapBuildJob(snapbuild, cls.class_job_type, {})
         job = cls(snap_build_job)
         job.celeryRunOnCommit()
+        IStore(SnapBuildJob).flush()
         del get_property_cache(snapbuild).last_store_upload_job
         notify(SnapBuildStoreUploadStatusChangedEvent(snapbuild))
         return job

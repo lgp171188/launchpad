@@ -32,22 +32,21 @@ class TestTeamMenu(TestCaseWithFactory):
         # Only these queries should be run, no matter what the
         # membership tree looks like, although the number of queries
         # could change slightly if a different user is logged in.
-        #   1. Check whether the user is the team owner.
-        #   2. Deactivate the membership in the TeamMembership table.
-        #   3. Delete from TeamParticipation table.
-        #   (Queries #4, #5, #6, #7, and #10 are run because the storm
-        #    objects have been invalidated.)
-        #   4. Get the TeamMembership entry.
-        #   5. Verify that the member exists in the db, but don't load
-        #   the refresh the rest of its data, since we just need the id.
-        #   6. Verify that the user exists in the db.
-        #   7. Verify that the team exists in the db.
-        #   8. Insert into Job table.
-        #   9. Insert into PersonTransferJob table to schedule sending
-        #      email. (This requires the data from queries #5, #6, and
-        #      #7.)
-        #   10.Query the rest of the team data for the invalidated
-        #      object in order to generate the canonical url.
+        #   1.  Check whether the user is the team owner.
+        #   2.  Deactivate the membership in the TeamMembership table.
+        #   3.  Delete from TeamParticipation table.
+        #       (Queries #4, #5, #8, and #9 are run because the storm
+        #       objects have been invalidated.)
+        #   4.  Get the TeamMembership entry.
+        #   5.  Verify that the member exists in the db.
+        #   6.  Insert into Job table.
+        #   7.  Insert into SharingJob table to schedule removal of
+        #       subscriptions to artifacts shared with the team.
+        #   8.  Verify that the user exists in the db.
+        #   9.  Verify that the team exists in the db.
+        #   10. Insert into Job table.
+        #   11. Insert into PersonTransferJob table to schedule sending
+        #       email. (This requires the data from queries #5, #8, and #9.)
         self.team.addMember(
             self.member, self.team.teamowner, force_team_add=True
         )
@@ -64,4 +63,4 @@ class TestTeamMenu(TestCaseWithFactory):
             view.processForm()
         self.assertEqual("", view.errormessage)
         self.assertEqual(TeamMembershipStatus.DEACTIVATED, membership.status)
-        self.assertThat(recorder, HasQueryCount(LessThan(11)))
+        self.assertThat(recorder, HasQueryCount(LessThan(12)))
