@@ -1019,7 +1019,7 @@ class BugTask(StormBase):
             return True
         elif (
             self.status == BugTaskStatus.FIXRELEASED
-            and user.id != self.bug.ownerID
+            and user.id != self.bug.owner_id
             and not user.inTeam(self.bug.owner)
         ):
             # The bug reporter can reopen a Fix Released bug.
@@ -1606,7 +1606,7 @@ class BugTaskSet:
 
         people_ids = set(
             [bugtask.assignee_id for bugtask in bugtasks]
-            + [bugtask.bug.ownerID for bugtask in bugtasks]
+            + [bugtask.bug.owner_id for bugtask in bugtasks]
         )
         people = getUtility(IPersonSet).getPrecachedPersonsFromIDs(people_ids)
         return {person.id: person for person in people}

@@ -240,7 +240,7 @@ class IBugView(Interface):
             max_length=50000,
         )
     )
-    ownerID = Int(title=_("Owner"), required=True, readonly=True)
+    owner_id = Int(title=_("Owner"), required=True, readonly=True)
     owner = exported(
         Reference(IPerson, title=_("The owner's IPerson"), readonly=True)
     )

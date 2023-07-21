@@ -216,7 +216,7 @@ Linking to a bug
 ................
 
     >>> from lp.bugs.model.bug import Bug
-    >>> questionbug = firefox_question.linkBug(Bug.get(5))
+    >>> questionbug = firefox_question.linkBug(IStore(Bug).get(Bug, 5))
     Karma added: action=questionlinkedtobug, product=firefox, person=name12
 
 

@@ -184,7 +184,7 @@ class PersonSubscriptions:
         # Preload bug owners, then all pillars.
         list(
             getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                [bug.ownerID for bug in bugs]
+                [bug.owner_id for bug in bugs]
             )
         )
         all_tasks = load_referencing(BugTask, bugs, ["bug_id"])

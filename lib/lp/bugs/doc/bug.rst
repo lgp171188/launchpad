@@ -263,7 +263,7 @@ private:
     >>> from lp.bugs.model.bug import Bug
     >>> from lp.services.database.interfaces import IStore
 
-    >>> all_bugs = set(IStore(Bug).find(Bug).values(Bug.id))
+    >>> all_bugs = set(IStore(Bug).find(Bug.id))
 
     >>> taskset = getUtility(IBugTaskSet)
     >>> def hidden_bugs():

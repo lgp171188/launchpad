@@ -1105,7 +1105,7 @@ def _build_exclude_conjoined_clause(milestone):
     """
     # XXX: EdwinGrubbs 2010-12-15 bug=682989
     # (ConjoinedPrimary.bug == X) produces the wrong sql, but
-    # (ConjoinedPrimary.bugID == X) works right. This bug applies to
+    # (ConjoinedPrimary.bug_id == X) works right. This bug applies to
     # all foreign keys on the ClassAlias.
 
     # Perform a LEFT JOIN to the conjoined primary bugtask.  If the

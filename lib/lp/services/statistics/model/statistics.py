@@ -106,10 +106,10 @@ class LaunchpadStatisticSet:
         getUtility(IPersonSet).updateStatistics()
 
     def _updateMaloneStatistics(self, ztm):
-        self.update("bug_count", Bug.select().count())
+        store = IStore(Bug)
+        self.update("bug_count", store.find(Bug).count())
         ztm.commit()
 
-        store = IStore(BugTask)
         self.update("bugtask_count", store.find(BugTask).count())
         ztm.commit()
 

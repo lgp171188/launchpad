@@ -33,6 +33,7 @@ from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.declarations import error_status
 from storm.expr import (
     SQL,
+    Add,
     And,
     Coalesce,
     Desc,
@@ -170,19 +171,10 @@ from lp.registry.model.pillar import pillar_sort_key
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database import bulk
-from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    IntCol,
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-)
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import WithMaterialized
 from lp.services.fields import DuplicateBug
@@ -261,7 +253,6 @@ class BugTag(StormBase):
     __storm_table__ = "BugTag"
     id = Int(primary=True)
 
-    bug = ForeignKey(dbName="bug", foreignKey="Bug", notNull=True)
     bug_id = Int(name="bug", allow_none=False)
     bug = Reference(bug_id, "Bug.id")
 
@@ -356,33 +347,36 @@ def update_bug_heat(bug_ids):
 
 
 @implementer(IBug, IInformationType)
-class Bug(SQLBase, InformationTypeMixin):
+class Bug(StormBase, InformationTypeMixin):
     """A bug."""
 
-    _defaultOrder = "-id"
+    __storm_table__ = "Bug"
+    __storm_order__ = "-id"
 
     # db field names
-    name = StringCol(unique=True, default=None)
-    title = StringCol(notNull=True)
-    description = StringCol(notNull=False, default=None)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    id = Int(primary=True)
+    name = Unicode(default=None)
+    title = Unicode(allow_none=False)
+    description = Unicode(allow_none=True, default=None)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    duplicateof = ForeignKey(
-        dbName="duplicateof", foreignKey="Bug", default=None
+    owner = Reference(owner_id, "Person.id")
+    duplicateof_id = Int(name="duplicateof", default=None)
+    duplicateof = Reference(duplicateof_id, "Bug.id")
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_last_updated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    date_made_private = UtcDateTimeCol(notNull=False, default=None)
-    who_made_private = ForeignKey(
-        dbName="who_made_private",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
+    date_last_updated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
+    date_made_private = DateTime(
+        allow_none=True, default=None, tzinfo=timezone.utc
+    )
+    who_made_private_id = Int(
+        name="who_made_private", validator=validate_public_person, default=None
+    )
+    who_made_private = Reference(who_made_private_id, "Person.id")
     information_type = DBEnum(
         enum=InformationType, allow_none=False, default=InformationType.PUBLIC
     )
@@ -397,25 +391,44 @@ class Bug(SQLBase, InformationTypeMixin):
         BugWatch.bug_id,
         order_by=(BugWatch.bugtracker_id, BugWatch.remotebug),
     )
-    duplicates = SQLMultipleJoin("Bug", joinColumn="duplicateof", orderBy="id")
+    duplicates = ReferenceSet("id", "Bug.duplicateof_id", order_by="Bug.id")
     linked_bugbranches = ReferenceSet(
         "id", BugBranch.bug_id, order_by=BugBranch.id
     )
-    date_last_message = UtcDateTimeCol(default=None)
-    number_of_duplicates = IntCol(notNull=True, default=0)
-    message_count = IntCol(notNull=True, default=0)
-    users_affected_count = IntCol(notNull=True, default=0)
-    users_unaffected_count = IntCol(notNull=True, default=0)
-    heat = IntCol(notNull=True, default=0)
-    heat_last_updated = UtcDateTimeCol(default=None)
-    latest_patch_uploaded = UtcDateTimeCol(default=None)
+    date_last_message = DateTime(default=None, tzinfo=timezone.utc)
+    number_of_duplicates = Int(allow_none=False, default=0)
+    message_count = Int(allow_none=False, default=0)
+    users_affected_count = Int(allow_none=False, default=0)
+    users_unaffected_count = Int(allow_none=False, default=0)
+    heat = Int(allow_none=False, default=0)
+    heat_last_updated = DateTime(default=None, tzinfo=timezone.utc)
+    latest_patch_uploaded = DateTime(default=None, tzinfo=timezone.utc)
     lock_status = DBEnum(
         name="lock_status",
         enum=BugLockStatus,
         allow_none=False,
         default=BugLockStatus.UNLOCKED,
     )
-    lock_reason = StringCol(notNull=False, default=None)
+    lock_reason = Unicode(allow_none=True, default=None)
+
+    def __init__(
+        self,
+        title,
+        owner,
+        description=None,
+        datecreated=DEFAULT,
+        date_made_private=None,
+        who_made_private=None,
+        information_type=InformationType.PUBLIC,
+    ):
+        super().__init__()
+        self.title = title
+        self.owner = owner
+        self.description = description
+        self.datecreated = datecreated
+        self.date_made_private = date_made_private
+        self.who_made_private = who_made_private
+        self.information_type = information_type
 
     @property
     def locked(self):
@@ -1905,7 +1918,7 @@ class Bug(SQLBase, InformationTypeMixin):
     def _question_from_bug(self):
         for question in self.questions:
             if (
-                question.owner_id == self.ownerID
+                question.owner_id == self.owner_id
                 and question.datecreated == self.datecreated
             ):
                 return question
@@ -1934,10 +1947,12 @@ class Bug(SQLBase, InformationTypeMixin):
                         # range.
                         slices.append(
                             BugMessage.index
-                            >= SQL(
-                                "(select max(index) from "
-                                "bugmessage where bug=%s) + 1 - %s"
-                                % (sqlvalues(self.id, -slice.start))
+                            >= Add(
+                                Select(
+                                    Max(BugMessage.index),
+                                    where=(BugMessage.bug == self),
+                                ),
+                                slice.start + 1,
                             )
                         )
                     else:
@@ -2397,7 +2412,7 @@ class Bug(SQLBase, InformationTypeMixin):
         try:
             if duplicate_of is not None:
                 field._validate(duplicate_of)
-            if self.duplicates:
+            if not self.duplicates.is_empty():
                 user = getUtility(ILaunchBag).user
                 for duplicate in self.duplicates:
                     old_value = duplicate.duplicateof
@@ -3204,17 +3219,17 @@ class BugSet:
 
     def get(self, bugid):
         """See `IBugSet`."""
-        try:
-            return Bug.get(bugid)
-        except SQLObjectNotFound:
+        bug = IStore(Bug).get(Bug, int(bugid))
+        if bug is None:
             raise NotFoundError(
                 "Unable to locate bug with ID %s." % str(bugid)
             )
+        return bug
 
     def getByNameOrID(self, bugid):
         """See `IBugSet`."""
         if self.valid_bug_name_re.match(bugid):
-            bug = Bug.selectOneBy(name=bugid)
+            bug = IStore(Bug).find(Bug, name=bugid).one()
             if bug is None:
                 raise NotFoundError("Unable to locate bug with ID %s." % bugid)
         else:
@@ -3333,6 +3348,8 @@ class BugSet:
 
         if params.tags:
             bug.tags = params.tags
+
+        Store.of(bug).flush()
 
         # Link the bug to the message.
         BugMessage(bug=bug, message=params.msg, index=0)
@@ -3497,7 +3514,7 @@ def generate_subscription_with(bug, person):
                     BugSubscription,
                     Join(Bug, Bug.id == BugSubscription.bug_id),
                 ],
-                where=Or(Bug.id == bug.id, Bug.duplicateofID == bug.id),
+                where=Or(Bug.id == bug.id, Bug.duplicateof_id == bug.id),
             ),
         ),
         WithMaterialized(

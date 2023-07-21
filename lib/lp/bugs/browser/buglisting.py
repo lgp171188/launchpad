@@ -682,7 +682,7 @@ class BugTaskListingItem:
         assignee = None
         if self.assignee_id is not None:
             assignee = self.people[self.assignee_id].displayname
-        reporter = self.people[self.bug.ownerID]
+        reporter = self.people[self.bug.owner_id]
 
         # the case that there is no target context (e.g. viewing bug that
         # are related to a user account) is intercepted

@@ -3,7 +3,7 @@
     xmlns:metal="http://xml.zope.org/namespaces/metal"
     xmlns:i18n="http://xml.zope.org/namespaces/i18n"
     class="portlet" id="portlet-duplicates"
-    tal:condition="context/duplicates">
+    tal:condition="not: context/duplicates/is_empty">
   <h2>Duplicates of this bug</h2>
   <ul>
     <li tal:repeat="dupe view/duplicates">
