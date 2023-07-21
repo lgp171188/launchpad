@@ -13,15 +13,14 @@ __all__ = [
     "TranslationTemplateVocabulary",
 ]
 
+from storm.expr import Is
 from storm.locals import Desc, Not, Or
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.compat import tzname
-from lp.services.database.sqlobject import AND
 from lp.services.webapp.vocabulary import (
     NamedStormVocabulary,
-    SQLObjectVocabularyBase,
     StormVocabularyBase,
 )
 from lp.services.worlddata.interfaces.language import ILanguage
@@ -95,24 +94,24 @@ class TranslationMessageVocabulary(StormVocabularyBase):
             yield self.toTerm(message)
 
 
-class TranslationTemplateVocabulary(SQLObjectVocabularyBase):
+class TranslationTemplateVocabulary(StormVocabularyBase):
     """The set of all POTemplates for a given product or package."""
 
     _table = POTemplate
-    _orderBy = "name"
+    _order_by = "name"
 
     def __init__(self, context):
         if context.productseries != None:
-            self._filter = AND(
-                POTemplate.iscurrent == True,
+            self._clauses = [
+                Is(POTemplate.iscurrent, True),
                 POTemplate.productseries == context.productseries,
-            )
+            ]
         else:
-            self._filter = AND(
-                POTemplate.iscurrent == True,
+            self._clauses = [
+                Is(POTemplate.iscurrent, True),
                 POTemplate.distroseries == context.distroseries,
                 POTemplate.sourcepackagename == context.sourcepackagename,
-            )
+            ]
         super().__init__(context)
 
     def toTerm(self, obj):

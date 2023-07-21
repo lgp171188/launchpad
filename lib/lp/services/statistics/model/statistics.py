@@ -199,7 +199,9 @@ class LaunchpadStatisticSet:
                 translations_usage=ServiceUsage.LAUNCHPAD
             ).count(),
         )
-        self.update("potemplate_count", POTemplate.select().count())
+        self.update(
+            "potemplate_count", IStore(POTemplate).find(POTemplate).count()
+        )
         ztm.commit()
         self.update("pofile_count", IStore(POFile).find(POFile).count())
         ztm.commit()

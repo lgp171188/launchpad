@@ -1,14 +1,15 @@
 PO import script
 ================
 
-    >>> from lp.translations.model.potemplate import POTemplate
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.config import config
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue,
     ... )
-    >>> from lp.services.config import config
+    >>> from lp.translations.model.potemplate import POTemplate
     >>> from datetime import datetime, timezone
     >>> rosetta_experts = getUtility(ILaunchpadCelebrities).rosetta_experts
 
@@ -21,7 +22,7 @@ Login as an admin to be able to do changes to the import queue.
 
 We don't care about a POTemplate we are working with, so just pick any.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
 
 Provide a POFile with Last-Translator set to a user not existing in
 the sampledata.

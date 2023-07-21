@@ -2206,7 +2206,7 @@ class ProductSet:
                 (Product, Person),
                 Product.active == True,
                 Product.id == ProductSeries.productID,
-                POTemplate.productseriesID == ProductSeries.id,
+                POTemplate.productseries_id == ProductSeries.id,
                 Product.translations_usage == ServiceUsage.LAUNCHPAD,
                 Person.id == Product._ownerID,
             )

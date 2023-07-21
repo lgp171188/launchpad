@@ -10,11 +10,12 @@ like SQLObjects are not persistent between transactions.
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.registry.interfaces.karma import IKarmaActionSet
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.translations.enums import RosettaImportStatus
     >>> from lp.translations.interfaces.translationimportqueue import (
     ...     ITranslationImportQueue,
     ... )
-    >>> from lp.services.database.sqlbase import flush_database_caches
     >>> from lp.translations.model.potemplate import POTemplate
 
     >>> translation_import_queue = getUtility(ITranslationImportQueue)
@@ -46,7 +47,7 @@ Let's say that we have this .pot file to import:
     ... msgid "foo"
     ... msgstr ""
     ... """
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
 
 We are going to import it as the Rosetta expert team, like we do with
 automatic imports from Ubuntu. In this case, we shouldn't give any kind
@@ -76,7 +77,7 @@ We tell the PO template to import from the file data it has.  If any karma is
 assigned to the team, our karma_helper will print it out here.
 
     >>> entry = translation_import_queue[entry_id]
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> (subject, message) = potemplate.importFromQueue(entry)
 
 (Nothing printed means no karma was assigned)
@@ -91,7 +92,7 @@ Let's do the same import as the Foo Bar user.
 
 Do the import.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     potemplate.path,
     ...     potemplate_contents,
@@ -112,7 +113,7 @@ Tell the PO template to import from the file data it has, and see the karma
 being assigned.
 
     >>> entry = translation_import_queue[entry_id]
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> (subject, message) = potemplate.importFromQueue(entry)
     Karma added: action=translationtemplateimport, product=evolution
     >>> transaction.commit()
@@ -140,7 +141,7 @@ Let's say that we have this .po file to import:
     ... """
     ...     % datetime.now(timezone.utc).isoformat()
     ... ).encode()
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
 
 As we can see, we don't have any information in that file about who
@@ -173,7 +174,7 @@ to make sure it's stored properly.
 Tell the PO template to import from the file data it has.  If any karma is
 assigned to the team, our karma_helper will print it out here.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> entry = translation_import_queue[entry_id]
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -183,7 +184,7 @@ assigned to the team, our karma_helper will print it out here.
 We attach the new file as coming from upstream, that means that we
 will give karma only for the upload action.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -204,7 +205,7 @@ to make sure it's stored properly.
 
 Tell the PO file to import from the file data it has.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> entry = translation_import_queue[entry_id]
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -228,7 +229,7 @@ case, we will give karma *only* because the translation change.
 
 We attach the new file as not coming from upstream.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -251,7 +252,7 @@ Tell the PO file to import from the file data it has.  The user has rights
 to edit translations directly, so their suggestion is approved directly.
 No karma is awarded for this action.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> entry = translation_import_queue[entry_id]
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -262,7 +263,7 @@ To do this test, we are going to repeat previous import.
 
 We import it again without changes and see that we don't get karma changes.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> entry = translation_import_queue.addOrUpdateEntry(
     ...     pofile.path,
@@ -284,7 +285,7 @@ to make sure it's stored properly.
 Tell the PO file to import from the file data it has and see that no karma is
 assigned.  If it was, it'd be printed after the call to importFromQueue().
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> entry = translation_import_queue[entry_id]
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> (subject, message) = pofile.importFromQueue(entry)
@@ -311,7 +312,7 @@ handles translations for a given pofile.
 
 No Privileges Person is a translator that fits this requirement.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> no_priv = personset.getByEmail("no-priv@canonical.com")
     >>> pofile.canEditTranslations(no_priv)
@@ -344,7 +345,7 @@ But now, they will provide a new suggestion.
 At this moment, karma is assigned and thus is printed here.
 
     >>> no_priv = personset.getByEmail("no-priv@canonical.com")
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("foo")
     >>> translationmessage = potmsgset.submitSuggestion(
@@ -362,7 +363,7 @@ Now, they will approve a suggestion.  This will give them karma for
 reviewing the suggestion and will also give karma to the user who made the
 suggestion for it being approved.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("foo")
     >>> new_translations = {0: "somethingelse"}
@@ -378,7 +379,7 @@ Finally, this reviewer, is going to add a new translation directly. They
 should get karma for their translation, but not for a review.
 
     >>> kurem = personset.getByEmail("kurem@debian.cz")
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> potmsgset = potemplate.getPOTMsgSetByMsgIDText("foo")
     >>> new_translations = {0: "changed again"}
@@ -433,7 +434,6 @@ Now, let's ensure that we've covered every one of Rosetta's karma
 actions.
 
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> from lp.services.database.interfaces import IStore
     >>> translation_category = (
     ...     IStore(KarmaCategory)
     ...     .find(KarmaCategory, name="translations")

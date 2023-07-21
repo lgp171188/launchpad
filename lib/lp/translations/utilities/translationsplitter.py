@@ -105,12 +105,12 @@ class TranslationSplitter(TranslationSplitterBase):
             (UpstreamItem, UbuntuItem),
             UpstreamItem.potmsgset_id == UbuntuItem.potmsgset_id,
             UbuntuItem.potemplate_id == UbuntuTemplate.id,
-            UbuntuTemplate.sourcepackagenameID
+            UbuntuTemplate.sourcepackagename_id
             == self.sourcepackage.sourcepackagename.id,
-            UbuntuTemplate.distroseriesID
+            UbuntuTemplate.distroseries_id
             == self.sourcepackage.distroseries.id,
             UpstreamItem.potemplate_id == UpstreamTemplate.id,
-            UpstreamTemplate.productseriesID == self.productseries.id,
+            UpstreamTemplate.productseries_id == self.productseries.id,
         )
 
 

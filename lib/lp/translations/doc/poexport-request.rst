@@ -5,6 +5,7 @@ The queue of export requests is served by a cron script. Let's check if it can
 serve those requests properly.
 
     >>> from zope.component import getUtility
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.interfaces.poexportrequest import (
     ...     IPOExportRequestSet,
     ... )
@@ -25,7 +26,7 @@ Requesting PO files
 Our user requests the Catalan and Czech translations of a template.
 
     >>> from lp.translations.model.potemplate import POTemplate
-    >>> potemplate = POTemplate.get(2)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 2)
     >>> ca = potemplate.getPOFileByLang("ca")
     >>> cs = potemplate.getPOFileByLang("cs")
 
@@ -104,7 +105,6 @@ Duplicate requests
 On another occasion, the user requests just Catalan translation.  The
 queue is initially empty.
 
-    >>> from lp.services.database.interfaces import IStore
     >>> def render_request(request):
     ...     if request.pofile is None:
     ...         return request.potemplate.name
@@ -239,7 +239,7 @@ just PO files.
     >>> cs.potemplate.distroseries is None
     False
     >>> request_set.addRequest(person, None, [ca, cs])
-    >>> product_template = potemplate.get(1)
+    >>> product_template = IStore(POTemplate).get(POTemplate, 1)
     >>> product_template.productseries is None
     False
     >>> request_set.addRequest(person, product_template)

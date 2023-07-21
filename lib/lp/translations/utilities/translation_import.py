@@ -144,7 +144,7 @@ class ExistingPOFileInDatabase:
             "translation_columns": ", ".join(translations),
             "translation_joins": "\n".join(msgstr_joins),
             "language": quote(self.pofile.language),
-            "potemplate": quote(self.pofile.potemplate),
+            "potemplate": quote(self.pofile.potemplate.id),
             "flag": self._getFlagName(),
         }
 

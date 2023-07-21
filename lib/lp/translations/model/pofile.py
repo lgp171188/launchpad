@@ -865,7 +865,7 @@ class POFile(StormBase, POFileMixIn):
             self._getCompletePluralFormsConditions(table_name="Other")
         )
         params = {
-            "potemplate": quote(self.potemplate),
+            "potemplate": quote(self.potemplate.id),
             "language": quote(self.language),
             "flag": side_traits.flag_name,
             "other_flag": side_traits.other_side_traits.flag_name,
@@ -947,7 +947,7 @@ class POFile(StormBase, POFileMixIn):
         )
         params = {
             "language": quote(self.language),
-            "potemplate": quote(self.potemplate),
+            "potemplate": quote(self.potemplate.id),
             "flag": flag_name,
             "suggestion_nonempty": suggestion_nonempty,
         }
@@ -1306,7 +1306,7 @@ class POFile(StormBase, POFileMixIn):
             .getForTemplate(self.potemplate)
             .flag_name
         )
-        template_id = quote(self.potemplate)
+        template_id = quote(self.potemplate.id)
         params = {
             "flag": flag_name,
             "language": quote(self.language),

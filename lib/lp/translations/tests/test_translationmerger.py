@@ -9,6 +9,7 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.services.database.interfaces import IStore
 from lp.services.log.logger import FakeLogger
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
@@ -798,7 +799,9 @@ class TestSharingMigrationPerformance(
         self.stable_pofile = None
         self._flushDbObjects()
 
-        self.templates = [POTemplate.get(id) for id in template_ids]
+        self.templates = [
+            IStore(POTemplate).get(POTemplate, id) for id in template_ids
+        ]
 
     def assertNoStatementsInvolvingTable(self, table_name, statements):
         """The specified table name is not in any of the statements."""
