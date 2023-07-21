@@ -676,7 +676,7 @@ class TestRemoveTranslations(TestCase):
         ).origin = RosettaTranslationOrigin.SCM
 
         self._removeMessages(
-            potemplate=self.potemplate, origin=RosettaTranslationOrigin.SCM
+            potemplate=self.potemplate.id, origin=RosettaTranslationOrigin.SCM
         )
 
         self._checkInvariant()
