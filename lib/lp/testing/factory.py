@@ -6884,6 +6884,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         status=BuildStatus.NEEDSBUILD,
         builder=None,
         duration=None,
+        git_refs=None,
     ):
         """Make a new `CIBuild`."""
         if git_repository is None:
@@ -6900,6 +6901,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             distro_arch_series,
             stages,
             date_created=date_created,
+            git_refs=git_refs,
         )
         if duration is not None:
             removeSecurityProxy(build).updateStatus(

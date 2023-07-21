@@ -54,8 +54,19 @@ def _trigger_webhook(merge_proposal, payload):
         target = merge_proposal.target_branch
     else:
         target = merge_proposal.target_git_repository
+
+    git_refs = []
+    if "new" in payload:
+        git_refs.append(payload["new"]["target_git_path"])
+    if "old" in payload:
+        git_refs.append(payload["old"]["target_git_path"])
+
     getUtility(IWebhookSet).trigger(
-        target, "merge-proposal:0.1", payload, context=merge_proposal
+        target,
+        "merge-proposal:0.1",
+        payload,
+        context=merge_proposal,
+        git_refs=git_refs,
     )
 
 

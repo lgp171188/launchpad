@@ -25,7 +25,10 @@ def _trigger_ci_build_webhook(build: ICIBuild, action: str) -> None:
             )
         )
         getUtility(IWebhookSet).trigger(
-            build.git_repository, "ci:build:0.1", payload
+            build.git_repository,
+            "ci:build:0.1",
+            payload,
+            git_refs=build.git_refs,
         )
 
 

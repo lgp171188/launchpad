@@ -19,6 +19,7 @@ from lp.app.browser.launchpadform import (
     action,
 )
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     LaunchpadView,
@@ -100,7 +101,14 @@ class WebhookBreadcrumb(Breadcrumb):
 
 class WebhookEditSchema(Interface):
     use_template(
-        IWebhook, include=["delivery_url", "event_types", "active", "secret"]
+        IWebhook,
+        include=[
+            "delivery_url",
+            "event_types",
+            "active",
+            "secret",
+            "git_ref_pattern",
+        ],
     )
 
 
@@ -110,6 +118,16 @@ class WebhookAddView(LaunchpadFormView):
     schema = WebhookEditSchema
     custom_widget_event_types = LabeledMultiCheckBoxWidget
     next_url = None
+
+    @property
+    def field_names(self):
+        field_names = ["delivery_url", "event_types", "active", "secret"]
+
+        # Only show `git_ref_pattern` in webhooks targeted at Git Repositories
+        if IGitRepository.providedBy(self.context):
+            field_names.append("git_ref_pattern")
+
+        return field_names
 
     @property
     def inside_breadcrumb(self):
@@ -143,9 +161,18 @@ class WebhookView(LaunchpadEditFormView):
     label = "Manage webhook"
 
     schema = WebhookEditSchema
-    # XXX wgrant 2015-08-04: Need custom widget for secret.
-    field_names = ["delivery_url", "event_types", "active"]
     custom_widget_event_types = LabeledMultiCheckBoxWidget
+
+    @property
+    def field_names(self):
+        # XXX wgrant 2015-08-04: Need custom widget for secret.
+        field_names = ["delivery_url", "event_types", "active"]
+
+        # Only show `git_ref_pattern` in webhooks targeted at Git Repositories
+        if IGitRepository.providedBy(self.context.target):
+            field_names.append("git_ref_pattern")
+
+        return field_names
 
     def initialize(self):
         super().initialize()
