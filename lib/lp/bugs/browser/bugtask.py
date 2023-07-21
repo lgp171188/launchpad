@@ -435,7 +435,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             self.context = context
         list(
             getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                [self.context.bug.ownerID], need_validity=True
+                [self.context.bug.owner_id], need_validity=True
             )
         )
 

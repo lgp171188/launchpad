@@ -56,7 +56,6 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
     NamedSQLObjectVocabulary,
-    SQLObjectVocabularyBase,
     StormVocabularyBase,
 )
 
@@ -85,9 +84,9 @@ class UsesBugsDistributionVocabulary(DistributionVocabulary):
         )
 
 
-class BugVocabulary(SQLObjectVocabularyBase):
+class BugVocabulary(StormVocabularyBase):
     _table = Bug
-    _orderBy = "id"
+    _order_by = "id"
 
 
 @implementer(IHugeVocabulary)

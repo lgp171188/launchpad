@@ -1202,11 +1202,8 @@ class BugTextView(LaunchpadView):
         else:
             text.append("duplicate-of: ")
 
-        if bug.duplicates:
-            dupes = " ".join(str(dupe.id) for dupe in bug.duplicates)
-            text.append("duplicates: %s" % dupes)
-        else:
-            text.append("duplicates: ")
+        dupes = " ".join(str(dupe.id) for dupe in bug.duplicates)
+        text.append("duplicates: %s" % dupes)
 
         if bug.private:
             # XXX kiko 2007-10-31: this could include date_made_private and

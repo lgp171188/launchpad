@@ -1016,7 +1016,7 @@ class TestPersonStates(TestCaseWithFactory):
         )
 
     def test_Bug_person_validator(self):
-        bug = Bug.select(limit=1)[0]
+        bug = IStore(Bug).find(Bug).first()
         for attr_name in ["owner", "who_made_private"]:
             self.assertRaises(
                 PrivatePersonLinkageError, setattr, bug, attr_name, self.myteam

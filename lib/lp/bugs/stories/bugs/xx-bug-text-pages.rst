@@ -9,14 +9,15 @@ To demonstrate this feature, we'll use bug 1.
 We'll start by adding some attachments to the bug:
 
     >>> from io import BytesIO
-    >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> from lp.testing import login, logout
     >>> from lp.bugs.model.bug import Bug
     >>> from lp.registry.model.person import Person
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.sqlbase import flush_database_updates
+    >>> from lp.testing import login, logout
     >>> login("foo.bar@canonical.com")
     >>> mark = Person.selectOneBy(name="mark")
     >>> mark.display_name = "M\xe1rk Sh\xfattlew\xf2rth"
-    >>> bug = Bug.get(1)
+    >>> bug = IStore(Bug).get(Bug, 1)
     >>> content = BytesIO(b"<html><body>bogus</body></html>")
     >>> a1 = bug.addAttachment(
     ...     mark,

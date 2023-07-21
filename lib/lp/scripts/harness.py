@@ -77,8 +77,8 @@ def _get_locals():
         ds = DistroSeries.get(1)
         prod = Product.get(1)
         proj = ProjectGroup.get(1)
-        b2 = Bug.get(2)
-        b1 = Bug.get(1)
+        b2 = store.get(Bug, 2)
+        b1 = store.get(Bug, 1)
         s = store.get(Specification, 1)
         q = store.get(Question, 1)
         # Silence unused name warnings
