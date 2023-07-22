@@ -17,7 +17,7 @@ from typing import List
 
 import apt_pkg
 from lazr.delegates import delegate_to
-from storm.expr import SQL, And, Column, Desc, Is, Join, Or, Select, Table
+from storm.expr import SQL, And, Column, Desc, Is, Join, Not, Or, Select, Table
 from storm.locals import JSON, Int, Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
@@ -1066,14 +1066,16 @@ class DistroSeries(
 
     def getTranslatableSourcePackages(self):
         """See `IDistroSeries`."""
-        query = """
-            POTemplate.sourcepackagename = SourcePackageName.id AND
-            POTemplate.iscurrent = TRUE AND
-            POTemplate.distroseries = %s""" % sqlvalues(
-            self.id
-        )
-        result = SourcePackageName.select(
-            query, clauseTables=["POTemplate"], orderBy=["name"], distinct=True
+        result = (
+            IStore(SourcePackageName)
+            .find(
+                SourcePackageName,
+                POTemplate.sourcepackagename == SourcePackageName.id,
+                Is(POTemplate.iscurrent, True),
+                POTemplate.distroseries == self,
+            )
+            .order_by(SourcePackageName.name)
+            .config(distinct=True)
         )
         return [
             SourcePackage(sourcepackagename=spn, distroseries=self)
@@ -1085,25 +1087,34 @@ class DistroSeries(
         # Note that both unlinked packages and
         # linked-with-no-productseries packages are considered to be
         # "unlinked translatables".
-        query = """
-            SourcePackageName.id NOT IN (SELECT DISTINCT
-             sourcepackagename FROM Packaging WHERE distroseries = %s) AND
-            POTemplate.sourcepackagename = SourcePackageName.id AND
-            POTemplate.distroseries = %s""" % sqlvalues(
-            self.id, self.id
+        unlinked = (
+            IStore(SourcePackageName)
+            .find(
+                SourcePackageName,
+                Not(
+                    SourcePackageName.id.is_in(
+                        Select(
+                            Packaging.sourcepackagenameID,
+                            where=(Packaging.distroseries == self),
+                            distinct=True,
+                        )
+                    )
+                ),
+                POTemplate.sourcepackagename == SourcePackageName.id,
+                POTemplate.distroseries == self,
+            )
+            .order_by(SourcePackageName.name)
         )
-        unlinked = SourcePackageName.select(
-            query, clauseTables=["POTemplate"], orderBy=["name"]
-        )
-        query = """
-            Packaging.sourcepackagename = SourcePackageName.id AND
-            Packaging.productseries = NULL AND
-            POTemplate.sourcepackagename = SourcePackageName.id AND
-            POTemplate.distroseries = %s""" % sqlvalues(
-            self.id
-        )
-        linked_but_no_productseries = SourcePackageName.select(
-            query, clauseTables=["POTemplate", "Packaging"], orderBy=["name"]
+        linked_but_no_productseries = (
+            IStore(SourcePackageName)
+            .find(
+                SourcePackageName,
+                Packaging.sourcepackagename == SourcePackageName.id,
+                Is(Packaging.productseriesID, None),
+                POTemplate.sourcepackagename == SourcePackageName.id,
+                POTemplate.distroseries == self,
+            )
+            .order_by(SourcePackageName.name)
         )
         result = unlinked.union(linked_but_no_productseries)
         return [
@@ -1759,7 +1770,7 @@ class DistroSeriesSet:
             .find(
                 DistroSeries,
                 DistroSeries.hide_all_translations == False,
-                DistroSeries.id == POTemplate.distroseriesID,
+                DistroSeries.id == POTemplate.distroseries_id,
             )
             .config(distinct=True)
         )

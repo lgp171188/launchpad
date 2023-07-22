@@ -112,6 +112,7 @@ class WithVCSScenarios(WithScenarios):
         stacked_on=None,
         information_type=None,
         owner=None,
+        name=None,
     ):
         # Create the product pillar and its access policy if information
         # type is "PROPRIETARY".
@@ -128,10 +129,12 @@ class WithVCSScenarios(WithScenarios):
         kwargs = {"information_type": information_type, "owner": owner}
         if self.git:
             kwargs["target"] = product
-            return self.factory.makeGitRefs(**kwargs)[0]
+            paths = [name] if name else None
+            return self.factory.makeGitRefs(paths=paths, **kwargs)[0]
         else:
             kwargs["product"] = product
             kwargs["stacked_on"] = stacked_on
+            kwargs["name"] = name
             return self.factory.makeProductBranch(**kwargs)
 
     def makeBranchMergeProposal(
@@ -1392,6 +1395,133 @@ class TestMergeProposalWebhooks(WithVCSScenarios, TestCaseWithFactory):
         delivery = hook.deliveries.one()
         self.assertCorrectDelivery(expected_payload, hook, delivery)
         self.assertCorrectLogging(expected_redacted_payload, hook, logger)
+
+    def _create_for_webhook_with_git_ref_pattern(
+        self, git_ref_pattern, expect_delivery
+    ):
+        source = self.makeBranch()
+        target = self.makeBranch(
+            same_target_as=source, name="refs/heads/foo-bar"
+        )
+        registrant = self.factory.makePerson()
+        hook = self.factory.makeWebhook(
+            target=self.getWebhookTarget(target),
+            event_types=["merge-proposal:0.1"],
+            git_ref_pattern=git_ref_pattern,
+        )
+        source.addLandingTarget(registrant, target, needs_review=True)
+        login_person(target.owner)
+        delivery = hook.deliveries.one()
+
+        if expect_delivery:
+            self.assertIsNotNone(delivery)
+        else:
+            self.assertIsNone(delivery)
+
+    def test_create_triggers_webhooks_with_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._create_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="refs/heads/*", expect_delivery=True
+        )
+
+    def test_create_doesnt_trigger_webhooks_without_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._create_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="not-matching-test", expect_delivery=False
+        )
+
+    def _modify_for_webhook_with_git_ref_pattern(
+        self, git_ref_pattern, expect_delivery
+    ):
+        source = self.makeBranch()
+        target = self.makeBranch(
+            same_target_as=source, name="refs/heads/foo-bar"
+        )
+        registrant = self.factory.makePerson()
+        proposal = source.addLandingTarget(
+            registrant, target, needs_review=True
+        )
+        hook = self.factory.makeWebhook(
+            target=self.getWebhookTarget(target),
+            event_types=["merge-proposal:0.1"],
+            git_ref_pattern=git_ref_pattern,
+        )
+
+        with person_logged_in(
+            target.owner
+        ), BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
+            proposal.setStatus(
+                BranchMergeProposalStatus.CODE_APPROVED, user=target.owner
+            )
+            proposal.description = "An excellent proposal."
+        with admin_logged_in():
+            delivery = hook.deliveries.one()
+
+        if expect_delivery:
+            self.assertIsNotNone(delivery)
+        else:
+            self.assertIsNone(delivery)
+
+    def test_modify_triggers_webhooks_with_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._modify_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="refs/heads/*", expect_delivery=True
+        )
+
+    def test_modify_doesnt_trigger_webhooks_without_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._modify_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="not-matching-test", expect_delivery=False
+        )
+
+    def _delete_for_webhook_with_git_ref_pattern(
+        self, git_ref_pattern, expect_delivery
+    ):
+        source = self.makeBranch()
+        target = self.makeBranch(
+            same_target_as=source, name="refs/heads/foo-bar"
+        )
+        registrant = self.factory.makePerson()
+        proposal = source.addLandingTarget(
+            registrant, target, needs_review=True
+        )
+        hook = self.factory.makeWebhook(
+            target=self.getWebhookTarget(target),
+            event_types=["merge-proposal:0.1"],
+            git_ref_pattern=git_ref_pattern,
+        )
+        with person_logged_in(target.owner):
+            proposal.deleteProposal()
+            delivery = hook.deliveries.one()
+
+        if expect_delivery:
+            self.assertIsNotNone(delivery)
+        else:
+            self.assertIsNone(delivery)
+
+    def test_delete_triggers_webhooks_with_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._delete_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="refs/heads/*", expect_delivery=True
+        )
+
+    def test_delete_doesnt_trigger_webhooks_without_matching_ref_pattern(self):
+        if not self.git:
+            self.skipTest("Only relevant for Git.")
+
+        self._delete_for_webhook_with_git_ref_pattern(
+            git_ref_pattern="not-matching-test", expect_delivery=False
+        )
 
 
 class TestGetAddress(TestCaseWithFactory):

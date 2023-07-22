@@ -2085,7 +2085,7 @@ An empty unsigned mail to new@malone:
 If we submit an email with no affects command, it is rejected.
 
     >>> from lp.bugs.model.bug import Bug
-    >>> before_count = Bug.select().count()
+    >>> before_count = IStore(Bug).find(Bug).count()
     >>> submit_mail = b"""From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
@@ -2099,7 +2099,7 @@ If we submit an email with no affects command, it is rejected.
     ... """
 
     >>> process_email(submit_mail)
-    >>> before_count == Bug.select().count()
+    >>> before_count == IStore(Bug).find(Bug).count()
     True
 
     >>> print_latest_email()
@@ -2118,7 +2118,7 @@ required. If it is missing, the message is also rejected.
 XXX: Gavin Panella 2009-07-24 bug=404010: The need for this test
 arises from the implementation of MaloneHandler.
 
-    >>> before_count = Bug.select().count()
+    >>> before_count = IStore(Bug).find(Bug).count()
     >>> submit_mail = b"""From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
     ... Date: Fri Jun 17 10:20:23 BST 2005
@@ -2130,7 +2130,7 @@ arises from the implementation of MaloneHandler.
     ... """
 
     >>> process_email(submit_mail)
-    >>> before_count == Bug.select().count()
+    >>> before_count == IStore(Bug).find(Bug).count()
     True
 
     >>> print_latest_email()
@@ -2151,7 +2151,7 @@ edit@bugs).
 XXX: Gavin Panella 2009-07-24 bug=404010: The need for this test
 arises from the implementation of MaloneHandler.
 
-    >>> before_count = Bug.select().count()
+    >>> before_count = IStore(Bug).find(Bug).count()
     >>> submit_mail = b"""\
     ... From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
@@ -2162,7 +2162,7 @@ arises from the implementation of MaloneHandler.
     ... """
 
     >>> process_email(submit_mail)
-    >>> before_count == Bug.select().count()
+    >>> before_count == IStore(Bug).find(Bug).count()
     True
 
     >>> print_latest_email()
@@ -2184,7 +2184,7 @@ bug-related commands do blow up before the check for a bugtask is
 reached. For example, unsubscribing oneself from a private bug then
 linking a CVE.
 
-    >>> before_count = Bug.select().count()
+    >>> before_count = IStore(Bug).find(Bug).count()
     >>> submit_mail = b"""\
     ... From: Foo Bar <foo.bar@canonical.com>
     ... To: new@bugs.launchpad.ubuntu.com
@@ -2197,7 +2197,7 @@ linking a CVE.
     ... """
 
     >>> process_email(submit_mail)
-    >>> before_count == Bug.select().count()
+    >>> before_count == IStore(Bug).find(Bug).count()
     True
 
     >>> print_latest_email()

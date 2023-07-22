@@ -230,6 +230,71 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 ),
             )
 
+    def test_git_ref_pattern_match_triggers_webhooks(self):
+        # Jobs trigger any relevant webhooks if their `git_ref_pattern` matches
+        # at least one of the git references
+        repository = self.factory.makeGitRepository()
+        self.factory.makeGitRefs(
+            repository, paths=["refs/heads/master", "refs/tags/1.0"]
+        )
+        hook = self.factory.makeWebhook(
+            target=repository,
+            event_types=["git:push:0.1"],
+            git_ref_pattern="*tags/1.0",
+        )
+        job = GitRefScanJob.create(repository)
+        paths = ("refs/heads/master", "refs/tags/2.0")
+        self.useFixture(GitHostingFixture(refs=self.makeFakeRefs(paths)))
+        with dbuser("branchscanner"):
+            JobRunner([job]).runAll()
+        delivery = hook.deliveries.one()
+        sha1 = lambda s: hashlib.sha1(s).hexdigest()
+        payload_matcher = MatchesDict(
+            {
+                "git_repository": Equals("/" + repository.unique_name),
+                "git_repository_path": Equals(repository.unique_name),
+                "ref_changes": Equals(
+                    {
+                        "refs/tags/1.0": {
+                            "old": {"commit_sha1": sha1(b"refs/tags/1.0")},
+                            "new": None,
+                        },
+                        "refs/tags/2.0": {
+                            "old": None,
+                            "new": {"commit_sha1": sha1(b"refs/tags/2.0")},
+                        },
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            delivery,
+            MatchesStructure(
+                event_type=Equals("git:push:0.1"), payload=payload_matcher
+            ),
+        )
+
+    def test_git_ref_pattern_doesnt_match_doesnt_trigger_webhooks(self):
+        # Jobs are not triggered if `git_ref_pattern` doesn't match any of the
+        # git references.
+        repository = self.factory.makeGitRepository()
+        self.factory.makeGitRefs(
+            repository, paths=["refs/heads/master", "refs/tags/1.0"]
+        )
+        hook = self.factory.makeWebhook(
+            target=repository,
+            event_types=["git:push:0.1"],
+            git_ref_pattern="*foo",
+        )
+        job = GitRefScanJob.create(repository)
+        paths = ("refs/heads/master", "refs/tags/2.0")
+        self.useFixture(GitHostingFixture(refs=self.makeFakeRefs(paths)))
+        with dbuser("branchscanner"):
+            JobRunner([job]).runAll()
+
+        with person_logged_in(repository.owner):
+            self.assertEqual(0, len(list(hook.deliveries)))
+
     def test_triggers_webhooks_with_oci_project_as_repository_target(self):
         # Jobs trigger any relevant webhooks when they're enabled.
         logger = self.useFixture(FakeLogger())

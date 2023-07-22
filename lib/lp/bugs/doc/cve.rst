@@ -75,7 +75,8 @@ You can link a CVE to a bug. You can also see which CVEs are currently
 linked to a bug:
 
     >>> from lp.bugs.model.bug import Bug
-    >>> b = Bug.get(1)
+    >>> from lp.services.database.interfaces import IStore
+    >>> b = IStore(Bug).get(Bug, 1)
     >>> for c in b.cves:
     ...     print(c.displayname)
     ...

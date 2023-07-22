@@ -133,7 +133,7 @@ class MigrateCurrentFlagProcess:
         return (
             self.store.find(
                 Product,
-                POTemplate.productseriesID == ProductSeries.id,
+                POTemplate.productseries_id == ProductSeries.id,
                 ProductSeries.productID == Product.id,
             )
             .group_by(Product)
@@ -151,7 +151,7 @@ class MigrateCurrentFlagProcess:
                 == TranslationTemplateItem.potmsgset_id
             ),
             TranslationTemplateItem.potemplate_id == POTemplate.id,
-            POTemplate.productseriesID == ProductSeries.id,
+            POTemplate.productseries_id == ProductSeries.id,
             ProductSeries.productID == product.id,
         ).config(distinct=True)
 

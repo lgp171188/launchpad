@@ -14,6 +14,7 @@ from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_WEBHOOKS_FEATURE_FLAG,
 )
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
@@ -418,19 +419,33 @@ class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
             ),
         )
 
-    def test_creates(self):
-        view = self.makeView(
-            "+new-webhook",
-            method="POST",
-            form={
-                "field.delivery_url": "http://example.com/test",
-                "field.active": "on",
-                "field.event_types-empty-marker": "1",
-                "field.event_types": self.event_type,
-                "field.secret": "secret code",
-                "field.actions.new": "Add webhook",
-            },
+    def test_rendering_check_git_ref_pattern_field(self):
+        # Verify that `git_ref_pattern` field exists in webhook's forms for git
+        # repositories, but not for other webhook forms
+        count = 1 if IGitRepository.providedBy(self.target) else 0
+
+        self.assertThat(
+            self.makeView("+new-webhook")(),
+            soupmatchers.HTMLContains(
+                soupmatchers.TagWithId("field.git_ref_pattern", count=count)
+            ),
         )
+
+    def _create_webhook_with_git_ref_pattern(
+        self, ref_pattern_input=None, expected_webhook_ref_pattern=None
+    ):
+        form_data = {
+            "field.delivery_url": "http://example.com/test",
+            "field.active": "on",
+            "field.event_types-empty-marker": "1",
+            "field.event_types": self.event_type,
+            "field.secret": "secret code",
+            "field.actions.new": "Add webhook",
+        }
+        if ref_pattern_input:
+            form_data.update({"field.git_ref_pattern": ref_pattern_input})
+
+        view = self.makeView("+new-webhook", method="POST", form=form_data)
         self.assertEqual([], view.errors)
         hook = self.target.webhooks.one()
         self.assertThat(
@@ -442,7 +457,30 @@ class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
                 active=True,
                 event_types=[self.event_type],
                 secret="secret code",
+                git_ref_pattern=expected_webhook_ref_pattern,
             ),
+        )
+
+    def test_creates(self):
+        # Adding webhook without `git_ref_pattern` field is successful
+        self._create_webhook_with_git_ref_pattern(
+            ref_pattern_input=None,
+            expected_webhook_ref_pattern=None,
+        )
+
+    def test_creates_with_git_ref_pattern_field(self):
+        # Adding webhook with `git_ref_pattern` field works for git repository
+        # webhooks, but not for other webhooks (creation is successful, but
+        # `git_ref_pattern` param is ignored)
+
+        if IGitRepository.providedBy(self.target):
+            expected_ref_pattern = "refs/heads/*"
+        else:
+            expected_ref_pattern = None
+
+        self._create_webhook_with_git_ref_pattern(
+            ref_pattern_input="refs/heads/*",
+            expected_webhook_ref_pattern=expected_ref_pattern,
         )
 
     def test_rejects_bad_scheme(self):
@@ -603,16 +641,34 @@ class TestWebhookViewBase(WebhookViewTestHelpers):
             ),
         )
 
-    def test_saves(self):
+    def test_rendering_check_git_ref_pattern_field(self):
+        # Verify that `git_ref_pattern` field exists in webhook's forms for git
+        # repositories, but not for other webhook forms
+
+        count = 1 if IGitRepository.providedBy(self.target) else 0
+
+        self.assertThat(
+            self.makeView("+index")(),
+            soupmatchers.HTMLContains(
+                soupmatchers.TagWithId("field.git_ref_pattern", count=count)
+            ),
+        )
+
+    def _save_webhook_with_git_ref_pattern(
+        self, ref_pattern_input=None, expected_webhook_ref_pattern=None
+    ):
+        form_data = {
+            "field.delivery_url": "http://example.com/edited",
+            "field.active": "off",
+            "field.event_types-empty-marker": "1",
+            "field.actions.save": "Save webhook",
+        }
+        if ref_pattern_input:
+            form_data.update({"field.git_ref_pattern": ref_pattern_input})
         view = self.makeView(
             "+index",
             method="POST",
-            form={
-                "field.delivery_url": "http://example.com/edited",
-                "field.active": "off",
-                "field.event_types-empty-marker": "1",
-                "field.actions.save": "Save webhook",
-            },
+            form=form_data,
         )
         self.assertEqual([], view.errors)
         self.assertThat(
@@ -621,7 +677,30 @@ class TestWebhookViewBase(WebhookViewTestHelpers):
                 delivery_url="http://example.com/edited",
                 active=False,
                 event_types=[],
+                git_ref_pattern=expected_webhook_ref_pattern,
             ),
+        )
+
+    def test_saves(self):
+        # Editing webhook without `git_ref_pattern` field is always successful
+        self._save_webhook_with_git_ref_pattern(
+            ref_pattern_input=None,
+            expected_webhook_ref_pattern=None,
+        )
+
+    def test_saves_with_git_ref_pattern_field(self):
+        # Editing `git_ref_pattern` field works for git repository webhooks,
+        # but not for other webhooks (edit is successful, but `git_ref_pattern`
+        # param is ignored)
+
+        if IGitRepository.providedBy(self.target):
+            expected_ref_pattern = "refs/heads/*"
+        else:
+            expected_ref_pattern = None
+
+        self._save_webhook_with_git_ref_pattern(
+            ref_pattern_input="refs/heads/*",
+            expected_webhook_ref_pattern=expected_ref_pattern,
         )
 
     def test_rejects_bad_scheme(self):

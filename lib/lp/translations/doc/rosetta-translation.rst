@@ -1,4 +1,3 @@
-
 Rosetta Translation Objects
 ===========================
 
@@ -7,8 +6,9 @@ from POTemplate down to POTranslation.
 
 Get a PO template.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.potemplate import POTemplate
-    >>> template = POTemplate.get(1)
+    >>> template = IStore(POTemplate).get(POTemplate, 1)
     >>> template.name == "evolution-2.2"
     True
 

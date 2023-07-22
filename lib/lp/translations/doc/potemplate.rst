@@ -181,10 +181,11 @@ POTemplate
 POTemplate is an object with all strings that must be translated for a
 concrete context.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import verifyObject
     >>> from lp.translations.interfaces.potemplate import IPOTemplate
     >>> from lp.translations.model.potemplate import POTemplate
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
 
 It implements the IPOTemplate interface.
 
@@ -260,7 +261,7 @@ First, we can see the relatives in a IProductSeries context.
 
 Let's get a new IPOTemplate that belongs to an IDistroSeries:
 
-    >>> potemplate = POTemplate.get(4)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 4)
     >>> print(potemplate.title)
     Template "evolution-2.2" in Ubuntu Hoary package "evolution"
 
@@ -275,7 +276,7 @@ context:
 
 But we can see that there is a third template in this context:
 
-    >>> not_current_template = POTemplate.get(9)
+    >>> not_current_template = IStore(POTemplate).get(POTemplate, 9)
     >>> not_current_template.productseries == potemplate.productseries
     True
 

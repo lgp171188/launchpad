@@ -390,7 +390,7 @@ class TranslationsPerson:
         # ProductSeries it may lead to up to two: one for the Product
         # and one for the ProjectGroup.
         DistroSeriesJoin = LeftJoin(
-            DistroSeries, DistroSeries.id == POTemplate.distroseriesID
+            DistroSeries, DistroSeries.id == POTemplate.distroseries_id
         )
 
         # If there's a DistroSeries, it should be the distro's
@@ -404,7 +404,7 @@ class TranslationsPerson:
         DistroJoin = LeftJoin(Distribution, distrojoin_conditions)
 
         ProductSeriesJoin = LeftJoin(
-            ProductSeries, ProductSeries.id == POTemplate.productseriesID
+            ProductSeries, ProductSeries.id == POTemplate.productseries_id
         )
         ProductJoin = LeftJoin(
             Product,

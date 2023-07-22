@@ -354,7 +354,7 @@ this document:
     ...     status=CveStatus.ENTRY,
     ... )
     >>> from lp.bugs.model.bug import Bug
-    >>> bug = Bug.get(1)
+    >>> bug = IStore(Bug).get(Bug, 1)
     >>> bugcve = cve.linkBug(bug)  # note this creates the event and notifies
 
     >>> latest_notification = (

@@ -23,6 +23,8 @@ Contents
 
 .. list-table::
 
+   * - :doc:`tutorials/index`
+     - A hands-on introduction to Launchpad for new developers
    * - :doc:`how-to/index`
      - Step-by-step guides covering key operations and common tasks
    * - :doc:`explanation/index`
@@ -68,6 +70,7 @@ Thinking about using Launchpad for your next project?  `Get in touch!
    :hidden:
 
    Home <self>
+   tutorials/index
    how-to/index
    explanation/index
    reference/index

@@ -14,6 +14,7 @@ succeed and the ones that failed with the error associated.
     >>> import transaction
     >>> from zope.component import getUtility
     >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing.faketransaction import FakeTransaction
     >>> from lp.testing.mail_helpers import pop_notifications, print_emails
     >>> from lp.translations.scripts.po_export_queue import ExportResult
@@ -27,7 +28,7 @@ To note error messages with the failure file, it should happen inside an
 exception handling so we can get the exception error:
 
     >>> from lp.translations.model.potemplate import POTemplate
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> pofile = potemplate.getPOFileByLang("es")
     >>> personset = getUtility(IPersonSet)
     >>> carlos = personset.getByName("carlos")

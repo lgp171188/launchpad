@@ -12,16 +12,16 @@ __all__ = [
     "TranslationTemplatesCollection",
 ]
 
-import datetime
 import logging
 import operator
 import os
+from datetime import datetime, timezone
 
 from psycopg2.extensions import TransactionRollbackError
 from storm.expr import SQL, And, Desc, Join, LeftJoin, Or
 from storm.info import ClassAlias
-from storm.properties import Int
-from storm.references import ReferenceSet
+from storm.properties import Bool, DateTime, Int, Unicode
+from storm.references import Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getAdapter, getUtility
 from zope.interface import implementer
@@ -35,17 +35,12 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import load_related
 from lp.services.database.collection import Collection
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, flush_database_updates
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
+from lp.services.database.sqlbase import flush_database_updates
+from lp.services.database.stormbase import StormBase
+from lp.services.database.stormexpr import RegexpMatch
 from lp.services.helpers import shortlist
 from lp.services.mail.helpers import get_email_template
 from lp.services.propertycache import cachedproperty
@@ -187,77 +182,87 @@ def get_pofiles_for(potemplates, language):
 
 
 @implementer(IPOTemplate)
-class POTemplate(SQLBase, RosettaStats):
-    _table = "POTemplate"
+class POTemplate(StormBase, RosettaStats):
+    __storm_table__ = "POTemplate"
 
-    productseries = ForeignKey(
-        foreignKey="ProductSeries",
-        dbName="productseries",
-        notNull=False,
-        default=None,
+    id = Int(primary=True)
+    productseries_id = Int(name="productseries", allow_none=True, default=None)
+    productseries = Reference(productseries_id, "ProductSeries.id")
+    priority = Int(name="priority", allow_none=False, default=DEFAULT)
+    name = Unicode(name="name", allow_none=False)
+    translation_domain = Unicode(name="translation_domain", allow_none=False)
+    description = Unicode(name="description", allow_none=True, default=None)
+    copyright = Unicode(name="copyright", allow_none=True, default=None)
+    datecreated = DateTime(
+        name="datecreated", default=DEFAULT, tzinfo=timezone.utc
     )
-    priority = IntCol(dbName="priority", notNull=True, default=DEFAULT)
-    name = StringCol(dbName="name", notNull=True)
-    translation_domain = StringCol(dbName="translation_domain", notNull=True)
-    description = StringCol(dbName="description", notNull=False, default=None)
-    copyright = StringCol(dbName="copyright", notNull=False, default=None)
-    datecreated = UtcDateTimeCol(dbName="datecreated", default=DEFAULT)
-    path = StringCol(dbName="path", notNull=True)
-    source_file = ForeignKey(
-        foreignKey="LibraryFileAlias",
-        dbName="source_file",
-        notNull=False,
-        default=None,
-    )
+    path = Unicode(name="path", allow_none=False)
+    source_file_id = Int(name="source_file", allow_none=True, default=None)
+    source_file = Reference(source_file_id, "LibraryFileAlias.id")
     source_file_format = DBEnum(
         name="source_file_format",
         enum=TranslationFileFormat,
         default=TranslationFileFormat.PO,
         allow_none=False,
     )
-    iscurrent = BoolCol(dbName="iscurrent", notNull=True, default=True)
-    messagecount = IntCol(dbName="messagecount", notNull=True, default=0)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    iscurrent = Bool(name="iscurrent", allow_none=False, default=True)
+    messagecount = Int(name="messagecount", allow_none=False, default=0)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="sourcepackagename",
-        notNull=False,
-        default=None,
+    owner = Reference(owner_id, "Person.id")
+    sourcepackagename_id = Int(
+        name="sourcepackagename", allow_none=True, default=None
     )
-    from_sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="from_sourcepackagename",
-        notNull=False,
-        default=None,
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    from_sourcepackagename_id = Int(
+        name="from_sourcepackagename", allow_none=True, default=None
     )
-    sourcepackageversion = StringCol(
-        dbName="sourcepackageversion", notNull=False, default=None
+    from_sourcepackagename = Reference(
+        from_sourcepackagename_id, "SourcePackageName.id"
     )
-    distroseries = ForeignKey(
-        foreignKey="DistroSeries",
-        dbName="distroseries",
-        notNull=False,
-        default=None,
+    sourcepackageversion = Unicode(
+        name="sourcepackageversion", allow_none=True, default=None
     )
-    header = StringCol(dbName="header", notNull=True)
-    languagepack = BoolCol(dbName="languagepack", notNull=True, default=False)
-    date_last_updated = UtcDateTimeCol(
-        dbName="date_last_updated", default=DEFAULT
+    distroseries_id = Int(name="distroseries", allow_none=True, default=None)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    header = Unicode(name="header", allow_none=False)
+    languagepack = Bool(name="languagepack", allow_none=False, default=False)
+    date_last_updated = DateTime(
+        name="date_last_updated", default=DEFAULT, tzinfo=timezone.utc
     )
 
     # joins
-    pofiles = ReferenceSet("<primary key>", "POFile.potemplate_id")
+    pofiles = ReferenceSet("id", "POFile.potemplate_id")
 
     # In-memory cache: maps language_code to list of POFiles
     # translating this template to that language.
     _cached_pofiles_by_language = None
 
     _uses_english_msgids = None
+
+    def __init__(
+        self,
+        name,
+        translation_domain,
+        path,
+        owner,
+        header,
+        productseries=None,
+        distroseries=None,
+        sourcepackagename=None,
+        languagepack=False,
+    ):
+        super().__init__()
+        self.name = name
+        self.translation_domain = translation_domain
+        self.path = path
+        self.owner = owner
+        self.header = header
+        self.productseries = productseries
+        self.distroseries = distroseries
+        self.sourcepackagename = sourcepackagename
+        self.languagepack = languagepack
 
     @cachedproperty
     def _sharing_ids(self):
@@ -415,7 +420,7 @@ class POTemplate(SQLBase, RosettaStats):
                 .find(
                     POTemplate,
                     POTemplate.id != self.id,
-                    POTemplate.productseriesID == self.productseries.id,
+                    POTemplate.productseries == self.productseries,
                     POTemplate.iscurrent,
                 )
                 .order_by(POTemplate.name)
@@ -429,9 +434,8 @@ class POTemplate(SQLBase, RosettaStats):
                 .find(
                     POTemplate,
                     POTemplate.id != self.id,
-                    POTemplate.distroseriesID == self.distroseries.id,
-                    POTemplate.sourcepackagenameID
-                    == self.sourcepackagename.id,
+                    POTemplate.distroseries == self.distroseries,
+                    POTemplate.sourcepackagename == self.sourcepackagename,
                     POTemplate.iscurrent,
                 )
                 .order_by(POTemplate.name)
@@ -852,7 +856,7 @@ class POTemplate(SQLBase, RosettaStats):
         # Since we have no PO file for this language yet, create one.
         language = self._lookupLanguage(language_code)
 
-        now = datetime.datetime.now()
+        now = datetime.now()
         data = {
             "year": now.year,
             "languagename": language.englishname,
@@ -1142,7 +1146,7 @@ class POTemplate(SQLBase, RosettaStats):
     @property
     def translation_side(self):
         """See `IPOTemplate`."""
-        if self.productseriesID is not None:
+        if self.productseries_id is not None:
             return TranslationSide.UPSTREAM
         else:
             return TranslationSide.UBUNTU
@@ -1192,22 +1196,21 @@ class POTemplateSubset:
 
         # Construct the base clauses.
         if productseries is not None:
-            self.clauses.append(POTemplate.productseriesID == productseries.id)
+            self.clauses.append(POTemplate.productseries == productseries)
             if ordered_by_names:
                 self.orderby = [POTemplate.name]
         else:
-            self.clauses.append(POTemplate.distroseriesID == distroseries.id)
+            self.clauses.append(POTemplate.distroseries == distroseries)
             if ordered_by_names:
                 self.orderby = [SourcePackageName.name, POTemplate.name]
             if from_sourcepackagename is not None:
                 self.clauses.append(
-                    POTemplate.from_sourcepackagenameID
-                    == from_sourcepackagename.id
+                    POTemplate.from_sourcepackagename == from_sourcepackagename
                 )
                 self.sourcepackagename = from_sourcepackagename
             elif sourcepackagename is not None:
                 self.clauses.append(
-                    POTemplate.sourcepackagename == sourcepackagename.id
+                    POTemplate.sourcepackagename == sourcepackagename
                 )
             else:
                 # Select all POTemplates in a Distroseries.
@@ -1235,7 +1238,7 @@ class POTemplateSubset:
                     store.find(
                         (POTemplate, SourcePackageName),
                         (
-                            POTemplate.sourcepackagenameID
+                            POTemplate.sourcepackagename_id
                             == SourcePackageName.id
                         ),
                         condition,
@@ -1319,7 +1322,7 @@ class POTemplateSubset:
             )
         header_params = {
             "origin": "PACKAGE VERSION",
-            "templatedate": datetime.datetime.now(),
+            "templatedate": datetime.now(),
             "languagename": "LANGUAGE",
             "languagecode": "LL",
         }
@@ -1527,9 +1530,9 @@ class POTemplateSet:
         from lp.registry.model.product import Product
         from lp.registry.model.productseries import ProductSeries
 
-        pses = load_related(ProductSeries, templates, ["productseriesID"])
+        pses = load_related(ProductSeries, templates, ["productseries_id"])
         load_related(Product, pses, ["productID"])
-        load_related(SourcePackageName, templates, ["sourcepackagenameID"])
+        load_related(SourcePackageName, templates, ["sourcepackagename_id"])
 
     def wipeSuggestivePOTemplatesCache(self):
         """See `IPOTemplateSet`."""
@@ -1544,7 +1547,7 @@ class POTemplateSet:
         rowcount = (
             IPrimaryStore(POTemplate)
             .execute(
-                "DELETE FROM SuggestivePOTemplate " "WHERE potemplate = ?",
+                "DELETE FROM SuggestivePOTemplate WHERE potemplate = ?",
                 params=(potemplate.id,),
             )
             .rowcount
@@ -1697,10 +1700,10 @@ class POTemplateSharingSubset:
                 POTemplate,
                 And(
                     Or(
-                        POTemplate.productseriesID == ProductSeries.id,
+                        POTemplate.productseries_id == ProductSeries.id,
                         And(
-                            POTemplate.distroseriesID == DistroSeries.id,
-                            POTemplate.sourcepackagenameID
+                            POTemplate.distroseries_id == DistroSeries.id,
+                            POTemplate.sourcepackagename_id
                             == Location.sourcepackagename_id,
                         ),
                     ),
@@ -1722,9 +1725,7 @@ class POTemplateSharingSubset:
         if name_pattern is None:
             templatename_clause = True
         else:
-            templatename_clause = SQL(
-                "POTemplate.name ~ ?", params=(name_pattern,)
-            )
+            templatename_clause = RegexpMatch(POTemplate.name, name_pattern)
 
         return self._queryPOTemplates(templatename_clause)
 
@@ -1837,15 +1838,13 @@ class TranslationTemplatesCollection(Collection):
     starting_table = POTemplate
 
     def restrictProductSeries(self, productseries):
-        return self.refine(POTemplate.productseriesID == productseries.id)
+        return self.refine(POTemplate.productseries == productseries)
 
     def restrictDistroSeries(self, distroseries):
-        return self.refine(POTemplate.distroseriesID == distroseries.id)
+        return self.refine(POTemplate.distroseries == distroseries)
 
     def restrictSourcePackageName(self, sourcepackagename):
-        return self.refine(
-            POTemplate.sourcepackagenameID == sourcepackagename.id
-        )
+        return self.refine(POTemplate.sourcepackagename == sourcepackagename)
 
     def restrictCurrent(self, current_value=True):
         """Select based on `POTemplate.iscurrent`.

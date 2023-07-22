@@ -222,7 +222,7 @@ class ProjectGroup(
         origin = [
             Product,
             Join(ProductSeries, Product.id == ProductSeries.productID),
-            Join(POTemplate, ProductSeries.id == POTemplate.productseriesID),
+            Join(POTemplate, ProductSeries.id == POTemplate.productseries_id),
         ]
         return (
             store.using(*origin)

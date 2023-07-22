@@ -252,7 +252,7 @@ class TestLoaders(TestCaseWithFactory):
         expected = {bug.owner for bug in owning_objects}
         self.assertEqual(
             expected,
-            set(bulk.load_related(Person, owning_objects, ["ownerID"])),
+            set(bulk.load_related(Person, owning_objects, ["owner_id"])),
         )
 
     def test_load_referencing(self):

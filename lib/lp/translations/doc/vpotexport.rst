@@ -3,11 +3,12 @@ Template export sets
 
 POTemplate.getTranslationRows serialises a template's rows for export.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.potemplate import POTemplate
 
 We need a template to export, for instance, the one with id = 1.
 
-    >>> potemplate = POTemplate.get(1)
+    >>> potemplate = IStore(POTemplate).get(POTemplate, 1)
     >>> vpot_rows = list(potemplate.getTranslationRows())
 
 There are rows.

@@ -13,6 +13,7 @@ import re
 import socket
 from datetime import datetime, timedelta, timezone
 from fnmatch import fnmatch
+from typing import List
 from urllib.parse import urlsplit
 
 import iso8601
@@ -332,7 +333,24 @@ class WebhookSet:
             )
         )
 
-    def trigger(self, target, event_type, payload, context=None):
+    def _checkGitRefs(self, webhook: Webhook, git_refs: List[str]):
+        """Check if any of the `git_refs` matches the webhook's
+        `git_ref_pattern`.
+
+        :return: True if any of the git_refs match, if there are no git_refs,
+        or if there is no git_ref_pattern.
+            otherwise False.
+        """
+        if not webhook.git_ref_pattern or git_refs is None:
+            return True
+        return any(
+            check_webhook_git_ref_pattern(webhook, git_ref)
+            for git_ref in git_refs
+        )
+
+    def trigger(
+        self, target, event_type, payload, context=None, git_refs=None
+    ):
         if context is None:
             context = target
         user = removeSecurityProxy(target).owner
@@ -342,7 +360,11 @@ class WebhookSet:
         # each webhook, but the set should be small and we'd have to defer
         # the triggering itself to a job to fix it.
         for webhook in self.findByTarget(target):
-            if webhook.active and event_type in webhook.event_types:
+            if (
+                webhook.active
+                and event_type in webhook.event_types
+                and self._checkGitRefs(webhook, git_refs)
+            ):
                 WebhookDeliveryJob.create(webhook, event_type, payload)
 
 

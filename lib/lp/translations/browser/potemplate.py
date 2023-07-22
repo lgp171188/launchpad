@@ -1027,7 +1027,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
                 And(
                     Packaging.distroseries == self.context.id,
                     Packaging.sourcepackagename
-                    == POTemplate.sourcepackagenameID,
+                    == POTemplate.sourcepackagename_id,
                 ),
             )
             .joinOuter(
@@ -1046,13 +1046,13 @@ class BaseSeriesTemplatesView(LaunchpadView):
             .joinOuter(
                 OtherTemplate,
                 And(
-                    OtherTemplate.productseriesID == ProductSeries.id,
+                    OtherTemplate.productseries_id == ProductSeries.id,
                     OtherTemplate.name == POTemplate.name,
                 ),
             )
             .joinInner(
                 SourcePackageName,
-                SourcePackageName.id == POTemplate.sourcepackagenameID,
+                SourcePackageName.id == POTemplate.sourcepackagename_id,
             )
         )
 

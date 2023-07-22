@@ -14,7 +14,8 @@ action:
     >>> from lp.bugs.model.bug import Bug
     >>> from lp.registry.model.distribution import Distribution
     >>> from lp.registry.model.product import Product
-    >>> bug_one = Bug.get(1)
+    >>> from lp.services.database.interfaces import IStore
+    >>> bug_one = IStore(Bug).get(Bug, 1)
     >>> recipients = bug_one.getBugNotificationRecipients()
 
 The instance of BugNotificationRecipients we get back correctly
@@ -124,7 +125,7 @@ additional step is involved. A BugNotificationRecipients instance is
 created, annotating that it represents a master bug (of which we are a
 duplicate of).
 
-    >>> bug_two = Bug.get(2)
+    >>> bug_two = IStore(Bug).get(Bug, 2)
     >>> recipients = BugNotificationRecipients(duplicateof=bug_two)
 
     >>> foo_bar = personset.getByEmail("foo.bar@canonical.com")

@@ -55,7 +55,7 @@ class BaseSeriesLanguageView(LaunchpadView):
             load_related(
                 SourcePackageName,
                 self.batchnav.currentBatch(),
-                ["sourcepackagenameID"],
+                ["sourcepackagename_id"],
             )
         else:
             self.batchnav = BatchNavigator(self.context.pofiles, self.request)
