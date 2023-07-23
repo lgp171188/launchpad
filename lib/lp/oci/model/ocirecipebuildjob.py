@@ -213,6 +213,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
             )
             job = cls(oci_build_job)
             job.celeryRunOnCommit()
+            IStore(OCIRecipeBuildJob).flush()
             del get_property_cache(build).last_registry_upload_job
             upload_status = build.registry_upload_status
             if upload_status != before_modification.registry_upload_status:

@@ -148,6 +148,7 @@ class PersonTransferJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         )
         derived = cls(job)
         derived.celeryRunOnCommit()
+        IStore(PersonTransferJob).flush()
         return derived
 
     @classmethod

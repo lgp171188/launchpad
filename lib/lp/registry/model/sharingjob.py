@@ -184,6 +184,7 @@ class SharingJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
         base_job = SharingJob(cls.class_job_type, pillar, grantee, metadata)
         job = cls(base_job)
         job.celeryRunOnCommit()
+        IStore(SharingJob).flush()
         return job
 
     @classmethod

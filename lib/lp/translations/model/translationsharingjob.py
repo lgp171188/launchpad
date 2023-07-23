@@ -173,6 +173,7 @@ class TranslationSharingJobDerived(metaclass=EnumeratedSubclass):
         )
         derived = cls(context)
         derived.celeryRunOnCommit()
+        IStore(TranslationSharingJob).flush()
         return derived
 
     @classmethod

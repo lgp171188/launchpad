@@ -100,17 +100,17 @@ class TestJob(TestCaseWithFactory):
 
     def test_start_when_completed_is_invalid(self):
         """When a job is completed, attempting to start is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
+        job = Job(status=JobStatus.COMPLETED)
         self.assertRaises(InvalidTransition, job.start)
 
     def test_start_when_failed_is_invalid(self):
         """When a job is failed, attempting to start is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.start)
 
     def test_start_when_running_is_invalid(self):
         """When a job is running, attempting to start is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.start)
 
     def test_complete(self):
@@ -118,7 +118,7 @@ class TestJob(TestCaseWithFactory):
 
         It should set date_finished and set the job status to COMPLETED.
         """
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         self.assertEqual(None, job.date_finished)
         job.complete()
         self.assertNotEqual(None, job.date_finished)
@@ -126,17 +126,17 @@ class TestJob(TestCaseWithFactory):
 
     def test_complete_when_waiting_is_invalid(self):
         """When a job is waiting, attempting to complete is invalid."""
-        job = Job(_status=JobStatus.WAITING)
+        job = Job(status=JobStatus.WAITING)
         self.assertRaises(InvalidTransition, job.complete)
 
     def test_complete_when_completed_is_invalid(self):
         """When a job is completed, attempting to complete is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
+        job = Job(status=JobStatus.COMPLETED)
         self.assertRaises(InvalidTransition, job.complete)
 
     def test_complete_when_failed_is_invalid(self):
         """When a job is failed, attempting to complete is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.complete)
 
     def test_fail(self):
@@ -144,7 +144,7 @@ class TestJob(TestCaseWithFactory):
 
         It should set date_finished and set the job status to FAILED.
         """
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         self.assertEqual(None, job.date_finished)
         job.fail()
         self.assertNotEqual(None, job.date_finished)
@@ -152,17 +152,17 @@ class TestJob(TestCaseWithFactory):
 
     def test_fail_when_waiting_is_invalid(self):
         """When a job is waiting, attempting to fail is invalid."""
-        job = Job(_status=JobStatus.WAITING)
+        job = Job(status=JobStatus.WAITING)
         self.assertRaises(InvalidTransition, job.fail)
 
     def test_fail_when_completed_is_invalid(self):
         """When a job is completed, attempting to fail is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
+        job = Job(status=JobStatus.COMPLETED)
         self.assertRaises(InvalidTransition, job.fail)
 
     def test_fail_when_failed_is_invalid(self):
         """When a job is failed, attempting to fail is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.fail)
 
     def test_queue(self):
@@ -170,7 +170,7 @@ class TestJob(TestCaseWithFactory):
 
         It should set date_finished, and set status to WAITING.
         """
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         self.assertEqual(None, job.date_finished)
         job.queue()
         self.assertNotEqual(None, job.date_finished)
@@ -178,76 +178,76 @@ class TestJob(TestCaseWithFactory):
 
     def test_queue_clears_lease_expires(self):
         """Queueing a job releases its lease."""
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         job.lease_expires = UTC_NOW
         job.queue()
         self.assertIsNone(job.lease_expires)
 
     def test_suspend(self):
         """A job that is in the WAITING state can be suspended."""
-        job = Job(_status=JobStatus.WAITING)
+        job = Job(status=JobStatus.WAITING)
         job.suspend()
         self.assertEqual(job.status, JobStatus.SUSPENDED)
 
     def test_suspend_when_running(self):
         """When a job is running, attempting to suspend is valid."""
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         job.suspend()
         self.assertEqual(JobStatus.SUSPENDED, job.status)
 
     def test_suspend_when_completed(self):
         """When a job is completed, attempting to suspend is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
+        job = Job(status=JobStatus.COMPLETED)
         self.assertRaises(InvalidTransition, job.suspend)
 
     def test_suspend_when_failed(self):
         """When a job is failed, attempting to suspend is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.suspend)
 
     def test_resume(self):
         """A job that is suspended can be resumed."""
-        job = Job(_status=JobStatus.SUSPENDED)
+        job = Job(status=JobStatus.SUSPENDED)
         job.resume()
         self.assertEqual(job.status, JobStatus.WAITING)
 
     def test_resume_clears_lease_expires(self):
         """A job that resumes should null out the lease_expires."""
-        job = Job(_status=JobStatus.SUSPENDED)
+        job = Job(status=JobStatus.SUSPENDED)
         job.lease_expires = UTC_NOW
         job.resume()
         self.assertIsNone(job.lease_expires)
 
     def test_resume_when_running(self):
         """When a job is running, attempting to resume is invalid."""
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         self.assertRaises(InvalidTransition, job.resume)
 
     def test_resume_when_completed(self):
         """When a job is completed, attempting to resume is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
+        job = Job(status=JobStatus.COMPLETED)
         self.assertRaises(InvalidTransition, job.resume)
 
     def test_resume_when_failed(self):
         """When a job is failed, attempting to resume is invalid."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertRaises(InvalidTransition, job.resume)
 
     def test_is_pending(self):
         """is_pending is True when the job can possibly complete."""
         for status in JobStatus.items:
-            job = Job(_status=status)
+            job = Job(status=status)
             self.assertEqual(status in Job.PENDING_STATUSES, job.is_pending)
 
     def test_is_runnable_when_failed(self):
         """is_runnable is false when the job is not WAITING."""
-        job = Job(_status=JobStatus.FAILED)
+        job = Job(status=JobStatus.FAILED)
         self.assertFalse(job.is_runnable)
 
     def test_is_runnable_when_scheduled_in_future(self):
         """is_runnable is false when the job is scheduled in the future."""
         job = Job(
-            _status=JobStatus.WAITING,
+            status=JobStatus.WAITING,
             scheduled_start=datetime.now(timezone.utc) + timedelta(seconds=60),
         )
         self.assertFalse(job.is_runnable)
@@ -255,14 +255,14 @@ class TestJob(TestCaseWithFactory):
     def test_is_runnable_when_scheduled_in_past(self):
         """is_runnable is true when the job is scheduled in the past."""
         job = Job(
-            _status=JobStatus.WAITING,
+            status=JobStatus.WAITING,
             scheduled_start=datetime.now(timezone.utc) - timedelta(seconds=60),
         )
         self.assertTrue(job.is_runnable)
 
     def test_is_runnable_when_not_scheduled(self):
         """is_runnable is true when no explicit schedule has been requested."""
-        job = Job(_status=JobStatus.WAITING)
+        job = Job(status=JobStatus.WAITING)
         self.assertTrue(job.is_runnable)
 
     def test_start_manages_transactions(self):
@@ -387,6 +387,7 @@ class TestReadiness(TestCase):
         """Job.ready_jobs should include new jobs."""
         preexisting = self._sampleData()
         job = Job()
+        Store.of(job).flush()
         self.assertEqual(
             preexisting + [(job.id,)],
             list(Store.of(job).execute(Job.ready_jobs)),
@@ -395,7 +396,7 @@ class TestReadiness(TestCase):
     def test_ready_jobs_started(self):
         """Job.ready_jobs should not jobs that have been started."""
         preexisting = self._sampleData()
-        job = Job(_status=JobStatus.RUNNING)
+        job = Job(status=JobStatus.RUNNING)
         self.assertEqual(
             preexisting, list(Store.of(job).execute(Job.ready_jobs))
         )
@@ -405,6 +406,7 @@ class TestReadiness(TestCase):
         preexisting = self._sampleData()
         UNIX_EPOCH = datetime.fromtimestamp(0, timezone.utc)
         job = Job(lease_expires=UNIX_EPOCH)
+        Store.of(job).flush()
         self.assertEqual(
             preexisting + [(job.id,)],
             list(Store.of(job).execute(Job.ready_jobs)),

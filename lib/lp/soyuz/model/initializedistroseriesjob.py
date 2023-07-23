@@ -113,6 +113,7 @@ class InitializeDistroSeriesJob(DistributionJobDerived):
         store.add(distribution_job)
         derived_job = cls(distribution_job)
         derived_job.celeryRunOnCommit()
+        IStore(DistributionJob).flush()
         return derived_job
 
     @classmethod

@@ -193,6 +193,7 @@ class CharmhubUploadJob(CharmRecipeBuildJobDerived):
             )
             job = cls(charm_recipe_build_job)
             job.celeryRunOnCommit()
+            IStore(CharmRecipeBuildJob).flush()
             del get_property_cache(build).last_store_upload_job
             upload_status = build.store_upload_status
             if upload_status != before_modification.store_upload_status:
