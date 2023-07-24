@@ -62,7 +62,7 @@ from lp.registry.interfaces.product import IProduct, IProductSet, NoSuchProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackage import SourcePackage
-from lp.services.database.constants import UTC_NOW
+from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
 
 BRANCH_POLICY_ALLOWED_TYPES = {
@@ -107,11 +107,10 @@ class _BaseBranchNamespace:
         name,
         registrant,
         url=None,
-        title=None,
         lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
-        summary=None,
+        description=None,
         whiteboard=None,
-        date_created=None,
+        date_created=DEFAULT,
         branch_format=None,
         repository_format=None,
         control_format=None,
@@ -121,21 +120,12 @@ class _BaseBranchNamespace:
         self.validateRegistrant(registrant)
         self.validateBranchName(name)
 
-        if date_created is None:
-            date_created = UTC_NOW
-
         # Run any necessary data massage on the branch URL.
         if url is not None:
             url = IBranch["url"].normalize(url)
 
         product = getattr(self, "product", None)
         sourcepackage = getattr(self, "sourcepackage", None)
-        if sourcepackage is None:
-            distroseries = None
-            sourcepackagename = None
-        else:
-            distroseries = sourcepackage.distroseries
-            sourcepackagename = sourcepackage.sourcepackagename
 
         information_type = self.getDefaultInformationType(registrant)
         if information_type is None:
@@ -146,10 +136,10 @@ class _BaseBranchNamespace:
             name=name,
             owner=self.owner,
             product=product,
+            sourcepackage=sourcepackage,
             url=url,
-            title=title,
             lifecycle_status=lifecycle_status,
-            summary=summary,
+            description=description,
             whiteboard=whiteboard,
             information_type=information_type,
             date_created=date_created,
@@ -158,8 +148,6 @@ class _BaseBranchNamespace:
             branch_format=branch_format,
             repository_format=repository_format,
             control_format=control_format,
-            distroseries=distroseries,
-            sourcepackagename=sourcepackagename,
         )
         branch._reconcileAccess()
 

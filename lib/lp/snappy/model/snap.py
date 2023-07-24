@@ -1851,7 +1851,7 @@ class SnapSet:
         # Add branch/repository owners to the list of pre-loaded persons.
         # We need the target repository owner as well; unlike branches,
         # repository unique names aren't trigger-maintained.
-        person_ids.update(branch.ownerID for branch in branches)
+        person_ids.update(branch.owner_id for branch in branches)
         person_ids.update(repository.owner_id for repository in repositories)
 
         list(

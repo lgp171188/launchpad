@@ -235,7 +235,6 @@ it has been mirrored:
     ...     name="mirrored",
     ...     owner=no_priv,
     ...     url="http://example.com/mirrored",
-    ...     title="Disabled branch",
     ... )
     >>> branch.last_mirrored = datetime(
     ...     year=2007, month=10, day=1, tzinfo=timezone.utc
@@ -289,7 +288,6 @@ If next_mirror_time is NULL, then mirroring of the branch is disabled.
     ...     name="mirror-disabled",
     ...     owner=no_priv,
     ...     url="http://example.com/disabled",
-    ...     title="Disabled branch",
     ... )
     >>> branch.next_mirror_time = None
     >>> flush_database_updates()

@@ -127,7 +127,7 @@ class GenericBranchCollection:
     def ownerCounts(self):
         """See `IBranchCollection`."""
         is_team = Person.teamowner != None
-        branch_owners = self._getBranchSelect((Branch.ownerID,))
+        branch_owners = self._getBranchSelect((Branch.owner_id,))
         counts = dict(
             self.store.find(
                 (is_team, Count(Person.id)), Person.id.is_in(branch_owners)
@@ -245,9 +245,9 @@ class GenericBranchCollection:
     def preloadDataForBranches(branches):
         """Preload branches' cached associated targets, product series, and
         suite source packages."""
-        load_related(SourcePackageName, branches, ["sourcepackagenameID"])
-        load_related(DistroSeries, branches, ["distroseriesID"])
-        load_related(Product, branches, ["productID"])
+        load_related(SourcePackageName, branches, ["sourcepackagename_id"])
+        load_related(DistroSeries, branches, ["distroseries_id"])
+        load_related(Product, branches, ["product_id"])
         caches = {branch.id: get_property_cache(branch) for branch in branches}
         branch_ids = caches.keys()
         for cache in caches.values():
@@ -259,9 +259,9 @@ class GenericBranchCollection:
         from lp.registry.model.productseries import ProductSeries
 
         for productseries in IStore(ProductSeries).find(
-            ProductSeries, ProductSeries.branchID.is_in(branch_ids)
+            ProductSeries, ProductSeries.branch_id.is_in(branch_ids)
         ):
-            cache = caches[productseries.branchID]
+            cache = caches[productseries.branch_id]
             cache._associatedProductSeries.append(productseries)
         # associatedSuiteSourcePackages
         series_set = getUtility(IFindOfficialBranchLinks)
@@ -346,7 +346,7 @@ class GenericBranchCollection:
             # So far have only needed the persons for their canonical_url - no
             # need for validity etc in the /branches API call.
             load_related(
-                Person, rows, ["ownerID", "registrantID", "reviewerID"]
+                Person, rows, ["owner_id", "registrant_id", "reviewer_id"]
             )
             load_referencing(BugBranch, rows, ["branch_id"])
 
@@ -667,7 +667,7 @@ class GenericBranchCollection:
         # BranchCollection conceptual model, but we're not quite sure how to
         # fix it just yet.  Perhaps when bug 337494 is fixed, we'd be able to
         # sensibly be able to move this method to another utility class.
-        branch_query = self._getBranchSelect((Branch.ownerID,))
+        branch_query = self._getBranchSelect((Branch.owner_id,))
         return self.store.find(
             Person,
             Person.id == TeamParticipation.teamID,
@@ -754,7 +754,7 @@ class GenericBranchCollection:
         return self._filterBy(
             [Person.membership_policy.is_in(EXCLUSIVE_TEAM_POLICY)],
             table=Person,
-            join=Join(Person, Branch.ownerID == Person.id),
+            join=Join(Person, Branch.owner_id == Person.id),
         )
 
     def isSeries(self):
@@ -763,9 +763,9 @@ class GenericBranchCollection:
         from lp.registry.model.productseries import ProductSeries
 
         return self._filterBy(
-            [Branch.id == ProductSeries.branchID],
+            [Branch.id == ProductSeries.branch_id],
             table=ProductSeries,
-            join=Join(ProductSeries, Branch.id == ProductSeries.branchID),
+            join=Join(ProductSeries, Branch.id == ProductSeries.branch_id),
         )
 
     def ownedBy(self, person):
@@ -778,7 +778,7 @@ class GenericBranchCollection:
             TeamParticipation.teamID,
             where=TeamParticipation.personID == person.id,
         )
-        return self._filterBy([In(Branch.ownerID, subquery)], symmetric=False)
+        return self._filterBy([In(Branch.owner_id, subquery)], symmetric=False)
 
     def registeredBy(self, person):
         """See `IBranchCollection`."""

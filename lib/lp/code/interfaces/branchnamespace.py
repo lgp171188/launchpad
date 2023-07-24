@@ -32,9 +32,8 @@ class IBranchNamespace(Interface):
         name,
         registrant,
         url=None,
-        title=None,
         lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
-        summary=None,
+        description=None,
         whiteboard=None,
     ):
         """Create and return an `IBranch` in this namespace."""
