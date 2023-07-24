@@ -365,7 +365,7 @@ class DistributionSourcePackage(
         store = Store.of(self.sourcepackagename)
         condition = And(
             Packaging.sourcepackagename == self.sourcepackagename,
-            Packaging.distroseriesID == DistroSeries.id,
+            Packaging.distroseries_id == DistroSeries.id,
             DistroSeries.distribution == self.distribution,
         )
         result = store.find(Packaging, condition)

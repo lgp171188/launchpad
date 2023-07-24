@@ -1610,7 +1610,7 @@ class Distribution(
                     1,
                     tables=[Packaging],
                     where=(
-                        Packaging.sourcepackagenameID == SourcePackageName.id
+                        Packaging.sourcepackagename_id == SourcePackageName.id
                     ),
                 )
             )

@@ -3,7 +3,10 @@
 
 __all__ = ["Packaging", "PackagingUtil"]
 
+from datetime import timezone
+
 from lazr.lifecycle.event import ObjectCreatedEvent, ObjectDeletedEvent
+from storm.locals import DateTime, Int, Reference
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -16,39 +19,36 @@ from lp.registry.interfaces.packaging import (
     PackagingType,
 )
 from lp.registry.interfaces.person import validate_public_person
-from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.constants import UTC_NOW
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IPackaging)
-class Packaging(SQLBase):
+class Packaging(StormBase):
     """A Packaging relating a SourcePackage and a Product."""
 
-    _table = "Packaging"
+    __storm_table__ = "Packaging"
 
-    productseries = ForeignKey(
-        foreignKey="ProductSeries", dbName="productseries", notNull=True
-    )
-    sourcepackagename = ForeignKey(
-        foreignKey="SourcePackageName",
-        dbName="sourcepackagename",
-        notNull=True,
-    )
-    distroseries = ForeignKey(
-        foreignKey="DistroSeries", dbName="distroseries", notNull=True
-    )
+    id = Int(primary=True)
+    productseries_id = Int(name="productseries", allow_none=False)
+    productseries = Reference(productseries_id, "ProductSeries.id")
+    sourcepackagename_id = Int(name="sourcepackagename", allow_none=False)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
     packaging = DBEnum(name="packaging", allow_none=False, enum=PackagingType)
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-        default=DEFAULT,
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
+    owner_id = Int(
+        name="owner",
+        validator=validate_public_person,
+        allow_none=True,
+        default=None,
+    )
+    owner = Reference(owner_id, "Person.id")
 
     @property
     def sourcepackage(self):
@@ -59,13 +59,25 @@ class Packaging(SQLBase):
             sourcepackagename=self.sourcepackagename,
         )
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        productseries,
+        sourcepackagename,
+        distroseries,
+        packaging,
+        owner=None,
+    ):
+        super().__init__()
+        self.productseries = productseries
+        self.sourcepackagename = sourcepackagename
+        self.distroseries = distroseries
+        self.packaging = packaging
+        self.owner = owner
         notify(ObjectCreatedEvent(self))
 
     def destroySelf(self):
         notify(ObjectDeletedEvent(self))
-        super().destroySelf()
+        IStore(self).remove(self)
 
 
 @implementer(IPackagingUtil)
@@ -98,13 +110,15 @@ class PackagingUtil:
                 "Only Public project series can be packaged, not %s."
                 % info_type.title
             )
-        return Packaging(
+        packaging = Packaging(
             productseries=productseries,
             sourcepackagename=sourcepackagename,
             distroseries=distroseries,
             packaging=packaging,
             owner=owner,
         )
+        IStore(packaging).flush()
+        return packaging
 
     def get(self, productseries, sourcepackagename, distroseries):
         criteria = {
@@ -113,7 +127,7 @@ class PackagingUtil:
         }
         if productseries is not None:
             criteria["productseries"] = productseries
-        return Packaging.selectOneBy(**criteria)
+        return IStore(Packaging).find(Packaging, **criteria).one()
 
     def deletePackaging(self, productseries, sourcepackagename, distroseries):
         """See `IPackaging`."""
