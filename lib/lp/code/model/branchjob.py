@@ -867,6 +867,7 @@ class RosettaUploadJob(BranchJobDerived):
             )
             job = cls(branch_job)
             job.celeryRunOnCommit()
+            IStore(BranchJob).flush()
             return job
         else:
             return None
@@ -1136,6 +1137,7 @@ class BranchModifiedMailJob(BranchJobDerived):
         branch_job = BranchJob(branch, cls.class_job_type, metadata)
         job = cls(branch_job)
         job.celeryRunOnCommit()
+        IStore(BranchJob).flush()
         return job
 
     @property

@@ -57,6 +57,7 @@ class NullJob(BaseRunnableJob):
     ):
         self.message = completion_message
         self.job = Job()
+        IStore(Job).flush()
         self.oops_recipients = oops_recipients
         if self.oops_recipients is None:
             self.oops_recipients = []
@@ -512,6 +513,7 @@ class DerivedJob(BaseRunnableJob, StormBase):
         super().__init__()
         self.job = Job()
         self.should_succeed = should_succeed
+        IStore(Job).flush()
 
     def run(self):
         if not self.should_succeed:
@@ -619,6 +621,7 @@ class StuckJob(StaticJobSource):
         self.lease_length = lease_length
         self.delay = delay
         self.job = Job()
+        IStore(Job).flush()
 
     def __repr__(self):
         return "<%s(%r, lease_length=%s, delay=%s)>" % (
@@ -655,6 +658,7 @@ class InitialFailureJob(StaticJobSource):
     def __init__(self, id, fail):
         self.id = id
         self.job = Job()
+        IStore(Job).flush()
         self.fail = fail
 
     def run(self):
@@ -677,6 +681,7 @@ class ProcessSharingJob(StaticJobSource):
     def __init__(self, id, first):
         self.id = id
         self.job = Job()
+        IStore(Job).flush()
         self.first = first
 
     def run(self):
@@ -697,6 +702,7 @@ class MemoryHogJob(StaticJobSource):
 
     def __init__(self, id):
         self.job = Job()
+        IStore(Job).flush()
         self.id = id
 
     def run(self):
@@ -717,6 +723,7 @@ class LeaseHeldJob(StaticJobSource):
 
     def __init__(self, id):
         self.job = Job()
+        IStore(Job).flush()
         self.id = id
 
     def acquireLease(self):

@@ -26,6 +26,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
@@ -77,7 +78,6 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
@@ -1862,14 +1862,14 @@ class TestBranchMergeProposalDeletion(TestCaseWithFactory):
     def test_deleteProposal_deletes_job(self):
         """Deleting a branch merge proposal deletes all related jobs."""
         proposal = self.factory.makeBranchMergeProposal()
+        store = Store.of(proposal)
         job = MergeProposalNeedsReviewEmailJob.create(proposal)
-        job.context.sync()
         job_id = job.context.id
         login_person(proposal.registrant)
         proposal.deleteProposal()
-        self.assertRaises(
-            SQLObjectNotFound, BranchMergeProposalJob.get, job_id
-        )
+        store.flush()
+        store.invalidate()
+        self.assertRaises(NotFoundError, BranchMergeProposalJob.get, job_id)
 
 
 class TestBranchMergeProposalBugs(WithVCSScenarios, TestCaseWithFactory):

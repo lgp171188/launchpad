@@ -191,6 +191,7 @@ class SnapRequestBuildsJob(SnapJobDerived):
         snap_job = SnapJob(snap, cls.class_job_type, metadata)
         job = cls(snap_job)
         job.celeryRunOnCommit()
+        IStore(SnapJob).flush()
         return job
 
     @classmethod

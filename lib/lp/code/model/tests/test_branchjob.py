@@ -1022,7 +1022,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # the two out of any accidental sync by advancing the Job.id
         # sequence.
         dummy = Job()
-        dummy.sync()
+        IStore(Job).flush()
         dummy.destroySelf()
 
         # Now create the RosettaUploadJob.

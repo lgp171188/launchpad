@@ -23,7 +23,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
 
     def test_job_interface(self):
         # Instances of POFileStatsJob are runnable jobs.
-        verifyObject(IRunnableJob, POFileStatsJob(0))
+        verifyObject(IRunnableJob, POFileStatsJob(self.factory.makePOFile()))
 
     def test_source_interface(self):
         # The POFileStatsJob class is a source of POFileStatsJobs.
@@ -38,7 +38,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         self.factory.makePOTMsgSet(pofile.potemplate, singular)
         # The statistics start at 0.
         self.assertEqual(pofile.potemplate.messageCount(), 0)
-        job = pofilestatsjob.schedule(pofile.id)
+        job = pofilestatsjob.schedule(pofile)
         # Just scheduling the job doesn't update the statistics.
         self.assertEqual(pofile.potemplate.messageCount(), 0)
         with dbuser("pofilestats"):
@@ -58,7 +58,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         self.factory.makePOTMsgSet(pofile.potemplate, singular)
         # The statistics are still at 0, even though there is a message.
         self.assertEqual(potemplate.messageCount(), 0)
-        job = pofilestatsjob.schedule(pofile.id)
+        job = pofilestatsjob.schedule(pofile)
         # Just scheduling the job doesn't update the statistics.
         self.assertEqual(pofile.potemplate.messageCount(), 0)
         with dbuser("pofilestats"):
@@ -73,7 +73,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         # We need a POFile to update.
         pofile = self.factory.makePOFile(side=TranslationSide.UPSTREAM)
         # If we schedule a job, then we'll get it back.
-        job = pofilestatsjob.schedule(pofile.id)
+        job = pofilestatsjob.schedule(pofile)
         self.assertIs(list(POFileStatsJob.iterReady())[0], job)
 
     def test_second_job_is_scheduled(self):
@@ -83,11 +83,11 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         # We need a POFile to update.
         pofile = self.factory.makePOFile(side=TranslationSide.UPSTREAM)
         # If we schedule a job, then there will be one scheduled.
-        pofilestatsjob.schedule(pofile.id)
+        pofilestatsjob.schedule(pofile)
         self.assertIs(len(list(POFileStatsJob.iterReady())), 1)
         # If we attempt to schedule another job for the same POFile, a new job
         # is added.
-        pofilestatsjob.schedule(pofile.id)
+        pofilestatsjob.schedule(pofile)
         self.assertIs(len(list(POFileStatsJob.iterReady())), 2)
 
     def assertJobUpdatesStats(self, pofile1, pofile2):
@@ -97,7 +97,7 @@ class TestPOFileStatsJob(TestCaseWithFactory):
         # The statistics start at 0.
         self.assertEqual(pofile1.getStatistics(), (0, 0, 0, 0))
         self.assertEqual(pofile2.getStatistics(), (0, 0, 0, 0))
-        job = pofilestatsjob.schedule(pofile1.id)
+        job = pofilestatsjob.schedule(pofile1)
         # Just scheduling the job doesn't update the statistics.
         self.assertEqual(pofile1.getStatistics(), (0, 0, 0, 0))
         self.assertEqual(pofile2.getStatistics(), (0, 0, 0, 0))
@@ -207,7 +207,7 @@ class TestViaCelery(TestCaseWithFactory):
         self.factory.makePOTMsgSet(pofile.potemplate, singular)
         # The statistics start at 0.
         self.assertEqual(pofile.potemplate.messageCount(), 0)
-        pofilestatsjob.schedule(pofile.id)
+        pofilestatsjob.schedule(pofile)
         with block_on_job():
             transaction.commit()
         # Now that the job ran, the statistics have been updated.

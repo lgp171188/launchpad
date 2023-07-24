@@ -185,6 +185,7 @@ class CharmRecipeRequestBuildsJob(CharmRecipeJobDerived):
         recipe_job = CharmRecipeJob(recipe, cls.class_job_type, metadata)
         job = cls(recipe_job)
         job.celeryRunOnCommit()
+        IStore(CharmRecipeJob).flush()
         return job
 
     @classmethod

@@ -573,6 +573,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
         )
         job = cls(webhook_job)
         job.celeryRunOnCommit()
+        IStore(WebhookJob).flush()
         log.info(
             "Scheduled %r (%s): %s"
             % (job, event_type, _redact_payload(event_type, payload))
