@@ -34,8 +34,18 @@ class TestPackaging(TestCaseWithFactory):
 
     def test_init_notifies(self):
         """Creating a Packaging should generate an event."""
+        productseries = self.factory.makeProduct().development_focus
+        sourcepackagename = self.factory.makeSourcePackageName()
+        distroseries = self.factory.makeDistroSeries()
+        owner = self.factory.makePerson()
         with EventRecorder() as recorder:
-            packaging = Packaging()
+            packaging = Packaging(
+                productseries=productseries,
+                sourcepackagename=sourcepackagename,
+                distroseries=distroseries,
+                packaging=PackagingType.PRIME,
+                owner=owner,
+            )
         (event,) = recorder.events
         self.assertIsInstance(event, ObjectCreatedEvent)
         self.assertIs(packaging, event.object)
