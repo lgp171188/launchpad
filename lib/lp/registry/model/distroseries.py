@@ -1094,7 +1094,7 @@ class DistroSeries(
                 Not(
                     SourcePackageName.id.is_in(
                         Select(
-                            Packaging.sourcepackagenameID,
+                            Packaging.sourcepackagename_id,
                             where=(Packaging.distroseries == self),
                             distinct=True,
                         )
@@ -1110,7 +1110,7 @@ class DistroSeries(
             .find(
                 SourcePackageName,
                 Packaging.sourcepackagename == SourcePackageName.id,
-                Is(Packaging.productseriesID, None),
+                Is(Packaging.productseries_id, None),
                 POTemplate.sourcepackagename == SourcePackageName.id,
                 POTemplate.distroseries == self,
             )

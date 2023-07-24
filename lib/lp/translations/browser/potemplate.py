@@ -1031,7 +1031,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
                 ),
             )
             .joinOuter(
-                ProductSeries, ProductSeries.id == Packaging.productseriesID
+                ProductSeries, ProductSeries.id == Packaging.productseries_id
             )
             .joinOuter(
                 Product,

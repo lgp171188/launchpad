@@ -84,7 +84,6 @@ time goes on.
     ...     owner=eric,
     ...     product=fooix,
     ...     name="trunk",
-    ...     title="The Fooix Trunk",
     ...     date_created=datetime(2009, 1, 1, tzinfo=timezone.utc),
     ... )
     >>> feature_branch = factory.makeAnyBranch(

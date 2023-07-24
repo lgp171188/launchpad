@@ -184,7 +184,7 @@ class Revision(StormBase):
             result_set.order_by(Asc(BranchRevision.sequence))
         else:
             result_set.order_by(
-                Branch.ownerID != self.revision_author.person_id,
+                Branch.owner_id != self.revision_author.person_id,
                 Asc(BranchRevision.sequence),
             )
 
@@ -639,8 +639,8 @@ class RevisionSet:
             insert_columns.append("NULL")
             subselect_clauses.append("product IS NULL")
         else:
-            insert_columns.append(str(naked_branch.productID))
-            subselect_clauses.append("product = %s" % naked_branch.productID)
+            insert_columns.append(str(naked_branch.product_id))
+            subselect_clauses.append("product = %s" % naked_branch.product_id)
 
         if branch.distroseries is None:
             insert_columns.extend(["NULL", "NULL"])
@@ -650,15 +650,15 @@ class RevisionSet:
         else:
             insert_columns.extend(
                 [
-                    str(naked_branch.distroseriesID),
-                    str(naked_branch.sourcepackagenameID),
+                    str(naked_branch.distroseries_id),
+                    str(naked_branch.sourcepackagename_id),
                 ]
             )
             subselect_clauses.extend(
                 [
-                    "distroseries = %s" % naked_branch.distroseriesID,
+                    "distroseries = %s" % naked_branch.distroseries_id,
                     "sourcepackagename = %s"
-                    % naked_branch.sourcepackagenameID,
+                    % naked_branch.sourcepackagename_id,
                 ]
             )
 

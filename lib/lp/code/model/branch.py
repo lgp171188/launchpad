@@ -16,7 +16,14 @@ from breezy.revision import NULL_REVISION
 from breezy.url_policy_open import open_only_scheme
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import SQL, And, Coalesce, Desc, Join, Not, Or, Select
-from storm.locals import AutoReload, ReferenceSet
+from storm.locals import (
+    AutoReload,
+    DateTime,
+    Int,
+    Reference,
+    ReferenceSet,
+    Unicode,
+)
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -130,12 +137,10 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database import bulk
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import ForeignKey, IntCol, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Array, ArrayAgg, ArrayIntersects
 from lp.services.helpers import shortlist
 from lp.services.job.interfaces.job import JobStatus
@@ -151,26 +156,67 @@ from lp.snappy.interfaces.snap import ISnapSet
 
 
 @implementer(IBranch, IInformationType)
-class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
+class Branch(StormBase, WebhookTargetMixin, BzrIdentityMixin):
     """A sequence of ordered revisions in Bazaar."""
 
-    _table = "Branch"
+    __storm_table__ = "Branch"
+
+    id = Int(primary=True)
 
     branch_type = DBEnum(enum=BranchType, allow_none=False)
 
-    name = StringCol(notNull=False)
-    url = StringCol(dbName="url")
-    description = StringCol(dbName="summary")
+    name = Unicode(allow_none=False)
+    url = Unicode(name="url")
+    description = Unicode(name="summary")
     branch_format = DBEnum(enum=BranchFormat)
     repository_format = DBEnum(enum=RepositoryFormat)
     # XXX: Aaron Bentley 2008-06-13
     # Rename the metadir_format in the database, see bug 239746
     control_format = DBEnum(enum=ControlFormat, name="metadir_format")
-    whiteboard = StringCol(default=None)
-    mirror_status_message = StringCol(default=None)
+    whiteboard = Unicode(default=None)
+    mirror_status_message = Unicode(default=None)
     information_type = DBEnum(
-        enum=InformationType, default=InformationType.PUBLIC
+        enum=InformationType, allow_none=False, default=InformationType.PUBLIC
     )
+
+    def __init__(
+        self,
+        branch_type,
+        name,
+        registrant,
+        owner,
+        url=None,
+        description=None,
+        branch_format=None,
+        repository_format=None,
+        control_format=None,
+        whiteboard=None,
+        information_type=InformationType.PUBLIC,
+        product=None,
+        sourcepackage=None,
+        lifecycle_status=BranchLifecycleStatus.DEVELOPMENT,
+        date_created=DEFAULT,
+        date_last_modified=DEFAULT,
+    ):
+        super().__init__()
+        self.branch_type = branch_type
+        self.name = name
+        self.registrant = registrant
+        self.owner = owner
+        self.url = url
+        self.description = description
+        self.branch_format = branch_format
+        self.repository_format = repository_format
+        self.control_format = control_format
+        self.whiteboard = whiteboard
+        self.information_type = information_type
+        self.product = product
+        if sourcepackage is not None:
+            self.distroseries = sourcepackage.distroseries
+            self.sourcepackagename = sourcepackage.sourcepackagename
+        self.lifecycle_status = lifecycle_status
+        self.date_created = date_created
+        self.date_last_modified = date_last_modified
 
     @property
     def valid_webhook_event_types(self):
@@ -278,41 +324,28 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # such subscriptions.
         getUtility(IRemoveArtifactSubscriptionsJobSource).create(who, [self])
 
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=True,
-    )
+    registrant = Reference(registrant_id, "Person.id")
+    owner_id = Int(name="owner", validator=validate_person, allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
     def setOwner(self, new_owner, user):
         """See `IBranch`."""
         new_namespace = self.target.getNamespace(new_owner)
         new_namespace.moveBranch(self, user, rename_if_necessary=True)
 
-    reviewer = ForeignKey(
-        dbName="reviewer",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        default=None,
-    )
+    reviewer_id = Int(name="reviewer", validator=validate_person, default=None)
+    reviewer = Reference(reviewer_id, "Person.id")
 
-    product = ForeignKey(dbName="product", foreignKey="Product", default=None)
+    product_id = Int(name="product", default=None)
+    product = Reference(product_id, "Product.id")
 
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", default=None
-    )
-    sourcepackagename = ForeignKey(
-        dbName="sourcepackagename",
-        foreignKey="SourcePackageName",
-        default=None,
-    )
+    distroseries_id = Int(name="distroseries", default=None)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    sourcepackagename_id = Int(name="sourcepackagename", default=None)
+    sourcepackagename = Reference(sourcepackagename_id, "SourcePackageName.id")
 
     lifecycle_status = DBEnum(
         enum=BranchLifecycleStatus,
@@ -320,24 +353,23 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         default=BranchLifecycleStatus.DEVELOPMENT,
     )
 
-    last_mirrored = UtcDateTimeCol(default=None)
-    last_mirrored_id = StringCol(default=None)
-    last_mirror_attempt = UtcDateTimeCol(default=None)
-    mirror_failures = IntCol(default=0, notNull=True)
-    next_mirror_time = UtcDateTimeCol(default=None)
+    last_mirrored = DateTime(default=None, tzinfo=timezone.utc)
+    last_mirrored_id = Unicode(default=None)
+    last_mirror_attempt = DateTime(default=None, tzinfo=timezone.utc)
+    mirror_failures = Int(default=0, allow_none=False)
+    next_mirror_time = DateTime(default=None, tzinfo=timezone.utc)
 
-    last_scanned = UtcDateTimeCol(default=None)
-    last_scanned_id = StringCol(default=None)
-    revision_count = IntCol(default=DEFAULT, notNull=True)
-    stacked_on = ForeignKey(
-        dbName="stacked_on", foreignKey="Branch", default=None
-    )
+    last_scanned = DateTime(default=None, tzinfo=timezone.utc)
+    last_scanned_id = Unicode(default=None)
+    revision_count = Int(default=DEFAULT, allow_none=False)
+    stacked_on_id = Int(name="stacked_on", default=None)
+    stacked_on = Reference(stacked_on_id, "Branch.id")
 
     # The unique_name is maintined by a SQL trigger.
-    unique_name = StringCol()
+    unique_name = Unicode()
     # Denormalised columns used primarily for sorting.
-    owner_name = StringCol()
-    target_suffix = StringCol()
+    owner_name = Unicode()
+    target_suffix = Unicode()
 
     def __repr__(self):
         return "<Branch %r (%d)>" % (self.unique_name, self.id)
@@ -500,8 +532,12 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         return spec.unlinkBranch(self, user)
 
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    date_last_modified = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    date_created = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
+    date_last_modified = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
 
     @property
     def landing_targets(self):
@@ -1642,7 +1678,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
         # Now destroy the branch.
         branch_id = self.id
-        SQLBase.destroySelf(self)
+        Store.of(self).remove(self)
         # And now create a job to remove the branch from disk when it's done.
         job = getUtility(IReclaimBranchSpaceJobSource).create(branch_id)
         job.celeryRunOnCommit()

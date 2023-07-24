@@ -94,17 +94,15 @@ class NamespaceMixin:
         namespace = self.getNamespace()
         branch_name = self.factory.getUniqueString()
         registrant = removeSecurityProxy(namespace).owner
-        title = self.factory.getUniqueString()
-        summary = self.factory.getUniqueString()
+        description = self.factory.getUniqueString()
         whiteboard = self.factory.getUniqueString()
         branch = namespace.createBranch(
             BranchType.HOSTED,
             branch_name,
             registrant,
             url=None,
-            title=title,
             lifecycle_status=BranchLifecycleStatus.EXPERIMENTAL,
-            summary=summary,
+            description=description,
             whiteboard=whiteboard,
         )
         self.assertEqual(BranchType.HOSTED, branch.branch_type)

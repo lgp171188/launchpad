@@ -9,7 +9,7 @@ Setting up and running Launchpad
 
 This page explains how to set up and run Launchpad (for development) on your
 own machine, using a `LXD
-<https://linuxcontainers.org/lxd/introduction/>`_-managed container to
+<https://documentation.ubuntu.com/lxd/en/latest/>`_-managed container to
 isolate it from the rest of your system.
 
 After you've done this, you may want to read about
@@ -72,8 +72,8 @@ Create a LXD container
 ======================
 
 This assumes you already have LXD set up.  If not, follow the `instructions
-<https://linuxcontainers.org/lxd/getting-started-cli/>`_ for getting it
-installed and configured on your network.
+<https://documentation.ubuntu.com/lxd/en/latest/getting_started/>`_ for
+getting it installed and configured on your network.
 
 1. If you haven't done so already, run this script to set up LXD to let you
    use your home directory inside the container.  Some developers prefer to

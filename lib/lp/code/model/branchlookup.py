@@ -50,7 +50,6 @@ from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.webapp.authorization import check_permission
 
 
@@ -189,10 +188,10 @@ class BranchLookup:
 
     def get(self, branch_id, default=None):
         """See `IBranchLookup`."""
-        try:
-            return Branch.get(branch_id)
-        except SQLObjectNotFound:
+        branch = IStore(Branch).get(Branch, branch_id)
+        if branch is None:
             return default
+        return branch
 
     @staticmethod
     def uriToHostingPath(uri):
@@ -233,7 +232,7 @@ class BranchLookup:
                 return None
             return self.getByPath(uri.path.lstrip("/"))
 
-        return Branch.selectOneBy(url=url)
+        return IStore(Branch).find(Branch, url=url).one()
 
     def performLookup(self, lookup):
         if lookup["type"] == "id":
@@ -365,7 +364,7 @@ class BranchLookup:
             .find(
                 Branch,
                 Person.name == owner,
-                Branch.distroseriesID
+                Branch.distroseries_id
                 == Select(
                     DistroSeries.id,
                     And(

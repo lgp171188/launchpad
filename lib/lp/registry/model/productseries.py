@@ -14,11 +14,10 @@ from operator import itemgetter
 
 from lazr.delegates import delegate_to
 from storm.expr import Max, Sum
-from storm.locals import And, Desc
+from storm.locals import And, Desc, Int, Reference, ReferenceSet
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
@@ -57,7 +56,6 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
     ForeignKey,
-    SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
 )
@@ -130,7 +128,8 @@ class ProductSeries(
         notNull=False,
         default=None,
     )
-    branch = ForeignKey(foreignKey="Branch", dbName="branch", default=None)
+    branch_id = Int(name="branch", default=None)
+    branch = Reference(branch_id, "Branch.id")
 
     def validate_autoimport_mode(self, attr, value):
         # Perform the normal validation for None
@@ -152,18 +151,16 @@ class ProductSeries(
         default=TranslationsBranchImportMode.NO_IMPORT,
         validator=validate_autoimport_mode,
     )
-    translations_branch = ForeignKey(
-        dbName="translations_branch",
-        foreignKey="Branch",
-        notNull=False,
-        default=None,
+    translations_branch_id = Int(
+        name="translations_branch", allow_none=True, default=None
     )
+    translations_branch = Reference(translations_branch_id, "Branch.id")
     # where are the tarballs released from this branch placed?
     releasefileglob = StringCol(default=None)
     releaseverstyle = StringCol(default=None)
 
-    packagings = SQLMultipleJoin(
-        "Packaging", joinColumn="productseries", orderBy=["-id"]
+    packagings = ReferenceSet(
+        "id", "Packaging.productseries_id", order_by=Desc("Packaging.id")
     )
 
     @property
@@ -449,7 +446,7 @@ class ProductSeries(
             packaging=PackagingType.PRIME,
             owner=owner,
         )
-        removeSecurityProxy(pkg).sync()  # convert UTC_NOW to actual datetime
+        IStore(pkg).flush()  # convert UTC_NOW to actual datetime
         return pkg
 
     def getPackagingInDistribution(self, distribution):

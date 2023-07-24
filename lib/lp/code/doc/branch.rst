@@ -273,7 +273,7 @@ Branch names
 
 Branches have a display name that is the bzr_identity.
 
-    >>> untitled_branch = factory.makeAnyBranch(title=None)
+    >>> untitled_branch = factory.makeAnyBranch()
     >>> untitled_branch.displayname == untitled_branch.bzr_identity
     True
 

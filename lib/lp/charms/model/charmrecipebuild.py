@@ -68,6 +68,7 @@ from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
@@ -402,6 +403,13 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
             return file_object
 
         raise NotFoundError(filename)
+
+    def getFileUrls(self):
+        """See `ICharmRecipeBuild`."""
+        return [
+            ProxiedLibraryFileAlias(lfa, self).http_url
+            for _, lfa, _ in self.getFiles()
+        ]
 
     def addFile(self, lfa):
         """See `ICharmRecipeBuild`."""

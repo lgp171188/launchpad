@@ -149,9 +149,9 @@ class TestRecipientReasonBzr(TestRecipientReasonMixin, TestCaseWithFactory):
         """Test fixture."""
         if subscriber is None:
             subscriber = self.factory.makePerson()
-        source_branch = self.factory.makeProductBranch(title="foo")
+        source_branch = self.factory.makeProductBranch()
         target_branch = self.factory.makeProductBranch(
-            product=source_branch.product, title="bar"
+            product=source_branch.product
         )
         merge_proposal = source_branch.addLandingTarget(
             source_branch.owner, target_branch

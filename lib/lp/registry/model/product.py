@@ -1096,16 +1096,27 @@ class Product(
     def sourcepackages(self):
         from lp.registry.model.sourcepackage import SourcePackage
 
-        clause = """ProductSeries.id=Packaging.productseries AND
-                    ProductSeries.product = %s
-                    """ % sqlvalues(
-            self.id
-        )
-        clauseTables = ["ProductSeries"]
-        ret = Packaging.select(
-            clause,
-            clauseTables,
-            prejoins=["sourcepackagename", "distroseries.distribution"],
+        ret = DecoratedResultSet(
+            IStore(Packaging)
+            .using(
+                Packaging,
+                Join(
+                    ProductSeries, Packaging.productseries == ProductSeries.id
+                ),
+                Join(
+                    SourcePackageName,
+                    Packaging.sourcepackagename == SourcePackageName.id,
+                ),
+                Join(DistroSeries, Packaging.distroseries == DistroSeries.id),
+                Join(
+                    Distribution, DistroSeries.distribution == Distribution.id
+                ),
+            )
+            .find(
+                (Packaging, SourcePackageName, DistroSeries, Distribution),
+                ProductSeries.product == self,
+            ),
+            result_decorator=operator.itemgetter(0),
         )
         sps = [
             SourcePackage(

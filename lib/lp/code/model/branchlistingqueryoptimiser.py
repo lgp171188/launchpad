@@ -38,7 +38,7 @@ class BranchListingQueryOptimiser:
             for product, series in IStore(Product)
             .find(
                 (Product, ProductSeries),
-                ProductSeries.branchID.is_in(branch_ids),
+                ProductSeries.branch_id.is_in(branch_ids),
                 ProductSeries.product == Product.id,
             )
             .order_by(ProductSeries.name)

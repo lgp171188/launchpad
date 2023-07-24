@@ -1085,7 +1085,7 @@ class Distribution(
             IStore(self)
             .using(
                 Branch,
-                Join(DistroSeries, DistroSeries.id == Branch.distroseriesID),
+                Join(DistroSeries, DistroSeries.id == Branch.distroseries_id),
                 LeftJoin(
                     Join(
                         SeriesSourcePackageBranch,
@@ -1610,7 +1610,7 @@ class Distribution(
                     1,
                     tables=[Packaging],
                     where=(
-                        Packaging.sourcepackagenameID == SourcePackageName.id
+                        Packaging.sourcepackagename_id == SourcePackageName.id
                     ),
                 )
             )

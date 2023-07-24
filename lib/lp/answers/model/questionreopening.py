@@ -1,7 +1,7 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""SQLBase implementation of IQuestionReopening."""
+"""Storm implementation of IQuestionReopening."""
 
 __all__ = ["QuestionReopening", "create_questionreopening"]
 

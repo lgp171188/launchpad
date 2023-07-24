@@ -1630,7 +1630,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         # persons.  We need the target repository owner as well; unlike
         # branches, repository unique names aren't trigger-maintained.
         person_ids.update(
-            branch.ownerID
+            branch.owner_id
             for branch in branches
             if branch.id in source_branch_ids
         )
