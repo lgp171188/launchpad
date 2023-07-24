@@ -20,10 +20,8 @@ class TestCodeReviewComment(TestCaseWithFactory):
 
     def setUp(self):
         TestCaseWithFactory.setUp(self, "admin@canonical.com")
-        source = self.factory.makeProductBranch(title="source-branch")
-        target = self.factory.makeProductBranch(
-            product=source.product, title="target-branch"
-        )
+        source = self.factory.makeProductBranch()
+        target = self.factory.makeProductBranch(product=source.product)
         self.bmp = source.addLandingTarget(source.owner, target)
         self.submitter = self.factory.makePerson()
         self.reviewer = self.factory.makePerson()

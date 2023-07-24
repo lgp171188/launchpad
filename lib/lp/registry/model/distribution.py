@@ -1085,7 +1085,7 @@ class Distribution(
             IStore(self)
             .using(
                 Branch,
-                Join(DistroSeries, DistroSeries.id == Branch.distroseriesID),
+                Join(DistroSeries, DistroSeries.id == Branch.distroseries_id),
                 LeftJoin(
                     Join(
                         SeriesSourcePackageBranch,

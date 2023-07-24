@@ -24,16 +24,16 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
-    SQLObjectVocabularyBase,
+    StormVocabularyBase,
 )
 
 
 @implementer(IHugeVocabulary)
-class BranchVocabulary(SQLObjectVocabularyBase):
+class BranchVocabulary(StormVocabularyBase):
     """A vocabulary for searching branches."""
 
     _table = Branch
-    _orderBy = ["name", "id"]
+    _order_by = ["name", "id"]
     displayname = "Select a branch"
     step_title = "Search"
 

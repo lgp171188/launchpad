@@ -597,7 +597,7 @@ For branches, fmt:link links to the branch page.
     >>> eric = factory.makePerson(name="eric")
     >>> fooix = factory.makeProduct(name="fooix")
     >>> branch = factory.makeProductBranch(
-    ...     owner=eric, product=fooix, name="bar", title="The branch title"
+    ...     owner=eric, product=fooix, name="bar"
     ... )
     >>> print(test_tales("branch/fmt:link", branch=branch))
     <a href=".../~eric/fooix/bar"
@@ -680,7 +680,7 @@ Branch subscriptions show the person and branch name.  For users without
 adequate permissions, a link is not generated.
 
     >>> branch = factory.makeProductBranch(
-    ...     owner=eric, product=fooix, name="my-branch", title="My Branch"
+    ...     owner=eric, product=fooix, name="my-branch"
     ... )
     >>> michael = factory.makePerson(
     ...     name="michael", displayname="Michael the Viking"
