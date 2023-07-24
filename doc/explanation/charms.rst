@@ -150,7 +150,7 @@ Workflow
 ========
 
 You can run test deployments using `Juju <https://juju.is/docs/olm>`_ and
-`LXD <https://linuxcontainers.org/lxd/introduction/>`_.
+`LXD <https://documentation.ubuntu.com/lxd/en/latest/>`_.
 
 Each Mojo spec has a ``README.md`` file explaining how to deploy it, and
 that's usually the easiest way to get started.  You should normally use the
