@@ -30,8 +30,10 @@ LPCONFIG=launchpad-scripts
 
 27 07 * * 3 {{ code_dir }}/cronscripts/rosetta-pofile-stats.py -q --log-file=INFO:{{ logs_dir }}/rosetta-pofile-stats.log
 
+{%- if enable_debian_bugs_mirroring %}
 # Debian bugs mirroring, used by checkwatches
 4,19,34,49 * * * * {{ code_dir }}/scripts/debbugs-sync {{ var_dir }}/debbugs-mirror >> {{ logs_dir }}/debbugs-sync.log 2>&1
+{%- endif %}
 
 # NB. The checkwatches script requires access to {{ var_dir }}/debbugs-mirror
 # It does one job at a time (--jobs=1) because of https://bugs.launchpad.net/launchpad/+bug/435952

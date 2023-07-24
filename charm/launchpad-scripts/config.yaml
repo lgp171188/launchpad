@@ -11,6 +11,13 @@ options:
     type: string
     description: YAML-encoded dict mapping the credentials name to values.
     default: "{}"
+  enable_debian_bugs_mirroring:
+    type: boolean
+    description: |
+      Should the Debian bug data mirroring job be enabled? The checkwatches
+      script depends on the mirrored data being available locally and hence
+      it may throw some errors if it is missing.
+    default: false
   language_pack_exporter_schedule:
     type: string
     description: >-
