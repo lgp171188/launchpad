@@ -72,8 +72,8 @@ class StormBase(Storm):  # noqa: B1
         primary = [var.get() for var in obj_info["primary_vars"]]
         return hash((self.__class__,) + tuple(primary))
 
-    # XXX: jcsackett 2011-01-20 bug=622648: Much as with the SQLBase,
-    # this is not tested.
+    # XXX: jcsackett 2011-01-20 bug=622648: This is not directly tested, but
+    # large chunks of the test suite blow up if it's broken.
     def __storm_invalidated__(self):
         """Flush cached properties."""
         clear_property_cache(self)

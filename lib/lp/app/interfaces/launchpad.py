@@ -28,7 +28,7 @@ from lp.app.enums import ServiceUsage
 class ILaunchpadCelebrities(Interface):
     """Well known things.
 
-    Celebrities are SQLBase instances that have a well known name.
+    Celebrities are database objects that have a well-known name.
     """
 
     admin = Attribute("The 'admins' team.")

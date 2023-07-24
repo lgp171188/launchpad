@@ -172,8 +172,8 @@ def reconnect_stores(reset=False):
     main_store = IStore(LibraryFileAlias)
     assert main_store is not None, "Failed to reconnect"
 
-    # Confirm that SQLOS is again talking to the database (it connects
-    # as soon as SQLBase._connection is accessed
+    # Confirm that Storm is talking to the database again (it connects
+    # as soon as any query is executed).
     r = main_store.execute("SELECT count(*) FROM LaunchpadDatabaseRevision")
     assert r.get_one()[0] > 0, "Storm is not talking to the database"
     assert session_store() is not None, "Failed to reconnect"
