@@ -44,7 +44,8 @@ especially careful when redeploying.  The general procedure is as follows:
 1. Create a Ceph volume for locally-spooled librarian data.  On production
    this should be a 2 TiB volume to allow some breathing room if uploading
    to Swift is temporarily unavailable: `openstack volume create --size 2048
-   --description 'spooled production librarian data' librarian-data`.
+   --type Ceph_NVMe --description 'spooled production librarian data'
+   librarian-data`.
 
 1. Attach this Ceph volume to the new unit using `openstack server add
    volume`.
