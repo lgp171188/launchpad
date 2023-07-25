@@ -280,7 +280,7 @@ class CIBuild(PackageBuildMixin, StormBase):
         self.build_farm_job = build_farm_job
         self.git_repository = git_repository
         self.commit_sha1 = commit_sha1
-        self.git_refs = git_refs
+        self.git_refs = sorted(git_refs) if git_refs is not None else None
         self.distro_arch_series = distro_arch_series
         self.processor = processor
         self.virtualized = virtualized
@@ -754,7 +754,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                 for cibuild in result:
                     if cibuild.git_refs is None:
                         cibuild.git_refs = []
-                    cibuild.git_refs.extend(git_refs)
+                    cibuild.git_refs = sorted(set(cibuild.git_refs + git_refs))
             raise CIBuildAlreadyRequested
 
         build = self.new(
