@@ -815,7 +815,7 @@ class TestCIBuildSet(TestCaseWithFactory):
         self.assertTrue(build_queue.virtualized)
         self.assertIsNone(build_queue.builder_constraints)
         self.assertEqual(BuildQueueStatus.WAITING, build_queue.status)
-        self.assertEqual(git_refs, build.git_refs)
+        self.assertEqual(sorted(git_refs), build.git_refs)
 
         # Rescheduling a build for the same commit_sha1 raises an error, but
         # git_refs of the build are updated
@@ -826,10 +826,10 @@ class TestCIBuildSet(TestCaseWithFactory):
             commit_sha1,
             das,
             stages,
-            ["ref/bar"],
+            ["ref/test", "ref/bar"],
         )
         git_refs.append("ref/bar")
-        self.assertEqual(git_refs, build.git_refs)
+        self.assertEqual(sorted(git_refs), build.git_refs)
 
     def test_requestBuild_score(self):
         # CI builds have an initial queue score of 2600.
