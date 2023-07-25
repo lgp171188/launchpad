@@ -930,8 +930,8 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertContentEqual(
             [person_id, team.id],
             store.find(
-                TeamParticipation.teamID,
-                TeamParticipation.personID == person_id,
+                TeamParticipation.team_id,
+                TeamParticipation.person_id == person_id,
             ),
         )
         script = self.makeScript([person.name])
@@ -941,8 +941,8 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertContentEqual(
             [person_id],
             store.find(
-                TeamParticipation.teamID,
-                TeamParticipation.personID == person_id,
+                TeamParticipation.team_id,
+                TeamParticipation.person_id == person_id,
             ),
         )
 

@@ -2066,7 +2066,7 @@ def get_snap_privacy_filter(user):
         ArrayIntersects(
             SQL("%s.access_grants" % Snap.__storm_table__),
             Select(
-                ArrayAgg(TeamParticipation.teamID),
+                ArrayAgg(TeamParticipation.team_id),
                 tables=TeamParticipation,
                 where=(TeamParticipation.person == user),
             ),
@@ -2083,7 +2083,7 @@ def get_snap_privacy_filter(user):
                     AccessPolicyGrant,
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == AccessPolicyGrant.grantee_id,
                     ),
                 ),
@@ -2093,13 +2093,13 @@ def get_snap_privacy_filter(user):
         False,
     )
 
-    admin_team_id = getUtility(ILaunchpadCelebrities).admin.id
+    admin_team = getUtility(ILaunchpadCelebrities).admin
     user_is_admin = Exists(
         Select(
-            TeamParticipation.personID,
+            TeamParticipation.person_id,
             tables=[TeamParticipation],
             where=And(
-                TeamParticipation.teamID == admin_team_id,
+                TeamParticipation.team == admin_team,
                 TeamParticipation.person == user,
             ),
         )

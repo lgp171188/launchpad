@@ -39,7 +39,7 @@
                 id
                 team
                 person
-                personID
+                person_id
                 status
                 proposed_by
                 acknowledged_by

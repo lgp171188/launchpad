@@ -2052,7 +2052,7 @@ def get_branch_privacy_filter(user, branch_class=Branch):
         ArrayIntersects(
             SQL("%s.access_grants" % branch_class.__storm_table__),
             Select(
-                ArrayAgg(TeamParticipation.teamID),
+                ArrayAgg(TeamParticipation.team_id),
                 tables=TeamParticipation,
                 where=(TeamParticipation.person == user),
             ),
@@ -2069,7 +2069,7 @@ def get_branch_privacy_filter(user, branch_class=Branch):
                     AccessPolicyGrant,
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == AccessPolicyGrant.grantee_id,
                     ),
                 ),

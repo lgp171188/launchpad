@@ -178,7 +178,7 @@ class ArchivePermissionSet:
         clauses = [
             ArchivePermission.archive == archive,
             ArchivePermission.permission == permission,
-            ArchivePermission.person == TeamParticipation.teamID,
+            ArchivePermission.person == TeamParticipation.team_id,
             TeamParticipation.person == person,
         ]
 

@@ -293,9 +293,9 @@ class TranslationsPerson:
                     Join(
                         TeamParticipation,
                         And(
-                            TeamParticipation.teamID
+                            TeamParticipation.team_id
                             == Translator.translator_id,
-                            TeamParticipation.personID == self.person.id,
+                            TeamParticipation.person == self.person,
                         ),
                     ),
                 ],
@@ -446,8 +446,8 @@ class TranslationsPerson:
         # query won't be interested in its actual contents anyway.
         Reviewership = ClassAlias(TeamParticipation, "Reviewership")
         reviewerjoin_condition = And(
-            Reviewership.teamID == Translator.translator_id,
-            Reviewership.personID == self.person.id,
+            Reviewership.team_id == Translator.translator_id,
+            Reviewership.person_id == self.person.id,
         )
         if expect_reviewer_status:
             TranslationTeamJoin = Join(Reviewership, reviewerjoin_condition)

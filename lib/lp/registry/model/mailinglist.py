@@ -647,7 +647,7 @@ class MailingListSet:
             EmailAddress,
             Join(Person, Person.id == EmailAddress.personID),
             Join(Account, Account.id == Person.account_id),
-            Join(TeamParticipation, TeamParticipation.personID == Person.id),
+            Join(TeamParticipation, TeamParticipation.person_id == Person.id),
             Join(
                 MailingListSubscription,
                 MailingListSubscription.person_id == Person.id,
@@ -663,8 +663,8 @@ class MailingListSet:
             (EmailAddress.email, Person.display_name, Team.name),
             And(
                 MailingListSubscription.mailing_list_id.is_in(list_ids),
-                TeamParticipation.teamID.is_in(team_ids),
-                MailingList.team_id == TeamParticipation.teamID,
+                TeamParticipation.team_id.is_in(team_ids),
+                MailingList.team_id == TeamParticipation.team_id,
                 MailingList.status != MailingListStatus.INACTIVE,
                 Account.status == AccountStatus.ACTIVE,
                 Or(
@@ -703,15 +703,17 @@ class MailingListSet:
             Person,
             Join(Account, Account.id == Person.account_id),
             Join(EmailAddress, EmailAddress.personID == Person.id),
-            Join(TeamParticipation, TeamParticipation.personID == Person.id),
-            Join(MailingList, MailingList.team_id == TeamParticipation.teamID),
+            Join(TeamParticipation, TeamParticipation.person_id == Person.id),
+            Join(
+                MailingList, MailingList.team_id == TeamParticipation.team_id
+            ),
             Join(Team, Team.id == MailingList.team_id),
         )
         team_ids, list_ids = self._getTeamIdsAndMailingListIds(team_names)
         team_members = store.using(*tables).find(
             (Team.name, Person.display_name, EmailAddress.email),
             And(
-                TeamParticipation.teamID.is_in(team_ids),
+                TeamParticipation.team_id.is_in(team_ids),
                 MailingList.status != MailingListStatus.INACTIVE,
                 Person.teamowner == None,
                 EmailAddress.status.is_in(EMAIL_ADDRESS_STATUSES),

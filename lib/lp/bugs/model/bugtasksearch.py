@@ -1612,7 +1612,7 @@ def get_bug_privacy_filter_terms(user, check_admin=True):
         ArrayIntersects(
             SQL("BugTaskFlat.access_grants"),
             Select(
-                ArrayAgg(TeamParticipation.teamID),
+                ArrayAgg(TeamParticipation.team_id),
                 tables=TeamParticipation,
                 where=(TeamParticipation.person == user),
             ),
@@ -1629,7 +1629,7 @@ def get_bug_privacy_filter_terms(user, check_admin=True):
                     AccessPolicyGrant,
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == AccessPolicyGrant.grantee_id,
                     ),
                 ),
@@ -1698,9 +1698,9 @@ def get_bug_bulk_privacy_filter_terms(person, bug):
     )
     # And we need to expand team memberships.
     participants = Select(
-        TeamParticipation.personID,
+        TeamParticipation.person_id,
         tables=[TeamParticipation],
-        where=In(TeamParticipation.teamID, teams),
+        where=TeamParticipation.team_id.is_in(teams),
     )
     # The bug must public, or the user must satisfy the above criteria.
     return Or(

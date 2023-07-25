@@ -123,8 +123,8 @@ class ArchiveAuthTokenSet:
                         TeamParticipation,
                         And(
                             ArchiveSubscriber.subscriber_id
-                            == TeamParticipation.teamID,
-                            TeamParticipation.personID
+                            == TeamParticipation.team_id,
+                            TeamParticipation.person_id
                             == ArchiveAuthToken.person_id,
                         ),
                     ),

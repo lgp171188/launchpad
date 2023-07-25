@@ -505,9 +505,9 @@ class DistroSeriesDifference(StormBase):
                 SPPH.distroseries == distro_series,
                 SPPH.sourcepackagerelease_id == SPR.id,
                 SPPH.status.is_in(active_publishing_status),
-                SPR.creatorID == TP.personID,
+                SPR.creatorID == TP.person_id,
                 SPR.sourcepackagenameID == DSD.source_package_name_id,
-                TP.teamID.is_in(person.id for person in changed_by),
+                TP.team_id.is_in(person.id for person in changed_by),
             )
             differences_changed_by = store.find(
                 columns, differences_changed_by_conditions

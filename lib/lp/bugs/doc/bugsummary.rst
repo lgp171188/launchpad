@@ -590,7 +590,7 @@ But how many can the owner see?
     >>> join = LeftJoin(
     ...     BugSummary,
     ...     TeamParticipation,
-    ...     BugSummary.viewed_by_id == TeamParticipation.teamID,
+    ...     BugSummary.viewed_by_id == TeamParticipation.team_id,
     ... )
     >>> store.using(join).find(
     ...     BugSummary,

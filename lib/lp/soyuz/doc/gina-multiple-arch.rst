@@ -20,7 +20,9 @@ Get the current counts of stuff in the database:
     >>> orig_spr_count = SourcePackageRelease.select().count()
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
-    >>> orig_tp_count = TeamParticipation.select().count()
+    >>> orig_tp_count = (
+    ...     IStore(TeamParticipation).find(TeamParticipation).count()
+    ... )
     >>> orig_email_count = EmailAddress.select().count()
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
@@ -138,7 +140,10 @@ porridge):
 
     >>> print(Person.select().count() - orig_person_count)
     2
-    >>> print(TeamParticipation.select().count() - orig_tp_count)
+    >>> print(
+    ...     IStore(TeamParticipation).find(TeamParticipation).count()
+    ...     - orig_tp_count
+    ... )
     2
     >>> print(EmailAddress.select().count() - orig_email_count)
     2
