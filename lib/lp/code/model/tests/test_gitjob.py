@@ -17,11 +17,13 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
 )
+from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.adapters.gitrepository import GitRepositoryDelta
 from lp.code.enums import GitGranteeType, GitObjectType
+from lp.code.interfaces.cibuild import CIBuildAlreadyRequested, ICIBuildSet
 from lp.code.interfaces.gitjob import (
     IGitJob,
     IGitRefScanJob,
@@ -38,6 +40,7 @@ from lp.code.model.gitjob import (
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import canonical_url
@@ -456,6 +459,36 @@ class TestGitRefScanJob(TestCaseWithFactory):
             },
             payload,
         )
+
+    def test_branchscanner_job_can_requestBuild(self):
+        # During GitRefScanJobs, CIBuilds might be triggered by dbuser
+        # `branchscanner`. Ensure dbuser can create and update CIBuilds
+        repository = self.factory.makeGitRepository()
+        commit_sha1 = hashlib.sha1(self.factory.getUniqueBytes()).hexdigest()
+        das = self.factory.makeBuildableDistroArchSeries()
+
+        with dbuser("branchscanner"):
+            build = getUtility(ICIBuildSet).requestBuild(
+                repository,
+                commit_sha1,
+                das,
+                [[("test", 0)]],
+            )
+            IStore(repository).flush()
+
+            # Create duplicated build
+            self.assertRaises(
+                CIBuildAlreadyRequested,
+                getUtility(ICIBuildSet).requestBuild,
+                repository,
+                commit_sha1,
+                das,
+                [[("test", 0)]],
+                git_refs=["refs/heads/test"],
+            )
+            IStore(repository).flush()
+
+        self.assertEqual(["refs/heads/test"], build.git_refs)
 
 
 class TestReclaimGitRepositorySpaceJob(TestCaseWithFactory):
