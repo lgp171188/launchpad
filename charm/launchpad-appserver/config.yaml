@@ -36,6 +36,7 @@ options:
       - option httplog
       - option httpchk HEAD /_status/ping
       - option http-server-close
+      - option forwardfor
       - http-check disable-on-404
       - balance roundrobin
   haproxy_service_options_xmlrpc:
@@ -46,6 +47,7 @@ options:
       - option httplog
       - option httpchk HEAD /_status/ping
       - option http-server-close
+      - option forwardfor
       - http-check disable-on-404
       - balance roundrobin
   internal_macaroon_secret_key:

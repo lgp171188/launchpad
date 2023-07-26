@@ -14,6 +14,7 @@ options:
       - mode http
       - option httplog
       - option httpchk HEAD / HTTP/1.0
+      - option forwardfor
       - balance leastconn
   haproxy_service_options_upload:
     type: string
@@ -22,6 +23,7 @@ options:
       - mode tcp
       - option tcplog
       - option httpchk HEAD / HTTP/1.0
+      - option forwardfor
       - balance leastconn
       - timeout client 600000
       - timeout server 600000
