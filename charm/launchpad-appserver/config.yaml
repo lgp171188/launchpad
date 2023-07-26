@@ -24,6 +24,12 @@ options:
       Secret key for Git access tokens issued to Launchpad users.  Any
       random string of a reasonable size (64 characters) is ok.
     default:
+  google_site_verification:
+    type: string
+    description: >
+      If set, serve a /google{...} URL that can be used to verify domain
+      ownership.
+    default: ""
   haproxy_server_options:
     type: string
     description: Options to add to HAProxy "server" lines.
@@ -50,6 +56,10 @@ options:
       - option forwardfor
       - http-check disable-on-404
       - balance roundrobin
+  internal_bzr_codebrowse_endpoint:
+    type: string
+    description: The URL of the internal Bazaar code browsing endpoint.
+    default: ""
   internal_macaroon_secret_key:
     type: string
     description: >
@@ -73,6 +83,22 @@ options:
     type: int
     description: Port for the main application server.
     default: 8085
+  port_main_cached:
+    type: int
+    description: Port for the main application server via Squid.
+    default: 8086
+  ssl_chain_required:
+    type: boolean
+    description: >
+      Whether an intermediate certificate chain is needed for this service.
+      In development, we use self-signed certificates which don't have a
+      certificate chain; but in real deployments, we need to send a
+      certificate chain.
+    default: false
+  webmaster_email:
+    type: string
+    description: Email address to include in Apache virtual host configuration.
+    default: "webmaster@launchpad.test"
   wsgi_worker_max_requests:
     type: int
     description: >

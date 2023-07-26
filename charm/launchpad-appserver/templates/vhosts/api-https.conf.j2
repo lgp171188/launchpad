@@ -1,0 +1,66 @@
+<VirtualHost *:443>
+    ServerName api.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    CustomLog /var/log/apache2/api.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/api.{{ domain }}-error.log
+    LogLevel warn
+
+    Alias /robots.txt {{ base_dir }}/www/robots.txt
+    Alias /offline.html {{ base_dir }}/www/offline.html
+
+    ProxyRequests off
+    <Proxy *>
+        Require all granted
+        ErrorDocument 500 /offline.html
+        ErrorDocument 502 /offline.html
+        ErrorDocument 503 /offline.html
+    </Proxy>
+
+    ProxyPassReverse / balancer://launchpad-appserver-main/
+    ProxyPassReverse / balancer://cached-launchpad-appserver-main/
+    ProxyPreserveHost on
+
+    RewriteEngine on
+
+    RewriteRule ^/offline\.html$ - [PT]
+    RewriteRule ^/robots\.txt$ - [PT]
+    RewriteRule ^/\+apidoc/(.*) /$1 [PT]
+    RewriteRule ^/favicon\.(ico|gif|png)$ - [PT]
+
+    # API documentation.
+    RewriteCond %{REQUEST_URI} ^/([^/]*/?|[^/]+/index(\.\w+)?)$
+    RewriteRule ^/(.*)$ balancer://cached-launchpad-assets/+apidoc/$1 [P,L]
+
+    # Other cacheable URLs.
+    RewriteCond %{HTTP_COOKIE} ^$
+    RewriteCond %{HTTP:Authorization} ^$
+    RewriteCond %{REQUEST_URI} !/\+login
+    RewriteRule ^/(.*)$ balancer://cached-launchpad-appserver-main/$1 [P,L]
+
+    # Non-cacheable API requests, passed on to the appserver.
+    RewriteRule ^/(.*)$ balancer://launchpad-appserver-main/$1 [P,L]
+
+    <Location />
+        # Insert filter.
+        SetOutputFilter DEFLATE
+
+        # Don't compress images.
+        SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
+
+        # Don't gzip anything that starts /@@/ and doesn't end .js
+        # (i.e. images).
+        SetEnvIfNoCase Request_URI ^/@@/ no-gzip dont-vary
+        SetEnvIfNoCase Request_URI ^/@@/.*\.js$ !no-gzip !dont-vary
+
+        Require all granted
+    </Location>
+</VirtualHost>
+

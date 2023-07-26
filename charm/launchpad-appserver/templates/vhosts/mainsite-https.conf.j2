@@ -1,0 +1,87 @@
+<VirtualHost *:443>
+    ServerName {{ domain }}
+    ServerAlias answers.{{ domain }}
+    ServerAlias blueprints.{{ domain }}
+    ServerAlias bugs.{{ domain }}
+    ServerAlias code.{{ domain }}
+    ServerAlias translations.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    # Similar to the default Apache log format, but abuses the ident field
+    # to store the HTTP request's Host header (used for web stats).
+    LogFormat "%h %{Host}i %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined-vhost
+
+    CustomLog /var/log/apache2/{{ domain }}-access.log combined-vhost
+    ErrorLog /var/log/apache2/{{ domain }}-error.log
+    LogLevel warn
+
+    DocumentRoot {{ base_dir }}/www
+
+    ProxyRequests off
+    <Proxy *>
+        Require all granted
+        ErrorDocument 500 /offline.html
+        ErrorDocument 502 /offline.html
+        ErrorDocument 503 /offline.html
+    </Proxy>
+
+    ProxyPassReverse / balancer://launchpad-appserver-main/
+    ProxyPassReverse / balancer://cached-launchpad-appserver-main/
+    ProxyPreserveHost on
+
+    RewriteEngine on
+
+{% if google_site_verification %}
+    # https://portal.admin.canonical.com/C49078: File needed for Google to
+    # verify domain control.
+    RewriteRule ^/google{{ google_site_verification }}$ - [PT]
+{%- endif %}
+    RewriteRule ^/offline\.html$ - [PT]
+    RewriteRule ^/robots\.txt$ - [PT]
+
+    RewriteRule ^/(\+apidoc.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(\+combo/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(\+icing/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(\+tour.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(@@/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(favicon\.(?:ico|gif|png))$ balancer://cached-launchpad-assets/$1 [P,L]
+
+{% if internal_bzr_codebrowse_endpoint %}
+    # https://portal.admin.canonical.com/C46608: Proxy requests to Loggerhead.
+    RewriteRule ^/\+loggerhead/(.*)$ {{ internal_bzr_codebrowse_endpoint }}$1 [P,L,NE]
+{%- endif %}
+
+    # Most anonymous requests are cacheable.
+    RewriteCond %{HTTP_COOKIE} ^$
+    RewriteCond %{HTTP:Authorization} ^$
+    RewriteCond %{REQUEST_URI} !/\+login
+    RewriteCond %{REQUEST_URI} !/\+openid
+    RewriteCond %{REQUEST_METHOD} !POST
+    RewriteRule ^/(.*)$ balancer://cached-launchpad-appserver-main/$1 [P,L]
+
+    # Everything else goes to the appserver, bypassing the cache.
+    RewriteRule ^/(.*)$ balancer://launchpad-appserver-main/$1 [P,L]
+
+    <Location />
+        # Insert filter.
+        SetOutputFilter DEFLATE
+
+        # Don't compress images.
+        SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png)$ no-gzip dont-vary
+
+        # Don't gzip anything that starts /@@/ and doesn't end .js
+        # (i.e. images).
+        SetEnvIfNoCase Request_URI ^/@@/ no-gzip dont-vary
+        SetEnvIfNoCase Request_URI ^/@@/.*\.js$ !no-gzip !dont-vary
+
+        Require all granted
+    </Location>
+</VirtualHost>
+

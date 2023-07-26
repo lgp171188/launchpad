@@ -19,5 +19,9 @@ requires:
   memcache:
     interface: memcache
 provides:
+  api-vhost-config:
+    interface: apache-vhost-config
   loadbalancer:
     interface: http
+  vhost-config:
+    interface: apache-vhost-config
