@@ -218,7 +218,10 @@ class TestBuildFarmJobMixin(TestCaseWithFactory):
             build.updateStatus(BuildStatus.BUILDING)
             self.assertIsNot(None, build.date_started)
             self.assertIs(None, build.date_finished)
-            build.updateStatus(status)
+            build.updateStatus(BuildStatus.GATHERING)
+            self.assertIsNot(None, build.date_started)
+            self.assertIs(None, build.date_finished)
+            build.updateStatus(status, force_invalid_transition=True)
             self.assertIsNot(None, build.date_started)
             self.assertIsNot(None, build.date_finished)
 

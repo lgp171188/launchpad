@@ -3105,6 +3105,20 @@ class TestUploadHandler(TestUploadProcessorBase):
         self.assertEqual(BuildStatus.BUILDING, build.status)
         self.assertLogContains("Build status is BUILDING. Ignoring.")
 
+    def testBuildStillGathering(self):
+        # Builds that are still GATHERING should be left alone.  The
+        # upload directory may already be in place, but buildd-manager
+        # will set the status to UPLOADING when it's handed off.
+        build, leaf_name = self.processUploadWithBuildStatus(
+            BuildStatus.GATHERING
+        )
+        # The build status is not changed
+        self.assertTrue(
+            os.path.exists(os.path.join(self.incoming_folder, leaf_name))
+        )
+        self.assertEqual(BuildStatus.GATHERING, build.status)
+        self.assertLogContains("Build status is GATHERING. Ignoring.")
+
     def testBuildWithInvalidStatus(self):
         # Builds with an invalid (not UPLOADING or BUILDING) status
         # should trigger a failure. We've probably raced with
@@ -3121,8 +3135,8 @@ class TestUploadHandler(TestUploadProcessorBase):
         )
         self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
         self.assertLogContains(
-            "Expected build status to be UPLOADING or BUILDING, was "
-            "NEEDSBUILD."
+            "Expected build status to be BUILDING, GATHERING, or UPLOADING; "
+            "was NEEDSBUILD."
         )
 
     def testOrderFilenames(self):

@@ -41,6 +41,11 @@ VALID_STATUS_TRANSITIONS = {
     BuildStatus.SUPERSEDED: (),
     BuildStatus.BUILDING: tuple(BuildStatus.items),
     BuildStatus.FAILEDTOUPLOAD: (BuildStatus.NEEDSBUILD,),
+    BuildStatus.GATHERING: (
+        BuildStatus.NEEDSBUILD,
+        BuildStatus.FAILEDTOBUILD,
+        BuildStatus.UPLOADING,
+    ),
     BuildStatus.UPLOADING: (
         BuildStatus.FULLYBUILT,
         BuildStatus.FAILEDTOUPLOAD,
@@ -174,6 +179,7 @@ class BuildFarmJobMixin:
             BuildStatus.BUILDING,
             BuildStatus.CANCELLED,
             BuildStatus.CANCELLING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.SUPERSEDED,
         ]
@@ -251,6 +257,7 @@ class BuildFarmJobMixin:
             not in (
                 BuildStatus.NEEDSBUILD,
                 BuildStatus.BUILDING,
+                BuildStatus.GATHERING,
                 BuildStatus.CANCELLING,
             )
         ):
@@ -435,6 +442,7 @@ class BuildFarmJobSet:
         unfinished_states = [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.SUPERSEDED,
         ]

@@ -223,7 +223,7 @@ class BinaryPackageBuildMailer(BaseMailer):
             buildduration = "not available"
             buildlog_url = "not available"
             builder_url = "not available"
-        elif build.status == BuildStatus.UPLOADING:
+        elif build.status in (BuildStatus.GATHERING, BuildStatus.UPLOADING):
             buildduration = "uploading"
             buildlog_url = "see builder page"
             builder_url = "not available"

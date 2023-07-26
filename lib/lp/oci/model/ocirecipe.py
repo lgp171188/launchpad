@@ -733,6 +733,7 @@ class OCIRecipe(StormBase, WebhookTargetMixin):
         return [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.CANCELLING,
         ]
@@ -1085,7 +1086,9 @@ class OCIRecipeSet:
             BuildStatus.FAILEDTOUPLOAD,
         )
         needsbuild = collect_builds(BuildStatus.NEEDSBUILD)
-        building = collect_builds(BuildStatus.BUILDING, BuildStatus.UPLOADING)
+        building = collect_builds(
+            BuildStatus.BUILDING, BuildStatus.GATHERING, BuildStatus.UPLOADING
+        )
         successful = collect_builds(BuildStatus.FULLYBUILT)
         cancelled = collect_builds(
             BuildStatus.CANCELLING, BuildStatus.CANCELLED

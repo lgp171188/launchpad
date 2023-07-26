@@ -332,6 +332,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         return self.status not in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.SUPERSEDED,
         ]
@@ -1091,7 +1092,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             )
 
         # Ordering according status
-        # * NEEDSBUILD, BUILDING & UPLOADING by -lastscore
+        # * NEEDSBUILD, BUILDING, GATHERING & UPLOADING by -lastscore
         # * SUPERSEDED & All by -BinaryPackageBuild.id
         #   (nearly equivalent to -datecreated, but much more
         #   efficient.)
@@ -1102,6 +1103,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         if status in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
         ]:
             order_by = [Desc(BuildQueue.lastscore), BinaryPackageBuild.id]
@@ -1239,7 +1241,9 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             BuildStatus.FAILEDTOUPLOAD,
         )
         needsbuild = collect_builds(BuildStatus.NEEDSBUILD)
-        building = collect_builds(BuildStatus.BUILDING, BuildStatus.UPLOADING)
+        building = collect_builds(
+            BuildStatus.BUILDING, BuildStatus.GATHERING, BuildStatus.UPLOADING
+        )
         successful = collect_builds(BuildStatus.FULLYBUILT)
 
         # Note: the BuildStatus DBItems are used here to summarize the
