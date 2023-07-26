@@ -3,6 +3,15 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
+  domain_librarian:
+    type: string
+    description: Domain name for this instance's librarian service.
+    default: "launchpadlibrarian.test"
+  domain_librarian_aliases:
+    type: string
+    default: "[]"
+    description: >
+      A YAML-encoded list of aliases for the librarian's primary domain.
   haproxy_server_options:
     type: string
     description: Options to add to HAProxy "server" lines.
@@ -92,6 +101,14 @@ options:
     type: int
     description: Base port number for public upload workers.
     default: 9090
+  ssl_chain_required:
+    type: boolean
+    description: >
+      Whether an intermediate certificate chain is needed for this service.
+      In development, we use self-signed certificates which don't have a
+      certificate chain; but in real deployments, we need to send a
+      certificate chain.
+    default: false
   swift_feed_workers:
     type: int
     description: Number of librarian-feed-swift workers to run in parallel.
@@ -108,6 +125,10 @@ options:
     type: int
     description: Port for the upstream librarian, if any.
     default: 80
+  webmaster_email:
+    type: string
+    description: Email address to include in Apache virtual host configuration.
+    default: "webmaster@launchpad.test"
   workers:
     type: int
     description: >
