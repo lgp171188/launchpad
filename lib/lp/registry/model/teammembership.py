@@ -104,6 +104,7 @@ class TeamMembership(StormBase):
         self.team = team
         self.person = person
         self.status = status
+        self.dateexpires = dateexpires
 
     def isExpired(self):
         """See `ITeamMembership`."""
