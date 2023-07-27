@@ -17,6 +17,7 @@ from storm.zope.interfaces import IZStorm
 from zope.component import getUtility
 
 from lp.services.config import dbconfig
+from lp.services.database.sqlbase import flush_database_updates
 
 
 def update_store_connections():
@@ -56,6 +57,7 @@ def switch_dbuser(new_name):
 
     If new_name is None, the default will be restored.
     """
+    flush_database_updates()
     transaction.commit()
     dbconfig.override(dbuser=new_name)
     update_store_connections()

@@ -40,7 +40,6 @@ from lp.code.model.gitjob import (
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IStore
 from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import canonical_url
@@ -474,7 +473,6 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 das,
                 [[("test", 0)]],
             )
-            IStore(repository).flush()
 
             # Create duplicated build
             self.assertRaises(
@@ -486,7 +484,6 @@ class TestGitRefScanJob(TestCaseWithFactory):
                 [[("test", 0)]],
                 git_refs=["refs/heads/test"],
             )
-            IStore(repository).flush()
 
         self.assertEqual(["refs/heads/test"], build.git_refs)
 
