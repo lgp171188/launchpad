@@ -670,7 +670,7 @@ class GenericBranchCollection:
         branch_query = self._getBranchSelect((Branch.owner_id,))
         return self.store.find(
             Person,
-            Person.id == TeamParticipation.teamID,
+            Person.id == TeamParticipation.team_id,
             TeamParticipation.person == person,
             TeamParticipation.team != person,
             Person.id.is_in(branch_query),
@@ -775,8 +775,8 @@ class GenericBranchCollection:
     def ownedByTeamMember(self, person):
         """See `IBranchCollection`."""
         subquery = Select(
-            TeamParticipation.teamID,
-            where=TeamParticipation.personID == person.id,
+            TeamParticipation.team_id,
+            where=TeamParticipation.person == person,
         )
         return self._filterBy([In(Branch.owner_id, subquery)], symmetric=False)
 

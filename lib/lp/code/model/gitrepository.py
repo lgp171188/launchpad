@@ -1689,7 +1689,7 @@ class GitRepository(
             clauses = [
                 GitRuleGrant.grantee_type == GitGranteeType.PERSON,
                 TeamParticipation.person == grantee,
-                GitRuleGrant.grantee == TeamParticipation.teamID,
+                GitRuleGrant.grantee == TeamParticipation.team_id,
             ]
         if ref_pattern is not None:
             clauses.extend(
@@ -2579,7 +2579,7 @@ def get_git_repository_privacy_filter(user, repository_class=GitRepository):
         ArrayIntersects(
             SQL("%s.access_grants" % repository_class.__storm_table__),
             Select(
-                ArrayAgg(TeamParticipation.teamID),
+                ArrayAgg(TeamParticipation.team_id),
                 tables=TeamParticipation,
                 where=(TeamParticipation.person == user),
             ),
@@ -2596,7 +2596,7 @@ def get_git_repository_privacy_filter(user, repository_class=GitRepository):
                     AccessPolicyGrant,
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == AccessPolicyGrant.grantee_id,
                     ),
                 ),

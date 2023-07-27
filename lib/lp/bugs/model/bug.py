@@ -3526,11 +3526,11 @@ def generate_subscription_with(bug, person):
                     SQL("all_bugsubscriptions"),
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == SQL("all_bugsubscriptions.person"),
                     ),
                 ],
-                where=[TeamParticipation.personID == person.id],
+                where=[TeamParticipation.person == person],
             ),
         ),
     ]

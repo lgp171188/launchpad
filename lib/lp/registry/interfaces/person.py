@@ -1878,7 +1878,7 @@ class IPersonViewRestricted(
     @operation_returns_collection_of(Interface)  # Really IPerson
     @export_read_operation()
     @operation_for_version("beta")
-    def getMembersByStatus(status, orderby=None):
+    def getMembersByStatus(status, order_by=None):
         """Return the people whose membership on this team match :status:.
 
         If no orderby is provided, Person.sortingColumns is used.

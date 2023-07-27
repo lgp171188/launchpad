@@ -148,7 +148,7 @@ class ITeamMembership(Interface):
         ),  # Specified in interfaces/person.py.
         exported_as="member",
     )
-    personID = Int(title=_("Person ID"), required=True, readonly=True)
+    person_id = Int(title=_("Person ID"), required=True, readonly=True)
     proposed_by = Attribute(_("Proponent"))
     reviewed_by = Attribute(
         _("The team admin who approved/rejected the member.")

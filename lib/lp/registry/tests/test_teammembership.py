@@ -811,8 +811,11 @@ class TestTeamMembership(TestCaseWithFactory):
         operate on the correct data.
         """
         login("foo.bar@canonical.com")
-        tm = TeamMembership.selectFirstBy(
-            status=TeamMembershipStatus.APPROVED, orderBy="id"
+        tm = (
+            IStore(TeamMembership)
+            .find(TeamMembership, status=TeamMembershipStatus.APPROVED)
+            .order_by(TeamMembership.id)
+            .first()
         )
         tm.setStatus(
             TeamMembershipStatus.DEACTIVATED,

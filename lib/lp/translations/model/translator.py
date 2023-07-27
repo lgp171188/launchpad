@@ -70,7 +70,7 @@ class TranslatorSet:
             Translator,
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == Translator.translator_id,
+                TeamParticipation.team_id == Translator.translator_id,
             ),
             Join(
                 "TranslationGroup",

@@ -3716,10 +3716,10 @@ class ArchiveSet:
                 # Create a subselect to capture all the teams that are
                 # owners of archives AND the user is a member of:
                 user_teams_subselect = Select(
-                    TeamParticipation.teamID,
+                    TeamParticipation.team_id,
                     where=And(
-                        TeamParticipation.personID == user.id,
-                        TeamParticipation.teamID == Archive.ownerID,
+                        TeamParticipation.person == user,
+                        TeamParticipation.team_id == Archive.ownerID,
                     ),
                 )
 
@@ -3889,7 +3889,7 @@ def get_archive_privacy_filter(user):
             Not(Archive.private),
             Archive.ownerID.is_in(
                 Select(
-                    TeamParticipation.teamID,
+                    TeamParticipation.team_id,
                     where=(TeamParticipation.person == user),
                 )
             ),
@@ -3925,7 +3925,7 @@ def get_enabled_archive_filter(
 
     main = getUtility(IComponentSet)["main"]
     user_teams = Select(
-        TeamParticipation.teamID, where=TeamParticipation.person == user
+        TeamParticipation.team_id, where=TeamParticipation.person == user
     )
 
     is_owner = Archive.ownerID.is_in(user_teams)

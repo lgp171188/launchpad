@@ -785,7 +785,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         removeSecurityProxy(merged_team).merged = self.factory.makeTeam()
         store = Store.of(team)
         store.flush()
-        result = store.find(TeamMembership, TeamMembership.team == team.id)
+        result = store.find(TeamMembership, team=team)
         self.assertEqual(3, result.count())
         self.runDaily()
         self.assertContentEqual([team.teamowner], [tm.person for tm in result])

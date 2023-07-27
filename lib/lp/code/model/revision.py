@@ -564,7 +564,7 @@ class RevisionSet:
             origin.append(
                 Join(
                     TeamParticipation,
-                    RevisionAuthor.person_id == TeamParticipation.personID,
+                    RevisionAuthor.person_id == TeamParticipation.person_id,
                 )
             )
             person_condition = TeamParticipation.team == person

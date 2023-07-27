@@ -33,7 +33,7 @@ import random
 import re
 import weakref
 from datetime import datetime, timedelta, timezone
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 
 import six
 import transaction
@@ -48,8 +48,8 @@ from storm.expr import (
     Column,
     Desc,
     Exists,
-    In,
     Is,
+    IsNot,
     Join,
     LeftJoin,
     Min,
@@ -329,7 +329,7 @@ def get_person_visibility_terms(user):
         And(
             Person.id.is_in(
                 Select(
-                    TeamParticipation.teamID,
+                    TeamParticipation.team_id,
                     tables=[TeamParticipation],
                     where=(TeamParticipation.person == user),
                 )
@@ -981,19 +981,20 @@ class Person(
         person participates in, the one with the oldest creation date is
         returned.
         """
-        query = And(
-            TeamMembership.teamID == team.id,
-            TeamMembership.personID == Person.q.id,
-            Or(
-                TeamMembership.status == TeamMembershipStatus.ADMIN,
-                TeamMembership.status == TeamMembershipStatus.APPROVED,
+        clauses = (
+            TeamMembership.team_id == team.id,
+            TeamMembership.person_id == Person.id,
+            TeamMembership.status.is_in(
+                (TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED)
             ),
-            TeamParticipation.teamID == Person.id,
-            TeamParticipation.personID == self.id,
+            TeamParticipation.team_id == Person.id,
+            TeamParticipation.person_id == self.id,
         )
-        clauseTables = ["TeamMembership", "TeamParticipation"]
-        member = Person.selectFirst(
-            query, clauseTables=clauseTables, orderBy="datecreated"
+        member = (
+            IStore(Person)
+            .find(Person, *clauses)
+            .order_by(Person.datecreated)
+            .first()
         )
         assert member is not None, (
             "%(person)s is an indirect member of %(team)s but %(person)s "
@@ -1180,8 +1181,8 @@ class Person(
             ownership_participation = ClassAlias(TeamParticipation)
             clauses.extend(
                 [
-                    Product._ownerID == ownership_participation.teamID,
-                    ownership_participation.personID == self.id,
+                    Product._ownerID == ownership_participation.team_id,
+                    ownership_participation.person_id == self.id,
                 ]
             )
         else:
@@ -1215,12 +1216,9 @@ class Person(
         with_sql = [
             With(
                 "teams",
-                SQL(
-                    """
-                 SELECT team FROM TeamParticipation
-                 WHERE TeamParticipation.person = %d
-                """
-                    % self.id
+                Select(
+                    TeamParticipation.team_id,
+                    where=(TeamParticipation.person == self),
                 ),
             ),
             WithMaterialized(
@@ -1268,14 +1266,14 @@ class Person(
             .using(
                 Person,
                 Join(
-                    TeamParticipation, Person.id == TeamParticipation.personID
+                    TeamParticipation, Person.id == TeamParticipation.person_id
                 ),
                 LeftJoin(
-                    Product, TeamParticipation.teamID == Product._ownerID
+                    Product, TeamParticipation.team_id == Product._ownerID
                 ),
                 LeftJoin(
                     Distribution,
-                    TeamParticipation.teamID == Distribution.ownerID,
+                    TeamParticipation.team_id == Distribution.ownerID,
                 ),
                 Join(
                     CommercialSubscription,
@@ -1480,7 +1478,11 @@ class Person(
             except KeyError:
                 pass
 
-        tp = TeamParticipation.selectOneBy(team=team, person=self)
+        tp = (
+            IStore(TeamParticipation)
+            .find(TeamParticipation, team=team, person=self)
+            .one()
+        )
         in_team = tp is not None
         self._inTeam_cache[team.id] = in_team
         return in_team
@@ -1515,11 +1517,9 @@ class Person(
 
         found_team_ids = set(
             IStore(TeamParticipation).find(
-                TeamParticipation.teamID,
-                And(
-                    TeamParticipation.teamID.is_in(unknown_team_ids),
-                    TeamParticipation.personID == self.id,
-                ),
+                TeamParticipation.team_id,
+                TeamParticipation.team_id.is_in(unknown_team_ids),
+                TeamParticipation.person_id == self.id,
             )
         )
 
@@ -1530,7 +1530,11 @@ class Person(
 
     def hasParticipationEntryFor(self, team):
         """See `IPerson`."""
-        return bool(TeamParticipation.selectOneBy(person=self, team=team))
+        return (
+            not IStore(TeamParticipation)
+            .find(TeamParticipation, person=self, team=team)
+            .is_empty()
+        )
 
     def leave(self, team):
         """See `IPerson`."""
@@ -1592,7 +1596,8 @@ class Person(
         """See `IPerson`."""
         return list(
             Store.of(self).find(
-                TeamParticipation.personID, TeamParticipation.teamID == self.id
+                TeamParticipation.person_id,
+                TeamParticipation.team_id == self.id,
             )
         )
 
@@ -1787,12 +1792,12 @@ class Person(
                 Join(
                     Person,
                     TeamParticipation,
-                    Person.id == TeamParticipation.teamID,
+                    Person.id == TeamParticipation.team_id,
                 )
             ],
             And(
-                TeamParticipation.personID == self.id,
-                TeamParticipation.teamID != self.id,
+                TeamParticipation.person_id == self.id,
+                TeamParticipation.team_id != self.id,
             ),
             need_api=True,
         )
@@ -1805,12 +1810,12 @@ class Person(
                 Join(
                     Person,
                     TeamParticipation,
-                    Person.id == TeamParticipation.personID,
+                    Person.id == TeamParticipation.person_id,
                 )
             ],
             And(
-                TeamParticipation.teamID == self.id,
-                TeamParticipation.personID != self.id,
+                TeamParticipation.team_id == self.id,
+                TeamParticipation.person_id != self.id,
                 Person.teamownerID != None,
             ),
             need_api=True,
@@ -1849,7 +1854,11 @@ class Person(
             )
 
         event = JoinTeamEvent
-        tm = TeamMembership.selectOneBy(person=person, team=self)
+        tm = (
+            IStore(TeamMembership)
+            .find(TeamMembership, person=person, team=self)
+            .one()
+        )
         if tm is not None:
             if tm.status == TeamMembershipStatus.ADMIN or (
                 tm.status == TeamMembershipStatus.APPROVED
@@ -1895,9 +1904,7 @@ class Person(
                 dateexpires=expires,
                 comment=comment,
             )
-            # Accessing the id attribute ensures that the team
-            # creation has been flushed to the database.
-            tm.id
+            Store.of(tm).flush()
             notify(event(person, self))
         else:
             # We can't use tm.setExpirationDate() here because the reviewer
@@ -1912,7 +1919,11 @@ class Person(
         return (status_changed, tm.status)
 
     def _accept_or_decline_membership(self, team, status, comment):
-        tm = TeamMembership.selectOneBy(person=self, team=team)
+        tm = (
+            IStore(TeamMembership)
+            .find(TeamMembership, person=self, team=team)
+            .one()
+        )
         assert tm is not None
         assert tm.status == TeamMembershipStatus.INVITED
         tm.setStatus(status, getUtility(ILaunchBag).user, comment=comment)
@@ -1956,8 +1967,8 @@ class Person(
             ),
         }
         constraints = And(
-            TeamMembership.personID == self.id,
-            TeamMembership.teamID == team.id,
+            TeamMembership.person_id == self.id,
+            TeamMembership.team_id == team.id,
             TeamMembership.status.is_in(active_and_transitioning.keys()),
         )
         tm = Store.of(self).find(TeamMembership, constraints).one()
@@ -1974,7 +1985,11 @@ class Person(
         must be active (APPROVED or ADMIN) and set to expire in less than
         DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT days.
         """
-        tm = TeamMembership.selectOneBy(person=self, team=team)
+        tm = (
+            IStore(TeamMembership)
+            .find(TeamMembership, person=self, team=team)
+            .one()
+        )
         assert (
             tm.canBeRenewedByMember()
         ), "This membership can't be renewed by the member themselves."
@@ -1995,7 +2010,11 @@ class Person(
         self, person, status, reviewer, expires=None, comment=None
     ):
         """See `IPerson`."""
-        tm = TeamMembership.selectOneBy(person=person, team=self)
+        tm = (
+            IStore(TeamMembership)
+            .find(TeamMembership, person=person, team=self)
+            .one()
+        )
         assert tm is not None
         tm.setExpirationDate(expires, reviewer)
         tm.setStatus(status, reviewer, comment=comment)
@@ -2022,20 +2041,20 @@ class Person(
 
         class RestrictedParticipation:
             __storm_table__ = "RestrictedParticipation"
-            teamID = Int(primary=True, name="team")
+            team_id = Int(primary=True, name="team")
 
         store = Store.of(self)
         restricted_participation_cte = WithMaterialized(
             "RestrictedParticipation",
             store,
             Select(
-                TeamParticipation.teamID,
+                TeamParticipation.team_id,
                 tables=[TeamParticipation],
                 where=TeamParticipation.person == self,
             ),
         )
         team_select = Select(
-            RestrictedParticipation.teamID, tables=[RestrictedParticipation]
+            RestrictedParticipation.team_id, tables=[RestrictedParticipation]
         )
 
         return (
@@ -2050,12 +2069,12 @@ class Person(
                             where=Person.teamownerID.is_in(team_select),
                         ),
                         Select(
-                            TeamMembership.teamID,
+                            TeamMembership.team_id,
                             tables=[TeamMembership],
                             where=And(
                                 TeamMembership.status
                                 == TeamMembershipStatus.ADMIN,
-                                TeamMembership.personID.is_in(team_select),
+                                TeamMembership.person_id.is_in(team_select),
                             ),
                         ),
                     )
@@ -2069,22 +2088,24 @@ class Person(
         """See `IPerson`."""
         if not self.is_team:
             raise ValueError("This method must only be used for teams.")
-        owner = Person.select("id = %s" % sqlvalues(self.teamowner))
-        return self.adminmembers.union(
-            owner, orderBy=self._sortingColumnsForSetOperations
+        owner = IStore(Person).find(Person, id=self.teamowner.id)
+        return self.adminmembers.union(owner).order_by(
+            self._sortingColumnsForSetOperations
         )
 
-    def getMembersByStatus(self, status, orderBy=None):
+    def getMembersByStatus(self, status, order_by=None):
         """See `IPerson`."""
-        query = (
-            "TeamMembership.team = %s AND TeamMembership.status = %s "
-            "AND TeamMembership.person = Person.id"
-            % sqlvalues(self.id, status)
-        )
-        if orderBy is None:
-            orderBy = Person.sortingColumns
-        return Person.select(
-            query, clauseTables=["TeamMembership"], orderBy=orderBy
+        if order_by is None:
+            order_by = Person.sortingColumns
+        return (
+            IStore(Person)
+            .find(
+                Person,
+                TeamMembership.team == self,
+                TeamMembership.status == status,
+                TeamMembership.person == Person.id,
+            )
+            .order_by(order_by)
         )
 
     def _getEmailsByStatus(self, status):
@@ -2306,7 +2327,7 @@ class Person(
             if not isinstance(status, tuple):
                 status = (status,)
             origin.append(
-                Join(TeamMembership, TeamMembership.personID == Person.id)
+                Join(TeamMembership, TeamMembership.person_id == Person.id)
             )
             conditions = And(
                 # Membership in this team,
@@ -2442,8 +2463,8 @@ class Person(
     @property
     def activemembers(self):
         """See `IPerson`."""
-        return self.approvedmembers.union(
-            self.adminmembers, orderBy=self._sortingColumnsForSetOperations
+        return self.approvedmembers.union(self.adminmembers).order_by(
+            self._sortingColumnsForSetOperations
         )
 
     @property
@@ -2463,9 +2484,8 @@ class Person(
     @property
     def inactivemembers(self):
         """See `IPerson`."""
-        return self.expiredmembers.union(
-            self.deactivatedmembers,
-            orderBy=self._sortingColumnsForSetOperations,
+        return self.expiredmembers.union(self.deactivatedmembers).order_by(
+            self._sortingColumnsForSetOperations
         )
 
     @property
@@ -2476,8 +2496,8 @@ class Person(
     @property
     def pendingmembers(self):
         """See `IPerson`."""
-        return self.proposedmembers.union(
-            self.invited_members, orderBy=self._sortingColumnsForSetOperations
+        return self.proposedmembers.union(self.invited_members).order_by(
+            self._sortingColumnsForSetOperations
         )
 
     @property
@@ -2489,15 +2509,13 @@ class Person(
         # sorting works as is user expected, e.g. (A b C) not (A C b).
         return store.find(
             TeamMembership,
-            And(
-                TeamMembership.personID == self.id,
-                TeamMembership.teamID == Team.id,
-                TeamMembership.status.is_in(
-                    [
-                        TeamMembershipStatus.APPROVED,
-                        TeamMembershipStatus.ADMIN,
-                    ]
-                ),
+            TeamMembership.person == self,
+            TeamMembership.team_id == Team.id,
+            TeamMembership.status.is_in(
+                (
+                    TeamMembershipStatus.APPROVED,
+                    TeamMembershipStatus.ADMIN,
+                )
             ),
         ).order_by(Upper(Team.display_name), Upper(Team.name))
 
@@ -2511,14 +2529,15 @@ class Person(
     @property
     def open_membership_invitations(self):
         """See `IPerson`."""
-        return TeamMembership.select(
-            """
-            TeamMembership.person = %s AND status = %s
-            AND Person.id = TeamMembership.team
-            """
-            % sqlvalues(self.id, TeamMembershipStatus.INVITED),
-            clauseTables=["Person"],
-            orderBy=Person.sortingColumns,
+        return (
+            IStore(TeamMembership)
+            .find(
+                TeamMembership,
+                TeamMembership.person == self,
+                TeamMembership.status == TeamMembershipStatus.INVITED,
+                TeamMembership.team == Person.id,
+            )
+            .order_by(Person.sortingColumns)
         )
 
     def canDeactivate(self):
@@ -2834,22 +2853,16 @@ class Person(
         If called on an person rather than a team, this will obviously return
         no memberships at all.
         """
-        statuses = ",".join(quote(status) for status in statuses)
-        # We don't want to escape 'statuses' so we can't easily use
-        # sqlvalues() on the query below.
-        query = """
-            TeamMembership.status IN (%s)
-            AND Person.id = TeamMembership.person
-            AND TeamMembership.team = %d
-            """ % (
-            statuses,
-            self.id,
-        )
-        return TeamMembership.select(
-            query,
-            clauseTables=["Person"],
-            prejoinClauseTables=["Person"],
-            orderBy=Person.sortingColumns,
+        return DecoratedResultSet(
+            IStore(TeamMembership)
+            .find(
+                (TeamMembership, Person),
+                TeamMembership.status.is_in(statuses),
+                TeamMembership.person == Person.id,
+                TeamMembership.team == self,
+            )
+            .order_by(Person.sortingColumns),
+            result_decorator=itemgetter(0),
         )
 
     def getLatestApprovedMembershipsForPerson(self, limit=5):
@@ -2877,17 +2890,15 @@ class Person(
         store = Store.of(self)
         all_direct_memberships = store.find(
             TeamMembership,
-            And(
-                TeamMembership.personID.is_in(
-                    [team.id for team in teams] + [self.id]
-                ),
-                TeamMembership.teamID != self.id,
-                TeamMembership.status.is_in(
-                    [
-                        TeamMembershipStatus.APPROVED,
-                        TeamMembershipStatus.ADMIN,
-                    ]
-                ),
+            TeamMembership.person_id.is_in(
+                [team.id for team in teams] + [self.id]
+            ),
+            TeamMembership.team != self,
+            TeamMembership.status.is_in(
+                (
+                    TeamMembershipStatus.APPROVED,
+                    TeamMembershipStatus.ADMIN,
+                )
             ),
         ).order_by(Desc(TeamMembership.datejoined), Desc(TeamMembership.id))
         # Cast the results to list now, because they will be iterated over
@@ -2923,15 +2934,15 @@ class Person(
     @property
     def teams_participated_in(self):
         """See `IPerson`."""
-        return Person.select(
-            """
-            Person.id = TeamParticipation.team
-            AND TeamParticipation.person = %s
-            AND Person.teamowner IS NOT NULL
-            """
-            % sqlvalues(self.id),
-            clauseTables=["TeamParticipation"],
-            orderBy=Person.sortingColumns,
+        return (
+            IStore(Person)
+            .find(
+                Person,
+                Person.id == TeamParticipation.team_id,
+                TeamParticipation.person == self,
+                IsNot(Person.teamownerID, None),
+            )
+            .order_by(Person.sortingColumns)
         )
 
     @property
@@ -2941,12 +2952,12 @@ class Person(
         store = Store.of(self)
         origin = [
             Team,
-            Join(TeamParticipation, Team.id == TeamParticipation.teamID),
+            Join(TeamParticipation, Team.id == TeamParticipation.team_id),
             LeftJoin(
                 TeamMembership,
                 And(
                     TeamMembership.person == self.id,
-                    TeamMembership.teamID == TeamParticipation.teamID,
+                    TeamMembership.team_id == TeamParticipation.team_id,
                     TeamMembership.status.is_in(
                         [
                             TeamMembershipStatus.APPROVED,
@@ -2961,7 +2972,7 @@ class Person(
             find_objects,
             And(
                 TeamParticipation.person == self.id,
-                TeamParticipation.person != TeamParticipation.teamID,
+                TeamParticipation.person != TeamParticipation.team_id,
                 TeamMembership.id == None,
             ),
         )
@@ -2969,17 +2980,17 @@ class Person(
     @property
     def teams_with_icons(self):
         """See `IPerson`."""
-        return Person.select(
-            """
-            Person.id = TeamParticipation.team
-            AND TeamParticipation.person = %s
-            AND Person.teamowner IS NOT NULL
-            AND Person.icon IS NOT NULL
-            AND TeamParticipation.team != %s
-            """
-            % sqlvalues(self.id, self.id),
-            clauseTables=["TeamParticipation"],
-            orderBy=Person.sortingColumns,
+        return (
+            IStore(Person)
+            .find(
+                Person,
+                Person.id == TeamParticipation.team_id,
+                TeamParticipation.person == self,
+                IsNot(Person.teamownerID, None),
+                IsNot(Person.iconID, None),
+                TeamParticipation.team != self,
+            )
+            .order_by(Person.sortingColumns)
         )
 
     @property
@@ -5504,7 +5515,7 @@ def _get_recipients_for_team(team):
     store = IStore(Person)
     source = store.using(
         TeamMembership,
-        Join(Person, TeamMembership.personID == Person.id),
+        Join(Person, TeamMembership.person_id == Person.id),
         LeftJoin(
             EmailAddress,
             And(
@@ -5521,15 +5532,14 @@ def _get_recipients_for_team(team):
         # Find Persons that have a preferred email address and an active
         # account, or are a team, or both.
         intermediate_transitive_results = source.find(
-            (TeamMembership.personID, EmailAddress.personID),
-            In(
-                TeamMembership.status,
-                [
-                    TeamMembershipStatus.ADMIN.value,
-                    TeamMembershipStatus.APPROVED.value,
-                ],
+            (TeamMembership.person_id, EmailAddress.personID),
+            TeamMembership.status.is_in(
+                (
+                    TeamMembershipStatus.ADMIN,
+                    TeamMembershipStatus.APPROVED,
+                )
             ),
-            In(TeamMembership.teamID, pending_team_ids),
+            TeamMembership.team_id.is_in(pending_team_ids),
             Or(
                 And(
                     EmailAddress.personID != None,

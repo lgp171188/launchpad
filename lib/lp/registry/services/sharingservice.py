@@ -112,13 +112,13 @@ class SharingService:
             AccessPolicyGrant,
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == AccessPolicyGrant.grantee_id,
+                TeamParticipation.team_id == AccessPolicyGrant.grantee_id,
             ),
         ]
         result = store.using(*tables).find(
             AccessPolicyGrant,
             AccessPolicyGrant.policy_id.is_in(policy_ids),
-            TeamParticipation.personID == person.id,
+            TeamParticipation.person_id == person.id,
         )
         return not result.is_empty()
 
@@ -154,9 +154,9 @@ class SharingService:
             with_statement = With(
                 "teams",
                 Select(
-                    TeamParticipation.teamID,
+                    TeamParticipation.team_id,
                     tables=TeamParticipation,
-                    where=TeamParticipation.person == user.id,
+                    where=TeamParticipation.person == user,
                 ),
             )
             teams_sql = SQL("SELECT team from teams")
@@ -453,7 +453,7 @@ class SharingService:
             ),
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == AccessPolicyGrantFlat.grantee_id,
+                TeamParticipation.team_id == AccessPolicyGrantFlat.grantee_id,
             ),
         )
         spec_ids = [spec.id for spec in specifications]
@@ -464,7 +464,7 @@ class SharingService:
                     AccessPolicyGrantFlat.abstract_artifact_id == None,
                     AccessArtifact.specification == Specification.id,
                 ),
-                TeamParticipation.personID == person.id,
+                TeamParticipation.person == person,
                 In(Specification.id, spec_ids),
             )
         )
@@ -686,13 +686,13 @@ class SharingService:
         store = IStore(AccessArtifactGrant)
         tables = [
             Person,
-            Join(TeamParticipation, TeamParticipation.personID == Person.id),
+            Join(TeamParticipation, TeamParticipation.person_id == Person.id),
         ]
         result_set = store.using(*tables).find(
             Person,
             Or(
-                In(TeamParticipation.teamID, policy_grantees),
-                In(TeamParticipation.teamID, artifact_grantees),
+                TeamParticipation.team_id.is_in(policy_grantees),
+                TeamParticipation.team_id.is_in(artifact_grantees),
             ),
             In(Person.id, person_ids),
         )

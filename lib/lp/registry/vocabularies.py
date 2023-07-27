@@ -402,7 +402,7 @@ class UserTeamsParticipationVocabulary(SQLObjectVocabularyBase):
         if launchbag.user:
             user = launchbag.user
             clauses = [
-                Person.id == TeamParticipation.teamID,
+                Person.id == TeamParticipation.team_id,
                 TeamParticipation.person == user,
                 Person.teamowner != None,
             ]
@@ -879,14 +879,13 @@ class ValidTeamMemberVocabulary(
 
     @property
     def extra_clause(self):
-        clause = SQL(
-            """
-            Person.id NOT IN (
-                SELECT team FROM TeamParticipation
-                WHERE person = %d
+        clause = Not(
+            Person.id.is_in(
+                Select(
+                    TeamParticipation.team_id,
+                    TeamParticipation.person == self.team,
                 )
-            """
-            % self.team.id
+            )
         )
         if self.is_closed_team:
             clause = And(
@@ -960,8 +959,8 @@ class AllUserTeamsParticipationVocabulary(ValidTeamVocabulary):
                 Join(
                     tp_alias,
                     And(
-                        tp_alias.teamID == Person.id,
-                        tp_alias.personID == user.id,
+                        tp_alias.team_id == Person.id,
+                        tp_alias.person_id == user.id,
                     ),
                 )
             ]

@@ -63,6 +63,7 @@ from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
+from storm.expr import Desc
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import adapter, getUtility, queryMultiAdapter
@@ -1700,7 +1701,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     def recently_approved_members(self):
         members = self.context.getMembersByStatus(
             TeamMembershipStatus.APPROVED,
-            orderBy="-TeamMembership.date_joined",
+            order_by=Desc("TeamMembership.date_joined"),
         )
         return members[:5]
 
@@ -1708,7 +1709,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     def recently_proposed_members(self):
         members = self.context.getMembersByStatus(
             TeamMembershipStatus.PROPOSED,
-            orderBy="-TeamMembership.date_proposed",
+            order_by=Desc("TeamMembership.date_proposed"),
         )
         return members[:5]
 
@@ -1716,7 +1717,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     def recently_invited_members(self):
         members = self.context.getMembersByStatus(
             TeamMembershipStatus.INVITED,
-            orderBy="-TeamMembership.date_proposed",
+            order_by=Desc("TeamMembership.date_proposed"),
         )
         return members[:5]
 
@@ -2098,7 +2099,7 @@ class PersonParticipationView(LaunchpadView):
             # The member is a direct member; use the membership data.
             datejoined = membership.datejoined
             dateexpires = membership.dateexpires
-            if membership.personID == team.teamownerID:
+            if membership.person_id == team.teamownerID:
                 role = "Owner"
             elif membership.status == TeamMembershipStatus.ADMIN:
                 role = "Admin"
