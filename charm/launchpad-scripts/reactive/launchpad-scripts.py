@@ -6,10 +6,20 @@ import subprocess
 import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
-from charms.launchpad.db import strip_dsn_authentication, update_pgpass
-from charms.launchpad.payload import configure_cron, configure_lazr, home_dir
+from charms.launchpad.db import (
+    lazr_config_files,
+    strip_dsn_authentication,
+    update_pgpass,
+)
+from charms.launchpad.payload import (
+    config_file_path,
+    configure_cron,
+    configure_lazr,
+    home_dir,
+)
 from charms.reactive import (
     endpoint_from_flag,
+    helpers,
     remove_state,
     set_state,
     when,
@@ -18,6 +28,15 @@ from charms.reactive import (
 )
 from ols import base, postgres
 from psycopg2.extensions import parse_dsn
+
+CHARM_CELERY_SERVICES = [
+    "celerybeat_launchpad",
+    "celeryd_launchpad_job",
+    "celeryd_launchpad_job_slow",
+]
+CHARM_SYSTEMD_SERVICES = CHARM_CELERY_SERVICES + [
+    "number-cruncher",
+]
 
 
 def configure_logrotate(config):
@@ -28,6 +47,16 @@ def configure_logrotate(config):
         config,
         perms=0o644,
     )
+
+
+def config_files():
+    files = []
+    files.extend(lazr_config_files())
+    files.append(config_file_path("launchpad-scripts/launchpad-lazr.conf"))
+    files.append(
+        config_file_path("launchpad-scripts-secrets-lazr.conf", secret=True)
+    )
+    return files
 
 
 @host.restart_on_change(
@@ -46,20 +75,13 @@ def configure_logrotate(config):
 def configure_celery(config):
     hookenv.log("Writing celery systemd service files.")
     destination_dir = "/lib/systemd/system"
-    service_files = (
-        "celerybeat_launchpad.service",
-        "celeryd_launchpad_job.service",
-        "celeryd_launchpad_job_slow.service",
-    )
-    for service_file in service_files:
+    for service in CHARM_CELERY_SERVICES:
         templating.render(
-            f"{service_file}.j2",
-            f"{destination_dir}/{service_file}",
+            f"{service}.service.j2",
+            f"{destination_dir}/{service}.service",
             config,
         )
     subprocess.check_call(["systemctl", "daemon-reload"])
-    for service_file in service_files:
-        subprocess.check_call(["systemctl", "enable", service_file])
 
 
 @host.restart_on_change(
@@ -73,7 +95,11 @@ def configure_number_cruncher(config):
         config,
     )
     subprocess.check_call(["systemctl", "daemon-reload"])
-    subprocess.check_call(["systemctl", "enable", "number-cruncher.service"])
+
+
+def perform_action_on_services(services, action):
+    for service in services:
+        action(service)
 
 
 def configure_librarian_logs_sync(config):
@@ -161,6 +187,22 @@ def configure():
     configure_cron(config, "crontab.j2")
     configure_celery(config)
     configure_number_cruncher(config)
+
+    if config["active"]:
+        if helpers.any_file_changed(
+            [
+                base.version_info_path(),
+            ]
+            + config_files()
+        ):
+            hookenv.log("Config files or payload changed; restarting services")
+            perform_action_on_services(
+                CHARM_SYSTEMD_SERVICES, host.service_restart
+            )
+        perform_action_on_services(CHARM_SYSTEMD_SERVICES, host.service_resume)
+    else:
+        perform_action_on_services(CHARM_SYSTEMD_SERVICES, host.service_pause)
+
     set_state("service.configured")
 
 
