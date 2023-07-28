@@ -3,6 +3,11 @@ options:
     type: boolean
     description: Should the cron jobs and the celery services be active?
     default: true
+  charmhub_secrets_private_key:
+    type: string
+    description: >
+      Base64-encoded NaCl private key for decrypting Charmhub upload tokens.
+    default:
   checkwatches_batch_query_threshold:
     type: int
     description: The batch query threshold for the checkwatches.
@@ -43,6 +48,12 @@ options:
       This option will work only when the 'mirror_prober_active' option
       is true.
     default: false
+  oci_registry_credentials_private_key:
+    type: string
+    description: >
+      Base64-encoded NaCl private key for decrypting OCI registry upload
+      credentials.
+    default:
   process_inbound_email_host:
     type: string
     description: >-
@@ -59,4 +70,10 @@ options:
     type: string
     description: >-
       The username to connect to the `process_inbound_email_host` as.
+    default:
+  snap_store_secrets_private_key:
+    type: string
+    description: >
+      Base64-encoded NaCl private key for decrypting snap store upload
+      tokens.
     default:
