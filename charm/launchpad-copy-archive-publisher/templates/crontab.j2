@@ -1,0 +1,19 @@
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-copy-archive-publisher
+
+{% if active -%}
+*/5 * * * * {{ code_dir }}/cronscripts/publish-ftpmaster.py --all-derived -vv >> {{ logs_dir }}/derived-publish-ftpmaster.log 2>&1
+
+10 */6 * * * {{ code_dir }}/scripts/process-death-row.py --all-derived -q --log-file=DEBUG:{{ logs_dir }}/derived-process-death-row.log
+
+22 * * * * {{ base_dir }}/bin/cron.publish-copy-archives.sh >> {{ logs_dir }}/cron.publish-copy-archives.log 2>&1
+
+15 * * * * nice -n 12 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/ppa-generate-keys.py --copy-archives -q --log-file=INFO:{{ logs_dir }}/generate-keys-copy-archives.log
+{%- endif %}
+
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
