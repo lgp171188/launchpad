@@ -184,6 +184,10 @@ def configure():
         config["language_pack_exporter_schedule"]
     )
     configure_process_inbound_email(config)
+    # The checkwatches script logs to a 'checkwatches' sub-directory.
+    host.mkdir(
+        f"{base.logs_dir()}/checkwatches", group=base.user(), perms=0o775
+    )
     configure_cron(config, "crontab.j2")
     configure_celery(config)
     configure_number_cruncher(config)
