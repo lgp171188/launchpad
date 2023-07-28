@@ -288,6 +288,15 @@ div {
     margin: 0 auto;
   }
 
+  /**
+    font-size overwrite for timeline graphs
+    to fit in fixed size containers
+  **/
+  .yui3-timelinegraph {
+      font-size: 0.8rem;
+      line-height: 1rem;
+  }
+
   /* Hidden must be the last rule because it overides all other rules. */
 
   .inline {

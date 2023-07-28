@@ -28,8 +28,8 @@
 div#edit-description,
 div#edit-commit_message {
     font-family: "Ubuntu Mono variable", "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
-    font-size: 0.8rem;
-    line-height: 1.2rem;
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.5;
     margin: 1em 0;
     }
 
@@ -241,7 +241,7 @@ a.bg-image {
 * html .boardComment {float: left; clear: both; width: 99%;} /* IE float bug */
 
 .boardCommentDetails {
-  background-color: #eee;
+  background-color: #f4f6f9;
   border-bottom: 1px solid #ddd;
   padding: 0.5em 12px;
 }
@@ -264,7 +264,9 @@ a.bg-image {
     font-size: 0.9em;
     color: gray;
 }
-.boardCommentBody {padding: 0.5em 12px 0;}
+.boardCommentBody {
+  padding: 1rem 1rem 0;
+}
 .boardCommentActivity {
   padding: 0.5em 12px;
   background-color: #fafafa;
@@ -282,7 +284,9 @@ a.bg-image {
   text-align: right;
 }
 .boardCommentFooter a {
+  display: inline-block;
   margin-left: 1.5em;
+  padding: 0.625rem; /* 10px */
 }
 .from-superseded {background-color: #ffffcc;}
 .adminHiddenComment {background-color:gray;}
@@ -455,7 +459,7 @@ a.update-retry {
 /* PPA installation instructions slider.*/
 #ppa-install-slide-trigger {
     cursor: pointer;
-    color: #093; /* for the underline on hover */
+    color: #0e8420; /* for the underline on hover */
 }
 #ppa-install-slide-trigger:hover {
     text-decoration: underline
@@ -478,7 +482,7 @@ div#slide-trigger {
     padding:8px 0 8px 32px;
     background:url('/@@/ppa-large') 0 0 no-repeat;
     cursor: pointer;
-    color: #093; /* for the underline on hover */
+    color: #0e8420; /* for the underline on hover */
 }
 div#slide-trigger:hover {
     text-decoration: underline
@@ -630,13 +634,31 @@ div.diff .horizontal {
   margin: 0;
 }
 
-#proposal-summary td, #proposal-summary th { padding-bottom: 2px; }
+#proposal-summary td, #proposal-summary th {
+  padding-bottom: 2px;
+  color: #656d76;
+}
+
+#summary-row-3-approved-revision td,
+#summary-row-merge-instruction-git td {
+    font-family: "Ubuntu Mono variable", "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
+    font-size: 0.8125rem; /* 14px */
+}
+
+table#proposal-summary td,
+table.diff tr:not(.inline-comments) {
+    line-height: 1.5;
+    font-weight: 440;
+    padding-left: 0.625rem; /* 10px */
+}
 table.diff {
    white-space: pre-wrap;
    width: 100%;
    background-color: white;
    margin-bottom: 0.5em;
    overflow-wrap: break-word;
+    /* negative margin to break out of the parent `.yui-t4 .yui-main .yui-b` */
+    margin-right: -25%;
 }
 table.unidiff {
    table-layout: fixed;
@@ -649,12 +671,16 @@ table.diff .nav-cursor:before {
    float: left;
    margin-left: 1.25em;
 }
-table.diff .text { padding-left: 0.5em; }
+
+table.diff .text {
+  padding-left: 0.625rem; /* 10px */
+}
 table.diff .line-no, table.diff .ss-line-no {
   text-align: right;
   background-color: #f6f6f6;
-  color: #999;
-  border-right: solid 4px white;
+  padding-right: 0.625rem; /* 10px */
+  color: #6e7781;
+  border-right: 0;
   width: 4em;
   cursor: pointer;
 }
@@ -663,12 +689,18 @@ table.diff .line-no.active, table.diff .ss-line-no.active {
   background: url(/@@/add) #f6f6f6 center left no-repeat;
 }
 table.diff .diff-chunk, table.diff .diff-file, table.diff .diff-header {
- font-weight: bold;
+  background: #f4f6f9;
+  font-weight: 600;
 }
-table.diff .diff-added { background-color: #92ED92; }
-table.diff .diff-removed { background-color: #FF7F7F; }
+table.diff .diff-added { background-color: #cff7cf; }
+table.diff .diff-removed { background-color: #ffb8b8; }
 table.diff .inline-comments > td > div {
-  margin: 0 1em 1.5em 1em;
+  margin: 0;
+}
+
+table.diff .inline-comment {
+    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
 }
 table.diff .inline-comments .yui3-ieditor { padding-right:0!important; }
 table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
@@ -676,12 +708,13 @@ table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
   word-wrap: normal;
 }
 table.diff .inline-comments .boardComment {
-  margin: 1em 0;
+  margin: 0.5rem;
+  max-width: 50rem; /* 800px */
 }
 table.diff .inline-comments .boardCommentBody {
   word-wrap: break-word;
   font-family: "Ubuntu Mono variable", "Ubuntu Mono", Consolas, Monaco, Courier, monospace;
-  padding-bottom: 0.5em;
+  padding-bottom: 1rem;
 }
 table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
     .bg-top-label {
