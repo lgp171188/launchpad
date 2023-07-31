@@ -1,0 +1,21 @@
+# Redirect legacy domain.
+
+<VirtualHost *:443>
+    ServerName librarian.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    CustomLog /var/log/apache2/librarian.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/librarian.{{ domain }}-error.log
+    LogLevel warn
+
+    Redirect permanent / https://{{ domain_librarian }}/
+</VirtualHost>
+
+

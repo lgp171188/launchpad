@@ -1,0 +1,45 @@
+# Redirect legacy domains.
+
+<VirtualHost *:443>
+    ServerName edge.{{ domain }}
+    ServerAlias answers.edge.{{ domain }}
+    ServerAlias blueprints.edge.{{ domain }}
+    ServerAlias bugs.edge.{{ domain }}
+    ServerAlias code.edge.{{ domain }}
+    ServerAlias feeds.edge.{{ domain }}
+    ServerAlias translations.edge.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    # Similar to the default Apache log format, but abuses the ident field
+    # to store the HTTP request's Host header (used for web stats).
+    LogFormat "%h %{Host}i %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined-vhost
+
+    CustomLog /var/log/apache2/edge.{{ domain }}-access.log combined-vhost
+    ErrorLog /var/log/apache2/edge.{{ domain }}-error.log
+    LogLevel warn
+
+    DocumentRoot {{ base_dir }}/www
+
+    ProxyRequests off
+    <Proxy *>
+        Require all granted
+        ErrorDocument 500 /offline.html
+        ErrorDocument 502 /offline.html
+        ErrorDocument 503 /offline.html
+    </Proxy>
+
+    RewriteEngine on
+
+    RewriteCond %{REQUEST_URI} !/\+request-token
+    RewriteCond %{REQUEST_URI} !/\+access-token
+    RewriteCond "%{HTTP_HOST}" "^((?:[^.]+)\.)?edge\.{{ domain }}" [NC]
+    RewriteRule ^/(.*)$ "https://%1{{ domain }}/$1" [L,R=301]
+</VirtualHost>
+

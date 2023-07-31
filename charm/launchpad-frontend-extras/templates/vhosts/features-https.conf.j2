@@ -1,0 +1,21 @@
+# Redirect legacy domains.
+
+<VirtualHost *:443>
+    ServerName features.{{ domain }}
+    ServerAlias blueprint.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    CustomLog /var/log/apache2/features.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/features.{{ domain }}-error.log
+    LogLevel warn
+
+    Redirect permanent / https://blueprints.{{ domain }}/
+</VirtualHost>
+
