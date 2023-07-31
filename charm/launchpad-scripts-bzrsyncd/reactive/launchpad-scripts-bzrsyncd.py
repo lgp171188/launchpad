@@ -5,15 +5,28 @@ import subprocess
 
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
-from charms.launchpad.payload import configure_cron, configure_lazr
+from charms.launchpad.db import lazr_config_files
+from charms.launchpad.payload import (
+    config_file_path,
+    configure_cron,
+    configure_lazr,
+)
 from charms.reactive import (
     endpoint_from_flag,
+    helpers,
     remove_state,
     set_state,
     when,
     when_not,
     when_not_all,
 )
+from ols import base
+
+CHARM_CELERY_SERVICES = [
+    "celerybeat-bzrsyncd",
+    "celeryd_bzrsyncd_job",
+    "celeryd_bzrsyncd_job_slow",
+]
 
 
 def configure_logrotate(config):
@@ -24,6 +37,20 @@ def configure_logrotate(config):
         config,
         perms=0o644,
     )
+
+
+def config_files():
+    files = []
+    files.extend(lazr_config_files())
+    files.append(
+        config_file_path("launchpad-scripts-bzrsyncd/launchpad-lazr.conf")
+    )
+    files.append(
+        config_file_path(
+            "launchpad-scripts-bzrsyncd-secrets-lazr.conf", secret=True
+        )
+    )
+    return files
 
 
 @host.restart_on_change(
@@ -42,20 +69,18 @@ def configure_logrotate(config):
 def configure_celery(config):
     hookenv.log("Writing celery systemd service files.")
     destination_dir = "/lib/systemd/system"
-    service_files = (
-        "celerybeat_bzrsyncd.service",
-        "celeryd_bzrsyncd_job.service",
-        "celeryd_bzrsyncd_job_slow.service",
-    )
-    for service_file in service_files:
+    for service in CHARM_CELERY_SERVICES:
         templating.render(
-            f"{service_file}.j2",
-            f"{destination_dir}/{service_file}",
+            f"{service}.service.j2",
+            f"{destination_dir}/{service}.service",
             config,
         )
     subprocess.check_call(["systemctl", "daemon-reload"])
-    for service_file in service_files:
-        subprocess.check_call(["systemctl", "enable", service_file])
+
+
+def perform_action_on_services(services, action):
+    for service in services:
+        action(service)
 
 
 @when(
@@ -81,6 +106,22 @@ def configure():
     configure_logrotate(config)
     configure_cron(config, "crontab.j2")
     configure_celery(config)
+
+    if config["active"]:
+        if helpers.any_file_changed(
+            [
+                base.version_info_path(),
+            ]
+            + config_files()
+        ):
+            hookenv.log("Config files or payload changed; restarting services")
+            perform_action_on_services(
+                CHARM_CELERY_SERVICES, host.service_restart
+            )
+        perform_action_on_services(CHARM_CELERY_SERVICES, host.service_resume)
+    else:
+        perform_action_on_services(CHARM_CELERY_SERVICES, host.service_pause)
+
     set_state("service.configured")
 
 
