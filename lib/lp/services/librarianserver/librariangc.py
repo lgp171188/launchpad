@@ -280,7 +280,7 @@ def merge_duplicates(con):
         # production but the actual librarian contents has not.
         dupe1_id = dupes[0][0]
         if not file_exists(dupe1_id):
-            if config.instance_name == "staging":
+            if config.librarian_server.upstream_host is not None:
                 log.debug3("LibraryFileContent %d data is missing", dupe1_id)
             else:
                 log.warning("LibraryFileContent %d data is missing", dupe1_id)
@@ -812,10 +812,11 @@ def delete_unwanted_disk_files(con):
         next_wanted_content_id = get_next_wanted_content_id()
     if not swift_enabled:
         while next_wanted_content_id is not None:
-            log.error(
-                "LibraryFileContent %d exists in the database but "
-                "was not found on disk." % next_wanted_content_id
-            )
+            if config.librarian_server.upstream_host is None:
+                log.error(
+                    "LibraryFileContent %d exists in the database but "
+                    "was not found on disk." % next_wanted_content_id
+                )
             next_wanted_content_id = get_next_wanted_content_id()
 
     cur.close()
@@ -984,8 +985,10 @@ def delete_unwanted_swift_files(con):
         # has not run recently. Report an error if the file is older
         # than one week and doesn't exist in Swift.
         path = get_file_path(next_wanted_content_id)
-        if os.path.exists(path) and (
-            os.stat(path).st_ctime < time() - (7 * 24 * 60 * 60)
+        if (
+            config.librarian_server.upstream_host is None
+            and os.path.exists(path)
+            and (os.stat(path).st_ctime < time() - (7 * 24 * 60 * 60))
         ):
             log.error(
                 "LibraryFileContent {} exists in the database and disk "
