@@ -21,6 +21,7 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.sourcepackage import SourcePackageType
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import flush_database_caches
 from lp.soyuz.adapters.overrides import SourceOverride
@@ -1219,6 +1220,30 @@ class CopyCheckerTestCase(TestCaseWithFactory):
                     ),
                 ]
             ),
+        )
+
+    def test_checkCopy_non_debian(self):
+        build = self.factory.makeCIBuild()
+        distroseries = self.factory.makeDistroSeries()
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        spn = self.factory.makeSourcePackageName()
+        spr = build.createSourcePackageRelease(
+            distroseries,
+            spn,
+            "1.0",
+            creator=build.git_repository.owner,
+            archive=archive,
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagerelease=spr, format=SourcePackageType.CI_BUILD
+        )
+        copy_checker = CopyChecker(archive, include_binaries=False)
+        self.assertIsNone(
+            copy_checker.checkCopy(
+                spph, distroseries, spph.pocket, check_permissions=False
+            )
         )
 
 
