@@ -15,6 +15,7 @@ basic.bootstrap_charm_deps()
 basic.init_config_states()
 
 from charmhelpers.core import hookenv  # noqa: E402
+from ols import base  # noqa: E402
 
 services = (
     "celerybeat_launchpad.service",
@@ -22,6 +23,23 @@ services = (
     "celeryd_launchpad_job_slow.service",
     "number-cruncher.service",
 )
+
+
+def bugsummary_rebuild():
+    hookenv.log("Rebuilding CombinedBugSummary table.")
+    script = Path(base.code_dir(), "scripts", "bugsummary-rebuild.py")
+    subprocess.run(
+        [
+            "sudo",
+            "-H",
+            "-u",
+            base.user(),
+            "LPCONFIG=launchpad-scripts",
+            script,
+        ],
+        check=True,
+    )
+    hookenv.action_set({"result": "Rebuild complete"})
 
 
 def start_services():
@@ -41,7 +59,9 @@ def stop_services():
 def main(argv):
     action = Path(argv[0]).name
     try:
-        if action == "start-services":
+        if action == "bugsummary-rebuild":
+            bugsummary_rebuild()
+        elif action == "start-services":
             start_services()
         elif action == "stop-services":
             stop_services()
