@@ -899,11 +899,9 @@ class QuestionSet:
     def getQuestionLanguages(self):
         """See `IQuestionSet`"""
         return set(
-            Language.select(
-                "Language.id = Question.language",
-                clauseTables=["Question"],
-                distinct=True,
-            )
+            IStore(Language)
+            .find(Language, Question.language == Language.id)
+            .config(distinct=True)
         )
 
     def getMostActiveProjects(self, limit=5):

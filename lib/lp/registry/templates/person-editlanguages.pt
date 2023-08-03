@@ -48,10 +48,10 @@
           </dt>
           <tal:languages define="languages country/languages">
             <dd class="sprite language"
-              tal:condition="languages"
+              tal:condition="not: languages/is_empty"
               tal:repeat="lang country/languages"
               tal:content="lang/englishname"/>
-            <dd tal:condition="not: languages">
+            <dd tal:condition="languages/is_empty">
               No languages are currently registered as being spoken in <span
               tal:replace="country/name">country</span>.  If you have this
               information, please see if it has already been submitted in the

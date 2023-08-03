@@ -7,8 +7,8 @@ __all__ = [
     "LanguageSet",
 ]
 
-import six
-from storm.expr import And, Count, Desc, Join, LeftJoin, Or
+from storm.expr import And, Count, Desc, Is, Join, LeftJoin, Or
+from storm.locals import Bool, Int, Unicode
 from storm.references import ReferenceSet
 from zope.interface import implementer
 
@@ -17,14 +17,7 @@ from lp.registry.model.karma import KarmaCache, KarmaCategory
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStandbyStore, IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    IntCol,
-    SQLObjectNotFound,
-    SQLRelatedJoin,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.worlddata.interfaces.language import (
     ILanguage,
@@ -34,16 +27,17 @@ from lp.services.worlddata.interfaces.language import (
 
 
 @implementer(ILanguage)
-class Language(SQLBase):
-    _table = "Language"
+class Language(StormBase):
+    __storm_table__ = "Language"
 
-    code = StringCol(dbName="code", notNull=True, unique=True)
-    uuid = StringCol(dbName="uuid", notNull=False, default=None)
-    nativename = StringCol(dbName="nativename")
-    englishname = StringCol(dbName="englishname")
-    pluralforms = IntCol(dbName="pluralforms")
-    pluralexpression = StringCol(dbName="pluralexpression")
-    visible = BoolCol(dbName="visible", notNull=True)
+    id = Int(primary=True)
+    code = Unicode(name="code", allow_none=False)
+    uuid = Unicode(name="uuid", allow_none=True, default=None)
+    nativename = Unicode(name="nativename")
+    englishname = Unicode(name="englishname", allow_none=False)
+    pluralforms = Int(name="pluralforms")
+    pluralexpression = Unicode(name="pluralexpression")
+    visible = Bool(name="visible", allow_none=False)
     direction = DBEnum(
         name="direction",
         allow_none=False,
@@ -52,18 +46,37 @@ class Language(SQLBase):
     )
 
     translation_teams = ReferenceSet(
-        "<primary key>",
-        "Translator.language_id",
-        "Translator.translator_id",
-        "Person.id",
+        "id", "Translator.language_id", "Translator.translator_id", "Person.id"
     )
 
-    _countries = SQLRelatedJoin(
-        "Country",
-        joinColumn="language",
-        otherColumn="country",
-        intermediateTable="SpokenIn",
+    _countries = ReferenceSet(
+        "id", "SpokenIn.language_id", "SpokenIn.country_id", "Country.id"
     )
+
+    def __init__(
+        self,
+        code,
+        englishname,
+        nativename=None,
+        pluralforms=None,
+        pluralexpression=None,
+        visible=True,
+        direction=TextDirection.LTR,
+    ):
+        super().__init__()
+        self.code = code
+        self.englishname = englishname
+        self.nativename = nativename
+        self.pluralforms = pluralforms
+        self.pluralexpression = pluralexpression
+        self.visible = visible
+        self.direction = direction
+
+    def addCountry(self, country):
+        self._countries.add(country)
+
+    def removeCountry(self, country):
+        self._countries.remove(country)
 
     # Define a read/write property `countries` so it can be passed
     # to language administration `LaunchpadFormView`.
@@ -199,7 +212,11 @@ class LanguageSet:
 
     @property
     def _visible_languages(self):
-        return Language.select("visible IS TRUE", orderBy="englishname")
+        return (
+            IStore(Language)
+            .find(Language, Is(Language.visible, True))
+            .order_by(Language.englishname)
+        )
 
     @property
     def common_languages(self):
@@ -220,7 +237,7 @@ class LanguageSet:
             IStore(Language)
             .find(
                 Language,
-                Language.visible == True if only_visible else True,
+                Is(Language.visible, True) if only_visible else True,
             )
             .order_by(Language.englishname)
         )
@@ -257,7 +274,9 @@ class LanguageSet:
 
     def __iter__(self):
         """See `ILanguageSet`."""
-        return iter(Language.select(orderBy="englishname"))
+        return iter(
+            IStore(Language).find(Language).order_by(Language.englishname)
+        )
 
     def __getitem__(self, code):
         """See `ILanguageSet`."""
@@ -270,10 +289,7 @@ class LanguageSet:
 
     def get(self, language_id):
         """See `ILanguageSet`."""
-        try:
-            return Language.get(language_id)
-        except SQLObjectNotFound:
-            return None
+        return IStore(Language).get(Language, language_id)
 
     def getLanguageByCode(self, code):
         """See `ILanguageSet`."""
@@ -284,7 +300,7 @@ class LanguageSet:
 
     def keys(self):
         """See `ILanguageSet`."""
-        return [language.code for language in Language.select()]
+        return list(IStore(Language).find(Language.code))
 
     def canonicalise_language_code(self, code):
         """See `ILanguageSet`."""
@@ -307,7 +323,7 @@ class LanguageSet:
         direction=TextDirection.LTR,
     ):
         """See `ILanguageSet`."""
-        return Language(
+        language = Language(
             code=code,
             englishname=englishname,
             nativename=nativename,
@@ -316,11 +332,12 @@ class LanguageSet:
             visible=visible,
             direction=direction,
         )
+        return IStore(Language).add(language)
 
     def search(self, text):
         """See `ILanguageSet`."""
         if text:
-            text = six.ensure_text(text).lower()
+            text = text.lower()
             results = (
                 IStandbyStore(Language)
                 .find(
