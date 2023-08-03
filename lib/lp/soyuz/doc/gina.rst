@@ -27,7 +27,9 @@ Get the current counts of stuff in the database:
     >>> orig_spr_count = SourcePackageRelease.select().count()
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
-    >>> orig_tp_count = TeamParticipation.select().count()
+    >>> orig_tp_count = (
+    ...     IStore(TeamParticipation).find(TeamParticipation).count()
+    ... )
     >>> orig_email_count = EmailAddress.select().count()
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
@@ -571,7 +573,10 @@ Kamion, 2 being uploaded by mdz and 2 by doko).
     cjwatson
     >>> print(Person.select().count() - orig_person_count)
     13
-    >>> print(TeamParticipation.select().count() - orig_tp_count)
+    >>> print(
+    ...     IStore(TeamParticipation).find(TeamParticipation).count()
+    ...     - orig_tp_count
+    ... )
     13
     >>> print(EmailAddress.select().count() - orig_email_count)
     13
@@ -664,7 +669,10 @@ changed, etc.
     17
     >>> print(Person.select().count() - orig_person_count)
     13
-    >>> print(TeamParticipation.select().count() - orig_tp_count)
+    >>> print(
+    ...     IStore(TeamParticipation).find(TeamParticipation).count()
+    ...     - orig_tp_count
+    ... )
     13
     >>> print(EmailAddress.select().count() - orig_email_count)
     13

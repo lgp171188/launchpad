@@ -22,10 +22,13 @@ Let's make sure that 'cprov' is now an Approved member of
 
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.teammembership import TeamMembership
+    >>> from lp.services.database.interfaces import IStore
     >>> cprov = Person.byName("cprov")
     >>> landscape_team = Person.byName("landscape-developers")
-    >>> cprov_landscape_membership = TeamMembership.selectOneBy(
-    ...     personID=cprov.id, teamID=landscape_team.id
+    >>> cprov_landscape_membership = (
+    ...     IStore(TeamMembership)
+    ...     .find(TeamMembership, person=cprov, team=landscape_team)
+    ...     .one()
     ... )
     >>> cprov_landscape_membership.status.title
     'Approved'
@@ -56,8 +59,10 @@ members.
     >>> launchpad = Person.byName("launchpad")
     >>> launchpad in landscape_team.activemembers
     False
-    >>> membership = TeamMembership.selectOneBy(
-    ...     person=launchpad, team=landscape_team
+    >>> membership = (
+    ...     IStore(TeamMembership)
+    ...     .find(TeamMembership, person=launchpad, team=landscape_team)
+    ...     .one()
     ... )
     >>> membership.status.title
     'Invited'

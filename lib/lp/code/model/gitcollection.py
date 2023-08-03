@@ -553,7 +553,7 @@ class GenericGitCollection:
         repository_query = self._getRepositorySelect((GitRepository.owner_id,))
         return self.store.find(
             Person,
-            Person.id == TeamParticipation.teamID,
+            Person.id == TeamParticipation.team_id,
             TeamParticipation.person == person,
             TeamParticipation.team != person,
             Person.id.is_in(repository_query),
@@ -627,8 +627,8 @@ class GenericGitCollection:
     def ownedByTeamMember(self, person):
         """See `IGitCollection`."""
         subquery = Select(
-            TeamParticipation.teamID,
-            where=TeamParticipation.personID == person.id,
+            TeamParticipation.team_id,
+            where=TeamParticipation.person == person,
         )
         return self._filterBy(
             [In(GitRepository.owner_id, subquery)], symmetric=False

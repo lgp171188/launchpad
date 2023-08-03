@@ -192,9 +192,9 @@ class AccessTokenSet:
                     Or(
                         AccessToken.owner_id.is_in(
                             Select(
-                                TeamParticipation.teamID,
+                                TeamParticipation.team_id,
                                 where=TeamParticipation.person
-                                == visible_by_user.id,
+                                == visible_by_user,
                             )
                         ),
                         AccessToken.git_repository_id.is_in(

@@ -126,9 +126,9 @@ def get_bugsummary_filter_for_user(user):
                 "teams",
                 store,
                 Select(
-                    TeamParticipation.teamID,
+                    TeamParticipation.team_id,
                     tables=[TeamParticipation],
-                    where=(TeamParticipation.personID == user.id),
+                    where=(TeamParticipation.person == user),
                 ),
             ),
             WithMaterialized(

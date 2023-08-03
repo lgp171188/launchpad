@@ -1929,8 +1929,8 @@ class ArchiveAuthTokenDeactivator(BulkPruner):
                     ArchiveSubscriber.status
                     == ArchiveSubscriberStatus.CURRENT,
                     ArchiveSubscriber.subscriber_id
-                    == TeamParticipation.teamID,
-                    TeamParticipation.personID == ArchiveAuthToken.person_id,
+                    == TeamParticipation.team_id,
+                    TeamParticipation.person_id == ArchiveAuthToken.person_id,
                 ),
             ),
         )

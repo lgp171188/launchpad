@@ -888,10 +888,11 @@ We can also change the sort order of the results of getMembersByStatus.
     Celso Providelo (cprov)
     Guilherme Salgado (salgado)
 
-    >>> orderBy = "-TeamMembership.date_joined"
-    >>> for person in t3.getMembersByStatus(deactivated, orderBy=orderBy):
+    >>> from storm.locals import Desc
+    >>> for person in t3.getMembersByStatus(deactivated).order_by(
+    ...     Desc("TeamMembership.date_joined")
+    ... ):
     ...     print(person.unique_displayname)
-    ...
     Celso Providelo (cprov)
     Guilherme Salgado (salgado)
 

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from storm.expr import Func
 from storm.info import ClassAlias
+from storm.locals import DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -45,70 +46,65 @@ from lp.registry.interfaces.teammembership import (
     TeamMembershipStatus,
 )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    cursor,
-    flush_database_updates,
-    sqlvalues,
-)
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.sqlbase import flush_database_updates, sqlvalues
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ITeamMembership)
-class TeamMembership(SQLBase):
+class TeamMembership(StormBase):
     """See `ITeamMembership`."""
 
-    _table = "TeamMembership"
-    _defaultOrder = "id"
+    __storm_table__ = "TeamMembership"
+    __storm_order__ = "id"
 
-    team = ForeignKey(dbName="team", foreignKey="Person", notNull=True)
-    person = ForeignKey(
-        dbName="person",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=True,
+    id = Int(primary=True)
+    team_id = Int(name="team", allow_none=False)
+    team = Reference(team_id, "Person.id")
+    person_id = Int(name="person", validator=validate_person, allow_none=False)
+    person = Reference(person_id, "Person.id")
+    last_changed_by_id = Int(
+        name="last_changed_by", validator=validate_public_person, default=None
     )
-    last_changed_by = ForeignKey(
-        dbName="last_changed_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
+    last_changed_by = Reference(last_changed_by_id, "Person.id")
+    proposed_by_id = Int(
+        name="proposed_by", validator=validate_public_person, default=None
     )
-    proposed_by = ForeignKey(
-        dbName="proposed_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
+    proposed_by = Reference(proposed_by_id, "Person.id")
+    acknowledged_by_id = Int(
+        name="acknowledged_by", validator=validate_public_person, default=None
     )
-    acknowledged_by = ForeignKey(
-        dbName="acknowledged_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
+    acknowledged_by = Reference(acknowledged_by_id, "Person.id")
+    reviewed_by_id = Int(
+        name="reviewed_by", validator=validate_public_person, default=None
     )
-    reviewed_by = ForeignKey(
-        dbName="reviewed_by",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        default=None,
-    )
+    reviewed_by = Reference(reviewed_by_id, "Person.id")
     status = DBEnum(name="status", allow_none=False, enum=TeamMembershipStatus)
     # XXX: salgado, 2008-03-06: Need to rename datejoined and dateexpires to
     # match their db names.
-    datejoined = UtcDateTimeCol(dbName="date_joined", default=None)
-    dateexpires = UtcDateTimeCol(dbName="date_expires", default=None)
-    date_created = UtcDateTimeCol(default=UTC_NOW)
-    date_proposed = UtcDateTimeCol(default=None)
-    date_acknowledged = UtcDateTimeCol(default=None)
-    date_reviewed = UtcDateTimeCol(default=None)
-    date_last_changed = UtcDateTimeCol(default=None)
-    last_change_comment = StringCol(default=None)
-    proponent_comment = StringCol(default=None)
-    acknowledger_comment = StringCol(default=None)
-    reviewer_comment = StringCol(default=None)
+    datejoined = DateTime(
+        name="date_joined", default=None, tzinfo=timezone.utc
+    )
+    dateexpires = DateTime(
+        name="date_expires", default=None, tzinfo=timezone.utc
+    )
+    date_created = DateTime(default=UTC_NOW, tzinfo=timezone.utc)
+    date_proposed = DateTime(default=None, tzinfo=timezone.utc)
+    date_acknowledged = DateTime(default=None, tzinfo=timezone.utc)
+    date_reviewed = DateTime(default=None, tzinfo=timezone.utc)
+    date_last_changed = DateTime(default=None, tzinfo=timezone.utc)
+    last_change_comment = Unicode(default=None)
+    proponent_comment = Unicode(default=None)
+    acknowledger_comment = Unicode(default=None)
+    reviewer_comment = Unicode(default=None)
+
+    def __init__(self, team, person, status, dateexpires=None):
+        super().__init__()
+        self.team = team
+        self.person = person
+        self.status = status
+        self.dateexpires = dateexpires
 
     def isExpired(self):
         """See `ITeamMembership`."""
@@ -316,12 +312,13 @@ class TeamMembership(SQLBase):
             self.last_change_comment,
         )
 
+    def destroySelf(self):
+        Store.of(self).remove(self)
+
 
 @implementer(ITeamMembershipSet)
 class TeamMembershipSet:
     """See `ITeamMembershipSet`."""
-
-    _defaultOrder = ["Person.displayname", "Person.name"]
 
     def new(self, person, team, status, user, dateexpires=None, comment=None):
         """See `ITeamMembershipSet`."""
@@ -363,7 +360,11 @@ class TeamMembershipSet:
 
     def getByPersonAndTeam(self, person, team):
         """See `ITeamMembershipSet`."""
-        return TeamMembership.selectOneBy(person=person, team=team)
+        return (
+            IStore(TeamMembership)
+            .find(TeamMembership, person=person, team=team)
+            .one()
+        )
 
     def getMembershipsToExpire(self, when=None):
         """See `ITeamMembershipSet`."""
@@ -408,27 +409,16 @@ class TeamMembershipSet:
     def deactivateActiveMemberships(self, team, comment, reviewer):
         """See `ITeamMembershipSet`."""
         now = datetime.now(timezone.utc)
-        cur = cursor()
         all_members = list(team.activemembers)
-        cur.execute(
-            """
-            UPDATE TeamMembership
-            SET status=%(status)s,
-                last_changed_by=%(last_changed_by)s,
-                last_change_comment=%(comment)s,
-                date_last_changed=%(date_last_changed)s
-            WHERE
-                TeamMembership.team = %(team)s
-                AND TeamMembership.status IN %(original_statuses)s
-            """,
-            dict(
-                status=TeamMembershipStatus.DEACTIVATED,
-                last_changed_by=reviewer.id,
-                comment=comment,
-                date_last_changed=now,
-                team=team.id,
-                original_statuses=ACTIVE_STATES,
-            ),
+        IStore(TeamMembership).find(
+            TeamMembership,
+            TeamMembership.team == team,
+            TeamMembership.status.is_in(ACTIVE_STATES),
+        ).set(
+            status=TeamMembershipStatus.DEACTIVATED,
+            last_changed_by_id=reviewer.id,
+            last_change_comment=comment,
+            date_last_changed=now,
         )
         for member in all_members:
             # store.invalidate() is called for each iteration.
@@ -436,11 +426,14 @@ class TeamMembershipSet:
 
 
 @implementer(ITeamParticipation)
-class TeamParticipation(SQLBase):
-    _table = "TeamParticipation"
+class TeamParticipation(StormBase):
+    __storm_table__ = "TeamParticipation"
 
-    team = ForeignKey(dbName="team", foreignKey="Person", notNull=True)
-    person = ForeignKey(dbName="person", foreignKey="Person", notNull=True)
+    id = Int(primary=True)
+    team_id = Int(name="team", allow_none=False)
+    team = Reference(team_id, "Person.id")
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
 
 
 def _cleanTeamParticipation(child, parent):
@@ -619,8 +612,8 @@ def find_team_participations(people, teams=None):
         Team = ClassAlias(Person, "Team")
         person_ids = [person.id for person in people]
         conditions = [
-            TeamParticipation.personID == Person.id,
-            TeamParticipation.teamID == Team.id,
+            TeamParticipation.person_id == Person.id,
+            TeamParticipation.team_id == Team.id,
             Person.id.is_in(person_ids),
         ]
         team_ids = [team.id for team in teams_to_query]

@@ -498,15 +498,16 @@ class CopyChecker:
                 )
             )
 
-        format = SourcePackageFormat.getTermByToken(
-            source.sourcepackagerelease.dsc_format
-        ).value
+        if source.sourcepackagerelease.dsc_format is not None:
+            format = SourcePackageFormat.getTermByToken(
+                source.sourcepackagerelease.dsc_format
+            ).value
 
-        if not series.isSourcePackageFormatPermitted(format):
-            raise CannotCopy(
-                "Source format '%s' not supported by target series %s."
-                % (source.sourcepackagerelease.dsc_format, series.name)
-            )
+            if not series.isSourcePackageFormatPermitted(format):
+                raise CannotCopy(
+                    "Source format '%s' not supported by target series %s."
+                    % (source.sourcepackagerelease.dsc_format, series.name)
+                )
 
         # Deny copies of source publications containing files with an
         # expiration date set.

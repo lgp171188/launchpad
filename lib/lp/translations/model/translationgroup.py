@@ -345,7 +345,7 @@ class TranslationGroupSet:
             ),
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == Translator.translator_id,
+                TeamParticipation.team_id == Translator.translator_id,
             ),
         ]
         result = store.using(*origin).find(

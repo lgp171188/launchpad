@@ -573,8 +573,8 @@ def get_structural_subscriptions_for_target(target, person):
         StructuralSubscription,
         IStructuralSubscriptionTargetHelper(target).join,
         StructuralSubscription.subscriber == Person.id,
-        TeamParticipation.personID == person.id,
-        TeamParticipation.teamID == Person.id,
+        TeamParticipation.person == person,
+        TeamParticipation.team_id == Person.id,
     )
 
 
@@ -615,8 +615,8 @@ def get_structural_subscriptions_for_bug(bug, person=None):
         conditions.extend(
             [
                 StructuralSubscription.subscriber == Person.id,
-                TeamParticipation.personID == person.id,
-                TeamParticipation.teamID == Person.id,
+                TeamParticipation.person == person,
+                TeamParticipation.team_id == Person.id,
             ]
         )
     return _get_structural_subscriptions(

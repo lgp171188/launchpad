@@ -472,7 +472,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     BugSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )
@@ -481,7 +481,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     BranchSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )
@@ -490,7 +490,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     GitSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )
@@ -499,7 +499,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     SnapSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )
@@ -508,7 +508,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     SpecificationSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )
@@ -517,7 +517,7 @@ class RemoveArtifactSubscriptionsJob(SharingJobDerived):
                 In(
                     OCIRecipeSubscription.person_id,
                     Select(
-                        TeamParticipation.personID,
+                        TeamParticipation.person_id,
                         where=TeamParticipation.team == self.grantee,
                     ),
                 )

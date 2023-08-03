@@ -1855,7 +1855,7 @@ class ProductSet:
                         AccessPolicyGrantFlat,
                         Join(
                             TeamParticipation,
-                            TeamParticipation.teamID
+                            TeamParticipation.team_id
                             == AccessPolicyGrantFlat.grantee_id,
                         ),
                     ),

@@ -260,7 +260,7 @@ def get_specification_privacy_filter(user):
         ArrayIntersects(
             SQL("Specification.access_grants"),
             Select(
-                ArrayAgg(TeamParticipation.teamID),
+                ArrayAgg(TeamParticipation.team_id),
                 tables=TeamParticipation,
                 where=(TeamParticipation.person == user),
             ),
@@ -277,7 +277,7 @@ def get_specification_privacy_filter(user):
                     AccessPolicyGrant,
                     Join(
                         TeamParticipation,
-                        TeamParticipation.teamID
+                        TeamParticipation.team_id
                         == AccessPolicyGrant.grantee_id,
                     ),
                 ),

@@ -134,7 +134,7 @@ class GenericRevisionCollection:
         if person.is_team:
             query = [
                 TeamParticipation.team == person,
-                RevisionAuthor.person_id == TeamParticipation.personID,
+                RevisionAuthor.person_id == TeamParticipation.person_id,
             ]
         else:
             query = [RevisionAuthor.person == person]

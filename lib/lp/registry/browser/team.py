@@ -1286,7 +1286,7 @@ class TeamMemberAddView(LaunchpadFormView):
         newmember = data.get("newmember")
         error = None
         if newmember is not None:
-            if newmember.is_team and not newmember.activemembers:
+            if newmember.is_team and newmember.activemembers.is_empty():
                 error = _(
                     "You can't add a team that doesn't have any active"
                     " members."

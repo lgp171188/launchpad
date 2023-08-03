@@ -111,7 +111,7 @@ class ArchiveSubscriber(StormBase):
             )
 
             team_participation = Join(
-                TeamParticipation, TeamParticipation.personID == Person.id
+                TeamParticipation, TeamParticipation.person_id == Person.id
             )
 
             # Only return people with preferred email address set.
@@ -126,7 +126,7 @@ class ArchiveSubscriber(StormBase):
             ).find(
                 (Person, EmailAddress),
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
-                TeamParticipation.teamID == self.subscriber_id,
+                TeamParticipation.team == self.subscriber,
                 Person.teamowner == None,
                 # There is no existing archive auth token.
                 ArchiveAuthToken.person_id == None,
@@ -184,7 +184,7 @@ class ArchiveSubscriberSet:
             ArchiveSubscriber,
             Join(
                 TeamParticipation,
-                TeamParticipation.teamID == ArchiveSubscriber.subscriber_id,
+                TeamParticipation.team_id == ArchiveSubscriber.subscriber_id,
             ),
         ]
 
@@ -218,7 +218,7 @@ class ArchiveSubscriberSet:
             store.using(*origin)
             .find(
                 result_row,
-                TeamParticipation.personID == subscriber.id,
+                TeamParticipation.person == subscriber,
                 *extra_exprs,
             )
             .order_by(Desc(ArchiveSubscriber.date_created))
