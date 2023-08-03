@@ -19,3 +19,5 @@ requires:
 provides:
   loadbalancer:
     interface: http
+  vhost-config:
+    interface: apache-vhost-config

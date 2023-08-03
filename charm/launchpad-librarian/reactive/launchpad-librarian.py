@@ -210,7 +210,12 @@ def configure_loadbalancer():
     unit_ip = hookenv.unit_private_ip()
     services = [
         {
-            "service_name": config["librarian_download_host"],
+            # Note that we rename this to
+            # "cached-launchpad-librarian-download" in squid-reverseproxy
+            # configuration in order that the apache2 charm can distinguish
+            # between haproxy and Squid.  (Apache only needs the cached
+            # version.)
+            "service_name": "launchpad-librarian-download",
             "service_port": config["librarian_download_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_download),
@@ -225,7 +230,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": config["librarian_upload_host"],
+            "service_name": "launchpad-librarian-upload",
             "service_port": config["librarian_upload_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_upload),
@@ -241,7 +246,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": config["librarian_restricted_download_host"],
+            "service_name": "launchpad-librarian-restricted-download",
             "service_port": config["librarian_restricted_download_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_download),
@@ -256,7 +261,7 @@ def configure_loadbalancer():
             ],
         },
         {
-            "service_name": config["librarian_restricted_upload_host"],
+            "service_name": "launchpad-librarian-restricted-upload",
             "service_port": config["librarian_restricted_upload_port"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_upload),
@@ -291,3 +296,44 @@ def configure_loadbalancer():
 )
 def deconfigure_loadbalancer():
     remove_state("launchpad.loadbalancer.configured")
+
+
+@when(
+    "config.set.domain_librarian",
+    "vhost-config.available",
+    "service.configured",
+)
+@when_not("launchpad.vhost.configured")
+def configure_vhost():
+    vhost_config = endpoint_from_flag("vhost-config.available")
+    config = dict(hookenv.config())
+    config["domain_librarian_aliases"] = yaml.safe_load(
+        config["domain_librarian_aliases"]
+    )
+    vhost_config.publish_vhosts(
+        [
+            vhost_config.make_vhost(
+                80,
+                templating.render(
+                    "vhosts/librarian-http.conf.j2", None, config
+                ),
+            ),
+            vhost_config.make_vhost(
+                443,
+                templating.render(
+                    "vhosts/librarian-https.conf.j2", None, config
+                ),
+            ),
+        ]
+    )
+    set_state("launchpad.vhost.configured")
+
+
+@when("launchpad.vhost.configured")
+@when_not_all(
+    "config.set.domain_librarian",
+    "vhost-config.available",
+    "service.configured",
+)
+def deconfigure_vhost():
+    remove_state("launchpad.vhost.configured")

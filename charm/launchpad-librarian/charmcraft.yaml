@@ -35,11 +35,12 @@ parts:
     after:
       - ols-layers
     source: https://git.launchpad.net/launchpad-layers
-    source-commit: "42a4b4c4f62936b1d050c775e84f7364dfb5efc0"
+    source-commit: "8b7d25a29b8297d491abe6a0c6b69f34e39dddba"
     source-submodules: []
     source-type: git
     plugin: dump
     organize:
+      apache-vhost-config: layers/interface/apache-vhost-config
       launchpad-base: layers/layer/launchpad-base
       launchpad-db: layers/layer/launchpad-db
       launchpad-payload: layers/layer/launchpad-payload
