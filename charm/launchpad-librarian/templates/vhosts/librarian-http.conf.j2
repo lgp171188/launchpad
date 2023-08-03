@@ -23,15 +23,3 @@
     ProxyPassReverse / balancer://cached-launchpad-librarian-download/
 </VirtualHost>
 
-<VirtualHost *:80>
-    ServerName wildcard.restricted.{{ domain_librarian }}
-    ServerAlias *.restricted.{{ domain_librarian }}
-
-    CustomLog /var/log/apache2/wildcard.restricted.{{ domain_librarian }}-access.log combined
-    ErrorLog /var/log/apache2/wildcard.restricted.{{ domain_librarian }}-error.log
-
-    # The restricted librarian is only available over HTTPS.
-    RewriteEngine on
-    RewriteRule ^/(.*)$ - [R=403,L]
-</VirtualHost>
-
