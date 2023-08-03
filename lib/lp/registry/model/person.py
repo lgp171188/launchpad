@@ -2758,11 +2758,22 @@ class Person(
         for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
             if (src_tab, src_col) in skip:
                 continue
-            ref_query.append(
+            query = (
                 "SELECT '%(table)s' AS table FROM %(table)s "
                 "WHERE %(col)s = %(person_id)d"
                 % {"col": src_col, "table": src_tab, "person_id": self.id}
             )
+            if (src_tab, src_col) == ("teammembership", "person"):
+                # XXX: this should be converted to the Storm query compiler
+                # rather than doing fragile string assembly.
+                query += (
+                    " AND status != %(deactivated)d AND status != %(expired)d"
+                    % {
+                        "deactivated": TeamMembershipStatus.DEACTIVATED.value,
+                        "expired": TeamMembershipStatus.EXPIRED.value,
+                    }
+                )
+            ref_query.append(query)
         if ref_query:
             cur.execute(" UNION ".join(ref_query))
             for src_tab in cur.fetchall():
