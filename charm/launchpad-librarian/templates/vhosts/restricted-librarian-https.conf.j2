@@ -1,9 +1,6 @@
 <VirtualHost *:443>
-    ServerName {{ domain_librarian }}
-{%- for domain_librarian_alias in domain_librarian_aliases %}
-    ServerAlias {{ domain_librarian_alias }}
-{%- endfor %}
-    ServerAdmin {{ webmaster_email }}
+    ServerName wildcard.restricted.{{ domain_librarian }}
+    ServerAlias *.restricted.{{ domain_librarian }}
 
     SSLEngine on
     SSLCertificateFile /etc/ssl/certs/{{ domain_librarian }}.crt
@@ -27,11 +24,14 @@
         Require all granted
     </Proxy>
 
-    # Tokens may only be used on restricted librarian URLs.
-    ProxyPass "\?.*token=" !
-
     ProxyPreserveHost on
-    ProxyPass / balancer://cached-launchpad-librarian-download/
+    # nocanon per https://portal.admin.canonical.com/C42560 to avoid
+    # problems with Launchpad's handling of e.g. %2B.
+    ProxyPass / balancer://cached-launchpad-librarian-download/ nocanon
     ProxyPassReverse / balancer://cached-launchpad-librarian-download/
+
+    <Location />
+        Header set Cache-Control "max-age=604800"
+    </Location>
 </VirtualHost>
 

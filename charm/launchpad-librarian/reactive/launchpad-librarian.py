@@ -337,3 +337,44 @@ def configure_vhost():
 )
 def deconfigure_vhost():
     remove_state("launchpad.vhost.configured")
+
+
+@when(
+    "config.set.domain_librarian",
+    "restricted-vhost-config.available",
+    "service.configured",
+)
+@when_not("launchpad.restricted-vhost.configured")
+def configure_restricted_vhost():
+    vhost_config = endpoint_from_flag("restricted-vhost-config.available")
+    config = dict(hookenv.config())
+    config["domain_librarian_aliases"] = yaml.safe_load(
+        config["domain_librarian_aliases"]
+    )
+    vhost_config.publish_vhosts(
+        [
+            vhost_config.make_vhost(
+                80,
+                templating.render(
+                    "vhosts/restricted-librarian-http.conf.j2", None, config
+                ),
+            ),
+            vhost_config.make_vhost(
+                443,
+                templating.render(
+                    "vhosts/restricted-librarian-https.conf.j2", None, config
+                ),
+            ),
+        ]
+    )
+    set_state("launchpad.restricted-vhost.configured")
+
+
+@when("launchpad.restricted-vhost.configured")
+@when_not_all(
+    "config.set.domain_librarian",
+    "restricted-vhost-config.available",
+    "service.configured",
+)
+def deconfigure_restricted_vhost():
+    remove_state("launchpad.restricted-vhost.configured")
