@@ -23,7 +23,7 @@ from charms.reactive import (
 from ols import base
 
 CHARM_CELERY_SERVICES = [
-    "celerybeat-bzrsyncd",
+    "celerybeat_bzrsyncd",
     "celeryd_bzrsyncd_job",
     "celeryd_bzrsyncd_job_slow",
 ]
