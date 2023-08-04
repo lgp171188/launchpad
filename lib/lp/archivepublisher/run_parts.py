@@ -1,7 +1,14 @@
 # Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Publisher support for running programs from a plug-in directory."""
+"""Publisher support for running programs from a plug-in directory.
+
+This module offers a thin wrapper around the system application `run-parts`,
+which runs scripts or programs in a given directory.
+
+This is used to allow deployments of the publisher code to drop in hook scripts
+that are run at certain stages of publishing.
+"""
 
 __all__ = [
     "execute_subprocess",
@@ -53,7 +60,10 @@ def execute_subprocess(args, log=None, failure=None, **kwargs):
 
 
 def run_parts(distribution_name, parts, log=None, env=None):
-    """Execute run-parts.
+    """Execute the system application `run-parts`.
+
+    `run-parts` runs scripts or programs in a given directory.
+    See https://manpages.ubuntu.com/run-parts.
 
     :param distribution_name: The name of the distribution to execute
         run-parts scripts for.
