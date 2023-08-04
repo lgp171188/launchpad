@@ -602,6 +602,7 @@ def connect(user=None, dbname=None, isolation=ISOLATION_LEVEL_DEFAULT):
         and user != parsed_dsn["user"]
     ):
         con.cursor().execute("SET ROLE %s", (user,))
+        con.commit()
     return con
 
 

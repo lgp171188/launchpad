@@ -1,6 +1,7 @@
 # Copyright 2022 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+import transaction
 from psycopg2.errors import InsufficientPrivilege
 from psycopg2.extensions import parse_dsn
 from zope.component import getUtility
@@ -24,6 +25,12 @@ class TestLaunchpadDatabase(TestCase):
         self.addCleanup(dbconfig.reset)
 
     def assertCurrentUser(self, store, user):
+        self.assertEqual(
+            user, store.execute("SELECT current_user").get_one()[0]
+        )
+        # Ensure that the role is set for the whole session, not just the
+        # current transaction.
+        transaction.abort()
         self.assertEqual(
             user, store.execute("SELECT current_user").get_one()[0]
         )

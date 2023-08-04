@@ -46,7 +46,7 @@ parts:
       - layers
     prime:
       - "-layers"
-  launchpad:
+  charm:
     after:
       - charm-wheels
       - launchpad-layers
