@@ -6,7 +6,11 @@ After=syslog.target network.target remote-fs.target nss-lookup.target
 Environment=LPCONFIG=launchpad-scripts-bzrsyncd
 User=launchpad
 WorkingDirectory={{ code_dir }}
-ExecStart={{ code_dir }}/bin/celery beat --config=lp.services.job.celeryconfig
+ExecStart={{ code_dir }}/bin/celery beat \
+    --config=lp.services.job.celeryconfig \
+    --pidfile={{ var_dir }}/celerybeat_bzrsyncd.pid \
+    --logfile={{ logs_dir }}/celerybeat_bzrsyncd.log \
+    --schedule={{ var_dir }}/celerybeat-schedule.db
 Restart=on-failure
 LimitNOFILE=10000
 
