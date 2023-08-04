@@ -134,7 +134,7 @@ def add_word_breaks(word):
     any HTML tags.
 
     Breaks are inserted at least every 7 to 15 characters,
-    preferably after puctuation.
+    preferably after punctuation.
     """
     broken = []
     pos = 0
@@ -228,7 +228,7 @@ def linkify_bug_numbers(text):
             # string:
             # "LP: #9, #999"
             # replacing #9 with some HTML would also interfere with
-            # #999.  The liklihood of this happening is very, very
+            # #999.  The likelihood of this happening is very, very
             # small, however.
             text = text.replace(
                 replace_text, FormattersAPI._linkify_substitution(bug_match)
