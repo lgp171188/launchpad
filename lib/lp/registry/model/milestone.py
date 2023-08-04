@@ -18,7 +18,7 @@ from operator import itemgetter
 
 from lazr.restful.declarations import error_status
 from storm.expr import And, Desc, LeftJoin, Select, Union
-from storm.locals import Store
+from storm.locals import Bool, Date, Int, Reference, Store, Unicode
 from storm.zope import IResultSet
 from zope.component import getUtility
 from zope.interface import implementer
@@ -43,14 +43,7 @@ from lp.registry.interfaces.milestone import (
 from lp.registry.model.productrelease import ProductRelease
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    AND,
-    BoolCol,
-    DateCol,
-    ForeignKey,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.sorting import expand_numbers
 
@@ -107,7 +100,8 @@ class HasMilestonesMixin:
         store = Store.of(self)
         result = store.find(
             Milestone,
-            And(self._getMilestoneCondition(), Milestone.active == True),
+            self._getMilestoneCondition(),
+            Milestone.active == True,
         )
         return result.order_by(self._milestone_order)
 
@@ -223,34 +217,59 @@ class MilestoneData:
 
 @implementer(IHasBugs, IMilestone, IBugSummaryDimension)
 class Milestone(
-    SQLBase, MilestoneData, StructuralSubscriptionTargetMixin, HasBugsBase
+    StormBase, MilestoneData, StructuralSubscriptionTargetMixin, HasBugsBase
 ):
-    active = BoolCol(notNull=True, default=True)
+    __storm_table__ = "Milestone"
+
+    id = Int(primary=True)
+
+    active = Bool(allow_none=False, default=True)
 
     # XXX: EdwinGrubbs 2009-02-06 bug=326384:
     # The Milestone.dateexpected should be changed into a date column,
     # since the class defines the field as a DateCol, so that a list of
     # milestones can't have some dateexpected attributes that are
     # datetimes and others that are dates, which can't be compared.
-    dateexpected = DateCol(notNull=False, default=None)
+    dateexpected = Date(allow_none=True, default=None)
 
     # XXX: Guilherme Salgado 2007-03-27 bug=40978:
     # Milestones should be associated with productseries/distroseries
     # so these columns are not needed.
-    product = ForeignKey(dbName="product", foreignKey="Product", default=None)
-    distribution = ForeignKey(
-        dbName="distribution", foreignKey="Distribution", default=None
-    )
+    product_id = Int(name="product", default=None)
+    product = Reference(product_id, "Product.id")
+    distribution_id = Int(name="distribution", default=None)
+    distribution = Reference(distribution_id, "Distribution.id")
 
-    productseries = ForeignKey(
-        dbName="productseries", foreignKey="ProductSeries", default=None
-    )
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", default=None
-    )
-    name = StringCol(notNull=True)
-    summary = StringCol(notNull=False, default=None)
-    code_name = StringCol(dbName="codename", notNull=False, default=None)
+    productseries_id = Int(name="productseries", default=None)
+    productseries = Reference(productseries_id, "ProductSeries.id")
+    distroseries_id = Int(name="distroseries", default=None)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
+    name = Unicode(allow_none=False)
+    summary = Unicode(allow_none=True, default=None)
+    code_name = Unicode(name="codename", allow_none=True, default=None)
+
+    def __init__(
+        self,
+        name,
+        active=True,
+        dateexpected=None,
+        product=None,
+        distribution=None,
+        productseries=None,
+        distroseries=None,
+        summary=None,
+        code_name=None,
+    ):
+        super().__init__()
+        self.name = name
+        self.active = active
+        self.dateexpected = dateexpected
+        self.product = product
+        self.distribution = distribution
+        self.productseries = productseries
+        self.distroseries = distroseries
+        self.summary = summary
+        self.code_name = code_name
 
     def _milestone_ids_expr(self, user):
         return (self.id,)
@@ -346,7 +365,7 @@ class Milestone(
             "You cannot delete a milestone which has a product release "
             "associated with it."
         )
-        super().destroySelf()
+        Store.of(self).remove(self)
 
     def getBugSummaryContextWhereClause(self):
         """See BugTargetBase."""
@@ -415,7 +434,7 @@ class Milestone(
 class MilestoneSet:
     def __iter__(self):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
-        yield from Milestone.select()
+        yield from IStore(Milestone).find(Milestone)
 
     def get(self, milestoneid):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
@@ -434,28 +453,31 @@ class MilestoneSet:
 
     def getByNameAndProduct(self, name, product, default=None):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
-        query = AND(
-            Milestone.q.name == name, Milestone.q.productID == product.id
+        milestone = (
+            IStore(Milestone).find(Milestone, name=name, product=product).one()
         )
-        milestone = Milestone.selectOne(query)
         if milestone is None:
             return default
         return milestone
 
     def getByNameAndDistribution(self, name, distribution, default=None):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
-        query = AND(
-            Milestone.q.name == name,
-            Milestone.q.distributionID == distribution.id,
+        milestone = (
+            IStore(Milestone)
+            .find(Milestone, name=name, distribution=distribution)
+            .one()
         )
-        milestone = Milestone.selectOne(query)
         if milestone is None:
             return default
         return milestone
 
     def getVisibleMilestones(self):
         """See lp.registry.interfaces.milestone.IMilestoneSet."""
-        return Milestone.selectBy(active=True, orderBy="id")
+        return (
+            IStore(Milestone)
+            .find(Milestone, active=True)
+            .order_by(Milestone.id)
+        )
 
 
 @implementer(IProjectGroupMilestone)
@@ -498,7 +520,7 @@ class ProjectMilestone(MilestoneData, HasBugsBase):
             tables=[Milestone, Product],
             where=And(
                 Milestone.name == self.name,
-                Milestone.productID == Product.id,
+                Milestone.product_id == Product.id,
                 Product.projectgroup == self.target,
                 ProductSet.getProductPrivacyFilter(user),
             ),

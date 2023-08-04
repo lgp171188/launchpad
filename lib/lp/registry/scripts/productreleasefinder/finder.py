@@ -171,7 +171,7 @@ class ProductReleaseFinder:
             LibraryFileAlias.filename,
             Product.name == product_name,
             Product.id == ProductSeries.productID,
-            Milestone.productseriesID == ProductSeries.id,
+            Milestone.productseries_id == ProductSeries.id,
             ProductRelease.milestone_id == Milestone.id,
             ProductReleaseFile.productrelease_id == ProductRelease.id,
             LibraryFileAlias.id == ProductReleaseFile.libraryfile_id,

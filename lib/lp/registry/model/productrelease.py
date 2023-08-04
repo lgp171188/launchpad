@@ -344,7 +344,7 @@ class ProductReleaseSet:
             .find(
                 ProductRelease,
                 And(ProductRelease.milestone == Milestone.id),
-                Milestone.productseriesID.is_in(series_ids),
+                Milestone.productseries_id.is_in(series_ids),
             )
             .order_by(Desc(ProductRelease.datereleased))
         )
