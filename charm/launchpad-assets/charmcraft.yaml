@@ -57,7 +57,7 @@ parts:
       - layers
     prime:
       - "-layers"
-  launchpad-assets:
+  charm:
     after:
       - charm-wheels
       - launchpad-layers

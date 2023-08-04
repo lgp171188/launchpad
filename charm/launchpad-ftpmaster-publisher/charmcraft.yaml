@@ -48,7 +48,7 @@ parts:
       - layers
     prime:
       - "-layers"
-  launchpad-ftpmaster-publisher:
+  charm:
     after:
       - charm-wheels
       - launchpad-layers

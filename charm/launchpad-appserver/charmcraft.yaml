@@ -59,7 +59,7 @@ parts:
       - layers
     prime:
       - "-layers"
-  launchpad-appserver:
+  charm:
     after:
       - charm-wheels
       - launchpad-layers
