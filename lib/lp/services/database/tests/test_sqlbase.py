@@ -51,10 +51,16 @@ class TestConnect(TestCase):
         who, _, how = self.examineConnection(con)
         self.assertEqual(("launchpad_main", "serializable"), (who, how))
 
-    def getCurrentUser(self, con: connection) -> None:
+    def assertCurrentUser(self, con: connection, user: str) -> None:
         with con.cursor() as cur:
             cur.execute("SELECT current_user")
-            return cur.fetchone()[0]
+            self.assertEqual(user, cur.fetchone()[0])
+        # Ensure that the role is set for the whole session, not just the
+        # current transaction.
+        con.rollback()
+        with con.cursor() as cur:
+            cur.execute("SELECT current_user")
+            self.assertEqual(user, cur.fetchone()[0])
 
     def test_refuses_connstring_with_user(self):
         connstr = "dbname=%s user=foo" % DatabaseLayer._db_fixture.dbname
@@ -84,7 +90,7 @@ class TestConnect(TestCase):
             {"dbname": DatabaseLayer._db_fixture.dbname, "user": "ro"},
             parse_dsn(con.dsn),
         )
-        self.assertEqual("ro", self.getCurrentUser(con))
+        self.assertCurrentUser(con, "ro")
 
     def test_accepts_connstring_uri_without_user(self):
         connstr = "postgresql:///%s" % DatabaseLayer._db_fixture.dbname
@@ -94,7 +100,7 @@ class TestConnect(TestCase):
             {"dbname": DatabaseLayer._db_fixture.dbname, "user": "ro"},
             parse_dsn(con.dsn),
         )
-        self.assertEqual("ro", self.getCurrentUser(con))
+        self.assertCurrentUser(con, "ro")
 
     def test_set_role_after_connecting_refuses_connstring_without_user(self):
         connstr = "dbname=%s" % DatabaseLayer._db_fixture.dbname
@@ -134,7 +140,7 @@ class TestConnect(TestCase):
             {"dbname": DatabaseLayer._db_fixture.dbname, "user": "ro"},
             parse_dsn(con.dsn),
         )
-        self.assertEqual("read", self.getCurrentUser(con))
+        self.assertCurrentUser(con, "read")
 
     def test_set_role_after_connecting_accepts_connstring_uri_with_user(self):
         connstr = "postgresql://ro@/%s" % DatabaseLayer._db_fixture.dbname
@@ -146,7 +152,7 @@ class TestConnect(TestCase):
             {"dbname": DatabaseLayer._db_fixture.dbname, "user": "ro"},
             parse_dsn(con.dsn),
         )
-        self.assertEqual("read", self.getCurrentUser(con))
+        self.assertCurrentUser(con, "read")
 
     def test_set_role_after_connecting_not_member(self):
         connstr = "dbname=%s user=ro" % DatabaseLayer._db_fixture.dbname
