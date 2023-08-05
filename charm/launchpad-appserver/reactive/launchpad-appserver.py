@@ -147,7 +147,8 @@ def configure():
 @when("coordinator.granted.restart")
 def restart():
     hookenv.log("Restarting application server")
-    host.service_restart("launchpad")
+    host.service_restart("launchpad.service")
+    host.service_resume("launchpad.service")
     set_state("service.configured")
 
 

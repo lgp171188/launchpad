@@ -107,6 +107,7 @@ def configure():
         check=True,
     )
     configure_convoy(config)
+    host.service_resume("convoy.socket")
     set_flag("service.configured")
 
 
