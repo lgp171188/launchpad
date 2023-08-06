@@ -24,9 +24,40 @@ def base_dir():
 def install_files(source_path: os.PathLike, target_path: os.PathLike):
     hookenv.log(f"Installing files to {target_path}")
     subprocess.run(
-        ["rsync", "-av", "--delete", f"{source_path}/", f"{target_path}/"],
+        [
+            "rsync",
+            "-av",
+            "--delete",
+            "--exclude",
+            "offline.html",
+            "--exclude",
+            "offline-haproxy.html",
+            f"{source_path}/",
+            f"{target_path}/",
+        ],
         check=True,
     )
+
+
+def update_offline_symlinks(www_path: os.PathLike):
+    """Update offline.html and offline-haproxy.html symlinks.
+
+    These are used as error pages by Apache and haproxy when backends are
+    unavailable.
+    """
+    offline_mode = hookenv.config()["offline_mode"]
+    hookenv.log(f"Offline mode is '{offline_mode}'")
+    for suffix in ("", "-haproxy"):
+        offline_link_path = www_path / f"offline{suffix}.html"
+        offline_temp_link_path = www_path / f"offline{suffix}.html.new"
+        offline_target_path = www_path / f"offline-{offline_mode}{suffix}.html"
+        if not offline_target_path.exists():
+            offline_target_path = www_path / f"offline-unplanned{suffix}.html"
+
+        if offline_temp_link_path.exists():
+            offline_temp_link_path.unlink()
+        offline_temp_link_path.symlink_to(offline_target_path.name)
+        offline_temp_link_path.rename(offline_link_path)
 
 
 @when_not("service.configured")
@@ -40,6 +71,7 @@ def configure():
         Path(hookenv.charm_dir()) / "files" / "media",
         Path(base_dir()) / "www-media",
     )
+    update_offline_symlinks(Path(base_dir()) / "www")
     set_flag("service.configured")
 
 
