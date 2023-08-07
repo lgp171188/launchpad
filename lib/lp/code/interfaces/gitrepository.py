@@ -787,6 +787,21 @@ class IGitRepositoryView(IHasRecipes):
             diffs updated.
         """
 
+    def makeFrozenRef(path, commit_sha1):
+        """A frozen Git reference.
+
+        This is like a GitRef, but is frozen at a particular commit, even if
+        the real reference has moved on or has been deleted.
+        It isn't necessarily backed by a real database object,
+        and will retrieve columns from the database when required.
+        Use this when you have a repository/path/commit_sha1 that you want
+        to pass around as a single object,
+        but don't necessarily know that the ref still exists.
+
+        :param path: the repository reference path.
+        :param commit_sha1: the commit sha1 for that repository reference path.
+        """
+
     def markRecipesStale(paths):
         """Mark recipes associated with this repository as stale.
 

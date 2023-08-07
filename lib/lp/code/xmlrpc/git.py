@@ -38,6 +38,7 @@ from lp.code.errors import (
     GitRepositoryExists,
     InvalidNamespace,
 )
+from lp.code.interfaces.branchmergeproposal import IBranchMergeProposalGetter
 from lp.code.interfaces.codehosting import (
     LAUNCHPAD_ANONYMOUS,
     LAUNCHPAD_SERVICES,
@@ -693,6 +694,76 @@ class GitAPI(LaunchpadXMLRPCView):
                 # logging purposes (it may refer to private artifacts, but
                 # contains no credentials, only the merge proposal URL).
                 logger.info("getMergeProposalURL succeeded: %s" % result)
+            return result
+        finally:
+            # Avoid traceback reference cycles.
+            del result
+
+    @return_fault
+    def _getMergeProposalInfo(
+        self, requester, translated_path, ref, auth_params
+    ):
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path)
+        )
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            # Showing merge proposal information may be useful to ordinary
+            # users, but it doesn't make sense in the context of
+            # an internal service.
+            return None
+
+        # commit_sha1 isn't used here, but is
+        # needed to satisfy the `IGitRef` interface.
+        frozen_ref = repository.makeFrozenRef(path=ref, commit_sha1="")
+        branch = frozen_ref.name
+        merge_proposals = getUtility(
+            IBranchMergeProposalGetter
+        ).activeProposalsForBranches(source=frozen_ref, target=None)
+
+        merge_proposal = merge_proposals.any()
+        if merge_proposal:
+            return (
+                "Updated existing merge proposal "
+                "for %s on Launchpad:\n      %s"
+                % (quote(branch), merge_proposal.address)
+            )
+        else:
+            base_url = canonical_url(repository, rootsite="code")
+            mp_url = "%s/+ref/%s/+register-merge" % (base_url, quote(branch))
+            return (
+                "Create a merge proposal for '%s' on "
+                "Launchpad by visiting:\n      %s" % (branch, mp_url)
+            )
+
+    def getMergeProposalInfo(self, translated_path, ref, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: getMergeProposalInfo('%s, %s') for %s",
+            translated_path,
+            ref,
+            requester_id,
+        )
+
+        result = run_with_login(
+            requester_id,
+            self._getMergeProposalInfo,
+            translated_path,
+            ref,
+            auth_params,
+        )
+        try:
+            if isinstance(result, xmlrpc.client.Fault):
+                logger.error("getMergeProposalInfo failed: %r", result)
+            else:
+                logger.info("getMergeProposalInfo succeeded: %s" % result)
             return result
         finally:
             # Avoid traceback reference cycles.
