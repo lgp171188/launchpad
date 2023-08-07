@@ -38,6 +38,7 @@ from lp.registry.interfaces.karma import IKarmaCacheManager
 from lp.registry.interfaces.person import ImmutableVisibilityError, IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProductSet
+from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.model.karma import KarmaCategory, KarmaTotalCache
 from lp.registry.model.person import Person, get_recipients
 from lp.services.database.interfaces import IStore
@@ -1087,6 +1088,36 @@ class TestPersonStates(TestCaseWithFactory):
             )
         else:
             raise AssertionError("Expected exception.")
+
+    def test_visibility_validator_subteam_public_to_private_view(self):
+        team_owner = self.factory.makePerson()
+        new_team = self.factory.makeTeam(
+            owner=team_owner, visibility=PersonVisibility.PUBLIC
+        )
+        super_team = self.factory.makeTeam(
+            owner=team_owner,
+            visibility=PersonVisibility.PUBLIC,
+            members=[new_team],
+        )
+        membershipset = getUtility(ITeamMembershipSet)
+        membershipset.deactivateActiveMemberships(
+            super_team, "gone", team_owner
+        )
+        view = create_initialized_view(
+            new_team,
+            "+edit",
+            {
+                "field.name": "newteam",
+                "field.displayname": "New Team",
+                "field.membership_policy": "RESTRICTED",
+                "field.renewal_policy": "NONE",
+                "field.visibility": "PRIVATE",
+                "field.actions.save": "Save",
+            },
+        )
+        self.assertEqual(len(view.errors), 0)
+        self.assertEqual(len(view.request.notifications), 0)
+        self.assertEqual(new_team.visibility, PersonVisibility.PRIVATE)
 
     def test_visibility_validator_team_private_to_public_view(self):
         # A PRIVATE team cannot convert to PUBLIC.
