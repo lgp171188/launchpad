@@ -220,12 +220,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
     @property
     def source_git_ref(self):
-        from lp.code.model.gitref import GitRefFrozen
-
         if self.source_git_repository is None:
             return None
-        return GitRefFrozen(
-            self.source_git_repository,
+        return self.source_git_repository.makeFrozenRef(
             self.source_git_path,
             self.source_git_commit_sha1,
         )
@@ -238,12 +235,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
     @property
     def target_git_ref(self):
-        from lp.code.model.gitref import GitRefFrozen
-
         if self.target_git_repository is None:
             return None
-        return GitRefFrozen(
-            self.target_git_repository,
+        return self.target_git_repository.makeFrozenRef(
             self.target_git_path,
             self.target_git_commit_sha1,
         )
@@ -256,12 +250,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
 
     @property
     def prerequisite_git_ref(self):
-        from lp.code.model.gitref import GitRefFrozen
-
         if self.prerequisite_git_repository is None:
             return None
-        return GitRefFrozen(
-            self.prerequisite_git_repository,
+        return self.prerequisite_git_repository.makeFrozenRef(
             self.prerequisite_git_path,
             self.prerequisite_git_commit_sha1,
         )
@@ -1805,7 +1796,7 @@ class BranchMergeProposalGetter:
         return result
 
     @staticmethod
-    def activeProposalsForBranches(source, target):
+    def activeProposalsForBranches(source, target=None):
         clauses = [Not(BranchMergeProposal.queue_status.is_in(FINAL_STATES))]
         if IGitRef.providedBy(source):
             clauses.extend(
@@ -1813,16 +1804,29 @@ class BranchMergeProposalGetter:
                     BranchMergeProposal.source_git_repository
                     == source.repository,
                     BranchMergeProposal.source_git_path == source.path,
-                    BranchMergeProposal.target_git_repository
-                    == target.repository,
-                    BranchMergeProposal.target_git_path == target.path,
                 ]
             )
+
+            if target is not None:
+                clauses.extend(
+                    [
+                        BranchMergeProposal.target_git_repository
+                        == target.repository,
+                        BranchMergeProposal.target_git_path == target.path,
+                    ]
+                )
+
         else:
             clauses.extend(
                 [
                     BranchMergeProposal.source_branch == source,
-                    BranchMergeProposal.target_branch == target,
                 ]
             )
+
+            if target is not None:
+                clauses.extend(
+                    [
+                        BranchMergeProposal.target_branch == target,
+                    ]
+                )
         return IStore(BranchMergeProposal).find(BranchMergeProposal, *clauses)

@@ -98,7 +98,7 @@ from lp.code.interfaces.revisionstatus import (
 from lp.code.mail.branch import send_git_repository_modified_notifications
 from lp.code.model.branchmergeproposal import BranchMergeProposal
 from lp.code.model.gitactivity import GitActivity
-from lp.code.model.gitref import GitRef, GitRefDefault
+from lp.code.model.gitref import GitRef, GitRefDefault, GitRefFrozen
 from lp.code.model.gitrule import GitRule, GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.code.model.revisionstatus import RevisionStatusReport
@@ -1477,6 +1477,13 @@ class GitRepository(
         for merge_proposal in self.getActiveLandingTargets(paths):
             jobs.extend(merge_proposal.scheduleDiffUpdates())
         return jobs
+
+    def makeFrozenRef(self, path, commit_sha1):
+        return GitRefFrozen(
+            self,
+            path,
+            commit_sha1,
+        )
 
     def _getRecipes(self, paths=None):
         """Undecorated version of recipes for use by `markRecipesStale`."""

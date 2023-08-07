@@ -660,6 +660,34 @@ class TestGitAPIMixin:
         )
         self.assertEqual(expected_mp_url, result)
 
+    def assertHasMergeProposalInfo(
+        self, repository, pushed_branch, auth_params, mp=None
+    ):
+        base_url = canonical_url(repository, rootsite="code")
+        expected_mp_url = (
+            "Create a merge proposal for 'branch1' on "
+            "Launchpad by visiting:\n      "
+            "%s/+ref/%s/+register-merge"
+            % (
+                base_url,
+                quote(pushed_branch),
+            )
+        )
+
+        if mp:
+            expected_mp_url = (
+                "Updated existing merge proposal "
+                "for %s on Launchpad:\n      %s"
+                % (quote(pushed_branch), mp.address)
+            )
+
+        result = self.git_api.getMergeProposalInfo(
+            repository.getInternalPath(),
+            "refs/heads/%s" % pushed_branch,
+            auth_params,
+        )
+        self.assertEqual(expected_mp_url, result)
+
     def test_translatePath_private_repository(self):
         requester = self.factory.makePerson()
         repository = removeSecurityProxy(
@@ -2758,6 +2786,35 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             "/%s" % repository.unique_name,
             permission="write",
             access_token_id="string",
+        )
+
+    # TODO: add more `getMergeProposalInfo` tests
+    def test_getMergeProposalInfo(self):
+        # Merge proposal information is returned by LP for a non-default branch
+        # pushed by a user that has their ordinary privileges on the
+        # corresponding repository.
+        requester_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester_owner)
+        [ref] = self.factory.makeGitRefs(
+            repository=repository,
+            paths=["refs/heads/master"],
+        )
+        [source_ref] = self.factory.makeGitRefs(
+            repository=repository,
+            paths=["refs/heads/branch1"],
+        )
+        removeSecurityProxy(repository).default_branch = "refs/heads/master"
+        pushed_branch = "branch1"
+        self.assertHasMergeProposalInfo(
+            repository, pushed_branch, {"uid": requester_owner.id}
+        )
+
+        mp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=source_ref, target_ref=ref
+        )
+
+        self.assertHasMergeProposalInfo(
+            repository, pushed_branch, {"uid": requester_owner.id}, mp
         )
 
     def test_getMergeProposalURL_user(self):
