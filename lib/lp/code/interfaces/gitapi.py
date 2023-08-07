@@ -95,6 +95,22 @@ class IGitAPI(Interface):
             or an `Unauthorized` fault for unauthorized push attempts.
         """
 
+    def getMergeProposalInfo(translated_path, branch, auth_params):
+        """Return the info (string) for a merge proposal.
+
+        When a `branch` that is not the default branch in a repository
+        is pushed, the URL where the merge proposal for that branch can
+        be opened will be generated and returned if the merge proposal
+        doesn't exist, otherwise the link of the existing merge proposal
+        will be returned.
+
+        :returns: A string explaining how to register a merge proposal
+            for this branch, or pointing to an existing active merge
+            proposal. A `GitRepositoryNotFound` fault is returned
+            if no repository can be found for 'translated_path',
+            or an `Unauthorized` fault for unauthorized push attempts.
+        """
+
     def confirmRepoCreation(repository_id):
         """Confirm that repository creation.
 

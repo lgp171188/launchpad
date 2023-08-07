@@ -971,6 +971,13 @@ class IBranchMergeProposalGetter(Interface):
     def get(id):
         """Return the BranchMergeProposal with specified id."""
 
+    def activeProposalsForBranches(source, target=None):
+        """Return BranchMergeProposals having a given source and target.
+
+        :param source: source branch
+        :param target: target branch
+        """
+
     def getProposalsForContext(context, status=None, visible_by_user=None):
         """Return BranchMergeProposals associated with the context.
 
