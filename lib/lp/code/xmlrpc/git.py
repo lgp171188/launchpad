@@ -730,8 +730,11 @@ class GitAPI(LaunchpadXMLRPCView):
         if merge_proposal:
             return (
                 "Updated existing merge proposal "
-                "for %s on Launchpad:\n      %s"
-                % (quote(branch), merge_proposal.address)
+                "for '%s' on Launchpad:\n      %s"
+                % (
+                    quote(branch),
+                    canonical_url(merge_proposal, rootsite="code"),
+                )
             )
         else:
             base_url = canonical_url(repository, rootsite="code")
