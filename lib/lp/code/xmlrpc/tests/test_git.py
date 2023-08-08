@@ -665,10 +665,11 @@ class TestGitAPIMixin:
     ):
         base_url = canonical_url(repository, rootsite="code")
         expected_mp_url = (
-            "Create a merge proposal for 'branch1' on "
+            "Create a merge proposal for '%s' on "
             "Launchpad by visiting:\n      "
             "%s/+ref/%s/+register-merge"
             % (
+                quote(pushed_branch),
                 base_url,
                 quote(pushed_branch),
             )
@@ -677,8 +678,8 @@ class TestGitAPIMixin:
         if mp:
             expected_mp_url = (
                 "Updated existing merge proposal "
-                "for %s on Launchpad:\n      %s"
-                % (quote(pushed_branch), mp.address)
+                "for '%s' on Launchpad:\n      %s"
+                % (quote(pushed_branch), canonical_url(mp, rootsite="code"))
             )
 
         result = self.git_api.getMergeProposalInfo(
