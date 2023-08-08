@@ -106,7 +106,7 @@ def add_ssh_public_keys(person):
                 public_key_file.close()
         except OSError:
             continue
-        key_set.new(person, public_key)
+        key_set.new(person, public_key, send_notification=False)
         print("Registered SSH key: %s" % (filename,))
         break
     else:
