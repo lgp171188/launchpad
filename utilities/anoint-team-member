@@ -8,4 +8,4 @@ import _pythonpath  # noqa: F401
 from lp.scripts.utilities.anointteammember import AnointTeamMemberScript
 
 if __name__ == "__main__":
-    AnointTeamMemberScript("anoint-team-member").run()
+    AnointTeamMemberScript("anoint-team-member", dbuser="launchpad").run()
