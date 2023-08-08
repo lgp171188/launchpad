@@ -3,15 +3,12 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Kill transaction that have hung around for too long.
-"""
+"""Kill transactions that have hung around for too long."""
 
 __all__ = []
 
 import _pythonpath  # noqa: F401
 
-import os
-import signal
 import sys
 from optparse import OptionParser
 
@@ -34,7 +31,10 @@ def main():
         type="int",
         dest="max_seconds",
         default=60 * 60,
-        help="Maximum seconds time connections are allowed to remain active.",
+        help=(
+            "Connections with a transaction older than SECS seconds will "
+            "be killed. If 0, all matched connections will be killed."
+        ),
     )
     parser.add_option(
         "-q",
@@ -76,7 +76,10 @@ def main():
         """
         SELECT usename, pid, backend_start, xact_start
         FROM pg_stat_activity
-        WHERE xact_start < CURRENT_TIMESTAMP - '%d seconds'::interval %s
+        WHERE
+            pid <> pg_backend_pid()
+            AND xact_start < CURRENT_TIMESTAMP - '%d seconds'::interval
+            %s
         ORDER BY pid
         """
         % (options.max_seconds, user_match_sql),
@@ -88,7 +91,7 @@ def main():
     if len(rows) == 0:
         if not options.quiet:
             print("No transactions to kill")
-            return 0
+        return 0
 
     for usename, pid, backend_start, transaction_start in rows:
         print(
@@ -101,7 +104,8 @@ def main():
             )
         )
         if not options.dry_run:
-            os.kill(pid, signal.SIGTERM)
+            cur.execute("SELECT pg_terminate_backend(%s)", (pid,))
+    cur.close()
     return 0
 
 
