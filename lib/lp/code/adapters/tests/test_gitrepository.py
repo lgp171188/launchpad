@@ -3,11 +3,73 @@
 
 from lazr.lifecycle.snapshot import Snapshot
 from testtools.matchers import MatchesStructure
+from zope.component import getUtility
 from zope.interface import providedBy
 
 from lp.code.adapters.gitrepository import GitRepositoryDelta
-from lp.testing import TestCaseWithFactory, person_logged_in
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.code.interfaces.gitrepository import IGitRepository, IGitRepositorySet
+from lp.registry.model.persondistributionsourcepackage import (
+    PersonDistributionSourcePackage,
+)
+from lp.registry.model.personociproject import PersonOCIProject
+from lp.registry.model.personproduct import PersonProduct
+from lp.testing import TestCaseWithFactory, admin_logged_in, person_logged_in
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
+
+
+class TestAdapters(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def assertTargetBehaviour(self, target):
+        self.assertRaises(TypeError, IGitRepository, target)
+        repository = self.factory.makeGitRepository(target=target)
+        self.assertRaises(TypeError, IGitRepository, target)
+        with admin_logged_in():
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                target, repository
+            )
+        self.assertEqual(repository, IGitRepository(target))
+
+    def test_project(self):
+        self.assertTargetBehaviour(self.factory.makeProduct())
+
+    def test_distribution_source_package(self):
+        self.assertTargetBehaviour(
+            self.factory.makeDistributionSourcePackage()
+        )
+
+    def test_oci_project(self):
+        self.assertTargetBehaviour(self.factory.makeOCIProject())
+
+    def assertPersonTargetBehaviour(self, target, person_target_factory):
+        person = self.factory.makePerson()
+        person_target = person_target_factory(person, target)
+        self.assertRaises(TypeError, IGitRepository, person_target)
+        repository = self.factory.makeGitRepository(
+            owner=person, target=target
+        )
+        self.assertRaises(TypeError, IGitRepository, person_target)
+        with person_logged_in(person):
+            getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
+                person, target, repository, person
+            )
+        self.assertEqual(repository, IGitRepository(person_target))
+
+    def test_person_project(self):
+        self.assertPersonTargetBehaviour(
+            self.factory.makeProduct(), PersonProduct
+        )
+
+    def test_person_distribution_source_package(self):
+        self.assertPersonTargetBehaviour(
+            self.factory.makeDistributionSourcePackage(),
+            PersonDistributionSourcePackage,
+        )
+
+    def test_person_oci_project(self):
+        self.assertPersonTargetBehaviour(
+            self.factory.makeOCIProject(), PersonOCIProject
+        )
 
 
 class TestGitRepositoryDelta(TestCaseWithFactory):

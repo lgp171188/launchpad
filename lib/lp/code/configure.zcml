@@ -847,6 +847,30 @@
         set_schema="lp.code.interfaces.gitrepository.IGitRepositoryAdminAttributes" />
   </class>
   <adapter
+      for="lp.registry.interfaces.product.IProduct"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_project"/>
+  <adapter
+      for="lp.registry.interfaces.distributionsourcepackage.IDistributionSourcePackage"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_distro_source_package"/>
+  <adapter
+      for="lp.registry.interfaces.ociproject.IOCIProject"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_oci_project"/>
+  <adapter
+      for="lp.registry.interfaces.personproduct.IPersonProduct"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_person_product"/>
+  <adapter
+      for="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackage"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_person_distro_source_package"/>
+  <adapter
+      for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+      provides="lp.code.interfaces.gitrepository.IGitRepository"
+      factory="lp.code.adapters.gitrepository.git_repository_for_person_oci_project"/>
+  <adapter
       for="lp.code.interfaces.gitrepository.IGitRepository"
       provides="lp.services.webapp.interfaces.ILaunchpadContainer"
       factory="lp.code.publisher.LaunchpadGitRepositoryContainer"/>
