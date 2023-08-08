@@ -1,4 +1,8 @@
 options:
+  devmode:
+    type: boolean
+    description: Is this server running in dev mode?
+    default: true
   domain:
     type: string
     description: Domain name for this instance.
