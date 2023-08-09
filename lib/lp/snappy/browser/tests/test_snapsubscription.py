@@ -8,9 +8,7 @@ from zope.security.interfaces import Unauthorized
 
 from lp.app.enums import InformationType
 from lp.registry.enums import BranchSharingPolicy
-from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import BrowserTestCase, admin_logged_in, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import (
@@ -26,7 +24,6 @@ class BaseTestSnapView(BrowserTestCase):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.useFixture(FakeLogger())
         self.person = self.factory.makePerson(name="snap-owner")
 

@@ -123,7 +123,6 @@ from lp.services.database.stormexpr import (
     IsDistinctFrom,
     NullsLast,
 )
-from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -136,7 +135,6 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.adapters.buildarch import determine_architectures_to_build
 from lp.snappy.interfaces.snap import (
-    SNAP_PRIVATE_FEATURE_FLAG,
     BadMacaroon,
     BadSnapSearchContext,
     BadSnapSource,
@@ -159,7 +157,6 @@ from lp.snappy.interfaces.snap import (
     SnapBuildRequestStatus,
     SnapNotOwner,
     SnapPrivacyMismatch,
-    SnapPrivateFeatureDisabled,
 )
 from lp.snappy.interfaces.snapbase import ISnapBaseSet, NoSuchSnapBase
 from lp.snappy.interfaces.snapbuild import ISnapBuild, ISnapBuildSet
@@ -1621,9 +1618,6 @@ class SnapSet:
     ):
         private = information_type not in PUBLIC_INFORMATION_TYPES
         if private:
-            # If appropriately enabled via feature flag.
-            if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
-                raise SnapPrivateFeatureDisabled
             return True
 
         # Public snaps with private sources are not allowed.

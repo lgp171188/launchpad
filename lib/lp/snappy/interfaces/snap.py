@@ -22,9 +22,7 @@ __all__ = [
     "MissingSnapcraftYaml",
     "NoSourceForSnap",
     "NoSuchSnap",
-    "SNAP_PRIVATE_FEATURE_FLAG",
     "SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG",
-    "SNAP_TESTING_FLAGS",
     "SnapAuthorizationBadGeneratedMacaroon",
     "SnapBuildAlreadyPending",
     "SnapBuildArchiveOwnerMismatch",
@@ -33,7 +31,6 @@ __all__ = [
     "SnapNotOwner",
     "SnapPrivacyMismatch",
     "SnapPrivacyPillarError",
-    "SnapPrivateFeatureDisabled",
 ]
 
 import http.client
@@ -103,13 +100,7 @@ from lp.snappy.validators.channels import channels_validator
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
-SNAP_PRIVATE_FEATURE_FLAG = "snap.allow_private"
 SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = "snap.channels.snapcraft"
-
-
-SNAP_TESTING_FLAGS = {
-    SNAP_PRIVATE_FEATURE_FLAG: "on",
-}
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -150,14 +141,6 @@ class SnapBuildDisallowedArchitecture(Exception):
             "This snap package is not allowed to build for %s/%s."
             % (das.distroseries.getSuite(pocket), das.architecturetag)
         )
-
-
-@error_status(http.client.UNAUTHORIZED)
-class SnapPrivateFeatureDisabled(Unauthorized):
-    """Only certain users can create private snap objects."""
-
-    def __init__(self):
-        super().__init__("You do not have permission to create private snaps")
 
 
 @error_status(http.client.BAD_REQUEST)

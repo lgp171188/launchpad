@@ -41,7 +41,6 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
 from lp.services.mail.sendmail import format_address_for_person
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import (
     CeleryJobLayer,
@@ -306,7 +305,6 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             OCI_RECIPE_ALLOW_CREATE: "on",
             OCI_RECIPE_PRIVATE_FEATURE_FLAG: "on",
         }
-        features.update(SNAP_TESTING_FLAGS)
         self.useFixture(FeatureFixture(features))
         super().setUp()
 

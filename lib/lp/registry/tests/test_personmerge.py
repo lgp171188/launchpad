@@ -49,7 +49,7 @@ from lp.services.identity.interfaces.emailaddress import (
     IEmailAddressSet,
 )
 from lp.services.webapp.authorization import check_permission
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS, ISnapSet
+from lp.snappy.interfaces.snap import ISnapSet
 from lp.soyuz.enums import ArchiveStatus
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG, ILiveFSSet
 from lp.testing import (
@@ -720,7 +720,6 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
 
     def test_merge_snapsubscription(self):
         # Checks that merging users moves subscriptions.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         snap = removeSecurityProxy(

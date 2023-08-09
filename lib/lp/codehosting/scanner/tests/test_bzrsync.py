@@ -35,10 +35,8 @@ from lp.codehosting.bzrutils import read_locked, write_locked
 from lp.codehosting.scanner.bzrsync import BzrSync
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import override_environ
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser, lp_dbuser, switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -851,7 +849,6 @@ class TestMarkSnapsStale(BzrSyncTestCase):
     @run_as_db_user(config.launchpad.dbuser)
     def test_mark_private_snap_stale(self):
         # Private snaps should be correctly marked as stale.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         snap = self.factory.makeSnap(branch=self.db_branch, private=True)
         removeSecurityProxy(snap).is_stale = False
         switch_dbuser("branchscanner")

@@ -36,7 +36,6 @@ from lp.app.browser.launchpadform import (
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
-from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.itemswidgets import (
@@ -77,7 +76,6 @@ from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.snappy.interfaces.snap import (
-    SNAP_PRIVATE_FEATURE_FLAG,
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     CannotAuthorizeStoreUploads,
     CannotFetchSnapcraftYaml,
@@ -86,7 +84,6 @@ from lp.snappy.interfaces.snap import (
     ISnapSet,
     MissingSnapcraftYaml,
     NoSuchSnap,
-    SnapPrivateFeatureDisabled,
 )
 from lp.snappy.interfaces.snapbuild import ISnapBuild, ISnapBuildSet
 from lp.snappy.interfaces.snappyseries import (
@@ -620,19 +617,6 @@ class SnapAddView(
             "store_name",
             "store_channels",
         ]
-
-    def initialize(self):
-        """See `LaunchpadView`."""
-        super().initialize()
-
-        # Once initialized, if the private_snap flag is disabled, it
-        # prevents snap creation for private contexts.
-        if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
-            if (
-                IInformationType.providedBy(self.context)
-                and self.context.information_type in PRIVATE_INFORMATION_TYPES
-            ):
-                raise SnapPrivateFeatureDisabled
 
     @property
     def is_project_context(self):

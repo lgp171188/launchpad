@@ -60,13 +60,10 @@ from lp.snappy.browser.snap import (
     SnapView,
 )
 from lp.snappy.interfaces.snap import (
-    SNAP_PRIVATE_FEATURE_FLAG,
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
-    SNAP_TESTING_FLAGS,
     CannotModifySnapProcessor,
     ISnapSet,
     SnapBuildRequestStatus,
-    SnapPrivateFeatureDisabled,
 )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
@@ -99,10 +96,6 @@ from lp.testing.views import create_initialized_view, create_view
 class TestSnapNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
-
     def test_canonical_url(self):
         owner = self.factory.makePerson(name="person")
         snap = self.factory.makeSnap(
@@ -120,32 +113,11 @@ class TestSnapNavigation(TestCaseWithFactory):
         self.assertEqual(snap, obj)
 
 
-class TestSnapViewsFeatureFlag(TestCaseWithFactory):
-    layer = DatabaseFunctionalLayer
-
-    def test_private_feature_flag_disabled(self):
-        # Without a private_snap feature flag, we will not create Snaps for
-        # private contexts.
-        self.useFixture(BranchHostingFixture())
-        owner = self.factory.makePerson()
-        branch = self.factory.makeAnyBranch(
-            owner=owner, information_type=InformationType.USERDATA
-        )
-        with person_logged_in(owner):
-            self.assertRaises(
-                SnapPrivateFeatureDisabled,
-                create_initialized_view,
-                branch,
-                "+new-snap",
-            )
-
-
 class BaseTestSnapView(BrowserTestCase):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.useFixture(FakeLogger())
         self.snap_store_client = FakeMethod()
         self.snap_store_client.requestPackageUploadPermission = getUtility(
@@ -440,21 +412,13 @@ class TestSnapAddView(BaseTestSnapView):
         )
 
     def test_create_new_snap_private_link(self):
-        # Link for create new snaps for private content is only displayed
-        # if the 'snap.allow_private' is enabled.
+        # A link to create new snaps is displayed even for private content.
         login_person(self.person)
         branch = self.factory.makeAnyBranch(
             owner=self.person, information_type=InformationType.USERDATA
         )
-
-        with FeatureFixture({SNAP_PRIVATE_FEATURE_FLAG: ""}):
-            browser = self.getViewBrowser(branch, user=self.person)
-            self.assertRaises(
-                LinkNotFoundError, browser.getLink, "Create snap package"
-            )
-        with FeatureFixture(SNAP_TESTING_FLAGS):
-            browser = self.getViewBrowser(branch, user=self.person)
-            browser.getLink("Create snap package")
+        browser = self.getViewBrowser(branch, user=self.person)
+        browser.getLink("Create snap package")
 
     def test_create_new_snap_private(self):
         # Creates a private snap for a private project.
@@ -487,7 +451,7 @@ class TestSnapAddView(BaseTestSnapView):
         self.assertEqual(InformationType.PROPRIETARY, snap.information_type)
 
     def test_create_new_snap_private_without_project_fails(self):
-        # It should not not be possible to create a private snap with
+        # It should not be possible to create a private snap with
         # information_type not matching project's branch_sharing_policy.
         login_person(self.person)
         [git_ref] = self.factory.makeGitRefs()

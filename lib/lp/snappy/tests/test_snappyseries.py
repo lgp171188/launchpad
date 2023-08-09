@@ -8,9 +8,7 @@ from zope.component import getAdapter, getUtility
 
 from lp.app.interfaces.security import IAuthorization
 from lp.services.database.interfaces import IStore
-from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snappyseries import (
     ISnappyDistroSeriesSet,
     ISnappySeries,
@@ -31,10 +29,6 @@ from lp.testing.pages import webservice_for_person
 
 class TestSnappySeries(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_implements_interface(self):
         # SnappySeries implements ISnappySeries.
@@ -98,10 +92,6 @@ class TestSnappySeries(TestCaseWithFactory):
 class TestSnappySeriesSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
 
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
-
     def test_getByName(self):
         snappy_series = self.factory.makeSnappySeries(name="foo")
         self.factory.makeSnappySeries()
@@ -122,10 +112,6 @@ class TestSnappySeriesSet(TestCaseWithFactory):
 
 class TestSnappySeriesWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_new_unpriv(self):
         # An unprivileged user cannot create a SnappySeries.
@@ -252,10 +238,6 @@ class TestSnappySeriesWebservice(TestCaseWithFactory):
 
 class TestSnappyDistroSeriesSet(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_getByBothSeries(self):
         dses = [self.factory.makeDistroSeries() for _ in range(2)]
