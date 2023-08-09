@@ -3,15 +3,12 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Kill <IDLE> in transaction connections that have hung around for too long.
-"""
+"""Kill idle-in-transaction connections that have hung around for too long."""
 
 __all__ = []
 
 import _pythonpath  # noqa: F401
 
-import os
-import signal
 import sys
 from optparse import OptionParser
 
@@ -64,17 +61,24 @@ def main():
     if len(args) > 0:
         parser.error("Too many arguments")
 
-    ignore_sql = " AND usename <> %s" * len(options.ignore or [])
+    ignore_sql = " AND %s NOT IN (usename, application_name)" * len(
+        options.ignore or []
+    )
 
     con = psycopg2.connect(options.connect_string)
     cur = con.cursor()
     cur.execute(
         """
-        SELECT usename, pid, backend_start, query_start
+        SELECT
+            usename, application_name, datname, pid,
+            backend_start, state_change, AGE(NOW(), state_change) AS age
         FROM pg_stat_activity
-        WHERE query = '<IDLE> in transaction'
-            AND query_start < CURRENT_TIMESTAMP - '%d seconds'::interval %s
-        ORDER BY pid
+        WHERE
+            pid <> pg_backend_pid()
+            AND state = 'idle in transaction'
+            AND state_change < CURRENT_TIMESTAMP - '%d seconds'::interval
+            %s
+        ORDER BY age
         """
         % (options.max_idle_seconds, ignore_sql),
         options.ignore,
@@ -85,20 +89,17 @@ def main():
     if len(rows) == 0:
         if not options.quiet:
             print("No IDLE transactions to kill")
-            return 0
+        return 0
 
-    for usename, pid, backend_start, query_start in rows:
-        print(
-            "Killing %s(%d), %s, %s"
-            % (
-                usename,
-                pid,
-                backend_start,
-                query_start,
-            )
-        )
+    for usename, appname, datname, pid, backend, state, age in rows:
+        print(80 * "=")
+        print("Killing %s(%d) %s from %s:" % (usename, pid, appname, datname))
+        print("    backend start: %s" % (backend,))
+        print("    idle start:    %s" % (state,))
+        print("    age:           %s" % (age,))
         if not options.dryrun:
-            os.kill(pid, signal.SIGTERM)
+            cur.execute("SELECT pg_terminate_backend(%s)", (pid,))
+    cur.close()
     return 0
 
 
