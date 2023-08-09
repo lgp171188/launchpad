@@ -332,17 +332,17 @@ def milestone_matches_bugtask(milestone, bugtask):
     naked_milestone = removeSecurityProxy(milestone)
 
     if IProduct.providedBy(bug_target):
-        return bugtask.product.id == naked_milestone.productID
+        return bugtask.product == naked_milestone.product
     elif IProductSeries.providedBy(bug_target):
-        return bugtask.productseries.product.id == naked_milestone.productID
+        return bugtask.productseries.product == naked_milestone.product
     elif IDistribution.providedBy(
         bug_target
     ) or IDistributionSourcePackage.providedBy(bug_target):
-        return bugtask.distribution.id == naked_milestone.distributionID
+        return bugtask.distribution == naked_milestone.distribution
     elif IDistroSeries.providedBy(bug_target) or ISourcePackage.providedBy(
         bug_target
     ):
-        return bugtask.distroseries.id == naked_milestone.distroseriesID
+        return bugtask.distroseries == naked_milestone.distroseries
     return False
 
 
