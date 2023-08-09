@@ -20,12 +20,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuildjob import (
     ISnapBuildJob,
     ISnapStoreUploadJob,
@@ -92,10 +90,6 @@ class FileUploaded(MatchesListwise):
 class TestSnapBuildJob(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
-
     def test_provides_interface(self):
         # `SnapBuildJob` objects provide `ISnapBuildJob`.
         snapbuild = self.factory.makeSnapBuild()
@@ -110,7 +104,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
         self.store_url = "http://sca.example/dev/click-apps/1/rev/1/"
 

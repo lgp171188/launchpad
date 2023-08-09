@@ -176,7 +176,6 @@ from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     ANONYMOUS,
     StormStatementRecorder,
@@ -3665,7 +3664,6 @@ class TestGitRepositoryMarkSnapsStale(TestCaseWithFactory):
     def test_private_snap(self):
         # A private snap should be able to be marked stale
         self.useFixture(GitHostingFixture())
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         [ref] = self.factory.makeGitRefs()
         snap = self.factory.makeSnap(git_ref=ref, private=True)
         removeSecurityProxy(snap).is_stale = False

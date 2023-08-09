@@ -71,7 +71,6 @@ from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import (
-    SNAP_PRIVATE_FEATURE_FLAG,
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
     SnapBuildArchiveOwnerMismatch,
 )
@@ -517,7 +516,6 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     def test_extraBuildArgs_git_private(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a private Git branch.
-        self.useFixture(FeatureFixture({SNAP_PRIVATE_FEATURE_FLAG: "on"}))
         self.useFixture(InProcessAuthServerFixture())
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
@@ -1137,7 +1135,6 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     def test_extraBuildArgs_private(self):
         # If the snap is private, extraBuildArgs sends the appropriate
         # arguments.
-        self.useFixture(FeatureFixture({SNAP_PRIVATE_FEATURE_FLAG: "on"}))
         job = self.makeJob(private=True)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()

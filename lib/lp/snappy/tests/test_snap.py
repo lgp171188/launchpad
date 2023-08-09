@@ -68,7 +68,7 @@ from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
 )
-from lp.services.features.testing import FeatureFixture, MemoryFeatureFixture
+from lp.services.features.testing import MemoryFeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.log.logger import BufferLogger
@@ -79,7 +79,6 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import (
-    SNAP_TESTING_FLAGS,
     BadSnapSearchContext,
     CannotFetchSnapcraftYaml,
     CannotModifySnapProcessor,
@@ -92,7 +91,6 @@ from lp.snappy.interfaces.snap import (
     SnapBuildDisallowedArchitecture,
     SnapBuildRequestStatus,
     SnapPrivacyMismatch,
-    SnapPrivateFeatureDisabled,
 )
 from lp.snappy.interfaces.snapbase import ISnapBaseSet, NoSuchSnapBase
 from lp.snappy.interfaces.snapbuild import (
@@ -127,39 +125,13 @@ from lp.testing import (
 from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-)
+from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
 from lp.testing.matchers import DoesNotSnapshot, HasQueryCount
 from lp.testing.pages import webservice_for_person
 
 
-class TestSnapFeatureFlag(TestCaseWithFactory):
-    layer = LaunchpadZopelessLayer
-
-    def test_private_feature_flag_disabled(self):
-        # Without a private feature flag, we will not create new private Snaps.
-        person = self.factory.makePerson()
-        self.assertRaises(
-            SnapPrivateFeatureDisabled,
-            getUtility(ISnapSet).new,
-            person,
-            person,
-            None,
-            None,
-            branch=self.factory.makeAnyBranch(),
-            information_type=InformationType.PROPRIETARY,
-        )
-
-
 class TestSnapPermissions(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_delete_permissions_registry_experts(self):
         # A snap package can be deleted from registry_experts,
@@ -262,10 +234,6 @@ class TestSnapPermissions(TestCaseWithFactory):
 
 class TestSnap(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_implements_interfaces(self):
         # Snap implements ISnap.
@@ -1957,10 +1925,6 @@ class TestSnap(TestCaseWithFactory):
 class TestSnapDeleteWithBuilds(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
-
     def test_delete_with_builds(self):
         # A snap package with builds can be deleted.  Doing so deletes all
         # its builds, their files, and any associated build jobs too.
@@ -2100,10 +2064,6 @@ class TestSnapDeleteWithBuilds(TestCaseWithFactory):
 
 class TestSnapVisibility(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def getSnapGrants(self, snap, person=None):
         conditions = [AccessArtifact.snap == snap]
@@ -2269,10 +2229,6 @@ class TestSnapVisibility(TestCaseWithFactory):
 
 class TestSnapSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_class_implements_interfaces(self):
         # The SnapSet class implements ISnapSet.
@@ -3502,7 +3458,6 @@ class TestSnapProcessors(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp(user="foo.bar@canonical.com")
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.default_procs = [
             getUtility(IProcessorSet).getByName("386"),
             getUtility(IProcessorSet).getByName("amd64"),
@@ -3652,7 +3607,6 @@ class TestSnapWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.snap_store_client = FakeMethod()
         self.snap_store_client.requestPackageUploadPermission = getUtility(
             ISnapStoreClient

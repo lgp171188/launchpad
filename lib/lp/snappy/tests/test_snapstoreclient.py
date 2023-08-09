@@ -33,11 +33,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
 from lp.services.crypto.interfaces import IEncryptedContainer
-from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapstoreclient import (
     BadRequestPackageUploadResponse,
     BadScanStatusResponse,
@@ -254,7 +252,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "snappy",
             store_url="http://sca.example/",

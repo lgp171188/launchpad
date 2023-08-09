@@ -62,7 +62,6 @@ from lp.services.macaroons.interfaces import (
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import html_escape
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     ANONYMOUS,
     TestCaseWithFactory,
@@ -2370,7 +2369,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_translatePath_private_snap_build(self):
         # A builder with a suitable macaroon can read from a repository
         # associated with a running private snap build.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )
@@ -3284,7 +3282,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             )
 
     def test_authenticateWithPassword_private_snap_build(self):
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )
@@ -3700,7 +3697,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_checkRefPermissions_private_snap_build(self):
         # A builder with a suitable macaroon cannot write to a repository,
         # even if it is associated with a running private snap build.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )

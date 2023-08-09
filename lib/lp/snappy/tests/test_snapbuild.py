@@ -32,7 +32,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
-from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.macaroons.interfaces import IMacaroonIssuer
@@ -41,7 +40,6 @@ from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuild import (
     CannotScheduleStoreUpload,
     ISnapBuild,
@@ -85,7 +83,6 @@ class TestSnapBuild(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "snappy",
             store_url="http://sca.example/",
@@ -804,10 +801,6 @@ class TestSnapBuild(TestCaseWithFactory):
 class TestSnapBuildSet(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
-    def setUp(self):
-        super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
-
     def test_getByBuildFarmJob_works(self):
         build = self.factory.makeSnapBuild()
         self.assertEqual(
@@ -841,7 +834,6 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.person = self.factory.makePerson()
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PRIVATE
@@ -1025,7 +1017,6 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
         )

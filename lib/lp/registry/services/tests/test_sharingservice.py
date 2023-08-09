@@ -50,7 +50,6 @@ from lp.services.job.tests import block_on_job
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.publisher import canonical_url
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
@@ -148,16 +147,11 @@ class TestSharingService(
     def setUp(self):
         super().setUp()
         self.service = getUtility(IService, "sharing")
-        # Set test flags and configurations for Snaps and OCI.
-        flags = SNAP_TESTING_FLAGS.copy()
-        flags.update(
-            {
-                "jobs.celery.enabled_classes": (
-                    "RemoveArtifactSubscriptionsJob"
-                ),
+        self.setConfig(
+            feature_flags={
+                "jobs.celery.enabled_classes": "RemoveArtifactSubscriptionsJob"
             }
         )
-        self.setConfig(feature_flags=flags)
 
     def _makeGranteeData(
         self, grantee, policy_permissions, shared_artifact_types
