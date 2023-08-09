@@ -32,8 +32,8 @@ def main():
         dest="max_seconds",
         default=60 * 60,
         help=(
-            "Connections with a transaction older than SECS seconds will "
-            "be killed. If 0, all matched connections will be killed."
+            "Connections with a transaction older than MAX_SECONDS seconds "
+            "will be killed. If 0, all matched connections will be killed."
         ),
     )
     parser.add_option(
