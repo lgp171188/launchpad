@@ -82,7 +82,7 @@ Login as a user without privileges.
 First, we are going to try to do the guess against the Evolution product. That
 means that we are going to use the ProductSeries.id = 3
 
-    >>> evolution_productseries = ProductSeries.get(3)
+    >>> evolution_productseries = IStore(ProductSeries).get(ProductSeries, 3)
 
 Attach the file to the product series, without associating it with any
 potemplate.
@@ -1022,7 +1022,7 @@ was added to the queue.
 
 We need to attach a new entry to play with:
 
-    >>> productseries = ProductSeries.get(1)
+    >>> productseries = IStore(ProductSeries).get(ProductSeries, 1)
     >>> entry = translationimportqueue.addOrUpdateEntry(
     ...     "foo/bar.po",
     ...     b"foo content",

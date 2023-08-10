@@ -894,7 +894,7 @@ class IProductView(
             ),
         )
     )
-    development_focusID = Attribute("The development focus ID.")
+    development_focus_id = Attribute("The development focus ID.")
 
     releases = exported(
         doNotSnapshot(

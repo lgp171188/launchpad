@@ -1531,7 +1531,7 @@ class POTemplateSet:
         from lp.registry.model.productseries import ProductSeries
 
         pses = load_related(ProductSeries, templates, ["productseries_id"])
-        load_related(Product, pses, ["productID"])
+        load_related(Product, pses, ["product_id"])
         load_related(SourcePackageName, templates, ["sourcepackagename_id"])
 
     def wipeSuggestivePOTemplatesCache(self):
@@ -1694,7 +1694,7 @@ class POTemplateSharingSubset:
                 DistroSeries.distributionID == Location.distribution_id,
             ),
             LeftJoin(
-                ProductSeries, ProductSeries.productID == Location.product_id
+                ProductSeries, ProductSeries.product_id == Location.product_id
             ),
             Join(
                 POTemplate,

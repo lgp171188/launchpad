@@ -65,7 +65,6 @@ from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
-    AND,
     BoolCol,
     ForeignKey,
     SQLObjectNotFound,
@@ -221,7 +220,7 @@ class ProjectGroup(
         store = Store.of(self)
         origin = [
             Product,
-            Join(ProductSeries, Product.id == ProductSeries.productID),
+            Join(ProductSeries, Product.id == ProductSeries.product_id),
             Join(POTemplate, ProductSeries.id == POTemplate.productseries_id),
         ]
         return (
@@ -533,13 +532,16 @@ class ProjectGroup(
 
     def getSeries(self, series_name):
         """See `IProjectGroup.`"""
-        has_series = ProductSeries.selectFirst(
-            AND(
-                ProductSeries.q.productID == Product.q.id,
-                ProductSeries.q.name == series_name,
-                Product.q.projectgroupID == self.id,
-            ),
-            orderBy="id",
+        has_series = (
+            IStore(ProductSeries)
+            .find(
+                ProductSeries,
+                ProductSeries.product_id == Product.id,
+                ProductSeries.name == series_name,
+                Product.projectgroup == self,
+            )
+            .order_by(ProductSeries.id)
+            .first()
         )
 
         if has_series is None:

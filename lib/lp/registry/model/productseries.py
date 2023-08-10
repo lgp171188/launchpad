@@ -14,7 +14,15 @@ from operator import itemgetter
 
 from lazr.delegates import delegate_to
 from storm.expr import Max, Sum
-from storm.locals import And, Desc, Int, Reference, ReferenceSet
+from storm.locals import (
+    And,
+    DateTime,
+    Desc,
+    Int,
+    Reference,
+    ReferenceSet,
+    Unicode,
+)
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -49,16 +57,10 @@ from lp.registry.model.milestone import HasMilestonesMixin, Milestone
 from lp.registry.model.productrelease import ProductRelease
 from lp.registry.model.series import SeriesMixin
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.sorting import sorted_dotted_numbers
@@ -95,7 +97,7 @@ def landmark_key(landmark):
 @delegate_to(ISpecificationTarget, context="product")
 @implementer(IBugSummaryDimension, IProductSeries, ISeriesBugTarget)
 class ProductSeries(
-    SQLBase,
+    StormBase,
     SeriesMixin,
     BugTargetBase,
     HasMilestonesMixin,
@@ -106,28 +108,25 @@ class ProductSeries(
 ):
     """A series of product releases."""
 
-    _table = "ProductSeries"
+    __storm_table__ = "ProductSeries"
 
-    product = ForeignKey(dbName="product", foreignKey="Product", notNull=True)
+    id = Int(primary=True)
+    product_id = Int(name="product", allow_none=False)
+    product = Reference(product_id, "Product.id")
     status = DBEnum(
         allow_none=False, enum=SeriesStatus, default=SeriesStatus.DEVELOPMENT
     )
-    name = StringCol(notNull=True)
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=True,
+    name = Unicode(allow_none=False)
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=datetime.timezone.utc
     )
+    owner_id = Int(name="owner", validator=validate_person, allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
-        default=None,
+    driver_id = Int(
+        name="driver", validator=validate_person, allow_none=True, default=None
     )
+    driver = Reference(driver_id, "Person.id")
     branch_id = Int(name="branch", default=None)
     branch = Reference(branch_id, "Branch.id")
 
@@ -156,12 +155,23 @@ class ProductSeries(
     )
     translations_branch = Reference(translations_branch_id, "Branch.id")
     # where are the tarballs released from this branch placed?
-    releasefileglob = StringCol(default=None)
-    releaseverstyle = StringCol(default=None)
+    releasefileglob = Unicode(default=None)
+    releaseverstyle = Unicode(default=None)
 
     packagings = ReferenceSet(
         "id", "Packaging.productseries_id", order_by=Desc("Packaging.id")
     )
+
+    def __init__(
+        self, product, name, owner, summary, branch=None, releasefileglob=None
+    ):
+        super().__init__()
+        self.product = product
+        self.name = name
+        self.owner = owner
+        self.summary = summary
+        self.branch = branch
+        self.releasefileglob = releasefileglob
 
     @property
     def pillar(self):
@@ -623,13 +633,13 @@ class ProductSeries(
 
         If the series isn't found, the product task is better than others.
         """
-        seriesID = self.id
-        productID = self.productID
+        series_id = self.id
+        product_id = self.product_id
 
         def weight_function(bugtask):
-            if bugtask.productseries_id == seriesID:
+            if bugtask.productseries_id == series_id:
                 return OrderedBugTask(1, bugtask.id, bugtask)
-            elif bugtask.product_id == productID:
+            elif bugtask.product_id == product_id:
                 return OrderedBugTask(2, bugtask.id, bugtask)
             else:
                 return OrderedBugTask(3, bugtask.id, bugtask)
@@ -670,10 +680,10 @@ class ProductSeriesSet:
 
     def get(self, series_id, default=None):
         """See IProductSeriesSet."""
-        try:
-            return ProductSeries.get(series_id)
-        except SQLObjectNotFound:
+        series = IStore(ProductSeries).get(ProductSeries, series_id)
+        if series is None:
             return default
+        return series
 
     def findByTranslationsImportBranch(
         self, branch, force_translations_upload=False

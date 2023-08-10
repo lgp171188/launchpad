@@ -864,11 +864,11 @@ class BugTask(StormBase):
                     break
         elif self.product:
             assert (
-                self.product.development_focusID is not None
+                self.product.development_focus_id is not None
             ), "A product should always have a development series."
-            devel_focusID = self.product.development_focusID
+            devel_focus_id = self.product.development_focus_id
             for bugtask in bugtasks:
-                if bugtask.productseries_id == devel_focusID:
+                if bugtask.productseries_id == devel_focus_id:
                     conjoined_primary = bugtask
                     break
 
@@ -1978,7 +1978,10 @@ class BugTaskSet:
                 ) AS subquery
             GROUP BY status
             """
-        query %= dict(series=quote(product_series), privacy=bug_privacy_filter)
+        query %= {
+            "series": quote(product_series.id),
+            "privacy": bug_privacy_filter,
+        }
         cur = cursor()
         cur.execute(query)
         return {
@@ -2114,7 +2117,7 @@ class BugTaskSet:
                 LeftJoin(
                     Product,
                     Product.id.is_in(
-                        (BugTaskFlat.product_id, ProductSeries.productID)
+                        (BugTaskFlat.product_id, ProductSeries.product_id)
                     ),
                 ),
             ),
@@ -2312,7 +2315,7 @@ class BugTaskSet:
             distro_series_ids.add(task.distroseries_id)
             product_ids.add(task.product_id)
             if task.productseries:
-                product_ids.add(task.productseries.productID)
+                product_ids.add(task.productseries.product_id)
             product_series_ids.add(task.productseries_id)
 
         distro_ids.discard(None)

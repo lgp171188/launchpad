@@ -31,7 +31,7 @@ from storm.expr import (
     Or,
     Select,
 )
-from storm.locals import Int, List, Reference, Store, Unicode
+from storm.locals import Int, List, Reference, ReferenceSet, Store, Unicode
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -151,7 +151,6 @@ from lp.services.database.sqlbase import SQLBase, sqlvalues
 from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
-    SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
 )
@@ -344,12 +343,10 @@ class Product(
         enum=TranslationPermission,
         default=TranslationPermission.OPEN,
     )
-    translation_focus = ForeignKey(
-        dbName="translation_focus",
-        foreignKey="ProductSeries",
-        notNull=False,
-        default=None,
+    translation_focus_id = Int(
+        name="translation_focus", allow_none=True, default=None
     )
+    translation_focus = Reference(translation_focus_id, "ProductSeries.id")
     bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
     bugtracker = Reference(bugtracker_id, "BugTracker.id")
     official_answers = BoolCol(
@@ -675,12 +672,10 @@ class Product(
     # While the interface defines this field as required, we need to
     # allow it to be NULL so we can create new product records before
     # the corresponding series records.
-    development_focus = ForeignKey(
-        foreignKey="ProductSeries",
-        dbName="development_focus",
-        notNull=False,
-        default=None,
+    development_focus_id = Int(
+        name="development_focus", allow_none=True, default=None
     )
+    development_focus = Reference(development_focus_id, "ProductSeries.id")
     bug_reporting_guidelines = StringCol(default=None)
     bug_reported_acknowledgement = StringCol(default=None)
     enable_bugfiling_duplicate_search = BoolCol(notNull=True, default=True)
@@ -1020,8 +1015,8 @@ class Product(
         """Customize `search_params` for this product.."""
         search_params.setProduct(self)
 
-    _series = SQLMultipleJoin(
-        "ProductSeries", joinColumn="product", orderBy="name"
+    _series = ReferenceSet(
+        "id", "ProductSeries.product_id", order_by="ProductSeries.name"
     )
 
     @cachedproperty
@@ -1437,16 +1432,17 @@ class Product(
 
     def getSeries(self, name):
         """See `IProduct`."""
-        return ProductSeries.selectOneBy(product=self, name=name)
+        return (
+            IStore(ProductSeries)
+            .find(ProductSeries, product=self, name=name)
+            .one()
+        )
 
     def newSeries(
         self, owner, name, summary, branch=None, releasefileglob=None
     ):
-        # XXX: jamesh 2008-04-11
-        # Set the ID of the new ProductSeries to avoid flush order
-        # loops in ProductSet.createProduct()
         series = ProductSeries(
-            productID=self.id,
+            product=self,
             owner=owner,
             name=name,
             summary=summary,
@@ -1457,6 +1453,7 @@ class Product(
             # The user is a product driver, and should be the driver of this
             # series to make them the release manager.
             series.driver = owner
+        Store.of(series).flush()
         return series
 
     def getRelease(self, version):
@@ -1675,14 +1672,14 @@ def get_precached_products(
     if need_series:
         series_caches = {}
         for series in IStore(ProductSeries).find(
-            ProductSeries, ProductSeries.productID.is_in(product_ids)
+            ProductSeries, ProductSeries.product_id.is_in(product_ids)
         ):
             series_cache = get_property_cache(series)
             if need_releases and not hasattr(series_cache, "_cached_releases"):
                 series_cache._cached_releases = []
 
             series_caches[series.id] = series_cache
-            cache = caches[series.productID]
+            cache = caches[series.product_id]
             cache.series.append(series)
         if need_releases:
             release_caches = {}
@@ -1721,7 +1718,7 @@ def get_precached_products(
             ProjectGroup, products_by_id.values(), ["projectgroupID"]
         )
     bulk.load_related(
-        ProductSeries, products_by_id.values(), ["development_focusID"]
+        ProductSeries, products_by_id.values(), ["development_focus_id"]
     )
     if role_names is not None:
         person_ids = set()
@@ -1760,11 +1757,11 @@ def get_milestones_and_releases(products):
     store = IStore(Product)
     product_ids = [product.id for product in products]
     result = store.find(
-        (Milestone, ProductRelease, ProductSeries.productID),
+        (Milestone, ProductRelease, ProductSeries.product_id),
         And(
             ProductRelease.milestone == Milestone.id,
             Milestone.productseries == ProductSeries.id,
-            ProductSeries.productID.is_in(product_ids),
+            ProductSeries.product_id.is_in(product_ids),
         ),
     )
     return result.order_by(
@@ -1787,8 +1784,8 @@ def get_distro_sourcepackages(products):
     ]
     product_ids = [product.id for product in products]
     result = store.using(*origin).find(
-        (SourcePackageName, Distribution, ProductSeries.productID),
-        ProductSeries.productID.is_in(product_ids),
+        (SourcePackageName, Distribution, ProductSeries.product_id),
+        ProductSeries.product_id.is_in(product_ids),
     )
     result = result.order_by(SourcePackageName.name, Distribution.name)
     result.config(distinct=True)
@@ -2216,7 +2213,7 @@ class ProductSet:
             .find(
                 (Product, Person),
                 Product.active == True,
-                Product.id == ProductSeries.productID,
+                Product.id == ProductSeries.product_id,
                 POTemplate.productseries_id == ProductSeries.id,
                 Product.translations_usage == ServiceUsage.LAUNCHPAD,
                 Person.id == Product._ownerID,

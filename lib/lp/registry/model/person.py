@@ -1746,7 +1746,7 @@ class Person(
             productseries = task.productseries
             distroseries = task.distroseries
             if productseries is not None and task.product is None:
-                dev_focus_id = productseries.product.development_focusID
+                dev_focus_id = productseries.product.development_focus_id
                 if (
                     productseries.id == dev_focus_id
                     and task.status not in BugTask._NON_CONJOINED_STATUSES
