@@ -109,7 +109,6 @@ from lp.services.session.model import SessionData, SessionPkgData
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.worlddata.interfaces.language import ILanguageSet
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJob, SnapStoreUploadJob
 from lp.soyuz.enums import (
@@ -1071,7 +1070,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_SnapBuildJobPruner(self):
         # Garbo removes jobs completed over 30 days ago.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
         store = IPrimaryStore(Job)
 
@@ -1089,7 +1087,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_SnapBuildJobPruner_doesnt_prune_recent_jobs(self):
         # Garbo doesn't remove jobs under thirty days old.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
         store = IPrimaryStore(Job)
 
@@ -1113,7 +1110,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
     def test_SnapBuildJobPruner_doesnt_prune_most_recent_job_for_build(self):
         # Garbo doesn't remove the most recent job for a build.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         switch_dbuser("testadmin")
         store = IPrimaryStore(Job)
 

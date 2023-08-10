@@ -28,7 +28,6 @@ from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.publisher import canonical_url
-from lp.snappy.interfaces.snap import SNAP_PRIVATE_FEATURE_FLAG
 from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
@@ -427,14 +426,7 @@ class PillarSharingViewTestMixin:
             )
 
     def test_pillar_person_sharing_with_team(self):
-        self.useFixture(
-            FeatureFixture(
-                {
-                    SNAP_PRIVATE_FEATURE_FLAG: "on",
-                    OCI_RECIPE_ALLOW_CREATE: "on",
-                }
-            )
-        )
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         team = self.factory.makeTeam(
             membership_policy=TeamMembershipPolicy.MODERATED
         )
@@ -490,14 +482,7 @@ class PillarSharingViewTestMixin:
         )
 
     def test_pillar_person_sharing(self):
-        self.useFixture(
-            FeatureFixture(
-                {
-                    SNAP_PRIVATE_FEATURE_FLAG: "on",
-                    OCI_RECIPE_ALLOW_CREATE: "on",
-                }
-            )
-        )
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: "on"}))
         person = self.factory.makePerson()
         items = [
             self.factory.makeOCIRecipe(

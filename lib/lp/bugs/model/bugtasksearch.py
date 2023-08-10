@@ -379,7 +379,7 @@ def _build_query(params):
                         tables=[Milestone, Product],
                         where=And(
                             Product.projectgroup == params.milestone.target,
-                            Milestone.productID == Product.id,
+                            Milestone.product_id == Product.id,
                             Milestone.name == params.milestone.name,
                             ProductSet.getProductPrivacyFilter(params.user),
                         ),
@@ -406,7 +406,7 @@ def _build_query(params):
                     tables=[Milestone, Product, MilestoneTag],
                     where=And(
                         Product.projectgroup == params.milestone_tag.target,
-                        Milestone.productID == Product.id,
+                        Milestone.product_id == Product.id,
                         Milestone.id == MilestoneTag.milestone_id,
                         MilestoneTag.tag.is_in(params.milestone_tag.tags),
                     ),

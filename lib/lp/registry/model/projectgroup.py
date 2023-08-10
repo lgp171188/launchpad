@@ -10,7 +10,7 @@ __all__ = [
 ]
 
 import six
-from storm.expr import SQL, And, In, Join
+from storm.expr import And, Desc, Func, In, Is, Join, Min
 from storm.locals import Int, Reference
 from storm.store import Store
 from zope.component import getUtility
@@ -418,7 +418,7 @@ class ProjectGroup(
         user = getUtility(ILaunchBag).user
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
         return And(
-            Milestone.productID == Product.id,
+            Milestone.product_id == Product.id,
             Product.projectgroupID == self.id,
             privacy_filter,
         )
@@ -436,8 +436,8 @@ class ProjectGroup(
 
         columns = (
             Milestone.name,
-            SQL("MIN(Milestone.dateexpected)"),
-            SQL("BOOL_OR(Milestone.active)"),
+            Min(Milestone.dateexpected),
+            Func("bool_or", Milestone.active),
         )
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
         conditions = And(
@@ -449,12 +449,17 @@ class ProjectGroup(
         result = store.find(columns, conditions)
         result.group_by(Milestone.name)
         if only_active:
-            result.having("BOOL_OR(Milestone.active) = TRUE")
-        # MIN(Milestone.dateexpected) has to be used to match the
+            result.having(Is(Func("bool_or", Milestone.active), True))
+        # Min(Milestone.dateexpected) has to be used to match the
         # aggregate function in the `columns` variable.
         result.order_by(
-            "milestone_sort_key(MIN(Milestone.dateexpected), Milestone.name) "
-            "DESC"
+            Desc(
+                Func(
+                    "milestone_sort_key",
+                    Min(Milestone.dateexpected),
+                    Milestone.name,
+                )
+            )
         )
         # An extra query is required here in order to get the correct
         # products without affecting the group/order of the query above.

@@ -12,9 +12,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.tests.helpers import GitHostingFixture
 from lp.services.database.constants import ONE_DAY_AGO, SEVEN_DAYS_AGO, UTC_NOW
-from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
@@ -178,7 +176,6 @@ class TestSnapListing(BrowserTestCase):
     def test_project_private_snap_listing(self):
         # Only users with permission can see private snap packages in the list
         # for a project.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         project = self.factory.makeProduct(displayname="Snappable")
         private_owner = self.factory.makePerson()
         user_with_permission = self.factory.makePerson()
@@ -226,7 +223,6 @@ class TestSnapListing(BrowserTestCase):
         )
 
     def test_person_private_snap_listing(self):
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         private_owner = self.factory.makePerson(name="random-user")
         user_with_permission = self.factory.makePerson()
         someone_else = self.factory.makePerson()
@@ -283,7 +279,6 @@ class TestSnapListing(BrowserTestCase):
 
     def test_branch_private_snap_listing(self):
         # Only certain users can see private snaps on branch listing.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         private_owner = self.factory.makePerson(name="random-user")
         user_with_permission = self.factory.makePerson()
         someone_else = self.factory.makePerson()
@@ -330,7 +325,6 @@ class TestSnapListing(BrowserTestCase):
 
     def test_git_repository_private_snap_listing(self):
         # Only certain users can see private snaps on git repo listing.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         private_owner = self.factory.makePerson(name="random-user")
         user_with_permission = self.factory.makePerson()
         someone_else = self.factory.makePerson()
@@ -381,7 +375,6 @@ class TestSnapListing(BrowserTestCase):
 
     def test_git_ref_private_snap_listing(self):
         # Only certain users can see private snaps on git ref listing.
-        self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
         private_owner = self.factory.makePerson(name="random-user")
         user_with_permission = self.factory.makePerson()
         someone_else = self.factory.makePerson()

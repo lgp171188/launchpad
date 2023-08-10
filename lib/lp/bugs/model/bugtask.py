@@ -2324,10 +2324,10 @@ class BugTaskSet:
             Milestone,
             Milestone.active == True,
             Or(
-                Milestone.distributionID.is_in(distro_ids),
-                Milestone.distroseriesID.is_in(distro_series_ids),
-                Milestone.productID.is_in(product_ids),
-                Milestone.productseriesID.is_in(product_series_ids),
+                Milestone.distribution_id.is_in(distro_ids),
+                Milestone.distroseries_id.is_in(distro_series_ids),
+                Milestone.product_id.is_in(product_ids),
+                Milestone.productseries_id.is_in(product_series_ids),
             ),
         )
 

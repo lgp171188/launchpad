@@ -12,10 +12,9 @@ from zope.component import getUtility
 
 from lp.code.browser.decorations import DecoratedBranch
 from lp.code.interfaces.gitrepository import IGitRepository
-from lp.services.features import getFeatureFlag
 from lp.services.webapp import Link, canonical_url
 from lp.services.webapp.escaping import structured
-from lp.snappy.interfaces.snap import SNAP_PRIVATE_FEATURE_FLAG, ISnapSet
+from lp.snappy.interfaces.snap import ISnapSet
 
 
 class HasSnapsMenuMixin:
@@ -34,14 +33,7 @@ class HasSnapsMenuMixin:
         return Link("+snaps", text, icon="info", enabled=enabled)
 
     def create_snap(self):
-        # Only enabled if the snap_private flag is enabled for
-        # private contexts.
-        enabled = not self.context.private or bool(
-            getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG)
-        )
-
-        text = "Create snap package"
-        return Link("+new-snap", text, enabled=enabled, icon="add")
+        return Link("+new-snap", "Create snap package", icon="add")
 
 
 class HasSnapsViewMixin:

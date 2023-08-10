@@ -1212,7 +1212,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
     _order_by = [Product.name, ProductSeries.name, Milestone.name]
     _clauses = [
         ProductRelease.milestone_id == Milestone.id,
-        Milestone.productseriesID == ProductSeries.id,
+        Milestone.productseries_id == ProductSeries.id,
         ProductSeries.productID == Product.id,
     ]
 
@@ -1248,7 +1248,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
             .find(
                 ProductRelease,
                 ProductRelease.milestone_id == Milestone.id,
-                Milestone.productseriesID == ProductSeries.id,
+                Milestone.productseries_id == ProductSeries.id,
                 ProductSeries.productID == Product.id,
                 Product.name == productname,
                 ProductSeries.name == productseriesname,
@@ -1271,7 +1271,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
             .find(
                 self._table,
                 ProductRelease.milestone_id == Milestone.id,
-                Milestone.productseriesID == ProductSeries.id,
+                Milestone.productseries_id == ProductSeries.id,
                 ProductSeries.productID == Product.id,
                 Or(
                     Product.name.contains_string(query),
@@ -1393,11 +1393,11 @@ class FilteredProductSeriesVocabulary(SQLObjectVocabularyBase):
                 yield self.toTerm(series)
 
 
-class MilestoneVocabulary(SQLObjectVocabularyBase):
+class MilestoneVocabulary(StormVocabularyBase):
     """The milestones for a target."""
 
     _table = Milestone
-    _orderBy = None
+    _order_by = None
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -1475,19 +1475,23 @@ class MilestoneVocabulary(SQLObjectVocabularyBase):
         # Prefetch products and distributions for rendering
         # milestones: optimization to reduce the number of queries.
         product_ids = {
-            removeSecurityProxy(milestone).productID
+            removeSecurityProxy(milestone).product_id
             for milestone in milestones
         }
         product_ids.discard(None)
         distro_ids = {
-            removeSecurityProxy(milestone).distributionID
+            removeSecurityProxy(milestone).distribution_id
             for milestone in milestones
         }
         distro_ids.discard(None)
         if len(product_ids) > 0:
-            list(Product.select("id IN %s" % sqlvalues(product_ids)))
+            list(IStore(Product).find(Product, Product.id.is_in(product_ids)))
         if len(distro_ids) > 0:
-            list(Distribution.select("id IN %s" % sqlvalues(distro_ids)))
+            list(
+                IStore(Distribution).find(
+                    Distribution, Distribution.id.is_in(distro_ids)
+                )
+            )
 
         return sorted(milestones, key=attrgetter("displayname"))
 
@@ -1507,7 +1511,7 @@ class MilestoneVocabulary(SQLObjectVocabularyBase):
             # so we special-case them here just for that purpose.
             return obj.target.getMilestone(obj.name)
         else:
-            return SQLObjectVocabularyBase.__contains__(self, obj)
+            return super().__contains__(obj)
 
 
 class MilestoneWithDateExpectedVocabulary(MilestoneVocabulary):

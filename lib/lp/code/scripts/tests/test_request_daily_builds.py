@@ -19,7 +19,7 @@ from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
 from lp.services.config.fixture import ConfigFixture, ConfigUseFixture
 from lp.services.features.testing import FeatureFixture
-from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS, ISnap
+from lp.snappy.interfaces.snap import ISnap
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
@@ -184,9 +184,7 @@ class TestRequestDailyBuilds(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        features = dict(SNAP_TESTING_FLAGS)
-        features[CHARM_RECIPE_ALLOW_CREATE] = "on"
-        self.useFixture(FeatureFixture(features))
+        self.useFixture(FeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}))
 
     def makeLoggerheadServer(self):
         loggerhead_server = FakeLoggerheadServer()
