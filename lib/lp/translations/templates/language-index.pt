@@ -88,7 +88,7 @@
       <div class="yui-u">
         <div class="portlet">
           <h2>Countries</h2>
-          <tal:has_countries condition="context/countries">
+          <tal:has_countries condition="not:context/countries/is_empty">
             <p>
               <tal:language replace="view/language_name">
                 Espa&ntilde;ol
@@ -100,7 +100,7 @@
                 tal:content="country/name">Spain</li>
             </ul>
           </tal:has_countries>
-          <tal:has_not_countries condition="not:context/countries">
+          <tal:has_not_countries condition="context/countries/is_empty">
             <p class="helpwanted">
               <tal:language replace="view/language_name">
                 Espa&ntilde;ol

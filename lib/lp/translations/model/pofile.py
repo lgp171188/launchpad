@@ -866,7 +866,7 @@ class POFile(StormBase, POFileMixIn):
         )
         params = {
             "potemplate": quote(self.potemplate.id),
-            "language": quote(self.language),
+            "language": quote(self.language.id),
             "flag": side_traits.flag_name,
             "other_flag": side_traits.other_side_traits.flag_name,
             "has_msgstrs": complete_plural_clause_this_side,
@@ -946,7 +946,7 @@ class POFile(StormBase, POFileMixIn):
             ]
         )
         params = {
-            "language": quote(self.language),
+            "language": quote(self.language.id),
             "potemplate": quote(self.potemplate.id),
             "flag": flag_name,
             "suggestion_nonempty": suggestion_nonempty,
@@ -1309,7 +1309,7 @@ class POFile(StormBase, POFileMixIn):
         template_id = quote(self.potemplate.id)
         params = {
             "flag": flag_name,
-            "language": quote(self.language),
+            "language": quote(self.language.id),
             "template": template_id,
         }
         query = (

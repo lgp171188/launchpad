@@ -23,7 +23,7 @@ from lp.services.webapp.vocabulary import (
     NamedStormVocabulary,
     StormVocabularyBase,
 )
-from lp.services.worlddata.interfaces.language import ILanguage
+from lp.services.worlddata.model.language import Language
 from lp.services.worlddata.vocabularies import LanguageVocabulary
 from lp.translations.enums import LanguagePackType
 from lp.translations.model.languagepack import LanguagePack
@@ -40,39 +40,7 @@ class TranslatableLanguageVocabulary(LanguageVocabulary):
     excluding English and non-visible languages.
     """
 
-    def __contains__(self, language):
-        """See `IVocabulary`.
-
-        This vocabulary excludes English and languages that are not visible.
-        """
-        assert ILanguage.providedBy(language), (
-            "'in TranslatableLanguageVocabulary' requires ILanguage as "
-            "left operand, got %s instead." % type(language)
-        )
-        if language.code == "en":
-            return False
-        return language.visible == True and super().__contains__(language)
-
-    def __iter__(self):
-        """See `IVocabulary`.
-
-        Iterate languages that are visible and not English.
-        """
-        languages = self._table.select(
-            "Language.code != 'en' AND Language.visible = True",
-            orderBy=self._orderBy,
-        )
-        for language in languages:
-            yield self.toTerm(language)
-
-    def getTermByToken(self, token):
-        """See `IVocabulary`."""
-        if token == "en":
-            raise LookupError(token)
-        term = super().getTermByToken(token)
-        if not term.value.visible:
-            raise LookupError(token)
-        return term
+    _clauses = [Language.code != "en", Is(Language.visible, True)]
 
 
 class TranslationGroupVocabulary(NamedStormVocabulary):
