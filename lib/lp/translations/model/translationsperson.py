@@ -336,7 +336,7 @@ class TranslationsPerson:
                     Join(
                         Product,
                         And(
-                            Product.id == ProductSeries.productID,
+                            Product.id == ProductSeries.product_id,
                             Product.translations_usage
                             == ServiceUsage.LAUNCHPAD,
                             Product.active == True,
@@ -409,7 +409,7 @@ class TranslationsPerson:
         ProductJoin = LeftJoin(
             Product,
             And(
-                Product.id == ProductSeries.productID,
+                Product.id == ProductSeries.product_id,
                 Product.translations_usage == ServiceUsage.LAUNCHPAD,
                 Product.active == True,
             ),

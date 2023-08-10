@@ -997,7 +997,7 @@ class TestProduct(TestCaseWithFactory):
             "datecreated",
             "description",
             "development_focus",
-            "development_focusID",
+            "development_focus_id",
             "direct_answer_contacts",
             "distrosourcepackages",
             "downloadurl",

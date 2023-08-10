@@ -256,7 +256,7 @@ def preload_work_items(work_items):
     productseries = load_related(
         ProductSeries, templates, ["productseries_id"]
     )
-    load_related(Product, productseries, ["productID"])
+    load_related(Product, productseries, ["product_id"])
     return {pofile.id: pofile for pofile in pofiles}
 
 

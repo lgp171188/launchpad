@@ -55,7 +55,7 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     IHugeVocabulary,
-    NamedSQLObjectVocabulary,
+    NamedStormVocabulary,
     StormVocabularyBase,
 )
 
@@ -255,7 +255,7 @@ def BugNominatableSeriesVocabulary(context=None):
         )
 
 
-class BugNominatableSeriesVocabularyBase(NamedSQLObjectVocabulary):
+class BugNominatableSeriesVocabularyBase(NamedStormVocabulary):
     """Base vocabulary class for series for which a bug can be nominated."""
 
     def __iter__(self):
@@ -264,6 +264,15 @@ class BugNominatableSeriesVocabularyBase(NamedSQLObjectVocabulary):
         for series in self._getNominatableObjects():
             if bug.canBeNominatedFor(series):
                 yield self.toTerm(series)
+
+    def __contains__(self, obj):
+        # NamedStormVocabulary implements this using a database query, but
+        # we need to go through __iter__ so that we filter the available
+        # series properly.
+        for term in self:
+            if term.value == obj:
+                return True
+        return False
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.name, obj.name.capitalize())
@@ -292,7 +301,7 @@ class BugNominatableProductSeriesVocabulary(
     _table = ProductSeries
 
     def __init__(self, context, product):
-        BugNominatableSeriesVocabularyBase.__init__(self, context)
+        super().__init__(context)
         self.product = product
 
     def _getNominatableObjects(self):
@@ -310,7 +319,7 @@ class BugNominatableDistroSeriesVocabulary(BugNominatableSeriesVocabularyBase):
     _table = DistroSeries
 
     def __init__(self, context, distribution):
-        BugNominatableSeriesVocabularyBase.__init__(self, context)
+        super().__init__(context)
         self.distribution = distribution
 
     def _getNominatableObjects(self):

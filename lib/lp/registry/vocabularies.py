@@ -1213,7 +1213,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
     _clauses = [
         ProductRelease.milestone_id == Milestone.id,
         Milestone.productseries_id == ProductSeries.id,
-        ProductSeries.productID == Product.id,
+        ProductSeries.product_id == Product.id,
     ]
 
     def toTerm(self, obj):
@@ -1249,7 +1249,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
                 ProductRelease,
                 ProductRelease.milestone_id == Milestone.id,
                 Milestone.productseries_id == ProductSeries.id,
-                ProductSeries.productID == Product.id,
+                ProductSeries.product_id == Product.id,
                 Product.name == productname,
                 ProductSeries.name == productseriesname,
             )
@@ -1272,7 +1272,7 @@ class ProductReleaseVocabulary(StormVocabularyBase):
                 self._table,
                 ProductRelease.milestone_id == Milestone.id,
                 Milestone.productseries_id == ProductSeries.id,
-                ProductSeries.productID == Product.id,
+                ProductSeries.product_id == Product.id,
                 Or(
                     Product.name.contains_string(query),
                     ProductSeries.name.contains_string(query),
@@ -1283,14 +1283,14 @@ class ProductReleaseVocabulary(StormVocabularyBase):
 
 
 @implementer(IHugeVocabulary)
-class ProductSeriesVocabulary(SQLObjectVocabularyBase):
+class ProductSeriesVocabulary(StormVocabularyBase):
     """All `IProductSeries` objects vocabulary."""
 
     displayname = "Select a Release Series"
     step_title = "Search"
     _table = ProductSeries
     _order_by = [Product.name, ProductSeries.name]
-    _clauseTables = ["Product"]
+    _clauses = [ProductSeries.product == Product.id]
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -1334,17 +1334,17 @@ class ProductSeriesVocabulary(SQLObjectVocabularyBase):
         if "/" in query:
             product_query, series_query = query.split("/", 1)
             substring_search = And(
-                CONTAINSSTRING(Product.name, product_query),
-                CONTAINSSTRING(ProductSeries.name, series_query),
+                Product.name.contains_string(product_query),
+                ProductSeries.name.contains_string(series_query),
             )
         else:
             substring_search = Or(
-                CONTAINSSTRING(Product.name, query),
-                CONTAINSSTRING(ProductSeries.name, query),
+                Product.name.contains_string(query),
+                ProductSeries.name.contains_string(query),
             )
         result = IStore(self._table).find(
             self._table,
-            Product.id == ProductSeries.productID,
+            Product.id == ProductSeries.product_id,
             substring_search,
             privacy_filter,
         )
@@ -1376,11 +1376,11 @@ class FilteredDistroSeriesVocabulary(SQLObjectVocabularyBase):
                 yield self.toTerm(series)
 
 
-class FilteredProductSeriesVocabulary(SQLObjectVocabularyBase):
+class FilteredProductSeriesVocabulary(StormVocabularyBase):
     """Describes ProductSeries of a particular product."""
 
     _table = ProductSeries
-    _orderBy = ["product", "name"]
+    _order_by = ["product", "name"]
 
     def toTerm(self, obj):
         """See `IVocabulary`."""

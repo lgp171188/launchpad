@@ -1142,7 +1142,7 @@ def _build_exclude_conjoined_clause(milestone):
                     And(
                         ConjoinedPrimary.bug_id == BugTaskFlat.bug_id,
                         ConjoinedPrimary.productseries_id
-                        == Product.development_focusID,
+                        == Product.development_focus_id,
                         Not(
                             ConjoinedPrimary._status.is_in(
                                 BugTask._NON_CONJOINED_STATUSES
@@ -1154,7 +1154,7 @@ def _build_exclude_conjoined_clause(milestone):
             # join.right is the table name.
             join_tables = [(join.right, join) for join in joins]
         elif milestone.product is not None:
-            dev_focus_id = milestone.product.development_focusID
+            dev_focus_id = milestone.product.development_focus_id
             join = LeftJoin(
                 ConjoinedPrimary,
                 And(

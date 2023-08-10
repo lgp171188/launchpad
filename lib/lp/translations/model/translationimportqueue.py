@@ -924,7 +924,7 @@ def list_product_request_targets(user, status_condition):
 
     products = IStore(Product).find(
         Product,
-        Product.id == ProductSeries.productID,
+        Product.id == ProductSeries.product_id,
         Product.active == True,
         ProductSeries.id.is_in(
             Select(

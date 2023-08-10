@@ -90,7 +90,8 @@ This method gives us the IPOTemplate that belongs to this subset and its
 name is the given one.
 
     >>> from lp.registry.model.productseries import ProductSeries
-    >>> productseries = ProductSeries.get(3)
+    >>> from lp.services.database.interfaces import IStore
+    >>> productseries = IStore(ProductSeries).get(ProductSeries, 3)
     >>> potemplatesubset = potemplate_set.getSubset(
     ...     productseries=productseries
     ... )
@@ -137,7 +138,7 @@ To do this test, first we check the evolution product, it has two
 potemplates in the same path and thus, this method should not get any
 value.
 
-    >>> productseries = ProductSeries.get(3)
+    >>> productseries = IStore(ProductSeries).get(ProductSeries, 3)
     >>> potemplatesubset = potemplate_set.getSubset(
     ...     productseries=productseries
     ... )
@@ -153,7 +154,7 @@ value.
 
 Now, we move to the NetApplet product, we should detect it.
 
-    >>> productseries = ProductSeries.get(5)
+    >>> productseries = IStore(ProductSeries).get(ProductSeries, 5)
     >>> potemplatesubset = potemplate_set.getSubset(
     ...     productseries=productseries
     ... )
@@ -181,7 +182,6 @@ POTemplate
 POTemplate is an object with all strings that must be translated for a
 concrete context.
 
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.testing import verifyObject
     >>> from lp.translations.interfaces.potemplate import IPOTemplate
     >>> from lp.translations.model.potemplate import POTemplate

@@ -672,7 +672,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
             "name",
             "parent_subscription_target",
             "product",
-            "productID",
+            "product_id",
             "series",
         },
         "launchpad.View": {
