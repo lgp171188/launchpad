@@ -1036,7 +1036,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
             .joinOuter(
                 Product,
                 And(
-                    Product.id == ProductSeries.productID,
+                    Product.id == ProductSeries.product_id,
                     Or(
                         Product.translations_usage == ServiceUsage.LAUNCHPAD,
                         Product.translations_usage == ServiceUsage.EXTERNAL,

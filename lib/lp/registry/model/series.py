@@ -10,11 +10,11 @@ __all__ = [
 
 from operator import attrgetter
 
+from storm.locals import Unicode
 from zope.interface import implementer
 
 from lp.registry.interfaces.series import ISeriesMixin, SeriesStatus
 from lp.registry.model.hasdrivers import HasDriversMixin
-from lp.services.database.sqlobject import StringCol
 
 ACTIVE_STATUSES = [
     SeriesStatus.DEVELOPMENT,
@@ -28,7 +28,7 @@ ACTIVE_STATUSES = [
 class SeriesMixin(HasDriversMixin):
     """See `ISeriesMixin`."""
 
-    summary = StringCol(notNull=True)
+    summary = Unicode(allow_none=False)
 
     @property
     def active(self):

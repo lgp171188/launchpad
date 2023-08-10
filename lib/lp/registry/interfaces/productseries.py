@@ -141,7 +141,7 @@ class IProductSeriesLimitedView(Interface):
         ),
         exported_as="project",
     )
-    productID = Attribute("The product ID.")
+    product_id = Attribute("The product ID.")
 
 
 class IProductSeriesView(

@@ -134,7 +134,7 @@ class MigrateCurrentFlagProcess:
             self.store.find(
                 Product,
                 POTemplate.productseries_id == ProductSeries.id,
-                ProductSeries.productID == Product.id,
+                ProductSeries.product_id == Product.id,
             )
             .group_by(Product)
             .having(Count(POTemplate.id) > 0)
@@ -152,7 +152,7 @@ class MigrateCurrentFlagProcess:
             ),
             TranslationTemplateItem.potemplate_id == POTemplate.id,
             POTemplate.productseries_id == ProductSeries.id,
-            ProductSeries.productID == product.id,
+            ProductSeries.product_id == product.id,
         ).config(distinct=True)
 
     def run(self):

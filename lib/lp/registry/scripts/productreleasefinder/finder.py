@@ -119,7 +119,7 @@ class ProductReleaseFinder:
                     ProductSeries.name,
                     ProductSeries.releasefileglob,
                 ),
-                Product.id == ProductSeries.productID,
+                Product.id == ProductSeries.product_id,
                 Product.active == True,
                 ProductSeries.status != SeriesStatus.OBSOLETE,
                 ProductSeries.releasefileglob != None,
@@ -170,7 +170,7 @@ class ProductReleaseFinder:
         found_names = IStore(Product).find(
             LibraryFileAlias.filename,
             Product.name == product_name,
-            Product.id == ProductSeries.productID,
+            Product.id == ProductSeries.product_id,
             Milestone.productseries_id == ProductSeries.id,
             ProductRelease.milestone_id == Milestone.id,
             ProductReleaseFile.productrelease_id == ProductRelease.id,
