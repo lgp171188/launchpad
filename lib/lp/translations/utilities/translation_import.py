@@ -143,7 +143,7 @@ class ExistingPOFileInDatabase:
         substitutions = {
             "translation_columns": ", ".join(translations),
             "translation_joins": "\n".join(msgstr_joins),
-            "language": quote(self.pofile.language),
+            "language": quote(self.pofile.language.id),
             "potemplate": quote(self.pofile.potemplate.id),
             "flag": self._getFlagName(),
         }

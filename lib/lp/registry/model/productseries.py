@@ -510,7 +510,7 @@ class ProductSeries(
                 Language.id != english.id,
             )
 
-            ordered_results = query.order_by(["Language.englishname"])
+            ordered_results = query.order_by(Language.englishname)
 
             for language, pofile in ordered_results:
                 psl = ProductSeriesLanguage(self, language, pofile=pofile)
@@ -554,7 +554,7 @@ class ProductSeries(
                 Language.id != english.id,
             ).group_by(Language)
 
-            ordered_results = query.order_by(["Language.englishname"])
+            ordered_results = query.order_by(Language.englishname)
 
             for (
                 language,

@@ -20,7 +20,7 @@ from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
 from lp.answers.interfaces.faqcollection import IFAQCollection
 from lp.answers.interfaces.questioncollection import ISearchableByQuestionOwner
 from lp.answers.model.faq import FAQ, FAQSearch
-from lp.answers.model.question import QuestionTargetSearch
+from lp.answers.model.question import Question, QuestionTargetSearch
 from lp.app.enums import ServiceUsage
 from lp.app.errors import NotFoundError
 from lp.blueprints.enums import SprintSpecificationStatus
@@ -63,7 +63,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
+from lp.services.database.sqlbase import SQLBase
 from lp.services.database.sqlobject import (
     AND,
     BoolCol,
@@ -367,15 +367,14 @@ class ProjectGroup(
     def getQuestionLanguages(self):
         """See `IQuestionCollection`."""
         return set(
-            Language.select(
-                """
-            Language.id = Question.language AND
-            Question.product = Product.id AND
-            Product.project = %s"""
-                % sqlvalues(self.id),
-                clauseTables=["Question", "Product"],
-                distinct=True,
+            IStore(Language)
+            .find(
+                Language,
+                Question.language == Language.id,
+                Question.product == Product.id,
+                Product.projectgroup == self.id,
             )
+            .config(distinct=True)
         )
 
     @property

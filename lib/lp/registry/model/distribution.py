@@ -1167,9 +1167,8 @@ class Distribution(
         )
 
         if not mirrors and country is not None:
-            continent = country.continent
             query = And(
-                Country.continentID == continent.id,
+                Country.continent == country.continent,
                 DistributionMirror.country == Country.id,
                 base_query,
             )

@@ -11,7 +11,7 @@ from zope.component import getUtility
 from zope.interface import alsoProvides
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 
-from lp.services.webapp.vocabulary import SQLObjectVocabularyBase
+from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.services.worlddata.interfaces.language import ILanguage, ILanguageSet
 from lp.services.worlddata.interfaces.timezone import ITimezoneNameVocabulary
 from lp.services.worlddata.model.country import Country
@@ -74,31 +74,32 @@ def TimezoneNameVocabulary(context=None):
     return _timezone_vocab
 
 
-# Country.name may have non-ASCII characters, so we can't use
-# NamedSQLObjectVocabulary here.
-
-
-class CountryNameVocabulary(SQLObjectVocabularyBase):
+# Country.name is the English name of the country rather than an identifier,
+# so we don't use it as the token and thus don't use NamedStormVocabulary
+# here.
+class CountryNameVocabulary(StormVocabularyBase):
     """A vocabulary for country names."""
 
     _table = Country
-    _orderBy = "name"
+    _order_by = "name"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name)
 
 
-class LanguageVocabulary(SQLObjectVocabularyBase):
+class LanguageVocabulary(StormVocabularyBase):
     """All the languages known by Launchpad."""
 
     _table = Language
-    _orderBy = "englishname"
+    _order_by = "englishname"
 
     def __contains__(self, language):
         """See `IVocabulary`."""
-        assert ILanguage.providedBy(language), (
-            "'in LanguageVocabulary' requires ILanguage as left operand, "
-            "got %s instead." % type(language)
+        assert ILanguage.providedBy(
+            language
+        ), "'in %s' requires ILanguage as left operand, got %s instead." % (
+            self.__class__.__name__,
+            type(language),
         )
         return super().__contains__(language)
 
