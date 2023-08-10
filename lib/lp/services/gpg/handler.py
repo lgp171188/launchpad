@@ -332,6 +332,11 @@ class GPGHandler:
         if "GPG_AGENT_INFO" in os.environ:
             del os.environ["GPG_AGENT_INFO"]
 
+        def passphrase_cb(uid_hint, passphrase_info, prev_was_bad, fd):
+            os.write(fd, b"\n")
+
+        context.passphrase_cb = passphrase_cb
+
         # Only 'utf-8' encoding is supported by gpgme.
         # See more information at:
         # http://pyme.sourceforge.net/doc/gpgme/Generating-Keys.html
