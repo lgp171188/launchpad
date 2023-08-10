@@ -795,7 +795,30 @@ class CIBuildUploadJob(ArchiveJobDerived):
             metadata = scanned_artifact.metadata
             if not isinstance(metadata, BinaryArtifactMetadata):
                 continue
-            library_file = scanned_artifact.artifact.library_file
+            artifact = scanned_artifact.artifact
+            library_file = artifact.library_file
+            # XXX cjwatson 2023-08-09: Comparing distroseries names here is
+            # a pretty unpleasant hack, but it's necessary because in
+            # practice what we're doing is taking the output of build jobs
+            # that were run on (e.g.) Ubuntu focal and uploading them to
+            # (e.g.) <private distribution> focal.  Unfortunately the
+            # private series doesn't have its parent series set to the
+            # corresponding Ubuntu series, so we have no way to make the
+            # connection other than comparing names.  We need to figure out
+            # something better here, but at least this hack isn't too deep
+            # in the core of the system.
+            if (
+                artifact.report.distro_arch_series is not None
+                and artifact.report.distro_arch_series.distroseries.name
+                != self.target_distroseries.name
+            ):
+                logger.info(
+                    "Skipping %s (built for %s, not %s)",
+                    library_file.filename,
+                    artifact.report.distro_arch_series.distroseries.name,
+                    self.target_distroseries.name,
+                )
+                continue
             logger.info(
                 "Uploading %s to %s %s (%s)",
                 library_file.filename,
