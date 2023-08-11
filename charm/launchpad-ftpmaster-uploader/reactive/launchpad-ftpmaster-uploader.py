@@ -38,6 +38,16 @@ def configure():
     config = get_service_config()
     config["ubuntu_queue_dir"] = os.path.join(base.base_dir(), "ubuntu-queue")
     host.mkdir(config["ubuntu_queue_dir"], perms=0o755)
+    host.mkdir(
+        os.path.join(config["ubuntu_queue_dir"], "incoming"), perms=0o755
+    )
+    host.mkdir(
+        os.path.join(config["ubuntu_queue_dir"], "accepted"), perms=0o755
+    )
+    host.mkdir(
+        os.path.join(config["ubuntu_queue_dir"], "rejected"), perms=0o755
+    )
+    host.mkdir(os.path.join(config["ubuntu_queue_dir"], "failed"), perms=0o755)
 
     configure_lazr(
         config,
@@ -53,7 +63,7 @@ def configure():
 @when("service.configured", "upload-queue-processor.available")
 @when_not("service.txpkgupload-configured")
 def configure_txpkgupload():
-    fsroot = os.path.join(base.base_dir(), "incoming")
+    fsroot = os.path.join(base.base_dir(), "ubuntu-queue", "incoming")
     txpkgupload = endpoint_from_flag("upload-queue-processor.available")
     txpkgupload.set_config(
         fsroot=fsroot,
