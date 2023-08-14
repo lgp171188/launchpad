@@ -417,6 +417,16 @@ def close_account(username, log):
         """,
         (person.id,),
     )
+    table_notification("HWSubmissionBug")
+    store.execute(
+        """
+        DELETE FROM HWSubmissionBug
+        USING HWSubmission
+        WHERE HWSubmission.id = HWSubmissionBug.submission
+            AND owner = ?
+        """,
+        (person.id,),
+    )
     table_notification("HWSubmission")
     store.execute(
         """
