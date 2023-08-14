@@ -11,12 +11,6 @@ options:
     type: boolean
     description: Whether to enable the "media" domain.
     default: false
-  google_site_verification:
-    type: string
-    description: >
-      If set, serve a /google{...} URL that can be used to verify domain
-      ownership.
-    default: ""
   offline_mode:
     type: string
     description: >
