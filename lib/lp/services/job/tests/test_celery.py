@@ -26,7 +26,7 @@ from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import IJob, IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
-from lp.services.job.runner import BaseRunnableJob
+from lp.services.job.runner import BaseRunnableJob, celery_enabled
 from lp.services.job.tests import block_on_job, monitor_celery
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import CeleryJobLayer
@@ -45,7 +45,6 @@ class TestJob(BaseRunnableJob):
             self.job = store.find(Job, id=job_id)[0]
         else:
             self.job = Job(max_retries=2, scheduled_start=scheduled_start)
-            IStore(Job).flush()
 
     def run(self):
         pass
@@ -100,16 +99,25 @@ class TestJobsViaCelery(TestCaseWithFactory):
 
     layer = CeleryJobLayer
 
+    def enableCeleryClass(self, job_class_name):
+        """Enable running jobs with a given class name via Celery."""
+        self.useFixture(
+            FeatureFixture({"jobs.celery.enabled_classes": job_class_name})
+        )
+        # Prime the feature flag cache so that
+        # BaseRunnableJob.celeryRunOnCommit doesn't make a database query.
+        # This lets us more carefully test the flush behaviour in
+        # BaseRunnableJob.extractJobState.
+        self.assertTrue(celery_enabled(job_class_name))
+
     def test_TestJob(self):
         # TestJob can be run via Celery.
-        self.useFixture(
-            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
-        )
+        self.enableCeleryClass("TestJob")
         with block_on_job(self):
             job = TestJob()
             job.celeryRunOnCommit()
-            job_id = job.job_id
             transaction.commit()
+            job_id = job.job_id
         store = IStore(Job)
         dbjob = store.find(Job, id=job_id)[0]
         self.assertEqual(JobStatus.COMPLETED, dbjob.status)
@@ -119,9 +127,7 @@ class TestJobsViaCelery(TestCaseWithFactory):
         # in 10 seconds, and one at any time.  Wait up to a minute and
         # ensure that the correct three have completed, and that they
         # completed in the expected order.
-        self.useFixture(
-            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
-        )
+        self.enableCeleryClass("TestJob")
         now = datetime.now(timezone.utc)
         job_past = TestJob(scheduled_start=now - timedelta(seconds=60))
         job_past.celeryRunOnCommit()
@@ -158,11 +164,7 @@ class TestJobsViaCelery(TestCaseWithFactory):
     def test_jobs_with_retry_exceptions_are_queued_again(self):
         # A job that raises a retry error is automatically queued
         # and executed again.
-        self.useFixture(
-            FeatureFixture(
-                {"jobs.celery.enabled_classes": "TestJobWithRetryError"}
-            )
-        )
+        self.enableCeleryClass("TestJobWithRetryError")
 
         # Set scheduled_start on the job to ensure that retry delays
         # override it.
@@ -214,14 +216,12 @@ class TestJobsViaCelery(TestCaseWithFactory):
     def test_without_rabbitmq(self):
         # If no RabbitMQ broker is configured, the job is not run via Celery.
         self.pushConfig("rabbitmq", broker_urls="none")
-        self.useFixture(
-            FeatureFixture({"jobs.celery.enabled_classes": "TestJob"})
-        )
+        self.enableCeleryClass("TestJob")
         with monitor_celery() as responses:
             job = TestJob()
             job.celeryRunOnCommit()
-            job_id = job.job_id
             transaction.commit()
+            job_id = job.job_id
         self.assertEqual([], responses)
         store = IStore(Job)
         dbjob = store.find(Job, id=job_id)[0]

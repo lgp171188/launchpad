@@ -41,6 +41,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.services import scripts
 from lp.services.config import config, dbconfig
+from lp.services.database.interfaces import IStore
 from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import IJob, IRunnableJob
@@ -266,6 +267,11 @@ class BaseRunnableJob(BaseRunnableJobSource):
 
     def extractJobState(self):
         """Hook function to call before starting a commit."""
+        # Before-commit hooks are called before the hook in
+        # storm.zope.zstorm.StoreDataManager.tpc_begin that flushes the
+        # store, so we have to flush the store here because we might
+        # otherwise not know the job ID yet.
+        IStore(self.job).flush()
         self.job_state = JobState(self)
 
     def celeryCommitHook(self, succeeded):
