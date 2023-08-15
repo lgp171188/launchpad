@@ -1,0 +1,14 @@
+This is the Launchpad Badge Kit.  It is meant to be displayed by
+projects that use Launchpad.net, on their home pages.
+
+The home page for the badge kit itself lives in the help.launchpad.net
+(tentatively at https://help.launchpad.net/BadgeKit, although if that
+changes, no one is likely to remember to update this README, so be
+aware that this might already be obsolete).  The images themselves
+should be hosted on media.launchpad.net, since we will encourage
+people to include our images rather than self-host them -- that way if
+we ever improve the images, most users will be upgraded automatically.
+
+The file sample-index.html is merely a proposed way to present the
+images, to be used internally while the wiki page is being built.  It
+can probably go away after the Badge Kit is released.

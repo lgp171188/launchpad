@@ -1,0 +1,16 @@
+# A small amount of local content.
+
+<VirtualHost *:80>
+    ServerName media.{{ domain }}
+
+    CustomLog /var/log/apache2/media.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/media.{{ domain }}-error.log
+
+    DocumentRoot {{ base_dir }}/www-media
+    <Directory "{{ base_dir }}/www-media">
+        Options -Indexes
+        AllowOverride None
+        Require all granted
+    </Directory>
+</VirtualHost>
+
