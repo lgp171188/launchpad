@@ -1,0 +1,14 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+
+# Kill connections idling in a transaction for too long.
+0,30 * * * * {{ code_dir }}/utilities/pgkillidle.py -s {{ idle_transaction_seconds }} -q {% for user in idle_transaction_ignore_users %}-i {{ user }} {% endfor %}-c '{{ db_admin_primary }}'
+
+# Kill appserver transactions lasting too long (appserver timeout is 65
+# seconds, so these indicate a hung appserver or request handler).
+* * * * * {{ code_dir }}/utilities/pgkillactive.py -q -s {{ active_appserver_transaction_seconds }} -u '{{ active_appserver_transaction_user_regex }}' -c '{{ db_admin_primary }}'
+
+# Kill non-system connections holding open a transaction for too long.
+# These are bugs needing to be fixed.
+15,45 * * * * {{ code_dir }}/utilities/pgkillactive.py -s {{ active_long_transaction_seconds }} -u '{{ active_long_transaction_user_regex }}' -q -c '{{ db_admin_primary }}'
+

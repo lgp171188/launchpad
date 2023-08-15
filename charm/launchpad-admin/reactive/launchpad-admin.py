@@ -2,12 +2,14 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import os.path
+import re
 import subprocess
 
+import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
 from charms.launchpad.db import strip_dsn_authentication, update_pgpass
-from charms.launchpad.payload import configure_lazr, home_dir
+from charms.launchpad.payload import configure_cron, configure_lazr, home_dir
 from charms.reactive import (
     endpoint_from_flag,
     remove_state,
@@ -102,12 +104,32 @@ def configure():
     config["db_session_primary"] = strip_password(session_db_primary)
     config["db_session"] = strip_dsn_authentication(session_db_primary)
     config["db_session_user"] = parse_dsn(session_db_primary)["user"]
+    # utilities/pgkillactive.py takes regexes for users whose connections it
+    # should kill, but we'd rather just have the operator of the charm
+    # supply lists of user names.  Turn these into positive/negative regexes
+    # as appropriate.
+    config["active_appserver_transaction_user_regex"] = "^(%s)$" % "|".join(
+        re.escape(user)
+        for user in yaml.safe_load(
+            config["active_appserver_transaction_users"]
+        )
+    )
+    config["active_long_transaction_user_regex"] = "^(?!%s)" % "|".join(
+        re.escape(user) + "$"
+        for user in yaml.safe_load(
+            config["active_long_transaction_ignore_users"]
+        )
+    )
+    config["idle_transaction_ignore_users"] = yaml.safe_load(
+        config["idle_transaction_ignore_users"]
+    )
     configure_lazr(
         config,
         "launchpad-admin-lazr.conf",
         "launchpad-admin/launchpad-lazr.conf",
     )
     configure_email(config, "launchpad-admin")
+    configure_cron(config, "crontab.j2")
     templating.render(
         "bash_aliases.j2",
         os.path.join(home_dir(), ".bash_aliases"),

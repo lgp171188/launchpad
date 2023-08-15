@@ -1,0 +1,45 @@
+options:
+  active_appserver_transaction_seconds:
+    type: int
+    description: >
+      Number of seconds after which to kill active transactions matched by
+      `active_appserver_transaction_users`.  (Transactions are killed by a
+      cron job, so this only sets a lower bound.)
+    default: 120
+  active_appserver_transaction_users:
+    type: string
+    description: >
+      YAML-formatted list of database user names whose transactions should
+      be killed after `active_appserver_transaction_seconds`.
+    default: |
+      - "juju_launchpad-appserver"
+  active_long_transaction_seconds:
+    type: int
+    description: >
+      Number of seconds after which to kill active transactions not matched
+      by `active_long_transaction_ignore_users`.  (Transactions are killed
+      by a cron job, so this only sets a lower bound.)
+    # This timeout should ideally be a lot less (e.g. 15 minutes).
+    default: 12600
+  active_long_transaction_ignore_users:
+    type: string
+    description: >
+      YAML-formatted list of database user names whose transactions should
+      be left alone.  Transactions from any other user names will be killed
+      after `active_long_transaction_seconds`.
+    default: |
+      - "postgres"
+  idle_transaction_seconds:
+    type: int
+    description: >
+      Number of seconds after which to kill idle transactions not matched by
+      `idle_transaction_ignore_users`.  (Transactions are killed by a cron
+      job, so this only sets a lower bound.)
+    default: 1800
+  idle_transaction_ignore_users:
+    type: string
+    description: >
+      YAML-formatted list of database user names whose transactions should
+      be left alone.  Transactions from any other user names will be killed
+      after idling in a transaction for `idle_transaction_seconds`.
+    default: "[]"
