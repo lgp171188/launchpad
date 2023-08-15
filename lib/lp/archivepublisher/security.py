@@ -10,5 +10,7 @@ from lp.security import AdminByAdminsTeam
 __all__ = []  # type: List[str]
 
 
+# If edit access to this is ever opened up beyond admins, then we need to
+# take more care with validating IPublisherConfig.root_dir.
 class ViewPublisherConfig(AdminByAdminsTeam):
     usedfor = IPublisherConfig
