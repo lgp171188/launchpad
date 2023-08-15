@@ -521,6 +521,7 @@ class TestCloseAccount(TestCaseWithFactory):
         person = self.factory.makePerson()
         store = Store.of(person)
         date_created = get_transaction_timestamp(store)
+        bug = self.factory.makeBug(information_type=InformationType.USERDATA)
         keys = [
             self.factory.getUniqueUnicode("submission-key") for _ in range(2)
         ]
@@ -610,6 +611,17 @@ class TestCloseAccount(TestCaseWithFactory):
                 """,
                 (device_driver_link_id, submission_ids[0]),
             ).get_one()[0]
+            store.execute(
+                """
+                INSERT INTO HWSubmissionBug
+                    (submission, bug)
+                VALUES (?, ?)
+                """,
+                (
+                    submission_ids[0],
+                    bug.id,
+                ),
+            )
             store.execute(
                 """
                 INSERT INTO HWSubmissionDevice

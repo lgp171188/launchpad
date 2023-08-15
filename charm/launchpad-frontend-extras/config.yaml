@@ -1,0 +1,49 @@
+options:
+  domain:
+    type: string
+    description: Domain name for this instance.
+    default: "launchpad.test"
+  domain_librarian:
+    type: string
+    description: Domain name for this instance's librarian service.
+    default: "launchpadlibrarian.test"
+  enable_media:
+    type: boolean
+    description: Whether to enable the "media" domain.
+    default: false
+  offline_mode:
+    type: string
+    description: >
+      Launchpad's frontends show custom error pages when backends are
+      unavailable.  When scheduled maintenance is underway, we can show
+      different error pages.  Currently supported variants are
+      "maintenance", "staging-code-update", "staging-db-update", and
+      "unplanned".
+    default: "unplanned"
+  redirect_edge:
+    type: boolean
+    description: Whether to include redirections for legacy "edge" domains.
+    default: false
+  redirect_features:
+    type: boolean
+    description: >
+      Whether to include redirections for legacy "features" and "blueprint"
+      domains.
+    default: false
+  redirect_librarian:
+    type: boolean
+    description: >
+      Whether to include redirections for the legacy "librarian" domain.
+    default: false
+  ssl_chain_required:
+    type: boolean
+    description: >
+      Whether an intermediate certificate chain is needed for this service.
+      In development, we use self-signed certificates which don't have a
+      certificate chain; but in real deployments, we need to send a
+      certificate chain.
+    default: false
+  webmaster_email:
+    type: string
+    description: Webmaster contact address.
+    default: "webmaster@launchpad.test"

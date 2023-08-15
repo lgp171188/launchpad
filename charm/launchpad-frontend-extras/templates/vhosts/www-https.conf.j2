@@ -1,0 +1,14 @@
+<VirtualHost *:443>
+    ServerName www.{{ domain }}
+    ServerAdmin webmaster@ubuntu.com
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+{%- endif %}
+
+    Redirect permanent / https://{{ domain }}/
+</VirtualHost>
+
