@@ -1624,10 +1624,11 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
                     "ARCHIVEROOT": Equals(
                         os.path.join(self.temp_dir, self.distro.name)
                     ),
-                    "INPUT_PATH": Equals(sha256file),
-                    "OUTPUT_PATH": Equals("%s.gpg" % sha256file),
-                    "MODE": Equals("detached"),
                     "DISTRIBUTION": Equals(self.distro.name),
+                    "INPUT_PATH": Equals(sha256file),
+                    "MODE": Equals("detached"),
+                    "OUTPUT_PATH": Equals("%s.gpg" % sha256file),
+                    "SITE_NAME": Equals("launchpad.test"),
                     "SUITE": Equals(self.suite),
                 }
             ),
