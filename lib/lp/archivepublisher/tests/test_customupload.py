@@ -282,10 +282,11 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
             MatchesDict(
                 {
                     "ARCHIVEROOT": Equals(archiveroot),
-                    "INPUT_PATH": Equals(filename),
-                    "OUTPUT_PATH": Equals("%s.gpg" % filename),
-                    "MODE": Equals("detached"),
                     "DISTRIBUTION": Equals(self.distro.name),
+                    "INPUT_PATH": Equals(filename),
+                    "MODE": Equals("detached"),
+                    "OUTPUT_PATH": Equals("%s.gpg" % filename),
+                    "SITE_NAME": Equals("launchpad.test"),
                     "SUITE": Equals("suite"),
                 }
             ),
