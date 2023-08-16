@@ -3,6 +3,10 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
+  domain_ftpmaster:
+    type: string
+    description: Domain name for the published Ubuntu archive.
+    default: "archive.ubuntu.test"
   signing_client_public_key:
     type: string
     description: Public key for encrypting communication between client and signing service. 
@@ -15,3 +19,7 @@ options:
     type: string
     description: Endpoint for the signing service. 
     default: ""
+  webmaster_email:
+    type: string
+    description: Webmaster contact address.
+    default: "webmaster@launchpad.test"

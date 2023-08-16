@@ -12,4 +12,8 @@ tags:
   - network
 series:
   - focal
-subordinate: false
+subordinate: true
+requires:
+  apache-website:
+    interface: apache-website
+    scope: container

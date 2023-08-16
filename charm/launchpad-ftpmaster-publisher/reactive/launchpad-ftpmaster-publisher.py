@@ -1,17 +1,25 @@
 # Copyright 2023 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from charmhelpers.core import hookenv, templating
+import os.path
+
+from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
 from charms.launchpad.payload import configure_cron, configure_lazr
 from charms.launchpad.publisher_parts import publisher_parts_dir
 from charms.reactive import (
+    endpoint_from_flag,
     remove_state,
     set_state,
     when,
     when_not,
     when_not_all,
 )
+from ols import base
+
+
+def archives_dir():
+    return os.path.join(base.base_dir(), "archives")
 
 
 def configure_logrotate(config):
@@ -32,6 +40,10 @@ def configure_logrotate(config):
 def configure():
     hookenv.log("Configuring ftpmaster publisher")
     config = get_service_config()
+    config["archives_dir"] = archives_dir()
+    host.mkdir(
+        archives_dir(), owner=base.user(), group=base.user(), perms=0o755
+    )
     config["run_parts_location"] = publisher_parts_dir()
 
     configure_lazr(
@@ -63,3 +75,24 @@ def check_is_running():
 )
 def deconfigure():
     remove_state("service.configured")
+
+
+@when("apache-website.available", "service.configured")
+@when_not("service.apache-website.configured")
+def configure_apache_website():
+    apache_website = endpoint_from_flag("apache-website.available")
+    config = dict(hookenv.config())
+    config["archives_dir"] = archives_dir()
+    apache_website.set_remote(
+        domain=config["domain_ftpmaster"],
+        enabled="true",
+        ports="80",
+        site_config=templating.render("vhost.conf.j2", None, config),
+    )
+    set_state("service.apache-website.configured")
+
+
+@when("service.apache-website.configured")
+@when_not_all("apache-website.available", "service.configured")
+def deconfigure_apache_website():
+    remove_state("service.apache-website.configured")
