@@ -789,6 +789,14 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                 git_repository,
                 commit_sha1,
                 das,
+                # `das` is the series/arch of the overall build job,
+                # corresponding to the outer container started by
+                # launchpad-buildd in which lpci is run.  We also need to
+                # pass the series/arch of each individual CI job,
+                # corresponding to the inner containers started by lpci;
+                # these are often the same as those of the overall build
+                # job, but not necessarily if jobs for multiple series are
+                # being run on a given architecture.
                 [
                     [(job_name, i) for job_name, (i, series, arch) in stage]
                     for stage in stages
