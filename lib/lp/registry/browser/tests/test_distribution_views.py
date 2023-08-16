@@ -4,7 +4,12 @@
 import soupmatchers
 import transaction
 from fixtures import FakeLogger
-from testtools.matchers import MatchesSetwise, MatchesStructure
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    MatchesSetwise,
+    MatchesStructure,
+)
 from zope.component import getUtility
 
 from lp.app.enums import InformationType
@@ -108,6 +113,48 @@ class TestDistributionPublisherConfigView(TestCaseWithFactory):
             copy_base_url="foo",
         )
         self._change_and_test_config()
+
+    def test_validate_absolute_root_dir(self):
+        form = {
+            "field.actions.save": "save",
+            "field.root_dir": "/srv/launchpad.test/distro-name",
+            "field.base_url": self.BASE_URL,
+            "field.copy_base_url": self.COPY_BASE_URL,
+        }
+        view = create_initialized_view(self.distro, name="+pubconf", form=form)
+        self.assertEqual([], view.errors)
+
+    def test_validate_relative_root_dir(self):
+        form = {
+            "field.actions.save": "save",
+            "field.root_dir": "distro-name",
+            "field.base_url": self.BASE_URL,
+            "field.copy_base_url": self.COPY_BASE_URL,
+        }
+        view = create_initialized_view(self.distro, name="+pubconf", form=form)
+        self.assertEqual([], view.errors)
+
+    def test_validate_relative_root_dir_no_dotdot(self):
+        form = {
+            "field.actions.save": "save",
+            "field.root_dir": "../distro-name",
+            "field.base_url": self.BASE_URL,
+            "field.copy_base_url": self.COPY_BASE_URL,
+        }
+        view = create_initialized_view(self.distro, name="+pubconf", form=form)
+        self.assertThat(
+            view.errors,
+            MatchesListwise(
+                [
+                    MatchesStructure(
+                        field_name=Equals("root_dir"),
+                        errors=MatchesStructure.byEquality(
+                            args=("Path would escape target directory",)
+                        ),
+                    )
+                ]
+            ),
+        )
 
 
 class TestDistroAddView(TestCaseWithFactory):

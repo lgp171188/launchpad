@@ -8,6 +8,8 @@ __all__ = [
     "PublisherConfigSet",
 ]
 
+import os.path
+
 from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
@@ -15,13 +17,14 @@ from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
 )
+from lp.services.config import config
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 
 
 @implementer(IPublisherConfig)
 class PublisherConfig(StormBase):
-    """See `IArchiveAuthToken`."""
+    """See `IPublisherConfig`."""
 
     __storm_table__ = "PublisherConfig"
 
@@ -35,6 +38,16 @@ class PublisherConfig(StormBase):
     base_url = Unicode(name="base_url", allow_none=False)
 
     copy_base_url = Unicode(name="copy_base_url", allow_none=False)
+
+    @property
+    def absolute_root_dir(self):
+        """See `IPublisherConfig`."""
+        if os.path.isabs(self.root_dir):
+            return self.root_dir
+        else:
+            return os.path.join(
+                config.archivepublisher.archives_dir, self.root_dir
+            )
 
 
 @implementer(IPublisherConfigSet)
