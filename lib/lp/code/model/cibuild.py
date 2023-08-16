@@ -122,7 +122,7 @@ def get_stages(configuration):
                                 % (job_name, arch, previous_job),
                             )
                     jobs[arch].append(
-                        (job_name, (i, job_config["series"], arch))
+                        (job_name, i, job_config["series"], arch)
                     )
 
             for arch, value in jobs.items():
@@ -798,7 +798,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
                 # job, but not necessarily if jobs for multiple series are
                 # being run on a given architecture.
                 [
-                    [(job_name, i) for job_name, (i, series, arch) in stage]
+                    [(job_name, i) for job_name, i, series, arch in stage]
                     for stage in stages
                 ],
                 git_refs,
@@ -815,7 +815,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
             # lp.archiveuploader.ciupload looks for this report and attaches
             # artifacts to it.
             for stage in stages:
-                for job_name, (i, series, arch) in stage:
+                for job_name, i, series, arch in stage:
                     try:
                         job_das = distribution[series][arch]
                     except KeyError:
