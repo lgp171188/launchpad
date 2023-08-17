@@ -2,9 +2,11 @@
 
 {% if librarian_frontend_ip_addresses %}
 {% for ip_address in librarian_frontend_ip_addresses %}
+mkdir -p {{ librarian_logs_dir }}/frontend-{{ loop.index0 }}
 rsync -aq --timeout=120 --delete {{ ip_address }}::librarian-logs/ {{ librarian_logs_dir }}/frontend-{{ loop.index0 }}/
 {% endfor %}
 
+mkdir -p {{ librarian_logs_dir }}/for_parsing
 rm -f {{ librarian_logs_dir }}/for_parsing/*
 
 {% for ip_address in librarian_frontend_ip_addresses %}
