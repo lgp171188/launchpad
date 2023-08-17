@@ -68,7 +68,9 @@ def get_pub_config(distro):
 
 def get_archive_root(pub_config):
     """Return the archive root for the given publishing config."""
-    return os.path.join(pub_config.root_dir, pub_config.distribution.name)
+    return os.path.join(
+        pub_config.absolute_root_dir, pub_config.distribution.name
+    )
 
 
 def get_dists_root(pub_config):
@@ -218,7 +220,9 @@ class TestPublishFTPMasterScript(
         :param script_code: The code to go into the script.
         """
         distro_config = get_pub_config(distro)
-        parts_base = os.path.join(distro_config.root_dir, "distro-parts")
+        parts_base = os.path.join(
+            distro_config.absolute_root_dir, "distro-parts"
+        )
         self.enableRunParts(parts_base)
         script_dir = os.path.join(parts_base, distro.name, parts_dir)
         os.makedirs(script_dir)
@@ -526,6 +530,7 @@ class TestPublishFTPMasterScript(
                     "OVERRIDEROOT": Equals(
                         get_archive_root(distro_config) + "-overrides"
                     ),
+                    "SITE_NAME": Equals("launchpad.test"),
                 }
             ),
         )
@@ -591,10 +596,20 @@ class TestPublishFTPMasterScript(
         )
         script.runFinalizeParts(distro)
         _, kwargs = run_parts_fixture.new_value.calls[0]
-        env = kwargs["env"]
-        required_parameters = {"ARCHIVEROOTS", "SECURITY_UPLOAD_ONLY"}
-        missing_parameters = required_parameters.difference(set(env.keys()))
-        self.assertEqual(set(), missing_parameters)
+        distro_config = get_pub_config(distro)
+        self.assertThat(
+            kwargs["env"],
+            ContainsDict(
+                {
+                    "ARCHIVEROOTS": Equals(
+                        "%(root)s %(root)s-partner"
+                        % {"root": get_archive_root(distro_config)}
+                    ),
+                    "SECURITY_UPLOAD_ONLY": Equals("no"),
+                    "SITE_NAME": Equals("launchpad.test"),
+                }
+            ),
+        )
 
     def test_publishSecurityUploads_skips_pub_if_no_security_updates(self):
         script = self.makeScript()

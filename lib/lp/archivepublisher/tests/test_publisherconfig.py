@@ -68,6 +68,26 @@ class TestPublisherConfig(TestCaseWithFactory):
         )
         self.assertEqual(self.distribution.name, pubconf.distribution.name)
 
+    def test_preserve_absolute_root_dir(self):
+        self.pushConfig(
+            "archivepublisher", archives_dir="/srv/launchpad/archives"
+        )
+        pubconf = self.factory.makePublisherConfig(
+            root_dir="/srv/launchpad.test/distro-name"
+        )
+        self.assertEqual(
+            "/srv/launchpad.test/distro-name", pubconf.absolute_root_dir
+        )
+
+    def test_expand_relative_root_dir(self):
+        self.pushConfig(
+            "archivepublisher", archives_dir="/srv/launchpad/archives"
+        )
+        pubconf = self.factory.makePublisherConfig(root_dir="distro-name")
+        self.assertEqual(
+            "/srv/launchpad/archives/distro-name", pubconf.absolute_root_dir
+        )
+
 
 class TestPublisherConfigSecurity(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer

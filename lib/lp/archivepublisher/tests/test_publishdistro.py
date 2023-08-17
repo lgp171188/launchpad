@@ -627,7 +627,7 @@ class TestPublishDistro(TestNativePublishingBase):
         root_dir = (
             getUtility(IPublisherConfigSet)
             .getByDistribution(ubuntutest)
-            .root_dir
+            .absolute_root_dir
         )
         repo_path = os.path.join(
             root_dir,

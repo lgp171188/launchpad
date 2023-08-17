@@ -114,6 +114,13 @@ def configure_librarian_logs_sync(config):
         perms=0o755,
         force=True,
     )
+    host.mkdir(
+        config["librarian_logs_dir"],
+        owner=base.user(),
+        group=base.user(),
+        perms=0o755,
+        force=True,
+    )
     templating.render(
         "sync-librarian-logs.j2",
         f"{config['scripts_dir']}/sync-librarian-logs",

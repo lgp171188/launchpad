@@ -42,7 +42,7 @@ def getPubConfig(archive):
         return None
 
     pubconf.temproot = os.path.join(
-        db_pubconf.root_dir, "%s-temp" % archive.distribution.name
+        db_pubconf.absolute_root_dir, "%s-temp" % archive.distribution.name
     )
 
     if archive.publishing_method == ArchivePublishingMethod.ARTIFACTORY:
@@ -72,13 +72,13 @@ def getPubConfig(archive):
             archive.distribution.name,
         )
     elif archive.is_main:
-        pubconf.distroroot = db_pubconf.root_dir
+        pubconf.distroroot = db_pubconf.absolute_root_dir
         pubconf.archiveroot = os.path.join(
             pubconf.distroroot, archive.distribution.name
         )
         pubconf.archiveroot += archive_suffixes[archive.purpose]
     elif archive.is_copy:
-        pubconf.distroroot = db_pubconf.root_dir
+        pubconf.distroroot = db_pubconf.absolute_root_dir
         pubconf.archiveroot = os.path.join(
             pubconf.distroroot,
             archive.distribution.name + "-" + archive.name,

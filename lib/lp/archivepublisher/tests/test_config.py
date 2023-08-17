@@ -13,6 +13,7 @@ from pathlib import Path
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
@@ -67,6 +68,19 @@ class TestGetPubConfig(TestCaseWithFactory):
         primary_config = getPubConfig(self.ubuntutest.main_archive)
         self.assertEqual(archiveroot + "-uefi", primary_config.signingroot)
 
+    def test_primary_config_relative_root_dir(self):
+        self.pushConfig(
+            "archivepublisher", archives_dir="/srv/launchpad/archives"
+        )
+        getUtility(IPublisherConfigSet).getByDistribution(
+            self.ubuntutest
+        ).root_dir = "relative-ubuntutest"
+        primary_config = getPubConfig(self.ubuntutest.main_archive)
+        root = "/srv/launchpad/archives/relative-ubuntutest"
+        self.assertEqual(root, primary_config.distroroot)
+        self.assertEqual(root + "/ubuntutest", primary_config.archiveroot)
+        self.assertEqual(root + "/ubuntutest-temp", primary_config.temproot)
+
     def test_partner_config(self):
         # Partner archive configuration is correct.
         # The publisher config for PARTNER contains only 'partner' in its
@@ -93,6 +107,24 @@ class TestGetPubConfig(TestCaseWithFactory):
         self.assertIs(None, partner_config.metaroot)
         self.assertEqual(archiveroot + "-staging", partner_config.stagingroot)
 
+    def test_partner_config_relative_root_dir(self):
+        self.pushConfig(
+            "archivepublisher", archives_dir="/srv/launchpad/archives"
+        )
+        getUtility(IPublisherConfigSet).getByDistribution(
+            self.ubuntutest
+        ).root_dir = "relative-ubuntutest"
+        partner_archive = getUtility(IArchiveSet).getByDistroAndName(
+            self.ubuntutest, "partner"
+        )
+        partner_config = getPubConfig(partner_archive)
+        root = "/srv/launchpad/archives/relative-ubuntutest"
+        self.assertEqual(root, partner_config.distroroot)
+        self.assertEqual(
+            root + "/ubuntutest-partner", partner_config.archiveroot
+        )
+        self.assertEqual(root + "/ubuntutest-temp", partner_config.temproot)
+
     def test_copy_config(self):
         # In the case of copy archives (used for rebuild testing) the
         # archiveroot is of the form
@@ -117,6 +149,31 @@ class TestGetPubConfig(TestCaseWithFactory):
         self.assertFalse(copy_config.signingautokey)
         self.assertIs(None, copy_config.metaroot)
         self.assertIs(None, copy_config.stagingroot)
+
+    def test_copy_config_relative_root_dir(self):
+        self.pushConfig(
+            "archivepublisher", archives_dir="/srv/launchpad/archives"
+        )
+        getUtility(IPublisherConfigSet).getByDistribution(
+            self.ubuntutest
+        ).root_dir = "relative-ubuntutest"
+        copy_archive = getUtility(IArchiveSet).new(
+            purpose=ArchivePurpose.COPY,
+            owner=self.ubuntutest.owner,
+            distribution=self.ubuntutest,
+            name="rebuildtest99",
+        )
+        copy_config = getPubConfig(copy_archive)
+        root = "/srv/launchpad/archives/relative-ubuntutest"
+        self.assertEqual(root, copy_config.distroroot)
+        self.assertEqual(
+            root + "/ubuntutest-rebuildtest99/ubuntutest",
+            copy_config.archiveroot,
+        )
+        self.assertEqual(
+            root + "/ubuntutest-rebuildtest99/ubuntutest-temp",
+            copy_config.temproot,
+        )
 
     def test_getDiskPool(self):
         primary_config = getPubConfig(self.ubuntutest.main_archive)

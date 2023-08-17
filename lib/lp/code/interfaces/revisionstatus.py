@@ -36,6 +36,7 @@ from lp.app.validators.attachment import attachment_size_constraint
 from lp.code.enums import RevisionStatusArtifactType, RevisionStatusResult
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.fields import PublicPersonChoice, URIField
+from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 @error_status(http.client.UNAUTHORIZED)
@@ -160,6 +161,18 @@ class IRevisionStatusReportEditableAttributes(Interface):
         )
     )
 
+    distro_arch_series = exported(
+        Reference(
+            title=_(
+                "The series and architecture for the CI build job that "
+                "produced this report."
+            ),
+            schema=IDistroArchSeries,
+            required=False,
+            readonly=True,
+        )
+    )
+
     properties = exported(
         Dict(
             title=_("Metadata for artifacts attached to this report"),
@@ -277,6 +290,8 @@ class IRevisionStatusReportSet(Interface):
         date_finished=None,
         log=None,
         ci_build=None,
+        distro_arch_series=None,
+        properties=None,
     ):
         """Return a new revision status report.
 
@@ -292,6 +307,9 @@ class IRevisionStatusReportSet(Interface):
         :param date_finished: DateTime that report was completed.
         :param log: Stores the content of the artifact for this report.
         :param ci_build: The `ICIBuild` that produced this report, if any.
+        :param distro_arch_series: The series and architecture for the build
+            that produced this report, if any.
+        :param properties: Metadata for artifacts attached to this report.
         """
 
     def getByID(id):

@@ -85,6 +85,19 @@ from lp.testing.pages import webservice_for_person
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
+class MatchesDistroArchSeries(MatchesStructure):
+    def __init__(self, distribution_name, distroseries_name, architecturetag):
+        super().__init__(
+            distroseries=MatchesStructure(
+                distribution=MatchesStructure.byEquality(
+                    name=distribution_name
+                ),
+                name=Equals(distroseries_name),
+            ),
+            architecturetag=Equals(architecturetag),
+        )
+
+
 class TestGetAllCommitsForPaths(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
@@ -537,12 +550,34 @@ class TestCIBuild(TestCaseWithFactory):
         build = self.factory.makeCIBuild()
         self.assertThat(
             build.getOrCreateRevisionStatusReport("build:0"),
+            MatchesStructure(
+                creator=Equals(build.git_repository.owner),
+                title=Equals("build:0"),
+                git_repository=Equals(build.git_repository),
+                commit_sha1=Equals(build.commit_sha1),
+                ci_build=Equals(build),
+                distro_arch_series=Is(None),
+            ),
+        )
+
+    def test_getOrCreateRevisionStatusReport_absent_with_das(self):
+        build = self.factory.makeCIBuild()
+        job_das = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=build.distro_arch_series.distroseries.distribution
+            )
+        )
+        self.assertThat(
+            build.getOrCreateRevisionStatusReport(
+                "build:0", distro_arch_series=job_das
+            ),
             MatchesStructure.byEquality(
                 creator=build.git_repository.owner,
                 title="build:0",
                 git_repository=build.git_repository,
                 commit_sha1=build.commit_sha1,
                 ci_build=build,
+                distro_arch_series=job_das,
             ),
         )
 
@@ -994,13 +1029,13 @@ class TestCIBuildSet(TestCaseWithFactory):
         )
 
     def test_requestBuildsForRefs_triggers_builds(self):
-        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        series = self.factory.makeDistroSeries(
-            distribution=ubuntu,
-            name="focal",
+        self.factory.makeBuildableDistroArchSeries(
+            distroseries=self.factory.makeUbuntuDistroSeries(name="bionic"),
+            architecturetag="amd64",
         )
         self.factory.makeBuildableDistroArchSeries(
-            distroseries=series, architecturetag="amd64"
+            distroseries=self.factory.makeUbuntuDistroSeries(name="focal"),
+            architecturetag="amd64",
         )
         configuration = dedent(
             """\
@@ -1052,8 +1087,10 @@ class TestCIBuildSet(TestCaseWithFactory):
 
         # check that a build and some reports were created
         self.assertEqual(ref.commit_sha1, build.commit_sha1)
-        self.assertEqual("focal", build.distro_arch_series.distroseries.name)
-        self.assertEqual("amd64", build.distro_arch_series.architecturetag)
+        self.assertThat(
+            build.distro_arch_series,
+            MatchesDistroArchSeries("ubuntu", "focal", "amd64"),
+        )
         self.assertEqual(
             [[("build", 0), ("build", 1)], [("test", 0)]], build.stages
         )
@@ -1061,14 +1098,21 @@ class TestCIBuildSet(TestCaseWithFactory):
             reports,
             MatchesSetwise(
                 *(
-                    MatchesStructure.byEquality(
-                        creator=repository.owner,
-                        title=title,
-                        git_repository=repository,
-                        commit_sha1=ref.commit_sha1,
-                        ci_build=build,
+                    MatchesStructure(
+                        creator=Equals(repository.owner),
+                        title=Equals(title),
+                        git_repository=Equals(repository),
+                        commit_sha1=Equals(ref.commit_sha1),
+                        ci_build=Equals(build),
+                        distro_arch_series=MatchesDistroArchSeries(
+                            "ubuntu", distroseries_name, "amd64"
+                        ),
                     )
-                    for title in ("build:0", "build:1", "test:0")
+                    for title, distroseries_name in (
+                        ("build:0", "bionic"),
+                        ("build:1", "focal"),
+                        ("test:0", "focal"),
+                    )
                 )
             ),
         )
@@ -1162,23 +1206,26 @@ class TestCIBuildSet(TestCaseWithFactory):
             reports,
             MatchesSetwise(
                 *(
-                    MatchesStructure.byEquality(
-                        creator=repository.owner,
-                        title=title,
-                        git_repository=repository,
-                        commit_sha1=ref.commit_sha1,
-                        ci_build=build,
+                    MatchesStructure(
+                        creator=Equals(repository.owner),
+                        title=Equals(title),
+                        git_repository=Equals(repository),
+                        commit_sha1=Equals(ref.commit_sha1),
+                        ci_build=Equals(build),
+                        distro_arch_series=MatchesDistroArchSeries(
+                            "ubuntu", distroseries_name, architecturetag
+                        ),
                     )
-                    for title, build in [
-                        # amd
-                        ("build:0", jammy_test_amd64),
-                        ("test:0", jammy_test_amd64),
-                        ("test:1", jammy_test_amd64),
-                        ("test:2", jammy_test_amd64),
-                        # arm
-                        ("build:0", jammy_test_arm64),
-                        ("test:1", jammy_test_arm64),
-                        ("test:2", jammy_test_arm64),
+                    for title, build, distroseries_name, architecturetag in [
+                        # amd64
+                        ("build:0", jammy_test_amd64, "focal", "amd64"),
+                        ("test:0", jammy_test_amd64, "bionic", "amd64"),
+                        ("test:1", jammy_test_amd64, "focal", "amd64"),
+                        ("test:2", jammy_test_amd64, "jammy", "amd64"),
+                        # arm64
+                        ("build:0", jammy_test_arm64, "focal", "arm64"),
+                        ("test:1", jammy_test_arm64, "focal", "arm64"),
+                        ("test:2", jammy_test_arm64, "jammy", "arm64"),
                     ]
                 )
             ),
@@ -1253,16 +1300,19 @@ class TestCIBuildSet(TestCaseWithFactory):
             reports,
             MatchesSetwise(
                 *(
-                    MatchesStructure.byEquality(
-                        creator=repository.owner,
-                        title=title,
-                        git_repository=repository,
-                        commit_sha1=ref.commit_sha1,
-                        ci_build=build,
+                    MatchesStructure(
+                        creator=Equals(repository.owner),
+                        title=Equals(title),
+                        git_repository=Equals(repository),
+                        commit_sha1=Equals(ref.commit_sha1),
+                        ci_build=Equals(build),
+                        distro_arch_series=MatchesDistroArchSeries(
+                            "ubuntu", distroseries_name, "amd64"
+                        ),
                     )
-                    for title, build in [
-                        ("build:0", jammy_build),
-                        ("test:0", jammy_build),
+                    for title, build, distroseries_name in [
+                        ("build:0", jammy_build, "jammy"),
+                        ("test:0", jammy_build, "focal"),
                     ]
                 )
             ),

@@ -154,10 +154,13 @@ class SignableArchive:
                 remove_if_exists(output_path)
                 env = {
                     "ARCHIVEROOT": self.pubconf.archiveroot,
-                    "INPUT_PATH": input_path,
-                    "OUTPUT_PATH": output_path,
-                    "MODE": mode.name.lower(),
                     "DISTRIBUTION": self.archive.distribution.name,
+                    "INPUT_PATH": input_path,
+                    "MODE": mode.name.lower(),
+                    "OUTPUT_PATH": output_path,
+                    # Allow parts to detect whether they're running on
+                    # production.
+                    "SITE_NAME": config.vhost.mainsite.hostname,
                     "SUITE": suite,
                 }
                 run_parts(

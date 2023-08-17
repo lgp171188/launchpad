@@ -26,6 +26,7 @@ from lp.archivepublisher.scripts.publishdistro import PublishDistro
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.osutils import ensure_directory_exists
 from lp.services.scripts.base import (
@@ -423,6 +424,8 @@ class PublishFTPMaster(LaunchpadCronScript):
         env = {
             "ARCHIVEROOT": archive_config.archiveroot,
             "DISTSROOT": get_backup_dists(archive_config),
+            # Allow parts to detect whether they're running on production.
+            "SITE_NAME": config.vhost.mainsite.hostname,
         }
         if archive_config.overrideroot is not None:
             env["OVERRIDEROOT"] = archive_config.overrideroot
@@ -477,6 +480,8 @@ class PublishFTPMaster(LaunchpadCronScript):
         env = {
             "SECURITY_UPLOAD_ONLY": "yes" if security_only else "no",
             "ARCHIVEROOTS": archive_roots,
+            # Allow parts to detect whether they're running on production.
+            "SITE_NAME": config.vhost.mainsite.hostname,
         }
         run_parts(distribution.name, "finalize.d", log=self.logger, env=env)
 
