@@ -119,7 +119,7 @@ PROBER="{{ code_dir }}/cronscripts/distributionmirror-prober.py -q --log-file=DE
 
 {% if librarian_frontend_ip_addresses %}
 # Sync librarian logs for parsing
-25 * * * * run-one sh {{ scripts_dir }}/sync-librarian-logs
+25 * * * * run-one sh {{ scripts_dir }}/sync-librarian-logs >> {{ logs_dir }}/sync-librarian-logs.log 2>&1
 {% endif %}
 
 {% endif -%}
