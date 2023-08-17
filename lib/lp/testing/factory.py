@@ -2203,6 +2203,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         result=None,
         ci_build=None,
         properties=None,
+        distro_arch_series=None,
     ):
         """Create a new RevisionStatusReport."""
         if title is None:
@@ -2231,6 +2232,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             result,
             ci_build=ci_build,
             properties=properties,
+            distro_arch_series=distro_arch_series,
         )
 
     def makeRevisionStatusArtifact(

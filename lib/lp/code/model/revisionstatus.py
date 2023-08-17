@@ -60,6 +60,14 @@ class RevisionStatusReport(StormBase):
     ci_build_id = Int(name="ci_build", allow_none=True)
     ci_build = Reference(ci_build_id, "CIBuild.id")
 
+    # We don't always know the DAS for this report (for example, external
+    # builds, or historical builds from before we introduced this column),
+    # but when we do it's useful for filtering.
+    distro_arch_series_id = Int(name="distro_arch_series", allow_none=True)
+    distro_arch_series = Reference(
+        distro_arch_series_id, "DistroArchSeries.id"
+    )
+
     date_created = DateTime(
         name="date_created", tzinfo=timezone.utc, allow_none=False
     )
@@ -83,6 +91,7 @@ class RevisionStatusReport(StormBase):
         result_summary,
         result,
         ci_build=None,
+        distro_arch_series=None,
         properties=None,
     ):
         super().__init__()
@@ -93,6 +102,7 @@ class RevisionStatusReport(StormBase):
         self.url = url
         self.result_summary = result_summary
         self.ci_build = ci_build
+        self.distro_arch_series = distro_arch_series
         self.date_created = UTC_NOW
         self.transitionToNewResult(result)
         self.properties = properties
@@ -215,6 +225,7 @@ class RevisionStatusReportSet:
         date_finished=None,
         log=None,
         ci_build=None,
+        distro_arch_series=None,
         properties=None,
     ):
         """See `IRevisionStatusReportSet`."""
@@ -228,6 +239,7 @@ class RevisionStatusReportSet:
             result_summary,
             result,
             ci_build=ci_build,
+            distro_arch_series=distro_arch_series,
             properties=properties,
         )
         store.add(report)
