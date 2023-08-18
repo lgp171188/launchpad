@@ -4,6 +4,9 @@ includes:
   - interface:apache-website
 repo: https://git.launchpad.net/launchpad
 options:
+  apt:
+    packages:
+      - launchpad-soyuz-dependencies
   ols-pg:
     databases:
       db:
