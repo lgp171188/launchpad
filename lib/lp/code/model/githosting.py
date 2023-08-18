@@ -261,18 +261,28 @@ class GitHostingClient:
                 "Failed to get merge diff from Git repository: %s" % str(e)
             )
 
-    def detectMerges(self, path, target, sources, logger=None):
+    def detectMerges(
+        self, path, target, sources, previous_target=None, logger=None
+    ):
         """See `IGitHostingClient`."""
         sources = list(sources)
+        stop = [] if previous_target is None else [previous_target]
         try:
             if logger is not None:
                 logger.info(
-                    "Detecting merges for %s from %s to %s"
-                    % (path, sources, target)
+                    "Detecting merges for %s from %s to %s%s"
+                    % (
+                        path,
+                        sources,
+                        target,
+                        ""
+                        if previous_target is None
+                        else " (stopping at %s)" % previous_target,
+                    )
                 )
             return self._post(
                 "/repo/%s/detect-merges/%s" % (path, quote(target)),
-                json={"sources": sources},
+                json={"sources": sources, "stop": stop},
             )
         except requests.RequestException as e:
             raise GitRepositoryScanFault(

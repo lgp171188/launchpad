@@ -826,12 +826,15 @@ class IGitRepositoryView(IHasRecipes):
             based on one of these paths will be marked as stale.
         """
 
-    def detectMerges(paths, logger=None):
+    def detectMerges(paths, previous_targets, logger=None):
         """Detect merges of landing candidates.
 
         :param paths: A list of reference paths.  Any merge proposals whose
             target is this repository and one of these paths will be
             checked.
+        :param previous_targets: A dictionary mapping merge proposal IDs to
+            their previous target commit IDs, before the current ref scan
+            job updated them.
         :param logger: An optional logger.
         """
 
