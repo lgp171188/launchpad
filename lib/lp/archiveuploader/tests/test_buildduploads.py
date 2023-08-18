@@ -15,6 +15,7 @@ from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import PackagePublishingStatus, PackageUploadStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.publishing import IPublishingSet
@@ -77,14 +78,18 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
         self.build_uploadprocessor = self.getUploadProcessor(
             self.layer.txn, builds=True
         )
-        self.builds_before_upload = BinaryPackageBuild.select().count()
+        self.builds_before_upload = (
+            IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+        )
         self.source_queue = None
         self._uploadSource()
         self.layer.txn.commit()
 
     def assertBuildsCreated(self, amount):
         """Assert that a given 'amount' of build records was created."""
-        builds_count = BinaryPackageBuild.select().count()
+        builds_count = (
+            IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+        )
         self.assertEqual(self.builds_before_upload + amount, builds_count)
 
     def _prepareUpload(self, upload_dir):

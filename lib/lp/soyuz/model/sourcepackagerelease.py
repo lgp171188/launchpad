@@ -216,19 +216,24 @@ class SourcePackageRelease(SQLBase):
     @property
     def builds(self):
         """See `ISourcePackageRelease`."""
+        # Circular import.
+        from lp.soyuz.model.archive import Archive
+
         # Excluding PPA builds may seem like a strange thing to do, but,
         # since Archive.copyPackage can copy packages across archives, a
         # build may well have a different archive to the corresponding
         # sourcepackagerelease.
-        return BinaryPackageBuild.select(
-            """
-            source_package_release = %s AND
-            archive.id = binarypackagebuild.archive AND
-            archive.purpose IN %s
-            """
-            % sqlvalues(self.id, MAIN_ARCHIVE_PURPOSES),
-            orderBy=["-date_created", "id"],
-            clauseTables=["Archive"],
+        return (
+            IStore(BinaryPackageBuild)
+            .find(
+                BinaryPackageBuild,
+                BinaryPackageBuild.source_package_release == self,
+                BinaryPackageBuild.archive == Archive.id,
+                Archive.purpose.is_in(MAIN_ARCHIVE_PURPOSES),
+            )
+            .order_by(
+                Desc(BinaryPackageBuild.date_created), BinaryPackageBuild.id
+            )
         )
 
     @property

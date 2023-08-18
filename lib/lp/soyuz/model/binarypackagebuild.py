@@ -45,11 +45,12 @@ from lp.registry.interfaces.sourcepackage import SourcePackageUrgency
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.bulk import load_related
+from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import SQLObjectNotFound
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -137,11 +138,13 @@ def storm_validate_external_dependencies(build, attr, value):
 
 
 @implementer(IBinaryPackageBuild)
-class BinaryPackageBuild(PackageBuildMixin, SQLBase):
-    _table = "BinaryPackageBuild"
-    _defaultOrder = "id"
+class BinaryPackageBuild(PackageBuildMixin, StormBase):
+    __storm_table__ = "BinaryPackageBuild"
+    __storm_order__ = "id"
 
     job_type = BuildFarmJobType.PACKAGEBUILD
+
+    id = Int(primary=True)
 
     build_farm_job_id = Int(name="build_farm_job")
     build_farm_job = Reference(build_farm_job_id, BuildFarmJob.id)
@@ -214,6 +217,46 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
 
     buildinfo_id = Int(name="buildinfo")
     buildinfo = Reference(buildinfo_id, "LibraryFileAlias.id")
+
+    def __init__(
+        self,
+        build_farm_job,
+        distro_arch_series,
+        source_package_release,
+        archive,
+        pocket,
+        arch_indep,
+        status,
+        processor=None,
+        virtualized=None,
+        date_created=DEFAULT,
+        builder=None,
+        buildinfo=None,
+    ):
+        # Compute these before creating the row, to avoid violating not-null
+        # constraints if these other rows aren't in the cache.
+        distribution = distro_arch_series.distroseries.distribution
+        distro_series = distro_arch_series.distroseries
+        is_distro_archive = archive.is_main
+        source_package_name = source_package_release.sourcepackagename
+
+        super().__init__()
+        self.build_farm_job = build_farm_job
+        self.distro_arch_series = distro_arch_series
+        self.source_package_release = source_package_release
+        self.archive = archive
+        self.pocket = pocket
+        self.arch_indep = arch_indep
+        self.status = status
+        self.processor = processor
+        self.virtualized = virtualized
+        self.date_created = date_created
+        self.builder = builder
+        self.buildinfo = buildinfo
+        self.distribution = distribution
+        self.distro_series = distro_series
+        self.is_distro_archive = is_distro_archive
+        self.source_package_name = source_package_name
 
     def getLatestSourcePublication(self):
         from lp.soyuz.model.publishing import SourcePackagePublishingHistory
@@ -748,7 +791,7 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             assert self.buildinfo == buildinfo
 
     def verifySuccessfulUpload(self) -> bool:
-        return bool(self.binarypackages)
+        return not self.binarypackages.is_empty()
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`.
@@ -855,7 +898,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         )
         processor = distro_arch_series.processor
         virtualized = is_build_virtualized(archive, processor)
-        return BinaryPackageBuild(
+        build = BinaryPackageBuild(
             build_farm_job=build_farm_job,
             distro_arch_series=distro_arch_series,
             source_package_release=source_package_release,
@@ -866,20 +909,18 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             processor=processor,
             virtualized=virtualized,
             builder=builder,
-            is_distro_archive=archive.is_main,
-            distribution=distro_arch_series.distroseries.distribution,
-            distro_series=distro_arch_series.distroseries,
-            source_package_name=source_package_release.sourcepackagename,
             buildinfo=buildinfo,
             date_created=date_created,
         )
+        IStore(build).flush()
+        return build
 
     def getByID(self, id):
         """See `IBinaryPackageBuildSet`."""
-        try:
-            return BinaryPackageBuild.get(id)
-        except SQLObjectNotFound as e:
-            raise NotFoundError(str(e))
+        build = IStore(BinaryPackageBuild).get(BinaryPackageBuild, id)
+        if build is None:
+            raise NotFoundError(id)
+        return build
 
     def getByBuildFarmJob(self, build_farm_job):
         """See `ISpecificBuildFarmJobSource`."""
