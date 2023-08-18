@@ -40,7 +40,8 @@ class TestPublishingSet(BaseTestCaseWithThreeBuilds):
         self.publishing_set = getUtility(IPublishingSet)
 
     def _getBuildsForResults(self, results):
-        # The method returns (SPPH, Build) tuples, we just want the build.
+        # The method returns (SPPH, BinaryPackageBuild, DistroArchSeries)
+        # tuples.  We just want the binary package build.
         return [result[1] for result in results]
 
     def test_getUnpublishedBuildsForSources_none_published(self):
