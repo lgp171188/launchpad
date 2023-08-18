@@ -1132,8 +1132,8 @@ its context.
     >>> cprov_builds = publishing_set.getBuildsForSources(cprov_sources)
 
 It returns a `ResultSet` and it contains 3-element tuples as
-`SourcePackagePublishingHistory`, `Build` and `DistroArchseries` for
-each build found.
+`SourcePackagePublishingHistory`, `BinaryPackageBuild` and
+`DistroArchSeries` for each build found.
 
     >>> cprov_builds.count()
     7
