@@ -105,12 +105,14 @@ class IGitHostingClient(Interface):
             to a list of conflicted paths.
         """
 
-    def detectMerges(path, target, sources, logger=None):
+    def detectMerges(path, target, sources, previous_target=None, logger=None):
         """Detect merges of any of 'sources' into 'target'.
 
         :param path: Physical path of the repository on the hosting service.
         :param target: The OID of the merge proposal target commit.
         :param sources: The OIDs of the merge proposal source commits.
+        :param previous_target: If not None, stop walking back through
+            history upon reaching this commit.
         :param logger: An optional logger.
         :return: A dict mapping merged commit OIDs from 'sources' to the
             first commit OID in the left-hand (first parent only) history of

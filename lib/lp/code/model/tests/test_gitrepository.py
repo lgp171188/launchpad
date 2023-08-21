@@ -3937,6 +3937,9 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         bmp3 = self.factory.makeBranchMergeProposalForGit(
             target_ref=target_2, source_ref=source_1
         )
+        previous_targets = {
+            bmp.id: bmp.target_git_commit_sha1 for bmp in (bmp1, bmp2, bmp3)
+        }
         hosting_fixture = self.useFixture(
             GitHostingFixture(merges={source_1.commit_sha1: "0" * 40})
         )
@@ -3958,20 +3961,26 @@ class TestGitRepositoryDetectMerges(TestCaseWithFactory):
         _, events = self.assertNotifies(
             expected_events, True, repository.createOrUpdateRefs, refs_info
         )
-        expected_args = [
+        expected_calls = [
             (
-                repository.getInternalPath(),
-                target_1.commit_sha1,
-                {source_1.commit_sha1, source_2.commit_sha1},
+                (
+                    repository.getInternalPath(),
+                    target_1.commit_sha1,
+                    {source_1.commit_sha1, source_2.commit_sha1},
+                ),
+                {"previous_target": previous_targets[bmp1.id]},
             ),
             (
-                repository.getInternalPath(),
-                target_2.commit_sha1,
-                {source_1.commit_sha1},
+                (
+                    repository.getInternalPath(),
+                    target_2.commit_sha1,
+                    {source_1.commit_sha1},
+                ),
+                {"previous_target": previous_targets[bmp3.id]},
             ),
         ]
         self.assertContentEqual(
-            expected_args, hosting_fixture.detectMerges.extract_args()
+            expected_calls, hosting_fixture.detectMerges.calls
         )
         self.assertEqual(BranchMergeProposalStatus.MERGED, bmp1.queue_status)
         self.assertEqual("0" * 40, bmp1.merged_revision_id)

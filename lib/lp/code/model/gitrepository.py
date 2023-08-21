@@ -1550,7 +1550,7 @@ class GitRepository(
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.markAsMerged(merged_revision_id=merged_revision_id)
 
-    def detectMerges(self, paths, logger=None):
+    def detectMerges(self, paths, previous_targets, logger=None):
         """See `IGitRepository`."""
         hosting_client = getUtility(IGitHostingClient)
         all_proposals = self.getActiveLandingCandidates(paths).order_by(
@@ -1562,6 +1562,7 @@ class GitRepository(
                 self.getInternalPath(),
                 proposals[0].target_git_commit_sha1,
                 {proposal.source_git_commit_sha1 for proposal in proposals},
+                previous_target=previous_targets.get(proposals[0].id),
             )
             for proposal in proposals:
                 merged_revision_id = merges.get(

@@ -443,7 +443,19 @@ class TestGitHostingClient(TestCase):
         self.assertRequest(
             "repo/123/detect-merges/a",
             method="POST",
-            json_data={"sources": ["b", "c"]},
+            json_data={"sources": ["b", "c"], "stop": []},
+        )
+
+    def test_detectMerges_previous_target(self):
+        with self.mockRequests("POST", json={"b": "0"}):
+            merges = self.client.detectMerges(
+                "123", "a", ["b", "c"], previous_target="d"
+            )
+        self.assertEqual({"b": "0"}, merges)
+        self.assertRequest(
+            "repo/123/detect-merges/a",
+            method="POST",
+            json_data={"sources": ["b", "c"], "stop": ["d"]},
         )
 
     def test_detectMerges_failure(self):

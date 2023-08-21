@@ -18,7 +18,18 @@ from operator import attrgetter, itemgetter
 from pathlib import Path
 
 from storm.databases.postgres import JSON
-from storm.expr import And, Cast, Desc, Join, LeftJoin, Not, Or, Sum
+from storm.expr import (
+    And,
+    Cast,
+    Desc,
+    Join,
+    LeftJoin,
+    Not,
+    Or,
+    Select,
+    Sum,
+    Union,
+)
 from storm.info import ClassAlias
 from storm.properties import DateTime, Int, Unicode
 from storm.references import Reference
@@ -1719,9 +1730,26 @@ class PublishingSet:
         self, source_publication_ids, archive=None, build_states=None
     ):
         """See `IPublishingSet`."""
+        # We're interested in the binaries resulting from builds in the same
+        # distroseries as the SPPH.
+        bpb_tables = [
+            LeftJoin(
+                BinaryPackageBuild,
+                And(
+                    SourcePackagePublishingHistory.distroseries_id
+                    == BinaryPackageBuild.distro_series_id,
+                    SourcePackagePublishingHistory.sourcepackagerelease_id
+                    == BinaryPackageBuild.source_package_release_id,
+                ),
+            ),
+        ]
+
+        extra_exprs = [
+            SourcePackagePublishingHistory.id.is_in(source_publication_ids)
+        ]
+
         # If an archive was passed in as a parameter, add an extra expression
         # to filter by archive:
-        extra_exprs = []
         if archive is not None:
             extra_exprs.append(
                 SourcePackagePublishingHistory.archive == archive
@@ -1734,71 +1762,69 @@ class PublishingSet:
 
         store = IStore(SourcePackagePublishingHistory)
 
-        # We'll be looking for builds in the same distroseries as the
-        # SPPH for the same release.
-        builds_for_distroseries_expr = (
-            SourcePackagePublishingHistory.distroseries_id
-            == BinaryPackageBuild.distro_series_id,
-            SourcePackagePublishingHistory.sourcepackagerelease_id
-            == BinaryPackageBuild.source_package_release_id,
-            SourcePackagePublishingHistory.id.is_in(source_publication_ids),
-            DistroArchSeries.id == BinaryPackageBuild.distro_arch_series_id,
-        )
-
-        # First, we'll find the builds that were built in the same
-        # archive context as the published sources.
-        builds_in_same_archive = store.find(
-            BinaryPackageBuild,
-            builds_for_distroseries_expr,
-            (
+        # First, we'll find the binary package builds that were built in the
+        # same archive context as the published sources.
+        build_ids_in_same_archive = Select(
+            BinaryPackageBuild.id,
+            tables=(SourcePackagePublishingHistory, *bpb_tables),
+            where=And(
                 SourcePackagePublishingHistory.archive_id
-                == BinaryPackageBuild.archive_id
+                == BinaryPackageBuild.archive_id,
+                *extra_exprs,
             ),
-            *extra_exprs,
         )
 
-        # Next get all the builds that have a binary published in the
-        # same archive... even though the build was not built in
-        # the same context archive.
-        builds_copied_into_archive = store.find(
-            BinaryPackageBuild,
-            builds_for_distroseries_expr,
-            (
+        # Next get all the binary package builds that have a binary
+        # published in the same archive... even though the build was not
+        # built in the same context archive.
+        build_ids_copied_into_archive = Select(
+            BinaryPackageBuild.id,
+            tables=(
+                SourcePackagePublishingHistory,
+                *bpb_tables,
+                Join(
+                    BinaryPackageRelease,
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                ),
+                Join(
+                    BinaryPackagePublishingHistory,
+                    And(
+                        BinaryPackagePublishingHistory.archive
+                        == SourcePackagePublishingHistory.archive_id,
+                        BinaryPackagePublishingHistory.binarypackagerelease
+                        == BinaryPackageRelease.id,
+                    ),
+                ),
+            ),
+            where=And(
                 SourcePackagePublishingHistory.archive_id
-                != BinaryPackageBuild.archive_id
+                != BinaryPackageBuild.archive_id,
+                *extra_exprs,
             ),
-            BinaryPackagePublishingHistory.archive
-            == SourcePackagePublishingHistory.archive_id,
-            BinaryPackagePublishingHistory.binarypackagerelease
-            == BinaryPackageRelease.id,
-            BinaryPackageRelease.build == BinaryPackageBuild.id,
-            *extra_exprs,
         )
 
-        builds_union = builds_copied_into_archive.union(
-            builds_in_same_archive
-        ).config(distinct=True)
-
-        # Now that we have a result_set of all the builds, we'll use it
-        # as a subquery to get the required publishing and arch to do
-        # the ordering. We do this in this round-about way because we
-        # can't sort on SourcePackagePublishingHistory.id after the
-        # union. See bug 443353 for details.
-        find_spec = (
+        # Now that we have select expressions for all the builds, we'll use
+        # them as subqueries to get the required publishing and arch to do
+        # the ordering. We do this in this round-about way because we can't
+        # sort on SourcePackagePublishingHistory.id after the union. See bug
+        # 443353 for details.
+        result_set = store.using(
             SourcePackagePublishingHistory,
-            BinaryPackageBuild,
-            DistroArchSeries,
-        )
-
-        # Storm doesn't let us do builds_union.values('id') -
-        # ('Union' object has no attribute 'columns'). So instead
-        # we have to instantiate the objects just to get the id.
-        build_ids = [build.id for build in builds_union]
-
-        result_set = store.find(
-            find_spec,
-            builds_for_distroseries_expr,
-            BinaryPackageBuild.id.is_in(build_ids),
+            *bpb_tables,
+            Join(
+                DistroArchSeries,
+                BinaryPackageBuild.distro_arch_series == DistroArchSeries.id,
+            ),
+        ).find(
+            (
+                SourcePackagePublishingHistory,
+                BinaryPackageBuild,
+                DistroArchSeries,
+            ),
+            BinaryPackageBuild.id.is_in(
+                Union(build_ids_in_same_archive, build_ids_copied_into_archive)
+            ),
+            *extra_exprs,
         )
 
         return result_set.order_by(

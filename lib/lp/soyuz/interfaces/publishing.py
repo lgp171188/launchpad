@@ -1210,7 +1210,8 @@ class IPublishingSet(Interface):
         :param need_build_farm_job: whether to include the `PackageBuild`
             and `BuildFarmJob` in the result.
         :return: a storm ResultSet containing tuples as
-            (`SourcePackagePublishingHistory`, `Build`, `DistroArchSeries`)
+            (`SourcePackagePublishingHistory`, `BinaryPackageBuild`,
+            `DistroArchSeries`)
         :rtype: `storm.store.ResultSet`.
         """
 
@@ -1232,7 +1233,7 @@ class IPublishingSet(Interface):
             be limited. Defaults to BuildStatus.FULLYBUILT if none are
             specified.
         :return: a storm ResultSet containing tuples of
-            (`SourcePackagePublishingHistory`, `Build`)
+            (`SourcePackagePublishingHistory`, `BinaryPackageBuild`)
         """
 
     def getBinaryFilesForSources(one_or_more_source_publication):
