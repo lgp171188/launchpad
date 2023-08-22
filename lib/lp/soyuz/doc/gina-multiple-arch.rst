@@ -182,7 +182,11 @@ Check that the source package was correctly imported:
 
 And that one of the packages in main is here too:
 
-    >>> n = BinaryPackageName.selectOneBy(name="libgadu-dev")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="libgadu-dev")
+    ...     .one()
+    ... )
     >>> ekg = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -206,7 +210,11 @@ processed. In particular, its section should be stripped of the
 component name.
 
     >>> from lp.soyuz.enums import PackagePublishingPriority
-    >>> n = BinaryPackageName.selectOneBy(name="ekg")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="ekg")
+    ...     .one()
+    ... )
     >>> ekg = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -229,7 +237,11 @@ package files are in main! Gina to the rescue: it finds them in the
 right place, updates the component, and creates it with a semi-bogus
 DSC.
 
-    >>> n = BinaryPackageName.selectOneBy(name="bdftopcf")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="bdftopcf")
+    ...     .one()
+    ... )
     >>> ekg = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(

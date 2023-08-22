@@ -24,7 +24,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLObjectNotFound,
     StringCol,
 )
 from lp.services.database.stormexpr import fti_search, rank_by_fti
@@ -348,9 +347,12 @@ class DistroArchSeries(SQLBase):
         )
 
         if not IBinaryPackageName.providedBy(name):
-            try:
-                name = BinaryPackageName.byName(name)
-            except SQLObjectNotFound:
+            name = (
+                IStore(BinaryPackageName)
+                .find(BinaryPackageName, name=name)
+                .one()
+            )
+            if name is None:
                 return None
         return DistroArchSeriesBinaryPackage(self, name)
 
