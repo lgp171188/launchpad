@@ -10,10 +10,7 @@ from zope.component import getUtility
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
-from lp.services.database.sqlbase import (
-    clear_current_connection_cache,
-    flush_database_updates,
-)
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.log.logger import BufferLogger
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
@@ -164,8 +161,7 @@ class TestAddMissingBuilds(TestCaseWithFactory):
         )
 
         # Sync database changes made in the external process.
-        flush_database_updates()
-        clear_current_connection_cache()
+        flush_database_caches()
 
         # The arch-any package will get builds for all architectures.
         self.assertBuildsForAny()
