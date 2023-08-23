@@ -1,0 +1,64 @@
+type: charm
+bases:
+  - build-on:
+    - name: ubuntu
+      channel: "20.04"
+      architectures: [amd64]
+    run-on:
+    - name: ubuntu
+      channel: "20.04"
+      architectures: [amd64]
+parts:
+  charm-wheels:
+    source: https://git.launchpad.net/~ubuntuone-hackers/ols-charm-deps/+git/wheels
+    source-commit: "59b32ae07f98051385c96d6d8e7e02ca4f197fe5"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": charm-wheels/
+    prime:
+      - "-charm-wheels"
+  ols-layers:
+    source: https://git.launchpad.net/ols-charm-deps
+    source-commit: "56d219f60a293a6c73759b8439ef5fdb11e19d1f"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": layers/
+    stage:
+      - layers
+    prime:
+      - "-layers"
+  launchpad-layers:
+    after:
+      - ols-layers
+    source: https://git.launchpad.net/launchpad-layers
+    source-commit: "8b7d25a29b8297d491abe6a0c6b69f34e39dddba"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      launchpad-base: layers/layer/launchpad-base
+      launchpad-db: layers/layer/launchpad-db
+      launchpad-payload: layers/layer/launchpad-payload
+      launchpad-publisher-parts: layers/layer/launchpad-publisher-parts
+    stage:
+      - layers
+    prime:
+      - "-layers"
+  charm:
+    after:
+      - charm-wheels
+      - launchpad-layers
+    source: .
+    plugin: reactive
+    build-snaps: [charm]
+    build-packages: [libpq-dev, python3-dev]
+    build-environment:
+      - CHARM_LAYERS_DIR: $CRAFT_STAGE/layers/layer
+      - CHARM_INTERFACES_DIR: $CRAFT_STAGE/layers/interface
+      - PIP_NO_INDEX: "true"
+      - PIP_FIND_LINKS: $CRAFT_STAGE/charm-wheels
+    reactive-charm-build-arguments: [--binary-wheels-from-source]

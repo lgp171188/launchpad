@@ -1,0 +1,10 @@
+name: launchpad-copy-archive-publisher
+display-name: launchpad-copy-archive-publisher
+summary: | 
+  Mixed bag of cronjobs, previously used for phone project, nowadays sometimes
+  used to publish test rebuilds.
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+subordinate: false

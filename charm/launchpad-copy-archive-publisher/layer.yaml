@@ -1,0 +1,18 @@
+includes:
+  - layer:launchpad-db
+  - layer:launchpad-publisher-parts
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - procmail # Needed for the 'lockfile' command.
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - archivepublisher  # ppa-generate-keys.py
+          - process_accepted  # via cron.publish-copy-archives
+          - process_death_row  # archivepublisher.py
+          - publish_distro  # via cron.publish-copy-archives
+          - publish_ftpmaster  # cron.publish-copy-archives
