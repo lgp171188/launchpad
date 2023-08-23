@@ -166,7 +166,7 @@ class AdminMergeBaseView(ValidatingMergeView):
                 # EmailAddress.person is a readonly field, so we need to
                 # remove the security proxy here.
                 naked_email = removeSecurityProxy(email)
-                naked_email.personID = self.target_person.id
+                naked_email.person = self.target_person
                 naked_email.status = EmailAddressStatus.NEW
         getUtility(IPersonSet).mergeAsync(
             self.dupe_person,

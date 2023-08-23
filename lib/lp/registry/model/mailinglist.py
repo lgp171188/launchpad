@@ -332,7 +332,7 @@ class MailingList(StormBase):
                     email
                 ).status = EmailAddressStatus.VALIDATED
             assert (
-                email.personID == self.team_id
+                email.person == self.team
             ), "Email already associated with another team."
 
     def _setAndNotifyDateActivated(self):
@@ -361,7 +361,7 @@ class MailingList(StormBase):
         if email is not None and self.team.preferredemail is not None:
             if email.id == self.team.preferredemail.id:
                 self.team.setContactAddress(None)
-        assert email.personID == self.team_id, "Incorrectly linked email."
+        assert email.person == self.team, "Incorrectly linked email."
         # Anyone with permission to deactivate a list can also set the
         # email address status to NEW.
         removeSecurityProxy(email).status = EmailAddressStatus.NEW
@@ -435,7 +435,7 @@ class MailingList(StormBase):
             raise CannotSubscribe(
                 "Teams cannot be mailing list members: %s" % person.displayname
             )
-        if address is not None and address.personID != person.id:
+        if address is not None and address.person != person:
             raise CannotSubscribe(
                 "%s does not own the email address: %s"
                 % (person.displayname, address.email)
@@ -469,7 +469,7 @@ class MailingList(StormBase):
                 "%s is not a member of the mailing list: %s"
                 % (person.displayname, self.team.displayname)
             )
-        if address is not None and address.personID != person.id:
+        if address is not None and address.person != person:
             raise CannotChangeSubscription(
                 "%s does not own the email address: %s"
                 % (person.displayname, address.email)
@@ -645,7 +645,7 @@ class MailingListSet:
         Team = ClassAlias(Person)
         tables = (
             EmailAddress,
-            Join(Person, Person.id == EmailAddress.personID),
+            Join(Person, Person.id == EmailAddress.person_id),
             Join(Account, Account.id == Person.account_id),
             Join(TeamParticipation, TeamParticipation.person_id == Person.id),
             Join(
@@ -702,7 +702,7 @@ class MailingListSet:
         tables = (
             Person,
             Join(Account, Account.id == Person.account_id),
-            Join(EmailAddress, EmailAddress.personID == Person.id),
+            Join(EmailAddress, EmailAddress.person_id == Person.id),
             Join(TeamParticipation, TeamParticipation.person_id == Person.id),
             Join(
                 MailingList, MailingList.team_id == TeamParticipation.team_id
@@ -728,7 +728,7 @@ class MailingListSet:
         tables = (
             Person,
             Join(Account, Account.id == Person.account_id),
-            Join(EmailAddress, EmailAddress.personID == Person.id),
+            Join(EmailAddress, EmailAddress.person_id == Person.id),
             Join(MessageApproval, MessageApproval.posted_by_id == Person.id),
             Join(
                 MailingList, MailingList.id == MessageApproval.mailing_list_id

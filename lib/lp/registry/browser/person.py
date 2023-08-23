@@ -527,7 +527,7 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
     def traverse_email(self, email):
         """Traverse to this person's emails on the webservice layer."""
         email = getUtility(IEmailAddressSet).getByEmail(email)
-        if email is None or email.personID != self.context.id:
+        if email is None or email.person != self.context:
             return None
         return email
 
@@ -1146,7 +1146,7 @@ class BeginTeamClaimView(LaunchpadFormView):
                 "generated based on the email address it's "
                 "associated with." % self.context.name
             )
-        elif email.personID != self.context.id:
+        elif email.person != self.context:
             error = structured(
                 "This email address is associated with yet another "
                 "Launchpad profile, which you seem to have used at "

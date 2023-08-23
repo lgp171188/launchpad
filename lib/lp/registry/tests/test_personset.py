@@ -368,7 +368,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         return self.store.add(
             EmailAddress(
                 email=email,
-                account=person.account,
                 person=person,
                 status=EmailAddressStatus.PREFERRED,
             )
@@ -388,7 +387,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.person, found)
         self.assertIs(self.account, found.account)
         self.assertIs(self.email, found.preferredemail)
-        self.assertIs(self.email.account, self.account)
         self.assertIs(self.email.person, self.person)
         self.assertEqual(
             [self.identifier], list(self.account.openid_identifiers)
@@ -410,7 +408,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.person, found)
         self.assertIs(self.account, found.account)
         self.assertIs(self.email, found.preferredemail)
-        self.assertIs(self.email.account, self.account)
         self.assertIs(self.email.person, self.person)
         self.assertEqual(
             [self.identifier], list(self.account.openid_identifiers)
@@ -433,7 +430,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.person, found)
         self.assertIs(self.account, found.account)
         self.assertIs(self.email, found.preferredemail)
-        self.assertIs(self.email.account, self.account)
         self.assertIs(self.email.person, self.person)
 
         # Old OpenId Identifier still attached.
@@ -474,7 +470,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
     def testNoAccount(self):
         # EmailAddress is linked to a Person, but there is no Account.
         # Convert this stub into something valid.
-        self.email.account = None
         self.email.status = EmailAddressStatus.NEW
         self.person.account = None
         new_identifier = "new_identifier"
@@ -503,7 +498,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.identifier.account = self.store.find(
             Account, displayname="Foo Bar"
         ).one()
-        email_account = self.email.account
 
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
             self.identifier.identifier,
@@ -519,7 +513,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
 
         self.assertIs(found.account, self.identifier.account)
         self.assertIn(self.identifier, list(found.account.openid_identifiers))
-        self.assertIs(email_account, self.email.account)
 
     def testEmptyOpenIDIdentifier(self):
         self.assertRaises(

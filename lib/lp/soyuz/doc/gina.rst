@@ -30,7 +30,7 @@ Get the current counts of stuff in the database:
     >>> orig_tp_count = (
     ...     IStore(TeamParticipation).find(TeamParticipation).count()
     ... )
-    >>> orig_email_count = EmailAddress.select().count()
+    >>> orig_email_count = IStore(EmailAddress).find(EmailAddress).count()
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
     ... )
@@ -599,7 +599,9 @@ Kamion, 2 being uploaded by mdz and 2 by doko).
     ...     - orig_tp_count
     ... )
     13
-    >>> print(EmailAddress.select().count() - orig_email_count)
+    >>> print(
+    ...     IStore(EmailAddress).find(EmailAddress).count() - orig_email_count
+    ... )
     13
 
 
@@ -695,7 +697,9 @@ changed, etc.
     ...     - orig_tp_count
     ... )
     13
-    >>> print(EmailAddress.select().count() - orig_email_count)
+    >>> print(
+    ...     IStore(EmailAddress).find(EmailAddress).count() - orig_email_count
+    ... )
     13
     >>> (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()

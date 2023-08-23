@@ -47,9 +47,7 @@ class TestTeamContactAddress(TestCaseWithFactory):
 
     def getAllEmailAddresses(self):
         transaction.commit()
-        all_addresses = self.store.find(
-            EmailAddress, EmailAddress.personID == self.team.id
-        )
+        all_addresses = self.store.find(EmailAddress, person=self.team)
         return [address for address in all_addresses.order_by("email")]
 
     def createMailingListAndGetAddress(self):
