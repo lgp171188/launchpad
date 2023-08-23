@@ -34,7 +34,9 @@ Get the current counts of stuff in the database:
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
     ... )
-    >>> orig_build_count = BinaryPackageBuild.select().count()
+    >>> orig_build_count = (
+    ...     IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+    ... )
     >>> orig_sbpph_count = IStore(SBPPH).find(SBPPH).count()
     >>> orig_sspph_main_count = (
     ...     IStore(SSPPH)
@@ -431,7 +433,10 @@ work.
     ...     - orig_bpr_count
     ... )
     40
-    >>> BinaryPackageBuild.select().count() - orig_build_count
+    >>> (
+    ...     IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+    ...     - orig_build_count
+    ... )
     13
     >>> IStore(SBPPH).find(SBPPH).count() - orig_sbpph_count
     46
@@ -681,7 +686,10 @@ changed, etc.
     ...     - orig_bpr_count
     ... )
     40
-    >>> BinaryPackageBuild.select().count() - orig_build_count
+    >>> (
+    ...     IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+    ...     - orig_build_count
+    ... )
     13
 
 But the overrides do generate extra publishing entries:

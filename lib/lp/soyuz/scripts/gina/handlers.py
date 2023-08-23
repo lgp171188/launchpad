@@ -40,7 +40,6 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import quote
 from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
@@ -928,11 +927,6 @@ class BinaryPackageHandler:
     def ensureBuild(self, binary, srcpkg, distroarchseries, archtag):
         """Ensure a build record."""
         distribution = distroarchseries.distroseries.distribution
-        clauseTables = [
-            "BinaryPackageBuild",
-            "DistroArchSeries",
-            "DistroSeries",
-        ]
 
         # XXX kiko 2006-02-03:
         # This method doesn't work for real bin-only NMUs that are
@@ -942,23 +936,23 @@ class BinaryPackageHandler:
         # once, and the two checks below will of course blow up when
         # doing it the second time.
 
-        query = (
-            "BinaryPackageBuild.source_package_release = %d AND "
-            "BinaryPackageBuild.distro_arch_series = "
-            "    DistroArchSeries.id AND "
-            "BinaryPackageBuild.archive = %d AND "
-            "DistroArchSeries.distroseries = DistroSeries.id AND "
-            "DistroSeries.distribution = %d"
-            % (srcpkg.id, distribution.main_archive.id, distribution.id)
-        )
+        clauses = [
+            BinaryPackageBuild.source_package_release == srcpkg,
+            BinaryPackageBuild.archive == distribution.main_archive,
+            BinaryPackageBuild.distro_arch_series == DistroArchSeries.id,
+            DistroArchSeries.distroseries == DistroSeries.id,
+            DistroSeries.distribution == distribution,
+        ]
 
         if archtag != "all":
-            query += "AND DistroArchSeries.architecturetag = %s" % quote(
-                archtag
-            )
+            clauses.append(DistroArchSeries.architecturetag == archtag)
 
         try:
-            build = BinaryPackageBuild.selectOne(query, clauseTables)
+            build = (
+                IStore(BinaryPackageBuild)
+                .find(BinaryPackageBuild, *clauses)
+                .one()
+            )
         except NotOneError:
             # XXX kiko 2005-10-27: Untested.
             raise MultipleBuildError(

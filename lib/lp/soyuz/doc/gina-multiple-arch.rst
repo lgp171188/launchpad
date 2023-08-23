@@ -27,7 +27,9 @@ Get the current counts of stuff in the database:
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
     ... )
-    >>> orig_build_count = BinaryPackageBuild.select().count()
+    >>> orig_build_count = (
+    ...     IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+    ... )
     >>> orig_sbpph_count = IStore(SBPPH).find(SBPPH).count()
 
 Create a distribution series and an arch series for dapper:
@@ -157,7 +159,10 @@ distroarchseries:
     ...     - orig_bpr_count
     ... )
     4
-    >>> BinaryPackageBuild.select().count() - orig_build_count
+    >>> (
+    ...     IStore(BinaryPackageBuild).find(BinaryPackageBuild).count()
+    ...     - orig_build_count
+    ... )
     2
     >>> IStore(SBPPH).find(SBPPH).count() - orig_sbpph_count
     4

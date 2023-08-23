@@ -48,30 +48,34 @@ builds that are in sampledata!
 XXX: noodles 2008-11-05 bug=294585: The dependency on a database id
 needs to be removed.
 
-    >>> bpr = BinaryPackageBuild.get(8).createBinaryPackageRelease(
-    ...     binarypackagename=firefox_name.id,
-    ...     version="120.6-0",
-    ...     summary="Firefox loves lollies",
-    ...     description="Lolly-pop loving application",
-    ...     binpackageformat=binpackageformat,
-    ...     component=main_component.id,
-    ...     section=misc_section.id,
-    ...     priority=priority,
-    ...     shlibdeps=None,
-    ...     depends=None,
-    ...     recommends=None,
-    ...     suggests=None,
-    ...     conflicts=None,
-    ...     replaces=None,
-    ...     provides=None,
-    ...     pre_depends=None,
-    ...     enhances=None,
-    ...     breaks=None,
-    ...     built_using=None,
-    ...     essential=False,
-    ...     installedsize=0,
-    ...     architecturespecific=False,
-    ...     debug_package=None,
+    >>> bpr = (
+    ...     IStore(BinaryPackageBuild)
+    ...     .get(BinaryPackageBuild, 8)
+    ...     .createBinaryPackageRelease(
+    ...         binarypackagename=firefox_name.id,
+    ...         version="120.6-0",
+    ...         summary="Firefox loves lollies",
+    ...         description="Lolly-pop loving application",
+    ...         binpackageformat=binpackageformat,
+    ...         component=main_component.id,
+    ...         section=misc_section.id,
+    ...         priority=priority,
+    ...         shlibdeps=None,
+    ...         depends=None,
+    ...         recommends=None,
+    ...         suggests=None,
+    ...         conflicts=None,
+    ...         replaces=None,
+    ...         provides=None,
+    ...         pre_depends=None,
+    ...         enhances=None,
+    ...         breaks=None,
+    ...         built_using=None,
+    ...         essential=False,
+    ...         installedsize=0,
+    ...         architecturespecific=False,
+    ...         debug_package=None,
+    ...     )
     ... )
 
     >>> pe = BinaryPackagePublishingHistory(
@@ -93,30 +97,34 @@ needs to be removed.
 XXX: noodles 2008-11-06 bug=294585: The dependency on a database id
 needs to be removed.
 
-    >>> bpr = BinaryPackageBuild.get(9).createBinaryPackageRelease(
-    ...     binarypackagename=pmount_name.id,
-    ...     version="cr98.34",
-    ...     summary="Pmount bakes cakes",
-    ...     description="Phat cake-baker application",
-    ...     binpackageformat=binpackageformat,
-    ...     component=main_component.id,
-    ...     section=misc_section.id,
-    ...     priority=priority,
-    ...     shlibdeps=None,
-    ...     depends=None,
-    ...     recommends=None,
-    ...     suggests=None,
-    ...     conflicts=None,
-    ...     replaces=None,
-    ...     provides=None,
-    ...     pre_depends=None,
-    ...     enhances=None,
-    ...     breaks=None,
-    ...     built_using=None,
-    ...     essential=False,
-    ...     installedsize=0,
-    ...     architecturespecific=False,
-    ...     debug_package=None,
+    >>> bpr = (
+    ...     IStore(BinaryPackageBuild)
+    ...     .get(BinaryPackageBuild, 9)
+    ...     .createBinaryPackageRelease(
+    ...         binarypackagename=pmount_name.id,
+    ...         version="cr98.34",
+    ...         summary="Pmount bakes cakes",
+    ...         description="Phat cake-baker application",
+    ...         binpackageformat=binpackageformat,
+    ...         component=main_component.id,
+    ...         section=misc_section.id,
+    ...         priority=priority,
+    ...         shlibdeps=None,
+    ...         depends=None,
+    ...         recommends=None,
+    ...         suggests=None,
+    ...         conflicts=None,
+    ...         replaces=None,
+    ...         provides=None,
+    ...         pre_depends=None,
+    ...         enhances=None,
+    ...         breaks=None,
+    ...         built_using=None,
+    ...         essential=False,
+    ...         installedsize=0,
+    ...         architecturespecific=False,
+    ...         debug_package=None,
+    ...     )
     ... )
 
     >>> pe = BinaryPackagePublishingHistory(
