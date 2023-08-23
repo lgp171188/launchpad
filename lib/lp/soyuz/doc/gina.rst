@@ -445,7 +445,11 @@ Check that the shlibs parsing and bin-only-NMU version handling works as
 expected:
 
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
-    >>> n = BinaryPackageName.selectOneBy(name="rioutil")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="rioutil")
+    ...     .one()
+    ... )
     >>> rio = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(BinaryPackageRelease, binarypackagename=n)
@@ -461,7 +465,7 @@ expected:
 Test all the data got to the ed BPR intact, and that the missing
 priority was correctly munged to "extra":
 
-    >>> n = BinaryPackageName.selectOneBy(name="ed")
+    >>> n = IStore(BinaryPackageName).find(BinaryPackageName, name="ed").one()
     >>> ed = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(BinaryPackageRelease, binarypackagename=n)
@@ -499,7 +503,11 @@ We now check if the Breezy publication record has the correct priority:
 Check binary package libgjc-dev in Breezy. Its version number must differ from
 its source version number.
 
-    >>> n = BinaryPackageName.selectOneBy(name="libgcj-dev")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="libgcj-dev")
+    ...     .one()
+    ... )
     >>> lib = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -516,7 +524,11 @@ its source version number.
 
 Check if the udeb was properly parsed and identified:
 
-    >>> n = BinaryPackageName.selectOneBy(name="archive-copier")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="archive-copier")
+    ...     .one()
+    ... )
     >>> ac = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(BinaryPackageRelease, binarypackagename=n, version="0.1.5")
@@ -537,7 +549,11 @@ Check if the udeb was properly parsed and identified:
 
 We check that the binary package publishing override facility works:
 
-    >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
+    >>> n = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="libdb1-compat")
+    ...     .one()
+    ... )
     >>> db1 = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(

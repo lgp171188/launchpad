@@ -1160,7 +1160,11 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Find the binarypackagerelease and check its component.
-        foocomm_binname = BinaryPackageName.selectOneBy(name="foocomm")
+        foocomm_binname = (
+            IStore(BinaryPackageName)
+            .find(BinaryPackageName, name="foocomm")
+            .one()
+        )
         foocomm_bpr = (
             IStore(BinaryPackageRelease)
             .find(BinaryPackageRelease, binarypackagename=foocomm_binname)

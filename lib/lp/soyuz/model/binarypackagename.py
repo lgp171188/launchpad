@@ -6,15 +6,14 @@ __all__ = [
     "BinaryPackageNameSet",
 ]
 
-import six
 from storm.expr import Join
+from storm.properties import Int, Unicode
 from storm.store import EmptyResultSet
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import SQLObjectNotFound, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.soyuz.interfaces.binarypackagename import (
     IBinaryPackageName,
     IBinaryPackageNameSet,
@@ -23,11 +22,15 @@ from lp.soyuz.interfaces.publishing import active_publishing_status
 
 
 @implementer(IBinaryPackageName)
-class BinaryPackageName(SQLBase):
-    _table = "BinaryPackageName"
-    name = StringCol(
-        dbName="name", notNull=True, unique=True, alternateID=True
-    )
+class BinaryPackageName(StormBase):
+    __storm_table__ = "BinaryPackageName"
+
+    id = Int(primary=True)
+    name = Unicode(name="name", allow_none=False)
+
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
 
     def __str__(self):
         return self.name
@@ -40,24 +43,28 @@ class BinaryPackageName(SQLBase):
 class BinaryPackageNameSet:
     def __getitem__(self, name):
         """See `IBinaryPackageNameSet`."""
-        try:
-            return BinaryPackageName.byName(name)
-        except SQLObjectNotFound:
+        bpn = (
+            IStore(BinaryPackageName).find(BinaryPackageName, name=name).one()
+        )
+        if bpn is None:
             raise NotFoundError(name)
+        return bpn
 
     def getAll(self):
         """See `IBinaryPackageNameSet`."""
-        return BinaryPackageName.select()
+        return IStore(BinaryPackageName).find(BinaryPackageName)
 
     def queryByName(self, name):
         return (
-            IStore(BinaryPackageName)
-            .find(BinaryPackageName, name=six.ensure_text(name, "ASCII"))
-            .one()
+            IStore(BinaryPackageName).find(BinaryPackageName, name=name).one()
         )
 
     def new(self, name):
-        return BinaryPackageName(name=six.ensure_text(name, "ASCII"))
+        bpn = BinaryPackageName(name=name)
+        store = IStore(BinaryPackageName)
+        store.add(bpn)
+        store.flush()
+        return bpn
 
     def ensure(self, name):
         """Ensure that the given BinaryPackageName exists, creating it
@@ -65,7 +72,6 @@ class BinaryPackageNameSet:
 
         Returns the BinaryPackageName
         """
-        name = six.ensure_text(name, "ASCII")
         try:
             return self[name]
         except NotFoundError:

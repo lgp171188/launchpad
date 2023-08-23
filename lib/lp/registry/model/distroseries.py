@@ -1052,9 +1052,12 @@ class DistroSeries(
     def getBinaryPackage(self, name):
         """See `IDistroSeries`."""
         if not IBinaryPackageName.providedBy(name):
-            try:
-                name = BinaryPackageName.byName(name)
-            except SQLObjectNotFound:
+            name = (
+                IStore(BinaryPackageName)
+                .find(BinaryPackageName, name=name)
+                .one()
+            )
+            if name is None:
                 return None
         return DistroSeriesBinaryPackage(self, name)
 

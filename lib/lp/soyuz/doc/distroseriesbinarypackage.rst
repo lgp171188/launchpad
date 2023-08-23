@@ -8,15 +8,18 @@ releases and/or architectures for a given binary package name within a
 specific distribution series.
 
     >>> from zope.component import getUtility
-    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.interfaces.distribution import IDistributionSet
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
 
 A DistroSeriesBinaryPackage is normally accessed via a Distro
 Series:
 
     >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
-    >>> firefox_bin_name = BinaryPackageName.selectOneBy(
-    ...     name="mozilla-firefox"
+    >>> firefox_bin_name = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="mozilla-firefox")
+    ...     .one()
     ... )
     >>> firefox_dsbp = ubuntu["warty"].getBinaryPackage(firefox_bin_name)
 

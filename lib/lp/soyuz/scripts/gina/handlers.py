@@ -805,9 +805,12 @@ class BinaryPackageHandler:
 
     def checkBin(self, binarypackagedata, distroarchseries):
         """Returns a binarypackage -- if it exists."""
-        try:
-            binaryname = BinaryPackageName.byName(binarypackagedata.package)
-        except SQLObjectNotFound:
+        binaryname = (
+            IStore(BinaryPackageName)
+            .find(BinaryPackageName, name=binarypackagedata.package)
+            .one()
+        )
+        if binaryname is None:
             # If the binary package's name doesn't exist, don't even
             # bother looking for a binary package.
             return None

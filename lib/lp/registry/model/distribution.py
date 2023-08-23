@@ -1790,7 +1790,11 @@ class Distribution(
         # At this point we don't have a published source package by
         # that name, so let's try to find a binary package and work
         # back from there.
-        binarypackagename = BinaryPackageName.selectOneBy(name=pkgname)
+        binarypackagename = (
+            IStore(BinaryPackageName)
+            .find(BinaryPackageName, name=pkgname)
+            .one()
+        )
         if binarypackagename:
             # Ok, so we have a binarypackage with that name. Grab its
             # latest publication in the distribution (this may be an old
