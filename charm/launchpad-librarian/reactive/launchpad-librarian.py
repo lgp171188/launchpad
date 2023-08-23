@@ -187,7 +187,7 @@ def configure_loadbalancer():
         service_options_download = yaml.safe_load(
             config["haproxy_service_options_download"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_download YAML")
         hookenv.status_set(
             "blocked",
@@ -198,7 +198,7 @@ def configure_loadbalancer():
         service_options_upload = yaml.safe_load(
             config["haproxy_service_options_upload"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_upload YAML")
         hookenv.status_set(
             "blocked", "Bad haproxy_service_options_upload YAML configuration"
