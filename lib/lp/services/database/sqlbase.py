@@ -3,7 +3,6 @@
 
 __all__ = [
     "block_implicit_flushes",
-    "clear_current_connection_cache",
     "connect",
     "convert_storm_clause_to_string",
     "cursor",
@@ -275,11 +274,6 @@ class SQLBase(storm.sqlobject.SQLObjectBase):
         # tested, but the entire test suite blows up awesomely if it's broken.
         # It's entirely unclear where tests for this should be.
         clear_property_cache(self)
-
-
-def clear_current_connection_cache():
-    """Clear SQLObject's object cache. SQLObject compatibility - DEPRECATED."""
-    _get_sqlobject_store().invalidate()
 
 
 def get_transaction_timestamp(store):
