@@ -393,21 +393,41 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
 
     def getBuiltBinaries(self, want_files=False):
         """See `ISourcePackagePublishingHistory`."""
+        # Circular import.
+        from lp.code.model.cibuild import CIBuild
+
+        clauses = [
+            BinaryPackagePublishingHistory.binarypackagerelease_id
+            == BinaryPackageRelease.id,
+            BinaryPackagePublishingHistory.distroarchseries_id
+            == DistroArchSeries.id,
+            BinaryPackagePublishingHistory.archive == self.archive_id,
+            BinaryPackagePublishingHistory.pocket == self.pocket,
+            DistroArchSeries.distroseries == self.distroseries_id,
+        ]
+        if self.sourcepackagerelease.ci_build_id is not None:
+            # Source and binary publications may come from different CI
+            # builds, so just match the git commit.
+            clauses.extend(
+                [
+                    BinaryPackageRelease.ci_build == CIBuild.id,
+                    CIBuild.git_repository_id
+                    == self.sourcepackagerelease.ci_build.git_repository_id,
+                    CIBuild.commit_sha1
+                    == self.sourcepackagerelease.ci_build.commit_sha1,
+                ]
+            )
+        else:
+            clauses.extend(
+                [
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_release
+                    == self.sourcepackagerelease_id,
+                ]
+            )
         binary_publications = list(
             Store.of(self)
-            .find(
-                BinaryPackagePublishingHistory,
-                BinaryPackagePublishingHistory.binarypackagerelease_id
-                == BinaryPackageRelease.id,
-                BinaryPackagePublishingHistory.distroarchseries_id
-                == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archive == self.archive_id,
-                BinaryPackagePublishingHistory.pocket == self.pocket,
-                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
-                BinaryPackageBuild.source_package_release_id
-                == self.sourcepackagerelease_id,
-                DistroArchSeries.distroseries == self.distroseries_id,
-            )
+            .find(BinaryPackagePublishingHistory, *clauses)
             .order_by(Desc(BinaryPackagePublishingHistory.id))
         )
 
