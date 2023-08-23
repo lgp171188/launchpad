@@ -215,7 +215,7 @@ def configure_loadbalancer():
         service_options_main = yaml.safe_load(
             config["haproxy_service_options_main"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_main YAML")
         hookenv.status_set(
             "blocked", "Bad haproxy_service_options_main YAML configuration"
@@ -225,7 +225,7 @@ def configure_loadbalancer():
         service_options_xmlrpc = yaml.safe_load(
             config["haproxy_service_options_xmlrpc"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_xmlrpc YAML")
         hookenv.status_set(
             "blocked", "Bad haproxy_service_options_xmlrpc YAML configuration"
