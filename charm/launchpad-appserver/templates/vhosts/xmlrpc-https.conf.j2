@@ -1,0 +1,28 @@
+<VirtualHost *:443>
+    ServerName xmlrpc.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
+    SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
+{%- if ssl_chain_required %}
+    SSLCertificateChainFile /etc/ssl/certs/{{ domain }}_chain.crt
+{%- endif %}
+
+    CustomLog /var/log/apache2/xmlrpc.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/xmlrpc.{{ domain }}-error.log
+    LogLevel warn
+
+    DocumentRoot {{ base_dir }}/www
+
+    ProxyRequests off
+    <Proxy *>
+        Require all granted
+    </Proxy>
+
+    ProxyPass /robots.txt !
+    ProxyPass / balancer://launchpad-appserver-xmlrpc/
+    ProxyPassReverse / balancer://launchpad-appserver-xmlrpc/
+    ProxyPreserveHost on 
+</VirtualHost>
+

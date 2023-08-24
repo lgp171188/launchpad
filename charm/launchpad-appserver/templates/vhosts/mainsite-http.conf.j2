@@ -1,0 +1,48 @@
+<VirtualHost *:80>
+    ServerName {{ domain }}
+    ServerAlias answers.{{ domain }}
+    ServerAlias blueprints.{{ domain }}
+    ServerAlias bugs.{{ domain }}
+    ServerAlias code.{{ domain }}
+    ServerAlias translations.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    # Similar to the default Apache log format, but abuses the ident field
+    # to store the HTTP request's Host header (used for web stats).
+    LogFormat "%h %{Host}i %u %t \"%r\" %>s %O \"%{Referer}i\" \"%{User-Agent}i\"" combined-vhost
+
+    CustomLog /var/log/apache2/{{ domain }}-access.log combined-vhost
+    ErrorLog /var/log/apache2/{{ domain }}-error.log
+
+    DocumentRoot {{ base_dir }}/www
+    <Directory {{ base_dir }}/www>
+        Require all granted
+    </Directory>
+
+    ProxyRequests off
+    <Proxy *>
+        Require all granted
+        ErrorDocument 500 /offline.html
+        ErrorDocument 502 /offline.html
+        ErrorDocument 503 /offline.html
+    </Proxy>
+
+    RewriteEngine On
+
+    # /server-status and /robots.txt are served over HTTP.
+    RewriteRule ^/server-status - [L,R]
+    RewriteRule ^/robots.txt - [L,R]
+    # We serve a geolocated list of Ubuntu mirrors over HTTP.
+    RewriteRule ^/ubuntu/\+countrymirrors-archive - [L,R]
+    # All other URLs are redirected permanently to HTTPS.
+    RewriteCond "%{HTTP_HOST}" "^((?:[^.]+)\.)?{{ domain }}" [NC]
+    RewriteRule ^/(.*)$ "https://%1{{ domain }}/$1" [L,R=301]
+
+    ProxyPass /server-status !
+    ProxyPass /robots.txt !
+
+    ProxyPreserveHost on
+    ProxyPass / balancer://launchpad-appserver-main/
+    ProxyPassReverse / balancer://launchpad-appserver-main/
+</VirtualHost>
+

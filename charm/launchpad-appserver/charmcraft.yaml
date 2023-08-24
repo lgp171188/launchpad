@@ -40,6 +40,7 @@ parts:
     source-type: git
     plugin: dump
     organize:
+      apache-vhost-config: layers/interface/apache-vhost-config
       launchpad-base: layers/layer/launchpad-base
       launchpad-db: layers/layer/launchpad-db
       launchpad-payload: layers/layer/launchpad-payload
