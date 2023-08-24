@@ -47,6 +47,18 @@ parts:
       - layers
     prime:
       - "-layers"
+  interface-apache-website:
+    source: https://github.com/juju-solutions/interface-apache-website
+    source-commit: "2f736ebcc90d19ac142a2d898a2ec7e1aafaa13f"
+    source-submodules: []
+    source-type: git
+    plugin: dump
+    organize:
+      "*": layers/interface/apache-website/
+    stage:
+      - layers
+    prime:
+      - "-layers"
   charm:
     after:
       - charm-wheels

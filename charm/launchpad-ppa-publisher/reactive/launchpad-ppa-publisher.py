@@ -13,6 +13,7 @@ from charms.reactive import (
     set_flag,
     when,
     when_not,
+    when_not_all,
 )
 from ols import base
 
@@ -120,3 +121,54 @@ def deconfigure():
 @hook("{requires:memcache}-relation-{joined,changed,broken,departed}")
 def memcache_relation_changed(memcache):
     clear_flag("service.configured")
+
+
+@when("apache-website.available", "service.configured")
+@when_not("service.apache-website.configured")
+def configure_apache_website():
+    apache_website = endpoint_from_flag("apache-website.available")
+    config = get_service_config()
+    config["data_dir"] = get_data_dir()
+    config["ppa_archive_root"] = ppa_archive_root()
+    config["ppa_archive_private_root"] = ppa_archive_private()
+
+    domain = config["domain"]
+    config["domain_ppa"] = f"ppa.{domain}"
+    config["domain_ppa_private"] = f"private-ppa.{domain}"
+
+    # If "domain_alternate" is set, we set a server alias for the alternate
+    # domain. This is mainly for legacy reasons: we want to keep vhost
+    # configurations for "(private-)ppa.launchpadcontent.net" along side
+    # "ppa.launchpad.net".
+    # See https://blog.launchpad.net/ppa/new-domain-names-for-ppas.
+    alt_domain = config["domain_alternate"]
+    if alt_domain:
+        config["domain_ppa_alternate"] = f"ppa.{alt_domain}"
+        config["domain_ppa_private_alternate"] = f"private-ppa.{alt_domain}"
+
+    site_configs = []
+    site_configs.append(templating.render("vhosts/ppa.conf.j2", None, config))
+    site_configs.append(
+        templating.render("vhosts/private-ppa.conf.j2", None, config)
+    )
+    if config["domain_ppa_buildd"]:
+        site_configs.append(
+            templating.render(
+                "vhosts/private-ppa.buildd.conf.j2", None, config
+            )
+        )
+
+    apache_website.set_remote(
+        domain=domain,
+        enabled="true",
+        ports="8080",
+        site_config="\n".join(site_configs),
+        site_modules="expires headers rewrite wsgi",
+    )
+    set_flag("service.apache-website.configured")
+
+
+@when("service.apache-website.configured")
+@when_not_all("apache-website.available", "service.configured")
+def deconfigure_apache_website():
+    clear_flag("service.apache-website.configured")

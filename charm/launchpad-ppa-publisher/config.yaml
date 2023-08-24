@@ -3,6 +3,16 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
+  domain_alternate:
+    type: string
+    default:
+    description: |
+      If set, extra PPA apache configuration will be created for this extra
+      domain.
+  domain_ppa_buildd:
+    type: string
+    default:
+    description: Domain for PPA buildd route.
   logparser_max_parsed_lines:
     type: int
     default: 10000000

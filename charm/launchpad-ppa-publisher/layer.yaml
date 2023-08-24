@@ -1,8 +1,12 @@
 includes:
   - layer:launchpad-db
   - interface:memcache
+  - interface:apache-website
 repo: https://git.launchpad.net/launchpad
 options:
+  apt:
+    packages:
+      - libapache2-mod-wsgi-py3
   ols-pg:
     databases:
       db:
