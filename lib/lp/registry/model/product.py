@@ -271,12 +271,8 @@ class Product(
 
     _table = "Product"
 
-    projectgroup = ForeignKey(
-        foreignKey="ProjectGroup",
-        dbName="project",
-        notNull=False,
-        default=None,
-    )
+    projectgroup_id = Int(name="project", allow_none=True, default=None)
+    projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
     _owner = ForeignKey(
         dbName="owner",
         foreignKey="Person",
@@ -315,9 +311,8 @@ class Product(
     )
     homepageurl = StringCol(dbName="homepageurl", notNull=False, default=None)
     homepage_content = StringCol(default=None)
-    icon = ForeignKey(
-        dbName="icon", foreignKey="LibraryFileAlias", default=None
-    )
+    icon_id = Int(name="icon", default=None)
+    icon = Reference(icon_id, "LibraryFileAlias.id")
     logo = ForeignKey(
         dbName="logo", foreignKey="LibraryFileAlias", default=None
     )
@@ -1715,7 +1710,7 @@ def get_precached_products(
                 cache._cached_licenses.append(license.license)
     if need_projectgroups:
         bulk.load_related(
-            ProjectGroup, products_by_id.values(), ["projectgroupID"]
+            ProjectGroup, products_by_id.values(), ["projectgroup_id"]
         )
     bulk.load_related(
         ProductSeries, products_by_id.values(), ["development_focus_id"]

@@ -252,9 +252,8 @@ class Distribution(
     summary = StringCol(notNull=True)
     description = StringCol(notNull=True)
     homepage_content = StringCol(default=None)
-    icon = ForeignKey(
-        dbName="icon", foreignKey="LibraryFileAlias", default=None
-    )
+    icon_id = Int(name="icon", default=None)
+    icon = Reference(icon_id, "LibraryFileAlias.id")
     logo = ForeignKey(
         dbName="logo", foreignKey="LibraryFileAlias", default=None
     )

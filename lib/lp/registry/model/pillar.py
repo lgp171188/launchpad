@@ -13,6 +13,7 @@ import six
 from storm.databases.postgres import Case
 from storm.expr import And, Coalesce, Desc, LeftJoin, Lower, Or
 from storm.info import ClassAlias
+from storm.locals import Int, Reference
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -308,12 +309,12 @@ class PillarNameSet:
             )
             pillars = load_related(Product, pillar_names, ["productID"])
             pillars.extend(
-                load_related(ProjectGroup, pillar_names, ["projectgroupID"])
+                load_related(ProjectGroup, pillar_names, ["projectgroup_id"])
             )
             pillars.extend(
                 load_related(Distribution, pillar_names, ["distributionID"])
             )
-            load_related(LibraryFileAlias, pillars, ["iconID"])
+            load_related(LibraryFileAlias, pillars, ["icon_id"])
 
         return list(
             DecoratedResultSet(
@@ -333,7 +334,8 @@ class PillarName(SQLBase):
         dbName="name", notNull=True, unique=True, alternateID=True
     )
     product = ForeignKey(foreignKey="Product", dbName="product")
-    projectgroup = ForeignKey(foreignKey="ProjectGroup", dbName="project")
+    projectgroup_id = Int(name="project", allow_none=True)
+    projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
     distribution = ForeignKey(foreignKey="Distribution", dbName="distribution")
     active = BoolCol(dbName="active", notNull=True, default=True)
     alias_for = ForeignKey(

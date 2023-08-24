@@ -76,7 +76,7 @@ def _get_locals():
         p = Person.get(1)
         ds = DistroSeries.get(1)
         prod = Product.get(1)
-        proj = ProjectGroup.get(1)
+        proj = store.get(ProjectGroup, 1)
         b2 = store.get(Bug, 2)
         b1 = store.get(Bug, 1)
         s = store.get(Specification, 1)
