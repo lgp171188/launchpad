@@ -1,0 +1,14 @@
+# A config with just enough to run the WSGI authenticator for private PPAs
+# on production.  This intentionally doesn't extend 
+# ../launchpad-base-lazr.conf, since Apache can't read the production-secrets
+# overlay.
+
+[meta]
+extends: ../../lib/lp/services/config/schema-lazr.conf
+
+[memcache]
+servers: {{ memcache_servers }}
+
+[personalpackagearchive]
+archive_api_endpoint: http://{{ domain_xmlrpc_private }}:{{ port_xmlrpc }}/archive
+

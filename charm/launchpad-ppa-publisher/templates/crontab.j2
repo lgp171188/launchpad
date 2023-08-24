@@ -1,0 +1,24 @@
+# m h  dom mon dow   command
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-ppa-publisher
+
+# Variables to be used by cronscripts (see cronscripts/publishing/cron.base-ppa.sh)
+PPAROOT={{ ppa_archive_root }}
+P3AROOT={{ ppa_archive_private_root }}
+
+{% if active -%}
+* * * * * umask 022; nice -n 5 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/publishing/cron.publish-ppa "-d ubuntu" "--all-derived" "-d debian" >> {{ logs_dir }}/cron.ppa.log 2>&1
+
+17,47 * * * * nice -n 15 {{ code_dir }}/cronscripts/parse-ppa-apache-access-logs.py -q --log-file=INFO:{{ logs_dir }}/parse-ppa-apache-access-logs.log
+
+59 05  * * 0 {{ code_dir }}/cronscripts/publishing/cron.daily-ppa >> {{ logs_dir }}/cron.ppa.log 2>&1
+0 */6 * * * nice -n 17 {{ code_dir }}/scripts/process-death-row.py -d ubuntu --ppa -q --log-file=INFO:{{ logs_dir }}/process-death-row.log
+0 * * * * nice -n 17 {{ code_dir }}/scripts/process-death-row.py --all-derived --ppa -q --log-file=INFO:{{ logs_dir }}/derived-process-death-row.log
+*/20 * * * * nice -n 12 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/ppa-generate-keys.py -q --log-file=INFO:{{ logs_dir }}/ppa-generate-keys.log
+{% endif %}
+
+# OOPS amqp
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
