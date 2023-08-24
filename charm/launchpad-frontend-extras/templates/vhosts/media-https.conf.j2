@@ -7,7 +7,7 @@
     SSLCertificateFile /etc/ssl/certs/{{ domain }}.crt
     SSLCertificateKeyFile /etc/ssl/private/{{ domain }}.key
 {%- if ssl_chain_required %}
-    SSLCertificateChainFile /etc/ssl/private/{{ domain }}_chain.crt
+    SSLCertificateChainFile /etc/ssl/certs/{{ domain }}_chain.crt
 {%- endif %}
 
     CustomLog /var/log/apache2/media.{{ domain }}-access.log combined
