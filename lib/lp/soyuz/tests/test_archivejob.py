@@ -1654,6 +1654,109 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
 
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
 
+    def test_skips_binaries_for_wrong_series(self):
+        # A CI job might build binaries on multiple series.  When uploading
+        # the results to an archive, only the binaries for the corresponding
+        # series are selected.
+        #
+        # The build distribution is always Ubuntu for now, but the target
+        # distribution may differ.  Unfortunately, this currently requires
+        # matching on series names.
+        logger = self.useFixture(FakeLogger())
+        target_distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=target_distribution,
+            repository_format=ArchiveRepositoryFormat.PYTHON,
+        )
+        ubuntu_distroserieses = [
+            self.factory.makeUbuntuDistroSeries() for _ in range(2)
+        ]
+        target_distroserieses = [
+            self.factory.makeDistroSeries(
+                distribution=target_distribution,
+                name=ubuntu_distroseries.name,
+                version=ubuntu_distroseries.version,
+            )
+            for ubuntu_distroseries in ubuntu_distroserieses
+        ]
+        processor = self.factory.makeProcessor()
+        ubuntu_dases = [
+            self.factory.makeDistroArchSeries(
+                distroseries=ubuntu_distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+            )
+            for ubuntu_distroseries in ubuntu_distroserieses
+        ]
+        target_dases = [
+            self.factory.makeDistroArchSeries(
+                distroseries=target_distroseries,
+                architecturetag=processor.name,
+                processor=processor,
+            )
+            for target_distroseries in target_distroserieses
+        ]
+        build = self.makeCIBuild(
+            target_distribution, distro_arch_series=ubuntu_dases[0]
+        )
+        reports = [
+            build.getOrCreateRevisionStatusReport(
+                "build-wheel:%d" % i, distro_arch_series=ubuntu_das
+            )
+            for i, ubuntu_das in enumerate(ubuntu_dases)
+        ]
+        # We wouldn't normally expect to see only an
+        # architecture-independent package in one series and only an
+        # architecture-dependent package in another, but these test files
+        # are handy.
+        paths = [
+            "wheel-indep/dist/wheel_indep-0.0.1-py3-none-any.whl",
+            "wheel-arch/dist/wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl",
+        ]
+        for report, path in zip(reports, paths):
+            with open(datadir(path), mode="rb") as f:
+                report.attach(name=os.path.basename(path), data=f.read())
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            target_distroserieses[0],
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        transaction.commit()
+
+        with dbuser(job.config.dbuser):
+            JobRunner([job]).runAll()
+
+        self.assertThat(
+            archive.getAllPublishedBinaries(),
+            MatchesSetwise(
+                MatchesStructure(
+                    binarypackagename=MatchesStructure.byEquality(
+                        name="wheel-indep"
+                    ),
+                    binarypackagerelease=MatchesStructure(
+                        ci_build=Equals(build),
+                        binarypackagename=MatchesStructure.byEquality(
+                            name="wheel-indep"
+                        ),
+                        version=Equals("0.0.1"),
+                        binpackageformat=Equals(BinaryPackageFormat.WHL),
+                    ),
+                    binarypackageformat=Equals(BinaryPackageFormat.WHL),
+                    distroarchseries=Equals(target_dases[0]),
+                )
+            ),
+        )
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertIn(
+            "Skipping wheel_arch-0.0.1-cp310-cp310-linux_x86_64.whl (built "
+            "for %s, not %s)"
+            % (ubuntu_distroserieses[1].name, target_distroserieses[0].name),
+            logger.output.splitlines(),
+        )
+
     def test_run_failed(self):
         # A failed run sets the job status to FAILED and notifies the
         # requester.
