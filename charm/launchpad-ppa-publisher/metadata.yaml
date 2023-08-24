@@ -1,0 +1,22 @@
+name: launchpad-ppa-publisher
+display-name: launchpad-ppa-publisher
+summary: Launchpad PPA publisher
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm runs a Launchpad PPA publisher. Takes all PPAs that are pending
+  in the database (added there by a launchpad-ppa-uploader unit) and arranges
+  for contents of the disk to match.
+tags:
+  - network
+series:
+  - focal
+subordinate: true
+requires:
+  memcache:
+    interface: memcache
+  apache-website:
+    interface: apache-website
+    scope: container

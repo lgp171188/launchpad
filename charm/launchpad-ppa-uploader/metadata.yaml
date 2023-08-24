@@ -1,0 +1,20 @@
+name: launchpad-ppa-uploader
+display-name: launchpad-ppa-uploader
+summary: Launchpad PPA uploader
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm runs a Launchpad PPA upload processor, which processes the PPA
+  uploads requested by users, temporarily stores them, and puts them into
+  the database.
+tags:
+  - network
+series:
+  - focal
+subordinate: false
+provides:
+  upload-queue-processor:
+    interface: upload-queue-processor
+    scope: container

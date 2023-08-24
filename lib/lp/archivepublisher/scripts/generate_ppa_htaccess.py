@@ -13,7 +13,7 @@ class HtaccessTokenGenerator(LaunchpadCronScript):
     # generate .htaccess or .htpasswd files, but instead check archive
     # authentication dynamically; and garbo now handles expiring
     # subscriptions and deactivating tokens.  We can remove this script once
-    # we stop running it on production.
+    # after `launchpad-ppa-publisher` charm is deployed to production
 
     def add_my_options(self):
         """Add script command line options."""
