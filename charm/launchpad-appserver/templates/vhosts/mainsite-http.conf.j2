@@ -29,8 +29,6 @@
 
     RewriteEngine On
 
-    # Any URL ending in "+login" must be handled over HTTPS.
-    RewriteRule ^/(.*)/\+login https://{{ domain }}/$1/+login [L,R=301]
     # /server-status and /robots.txt are served over HTTP.
     RewriteRule ^/server-status - [L,R]
     RewriteRule ^/robots.txt - [L,R]

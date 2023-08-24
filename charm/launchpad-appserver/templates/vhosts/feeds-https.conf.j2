@@ -13,6 +13,10 @@
     ErrorLog /var/log/apache2/feeds.{{ domain }}-error.log
     LogLevel warn
   
+    # XXX cjwatson 2023-08-24: Consider providing feeds over HTTPS as well
+    # rather than redirecting to HTTP.  We might even want to invert this
+    # and redirect from HTTP to HTTPS, assuming that RSS readers will handle
+    # that gracefully.
     Redirect permanent / http://feeds.{{ domain }}/
 </VirtualHost>
 
