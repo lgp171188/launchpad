@@ -592,7 +592,7 @@ def _build_query(params):
                         Product.id,
                         tables=[SS, Product],
                         where=And(
-                            SS.projectgroupID == Product.projectgroupID,
+                            SS.projectgroupID == Product.projectgroup_id,
                             projectgroup_match,
                             Product.active,
                         ),

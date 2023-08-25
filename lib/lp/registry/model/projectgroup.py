@@ -9,9 +9,10 @@ __all__ = [
     "ProjectGroupSet",
 ]
 
-import six
+from datetime import timezone
+
 from storm.expr import And, Desc, Func, In, Is, Join, Min
-from storm.locals import Int, Reference
+from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -60,16 +61,9 @@ from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.product import Product, ProductSet
 from lp.registry.model.productseries import ProductSeries
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
@@ -88,7 +82,7 @@ from lp.translations.model.translationpolicy import TranslationPolicyMixin
     ISearchableByQuestionOwner,
 )
 class ProjectGroup(
-    SQLBase,
+    StormBase,
     BugTargetBase,
     HasSpecificationsMixin,
     MakesAnnouncements,
@@ -104,53 +98,52 @@ class ProjectGroup(
 ):
     """A ProjectGroup"""
 
-    _table = "Project"
+    __storm_table__ = "Project"
 
     # db field names
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person_or_closed_team,
-        notNull=True,
+    id = Int(primary=True)
+    owner_id = Int(
+        name="owner",
+        validator=validate_person_or_closed_team,
+        allow_none=False,
     )
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    owner = Reference(owner_id, "Person.id")
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    name = StringCol(dbName="name", notNull=True)
-    display_name = StringCol(dbName="displayname", notNull=True)
-    _title = StringCol(dbName="title", notNull=True)
-    summary = StringCol(dbName="summary", notNull=True)
-    description = StringCol(dbName="description", notNull=True)
-    datecreated = UtcDateTimeCol(
-        dbName="datecreated", notNull=True, default=UTC_NOW
+    registrant = Reference(registrant_id, "Person.id")
+    name = Unicode(name="name", allow_none=False)
+    display_name = Unicode(name="displayname", allow_none=False)
+    _title = Unicode(name="title", allow_none=False)
+    summary = Unicode(name="summary", allow_none=False)
+    description = Unicode(name="description", allow_none=False)
+    datecreated = DateTime(
+        name="datecreated",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    driver_id = Int(
+        name="driver",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    homepageurl = StringCol(dbName="homepageurl", notNull=False, default=None)
-    homepage_content = StringCol(default=None)
-    icon = ForeignKey(
-        dbName="icon", foreignKey="LibraryFileAlias", default=None
-    )
-    logo = ForeignKey(
-        dbName="logo", foreignKey="LibraryFileAlias", default=None
-    )
-    mugshot = ForeignKey(
-        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
-    )
-    wikiurl = StringCol(dbName="wikiurl", notNull=False, default=None)
-    sourceforgeproject = StringCol(
-        dbName="sourceforgeproject", notNull=False, default=None
+    driver = Reference(driver_id, "Person.id")
+    homepageurl = Unicode(name="homepageurl", allow_none=True, default=None)
+    homepage_content = Unicode(default=None)
+    icon_id = Int(name="icon", allow_none=True, default=None)
+    icon = Reference(icon_id, "LibraryFileAlias.id")
+    logo_id = Int(name="logo", allow_none=True, default=None)
+    logo = Reference(logo_id, "LibraryFileAlias.id")
+    mugshot_id = Int(name="mugshot", allow_none=True, default=None)
+    mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
+    wikiurl = Unicode(name="wikiurl", allow_none=True, default=None)
+    sourceforgeproject = Unicode(
+        name="sourceforgeproject", allow_none=True, default=None
     )
     freshmeatproject = None
-    lastdoap = StringCol(dbName="lastdoap", notNull=False, default=None)
+    lastdoap = Unicode(name="lastdoap", allow_none=True, default=None)
     translationgroup_id = Int(
         name="translationgroup", allow_none=True, default=None
     )
@@ -161,12 +154,45 @@ class ProjectGroup(
         enum=TranslationPermission,
         default=TranslationPermission.OPEN,
     )
-    active = BoolCol(dbName="active", notNull=True, default=True)
-    reviewed = BoolCol(dbName="reviewed", notNull=True, default=False)
+    active = Bool(name="active", allow_none=False, default=True)
+    reviewed = Bool(name="reviewed", allow_none=False, default=False)
     bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
     bugtracker = Reference(bugtracker_id, "BugTracker.id")
-    bug_reporting_guidelines = StringCol(default=None)
-    bug_reported_acknowledgement = StringCol(default=None)
+    bug_reporting_guidelines = Unicode(default=None)
+    bug_reported_acknowledgement = Unicode(default=None)
+
+    def __init__(
+        self,
+        owner,
+        registrant,
+        name,
+        display_name,
+        title,
+        summary,
+        description,
+        homepageurl=None,
+        icon=None,
+        logo=None,
+        mugshot=None,
+    ):
+        try:
+            self.owner = owner
+            self.registrant = registrant
+            self.name = name
+            self.display_name = display_name
+            self._title = title
+            self.summary = summary
+            self.description = description
+            self.homepageurl = homepageurl
+            self.icon = icon
+            self.logo = logo
+            self.mugshot = mugshot
+        except Exception:
+            # If validating references such as `owner` fails, then the new
+            # object may have been added to the store first.  Remove it
+            # again in that case.
+            IStore(self).remove(self)
+            raise
 
     @property
     def displayname(self):
@@ -278,7 +304,7 @@ class ProjectGroup(
         """See `IHasSpecifications`."""
         base_clauses = [
             Specification.product_id == Product.id,
-            Product.projectgroupID == self.id,
+            Product.projectgroup_id == self.id,
         ]
         tables = [Specification]
         if series:
@@ -309,7 +335,7 @@ class ProjectGroup(
     def _getOfficialTagClause(self):
         """See `OfficialBugTagTargetMixin`."""
         And(
-            ProjectGroup.id == Product.projectgroupID,
+            ProjectGroup.id == Product.projectgroup_id,
             Product.id == OfficialBugTag.productID,
         )
 
@@ -417,7 +443,7 @@ class ProjectGroup(
         privacy_filter = ProductSet.getProductPrivacyFilter(user)
         return And(
             Milestone.product_id == Product.id,
-            Product.projectgroupID == self.id,
+            Product.projectgroup_id == self.id,
             privacy_filter,
         )
 
@@ -607,7 +633,7 @@ class ProjectGroupSet:
         self.title = "Project groups registered in Launchpad"
 
     def __iter__(self):
-        return iter(ProjectGroup.selectBy(active=True))
+        return iter(IStore(ProjectGroup).find(ProjectGroup, active=True))
 
     def __getitem__(self, name):
         projectgroup = self.getByName(name=name, ignore_inactive=True)
@@ -626,9 +652,8 @@ class ProjectGroupSet:
         ...
         lp.app.errors.NotFoundError: -1
         """
-        try:
-            projectgroup = ProjectGroup.get(projectgroupid)
-        except SQLObjectNotFound:
+        projectgroup = IStore(ProjectGroup).get(ProjectGroup, projectgroupid)
+        if projectgroup is None:
             raise NotFoundError(projectgroupid)
         return projectgroup
 
@@ -658,26 +683,29 @@ class ProjectGroupSet:
         """See `lp.registry.interfaces.projectgroup.IProjectGroupSet`."""
         if registrant is None:
             registrant = owner
-        return ProjectGroup(
+        projectgroup = ProjectGroup(
             name=name,
             display_name=display_name,
-            _title=title,
+            title=title,
             summary=summary,
             description=description,
             homepageurl=homepageurl,
             owner=owner,
             registrant=registrant,
-            datecreated=UTC_NOW,
             mugshot=mugshot,
             logo=logo,
             icon=icon,
         )
+        Store.of(projectgroup).flush()
+        return projectgroup
 
     def count_all(self):
-        return ProjectGroup.select().count()
+        return IStore(ProjectGroup).find(ProjectGroup).count()
 
     def forReview(self):
-        return ProjectGroup.select("reviewed IS FALSE")
+        return IStore(ProjectGroup).find(
+            ProjectGroup, Is(ProjectGroup.reviewed, False)
+        )
 
     def search(self, text=None, search_products=False, show_inactive=False):
         """Search through the Registry database for project groups that match
@@ -691,7 +719,6 @@ class ProjectGroupSet:
         clauses = []
 
         if text:
-            text = six.ensure_text(text)
             if search_products:
                 joining_product = True
                 clauses.extend(

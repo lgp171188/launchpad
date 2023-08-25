@@ -222,7 +222,7 @@ class TranslationGroup(StormBase):
             .order_by(Product.display_name)
         )
         get_precached_products(products, need_licences=True)
-        icons = bulk.load_related(LibraryFileAlias, products, ["iconID"])
+        icons = bulk.load_related(LibraryFileAlias, products, ["icon_id"])
         bulk.load_related(LibraryFileContent, icons, ["contentID"])
         return products
 
@@ -234,7 +234,7 @@ class TranslationGroup(StormBase):
         using = [
             ProjectGroup,
             LeftJoin(
-                LibraryFileAlias, LibraryFileAlias.id == ProjectGroup.iconID
+                LibraryFileAlias, LibraryFileAlias.id == ProjectGroup.icon_id
             ),
             LeftJoin(
                 LibraryFileContent,
@@ -267,7 +267,7 @@ class TranslationGroup(StormBase):
         using = [
             Distribution,
             LeftJoin(
-                LibraryFileAlias, LibraryFileAlias.id == Distribution.iconID
+                LibraryFileAlias, LibraryFileAlias.id == Distribution.icon_id
             ),
             LeftJoin(
                 LibraryFileContent,

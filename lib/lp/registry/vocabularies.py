@@ -323,22 +323,14 @@ class ProductVocabulary(SQLObjectVocabularyBase):
 
 
 @implementer(IHugeVocabulary)
-class ProjectGroupVocabulary(SQLObjectVocabularyBase):
+class ProjectGroupVocabulary(StormVocabularyBase):
     """All `IProjectGroup` objects vocabulary."""
 
     _table = ProjectGroup
-    _orderBy = "displayname"
+    _order_by = "displayname"
+    _clauses = [ProjectGroup.active]
     displayname = "Select a project group"
     step_title = "Search"
-
-    def __contains__(self, obj):
-        where = "active='t' and id=%d"
-        if zisinstance(obj, SQLBase):
-            project = self._table.selectOne(where % obj.id)
-            return project is not None and project == obj
-        else:
-            project = self._table.selectOne(where % int(obj))
-            return project is not None
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -346,7 +338,11 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        project = self._table.selectOneBy(name=token, active=True)
+        project = (
+            IStore(self._table)
+            .find(self._table, self._table.active, name=token)
+            .one()
+        )
         if project is None:
             raise LookupError(token)
         return self.toTerm(project)

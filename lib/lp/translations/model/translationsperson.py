@@ -343,7 +343,8 @@ class TranslationsPerson:
                         ),
                     ),
                     LeftJoin(
-                        ProjectGroup, ProjectGroup.id == Product.projectgroupID
+                        ProjectGroup,
+                        ProjectGroup.id == Product.projectgroup_id,
                     ),
                     Join(
                         SQL("reviewable_groups"),
@@ -416,7 +417,7 @@ class TranslationsPerson:
         )
 
         ProjectJoin = LeftJoin(
-            ProjectGroup, ProjectGroup.id == Product.projectgroupID
+            ProjectGroup, ProjectGroup.id == Product.projectgroup_id
         )
 
         # Look up translation group.
