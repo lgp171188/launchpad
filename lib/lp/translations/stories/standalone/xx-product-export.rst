@@ -47,9 +47,10 @@ Use the DB classes directly to avoid having to setup a zope interaction
 
     >>> from lp.app.enums import ServiceUsage
     >>> from lp.registry.model.product import Product
-    >>> product = Product.byName("evolution")
+    >>> from lp.services.database.interfaces import IStore
+    >>> product = IStore(Product).find(Product, name="evolution").one()
     >>> product.translations_usage = ServiceUsage.NOT_APPLICABLE
-    >>> product.sync()
+    >>> IStore(product).flush()
     >>> browser.open("http://translations.launchpad.test/evolution")
     >>> browser.getLink("download")
     Traceback (most recent call last):
@@ -59,7 +60,7 @@ Use the DB classes directly to avoid having to setup a zope interaction
 Restore previous state for subsequent tests, and verify.
 
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
-    >>> product.sync()
+    >>> IStore(product).flush()
     >>> browser.open("http://translations.launchpad.test/evolution")
     >>> browser.getLink("download") is not None
     True

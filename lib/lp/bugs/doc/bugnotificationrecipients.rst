@@ -71,8 +71,8 @@ Let's up some data for our test:
     ... )
     >>> debian = Distribution.selectOneBy(name="debian")
     >>> pmount = debian.getSourcePackage("pmount")
-    >>> alsa_utils = Product.selectOneBy(name="alsa-utils")
-    >>> gnomebaker = Product.selectOneBy(name="gnomebaker")
+    >>> alsa_utils = IStore(Product).find(Product, name="alsa-utils").one()
+    >>> gnomebaker = IStore(Product).find(Product, name="gnomebaker").one()
     >>> personset = getUtility(IPersonSet)
 
 Here's where getBugNotificationRecipients() starts off. First, a

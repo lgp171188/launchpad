@@ -1203,7 +1203,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertTrue(self._exists(entry_id))
 
         entry.productseries.product.active = False
-        entry.productseries.product.syncUpdate()
+        self.store.flush()
 
         self.becomeTheGardener()
         self.queue._cleanUpInactiveProductEntries(self.store)

@@ -175,6 +175,7 @@ class ProjectGroup(
         logo=None,
         mugshot=None,
     ):
+        super().__init__()
         try:
             self.owner = owner
             self.registrant = registrant
@@ -221,7 +222,9 @@ class ProjectGroup(
         return list(self.getProducts(getUtility(ILaunchBag).user))
 
     def getProduct(self, name):
-        return Product.selectOneBy(projectgroup=self, name=name)
+        return (
+            IStore(Product).find(Product, projectgroup=self, name=name).one()
+        )
 
     def getConfigurableProducts(self):
         return [
@@ -336,7 +339,7 @@ class ProjectGroup(
         """See `OfficialBugTagTargetMixin`."""
         And(
             ProjectGroup.id == Product.projectgroup_id,
-            Product.id == OfficialBugTag.productID,
+            Product.id == OfficialBugTag.product_id,
         )
 
     @property

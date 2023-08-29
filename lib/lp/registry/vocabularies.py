@@ -87,7 +87,6 @@ from zope.interface import implementer
 from zope.schema.interfaces import IVocabularyTokenized
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import isinstance as zisinstance
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.interfaces.question import IQuestion
@@ -147,7 +146,7 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
+from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.sqlobject import AND, CONTAINSSTRING, OR
 from lp.services.database.stormexpr import (
     RegexpMatch,
@@ -247,26 +246,15 @@ class KarmaCategoryVocabulary(NamedStormVocabulary):
 
 
 @implementer(IHugeVocabulary)
-class ProductVocabulary(SQLObjectVocabularyBase):
+class ProductVocabulary(StormVocabularyBase):
     """All `IProduct` objects vocabulary."""
 
     step_title = "Search"
 
     _table = Product
-    _orderBy = "displayname"
+    _order_by = "displayname"
+    _clauses = [Product.active]
     displayname = "Select a project"
-
-    def __contains__(self, obj):
-        # Sometimes this method is called with an SQLBase instance, but
-        # z3 form machinery sends through integer ids. This might be due
-        # to a bug somewhere.
-        where = "active='t' AND id=%d"
-        if zisinstance(obj, SQLBase):
-            product = self._table.selectOne(where % obj.id)
-            return product is not None and product == obj
-        else:
-            product = self._table.selectOne(where % int(obj))
-            return product is not None
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -276,7 +264,11 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         """See `IVocabularyTokenized`."""
         # Product names are always lowercase.
         token = token.lower()
-        product = self._table.selectOneBy(name=token, active=True)
+        product = (
+            IStore(self._table)
+            .find(self._table, self._table.active, name=token)
+            .one()
+        )
         if product is None:
             raise LookupError(token)
         return self.toTerm(product)
@@ -584,7 +576,7 @@ class ValidPersonOrTeamVocabulary(
     @cachedproperty
     def store(self):
         """The storm store."""
-        return IStore(Product)
+        return IStore(Person)
 
     @cachedproperty
     def _karma_context_constraint(self):
@@ -1521,7 +1513,7 @@ class MilestoneWithDateExpectedVocabulary(MilestoneVocabulary):
 
 
 @implementer(IHugeVocabulary)
-class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
+class CommercialProjectsVocabulary(NamedStormVocabulary):
     """List all commercial projects.
 
     A commercial project is an active project that can have a commercial
@@ -1531,7 +1523,7 @@ class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
     """
 
     _table = Product
-    _orderBy = "displayname"
+    _order_by = "displayname"
     step_title = "Search"
 
     @property
@@ -1982,7 +1974,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
         store = IStore(PillarName)
         origin = [
             PillarName,
-            LeftJoin(Product, Product.id == PillarName.productID),
+            LeftJoin(Product, Product.id == PillarName.product_id),
         ]
         base_clauses = [
             ProductSet.getProductPrivacyFilter(getUtility(ILaunchBag).user)

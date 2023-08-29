@@ -18,12 +18,15 @@ from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.enums import ServiceUsage
 from lp.blueprints.interfaces.specification import ISpecificationSet
+from lp.blueprints.model.specification import Specification
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtask import BugTask
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.gitcollection import IAllGitRepositories
+from lp.code.model.branch import Branch
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
+from lp.registry.model.productseries import ProductSeries
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor
@@ -115,7 +118,7 @@ class LaunchpadStatisticSet:
 
         self.update(
             "products_using_malone",
-            Product.selectBy(official_malone=True).count(),
+            store.find(Product, official_malone=True).count(),
         )
         ztm.commit()
 
@@ -139,65 +142,59 @@ class LaunchpadStatisticSet:
         ztm.commit()
 
     def _updateRegistryStatistics(self, ztm):
+        store = IStore(Product)
         self.update(
             "active_products",
-            Product.select("active IS TRUE", distinct=True).count(),
+            store.find(Product, Product.active).config(distinct=True).count(),
         )
         self.update(
             "products_with_translations",
-            Product.select(
-                """
-                POTemplate.productseries = ProductSeries.id AND
-                Product.id = ProductSeries.product AND
-                Product.active = TRUE
-                """,
-                clauseTables=["ProductSeries", "POTemplate"],
-                distinct=True,
-            ).count(),
+            store.find(
+                Product,
+                POTemplate.productseries == ProductSeries.id,
+                ProductSeries.product == Product.id,
+                Product.active,
+            )
+            .config(distinct=True)
+            .count(),
         )
         self.update(
             "products_with_blueprints",
-            Product.select(
-                "Specification.product=Product.id AND Product.active IS TRUE",
-                distinct=True,
-                clauseTables=["Specification"],
-            ).count(),
+            store.find(
+                Product, Specification.product == Product.id, Product.active
+            )
+            .config(distinct=True)
+            .count(),
         )
         self.update(
             "products_with_branches",
-            Product.select(
-                "Branch.product=Product.id AND Product.active IS TRUE",
-                distinct=True,
-                clauseTables=["Branch"],
-            ).count(),
+            store.find(Product, Branch.product == Product.id, Product.active)
+            .config(distinct=True)
+            .count(),
         )
         self.update(
             "products_with_bugs",
-            Product.select(
-                "BugTask.product=Product.id AND Product.active IS TRUE",
-                distinct=True,
-                clauseTables=["BugTask"],
-            ).count(),
+            store.find(Product, BugTask.product == Product.id, Product.active)
+            .config(distinct=True)
+            .count(),
         )
         self.update(
             "products_with_questions",
-            Product.select(
-                "Question.product=Product.id AND Product.active IS TRUE",
-                distinct=True,
-                clauseTables=["Question"],
-            ).count(),
+            store.find(Product, Question.product == Product.id, Product.active)
+            .config(distinct=True)
+            .count(),
         )
         self.update(
             "reviewed_products",
-            Product.selectBy(project_reviewed=True, active=True).count(),
+            store.find(Product, project_reviewed=True, active=True).count(),
         )
 
     def _updateRosettaStatistics(self, ztm):
         self.update(
             "products_using_rosetta",
-            Product.selectBy(
-                translations_usage=ServiceUsage.LAUNCHPAD
-            ).count(),
+            IStore(Product)
+            .find(Product, translations_usage=ServiceUsage.LAUNCHPAD)
+            .count(),
         )
         self.update(
             "potemplate_count", IStore(POTemplate).find(POTemplate).count()

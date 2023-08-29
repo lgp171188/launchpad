@@ -307,7 +307,7 @@ class PillarNameSet:
             pillar_names = set(rows).union(
                 load_related(PillarName, rows, ["alias_for"])
             )
-            pillars = load_related(Product, pillar_names, ["productID"])
+            pillars = load_related(Product, pillar_names, ["product_id"])
             pillars.extend(
                 load_related(ProjectGroup, pillar_names, ["projectgroup_id"])
             )
@@ -333,7 +333,8 @@ class PillarName(SQLBase):
     name = StringCol(
         dbName="name", notNull=True, unique=True, alternateID=True
     )
-    product = ForeignKey(foreignKey="Product", dbName="product")
+    product_id = Int(name="product", allow_none=True)
+    product = Reference(product_id, "Product.id")
     projectgroup_id = Int(name="project", allow_none=True)
     projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
     distribution = ForeignKey(foreignKey="Distribution", dbName="distribution")
