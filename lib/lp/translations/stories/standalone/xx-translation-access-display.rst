@@ -84,7 +84,7 @@ If the two groups are identical, however, it is only listed once.
     >>> managers_tag = find_tag_by_id(
     ...     admin_browser.contents, "translation-managers"
     ... ).decode_contents()
-    >>> print(re.search(",\s+and", managers_tag))
+    >>> print(re.search(r",\s+and", managers_tag))
     None
 
 If no translation group is assigned, the page also mentions that.

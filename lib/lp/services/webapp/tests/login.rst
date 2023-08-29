@@ -42,7 +42,7 @@ the query args preserved.
     >>> browser.urlpath
     '/people'
     >>> import re
-    >>> print(pretty(sorted(re.sub(".*\?", "", browser.url).split("&"))))
+    >>> print(pretty(sorted(re.sub(r".*\?", "", browser.url).split("&"))))
     ['name=foo', 'searchfor=all']
 
 If we load the +login page while already logged in, it will say we're already
@@ -83,5 +83,5 @@ name.
     >>> browser.urlpath
     '/people'
     >>> import re
-    >>> print(pretty(sorted(re.sub(".*\?", "", browser.url).split("&"))))
+    >>> print(pretty(sorted(re.sub(r".*\?", "", browser.url).split("&"))))
     ['name=foo', 'searchfor=all']
