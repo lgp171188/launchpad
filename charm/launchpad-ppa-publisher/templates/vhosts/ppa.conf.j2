@@ -1,12 +1,12 @@
 <VirtualHost *:80>
-	ServerName {{ domain_ppa }}
-{%- if domain_alternate %}
-	ServerAlias {{ domain_ppa_alternate }}
+	ServerName {{ domain_ppa_public }}
+{%- if domain_ppa_public_alt %}
+	ServerAlias {{ domain_ppa_public_alt }}
 {%- endif %}
 	DocumentRoot	{{ ppa_archive_root }}/
 
-	CustomLog /var/log/apache2/{{ domain_ppa }}-access.log combined
-	ErrorLog /var/log/apache2/{{ domain_ppa }}-error.log
+	CustomLog /var/log/apache2/{{ domain_ppa_public }}-access.log combined
+	ErrorLog /var/log/apache2/{{ domain_ppa_public }}-error.log
 
 	<Files ~ "Release(\.gpg)?|InRelease|Packages\.(xz|bz2|gz)|Sources\.(xz|bz2|gz)?$">
 		ExpiresActive On

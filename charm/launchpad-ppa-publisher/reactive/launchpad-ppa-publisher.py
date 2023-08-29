@@ -126,26 +126,24 @@ def memcache_relation_changed(memcache):
 @when("apache-website.available", "service.configured")
 @when_not("service.apache-website.configured")
 def configure_apache_website():
-    apache_website = endpoint_from_flag("apache-website.available")
     config = get_service_config()
+    if not (config["domain_ppa_public"] and config["domain_ppa_private"]):
+        hookenv.status_set(
+            "blocked",
+            "Apache configuration requires `domain_ppa_public` and "
+            "`domain_ppa_private`",
+        )
+        return
+
     config["data_dir"] = get_data_dir()
     config["ppa_archive_root"] = ppa_archive_root()
     config["ppa_archive_private_root"] = ppa_archive_private()
 
-    domain = config["domain"]
-    config["domain_ppa"] = f"ppa.{domain}"
-    config["domain_ppa_private"] = f"private-ppa.{domain}"
-
-    # If "domain_alternate" is set, we set a server alias for the alternate
-    # domain. This is mainly for legacy reasons: we want to keep vhost
-    # configurations for "(private-)ppa.launchpadcontent.net" along side
-    # "ppa.launchpad.net".
+    # If the config value for "domain_ppa_<public/private>_alt" are set, we set
+    # a server alias for the alternative domain in the Apache configuration.
+    # This is mainly for legacy reasons: we want to keep vhost configurations
+    # for "(private-)ppa.launchpadcontent.net" along side "ppa.launchpad.net".
     # See https://blog.launchpad.net/ppa/new-domain-names-for-ppas.
-    alt_domain = config["domain_alternate"]
-    if alt_domain:
-        config["domain_ppa_alternate"] = f"ppa.{alt_domain}"
-        config["domain_ppa_private_alternate"] = f"private-ppa.{alt_domain}"
-
     site_configs = []
     site_configs.append(templating.render("vhosts/ppa.conf.j2", None, config))
     site_configs.append(
@@ -158,8 +156,9 @@ def configure_apache_website():
             )
         )
 
+    apache_website = endpoint_from_flag("apache-website.available")
     apache_website.set_remote(
-        domain=domain,
+        domain=config["domain"],
         enabled="true",
         ports="80",
         site_config="\n".join(site_configs),
