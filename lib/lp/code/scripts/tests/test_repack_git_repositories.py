@@ -114,6 +114,17 @@ class TestRequestGitRepack(TestCaseWithFactory):
         repo.loose_object_count = 7000
         repo.pack_count = 43
 
+        config_name = self.factory.getUniqueString()
+        config_fixture = self.useFixture(
+            ConfigFixture(config_name, config.instance_name)
+        )
+        setting_lines = [
+            "[codehosting]",
+            "internal_git_api_endpoint: http://nonexistent.test/",
+        ]
+        config_fixture.add_section("\n" + "\n".join(setting_lines))
+        self.useFixture(ConfigUseFixture(config_name))
+
         # Do not start the fake turnip server here
         # to test if the RequestGitRepack will catch and
         # log correctly the failure to establish
