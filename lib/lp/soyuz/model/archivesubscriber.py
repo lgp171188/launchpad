@@ -116,7 +116,7 @@ class ArchiveSubscriber(StormBase):
 
             # Only return people with preferred email address set.
             preferred_email = Join(
-                EmailAddress, EmailAddress.personID == Person.id
+                EmailAddress, EmailAddress.person_id == Person.id
             )
 
             # We want to get all participants who are themselves
@@ -151,7 +151,7 @@ class ArchiveSubscriber(StormBase):
             return store.find(
                 (Person, EmailAddress),
                 Person.id == self.subscriber_id,
-                EmailAddress.personID == Person.id,
+                EmailAddress.person_id == Person.id,
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
             )
 

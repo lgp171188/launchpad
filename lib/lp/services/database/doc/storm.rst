@@ -162,7 +162,7 @@ Objects not yet flushed to the database also compare equal.
     >>> unflushed = EmailAddress(
     ...     email="notflushed@example.com",
     ...     status=EmailAddressStatus.NEW,
-    ...     personID=1,
+    ...     person=getUtility(IPersonSet).get(1),
     ... )
     >>> unflushed == unflushed
     True

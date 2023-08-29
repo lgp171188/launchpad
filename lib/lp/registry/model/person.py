@@ -2102,11 +2102,7 @@ class Person(
         )
 
     def _getEmailsByStatus(self, status):
-        return Store.of(self).find(
-            EmailAddress,
-            EmailAddress.personID == self.id,
-            EmailAddress.status == status,
-        )
+        return Store.of(self).find(EmailAddress, person=self, status=status)
 
     def checkInclusiveMembershipPolicyAllowed(self, policy="open"):
         """See `ITeam`"""
@@ -2251,7 +2247,7 @@ class Person(
             LeftJoin(
                 email_table,
                 And(
-                    email_table.personID == person_table.id,
+                    email_table.person_id == person_table.id,
                     email_table.status == EmailAddressStatus.PREFERRED,
                 ),
             )
@@ -3034,10 +3030,8 @@ class Person(
                 "Any person's email address must provide the IEmailAddress "
                 "interface. %s doesn't." % email
             )
-        # XXX Steve Alexander 2005-07-05:
-        # This is here because of an SQLobject comparison oddity.
-        assert email.personID == self.id, "Wrong person! %r, %r" % (
-            email.personID,
+        assert email.person == self, "Wrong person! %r, %r" % (
+            email.person_id,
             self.id,
         )
 
@@ -3049,7 +3043,7 @@ class Person(
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                EmailAddress.personID == self.id,
+                EmailAddress.person == self,
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -3088,9 +3082,7 @@ class Person(
             )
         else:
             mailing_list_email = None
-        all_addresses = IStore(EmailAddress).find(
-            EmailAddress, EmailAddress.personID == self.id
-        )
+        all_addresses = IStore(EmailAddress).find(EmailAddress, person=self)
         for address in all_addresses:
             # Delete all email addresses that are not the preferred email
             # address, or the team's email address. If this method was called
@@ -3105,7 +3097,7 @@ class Person(
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                personID=self.id,
+                person=self,
                 status=EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -3136,12 +3128,12 @@ class Person(
                 "Any person's email address must provide the IEmailAddress "
                 "interface. %s doesn't." % email
             )
-        assert email.personID == self.id
+        assert email.person == self
         existing_preferred_email = (
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                personID=self.id,
+                person=self,
                 status=EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -4513,7 +4505,7 @@ class PersonSet:
         return (
             IStore(Person)
             .using(
-                Person, Join(EmailAddress, EmailAddress.personID == Person.id)
+                Person, Join(EmailAddress, EmailAddress.person_id == Person.id)
             )
             .find(
                 (EmailAddress, Person),
@@ -5536,7 +5528,7 @@ def _get_recipients_for_team(team):
         # Find Persons that have a preferred email address and an active
         # account, or are a team, or both.
         intermediate_transitive_results = source.find(
-            (TeamMembership.person_id, EmailAddress.personID),
+            (TeamMembership.person_id, EmailAddress.person_id),
             TeamMembership.status.is_in(
                 (
                     TeamMembershipStatus.ADMIN,
@@ -5546,7 +5538,7 @@ def _get_recipients_for_team(team):
             TeamMembership.team_id.is_in(pending_team_ids),
             Or(
                 And(
-                    EmailAddress.personID != None,
+                    EmailAddress.person != None,
                     Account.status == AccountStatus.ACTIVE,
                 ),
                 Person.teamownerID != None,

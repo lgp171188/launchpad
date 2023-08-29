@@ -1023,7 +1023,7 @@ class RevisionAuthorEmailLinker(TunableLoop):
 
         emails = dict(
             self.email_store.find(
-                (EmailAddress.email.lower(), EmailAddress.personID),
+                (EmailAddress.email.lower(), EmailAddress.person_id),
                 EmailAddress.email.lower().is_in(
                     [author.email.lower() for author in authors]
                 ),
@@ -1033,7 +1033,7 @@ class RevisionAuthorEmailLinker(TunableLoop):
                         EmailAddressStatus.VALIDATED,
                     ]
                 ),
-                EmailAddress.personID != None,
+                EmailAddress.person != None,
             )
         )
 

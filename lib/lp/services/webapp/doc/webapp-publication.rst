@@ -1022,7 +1022,7 @@ be automatically reverted in a GET request.
     ...         IPrimaryStore(Person)
     ...         .find(
     ...             Person,
-    ...             Person.id == EmailAddress.personID,
+    ...             Person.id == EmailAddress.person_id,
     ...             EmailAddress.email == "foo.bar@canonical.com",
     ...         )
     ...         .one()

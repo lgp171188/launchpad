@@ -235,7 +235,7 @@ class RevisionAuthor(StormBase):
             return False
         # Only accept an email address that is validated.
         if lp_email.status != EmailAddressStatus.NEW:
-            self.person_id = lp_email.personID
+            self.person_id = lp_email.person_id
             return True
         else:
             return False

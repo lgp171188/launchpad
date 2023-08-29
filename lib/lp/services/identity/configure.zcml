@@ -16,9 +16,7 @@
             attributes="
                 id
                 person
-                personID
-                account
-                account_id
+                person_id
                 status
                 rdf_sha1"/>
         <require

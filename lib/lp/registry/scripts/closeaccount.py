@@ -60,7 +60,7 @@ def close_account(username, log):
 
     person = (
         store.using(
-            Person, LeftJoin(EmailAddress, Person.id == EmailAddress.personID)
+            Person, LeftJoin(EmailAddress, Person.id == EmailAddress.person_id)
         )
         .find(
             Person,
@@ -218,7 +218,7 @@ def close_account(username, log):
     # people requesting account removal seem to primarily be interested
     # in ensuring we no longer store this information.
     table_notification("EmailAddress")
-    store.find(EmailAddress, EmailAddress.personID == person.id).remove()
+    store.find(EmailAddress, person=person).remove()
 
     # Clean out personal details from the Person table
     table_notification("Person")

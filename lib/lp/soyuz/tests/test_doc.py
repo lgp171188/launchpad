@@ -12,6 +12,9 @@ import unittest
 import transaction
 
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
+from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
+from lp.services.identity.model.emailaddress import EmailAddress
 from lp.testing import logout
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadFunctionalLayer, LaunchpadZopelessLayer
@@ -35,11 +38,10 @@ def lobotomize_stevea():
     code that did not use the ValidPersonOrTeamCache to determine
     validity.
     """
-    from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
-    from lp.services.identity.model.emailaddress import EmailAddress
-
-    stevea_emailaddress = EmailAddress.byEmail(
-        "steve.alexander@ubuntulinux.com"
+    stevea_emailaddress = (
+        IStore(EmailAddress)
+        .find(EmailAddress, email="steve.alexander@ubuntulinux.com")
+        .one()
     )
     stevea_emailaddress.status = EmailAddressStatus.NEW
     transaction.commit()

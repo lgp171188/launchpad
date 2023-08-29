@@ -12,15 +12,13 @@ __all__ = [
 import hashlib
 import operator
 
-import six
-from storm.expr import Lower
+from storm.locals import Int, Reference, Unicode
 from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import ForeignKey, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressAlreadyTaken,
     EmailAddressStatus,
@@ -41,15 +39,21 @@ class HasOwnerMixin:
 
 
 @implementer(IEmailAddress)
-class EmailAddress(SQLBase, HasOwnerMixin):
-    _table = "EmailAddress"
-    _defaultOrder = ["email"]
+class EmailAddress(StormBase, HasOwnerMixin):
+    __storm_table__ = "EmailAddress"
+    __storm_order__ = ["email"]
 
-    email = StringCol(
-        dbName="email", notNull=True, unique=True, alternateID=True
-    )
+    id = Int(primary=True)
+    email = Unicode(name="email", allow_none=False)
     status = DBEnum(name="status", enum=EmailAddressStatus, allow_none=False)
-    person = ForeignKey(dbName="person", foreignKey="Person", notNull=False)
+    person_id = Int(name="person", allow_none=True)
+    person = Reference(person_id, "Person.id")
+
+    def __init__(self, email, status, person=None):
+        super().__init__()
+        self.email = email
+        self.status = status
+        self.person = person
 
     def __repr__(self):
         return "<EmailAddress <%s> [%s]>" % (self.email, self.status)
@@ -83,7 +87,7 @@ class EmailAddress(SQLBase, HasOwnerMixin):
             MailingListSubscription, email_address=self
         ):
             store.remove(subscription)
-        super().destroySelf()
+        store.remove(self)
 
     @property
     def rdf_sha1(self):
@@ -99,18 +103,18 @@ class EmailAddress(SQLBase, HasOwnerMixin):
 class EmailAddressSet:
     def getByPerson(self, person):
         """See `IEmailAddressSet`."""
-        return EmailAddress.selectBy(person=person, orderBy="email")
+        return (
+            IStore(EmailAddress)
+            .find(EmailAddress, person=person)
+            .order_by(EmailAddress.email)
+        )
 
     def getPreferredEmailForPeople(self, people):
         """See `IEmailAddressSet`."""
-        return EmailAddress.select(
-            """
-            EmailAddress.status = %s AND
-            EmailAddress.person IN %s
-            """
-            % sqlvalues(
-                EmailAddressStatus.PREFERRED, [person.id for person in people]
-            )
+        return IStore(EmailAddress).find(
+            EmailAddress,
+            EmailAddress.status == EmailAddressStatus.PREFERRED,
+            EmailAddress.person_id.is_in([person.id for person in people]),
         )
 
     def getByEmail(self, email):
@@ -119,8 +123,7 @@ class EmailAddressSet:
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                Lower(EmailAddress.email)
-                == six.ensure_text(email).strip().lower(),
+                EmailAddress.email.lower() == email.strip().lower(),
             )
             .one()
         )

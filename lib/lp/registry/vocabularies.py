@@ -734,9 +734,11 @@ class ValidPersonOrTeamVocabulary(
         # description so we need to bulk load them for performance, otherwise
         # we get one query per person per attribute.
         def pre_iter_hook(persons):
-            emails = bulk.load_referencing(EmailAddress, persons, ["personID"])
+            emails = bulk.load_referencing(
+                EmailAddress, persons, ["person_id"]
+            )
             email_by_person = {
-                email.personID: email
+                email.person_id: email
                 for email in emails
                 if email.status == EmailAddressStatus.PREFERRED
             }

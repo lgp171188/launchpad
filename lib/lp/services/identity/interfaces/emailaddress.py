@@ -120,7 +120,7 @@ class IEmailAddress(IHasOwner):
             title=_("Person"), required=True, readonly=False, schema=Interface
         )
     )
-    personID = Int(title=_("PersonID"), required=True, readonly=True)
+    person_id = Int(title=_("Person ID"), required=True, readonly=True)
 
     rdf_sha1 = TextLine(
         title=_("RDF-ready SHA-1 Hash"),
@@ -137,13 +137,6 @@ class IEmailAddress(IHasOwner):
 
         :raises UndeletableEmailAddress: When the email address is a person's
             preferred one or a hosted mailing list's address.
-        """
-
-    def syncUpdate():
-        """Write updates made on this object to the database.
-
-        This should be used when you can't wait until the transaction is
-        committed to have some updates actually written to the database.
         """
 
 

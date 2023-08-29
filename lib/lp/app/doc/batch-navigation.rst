@@ -64,8 +64,11 @@ Multiple pages
 
 The batch navigator tells us whether multiple pages will be used.
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.identity.model.emailaddress import EmailAddress
-    >>> select_results = EmailAddress.select(orderBy="id")
+    >>> select_results = (
+    ...     IStore(EmailAddress).find(EmailAddress).order_by("id")
+    ... )
     >>> batch_nav = BatchNavigator(select_results, build_request(), size=50)
     >>> batch_nav.has_multiple_pages
     True
