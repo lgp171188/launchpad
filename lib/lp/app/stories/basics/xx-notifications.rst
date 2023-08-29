@@ -41,10 +41,10 @@ The notification messages should be propagated.
     ...
     >>> import re
     >>> destination_url = re.search(
-    ...     "(?m)^Location:\s(.*)$", str(result)
+    ...     r"(?m)^Location:\s(.*)$", str(result)
     ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ...     r"(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
     ... ).group(1)
     >>> print(
     ...     http(
@@ -88,10 +88,10 @@ combined.
     ...
 
     >>> destination_url = re.search(
-    ...     "(?m)^Location:\s(.*)$", str(result)
+    ...     r"(?m)^Location:\s(.*)$", str(result)
     ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ...     r"(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
     ... ).group(1)
     >>> print(
     ...     http(
@@ -138,10 +138,10 @@ be needed.
     ...
 
     >>> destination_url = re.search(
-    ...     "(?m)^Location:\s(.*)$", str(result)
+    ...     r"(?m)^Location:\s(.*)$", str(result)
     ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ...     r"(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
     ... ).group(1)
     >>> result = http(
     ...     r"""
@@ -160,10 +160,10 @@ be needed.
     ...
 
     >>> destination_url = re.search(
-    ...     "(?m)^Location:\s(.*)$", str(result)
+    ...     r"(?m)^Location:\s(.*)$", str(result)
     ... ).group(1)
     >>> launchpad_session_cookie = re.search(
-    ...     "(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
+    ...     r"(?m)^Set-Cookie:\slaunchpad_tests=(.*?);", str(result)
     ... ).group(1)
     >>> print(
     ...     http(

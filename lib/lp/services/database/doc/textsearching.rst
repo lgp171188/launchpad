@@ -268,7 +268,7 @@ Punctuation is handled consistently. If a string containing punctuation
 appears in an FTI, it can also be passed to ftq(),and a search for this
 string finds the indexed text.
 
-    >>> punctuation = "'\"#$%*+,./:;<=>?@[\]^`{}~"
+    >>> punctuation = "'\"#$%*+,./:;<=>?@[\\]^`{}~"
     >>> for symbol in punctuation:
     ...     print(repr(symbol), search_same("foo%sbar" % symbol))
     ...

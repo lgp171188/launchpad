@@ -409,7 +409,7 @@ class ExCon():
         # If name is "Veronica Random <veronica {_AT_} example.com>",
         # then name_as_anchor will be "veronica_random".
         self.name_as_anchor = \
-            re.compile("\\s+").sub("_", name.split("<")[0].strip()).lower()
+            re.compile(r"\s+").sub("_", name.split("<")[0].strip()).lower()
         # All the top-level revisions this contributor is associated with
         # (key == value == ContainerRevision).  We use a dictionary
         # instead of list to get set semantics; set() would be overkill.

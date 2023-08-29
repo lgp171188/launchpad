@@ -290,7 +290,7 @@ because, except for test cases, the URL is the only thing useful
 (because the client can't see the database records yet).
 
     >>> import re
-    >>> match = re.search("/(\d+)/", url)
+    >>> match = re.search(r"/(\d+)/", url)
     >>> alias_id = int(match.group(1))
     >>> alias = lfas[alias_id]
     >>> print(alias.expires.isoformat())

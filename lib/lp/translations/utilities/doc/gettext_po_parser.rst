@@ -57,7 +57,7 @@ as an error.
 
 Unrecognized escape sequences are caught as well.
 
-    >>> parser.parse(b'msgid "\!"\nmsgstr ""\n')  # noqa
+    >>> parser.parse(b'msgid "\\!"\nmsgstr ""\n')  # noqa
     Traceback (most recent call last):
     ...
     lp.translations.interfaces.translationimporter.TranslationFormatSyntaxError: ...Unknown escape sequence...

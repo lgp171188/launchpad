@@ -81,7 +81,7 @@ from lp.services.webapp.vhosts import allvhosts
 error_status(http.client.NOT_FOUND)(NotFound)
 
 # Used to match zope namespaces eg ++model++.
-RESERVED_NAMESPACE = re.compile("\\+\\+.*\\+\\+")
+RESERVED_NAMESPACE = re.compile(r"\+\+.*\+\+")
 
 
 class DecoratorAnnotator:

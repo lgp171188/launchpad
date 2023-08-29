@@ -54,7 +54,7 @@ The application footer also contains a sample of stats for the application:
     >>> import re
     >>> print(
     ...     re.sub(
-    ...         "\d+",
+    ...         r"\d+",
     ...         "X",
     ...         extract_text(
     ...             find_tag_by_id(
