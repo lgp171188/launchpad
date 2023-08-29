@@ -1805,7 +1805,7 @@ class ProductAttributeCacheTestCase(TestCaseWithFactory):
 
     def setUp(self):
         super().setUp()
-        self.product = Product.selectOneBy(name="tomcat")
+        self.product = IStore(Product).find(Product, name="tomcat").one()
 
     def testLicensesCache(self):
         """License cache should be cleared automatically."""

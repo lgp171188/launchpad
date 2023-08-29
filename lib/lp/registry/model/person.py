@@ -203,7 +203,6 @@ from lp.services.database.sqlbase import (
     SQLBase,
     convert_storm_clause_to_string,
     cursor,
-    quote,
     sqlvalues,
 )
 from lp.services.database.sqlobject import (
@@ -1181,12 +1180,12 @@ class Person(
             ownership_participation = ClassAlias(TeamParticipation)
             clauses.extend(
                 [
-                    Product._ownerID == ownership_participation.team_id,
+                    Product._owner_id == ownership_participation.team_id,
                     ownership_participation.person_id == self.id,
                 ]
             )
         else:
-            clauses.append(Product._ownerID == self.id)
+            clauses.append(Product._owner_id == self.id)
 
         # We only want to use the extra query if match_name is not None and it
         # is not the empty string ('' or u'').
@@ -1269,11 +1268,11 @@ class Person(
                     TeamParticipation, Person.id == TeamParticipation.person_id
                 ),
                 LeftJoin(
-                    Product, TeamParticipation.team_id == Product._ownerID
+                    Product, TeamParticipation.team_id == Product._owner_id
                 ),
                 LeftJoin(
                     Distribution,
-                    TeamParticipation.team_id == Distribution.ownerID,
+                    TeamParticipation.team_id == Distribution.owner_id,
                 ),
                 Join(
                     CommercialSubscription,
@@ -1300,31 +1299,25 @@ class Person(
         The given pillar must be either an IProduct or an IDistribution.
         """
         if IProduct.providedBy(pillar):
-            where_clause = "product = %s" % sqlvalues(pillar)
+            pillar_clause = KarmaCache.product == pillar
         elif IDistribution.providedBy(pillar):
-            where_clause = "distribution = %s" % sqlvalues(pillar)
+            pillar_clause = KarmaCache.distribution == pillar
         else:
             raise AssertionError(
                 "Pillar must be a product or distro, got %s" % pillar
             )
-        replacements = sqlvalues(person=self)
-        replacements["where_clause"] = where_clause
-        query = (
-            """
-            SELECT DISTINCT KarmaCategory.id
-            FROM KarmaCategory
-            JOIN KarmaCache ON KarmaCache.category = KarmaCategory.id
-            WHERE %(where_clause)s
-                AND category IS NOT NULL
-                AND person = %(person)s
-            """
-            % replacements
-        )
-        cur = cursor()
-        cur.execute(query)
-        ids = [id for [id] in cur.fetchall()]
-        return IStore(KarmaCategory).find(
-            KarmaCategory, KarmaCategory.id.is_in(ids)
+        return (
+            IStore(KarmaCategory)
+            .using(
+                KarmaCategory,
+                Join(KarmaCache, KarmaCache.category == KarmaCategory.id),
+            )
+            .find(
+                KarmaCategory,
+                pillar_clause,
+                IsNot(KarmaCache.category_id, None),
+                KarmaCache.person == self,
+            )
         )
 
     @property
@@ -4561,14 +4554,14 @@ class PersonSet:
 
     def getPeopleWithBranches(self, product=None):
         """See `IPersonSet`."""
-        branch_clause = "SELECT owner FROM Branch"
+        # Circular import.
+        from lp.code.model.branch import Branch
+
+        branch_params = {}
         if product is not None:
-            branch_clause += " WHERE product = %s" % quote(product)
-        return Person.select(
-            """
-            Person.id in (%s)
-            """
-            % branch_clause
+            branch_params["where"] = Branch.product == product
+        return IStore(Person).find(
+            Person, Person.id.is_in(Select(Branch.owner_id, **branch_params))
         )
 
     def updatePersonalStandings(self):

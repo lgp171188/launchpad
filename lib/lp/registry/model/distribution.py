@@ -261,12 +261,12 @@ class Distribution(
         dbName="mugshot", foreignKey="LibraryFileAlias", default=None
     )
     domainname = StringCol(notNull=True)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person_or_closed_team,
-        notNull=True,
+    owner_id = Int(
+        name="owner",
+        validator=validate_person_or_closed_team,
+        allow_none=False,
     )
+    owner = Reference(owner_id, "Person.id")
     registrant = ForeignKey(
         dbName="registrant",
         foreignKey="Person",
@@ -282,13 +282,13 @@ class Distribution(
     )
     bug_reporting_guidelines = StringCol(default=None)
     bug_reported_acknowledgement = StringCol(default=None)
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    driver_id = Int(
+        name="driver",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    driver = Reference(driver_id, "Person.id")
     members = ForeignKey(
         dbName="members",
         foreignKey="Person",

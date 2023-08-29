@@ -8,6 +8,7 @@ from zope.interface import implementer
 from lp.app.enums import InformationType, ServiceUsage
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.product import Product
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor, sqlvalues
 from lp.services.utils import round_half_up
 from lp.translations.interfaces.translationsoverview import (
@@ -94,7 +95,7 @@ class TranslationsOverview:
             if maximum is None or relative_karma > maximum:
                 maximum = relative_karma
             if product_id is not None:
-                pillar = Product.get(product_id)
+                pillar = IStore(Product).get(Product, product_id)
             elif distro_id is not None:
                 pillar = Distribution.get(distro_id)
             else:

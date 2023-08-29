@@ -180,7 +180,8 @@ Launchpad Translations.
 
     # Use the raw DB object to bypass the security proxy.
     >>> from lp.registry.model.product import Product
-    >>> product = Product.byName("bazaar")
+    >>> from lp.services.database.interfaces import IStore
+    >>> product = IStore(Product).find(Product, name="bazaar").one()
     >>> product.translations_usage = ServiceUsage.NOT_APPLICABLE
 
 When the owner now visits the upload page for trunk, there's a notice.
@@ -416,9 +417,8 @@ project admin does not see the link for configuring other branches.
 A new series is added.
 
     >>> from lp.registry.interfaces.series import SeriesStatus
-    >>> from lp.registry.model.product import Product
     >>> login("foo.bar@canonical.com")
-    >>> evolution = Product.byName("evolution")
+    >>> evolution = IStore(Product).find(Product, name="evolution").one()
     >>> series = factory.makeProductSeries(product=evolution, name="evo-new")
     >>> series.status = SeriesStatus.EXPERIMENTAL
     >>> logout()

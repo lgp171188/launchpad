@@ -346,8 +346,9 @@ their commercial subscription was modified.
 All the products are returned when no parameters are passed in.
 
     >>> from lp.registry.model.product import Product
+    >>> from lp.services.database.interfaces import IStore
     >>> review_listing = product_set.forReview(commercial_member)
-    >>> review_listing.count() == Product.select().count()
+    >>> review_listing.count() == IStore(Product).find(Product).count()
     True
 
 The full text search will not match strings with dots in their name

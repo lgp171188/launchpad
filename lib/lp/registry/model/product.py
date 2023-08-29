@@ -31,7 +31,16 @@ from storm.expr import (
     Or,
     Select,
 )
-from storm.locals import Int, List, Reference, ReferenceSet, Store, Unicode
+from storm.locals import (
+    Bool,
+    DateTime,
+    Int,
+    List,
+    Reference,
+    ReferenceSet,
+    Store,
+    Unicode,
+)
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
@@ -143,17 +152,10 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -245,7 +247,7 @@ specification_policy_default = {
 
 @implementer(IBugSummaryDimension, IHasCustomLanguageCodes, IProduct)
 class Product(
-    SQLBase,
+    StormBase,
     BugTargetBase,
     HasDriversMixin,
     OfficialBugTagTargetMixin,
@@ -269,65 +271,60 @@ class Product(
 ):
     """A Product."""
 
-    _table = "Product"
+    __storm_table__ = "Product"
 
+    id = Int(primary=True)
     projectgroup_id = Int(name="project", allow_none=True, default=None)
     projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
-    _owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person_or_closed_team,
-        notNull=True,
+    _owner_id = Int(
+        name="owner",
+        validator=validate_person_or_closed_team,
+        allow_none=False,
     )
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    _owner = Reference(_owner_id, "Person.id")
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    bug_supervisor = ForeignKey(
-        dbName="bug_supervisor",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
+    registrant = Reference(registrant_id, "Person.id")
+    bug_supervisor_id = Int(
+        name="bug_supervisor",
+        validator=validate_person,
+        allow_none=True,
         default=None,
     )
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
-        default=None,
+    bug_supervisor = Reference(bug_supervisor_id, "Person.id")
+    driver_id = Int(
+        name="driver", validator=validate_person, allow_none=True, default=None
     )
-    name = StringCol(
-        dbName="name", notNull=True, alternateID=True, unique=True
+    driver = Reference(driver_id, "Person.id")
+    name = Unicode(name="name", allow_none=False)
+    display_name = Unicode(name="displayname", allow_none=False)
+    _title = Unicode(name="title", allow_none=False)
+    summary = Unicode(name="summary", allow_none=False)
+    description = Unicode(allow_none=True, default=None)
+    datecreated = DateTime(
+        name="datecreated",
+        allow_none=False,
+        default=UTC_NOW,
+        tzinfo=timezone.utc,
     )
-    display_name = StringCol(dbName="displayname", notNull=True)
-    _title = StringCol(dbName="title", notNull=True)
-    summary = StringCol(dbName="summary", notNull=True)
-    description = StringCol(notNull=False, default=None)
-    datecreated = UtcDateTimeCol(
-        dbName="datecreated", notNull=True, default=UTC_NOW
-    )
-    homepageurl = StringCol(dbName="homepageurl", notNull=False, default=None)
-    homepage_content = StringCol(default=None)
-    icon_id = Int(name="icon", default=None)
+    homepageurl = Unicode(name="homepageurl", allow_none=True, default=None)
+    homepage_content = Unicode(default=None)
+    icon_id = Int(name="icon", allow_none=True, default=None)
     icon = Reference(icon_id, "LibraryFileAlias.id")
-    logo = ForeignKey(
-        dbName="logo", foreignKey="LibraryFileAlias", default=None
+    logo_id = Int(name="logo", allow_none=True, default=None)
+    logo = Reference(logo_id, "LibraryFileAlias.id")
+    mugshot_id = Int(name="mugshot", allow_none=True, default=None)
+    mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
+    screenshotsurl = Unicode(
+        name="screenshotsurl", allow_none=True, default=None
     )
-    mugshot = ForeignKey(
-        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
+    wikiurl = Unicode(name="wikiurl", allow_none=True, default=None)
+    programminglang = Unicode(
+        name="programminglang", allow_none=True, default=None
     )
-    screenshotsurl = StringCol(
-        dbName="screenshotsurl", notNull=False, default=None
-    )
-    wikiurl = StringCol(dbName="wikiurl", notNull=False, default=None)
-    programminglang = StringCol(
-        dbName="programminglang", notNull=False, default=None
-    )
-    downloadurl = StringCol(dbName="downloadurl", notNull=False, default=None)
-    lastdoap = StringCol(dbName="lastdoap", notNull=False, default=None)
+    downloadurl = Unicode(name="downloadurl", allow_none=True, default=None)
+    lastdoap = Unicode(name="lastdoap", allow_none=True, default=None)
     translationgroup_id = Int(
         name="translationgroup", allow_none=True, default=None
     )
@@ -344,14 +341,14 @@ class Product(
     translation_focus = Reference(translation_focus_id, "ProductSeries.id")
     bugtracker_id = Int(name="bugtracker", allow_none=True, default=None)
     bugtracker = Reference(bugtracker_id, "BugTracker.id")
-    official_answers = BoolCol(
-        dbName="official_answers", notNull=True, default=False
+    official_answers = Bool(
+        name="official_answers", allow_none=False, default=False
     )
-    official_blueprints = BoolCol(
-        dbName="official_blueprints", notNull=True, default=False
+    official_blueprints = Bool(
+        name="official_blueprints", allow_none=False, default=False
     )
-    official_malone = BoolCol(
-        dbName="official_malone", notNull=True, default=False
+    official_malone = Bool(
+        name="official_malone", allow_none=False, default=False
     )
     remote_product = Unicode(
         name="remote_product", allow_none=True, default=None
@@ -362,6 +359,70 @@ class Product(
     # Unlike artifacts' cached access_policies, an AccessArtifactGrant
     # to an artifact in the policy is sufficient for access.
     access_policies = List(type=Int())
+
+    _creating = False
+
+    def __init__(
+        self,
+        owner,
+        registrant,
+        name,
+        display_name,
+        title,
+        summary,
+        projectgroup=None,
+        bug_supervisor=None,
+        driver=None,
+        description=None,
+        homepageurl=None,
+        icon=None,
+        logo=None,
+        mugshot=None,
+        screenshotsurl=None,
+        wikiurl=None,
+        programminglang=None,
+        downloadurl=None,
+        vcs=None,
+        information_type=InformationType.PUBLIC,
+        project_reviewed=False,
+        sourceforgeproject=None,
+        license_info=None,
+    ):
+        super().__init__()
+        try:
+            self._creating = True
+            self.owner = owner
+            self.registrant = registrant
+            self.name = name
+            self.display_name = display_name
+            self._title = title
+            self.summary = summary
+            self.projectgroup = projectgroup
+            self.bug_supervisor = bug_supervisor
+            self.driver = driver
+            self.description = description
+            self.homepageurl = homepageurl
+            self.icon = icon
+            self.logo = logo
+            self.mugshot = mugshot
+            self.screenshotsurl = screenshotsurl
+            self.wikiurl = wikiurl
+            self.programminglang = programminglang
+            self.downloadurl = downloadurl
+            self.vcs = vcs
+            self.information_type = information_type
+            self.project_reviewed = project_reviewed
+            self.sourceforgeproject = sourceforgeproject
+            self.license_info = license_info
+        except Exception:
+            # If validating references such as `owner` fails, then the new
+            # object may have been added to the store first.  Remove it
+            # again in that case.
+            store = Store.of(self)
+            if store is not None:
+                store.remove(self)
+            raise
+        del self._creating
 
     @property
     def displayname(self):
@@ -417,7 +478,7 @@ class Product(
         if value in PROPRIETARY_INFORMATION_TYPES:
             if self.answers_usage == ServiceUsage.LAUNCHPAD:
                 yield CannotChangeInformationType("Answers is enabled.")
-        if self._SO_creating or value not in PROPRIETARY_INFORMATION_TYPES:
+        if self._creating or value not in PROPRIETARY_INFORMATION_TYPES:
             return
         # Additional checks when transitioning an existing product to a
         # proprietary type
@@ -524,7 +585,7 @@ class Product(
         # maintainer as required for the Product.
         # However, only on edits. If this is a new Product it's handled
         # already.
-        if not self._SO_creating:
+        if not self._creating:
             if (
                 old_info_type == InformationType.PUBLIC
                 and value != InformationType.PUBLIC
@@ -644,11 +705,11 @@ class Product(
         """See `HasMilestonesMixin`."""
         return Milestone.product == self
 
-    enable_bug_expiration = BoolCol(
-        dbName="enable_bug_expiration", notNull=True, default=False
+    enable_bug_expiration = Bool(
+        name="enable_bug_expiration", allow_none=False, default=False
     )
-    project_reviewed = BoolCol(dbName="reviewed", notNull=True, default=False)
-    reviewer_whiteboard = StringCol(notNull=False, default=None)
+    project_reviewed = Bool(name="reviewed", allow_none=False, default=False)
+    reviewer_whiteboard = Unicode(allow_none=True, default=None)
     private_bugs = False
     bug_sharing_policy = DBEnum(
         enum=BugSharingPolicy, allow_none=True, default=None
@@ -661,9 +722,9 @@ class Product(
         allow_none=True,
         default=SpecificationSharingPolicy.PUBLIC,
     )
-    autoupdate = BoolCol(dbName="autoupdate", notNull=True, default=False)
+    autoupdate = Bool(name="autoupdate", allow_none=False, default=False)
     freshmeatproject = None
-    sourceforgeproject = StringCol(notNull=False, default=None)
+    sourceforgeproject = Unicode(allow_none=True, default=None)
     # While the interface defines this field as required, we need to
     # allow it to be NULL so we can create new product records before
     # the corresponding series records.
@@ -671,9 +732,9 @@ class Product(
         name="development_focus", allow_none=True, default=None
     )
     development_focus = Reference(development_focus_id, "ProductSeries.id")
-    bug_reporting_guidelines = StringCol(default=None)
-    bug_reported_acknowledgement = StringCol(default=None)
-    enable_bugfiling_duplicate_search = BoolCol(notNull=True, default=True)
+    bug_reporting_guidelines = Unicode(default=None)
+    bug_reported_acknowledgement = Unicode(default=None)
+    enable_bugfiling_duplicate_search = Bool(allow_none=False, default=True)
 
     def _validate_active(self, attr, value):
         # Validate deactivation.
@@ -685,29 +746,27 @@ class Product(
                 )
         return value
 
-    active = BoolCol(
-        dbName="active",
-        notNull=True,
+    active = Bool(
+        name="active",
+        allow_none=False,
         default=True,
-        storm_validator=_validate_active,
+        validator=_validate_active,
     )
 
     def _validate_license_info(self, attr, value):
-        if not self._SO_creating and value != self.license_info:
+        if not self._creating and value != self.license_info:
             # Clear the project_reviewed and license_approved flags
             # if the licence changes.
             self._resetLicenseReview()
         return value
 
-    license_info = StringCol(
-        dbName="license_info",
-        default=None,
-        storm_validator=_validate_license_info,
+    license_info = Unicode(
+        name="license_info", default=None, validator=_validate_license_info
     )
 
     def _validate_license_approved(self, attr, value):
         """Ensure licence approved is only applied to the correct licences."""
-        if not self._SO_creating:
+        if not self._creating:
             licenses = list(self.licenses)
             if value:
                 if (
@@ -723,11 +782,11 @@ class Product(
                 self.project_reviewed = True
         return value
 
-    license_approved = BoolCol(
-        dbName="license_approved",
-        notNull=True,
+    license_approved = Bool(
+        name="license_approved",
+        allow_none=False,
         default=False,
-        storm_validator=_validate_license_approved,
+        validator=_validate_license_approved,
     )
 
     def getAllowedBugInformationTypes(self):
@@ -1720,7 +1779,7 @@ def get_precached_products(
         for attr_name in role_names:
             person_ids.update(
                 map(
-                    lambda x: getattr(x, attr_name + "ID"),
+                    lambda x: getattr(x, attr_name + "_id"),
                     products_by_id.values(),
                 )
             )
@@ -1880,7 +1939,7 @@ class ProductSet:
             return result
 
         def do_eager_load(rows):
-            owner_ids = set(map(operator.attrgetter("_ownerID"), rows))
+            owner_ids = set(map(operator.attrgetter("_owner_id"), rows))
             # +detailed-listing renders the person with team branding.
             list(
                 getUtility(IPersonSet).getPrecachedPersonsFromIDs(
@@ -1892,12 +1951,12 @@ class ProductSet:
 
     def get(self, productid):
         """See `IProductSet`."""
-        try:
-            return Product.get(productid)
-        except SQLObjectNotFound:
+        product = IStore(Product).get(Product, productid)
+        if product is None:
             raise NotFoundError(
                 "Product with ID %s does not exist" % str(productid)
             )
+        return product
 
     def getByName(self, name, ignore_inactive=False):
         """See `IProductSet`."""
@@ -1908,18 +1967,25 @@ class ProductSet:
 
     def getProductsWithBranches(self, num_products=None):
         """See `IProductSet`."""
-        results = Product.select(
-            """
-            Product.id in (
-                select distinct(product) from Branch
-                where lifecycle_status in %s)
-            and Product.active
-            """
-            % sqlvalues(DEFAULT_BRANCH_STATUS_IN_LISTING),
-            orderBy="name",
+        results = (
+            IStore(Product)
+            .find(
+                Product,
+                Product.id.is_in(
+                    Select(
+                        Branch.product_id,
+                        where=Branch.lifecycle_status.is_in(
+                            DEFAULT_BRANCH_STATUS_IN_LISTING
+                        ),
+                        distinct=True,
+                    )
+                ),
+                Product.active,
+            )
+            .order_by(Product.name)
         )
         if num_products is not None:
-            results = results.limit(num_products)
+            results = results[:num_products]
         return results
 
     def createProduct(
@@ -1975,7 +2041,7 @@ class ProductSet:
             registrant=registrant,
             name=name,
             display_name=display_name,
-            _title=title,
+            title=title,
             projectgroup=projectgroup,
             summary=summary,
             description=description,
@@ -1983,7 +2049,6 @@ class ProductSet:
             screenshotsurl=screenshotsurl,
             wikiurl=wikiurl,
             downloadurl=downloadurl,
-            freshmeatproject=None,
             sourceforgeproject=sourceforgeproject,
             programminglang=programminglang,
             project_reviewed=project_reviewed,
@@ -2211,7 +2276,7 @@ class ProductSet:
                 Product.id == ProductSeries.product_id,
                 POTemplate.productseries_id == ProductSeries.id,
                 Product.translations_usage == ServiceUsage.LAUNCHPAD,
-                Person.id == Product._ownerID,
+                Person.id == Product._owner_id,
             )
             .config(distinct=True)
             .order_by(Product.display_name)

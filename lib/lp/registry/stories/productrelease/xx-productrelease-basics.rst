@@ -133,7 +133,8 @@ release too.
 
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.product import Product
-    >>> tomcat = Product.selectOneBy(name="tomcat")
+    >>> from lp.services.database.interfaces import IStore
+    >>> tomcat = IStore(Product).find(Product, name="tomcat").one()
     >>> print(tomcat.owner.name)
     ubuntu-team
 
