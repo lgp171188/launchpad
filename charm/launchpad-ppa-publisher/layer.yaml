@@ -6,6 +6,7 @@ repo: https://git.launchpad.net/launchpad
 options:
   apt:
     packages:
+      - launchpad-soyuz-dependencies
       - libapache2-mod-wsgi-py3
   ols-pg:
     databases:

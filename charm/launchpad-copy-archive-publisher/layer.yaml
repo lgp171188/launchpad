@@ -5,6 +5,7 @@ repo: https://git.launchpad.net/launchpad
 options:
   apt:
     packages:
+      - launchpad-soyuz-dependencies
       - procmail # Needed for the 'lockfile' command.
   ols-pg:
     databases:

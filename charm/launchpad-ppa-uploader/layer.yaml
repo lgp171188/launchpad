@@ -3,6 +3,9 @@ includes:
   - interface:upload-queue-processor
 repo: https://git.launchpad.net/launchpad
 options:
+  apt:
+    packages:
+      - launchpad-soyuz-dependencies
   ols-pg:
     databases:
       db:
