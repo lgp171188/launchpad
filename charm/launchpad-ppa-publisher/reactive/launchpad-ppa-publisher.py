@@ -161,7 +161,7 @@ def configure_apache_website():
     apache_website.set_remote(
         domain=domain,
         enabled="true",
-        ports="8080",
+        ports="80",
         site_config="\n".join(site_configs),
         site_modules="expires headers rewrite wsgi",
     )
