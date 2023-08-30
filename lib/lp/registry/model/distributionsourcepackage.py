@@ -334,7 +334,7 @@ class DistributionSourcePackage(
             SourcePackageRelease.upload_archive == Archive.id,
             # Next, the joins for the ordering by soyuz karma of the
             # SPR creator.
-            KarmaTotalCache.person == SourcePackageRelease.creatorID,
+            KarmaTotalCache.person == SourcePackageRelease.creator_id,
             *extra_args,
         )
 
@@ -435,7 +435,10 @@ class DistributionSourcePackage(
         def decorate(spr_ids):
             # Find the SPPHs for each SPR in our result.
             load(SourcePackageRelease, spr_ids)
-            sprs = [SourcePackageRelease.get(spr_id) for spr_id in spr_ids]
+            sprs = [
+                IStore(SourcePackageRelease).get(SourcePackageRelease, spr_id)
+                for spr_id in spr_ids
+            ]
             pubs = DistributionSourcePackageRelease.getPublishingHistories(
                 self.distribution, sprs
             )

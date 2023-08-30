@@ -5,11 +5,12 @@
 
 import io
 import os.path
-from datetime import datetime
+from datetime import datetime, timezone
 from textwrap import dedent
 
 import transaction
 from fixtures import EnvironmentVariableFixture
+from storm.expr import And
 from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
@@ -17,12 +18,13 @@ from lp.archivepublisher.config import ArchivePurpose
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormexpr import BulkUpdate
 from lp.services.job.interfaces.job import JobType
 from lp.services.job.model.job import Job
 from lp.services.librarian.client import ILibrarianClient
+from lp.services.librarian.model import LibraryFileAlias
 from lp.soyuz.enums import PackageDiffStatus
-from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.files import SourcePackageReleaseFile
 from lp.testing import (
     BrowserTestCase,
     TestCaseWithFactory,
@@ -96,25 +98,25 @@ class TestPackageDiffs(TestCaseWithFactory):
         """Expire the files associated with the given source package in the
         librarian."""
         assert expire or delete
-        query = "UPDATE LibraryFileAlias lfa SET "
+        update_map = {}
         if expire:
-            query += "expires = %s" % sqlvalues(datetime.utcnow())
-        if expire and delete:
-            query += ", "
+            update_map[LibraryFileAlias.expires] = datetime.now(timezone.utc)
         if delete:
-            query += "content = NULL"
-        query += """
-            FROM
-                SourcePackageRelease spr, SourcePackageReleaseFile sprf
-            WHERE
-                spr.id = %s
-                AND sprf.SourcePackageRelease = spr.id
-                AND sprf.libraryfile = lfa.id
-            """ % sqlvalues(
-            source.id
-        )
+            update_map[LibraryFileAlias.contentID] = None
         with dbuser("launchpad"):
-            IStore(Archive).execute(query)
+            IStore(LibraryFileAlias).execute(
+                BulkUpdate(
+                    update_map,
+                    table=LibraryFileAlias,
+                    values=SourcePackageReleaseFile,
+                    where=And(
+                        SourcePackageReleaseFile.sourcepackagerelease
+                        == source,
+                        SourcePackageReleaseFile.libraryfile
+                        == LibraryFileAlias.id,
+                    ),
+                )
+            )
 
     def test_packagediff_with_expired_and_deleted_lfas(self):
         # Test the case where files required for the diff are expired *and*

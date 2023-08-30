@@ -1344,7 +1344,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             Join(
                 SourcePackageName,
                 SourcePackageName.id
-                == SourcePackageRelease.sourcepackagenameID,
+                == SourcePackageRelease.sourcepackagename_id,
             ),
             LeftJoin(
                 LibraryFileAlias,

@@ -177,7 +177,7 @@ class QueueItemsView(LaunchpadView):
         """
         sprs = [spr for spr in source_package_releases if spr is not None]
         return getUtility(IPackagesetSet).getForPackages(
-            self.context, {spr.sourcepackagenameID for spr in sprs}
+            self.context, {spr.sourcepackagename_id for spr in sprs}
         )
 
     def loadPackageCopyJobs(self, uploads):
@@ -548,7 +548,7 @@ class CompletePackageUpload:
         if self.contains_source:
             self.sourcepackagerelease = self.sources[0].sourcepackagerelease
             self.package_sets = package_sets.get(
-                self.sourcepackagerelease.sourcepackagenameID, []
+                self.sourcepackagerelease.sourcepackagename_id, []
             )
         else:
             self.package_sets = []

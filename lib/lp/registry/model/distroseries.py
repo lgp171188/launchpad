@@ -1385,7 +1385,7 @@ class DistroSeries(
         clauses = [
             PackageUploadSource.sourcepackagerelease
             == SourcePackageRelease.id,
-            SourcePackageRelease.sourcepackagenameID == SourcePackageName.id,
+            SourcePackageRelease.sourcepackagename_id == SourcePackageName.id,
             PackageUploadSource.packageupload == Column("id", RelevantUpload),
         ]
 

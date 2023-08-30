@@ -1097,8 +1097,10 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
 
         # Find the sourcepackagerelease and check its component.
         foocomm_name = SourcePackageName.selectOneBy(name="foocomm")
-        foocomm_spr = SourcePackageRelease.selectOneBy(
-            sourcepackagename=foocomm_name
+        foocomm_spr = (
+            IStore(SourcePackageRelease)
+            .find(SourcePackageRelease, sourcepackagename=foocomm_name)
+            .one()
         )
         self.assertEqual(foocomm_spr.component.name, "partner")
 

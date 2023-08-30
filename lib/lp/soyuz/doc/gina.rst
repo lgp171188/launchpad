@@ -24,7 +24,9 @@ Get the current counts of stuff in the database:
     >>> SSPPH = SourcePackagePublishingHistory
     >>> SBPPH = BinaryPackagePublishingHistory
 
-    >>> orig_spr_count = SourcePackageRelease.select().count()
+    >>> orig_spr_count = (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ... )
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = (
@@ -234,7 +236,9 @@ forcefully (ubuntu-meta).
 
     >>> hc + bc
     16
-    >>> count = SourcePackageRelease.select().count()
+    >>> count = (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ... )
     >>> count - orig_spr_count
     17
 
@@ -242,8 +246,14 @@ Check that x11proto-damage has its Build-Depends-Indep value correctly set:
 
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> n = SourcePackageName.selectOneBy(name="x11proto-damage")
-    >>> x11p = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="6.8.99.7-2"
+    >>> x11p = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=n,
+    ...         version="6.8.99.7-2",
+    ...     )
+    ...     .one()
     ... )
 
     >>> print(x11p.builddependsindep)
@@ -293,7 +303,11 @@ Check that the dsc on the libcap package is correct, and that we
 only imported one:
 
     >>> n = SourcePackageName.selectOneBy(name="libcap")
-    >>> cap = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> cap = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=n)
+    ...     .one()
+    ... )
     >>> print(cap.dsc)
     -----BEGIN PGP SIGNED MESSAGE-----
     Hash: SHA1
@@ -325,8 +339,10 @@ only imported one:
 Test ubuntu-meta in breezy, which was forcefully imported.
 
     >>> n = SourcePackageName.selectOneBy(name="ubuntu-meta")
-    >>> um = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="0.80"
+    >>> um = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=n, version="0.80")
+    ...     .one()
     ... )
     >>> print(
     ...     um.section.name,
@@ -355,7 +371,11 @@ Check that the section on the python-pam package is correct, and that we
 only imported one:
 
     >>> n = SourcePackageName.selectOneBy(name="python-pam")
-    >>> pp = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> pp = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=n)
+    ...     .one()
+    ... )
     >>> print(pp.component.name)
     main
 
@@ -368,7 +388,11 @@ this is cut up correctly:
 Make sure that we only imported one db1-compat source package.
 
     >>> n = SourcePackageName.selectOneBy(name="db1-compat")
-    >>> db1 = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> db1 = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=n)
+    ...     .one()
+    ... )
     >>> print(db1.section.name)
     libs
 
@@ -688,7 +712,10 @@ run.
 Nothing should happen to most of our data -- no counts should have
 changed, etc.
 
-    >>> SourcePackageRelease.select().count() - orig_spr_count
+    >>> (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ...     - orig_spr_count
+    ... )
     17
     >>> print(Person.select().count() - orig_person_count)
     13
@@ -748,8 +775,10 @@ package -- that's what overrides actually do.
     >>> print(ed_pub.priority)
     Extra
     >>> n = SourcePackageName.selectOneBy(name="archive-copier")
-    >>> ac = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="0.3.6"
+    >>> ac = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=n, version="0.3.6")
+    ...     .one()
     ... )
     >>> ac_pub = (
     ...     IStore(SSPPH)

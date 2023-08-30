@@ -49,7 +49,7 @@ class RetryDepwaitTunableLoop(TunableLoop):
         sprs = load_related(
             SourcePackageRelease, bpbs, ["source_package_release_id"]
         )
-        load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+        load_related(SourcePackageName, sprs, ["sourcepackagename_id"])
         chroots = IStore(PocketChroot).find(
             PocketChroot,
             PocketChroot.distroarchseries_id.is_in(

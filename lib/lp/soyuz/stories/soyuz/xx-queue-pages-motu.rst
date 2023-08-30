@@ -89,8 +89,8 @@ permission to manipulate them.
     >>> mozilla = getUtility(IBinaryPackageNameSet).queryByName(
     ...     "mozilla-firefox"
     ... )
-    >>> for source in SourcePackageRelease.selectBy(
-    ...     sourcepackagename=alsa_utils
+    >>> for source in IStore(SourcePackageRelease).find(
+    ...     SourcePackageRelease, sourcepackagename=alsa_utils
     ... ):
     ...     source.component = universe
     >>> for binary in IStore(BinaryPackageRelease).find(

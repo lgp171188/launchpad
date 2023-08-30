@@ -692,7 +692,7 @@ class Archive(SQLBase):
             # attrgetter).
             spn_ids = set(
                 map(
-                    attrgetter("sourcepackagerelease.sourcepackagenameID"),
+                    attrgetter("sourcepackagerelease.sourcepackagename_id"),
                     rows,
                 )
             )
@@ -853,7 +853,7 @@ class Archive(SQLBase):
                     SourcePackageRelease, SourcePackageRelease.id.is_in(ids)
                 )
             )
-            ids = set(map(attrgetter("creatorID"), releases))
+            ids = set(map(attrgetter("creator_id"), releases))
             ids.discard(None)
             if ids:
                 list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(ids))
@@ -1116,7 +1116,7 @@ class Archive(SQLBase):
             sprs = load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
-            load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            load_related(SourcePackageName, sprs, ["sourcepackagename_id"])
             load_related(Component, bpphs, ["component_id"])
             load_related(Section, bpphs, ["section_id"])
             dases = load_related(

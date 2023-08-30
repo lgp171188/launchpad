@@ -77,9 +77,9 @@ class FilteredDistroArchSeriesVocabulary(StormVocabularyBase):
                 yield self.toTerm(distroarchseries)
 
 
-class PackageReleaseVocabulary(SQLObjectVocabularyBase):
+class PackageReleaseVocabulary(StormVocabularyBase):
     _table = SourcePackageRelease
-    _orderBy = "id"
+    _order_by = "id"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name + " " + obj.version)

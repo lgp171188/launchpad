@@ -657,19 +657,19 @@ class SourcePackageHandler:
         )
 
         # Create the SourcePackageRelease (SPR)
-        componentID = self.distro_handler.getComponentByName(src.component).id
-        sectionID = self.distro_handler.ensureSection(src.section).id
+        component = self.distro_handler.getComponentByName(src.component)
+        section = self.distro_handler.ensureSection(src.section)
         maintainer_line = "%s <%s>" % (displayname, emailaddress)
         name = self.ensureSourcePackageName(src.package)
         kwargs = {}
         if src._user_defined:
             kwargs["user_defined_fields"] = src._user_defined
         spr = SourcePackageRelease(
-            section=sectionID,
-            creator=maintainer.id,
-            component=componentID,
-            sourcepackagename=name.id,
-            maintainer=maintainer.id,
+            section=section,
+            creator=maintainer,
+            component=component,
+            sourcepackagename=name,
+            maintainer=maintainer,
             signing_key_owner=key.owner if key else None,
             signing_key_fingerprint=key.fingerprint if key else None,
             urgency=ChangesFile.urgency_map[src.urgency],

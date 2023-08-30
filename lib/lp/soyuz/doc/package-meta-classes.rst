@@ -6,6 +6,7 @@ our Database Model for packages in a intuitive manner, they are:
 
     >>> from lp.registry.model.distribution import Distribution
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.distributionsourcepackagerelease import (
     ...     DistributionSourcePackageRelease,
     ... )
@@ -29,8 +30,14 @@ Combining Distribution and SourcePackageRelease:
     >>> print(src_name.name)
     pmount
 
-    >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=src_name.id, version="0.1-1"
+    >>> sourcepackagerelease = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=src_name,
+    ...         version="0.1-1",
+    ...     )
+    ...     .one()
     ... )
     >>> print(sourcepackagerelease.name)
     pmount
