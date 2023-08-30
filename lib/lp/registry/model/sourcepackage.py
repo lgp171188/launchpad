@@ -693,13 +693,14 @@ class SourcePackage(
         )
 
         # Ordering according status
-        # * NEEDSBUILD, BUILDING & UPLOADING by -lastscore
+        # * NEEDSBUILD, BUILDING, GATHERING & UPLOADING by -lastscore
         # * SUPERSEDED by -datecreated
         # * FULLYBUILT & FAILURES by -datebuilt
         # It should present the builds in a more natural order.
         if build_state in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
         ]:
             orderBy = ["-BuildQueue.lastscore"]

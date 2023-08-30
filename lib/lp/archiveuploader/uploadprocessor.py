@@ -792,19 +792,25 @@ class BuildUploadHandler(UploadHandler):
             )
             self.moveUpload(UploadStatusEnum.FAILED, logger)
             return
-        elif self.build.status == BuildStatus.BUILDING:
+        elif self.build.status in (
+            BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
+        ):
             # Handoff from buildd-manager isn't complete until the
             # status is UPLOADING.
-            self.processor.log.info("Build status is BUILDING. Ignoring.")
+            self.processor.log.info(
+                "Build status is %s. Ignoring.", self.build.status.name
+            )
             return
         elif self.build.status != BuildStatus.UPLOADING:
-            # buildd-manager should only have given us a directory
-            # during BUILDING or UPLOADING. Anything else indicates a
+            # buildd-manager should only have given us a directory during
+            # BUILDING, GATHERING, or UPLOADING. Anything else indicates a
             # bug, so get the upload out of the queue before the status
             # changes to something that might accidentally let it be
             # accepted.
             self.processor.log.warning(
-                "Expected build status to be UPLOADING or BUILDING, was %s.",
+                "Expected build status to be BUILDING, GATHERING, or "
+                "UPLOADING; was %s.",
                 self.build.status.name,
             )
             self.moveUpload(UploadStatusEnum.FAILED, logger)

@@ -1269,6 +1269,7 @@ class Snap(StormBase, WebhookTargetMixin):
         return [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.CANCELLING,
         ]
