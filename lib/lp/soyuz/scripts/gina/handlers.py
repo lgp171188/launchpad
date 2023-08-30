@@ -211,8 +211,14 @@ class ImporterHandler:
             return
 
         # Get distroarchseries and processor from the architecturetag.
-        das = DistroArchSeries.selectOneBy(
-            distroseriesID=self.distroseries.id, architecturetag=archtag
+        das = (
+            IStore(DistroArchSeries)
+            .find(
+                DistroArchSeries,
+                distroseries=self.distroseries,
+                architecturetag=archtag,
+            )
+            .one()
         )
         if not das:
             raise DataSetupError(

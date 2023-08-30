@@ -10,10 +10,10 @@ Distro Arch Release Binary Package Release
 
 Grab the relevant DARs and BPRs:
 
-    >>> warty = DistroArchSeries.get(1)
+    >>> warty = IStore(DistroArchSeries).get(DistroArchSeries, 1)
     >>> print(warty.distroseries.name)
     warty
-    >>> hoary = DistroArchSeries.get(6)
+    >>> hoary = IStore(DistroArchSeries).get(DistroArchSeries, 6)
     >>> print(hoary.distroseries.name)
     hoary
 

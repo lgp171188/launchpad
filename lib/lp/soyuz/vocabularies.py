@@ -43,11 +43,15 @@ class ComponentVocabulary(StormVocabularyBase):
         return SimpleTerm(obj, obj.id, obj.name)
 
 
-class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
+class FilteredDistroArchSeriesVocabulary(StormVocabularyBase):
     """All arch series of a particular distribution."""
 
     _table = DistroArchSeries
-    _orderBy = ["DistroSeries.version", "architecturetag", "id"]
+    _order_by = [
+        "DistroSeries.version",
+        DistroArchSeries.architecturetag,
+        DistroArchSeries.id,
+    ]
 
     def toTerm(self, obj):
         name = "%s %s (%s)" % (
@@ -64,7 +68,7 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
                 IStore(DistroSeries)
                 .find(
                     self._table,
-                    DistroSeries.id == DistroArchSeries.distroseriesID,
+                    DistroSeries.id == DistroArchSeries.distroseries_id,
                     DistroSeries.distributionID == distribution.id,
                 )
                 .order_by(*self._orderBy)

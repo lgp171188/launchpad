@@ -586,7 +586,7 @@ class Publisher:
             BinaryPackagePublishingHistory, *clauses
         )
         return publications.order_by(
-            DistroArchSeries.distroseriesID,
+            DistroArchSeries.distroseries_id,
             BinaryPackagePublishingHistory.pocket,
             DistroArchSeries.architecturetag,
             Desc(BinaryPackagePublishingHistory.id),
@@ -696,7 +696,7 @@ class Publisher:
             [
                 BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                DistroArchSeries.distroseriesID == DistroSeries.id,
+                DistroArchSeries.distroseries == DistroSeries.id,
             ]
         )
         binary_suites = (

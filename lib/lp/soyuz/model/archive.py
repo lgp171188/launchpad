@@ -1122,7 +1122,7 @@ class Archive(SQLBase):
             dases = load_related(
                 DistroArchSeries, bpphs, ["distroarchseries_id"]
             )
-            load_related(DistroSeries, dases, ["distroseriesID"])
+            load_related(DistroSeries, dases, ["distroseries_id"])
 
         if eager_load:
             result = DecoratedResultSet(result, pre_iter_hook=eager_load_api)
@@ -1156,7 +1156,7 @@ class Archive(SQLBase):
             [
                 BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                DistroArchSeries.distroseriesID == DistroSeries.id,
+                DistroArchSeries.distroseries == DistroSeries.id,
             ]
         )
 
@@ -1167,7 +1167,7 @@ class Archive(SQLBase):
         # It includes all architecture-independent binaries only once and the
         # architecture-specific built for 'nominatedarchindep'.
         nominated_arch_independent_clauses = clauses + [
-            DistroSeries.nominatedarchindepID
+            DistroSeries.nominatedarchindep_id
             == BinaryPackagePublishingHistory.distroarchseries_id,
         ]
         nominated_arch_independents = store.find(
@@ -1177,7 +1177,7 @@ class Archive(SQLBase):
         # Retrieve all architecture-specific binary publications except
         # 'nominatedarchindep' (already included in the previous query).
         no_nominated_arch_independent_clauses = clauses + [
-            DistroSeries.nominatedarchindepID
+            DistroSeries.nominatedarchindep_id
             != BinaryPackagePublishingHistory.distroarchseries_id,
             BinaryPackageRelease.architecturespecific == True,
         ]
@@ -2960,7 +2960,7 @@ class Archive(SQLBase):
 
         clauses = [
             Processor.id == DistroArchSeries.processor_id,
-            DistroArchSeries.distroseriesID == DistroSeries.id,
+            DistroArchSeries.distroseries == DistroSeries.id,
             DistroSeries.distribution == self.distribution,
         ]
         if not self.permit_obsolete_series_uploads:

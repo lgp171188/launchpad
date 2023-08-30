@@ -406,7 +406,7 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
                 BinaryPackageBuild.id == BinaryPackageRelease.build_id,
                 BinaryPackageBuild.source_package_release_id
                 == self.sourcepackagerelease_id,
-                DistroArchSeries.distroseriesID == self.distroseries_id,
+                DistroArchSeries.distroseries == self.distroseries_id,
             )
             .order_by(Desc(BinaryPackagePublishingHistory.id))
         )
@@ -1881,7 +1881,7 @@ class PublishingSet:
             BinaryPackageRelease.build == BinaryPackageBuild.id,
             BinaryPackageRelease.binarypackagename_id == BinaryPackageName.id,
             SourcePackagePublishingHistory.distroseries_id
-            == DistroArchSeries.distroseriesID,
+            == DistroArchSeries.distroseries_id,
             BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
             BinaryPackagePublishingHistory.binarypackagerelease
@@ -2066,7 +2066,7 @@ class PublishingSet:
             BinaryPackagePublishingHistory.archive == archive,
             BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
-            DistroArchSeries.distroseriesID == distroseries.id,
+            DistroArchSeries.distroseries == distroseries,
             BinaryPackagePublishingHistory.pocket == pocket,
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status

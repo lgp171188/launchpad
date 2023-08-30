@@ -265,12 +265,17 @@ DSC.
 Check that we publishing bdftopcf into the correct distroarchseries:
 
     >>> processor = getUtility(IProcessorSet).getByName("386")
-    >>> dar = DistroArchSeries.selectOneBy(
-    ...     distroseriesID=dapper.id,
-    ...     processor_id=processor.id,
-    ...     architecturetag="i386",
-    ...     official=True,
-    ...     ownerID=celebs.launchpad_developers.id,
+    >>> dar = (
+    ...     IStore(DistroArchSeries)
+    ...     .find(
+    ...         DistroArchSeries,
+    ...         distroseries=dapper,
+    ...         processor=processor,
+    ...         architecturetag="i386",
+    ...         official=True,
+    ...         owner=celebs.launchpad_developers,
+    ...     )
+    ...     .one()
     ... )
     >>> print(dar.architecturetag)
     i386

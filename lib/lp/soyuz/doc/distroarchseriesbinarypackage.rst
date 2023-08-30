@@ -8,7 +8,7 @@ Distro Arch Series Binary Package
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
     ...     DistroArchSeriesBinaryPackage,
     ... )
-    >>> hoary_i386 = DistroArchSeries.get(6)
+    >>> hoary_i386 = IStore(DistroArchSeries).get(DistroArchSeries, 6)
     >>> pmount_name = (
     ...     IStore(BinaryPackageName)
     ...     .find(BinaryPackageName, name="pmount")
@@ -271,7 +271,7 @@ Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
     >>> switch_dbuser("archivepublisher")
-    >>> warty_i386 = DistroArchSeries.get(1)
+    >>> warty_i386 = IStore(DistroArchSeries).get(DistroArchSeries, 1)
     >>> pmount_name = (
     ...     IStore(BinaryPackageName)
     ...     .find(BinaryPackageName, name="pmount")
