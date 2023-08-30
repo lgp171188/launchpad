@@ -178,12 +178,12 @@ Check that the source package was correctly imported:
 
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> n = SourcePackageName.selectOneBy(name="ekg")
+    >>> ekg_name = SourcePackageName.selectOneBy(name="ekg")
     >>> ekg = (
     ...     IStore(SourcePackageRelease)
     ...     .find(
     ...         SourcePackageRelease,
-    ...         sourcepackagename=n,
+    ...         sourcepackagename=ekg_name,
     ...         version="1:1.5-4ubuntu1.2",
     ...     )
     ...     .one()
@@ -195,27 +195,27 @@ Check that the source package was correctly imported:
 
 And that one of the packages in main is here too:
 
-    >>> n = (
+    >>> libgadu_dev_name = (
     ...     IStore(BinaryPackageName)
     ...     .find(BinaryPackageName, name="libgadu-dev")
     ...     .one()
     ... )
-    >>> ekg = (
+    >>> libgadu_dev = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
     ...         BinaryPackageRelease,
-    ...         binarypackagename=n,
+    ...         binarypackagename=libgadu_dev_name,
     ...         version="1:1.5-4ubuntu1.2",
     ...     )
     ...     .one()
     ... )
-    >>> print(ekg.section.name)
+    >>> print(libgadu_dev.section.name)
     libdevel
-    >>> print(ekg.component.name)
+    >>> print(libgadu_dev.component.name)
     main
-    >>> print(ekg.architecturespecific)
+    >>> print(libgadu_dev.architecturespecific)
     True
-    >>> print(ekg.build.processor.name)
+    >>> print(libgadu_dev.build.processor.name)
     386
 
 Check that the package it generates in universe was successfully
@@ -223,7 +223,7 @@ processed. In particular, its section should be stripped of the
 component name.
 
     >>> from lp.soyuz.enums import PackagePublishingPriority
-    >>> n = (
+    >>> ekg_name = (
     ...     IStore(BinaryPackageName)
     ...     .find(BinaryPackageName, name="ekg")
     ...     .one()
@@ -232,7 +232,7 @@ component name.
     ...     IStore(BinaryPackageRelease)
     ...     .find(
     ...         BinaryPackageRelease,
-    ...         binarypackagename=n,
+    ...         binarypackagename=ekg_name,
     ...         version="1:1.5-4ubuntu1.2",
     ...     )
     ...     .one()
@@ -250,27 +250,29 @@ package files are in main! Gina to the rescue: it finds them in the
 right place, updates the component, and creates it with a semi-bogus
 DSC.
 
-    >>> n = (
+    >>> bdftopcf_name = (
     ...     IStore(BinaryPackageName)
     ...     .find(BinaryPackageName, name="bdftopcf")
     ...     .one()
     ... )
-    >>> ekg = (
+    >>> bdftopcf = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
-    ...         BinaryPackageRelease, binarypackagename=n, version="0.99.0-1"
+    ...         BinaryPackageRelease,
+    ...         binarypackagename=bdftopcf_name,
+    ...         version="0.99.0-1",
     ...     )
     ...     .one()
     ... )
-    >>> print(ekg.section.name)
+    >>> print(bdftopcf.section.name)
     x11
-    >>> print(ekg.component.name)
+    >>> print(bdftopcf.component.name)
     universe
-    >>> print(ekg.build.source_package_release.sourcepackagename.name)
+    >>> print(bdftopcf.build.source_package_release.sourcepackagename.name)
     bdftopcf
-    >>> print(ekg.build.source_package_release.component.name)
+    >>> print(bdftopcf.build.source_package_release.component.name)
     main
-    >>> print(ekg.build.source_package_release.version)
+    >>> print(bdftopcf.build.source_package_release.version)
     0.99.0-1
 
 Check that we publishing bdftopcf into the correct distroarchseries:
