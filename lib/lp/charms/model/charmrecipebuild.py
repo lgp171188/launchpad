@@ -525,7 +525,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )
         distroserieses = load_related(
-            DistroSeries, distroarchserieses, ["distroseriesID"]
+            DistroSeries, distroarchserieses, ["distroseries_id"]
         )
         load_related(Distribution, distroserieses, ["distributionID"])
         recipes = load_related(CharmRecipe, builds, ["recipe_id"])

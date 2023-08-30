@@ -1808,7 +1808,7 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
             return self.find_terms(where)
         else:
             # Select only the series with architectures setup in LP.
-            where.append(DistroSeries.id == DistroArchSeries.distroseriesID)
+            where.append(DistroSeries.id == DistroArchSeries.distroseries_id)
             where.append(DistroSeries.distribution != self.distribution)
             return self.find_terms(where)
 

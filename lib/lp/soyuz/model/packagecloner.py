@@ -170,7 +170,7 @@ class PackageCloner:
                 %s as pocket,
                 bpph.binarypackagename
             """ % sqlvalues(
-            destination_das,
+            destination_das.id,
             destination.archive,
             UTC_NOW,
             UTC_NOW,
@@ -184,7 +184,7 @@ class PackageCloner:
                 bpph.pocket = %s AND
                 bpph.archive = %s
             """ % sqlvalues(
-            origin_das,
+            origin_das.id,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.pocket,

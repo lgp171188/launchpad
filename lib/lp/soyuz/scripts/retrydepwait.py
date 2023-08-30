@@ -52,12 +52,12 @@ class RetryDepwaitTunableLoop(TunableLoop):
         load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
         chroots = IStore(PocketChroot).find(
             PocketChroot,
-            PocketChroot.distroarchseriesID.is_in(
+            PocketChroot.distroarchseries_id.is_in(
                 b.distro_arch_series_id for b in bpbs
             ),
             PocketChroot.chroot != None,
         )
-        chroot_series = {chroot.distroarchseriesID for chroot in chroots}
+        chroot_series = {chroot.distroarchseries_id for chroot in chroots}
         for build in bpbs:
             das = build.distro_arch_series
             if (

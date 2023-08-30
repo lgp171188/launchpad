@@ -341,7 +341,7 @@ class FromExistingOverridePolicy(BaseOverridePolicy):
             other_conditions.extend(
                 [
                     BinaryPackagePublishingHistory.archive == self.archive,
-                    DistroArchSeries.distroseriesID == self.distroseries.id,
+                    DistroArchSeries.distroseries == self.distroseries,
                     BinaryPackagePublishingHistory.distroarchseries_id
                     == DistroArchSeries.id,
                 ]

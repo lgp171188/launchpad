@@ -73,7 +73,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLMultipleJoin,
     SQLObjectNotFound,
     StringCol,
 )
@@ -205,11 +204,11 @@ class DistroSeries(
         default=None,
     )
     changeslist = StringCol(notNull=False, default=None)
-    nominatedarchindep = ForeignKey(
-        dbName="nominatedarchindep",
-        foreignKey="DistroArchSeries",
-        notNull=False,
-        default=None,
+    nominatedarchindep_id = Int(
+        name="nominatedarchindep", allow_none=True, default=None
+    )
+    nominatedarchindep = Reference(
+        nominatedarchindep_id, "DistroArchSeries.id"
     )
     messagecount = IntCol(notNull=True, default=0)
     binarycount = IntCol(notNull=True, default=DEFAULT)
@@ -350,10 +349,10 @@ class DistroSeries(
         )
 
     # DistroArchSeries lookup properties/methods.
-    architectures = SQLMultipleJoin(
-        "DistroArchSeries",
-        joinColumn="distroseries",
-        orderBy="architecturetag",
+    architectures = ReferenceSet(
+        "id",
+        DistroArchSeries.distroseries_id,
+        order_by=DistroArchSeries.architecturetag,
     )
 
     def __getitem__(self, archtag):
@@ -368,8 +367,10 @@ class DistroSeries(
 
     def getDistroArchSeries(self, archtag):
         """See `IDistroSeries`."""
-        item = DistroArchSeries.selectOneBy(
-            distroseries=self, architecturetag=archtag
+        item = (
+            IStore(DistroArchSeries)
+            .find(DistroArchSeries, distroseries=self, architecturetag=archtag)
+            .one()
         )
         if item is None:
             raise NotFoundError(
@@ -384,8 +385,8 @@ class DistroSeries(
             Store.of(self)
             .find(
                 DistroArchSeries,
-                DistroArchSeries.distroseriesID == self.id,
-                DistroArchSeries.processor_id == processor.id,
+                DistroArchSeries.distroseries == self,
+                DistroArchSeries.processor == processor,
             )
             .one()
         )
@@ -420,7 +421,7 @@ class DistroSeries(
             .find(
                 DistroArchSeries,
                 DistroArchSeries.distroseries == self,
-                DistroArchSeries.enabled == True,
+                Is(DistroArchSeries.enabled, True),
             )
             .order_by(DistroArchSeries.architecturetag)
         )
@@ -1149,7 +1150,7 @@ class DistroSeries(
             IStore(BinaryPackagePublishingHistory)
             .find(
                 BinaryPackagePublishingHistory,
-                DistroArchSeries.distroseriesID == self.id,
+                DistroArchSeries.distroseries == self,
                 BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
                 BinaryPackagePublishingHistory.archive_id.is_in(
@@ -1335,7 +1336,7 @@ class DistroSeries(
         self, architecturetag, processor, official, owner, enabled=True
     ):
         """See `IDistroSeries`."""
-        return DistroArchSeries(
+        das = DistroArchSeries(
             architecturetag=architecturetag,
             processor=processor,
             official=official,
@@ -1343,6 +1344,8 @@ class DistroSeries(
             owner=owner,
             enabled=enabled,
         )
+        IStore(das).flush()
+        return das
 
     def newMilestone(
         self, name, dateexpected=None, summary=None, code_name=None, tags=None
