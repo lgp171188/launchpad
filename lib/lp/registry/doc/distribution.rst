@@ -73,20 +73,17 @@ Let's make sure a distribution object properly implements its interfaces.
 Once you've got a distribution, you can retrieve a source package if you
 have a SourcePackageName object for it.
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.registry.interfaces.distributionsourcepackage import (
     ...     IDistributionSourcePackage,
     ... )
-    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     ...     IDistributionSourcePackageRelease,
     ... )
 
-    >>> evo = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="evolution")
-    ...     .one()
-    ... )
+    >>> evo = getUtility(ISourcePackageNameSet)["evolution"]
     >>> evo_ubuntu = ubuntu.getSourcePackage(evo)
     >>> print(evo_ubuntu.name)
     evolution
@@ -94,6 +91,7 @@ have a SourcePackageName object for it.
     >>> IDistributionSourcePackage.providedBy(evo_ubuntu)
     True
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
     >>> sourcepackagerelease = (
     ...     IStore(SourcePackageRelease)

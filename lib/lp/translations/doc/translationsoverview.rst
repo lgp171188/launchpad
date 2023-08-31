@@ -17,8 +17,10 @@ test too much.
     >>> from lp.registry.interfaces.karma import IKarmaCacheManager
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.registry.model.karma import KarmaCategory
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.interfaces.translationsoverview import (
     ...     ITranslationsOverview,
@@ -162,11 +164,9 @@ list as well.
 
     >>> start_karma_update()
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
-    >>> evolution_sourcepackagename = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="evolution")
-    ...     .one()
-    ... )
+    >>> evolution_sourcepackagename = getUtility(ISourcePackageNameSet)[
+    ...     "evolution"
+    ... ]
     >>> cache_entry = karmacachemanager.new(
     ...     5150,
     ...     carlos.id,

@@ -237,12 +237,10 @@ kilo-bytes).
 
 Verify that empty packages have a size of zero.
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> linux_src = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="linux-source-2.6.15")
-    ...     .one()
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
     ... )
+    >>> linux_src = getUtility(ISourcePackageNameSet)["linux-source-2.6.15"]
     >>> spr = (
     ...     IStore(SourcePackageRelease)
     ...     .find(

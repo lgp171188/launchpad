@@ -274,17 +274,8 @@ packaging process. Here we test the code that links all of those.
 
 First, let's get some useful objects from the db.
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> firefox = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="mozilla-firefox")
-    ...     .one()
-    ... )
-    >>> pmount = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="pmount")
-    ...     .one()
-    ... )
+    >>> firefox = sourcepackagenameset["mozilla-firefox"]
+    >>> pmount = sourcepackagenameset["pmount"]
 
     >>> from lp.registry.model.distroseries import DistroSeries
     >>> warty = DistroSeries.get(1)

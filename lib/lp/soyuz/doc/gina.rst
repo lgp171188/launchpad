@@ -244,12 +244,10 @@ forcefully (ubuntu-meta).
 
 Check that x11proto-damage has its Build-Depends-Indep value correctly set:
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> x11p_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="x11proto-damage")
-    ...     .one()
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
     ... )
+    >>> x11p_name = getUtility(ISourcePackageNameSet)["x11proto-damage"]
     >>> x11p = (
     ...     IStore(SourcePackageRelease)
     ...     .find(
@@ -306,11 +304,7 @@ Same for the copyright:
 Check that the dsc on the libcap package is correct, and that we
 only imported one:
 
-    >>> cap_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="libcap")
-    ...     .one()
-    ... )
+    >>> cap_name = getUtility(ISourcePackageNameSet)["libcap"]
     >>> cap = (
     ...     IStore(SourcePackageRelease)
     ...     .find(SourcePackageRelease, sourcepackagename=cap_name)
@@ -346,11 +340,7 @@ only imported one:
 
 Test ubuntu-meta in breezy, which was forcefully imported.
 
-    >>> um_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="ubuntu-meta")
-    ...     .one()
-    ... )
+    >>> um_name = getUtility(ISourcePackageNameSet)["ubuntu-meta"]
     >>> um = (
     ...     IStore(SourcePackageRelease)
     ...     .find(
@@ -386,11 +376,7 @@ were calculated directly on the files):
 Check that the section on the python-pam package is correct, and that we
 only imported one:
 
-    >>> pp_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="python-pam")
-    ...     .one()
-    ... )
+    >>> pp_name = getUtility(ISourcePackageNameSet)["python-pam"]
     >>> pp = (
     ...     IStore(SourcePackageRelease)
     ...     .find(SourcePackageRelease, sourcepackagename=pp_name)
@@ -407,11 +393,7 @@ this is cut up correctly:
 
 Make sure that we only imported one db1-compat source package.
 
-    >>> db1_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="db1-compat")
-    ...     .one()
-    ... )
+    >>> db1_name = getUtility(ISourcePackageNameSet)["db1-compat"]
     >>> db1 = (
     ...     IStore(SourcePackageRelease)
     ...     .find(SourcePackageRelease, sourcepackagename=db1_name)
@@ -492,12 +474,10 @@ work.
 Check that the shlibs parsing and bin-only-NMU version handling works as
 expected:
 
-    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
-    >>> rio_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="rioutil")
-    ...     .one()
+    >>> from lp.soyuz.interfaces.binarypackagename import (
+    ...     IBinaryPackageNameSet,
     ... )
+    >>> rio_name = getUtility(IBinaryPackageNameSet)["rioutil"]
     >>> rio = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(BinaryPackageRelease, binarypackagename=rio_name)
@@ -513,9 +493,7 @@ expected:
 Test all the data got to the ed BPR intact, and that the missing
 priority was correctly munged to "extra":
 
-    >>> ed_name = (
-    ...     IStore(BinaryPackageName).find(BinaryPackageName, name="ed").one()
-    ... )
+    >>> ed_name = getUtility(IBinaryPackageNameSet)["ed"]
     >>> ed = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(BinaryPackageRelease, binarypackagename=ed_name)
@@ -553,11 +531,7 @@ We now check if the Breezy publication record has the correct priority:
 Check binary package libgjc-dev in Breezy. Its version number must differ from
 its source version number.
 
-    >>> lib_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="libgcj-dev")
-    ...     .one()
-    ... )
+    >>> lib_name = getUtility(IBinaryPackageNameSet)["libgcj-dev"]
     >>> lib = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -576,11 +550,7 @@ its source version number.
 
 Check if the udeb was properly parsed and identified:
 
-    >>> ac_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="archive-copier")
-    ...     .one()
-    ... )
+    >>> ac_name = getUtility(IBinaryPackageNameSet)["archive-copier"]
     >>> ac = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -605,11 +575,7 @@ Check if the udeb was properly parsed and identified:
 
 We check that the binary package publishing override facility works:
 
-    >>> db1_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="libdb1-compat")
-    ...     .one()
-    ... )
+    >>> db1_name = getUtility(IBinaryPackageNameSet)["libdb1-compat"]
     >>> db1 = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -808,11 +774,7 @@ package -- that's what overrides actually do.
     ... )
     >>> print(ed_pub.priority)
     Extra
-    >>> ac_name = (
-    ...     IStore(SourcePackageName)
-    ...     .find(SourcePackageName, name="archive-copier")
-    ...     .one()
-    ... )
+    >>> ac_name = getUtility(ISourcePackageNameSet)["archive-copier"]
     >>> ac = (
     ...     IStore(SourcePackageRelease)
     ...     .find(

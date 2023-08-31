@@ -35,6 +35,7 @@ from lp.archiveuploader.utils import determine_binary_file_type
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.person import IPersonSet, PersonCreationRationale
 from lp.registry.interfaces.sourcepackage import SourcePackageType
+from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -60,7 +61,6 @@ from lp.soyuz.interfaces.publishing import (
 )
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
-from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.files import BinaryPackageFile
@@ -591,11 +591,7 @@ class SourcePackageHandler:
 
         Returns the sourcepackagerelease if exists or none if not.
         """
-        spname = (
-            IStore(SourcePackageName)
-            .find(SourcePackageName, name=source)
-            .one()
-        )
+        spname = getUtility(ISourcePackageNameSet).queryByName(source)
         if spname is None:
             return None
 
@@ -813,10 +809,8 @@ class BinaryPackageHandler:
 
     def checkBin(self, binarypackagedata, distroarchseries):
         """Returns a binarypackage -- if it exists."""
-        binaryname = (
-            IStore(BinaryPackageName)
-            .find(BinaryPackageName, name=binarypackagedata.package)
-            .one()
+        binaryname = getUtility(IBinaryPackageNameSet).queryByName(
+            binarypackagedata.package
         )
         if binaryname is None:
             # If the binary package's name doesn't exist, don't even

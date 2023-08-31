@@ -51,9 +51,7 @@ class SourcePackageName(StormBase):
 class SourcePackageNameSet:
     def __getitem__(self, name):
         """See `ISourcePackageNameSet`."""
-        spn = (
-            IStore(SourcePackageName).find(SourcePackageName, name=name).one()
-        )
+        spn = self.queryByName(name)
         if spn is None:
             raise NoSuchSourcePackageName(name)
         return spn
