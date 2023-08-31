@@ -146,6 +146,40 @@ class TestPersonAccountStatus(TestCaseWithFactory):
             )
 
 
+class TestPersonExportedID(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def test_normal_user_cannot_see_id(self):
+        # A normal user cannot read the `id` field, not even their own.
+        person = self.factory.makePerson()
+        person_url = api_url(person)
+
+        body = (
+            webservice_for_person(
+                person, permission=OAuthPermission.WRITE_PRIVATE
+            )
+            .get(person_url, api_version="devel")
+            .jsonBody()
+        )
+        self.assertEqual("tag:launchpad.net:2008:redacted", body["id"])
+
+    def test_registry_can_see_id(self):
+        # A member of ~registry can read the `id` field.
+        person = self.factory.makePerson()
+        person_id = person.id
+        person_url = api_url(person)
+
+        body = (
+            webservice_for_person(
+                self.factory.makeRegistryExpert(),
+                permission=OAuthPermission.WRITE_PRIVATE,
+            )
+            .get(person_url, api_version="devel")
+            .jsonBody()
+        )
+        self.assertEqual(person_id, body["id"])
+
+
 class TestPersonRepresentation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
