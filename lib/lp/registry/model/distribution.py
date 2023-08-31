@@ -124,7 +124,10 @@ from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.pocket import suffixpocket
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
-from lp.registry.interfaces.sourcepackagename import ISourcePackageName
+from lp.registry.interfaces.sourcepackagename import (
+    ISourcePackageName,
+    ISourcePackageNameSet,
+)
 from lp.registry.model.accesspolicy import AccessPolicyGrantFlat
 from lp.registry.model.announcement import MakesAnnouncements
 from lp.registry.model.commercialsubscription import CommercialSubscription
@@ -155,12 +158,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.sqlobject import BoolCol, ForeignKey, StringCol
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -183,10 +181,10 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES, IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivefile import ArchiveFile
-from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
 )
@@ -1358,9 +1356,10 @@ class Distribution(
         if ISourcePackageName.providedBy(name):
             sourcepackagename = name
         else:
-            try:
-                sourcepackagename = SourcePackageName.byName(name)
-            except SQLObjectNotFound:
+            sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
+                name
+            )
+            if sourcepackagename is None:
                 return None
         return DistributionSourcePackage(self, sourcepackagename)
 
@@ -1748,7 +1747,9 @@ class Distribution(
                 "published in it" % (self.displayname, pkgname)
             )
 
-        sourcepackagename = SourcePackageName.selectOneBy(name=pkgname)
+        sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
+            pkgname
+        )
         if sourcepackagename:
             # Note that in the source package case, we don't restrict
             # the search to the distribution release, making a best
@@ -1789,10 +1790,8 @@ class Distribution(
         # At this point we don't have a published source package by
         # that name, so let's try to find a binary package and work
         # back from there.
-        binarypackagename = (
-            IStore(BinaryPackageName)
-            .find(BinaryPackageName, name=pkgname)
-            .one()
+        binarypackagename = getUtility(IBinaryPackageNameSet).queryByName(
+            pkgname
         )
         if binarypackagename:
             # Ok, so we have a binarypackage with that name. Grab its

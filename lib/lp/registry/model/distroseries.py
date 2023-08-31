@@ -56,7 +56,10 @@ from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket, pocketsuffix
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import ISourcePackageFactory
-from lp.registry.interfaces.sourcepackagename import ISourcePackageName
+from lp.registry.interfaces.sourcepackagename import (
+    ISourcePackageName,
+    ISourcePackageNameSet,
+)
 from lp.registry.model.milestone import HasMilestonesMixin, Milestone
 from lp.registry.model.packaging import Packaging
 from lp.registry.model.person import Person
@@ -73,7 +76,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLObjectNotFound,
     StringCol,
 )
 from lp.services.database.stormexpr import WithMaterialized, fti_search
@@ -89,7 +91,10 @@ from lp.soyuz.enums import (
     PackageUploadStatus,
 )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
-from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
+from lp.soyuz.interfaces.binarypackagename import (
+    IBinaryPackageName,
+    IBinaryPackageNameSet,
+)
 from lp.soyuz.interfaces.distributionjob import (
     IInitializeDistroSeriesJobSource,
 )
@@ -1042,9 +1047,8 @@ class DistroSeries(
     def getSourcePackage(self, name):
         """See `IDistroSeries`."""
         if not ISourcePackageName.providedBy(name):
-            try:
-                name = SourcePackageName.byName(name)
-            except SQLObjectNotFound:
+            name = getUtility(ISourcePackageNameSet).queryByName(name)
+            if name is None:
                 return None
         return getUtility(ISourcePackageFactory).new(
             sourcepackagename=name, distroseries=self
@@ -1053,11 +1057,7 @@ class DistroSeries(
     def getBinaryPackage(self, name):
         """See `IDistroSeries`."""
         if not IBinaryPackageName.providedBy(name):
-            name = (
-                IStore(BinaryPackageName)
-                .find(BinaryPackageName, name=name)
-                .one()
-            )
+            name = getUtility(IBinaryPackageNameSet).queryByName(name)
             if name is None:
                 return None
         return DistroSeriesBinaryPackage(self, name)

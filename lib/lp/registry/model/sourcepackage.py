@@ -666,7 +666,7 @@ class SourcePackage(
         SourcePackagePublishingHistory.archive = BinaryPackageBuild.archive
         """
             % sqlvalues(
-                self.sourcepackagename,
+                self.sourcepackagename.id,
                 self.distroseries,
                 list(self.distribution.all_distro_archive_ids),
             )

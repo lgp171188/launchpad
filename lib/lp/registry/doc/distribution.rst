@@ -73,15 +73,17 @@ Let's make sure a distribution object properly implements its interfaces.
 Once you've got a distribution, you can retrieve a source package if you
 have a SourcePackageName object for it.
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.registry.interfaces.distributionsourcepackage import (
     ...     IDistributionSourcePackage,
+    ... )
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
     ... )
     >>> from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     ...     IDistributionSourcePackageRelease,
     ... )
 
-    >>> evo = SourcePackageName.byName("evolution")
+    >>> evo = getUtility(ISourcePackageNameSet)["evolution"]
     >>> evo_ubuntu = ubuntu.getSourcePackage(evo)
     >>> print(evo_ubuntu.name)
     evolution

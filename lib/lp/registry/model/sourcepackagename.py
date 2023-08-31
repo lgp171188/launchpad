@@ -7,7 +7,7 @@ __all__ = [
     "getSourcePackageDescriptions",
 ]
 
-import six
+from storm.properties import Int, Unicode
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
@@ -17,26 +17,21 @@ from lp.registry.interfaces.sourcepackagename import (
     ISourcePackageName,
     ISourcePackageNameSet,
 )
-from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
-from lp.services.database.sqlobject import (
-    SQLMultipleJoin,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import cursor, sqlvalues
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ISourcePackageName)
-class SourcePackageName(SQLBase):
-    _table = "SourcePackageName"
+class SourcePackageName(StormBase):
+    __storm_table__ = "SourcePackageName"
 
-    name = StringCol(
-        dbName="name", notNull=True, unique=True, alternateID=True
-    )
+    id = Int(primary=True)
+    name = Unicode(name="name", allow_none=False)
 
-    potemplates = SQLMultipleJoin("POTemplate", joinColumn="sourcepackagename")
-    packagings = SQLMultipleJoin(
-        "Packaging", joinColumn="sourcepackagename", orderBy="Packaging.id"
-    )
+    def __init__(self, name):
+        super().__init__()
+        self.name = name
 
     def __str__(self):
         return self.name
@@ -44,46 +39,52 @@ class SourcePackageName(SQLBase):
     def __repr__(self):
         return "<%s '%s'>" % (self.__class__.__name__, self.name)
 
+    @classmethod
     def ensure(klass, name):
-        try:
-            return klass.byName(name)
-        except SQLObjectNotFound:
-            return klass(name=name)
-
-    ensure = classmethod(ensure)
+        spn = IStore(klass).find(klass, name=name).one()
+        if spn is None:
+            spn = klass(name=name)
+        return spn
 
 
 @implementer(ISourcePackageNameSet)
 class SourcePackageNameSet:
     def __getitem__(self, name):
         """See `ISourcePackageNameSet`."""
-        name = six.ensure_text(name, "ASCII")
-        try:
-            return SourcePackageName.byName(name)
-        except SQLObjectNotFound:
+        spn = self.queryByName(name)
+        if spn is None:
             raise NoSuchSourcePackageName(name)
+        return spn
 
     def get(self, sourcepackagenameid):
         """See `ISourcePackageNameSet`."""
-        try:
-            return SourcePackageName.get(sourcepackagenameid)
-        except SQLObjectNotFound:
+        spn = IStore(SourcePackageName).get(
+            SourcePackageName, sourcepackagenameid
+        )
+        if spn is None:
             raise NotFoundError(sourcepackagenameid)
+        return spn
 
     def getAll(self):
         """See `ISourcePackageNameSet`."""
-        return SourcePackageName.select()
+        return IStore(SourcePackageName).find(SourcePackageName)
 
     def queryByName(self, name):
         """See `ISourcePackageNameSet`."""
-        return SourcePackageName.selectOneBy(name=name)
+        return (
+            IStore(SourcePackageName).find(SourcePackageName, name=name).one()
+        )
 
     def new(self, name):
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for a source package." % name
             )
-        return SourcePackageName(name=name)
+        spn = SourcePackageName(name=name)
+        store = IStore(SourcePackageName)
+        store.add(spn)
+        store.flush()
+        return spn
 
     def getOrCreateByName(self, name):
         try:

@@ -112,7 +112,9 @@ Now let's try the same against the evolution sourcepackage that only has an
 IPOTemplate.
 
     >>> hoary_distroseries = DistroSeries.get(3)
-    >>> evolution_sourcepackagename = SourcePackageName.get(9)
+    >>> evolution_sourcepackagename = IStore(SourcePackageName).get(
+    ...     SourcePackageName, 9
+    ... )
     >>> entry = translationimportqueue.addOrUpdateEntry(
     ...     "po/sr.po",
     ...     b"foo",

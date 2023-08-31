@@ -325,10 +325,12 @@ Now continue with the real upload.
 Let's check if packages were uploaded correctly.
 
     >>> from operator import attrgetter
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> spn = SourcePackageName.selectOneBy(name="drdsl")
+    >>> spn = getUtility(ISourcePackageNameSet)["drdsl"]
     >>> print(spn.name)
     drdsl
     >>> spr = (
@@ -364,7 +366,7 @@ Let's check if packages were uploaded correctly.
 
 Same thing for etherwake:
 
-    >>> spn = SourcePackageName.selectOneBy(name="etherwake")
+    >>> spn = getUtility(ISourcePackageNameSet)["etherwake"]
     >>> print(spn.name)
     etherwake
     >>> spr = (
@@ -434,7 +436,7 @@ as NEW and RELEASE.
     >>> from lp.soyuz.model.queue import PackageUploadSource
     >>> for name in package_names:
     ...     print(name)
-    ...     spn = SourcePackageName.selectOneBy(name=name)
+    ...     spn = getUtility(ISourcePackageNameSet)[name]
     ...     spr = (
     ...         IStore(SourcePackageRelease)
     ...         .find(SourcePackageRelease, sourcepackagename=spn)
@@ -508,7 +510,7 @@ These packages must now be in the publishing history. Let's check it.
     ... )
     >>> package_names.sort()
     >>> for name in package_names:
-    ...     spn = SourcePackageName.selectOneBy(name=name)
+    ...     spn = getUtility(ISourcePackageNameSet)[name]
     ...     spr = (
     ...         IStore(SourcePackageRelease)
     ...         .find(SourcePackageRelease, sourcepackagename=spn)

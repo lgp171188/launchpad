@@ -8,7 +8,7 @@ __all__ = [
     "ISourcePackageNameSet",
 ]
 
-from zope.interface import Attribute, Interface
+from zope.interface import Interface
 from zope.schema import Int, TextLine
 
 from lp import _
@@ -27,11 +27,6 @@ class ISourcePackageName(Interface):
         title=_("Valid Source package name"),
         required=True,
         constraint=name_validator,
-    )
-    potemplates = Attribute("The list of PO templates that this object has.")
-    packagings = Attribute(
-        "Everything we know about the packaging of "
-        "packages with this source package name."
     )
 
     def __str__():

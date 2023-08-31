@@ -271,7 +271,9 @@ class DistroSeriesDifferenceJob(DistributionJobDerived):
 
     @property
     def sourcepackagename(self):
-        return SourcePackageName.get(self.metadata["sourcepackagename"])
+        return IStore(SourcePackageName).get(
+            SourcePackageName, self.metadata["sourcepackagename"]
+        )
 
     @property
     def derived_series(self):

@@ -19,11 +19,9 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
-from lp.registry.model.sourcepackagename import (
-    SourcePackageName,
-    SourcePackageNameSet,
-)
+from lp.registry.model.sourcepackagename import SourcePackageNameSet
 from lp.services.database.interfaces import IPrimaryStore
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory, verifyObject
@@ -87,7 +85,7 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         )
 
         self.distro = Distribution.byName("ubuntu")
-        self.sourcepackagename = SourcePackageName.byName("evolution")
+        self.sourcepackagename = getUtility(ISourcePackageNameSet)["evolution"]
         self.package_codes["Brazilian"] = CustomLanguageCode(
             translation_target=self.distro.getSourcePackage(
                 self.sourcepackagename
@@ -118,7 +116,7 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         brazilian = gentoo_package.getCustomLanguageCode("Brazilian")
         self.assertEqual(brazilian, None)
 
-        cnews = SourcePackageName.byName("cnews")
+        cnews = getUtility(ISourcePackageNameSet)["cnews"]
         cnews_package = self.distro.getSourcePackage(cnews)
         self.assertEqual(cnews_package.getCustomLanguageCode("nocode"), None)
         self.assertEqual(

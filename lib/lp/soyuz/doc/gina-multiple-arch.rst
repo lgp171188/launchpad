@@ -176,9 +176,13 @@ distroarchseries:
 
 Check that the source package was correctly imported:
 
-    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> ekg_name = SourcePackageName.selectOneBy(name="ekg")
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> from lp.soyuz.interfaces.binarypackagename import (
+    ...     IBinaryPackageNameSet,
+    ... )
+    >>> ekg_name = getUtility(ISourcePackageNameSet)["ekg"]
     >>> ekg = (
     ...     IStore(SourcePackageRelease)
     ...     .find(
@@ -195,11 +199,7 @@ Check that the source package was correctly imported:
 
 And that one of the packages in main is here too:
 
-    >>> libgadu_dev_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="libgadu-dev")
-    ...     .one()
-    ... )
+    >>> libgadu_dev_name = getUtility(IBinaryPackageNameSet)["libgadu-dev"]
     >>> libgadu_dev = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -223,11 +223,7 @@ processed. In particular, its section should be stripped of the
 component name.
 
     >>> from lp.soyuz.enums import PackagePublishingPriority
-    >>> ekg_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="ekg")
-    ...     .one()
-    ... )
+    >>> ekg_name = getUtility(IBinaryPackageNameSet)["ekg"]
     >>> ekg = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
@@ -250,11 +246,7 @@ package files are in main! Gina to the rescue: it finds them in the
 right place, updates the component, and creates it with a semi-bogus
 DSC.
 
-    >>> bdftopcf_name = (
-    ...     IStore(BinaryPackageName)
-    ...     .find(BinaryPackageName, name="bdftopcf")
-    ...     .one()
-    ... )
+    >>> bdftopcf_name = getUtility(IBinaryPackageNameSet)["bdftopcf"]
     >>> bdftopcf = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(

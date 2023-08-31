@@ -2122,7 +2122,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = six.ensure_text(query).lower()
+        query = query.lower()
         results = IStore(self._table).find(
             self._table,
             Or(
