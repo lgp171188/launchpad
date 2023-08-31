@@ -111,7 +111,7 @@ this IPOFile is located ('po/')
 Now let's try the same against the evolution sourcepackage that only has an
 IPOTemplate.
 
-    >>> hoary_distroseries = DistroSeries.get(3)
+    >>> hoary_distroseries = IStore(DistroSeries).get(DistroSeries, 3)
     >>> evolution_sourcepackagename = IStore(SourcePackageName).get(
     ...     SourcePackageName, 9
     ... )

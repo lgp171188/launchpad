@@ -548,7 +548,7 @@ def _build_query(params):
             # distroseries. We only include these when we need to.
             if params.distroseries is not None:
                 distroseries_id = params.distroseries.id
-                parent_distro_id = params.distroseries.distributionID
+                parent_distro_id = params.distroseries.distribution_id
             else:
                 distroseries_id = 0
                 parent_distro_id = 0

@@ -878,7 +878,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
         return [
             dsd
             for dsd in candidates
-            if dsd.parent_series.distributionID == source_distro_id
+            if dsd.parent_series.distribution_id == source_distro_id
         ]
 
     def reportFailure(self, message):

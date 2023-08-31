@@ -944,7 +944,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         archives = load_related(Archive, builds, ["archive_id"])
         load_related(Person, archives, ["ownerID"])
         distroseries = load_related(DistroSeries, das, ["distroseries_id"])
-        load_related(Distribution, distroseries, ["distributionID"])
+        load_related(Distribution, distroseries, ["distribution_id"])
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""

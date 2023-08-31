@@ -86,8 +86,9 @@ And IHasTranslationImports:
 
 To search the set of IDistroSeriess, use IDistroSeriesSet.search:
 
+    >>> from storm.expr import Desc
     >>> ubuntu_releases = distroseriesset.search(
-    ...     distribution=ubuntu, isreleased=True, orderBy="-datereleased"
+    ...     distribution=ubuntu, isreleased=True, orderBy=Desc("datereleased")
     ... )
     >>> for release in ubuntu_releases:
     ...     print(release.name)

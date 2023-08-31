@@ -229,7 +229,7 @@ class PackageCloner:
             WHERE mcd.obsoleted = True OR mcd.missing = True
             """
             % sqlvalues(
-                destination.distroseries,
+                destination.distroseries.id,
                 destination.archive,
                 UTC_NOW,
                 UTC_NOW,
@@ -294,7 +294,7 @@ class PackageCloner:
             origin.archive,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
-            origin.distroseries,
+            origin.distroseries.id,
             origin.pocket,
         )
 
@@ -337,7 +337,7 @@ class PackageCloner:
             origin.archive,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
-            origin.distroseries,
+            origin.distroseries.id,
             origin.pocket,
         )
 
@@ -417,7 +417,7 @@ class PackageCloner:
             destination.archive,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
-            destination.distroseries,
+            destination.distroseries.id,
             destination.pocket,
         )
 
@@ -464,12 +464,12 @@ class PackageCloner:
                 spph.pocket = %s AND
                 spph.archive = %s
             """ % sqlvalues(
-            destination.distroseries,
+            destination.distroseries.id,
             destination.archive,
             UTC_NOW,
             UTC_NOW,
             destination.pocket,
-            origin.distroseries,
+            origin.distroseries.id,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.pocket,

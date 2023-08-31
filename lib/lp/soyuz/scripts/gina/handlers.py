@@ -245,7 +245,11 @@ class ImporterHandler:
 
     def _get_distroseries(self, name):
         """Return the distroseries database object by name."""
-        dr = DistroSeries.selectOneBy(name=name, distributionID=self.distro.id)
+        dr = (
+            IStore(DistroSeries)
+            .find(DistroSeries, name=name, distribution=self.distro)
+            .one()
+        )
         if not dr:
             raise DataSetupError("Error finding distroseries %r" % name)
         return dr

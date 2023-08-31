@@ -278,8 +278,8 @@ First, let's get some useful objects from the db.
     >>> pmount = sourcepackagenameset["pmount"]
 
     >>> from lp.registry.model.distroseries import DistroSeries
-    >>> warty = DistroSeries.get(1)
-    >>> hoary = DistroSeries.get(3)
+    >>> warty = IStore(DistroSeries).get(DistroSeries, 1)
+    >>> hoary = IStore(DistroSeries).get(DistroSeries, 3)
 
 Now let's make sure that we can see a productseries for a source
 package.

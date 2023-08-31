@@ -964,7 +964,7 @@ def list_distroseries_request_targets(status_condition):
     distroseries = IStore(DistroSeries).find(
         DistroSeries,
         DistroSeries.defer_translation_imports == False,
-        Distribution.id == DistroSeries.distributionID,
+        Distribution.id == DistroSeries.distribution_id,
         DistroSeries.id.is_in(
             Select(
                 TranslationImportQueueEntry.distroseries_id,

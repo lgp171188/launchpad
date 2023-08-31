@@ -643,7 +643,7 @@ Set ubuntutest/breezy to 'experimental' state again to not affect the
 rest of the test:
 
     >>> breezy.status = SeriesStatus.EXPERIMENTAL
-    >>> breezy.syncUpdate()
+    >>> IStore(breezy).flush()
 
 
 Regression test for bug 54039. Currently must be here, see bug 54158.
