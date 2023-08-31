@@ -1,0 +1,14 @@
+
+[librarian-logs]
+  # /var/log/apache2/ is root:adm 0640, so we can't drop privileges to read
+  # it.
+  uid = root
+  gid = *
+  path = /var/log/apache2/
+  comment = LP Librarian Logs
+  list = false
+  read only = true
+  hosts allow = {{ librarian_log_hosts_allow }}
+  exclude = *
+  include = {{ domain_librarian }}-access*
+

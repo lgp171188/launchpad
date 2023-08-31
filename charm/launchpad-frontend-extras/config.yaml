@@ -11,6 +11,12 @@ options:
     type: boolean
     description: Whether to enable the "media" domain.
     default: false
+  librarian_log_hosts_allow:
+    type: string
+    description: >
+      Space-separated list of hosts that should be allowed to rsync
+      librarian logs.
+    default: ""
   offline_mode:
     type: string
     description: >

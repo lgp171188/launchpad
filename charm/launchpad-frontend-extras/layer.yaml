@@ -1,4 +1,5 @@
 includes:
   - layer:basic
   - interface:apache-website
+  - interface:juju-info
 repo: https://git.launchpad.net/launchpad
