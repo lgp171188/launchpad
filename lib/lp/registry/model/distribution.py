@@ -155,12 +155,7 @@ from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.sqlobject import BoolCol, ForeignKey, StringCol
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -1358,9 +1353,12 @@ class Distribution(
         if ISourcePackageName.providedBy(name):
             sourcepackagename = name
         else:
-            try:
-                sourcepackagename = SourcePackageName.byName(name)
-            except SQLObjectNotFound:
+            sourcepackagename = (
+                IStore(SourcePackageName)
+                .find(SourcePackageName, name=name)
+                .one()
+            )
+            if sourcepackagename is None:
                 return None
         return DistributionSourcePackage(self, sourcepackagename)
 
@@ -1748,7 +1746,11 @@ class Distribution(
                 "published in it" % (self.displayname, pkgname)
             )
 
-        sourcepackagename = SourcePackageName.selectOneBy(name=pkgname)
+        sourcepackagename = (
+            IStore(SourcePackageName)
+            .find(SourcePackageName, name=pkgname)
+            .one()
+        )
         if sourcepackagename:
             # Note that in the source package case, we don't restrict
             # the search to the distribution release, making a best

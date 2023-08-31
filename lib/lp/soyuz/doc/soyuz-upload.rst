@@ -328,7 +328,11 @@ Let's check if packages were uploaded correctly.
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
     >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> spn = SourcePackageName.selectOneBy(name="drdsl")
+    >>> spn = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="drdsl")
+    ...     .one()
+    ... )
     >>> print(spn.name)
     drdsl
     >>> spr = (
@@ -364,7 +368,11 @@ Let's check if packages were uploaded correctly.
 
 Same thing for etherwake:
 
-    >>> spn = SourcePackageName.selectOneBy(name="etherwake")
+    >>> spn = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="etherwake")
+    ...     .one()
+    ... )
     >>> print(spn.name)
     etherwake
     >>> spr = (
@@ -434,7 +442,11 @@ as NEW and RELEASE.
     >>> from lp.soyuz.model.queue import PackageUploadSource
     >>> for name in package_names:
     ...     print(name)
-    ...     spn = SourcePackageName.selectOneBy(name=name)
+    ...     spn = (
+    ...         IStore(SourcePackageName)
+    ...         .find(SourcePackageName, name=name)
+    ...         .one()
+    ...     )
     ...     spr = (
     ...         IStore(SourcePackageRelease)
     ...         .find(SourcePackageRelease, sourcepackagename=spn)
@@ -508,7 +520,11 @@ These packages must now be in the publishing history. Let's check it.
     ... )
     >>> package_names.sort()
     >>> for name in package_names:
-    ...     spn = SourcePackageName.selectOneBy(name=name)
+    ...     spn = (
+    ...         IStore(SourcePackageName)
+    ...         .find(SourcePackageName, name=name)
+    ...         .one()
+    ...     )
     ...     spr = (
     ...         IStore(SourcePackageRelease)
     ...         .find(SourcePackageRelease, sourcepackagename=spn)

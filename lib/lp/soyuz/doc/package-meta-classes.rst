@@ -26,7 +26,11 @@ Combining Distribution and SourcePackageRelease:
     >>> print(distribution.name)
     ubuntu
 
-    >>> src_name = SourcePackageName.selectOneBy(name="pmount")
+    >>> src_name = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="pmount")
+    ...     .one()
+    ... )
     >>> print(src_name.name)
     pmount
 

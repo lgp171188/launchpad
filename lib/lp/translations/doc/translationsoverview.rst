@@ -162,7 +162,11 @@ list as well.
 
     >>> start_karma_update()
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
-    >>> evolution_sourcepackagename = SourcePackageName.byName("evolution")
+    >>> evolution_sourcepackagename = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="evolution")
+    ...     .one()
+    ... )
     >>> cache_entry = karmacachemanager.new(
     ...     5150,
     ...     carlos.id,

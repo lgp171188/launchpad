@@ -73,7 +73,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLObjectNotFound,
     StringCol,
 )
 from lp.services.database.stormexpr import WithMaterialized, fti_search
@@ -1042,9 +1041,12 @@ class DistroSeries(
     def getSourcePackage(self, name):
         """See `IDistroSeries`."""
         if not ISourcePackageName.providedBy(name):
-            try:
-                name = SourcePackageName.byName(name)
-            except SQLObjectNotFound:
+            name = (
+                IStore(SourcePackageName)
+                .find(SourcePackageName, name=name)
+                .one()
+            )
+            if name is None:
                 return None
         return getUtility(ISourcePackageFactory).new(
             sourcepackagename=name, distroseries=self

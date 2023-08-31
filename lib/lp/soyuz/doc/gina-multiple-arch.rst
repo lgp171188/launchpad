@@ -178,7 +178,11 @@ Check that the source package was correctly imported:
 
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> ekg_name = SourcePackageName.selectOneBy(name="ekg")
+    >>> ekg_name = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="ekg")
+    ...     .one()
+    ... )
     >>> ekg = (
     ...     IStore(SourcePackageRelease)
     ...     .find(

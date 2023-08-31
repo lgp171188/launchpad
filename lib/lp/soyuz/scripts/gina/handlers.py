@@ -40,7 +40,6 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
@@ -592,9 +591,12 @@ class SourcePackageHandler:
 
         Returns the sourcepackagerelease if exists or none if not.
         """
-        try:
-            spname = SourcePackageName.byName(source)
-        except SQLObjectNotFound:
+        spname = (
+            IStore(SourcePackageName)
+            .find(SourcePackageName, name=source)
+            .one()
+        )
+        if spname is None:
             return None
 
         # Check if this sourcepackagerelease already exists using name and

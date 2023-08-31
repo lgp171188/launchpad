@@ -116,6 +116,7 @@ some DB classes.
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.translations.model.potemplate import POTemplate
 
 Get hold of a person.
@@ -130,7 +131,11 @@ Get the Grumpy distro series.
 
 Get a source package name to go with our distro series.
 
-    >>> spn = SourcePackageName.byName("evolution")
+    >>> spn = (
+    ...     IStore(SourcePackageName)
+    ...     .find(SourcePackageName, name="evolution")
+    ...     .one()
+    ... )
 
 Put a dummy file in the Librarian required by the new template we are
 creating.

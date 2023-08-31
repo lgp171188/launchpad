@@ -1096,7 +1096,11 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         self._checkPartnerUploadEmailSuccess()
 
         # Find the sourcepackagerelease and check its component.
-        foocomm_name = SourcePackageName.selectOneBy(name="foocomm")
+        foocomm_name = (
+            IStore(SourcePackageName)
+            .find(SourcePackageName, name="foocomm")
+            .one()
+        )
         foocomm_spr = (
             IStore(SourcePackageRelease)
             .find(SourcePackageRelease, sourcepackagename=foocomm_name)
