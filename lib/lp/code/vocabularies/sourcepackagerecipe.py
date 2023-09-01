@@ -17,16 +17,13 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.sorting import sorted_dotted_numbers
-from lp.services.webapp.vocabulary import (
-    IHugeVocabulary,
-    SQLObjectVocabularyBase,
-)
+from lp.services.webapp.vocabulary import IHugeVocabulary, StormVocabularyBase
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.vocabularies import make_archive_vocabulary
 
 
 @implementer(IHugeVocabulary)
-class BuildableDistroSeries(SQLObjectVocabularyBase):
+class BuildableDistroSeries(StormVocabularyBase):
     _table = DistroSeries
 
     def toTerm(self, obj):

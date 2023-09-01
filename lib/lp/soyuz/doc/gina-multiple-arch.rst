@@ -60,8 +60,10 @@ Create a distribution series and an arch series for dapper:
 Check it was properly created and create its DistroArchSeriess.
 
     >>> from lp.registry.model.distroseries import DistroSeries
-    >>> dapper = DistroSeries.selectOneBy(
-    ...     name="dapper", distributionID=ubuntu.id
+    >>> dapper = (
+    ...     IStore(DistroSeries)
+    ...     .find(DistroSeries, name="dapper", distribution=ubuntu)
+    ...     .one()
     ... )
     >>> processor = getUtility(IProcessorSet).getByName("386")
     >>> dar = dapper.newArch(

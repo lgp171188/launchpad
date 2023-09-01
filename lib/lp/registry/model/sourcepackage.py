@@ -667,7 +667,7 @@ class SourcePackage(
         """
             % sqlvalues(
                 self.sourcepackagename.id,
-                self.distroseries,
+                self.distroseries.id,
                 list(self.distribution.all_distro_archive_ids),
             )
         ]
@@ -877,19 +877,19 @@ class SourcePackage(
         We look for the source package task, followed by the distro source
         package, then the distroseries task, and lastly the distro task.
         """
-        sourcepackagenameID = self.sourcepackagename.id
-        seriesID = self.distroseries.id
-        distributionID = self.distroseries.distributionID
+        sourcepackagename_id = self.sourcepackagename.id
+        series_id = self.distroseries.id
+        distribution_id = self.distroseries.distribution_id
 
         def weight_function(bugtask):
-            if bugtask.sourcepackagename_id == sourcepackagenameID:
-                if bugtask.distroseries_id == seriesID:
+            if bugtask.sourcepackagename_id == sourcepackagename_id:
+                if bugtask.distroseries_id == series_id:
                     return OrderedBugTask(1, bugtask.id, bugtask)
-                elif bugtask.distribution_id == distributionID:
+                elif bugtask.distribution_id == distribution_id:
                     return OrderedBugTask(2, bugtask.id, bugtask)
-            elif bugtask.distroseries_id == seriesID:
+            elif bugtask.distroseries_id == series_id:
                 return OrderedBugTask(3, bugtask.id, bugtask)
-            elif bugtask.distribution_id == distributionID:
+            elif bugtask.distribution_id == distribution_id:
                 return OrderedBugTask(4, bugtask.id, bugtask)
             # Catch the default case, and where there is a task for the same
             # sourcepackage on a different distro.

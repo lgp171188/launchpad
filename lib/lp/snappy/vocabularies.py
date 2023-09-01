@@ -118,7 +118,7 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
             DistroSeries,
             SnappyDistroSeries.distro_series_id == DistroSeries.id,
         ),
-        LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
+        LeftJoin(Distribution, DistroSeries.distribution == Distribution.id),
         SnappySeries,
     ]
     _clauses = [

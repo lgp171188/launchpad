@@ -252,7 +252,7 @@ def preload_work_items(work_items):
     load_related(Language, pofiles, ["language_id"])
     templates = load_related(POTemplate, pofiles, ["potemplate_id"])
     distroseries = load_related(DistroSeries, templates, ["distroseries_id"])
-    load_related(Distribution, distroseries, ["distributionID"])
+    load_related(Distribution, distroseries, ["distribution_id"])
     productseries = load_related(
         ProductSeries, templates, ["productseries_id"]
     )

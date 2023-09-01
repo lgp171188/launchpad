@@ -752,12 +752,10 @@ class Distribution(
     enable_bug_expiration = BoolCol(
         dbName="enable_bug_expiration", notNull=True, default=False
     )
-    translation_focus = ForeignKey(
-        dbName="translation_focus",
-        foreignKey="DistroSeries",
-        notNull=False,
-        default=None,
+    translation_focus_id = Int(
+        name="translation_focus", allow_none=True, default=None
     )
+    translation_focus = Reference(translation_focus_id, "DistroSeries.id")
     date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
     language_pack_admin = ForeignKey(
         dbName="language_pack_admin",
@@ -1001,16 +999,16 @@ class Distribution(
         """See `IDistribution`."""
         ParentDistroSeries = ClassAlias(DistroSeries)
         # XXX rvb 2011-04-08 bug=754750: The clause
-        # 'DistroSeries.distributionID!=self.id' is only required
+        # 'DistroSeries.distribution_id!=self.id' is only required
         # because the previous_series attribute has been (mis-)used
         # to denote other relations than proper derivation
         # relationships. We should be rid of this condition once
         # the bug is fixed.
         ret = Store.of(self).find(
             DistroSeries,
-            ParentDistroSeries.id == DistroSeries.previous_seriesID,
-            ParentDistroSeries.distributionID == self.id,
-            DistroSeries.distributionID != self.id,
+            ParentDistroSeries.id == DistroSeries.previous_series_id,
+            ParentDistroSeries.distribution_id == self.id,
+            DistroSeries.distribution_id != self.id,
         )
         return ret.config(distinct=True).order_by(
             Desc(DistroSeries.date_created)
@@ -1067,7 +1065,7 @@ class Distribution(
         ds_ids = Select(
             DistroSeries.id,
             tables=[DistroSeries],
-            where=DistroSeries.distributionID == self.id,
+            where=DistroSeries.distribution_id == self.id,
         )
         clauses = [
             DistroSeries.id.is_in(ds_ids),
@@ -2093,6 +2091,7 @@ class Distribution(
         # RBC 20100816.
         del get_property_cache(self).series
 
+        IStore(series).flush()
         return series
 
     @property
@@ -2461,7 +2460,7 @@ class DistributionSet:
                 SourcePackagePublishingHistory.distroseries_id
                 == DistroSeries.id
             ],
-            DistroSeries.distributionID,
+            DistroSeries.distribution_id,
         )
         result = {}
         for spr, distro_id in releases:
@@ -2478,9 +2477,9 @@ class DistributionSet:
             IStore(DistroSeries)
             .find(
                 Distribution,
-                Distribution.id == DistroSeries.distributionID,
+                Distribution.id == DistroSeries.distribution_id,
                 DistroSeries.id == DistroSeriesParent.derived_series_id,
-                DistroSeries.distributionID != ubuntu_id,
+                DistroSeries.distribution_id != ubuntu_id,
             )
             .config(distinct=True)
         )

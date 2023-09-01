@@ -74,7 +74,7 @@ def _get_locals():
         # Do we really use these?  Are they worth carrying around?
         d = Distribution.get(1)
         p = Person.get(1)
-        ds = DistroSeries.get(1)
+        ds = store.get(DistroSeries, 1)
         prod = store.get(Product, 1)
         proj = store.get(ProjectGroup, 1)
         b2 = store.get(Bug, 2)

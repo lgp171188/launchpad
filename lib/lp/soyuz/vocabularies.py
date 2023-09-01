@@ -69,7 +69,7 @@ class FilteredDistroArchSeriesVocabulary(StormVocabularyBase):
                 .find(
                     self._table,
                     DistroSeries.id == DistroArchSeries.distroseries_id,
-                    DistroSeries.distributionID == distribution.id,
+                    DistroSeries.distribution == distribution,
                 )
                 .order_by(*self._orderBy)
             )

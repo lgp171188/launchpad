@@ -311,10 +311,10 @@ class TranslationsPerson:
                     Join(
                         Distribution,
                         And(
-                            Distribution.id == DistroSeries.distributionID,
+                            Distribution.id == DistroSeries.distribution_id,
                             Distribution.translations_usage
                             == ServiceUsage.LAUNCHPAD,
-                            Distribution.translation_focusID
+                            Distribution.translation_focus_id
                             == DistroSeries.id,
                         ),
                     ),
@@ -397,9 +397,9 @@ class TranslationsPerson:
         # If there's a DistroSeries, it should be the distro's
         # translation focus.
         distrojoin_conditions = And(
-            Distribution.id == DistroSeries.distributionID,
+            Distribution.id == DistroSeries.distribution_id,
             Distribution.translations_usage == ServiceUsage.LAUNCHPAD,
-            Distribution.translation_focusID == DistroSeries.id,
+            Distribution.translation_focus_id == DistroSeries.id,
         )
 
         DistroJoin = LeftJoin(Distribution, distrojoin_conditions)

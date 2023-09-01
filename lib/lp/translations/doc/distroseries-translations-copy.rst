@@ -201,7 +201,8 @@ set.
 
     >>> transaction.abort()
     >>> from lp.registry.model.distroseries import DistroSeries
-    >>> darty = DistroSeries.get(darty_id)
+    >>> from lp.services.database.interfaces import IStore
+    >>> darty = IStore(DistroSeries).get(DistroSeries, darty_id)
     >>> darty.defer_translation_imports
     False
     >>> darty.hide_all_translations
@@ -211,7 +212,7 @@ It succeeds, however, when we pass the --force option.  The script then
 sets the defer_translation_imports flag itself before copying.
 
     >>> transaction.abort()
-    >>> darty = DistroSeries.get(darty_id)
+    >>> darty = IStore(DistroSeries).get(DistroSeries, darty_id)
     >>> returnvalue, output, error_output = run_script(
     ...     "scripts/copy-distroseries-translations.py",
     ...     ["--distribution=foobuntu", "--series=darty", "--force"],
@@ -243,7 +244,7 @@ After completing, the script restores the defer_translation_imports
 flag to its previous value (off).
 
     >>> transaction.abort()
-    >>> darty = DistroSeries.get(darty_id)
+    >>> darty = IStore(DistroSeries).get(DistroSeries, darty_id)
     >>> darty.defer_translation_imports
     False
     >>> darty.hide_all_translations
@@ -331,7 +332,7 @@ for package2, and template3 is inactive, so they're both skipped.
     >>> returnvalue
     0
     >>> transaction.abort()
-    >>> lumpy = DistroSeries.get(lumpy_id)
+    >>> lumpy = IStore(DistroSeries).get(DistroSeries, lumpy_id)
     >>> len(getUtility(IPOTemplateSet).getSubset(distroseries=lumpy))
     0
 
@@ -354,7 +355,7 @@ for package2, and template3 is inactive, so they're both skipped.
     >>> returnvalue
     0
     >>> transaction.abort()
-    >>> lumpy = DistroSeries.get(lumpy_id)
+    >>> lumpy = IStore(DistroSeries).get(DistroSeries, lumpy_id)
     >>> for pot in getUtility(IPOTemplateSet).getSubset(distroseries=lumpy):
     ...     print(pot.name)
     ...

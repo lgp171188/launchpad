@@ -147,7 +147,6 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
-from lp.services.database.sqlobject import AND, CONTAINSSTRING, OR
 from lp.services.database.stormexpr import (
     RegexpMatch,
     WithMaterialized,
@@ -1342,11 +1341,11 @@ class ProductSeriesVocabulary(StormVocabularyBase):
         return result
 
 
-class FilteredDistroSeriesVocabulary(SQLObjectVocabularyBase):
+class FilteredDistroSeriesVocabulary(StormVocabularyBase):
     """Describes the series of a particular distribution."""
 
     _table = DistroSeries
-    _orderBy = "version"
+    _order_by = "version"
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -1355,13 +1354,14 @@ class FilteredDistroSeriesVocabulary(SQLObjectVocabularyBase):
         )
 
     def __iter__(self):
-        kw = {}
-        if self._orderBy:
-            kw["orderBy"] = self._orderBy
         launchbag = getUtility(ILaunchBag)
         if launchbag.distribution:
             distribution = launchbag.distribution
-            series = self._table.selectBy(distributionID=distribution.id, **kw)
+            series = IStore(DistroSeries).find(
+                DistroSeries, distribution=distribution
+            )
+            if self._order_by:
+                series = series.order_by(self._order_by)
             for series in sorted(series, key=attrgetter("sortkey")):
                 yield self.toTerm(series)
 
@@ -1620,20 +1620,15 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
         return rows
 
 
-class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
+class DistroSeriesVocabulary(NamedStormVocabulary):
     """All `IDistroSeries` objects vocabulary."""
 
     _table = DistroSeries
-    _orderBy = ["Distribution.displayname", "-DistroSeries.date_created"]
-    _clauseTables = ["Distribution"]
+    _order_by = [Distribution.display_name, Desc(DistroSeries.date_created)]
+    _clauses = [DistroSeries.distribution == Distribution.id]
 
     def __iter__(self):
-        series = self._table.select(
-            DistroSeries.q.distributionID == Distribution.q.id,
-            orderBy=self._orderBy,
-            clauseTables=self._clauseTables,
-        )
-        for series in sorted(series, key=attrgetter("sortkey")):
+        for series in sorted(self._entries, key=attrgetter("sortkey")):
             yield self.toTerm(series)
 
     @staticmethod
@@ -1672,18 +1667,19 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = six.ensure_text(query).lower()
-        objs = self._table.select(
-            AND(
-                Distribution.q.id == DistroSeries.q.distributionID,
-                OR(
-                    CONTAINSSTRING(Distribution.q.name, query),
-                    CONTAINSSTRING(DistroSeries.q.name, query),
+        query = query.lower()
+        return (
+            IStore(DistroSeries)
+            .find(
+                DistroSeries,
+                DistroSeries.distribution == Distribution.id,
+                Or(
+                    Distribution.name.contains_string(query),
+                    DistroSeries.name.contains_string(query),
                 ),
-            ),
-            orderBy=self._orderBy,
+            )
+            .order_by(self._order_by)
         )
-        return objs
 
 
 @implementer(IHugeVocabulary)
@@ -1792,10 +1788,10 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
             where.append(search)
         parent_distributions = list(
             IStore(DistroSeries).find(
-                parent.distributionID,
+                parent.distribution_id,
                 And(
-                    parent.distributionID != self.distribution.id,
-                    child.distributionID == self.distribution.id,
+                    parent.distribution_id != self.distribution.id,
+                    child.distribution_id == self.distribution.id,
                     child.id == DistroSeriesParent.derived_series_id,
                     parent.id == DistroSeriesParent.parent_series_id,
                 ),
@@ -1803,7 +1799,7 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
         )
         if parent_distributions != []:
             where.append(
-                DistroSeries.distributionID.is_in(parent_distributions)
+                DistroSeries.distribution_id.is_in(parent_distributions)
             )
             return self.find_terms(where)
         else:

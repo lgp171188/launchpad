@@ -11,6 +11,7 @@ __all__ = [
 ]
 
 import collections
+from datetime import timezone
 from io import BytesIO
 from operator import itemgetter
 from typing import List
@@ -18,7 +19,15 @@ from typing import List
 import apt_pkg
 from lazr.delegates import delegate_to
 from storm.expr import SQL, And, Column, Desc, Is, Join, Not, Or, Select, Table
-from storm.locals import JSON, Int, Reference, ReferenceSet
+from storm.locals import (
+    JSON,
+    Bool,
+    DateTime,
+    Int,
+    Reference,
+    ReferenceSet,
+    Unicode,
+)
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -67,17 +76,11 @@ from lp.registry.model.series import SeriesMixin
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import WithMaterialized, fti_search
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.model import LibraryFileAlias
@@ -167,7 +170,7 @@ DEFAULT_INDEX_COMPRESSORS = [
     ISeriesBugTarget,
 )
 class DistroSeries(
-    SQLBase,
+    StormBase,
     SeriesMixin,
     BugTargetBase,
     HasSpecificationsMixin,
@@ -178,48 +181,47 @@ class DistroSeries(
 ):
     """A particular series of a distribution."""
 
-    _table = "DistroSeries"
-    _defaultOrder = ["distribution", "version"]
+    __storm_table__ = "DistroSeries"
+    __storm_order__ = ["distribution", "version"]
 
-    distribution = ForeignKey(
-        dbName="distribution", foreignKey="Distribution", notNull=True
-    )
-    name = StringCol()
-    display_name = StringCol(dbName="displayname", notNull=True)
-    title = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    version = StringCol(notNull=True)
+    id = Int(primary=True)
+    distribution_id = Int(name="distribution", allow_none=False)
+    distribution = Reference(distribution_id, "Distribution.id")
+    name = Unicode()
+    display_name = Unicode(name="displayname", allow_none=False)
+    title = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    version = Unicode(allow_none=False)
     status = DBEnum(name="releasestatus", allow_none=False, enum=SeriesStatus)
-    date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
-    datereleased = UtcDateTimeCol(notNull=False, default=None)
-    previous_series = ForeignKey(
-        dbName="parent_series", foreignKey="DistroSeries", notNull=False
+    date_created = DateTime(
+        allow_none=True, default=UTC_NOW, tzinfo=timezone.utc
     )
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    datereleased = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
+    previous_series_id = Int(name="parent_series", allow_none=True)
+    previous_series = Reference(previous_series_id, "DistroSeries.id")
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    registrant = Reference(registrant_id, "Person.id")
+    driver_id = Int(
+        name="driver",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    changeslist = StringCol(notNull=False, default=None)
+    driver = Reference(driver_id, "Person.id")
+    changeslist = Unicode(allow_none=True, default=None)
     nominatedarchindep_id = Int(
         name="nominatedarchindep", allow_none=True, default=None
     )
     nominatedarchindep = Reference(
         nominatedarchindep_id, "DistroArchSeries.id"
     )
-    messagecount = IntCol(notNull=True, default=0)
-    binarycount = IntCol(notNull=True, default=DEFAULT)
-    sourcecount = IntCol(notNull=True, default=DEFAULT)
-    defer_translation_imports = BoolCol(notNull=True, default=True)
-    hide_all_translations = BoolCol(notNull=True, default=True)
+    messagecount = Int(allow_none=False, default=0)
+    binarycount = Int(allow_none=False, default=DEFAULT)
+    sourcecount = Int(allow_none=False, default=DEFAULT)
+    defer_translation_imports = Bool(allow_none=False, default=True)
+    hide_all_translations = Bool(allow_none=False, default=True)
     language_pack_base_id = Int(
         name="language_pack_base", allow_none=True, default=None
     )
@@ -234,7 +236,7 @@ class DistroSeries(
     language_pack_proposed = Reference(
         language_pack_proposed_id, "LanguagePack.id"
     )
-    language_pack_full_export_requested = BoolCol(notNull=True, default=False)
+    language_pack_full_export_requested = Bool(allow_none=False, default=False)
     publishing_options = JSON("publishing_options")
 
     language_packs = ReferenceSet(
@@ -249,21 +251,41 @@ class DistroSeries(
         "Section.id",
     )
 
-    def __init__(self, *args, **kwargs):
-        if "publishing_options" not in kwargs:
-            kwargs["publishing_options"] = {
-                "backports_not_automatic": False,
-                "proposed_not_automatic": False,
-                "include_long_descriptions": True,
-                "index_compressors": [
-                    compressor.title
-                    for compressor in DEFAULT_INDEX_COMPRESSORS
-                ],
-                "publish_by_hash": False,
-                "advertise_by_hash": False,
-                "strict_supported_component_dependencies": True,
-            }
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        distribution,
+        name,
+        display_name,
+        title,
+        summary,
+        description,
+        version,
+        status,
+        registrant,
+        previous_series=None,
+    ):
+        super().__init__()
+        self.distribution = distribution
+        self.name = name
+        self.display_name = display_name
+        self.title = title
+        self.summary = summary
+        self.description = description
+        self.version = version
+        self.status = status
+        self.registrant = registrant
+        self.previous_series = previous_series
+        self.publishing_options = {
+            "backports_not_automatic": False,
+            "proposed_not_automatic": False,
+            "include_long_descriptions": True,
+            "index_compressors": [
+                compressor.title for compressor in DEFAULT_INDEX_COMPRESSORS
+            ],
+            "publish_by_hash": False,
+            "advertise_by_hash": False,
+            "strict_supported_component_dependencies": True,
+        }
 
     @property
     def displayname(self):
@@ -593,7 +615,7 @@ class DistroSeries(
     ) AS spn_info"""
             % sqlvalues(
                 po_message_weight=self._current_sourcepackage_po_weight,
-                distroseries=self,
+                distroseries=self.id,
                 active_status=active_publishing_status,
                 primary=ArchivePurpose.PRIMARY,
             )
@@ -702,7 +724,7 @@ class DistroSeries(
                 ON SourcePackageName.id = messages.sourcepackagename
                 AND DistroSeries.id = messages.distroseries
             """ % sqlvalues(
-            distroseries=self, po_message_weight=po_message_weight
+            distroseries=self.id, po_message_weight=po_message_weight
         )
         joins = (
             """
@@ -732,7 +754,7 @@ class DistroSeries(
             AND archive.purpose = %(primary)s
             AND section.name != 'translations'
             """ % sqlvalues(
-            distroseries=self,
+            distroseries=self.id,
             active_status=active_publishing_status,
             primary=ArchivePurpose.PRIMARY,
         )
@@ -1668,13 +1690,13 @@ class DistroSeries(
         If the series isn't found, the distribution task is better than
         others.
         """
-        seriesID = self.id
-        distributionID = self.distributionID
+        series_id = self.id
+        distribution_id = self.distribution_id
 
         def weight_function(bugtask):
-            if bugtask.distroseries_id == seriesID:
+            if bugtask.distroseries_id == series_id:
                 return OrderedBugTask(1, bugtask.id, bugtask)
-            elif bugtask.distribution_id == distributionID:
+            elif bugtask.distribution_id == distribution_id:
                 return OrderedBugTask(2, bugtask.id, bugtask)
             else:
                 return OrderedBugTask(3, bugtask.id, bugtask)
@@ -1764,7 +1786,7 @@ class DistroSeries(
 class DistroSeriesSet:
     def get(self, distroseriesid):
         """See `IDistroSeriesSet`."""
-        return DistroSeries.get(distroseriesid)
+        return IStore(DistroSeries).get(DistroSeries, distroseriesid)
 
     def translatables(self):
         """See `IDistroSeriesSet`."""
@@ -1783,7 +1805,11 @@ class DistroSeriesSet:
 
     def queryByName(self, distribution, name, follow_aliases=False):
         """See `IDistroSeriesSet`."""
-        series = DistroSeries.selectOneBy(distribution=distribution, name=name)
+        series = (
+            IStore(DistroSeries)
+            .find(DistroSeries, distribution=distribution, name=name)
+            .one()
+        )
         if series is not None:
             return series
         if follow_aliases:
@@ -1795,8 +1821,10 @@ class DistroSeriesSet:
 
     def queryByVersion(self, distribution, version):
         """See `IDistroSeriesSet`."""
-        return DistroSeries.selectOneBy(
-            distribution=distribution, version=version
+        return (
+            IStore(DistroSeries)
+            .find(DistroSeries, distribution=distribution, version=version)
+            .one()
         )
 
     def _parseSuite(self, suite):
@@ -1841,23 +1869,21 @@ class DistroSeriesSet:
 
     def search(self, distribution=None, isreleased=None, orderBy=None):
         """See `IDistroSeriesSet`."""
-        where_clause = ""
+        clauses = []
         if distribution is not None:
-            where_clause += "distribution = %s" % sqlvalues(distribution.id)
+            clauses.append(DistroSeries.distribution == distribution)
         if isreleased is not None:
-            if where_clause:
-                where_clause += " AND "
             if isreleased:
                 # The query is filtered on released releases.
-                where_clause += "releasestatus in (%s, %s)" % sqlvalues(
-                    *ACTIVE_RELEASED_STATUSES
+                clauses.append(
+                    DistroSeries.status.is_in(ACTIVE_RELEASED_STATUSES)
                 )
             else:
                 # The query is filtered on unreleased releases.
-                where_clause += "releasestatus in (%s, %s, %s)" % sqlvalues(
-                    *ACTIVE_UNRELEASED_STATUSES
+                clauses.append(
+                    DistroSeries.status.is_in(ACTIVE_UNRELEASED_STATUSES)
                 )
+        rows = IStore(DistroSeries).find(DistroSeries, *clauses)
         if orderBy is not None:
-            return DistroSeries.select(where_clause, orderBy=orderBy)
-        else:
-            return DistroSeries.select(where_clause)
+            rows = rows.order_by(orderBy)
+        return rows

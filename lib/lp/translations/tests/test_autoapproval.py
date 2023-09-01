@@ -1217,7 +1217,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertTrue(self._exists(entry_id))
 
         entry.distroseries.status = SeriesStatus.OBSOLETE
-        entry.distroseries.syncUpdate()
+        self.store.flush()
 
         self.becomeTheGardener()
         self.queue._cleanUpObsoleteDistroEntries(self.store)

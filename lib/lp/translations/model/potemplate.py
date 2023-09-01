@@ -1691,7 +1691,7 @@ class POTemplateSharingSubset:
             Location,
             LeftJoin(
                 DistroSeries,
-                DistroSeries.distributionID == Location.distribution_id,
+                DistroSeries.distribution_id == Location.distribution_id,
             ),
             LeftJoin(
                 ProductSeries, ProductSeries.product_id == Location.product_id

@@ -55,7 +55,7 @@ def compose_sql_find_latest_source_package_releases(distroseries):
     """
     parameters = {
         "active_status": quote(active_publishing_status),
-        "distroseries": quote(distroseries),
+        "distroseries": quote(distroseries.id),
         "main_archive": quote(distroseries.distribution.main_archive),
         "release_pocket": quote(PackagePublishingPocket.RELEASE),
     }
@@ -166,8 +166,8 @@ def compose_sql_populate_distroseriesdiff(
     :return: SQL query, as a string.
     """
     parameters = {
-        "derived_series": quote(derived_series),
-        "parent_series": quote(parent_series),
+        "derived_series": quote(derived_series.id),
+        "parent_series": quote(parent_series.id),
         "difference_type_expression": compose_sql_difference_type(),
         "needs_attention": quote(DistroSeriesDifferenceStatus.NEEDS_ATTENTION),
         "temp_table": quote_identifier(temp_table),

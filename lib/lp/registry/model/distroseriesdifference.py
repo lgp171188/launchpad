@@ -98,7 +98,7 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
         tables=[Archive, DistroSeries],
         where=And(
             DistroSeries.id == series_col,
-            Archive.distributionID == DistroSeries.distributionID,
+            Archive.distributionID == DistroSeries.distribution_id,
             Archive.purpose == ArchivePurpose.PRIMARY,
         ),
     )
