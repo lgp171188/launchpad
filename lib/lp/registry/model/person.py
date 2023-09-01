@@ -457,6 +457,11 @@ class Person(
                 .one()
             )
 
+    @property
+    def exported_id(self):
+        """See `IPerson`."""
+        return self.id
+
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
     # Redefine the default ordering into Storm syntax.
     _storm_sortingColumns = ("Person.displayname", "Person.name")
