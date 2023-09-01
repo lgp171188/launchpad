@@ -91,9 +91,9 @@ class SourcePackageQuestionTargetMixin(QuestionTargetMixin):
         Return True when the question's distribution and sourcepackagename
         are this object's distribution and sourcepackagename.
         """
-        if question.distribution is not self.distribution:
+        if question.distribution != self.distribution:
             return False
-        if question.sourcepackagename is not self.sourcepackagename:
+        if question.sourcepackagename != self.sourcepackagename:
             return False
         return True
 

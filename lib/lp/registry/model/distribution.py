@@ -1464,7 +1464,7 @@ class Distribution(
 
         Return True when the Question's distribution is self.
         """
-        if question.distribution is not self:
+        if question.distribution != self:
             return False
         return True
 
