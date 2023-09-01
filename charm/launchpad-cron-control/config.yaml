@@ -1,0 +1,9 @@
+options:
+  domain_cron_control:
+    type: string
+    description: Domain name for this instance's cron-control service.
+    default: "cron-control.launchpad.test"
+  webmaster_email:
+    type: string
+    description: Webmaster contact address.
+    default: "webmaster@launchpad.test"
