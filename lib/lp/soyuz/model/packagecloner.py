@@ -171,7 +171,7 @@ class PackageCloner:
                 bpph.binarypackagename
             """ % sqlvalues(
             destination_das.id,
-            destination.archive,
+            destination.archive.id,
             UTC_NOW,
             UTC_NOW,
             destination.pocket,
@@ -188,7 +188,7 @@ class PackageCloner:
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.pocket,
-            origin.archive,
+            origin.archive.id,
         )
 
         if use_names:
@@ -230,7 +230,7 @@ class PackageCloner:
             """
             % sqlvalues(
                 destination.distroseries.id,
-                destination.archive,
+                destination.archive.id,
                 UTC_NOW,
                 UTC_NOW,
                 destination.pocket,
@@ -291,7 +291,7 @@ class PackageCloner:
                 spn.name = mcd.sourcepackagename AND
                 spr.version > mcd.t_version
         """ % sqlvalues(
-            origin.archive,
+            origin.archive.id,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.distroseries.id,
@@ -334,7 +334,7 @@ class PackageCloner:
                 spn.name NOT IN (
                     SELECT sourcepackagename FROM tmp_merge_copy_data)
         """ % sqlvalues(
-            origin.archive,
+            origin.archive.id,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.distroseries.id,
@@ -414,7 +414,7 @@ class PackageCloner:
                 secsrc.distroseries = %s AND
                 secsrc.pocket = %s
         """ % sqlvalues(
-            destination.archive,
+            destination.archive.id,
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             destination.distroseries.id,
@@ -465,7 +465,7 @@ class PackageCloner:
                 spph.archive = %s
             """ % sqlvalues(
             destination.distroseries.id,
-            destination.archive,
+            destination.archive.id,
             UTC_NOW,
             UTC_NOW,
             destination.pocket,
@@ -473,7 +473,7 @@ class PackageCloner:
             PackagePublishingStatus.PENDING,
             PackagePublishingStatus.PUBLISHED,
             origin.pocket,
-            origin.archive,
+            origin.archive.id,
         )
 
         if sourcepackagenames and len(sourcepackagenames) > 0:

@@ -240,7 +240,7 @@ class ArchiveSubscriberSet:
             archives = load_related(Archive, subscriptions, ["archive_id"])
             list(
                 getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-                    [archive.ownerID for archive in archives],
+                    [archive.owner_id for archive in archives],
                     need_validity=True,
                 )
             )

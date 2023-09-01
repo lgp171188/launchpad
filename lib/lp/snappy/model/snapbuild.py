@@ -604,7 +604,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         distroarchseries = load_related(
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )

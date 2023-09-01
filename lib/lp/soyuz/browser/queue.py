@@ -190,7 +190,7 @@ class QueueItemsView(LaunchpadView):
             if upload.package_copy_job_id is not None
         }
         archives = {pcj.source_archive for pcj in package_copy_jobs}
-        person_ids = [archive.ownerID for archive in archives]
+        person_ids = [archive.owner_id for archive in archives]
         jobs = load_related(Job, package_copy_jobs, ["job_id"])
         person_ids.extend(job.requester_id for job in jobs)
         list(

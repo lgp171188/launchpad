@@ -158,7 +158,6 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     ArrayAgg,
@@ -195,6 +194,7 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     get_current_source_releases,
 )
+from lp.soyuz.model.queue import PackageUpload
 from lp.translations.enums import TranslationPermission
 from lp.translations.model.hastranslationimports import (
     HasTranslationImportsMixin,
@@ -1877,20 +1877,17 @@ class Distribution(
 
     def getPendingAcceptancePPAs(self):
         """See `IDistribution`."""
-        query = """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        PackageUpload.archive = Archive.id AND
-        PackageUpload.status = %s
-        """ % sqlvalues(
-            ArchivePurpose.PPA, self.id, PackageUploadStatus.ACCEPTED
-        )
-
-        return Archive.select(
-            query,
-            clauseTables=["PackageUpload"],
-            orderBy=["archive.id"],
-            distinct=True,
+        return (
+            IStore(Archive)
+            .find(
+                Archive,
+                Archive.purpose == ArchivePurpose.PPA,
+                Archive.distribution == self,
+                PackageUpload.archive == Archive.id,
+                PackageUpload.status == PackageUploadStatus.ACCEPTED,
+            )
+            .order_by(Archive.id)
+            .config(distinct=True)
         )
 
     def getPendingPublicationPPAs(self):
