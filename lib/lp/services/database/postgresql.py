@@ -475,63 +475,6 @@ def allow_sequential_scans(cur, permission):
     cur.execute("SET enable_seqscan=%s" % permission_value)
 
 
-def all_tables_in_schema(cur, schema):
-    """Return a set of all tables in the given schema.
-
-    :returns: A set of quoted, fully qualified table names.
-    """
-    cur.execute(
-        """
-        SELECT nspname, relname
-        FROM pg_class, pg_namespace
-        WHERE
-            pg_class.relnamespace = pg_namespace.oid
-            AND pg_namespace.nspname = %s
-            AND pg_class.relkind = 'r'
-        """
-        % sqlvalues(schema)
-    )
-    return {
-        fqn(namespace, tablename) for namespace, tablename in cur.fetchall()
-    }
-
-
-def all_sequences_in_schema(cur, schema):
-    """Return a set of all sequences in the given schema.
-
-    :returns: A set of quoted, fully qualified table names.
-    """
-    cur.execute(
-        """
-        SELECT nspname, relname
-        FROM pg_class, pg_namespace
-        WHERE
-            pg_class.relnamespace = pg_namespace.oid
-            AND pg_namespace.nspname = %s
-            AND pg_class.relkind = 'S'
-        """
-        % sqlvalues(schema)
-    )
-    return {fqn(namespace, sequence) for namespace, sequence in cur.fetchall()}
-
-
-def fqn(namespace, name):
-    """Return the fully qualified name by combining the namespace and name.
-
-    Quoting is done for the non trivial cases.
-
-    >>> print(fqn("public", "foo"))
-    public.foo
-    >>> print(fqn(" foo ", "$bar"))
-    " foo "."$bar"
-    """
-    if re.search(r"[^a-z_]", namespace) is not None:
-        namespace = quoteIdentifier(namespace)
-    if re.search(r"[^a-z_]", name) is not None:
-        name = quoteIdentifier(name)
-    return "%s.%s" % (namespace, name)
-
-
 class ConnectionString:
     """A libpq connection string.
 
