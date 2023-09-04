@@ -21,3 +21,6 @@ requires:
   juju-info:
     interface: juju-info
     scope: container
+  librarian-logs:
+    interface: juju-info
+    scope: container
