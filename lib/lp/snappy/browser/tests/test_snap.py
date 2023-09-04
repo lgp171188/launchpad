@@ -72,6 +72,7 @@ from lp.testing import (
     BrowserTestCase,
     TestCaseWithFactory,
     admin_logged_in,
+    api_url,
     login,
     login_admin,
     login_person,
@@ -88,6 +89,7 @@ from lp.testing.pages import (
     find_tag_by_id,
     find_tags_by_class,
     get_feedback_messages,
+    webservice_for_person,
 )
 from lp.testing.publication import test_traverse
 from lp.testing.views import create_initialized_view, create_view
@@ -2513,6 +2515,85 @@ class TestSnapView(BaseTestSnapView):
         browser = self.getViewBrowser(snap, user=owner)
         authorize_link = browser.getLink("Reauthorize store uploads")
         self.assertEqual(authorize_url, authorize_link.url)
+
+    def test_snap_anonymous_view(self):
+        registrant = self.factory.makePerson(name="snap-registrant")
+        team_owner = self.factory.makeTeam(
+            name="snap-creator", members=[registrant]
+        )
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        snap = self.factory.makeSnap(
+            name="core20",
+            registrant=registrant,
+            owner=team_owner,
+            date_created=date_created,
+            auto_build_channels={"snapcraft": "stable/launchpad-buildd"},
+        )
+        browser = self.getViewBrowser(
+            context=snap, no_login=True, user=registrant
+        )
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Source snap channels for automatic builds:\n"
+            "snapcraft\nstable/launchpad-buildd",
+            MatchesTagText(content, "auto_build_channels"),
+        )
+
+    # Bug #2033382
+    def test_snap_anonymous_view_byarch(self):
+        registrant = self.factory.makePerson(name="snap-registrant")
+        team_owner = self.factory.makeTeam(
+            name="snap-creator", members=[registrant]
+        )
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        snap = self.factory.makeSnap(
+            name="core20",
+            registrant=registrant,
+            owner=team_owner,
+            date_created=date_created,
+            auto_build_channels={
+                "_byarch": {"riscv64": {"snapcraft": "beta"}}
+            },
+        )
+        browser = self.getViewBrowser(
+            context=snap, no_login=True, user=registrant
+        )
+        content = find_main_content(browser.contents)
+        self.assertThat(
+            "Source snap channels for automatic builds:\n"
+            "_byarch\n{'riscv64': {'snapcraft': 'beta'}}",
+            MatchesTagText(content, "auto_build_channels"),
+        )
+
+    # Bug #2033382
+    def test_snap_anonymous_api_byarch(self):
+        registrant = self.factory.makePerson(name="snap-registrant")
+        team_owner = self.factory.makeTeam(
+            name="snap-creator", members=[registrant]
+        )
+        date_created = datetime(2000, 1, 1, tzinfo=timezone.utc)
+        snap = self.factory.makeSnap(
+            name="core20",
+            registrant=registrant,
+            owner=team_owner,
+            date_created=date_created,
+            auto_build_channels={
+                "_byarch": {"riscv64": {"snapcraft": "beta"}}
+            },
+        )
+        api_base = "http://api.launchpad.test/devel"
+        snap_url = api_base + api_url(snap)
+
+        webservice = webservice_for_person(
+            None,
+            default_api_version="devel",
+        )
+        response = webservice.get(snap_url)
+        self.assertEqual(200, response.status)
+        self.assertEqual(
+            {"_byarch": {"riscv64": {"snapcraft": "beta"}}},
+            response.jsonBody()["auto_build_channels"],
+        )
 
 
 class TestHintedSnapBuildChannelsWidget(TestSnapBuildChannelsWidget):
