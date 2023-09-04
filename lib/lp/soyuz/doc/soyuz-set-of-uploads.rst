@@ -563,8 +563,8 @@ In order to verify if the binary ancestry lookup algorithm works we
 will need to build a new DistroArchSeries for powerpc in
 ubuntutest/breezy.
 
-    >>> from lp.buildmaster.model.processor import Processor
-    >>> powerpc = Processor(
+    >>> from lp.buildmaster.interfaces.processor import IProcessorSet
+    >>> powerpc = getUtility(IProcessorSet).new(
     ...     name="powerpc", title="PowerPC G3/G4", description="G3/G4"
     ... )
     >>> powerpc_dar = breezy.newArch("powerpc", powerpc, True, breezy.owner)

@@ -273,9 +273,10 @@ architectures.
     >>> cprov = getUtility(IPersonSet).getByName("cprov")
 
     >>> from lp.buildmaster.model.processor import Processor
-    >>> i386 = Processor.selectOneBy(name="386")
-    >>> amd64 = Processor.selectOneBy(name="amd64")
-    >>> hppa = Processor.selectOneBy(name="hppa")
+    >>> from lp.services.database.interfaces import IStore
+    >>> i386 = IStore(Processor).find(Processor, name="386").one()
+    >>> amd64 = IStore(Processor).find(Processor, name="amd64").one()
+    >>> hppa = IStore(Processor).find(Processor, name="hppa").one()
 
     >>> ignored = factory.makeBuilder(
     ...     name="hamburger", processors=[i386], virtualized=True

@@ -6,7 +6,7 @@ __all__ = [
     "ProcessorSet",
 ]
 
-from storm.locals import Bool
+from storm.locals import Bool, Int, Unicode
 from zope.interface import implementer
 
 from lp.buildmaster.interfaces.processor import (
@@ -14,18 +14,20 @@ from lp.buildmaster.interfaces.processor import (
     IProcessorSet,
     ProcessorNotFound,
 )
+from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import StringCol
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IProcessor)
-class Processor(SQLBase):
-    _table = "Processor"
+class Processor(StormBase):
+    __storm_table__ = "Processor"
 
-    name = StringCol(dbName="name", notNull=True)
-    title = StringCol(dbName="title", notNull=True)
-    description = StringCol(dbName="description", notNull=True)
+    id = Int(primary=True)
+
+    name = Unicode(name="name", allow_none=False)
+    title = Unicode(name="title", allow_none=False)
+    description = Unicode(name="description", allow_none=False)
     restricted = Bool(allow_none=False, default=False)
 
     # When setting this to true you may want to add missing
@@ -40,6 +42,25 @@ class Processor(SQLBase):
     # BinaryPackageBuild.virtualized may need tweaking if this is
     # changed on an existing processor.
     supports_nonvirtualized = Bool(allow_none=False, default=True)
+
+    def __init__(
+        self,
+        name,
+        title,
+        description,
+        restricted=DEFAULT,
+        build_by_default=DEFAULT,
+        supports_virtualized=DEFAULT,
+        supports_nonvirtualized=DEFAULT,
+    ):
+        super().__init__()
+        self.name = name
+        self.title = title
+        self.description = description
+        self.restricted = restricted
+        self.build_by_default = build_by_default
+        self.supports_virtualized = supports_virtualized
+        self.supports_nonvirtualized = supports_nonvirtualized
 
     def __repr__(self):
         return "<Processor %r>" % self.title
@@ -73,7 +94,7 @@ class ProcessorSet:
         supports_nonvirtualized=True,
     ):
         """See `IProcessorSet`."""
-        return Processor(
+        processor = Processor(
             name=name,
             title=title,
             description=description,
@@ -82,3 +103,4 @@ class ProcessorSet:
             supports_virtualized=supports_virtualized,
             supports_nonvirtualized=supports_nonvirtualized,
         )
+        return IStore(Processor).add(processor)
