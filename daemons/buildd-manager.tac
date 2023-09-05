@@ -4,13 +4,11 @@
 # Twisted Application Configuration file.
 # Use with "twistd2.4 -y <file.tac>", e.g. "twistd -noy server.tac"
 
-import resource
-
 from twisted.application import service
 from twisted.scripts.twistd import ServerOptions
 
 from lp.buildmaster.manager import BuilddManager
-from lp.services.config import config, dbconfig
+from lp.services.config import dbconfig
 from lp.services.daemons import readyservice
 from lp.services.mail.sendmail import set_immediate_mail_delivery
 from lp.services.scripts import execute_zcml_for_scripts
@@ -27,16 +25,6 @@ set_immediate_mail_delivery(True)
 # application, in order to ensure that we switch to the correct database
 # role before starting any threads.
 setup_feature_controller("buildd-manager")
-
-# ampoule uses five file descriptors per subprocess (i.e.
-# 5 * config.builddmaster.download_connections); we also need at least three
-# per active builder for resuming virtualized builders or making XML-RPC
-# calls, we need to be able to make connections from time to time to the
-# keyserver for fetching keys or to the appserver for issuing macaroons, and
-# we also need to allow slack for odds and ends like database connections.
-soft_nofile = 5 * config.builddmaster.download_connections + 4096
-_, hard_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
-resource.setrlimit(resource.RLIMIT_NOFILE, (soft_nofile, hard_nofile))
 
 options = ServerOptions()
 options.parseOptions()
