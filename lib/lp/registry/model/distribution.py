@@ -17,6 +17,7 @@ from storm.expr import (
     SQL,
     And,
     Coalesce,
+    Column,
     Desc,
     Exists,
     Func,
@@ -26,6 +27,7 @@ from storm.expr import (
     Not,
     Or,
     Select,
+    Table,
 )
 from storm.info import ClassAlias
 from storm.locals import Int, List, Reference
@@ -183,7 +185,7 @@ from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.publishing import active_publishing_status
-from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
 from lp.soyuz.model.archivefile import ArchiveFile
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
@@ -1847,54 +1849,37 @@ class Distribution(
 
     def searchPPAs(self, text=None, show_inactive=False, user=None):
         """See `IDistribution`."""
+        ValidPersonOrTeamCache = Table("ValidPersonOrTeamCache")
         clauses = [
-            """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        Archive.owner = ValidPersonOrTeamCache.id
-        """
-            % sqlvalues(ArchivePurpose.PPA, self)
+            Archive.distribution == self,
+            Archive.owner == Column("id", ValidPersonOrTeamCache),
         ]
 
-        clauseTables = ["ValidPersonOrTeamCache"]
-        orderBy = ["Archive.displayname"]
+        order_by = [Archive.displayname]
 
         if not show_inactive:
             clauses.append(
-                """
-            Archive.id IN (
-                SELECT archive FROM SourcepackagePublishingHistory
-                WHERE status IN %s)
-            """
-                % sqlvalues(active_publishing_status)
+                Archive.id.is_in(
+                    Select(
+                        SourcePackagePublishingHistory.archive_id,
+                        SourcePackagePublishingHistory.status.is_in(
+                            active_publishing_status
+                        ),
+                    )
+                )
             )
 
         if text:
-            orderBy.insert(0, rank_by_fti(Archive, text))
+            order_by.insert(0, rank_by_fti(Archive, text))
             clauses.append(fti_search(Archive, text))
 
-        if user is not None:
-            if not user.inTeam(getUtility(ILaunchpadCelebrities).admin):
-                clauses.append(
-                    """
-                ((Archive.private = FALSE AND Archive.enabled = TRUE) OR
-                 Archive.owner = %s OR
-                 %s IN (SELECT TeamParticipation.person
-                        FROM TeamParticipation
-                        WHERE TeamParticipation.person = %s AND
-                              TeamParticipation.team = Archive.owner)
-                )
-                """
-                    % sqlvalues(user, user, user)
-                )
-        else:
-            clauses.append(
-                "Archive.private = FALSE AND Archive.enabled = TRUE"
+        clauses.append(
+            get_enabled_archive_filter(
+                user, purpose=ArchivePurpose.PPA, include_public=True
             )
-
-        return Archive.select(
-            And(*clauses), orderBy=orderBy, clauseTables=clauseTables
         )
+
+        return IStore(Archive).find(Archive, *clauses).order_by(order_by)
 
     def getPendingAcceptancePPAs(self):
         """See `IDistribution`."""
