@@ -6,8 +6,8 @@
         delaycompress
         sharedscripts
         postrotate
-            systemctl restart celeryd_launchpad_job
-            systemctl restart celeryd_launchpad_job_slow
+            systemctl reload celeryd_launchpad_job
+            systemctl reload celeryd_launchpad_job_slow
         endscript
 }
 

@@ -6,8 +6,8 @@
         delaycompress
         sharedscripts
         postrotate
-            systemctl restart celeryd_bzrsyncd_job
-            systemctl restart celeryd_bzrsyncd_job_slow
+            systemctl reload celeryd_bzrsyncd_job
+            systemctl reload celeryd_bzrsyncd_job_slow
         endscript
 }
 
