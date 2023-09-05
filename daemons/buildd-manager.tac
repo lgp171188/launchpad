@@ -31,9 +31,10 @@ setup_feature_controller("buildd-manager")
 # ampoule uses five file descriptors per subprocess (i.e.
 # 5 * config.builddmaster.download_connections); we also need at least three
 # per active builder for resuming virtualized builders or making XML-RPC
-# calls, and we also need to allow slack for odds and ends like database
-# connections.
-soft_nofile = 5 * config.builddmaster.download_connections + 2048
+# calls, we need to be able to make connections from time to time to the
+# keyserver for fetching keys or to the appserver for issuing macaroons, and
+# we also need to allow slack for odds and ends like database connections.
+soft_nofile = 5 * config.builddmaster.download_connections + 4096
 _, hard_nofile = resource.getrlimit(resource.RLIMIT_NOFILE)
 resource.setrlimit(resource.RLIMIT_NOFILE, (soft_nofile, hard_nofile))
 
