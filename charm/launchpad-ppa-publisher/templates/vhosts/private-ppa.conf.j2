@@ -1,7 +1,7 @@
 <VirtualHost *:80>
 	ServerName {{ domain_ppa_private }}
-{%- if domain_alternate %}
-	ServerAlias {{ domain_ppa_private_alternate }}
+{%- if domain_ppa_private_alt %}
+	ServerAlias {{ domain_ppa_private_alt }}
 {%- endif %}
 	DocumentRoot	{{ ppa_archive_private_root }}/
 
