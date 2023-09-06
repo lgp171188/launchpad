@@ -32,6 +32,12 @@ def get_data_dir():
     return os.path.join(base.base_dir(), "data")
 
 
+def archives_dir():
+    # Used by `lp.archivepublisher.config.getPubConfig` to construct
+    # `Config.temproot`, even for PPAs.
+    return os.path.join(get_data_dir(), "archives")
+
+
 def ppa_archive_root():
     return os.path.join(get_data_dir(), "ppa-archive")
 
@@ -53,12 +59,16 @@ def configure():
     ppa_keys_root = os.path.join(data_dir, "ppa-signing-keys")
     oval_data_root = os.path.join(data_dir, "oval-data")
 
+    config["archives_dir"] = archives_dir()
     config["ppa_archive_root"] = ppa_archive_root()
     config["ppa_archive_private_root"] = ppa_archive_private()
     config["ppa_signing_keys_root"] = ppa_keys_root
     config["oval_data_root"] = oval_data_root
 
     host.mkdir(data_dir, owner=base.user(), group=base.user(), perms=0o775)
+    host.mkdir(
+        archives_dir(), owner=base.user(), group=base.user(), perms=0o775
+    )
     host.mkdir(
         ppa_archive_root(), owner=base.user(), group=base.user(), perms=0o775
     )
