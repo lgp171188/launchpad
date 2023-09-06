@@ -1,0 +1,7 @@
+preflight:
+  description: >
+    Confirm that the system is ready for a database schema update.  This
+    checks that no processes are connected that would have problems if they
+    were interrupted.
+db-update:
+  description: Perform a database schema update.

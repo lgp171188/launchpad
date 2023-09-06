@@ -1,0 +1,25 @@
+name: launchpad-db-update
+display-name: launchpad-db-update
+summary: Launchpad database schema updates
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm provides tools for managing schema updates of Launchpad
+  deployments.
+subordinate: false
+requires:
+  db:
+    interface: pgsql
+  # A direct connection to the primary database, bypassing pgbouncer.
+  # (full-update.py disables access via pgbouncer to the primary database
+  # for the duration of the update, so we must have direct access.)
+  db-admin:
+    interface: pgsql
+  # A connection to the pgbouncer load balancer.  The schema update process
+  # uses this to check for long-running connections and to disable access to
+  # the primary database for the duration of the update.
+  pgbouncer:
+    interface: pgsql
+    optional: true
