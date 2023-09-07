@@ -36,18 +36,20 @@ def configure_logrotate(config):
 def configure():
     hookenv.log("Configuring ftpmaster uploader")
     config = get_service_config()
-    config["ubuntu_queue_dir"] = os.path.join(base.base_dir(), "ubuntu-queue")
-    host.mkdir(config["ubuntu_queue_dir"], perms=0o755)
+
+    # Create queue directories.
+    ubuntu_queue_dir = os.path.join(base.base_dir(), "ubuntu-queue")
     host.mkdir(
-        os.path.join(config["ubuntu_queue_dir"], "incoming"), perms=0o755
+        ubuntu_queue_dir, owner=base.user(), group=base.user(), perms=0o755
     )
-    host.mkdir(
-        os.path.join(config["ubuntu_queue_dir"], "accepted"), perms=0o755
-    )
-    host.mkdir(
-        os.path.join(config["ubuntu_queue_dir"], "rejected"), perms=0o755
-    )
-    host.mkdir(os.path.join(config["ubuntu_queue_dir"], "failed"), perms=0o755)
+    config["ubuntu_queue_dir"] = ubuntu_queue_dir
+    for queue in ("accepted", "failed", "rejected"):
+        host.mkdir(
+            os.path.join(ubuntu_queue_dir, queue),
+            owner=base.user(),
+            group=base.user(),
+            perms=0o755,
+        )
 
     configure_lazr(
         config,
@@ -64,10 +66,10 @@ def configure():
 @when_not("service.txpkgupload-configured")
 def configure_txpkgupload():
     fsroot = os.path.join(base.base_dir(), "ubuntu-queue", "incoming")
+    host.mkdir(fsroot, owner=base.user(), group="txpkgupload", perms=0o775)
     txpkgupload = endpoint_from_flag("upload-queue-processor.available")
-    txpkgupload.set_config(
-        fsroot=fsroot,
-    )
+    txpkgupload.set_config(fsroot=fsroot)
+    host.add_user_to_group(base.user(), "txpkgupload")
     set_flag("service.txpkgupload-configured")
 
 
