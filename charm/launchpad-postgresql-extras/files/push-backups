@@ -1,0 +1,80 @@
+#! /usr/bin/python3
+# Push backups to another machine.  This is useful for regularly restoring
+# staging from production.
+
+import glob
+import shlex
+import subprocess
+from argparse import ArgumentParser
+from pathlib import Path
+
+
+def find_latest_dumps(backups_path, database, count):
+    yield from sorted(backups_path.glob(f"{glob.escape(database)}.*.dump"))[
+        -count:
+    ]
+
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--backups-path",
+        type=Path,
+        default="/var/lib/postgresql/backups",
+        help=(
+            "Directory where backups are stored "
+            "(default: /var/lib/postgresql/backups)"
+        ),
+    )
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=2,
+        help="Number of backups to push (default: 2)",
+    )
+    parser.add_argument("--bwlimit", help="Bandwidth limit")
+    parser.add_argument(
+        "--ssh-key",
+        help="SSH key to use to authenticate to destination system",
+    )
+    parser.add_argument(
+        "--dry-run",
+        default=False,
+        action="store_true",
+        help="Only show the command to run",
+    )
+    parser.add_argument(
+        "destination", help="Destination system, e.g. postgres@hostname:/path/"
+    )
+    parser.add_argument("databases", metavar="database", nargs="+")
+    args = parser.parse_args()
+
+    command = ["rsync"]
+    if args.bwlimit is not None:
+        command.append(f"--bwlimit={args.bwlimit}")
+    if args.ssh_key:
+        command.append(f"--rsh=ssh -i {shlex.quote(args.ssh_key)}")
+    else:
+        command.append("--rsh=ssh")
+    command.extend(["-a", "--delete-after"])
+    for database in args.databases:
+        for path in find_latest_dumps(args.backups_path, database, args.count):
+            command.extend(["--include", path.name])
+    command.extend(["--exclude", "*"])
+    # rsync wants a trailing slash on both source and destination.
+    # str(Path(...)) strips any trailing slash so we can add one
+    # unconditionally there; only add one to the destination if the command
+    # line didn't include it.
+    destination = args.destination
+    if not destination.endswith("/"):
+        destination += "/"
+    command.extend([f"{args.backups_path}/", destination])
+
+    if args.dry_run:
+        print("Would run:", " ".join(shlex.quote(arg) for arg in command))
+    else:
+        subprocess.run(command, check=True)
+
+
+if __name__ == "__main__":
+    main()

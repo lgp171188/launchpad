@@ -1,0 +1,20 @@
+name: launchpad-postgresql-extras
+display-name: launchpad-postgresql-extras
+summary: Customization for Launchpad's PostgreSQL services
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm adds pgbouncer and other necessary customizations to
+  Launchpad's PostgreSQL units.
+subordinate: true
+requires:
+  juju-info:
+    interface: juju-info
+    scope: container
+provides:
+  # For this to work, the pgbouncer_userlist option must include a line of
+  # the form `"telegraf_stats" "PASSWORD"`.
+  telegraf-stats:
+    interface: pgsql
