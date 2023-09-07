@@ -18,7 +18,7 @@ from debian.changelog import (
     ChangelogCreateError,
     ChangelogParseError,
 )
-from storm.expr import Coalesce, Join, Sum
+from storm.expr import Coalesce, Join, LeftJoin, Sum
 from storm.locals import DateTime, Desc, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
@@ -361,11 +361,32 @@ class SourcePackageRelease(StormBase):
     @cachedproperty
     def files(self):
         """See `ISourcePackageRelease`."""
-        return list(
-            Store.of(self)
-            .find(SourcePackageReleaseFile, sourcepackagerelease=self)
+        # Preload library files, since call sites will normally need them too.
+        return [
+            sprf
+            for sprf, _, _ in Store.of(self)
+            .using(
+                SourcePackageReleaseFile,
+                Join(
+                    LibraryFileAlias,
+                    SourcePackageReleaseFile.libraryfile
+                    == LibraryFileAlias.id,
+                ),
+                LeftJoin(
+                    LibraryFileContent,
+                    LibraryFileAlias.content == LibraryFileContent.id,
+                ),
+            )
+            .find(
+                (
+                    SourcePackageReleaseFile,
+                    LibraryFileAlias,
+                    LibraryFileContent,
+                ),
+                SourcePackageReleaseFile.sourcepackagerelease == self,
+            )
             .order_by(SourcePackageReleaseFile.libraryfile_id)
-        )
+        ]
 
     def getFileByName(self, filename):
         """See `ISourcePackageRelease`."""
