@@ -7,6 +7,6 @@ Historically, they were used for the Ubuntu phone project.
 
 You will need the following relations:
 
-    juju relate launchpad-ftpmaster-publisher:db postgresql:db
-    juju relate launchpad-ftpmaster-publisher rabbitmq-server
-    juju relate launchpad-ftpmaster-publisher nrpe
+    juju relate launchpad-copy-archive-publisher:db postgresql:db
+    juju relate launchpad-copy-archive-publisher rabbitmq-server
+    juju relate launchpad-copy-archive-publisher nrpe
