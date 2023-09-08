@@ -16,6 +16,7 @@ from storm.expr import SQL, And, Cast, Or, Select, Update
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.interfaces.gitcollection import IAllGitRepositories
@@ -23,9 +24,11 @@ from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
+from lp.services.auth.utils import create_access_token_secret
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
+from lp.services.webapp.interfaces import ILaunchBag
 
 
 @implementer(IAccessToken)
@@ -236,3 +239,26 @@ class AccessTokenTargetMixin:
             visible_by_user=visible_by_user,
             include_expired=include_expired,
         )
+
+    def issueAccessToken(self, description, scopes, date_expires=None):
+        # It's more usual in model code to pass the user as an argument,
+        # e.g. using @call_with(user=REQUEST_USER) in the webservice
+        # interface.  However, in this case that would allow anyone who
+        # constructs a way to call this method not via the webservice to
+        # issue a token for any user, which seems like a bad idea.
+        user = getUtility(ILaunchBag).user
+        if user is None:
+            raise Unauthorized(
+                "Personal access tokens may only be issued for a logged-in "
+                "user."
+            )
+        secret = create_access_token_secret()
+        getUtility(IAccessTokenSet).new(
+            secret,
+            owner=user,
+            description=description,
+            target=self,
+            scopes=scopes,
+            date_expires=date_expires,
+        )
+        return secret

@@ -7,6 +7,7 @@ __all__ = [
     "IAccessToken",
     "IAccessTokenSet",
     "IAccessTokenTarget",
+    "IAccessTokenTargetEdit",
     "IAccessTokenVerifiedRequest",
 ]
 
@@ -18,6 +19,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_entry,
     operation_for_version,
+    operation_parameters,
     operation_returns_collection_of,
 )
 from lazr.restful.fields import Reference
@@ -206,6 +208,49 @@ class IAccessTokenVerifiedRequest(Interface):
 @exported_as_webservice_entry(as_of="beta")
 class IAccessTokenTarget(Interface):
     """An object that can be a target for access tokens."""
+
+    # XXX ines-almeida 2023-09-08: We keep this class separated from
+    # `IAccessTokenTargetEdit` because we need them to have different
+    # permission settings. Once the `_issueMacaroon` logic is no longer needed,
+    # we might want to reconsider requiring `launchpad.Edit` permissions for
+    # the below endpoints.
+
+    @operation_parameters(
+        description=TextLine(
+            title=_("A short description of the token."), required=True
+        ),
+        scopes=List(
+            title=_("A list of scopes to be granted by this token."),
+            value_type=Choice(vocabulary=AccessTokenScope),
+            required=True,
+        ),
+        date_expires=Datetime(
+            title=_("When the token should expire."), required=False
+        ),
+    )
+    @export_write_operation()
+    @operation_for_version("devel")
+    def issueAccessToken(description, scopes, date_expires=None):
+        """Issue a personal access token for this target.
+
+        Access tokens can be used to push to repositories over HTTPS. These may
+        be used in webservice API requests for certain methods in the target's
+        repositories.
+
+        They are either non-expiring or with an expiry time given by
+        `date_expires`.
+
+        :return: The secret for a new personal access token (Launchpad only
+            records the hash of this secret and not the secret itself, so the
+            caller must be careful to save this).
+        """
+
+
+@exported_as_webservice_entry(as_of="beta")
+class IAccessTokenTargetEdit(Interface):
+    """An object that can be a target for access tokens that requires
+    launchpad.Edit permission.
+    """
 
     @call_with(visible_by_user=REQUEST_USER)
     @operation_returns_collection_of(IAccessToken)

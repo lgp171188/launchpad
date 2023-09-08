@@ -30,7 +30,6 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
-    StartsWith,
 )
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
@@ -150,7 +149,6 @@ from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.auth.enums import AccessTokenScope
-from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -6670,156 +6668,6 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
                     "refs/other": Equals([]),
                 }
             ),
-        )
-
-    def test_issueAccessToken(self):
-        # A user can request an access token via the webservice API.
-        self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
-        repository = self.factory.makeGitRepository()
-        # Write access to the repository isn't checked at this stage
-        # (although the access token will only be useful if the user has
-        # some kind of write access).
-        requester = self.factory.makePerson()
-        with person_logged_in(requester):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(
-            requester,
-            permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel",
-        )
-        response = webservice.named_post(repository_url, "issueAccessToken")
-        self.assertEqual(200, response.status)
-        macaroon = Macaroon.deserialize(response.jsonBody())
-        with person_logged_in(ANONYMOUS):
-            self.assertThat(
-                macaroon,
-                MatchesStructure(
-                    location=Equals(config.vhost.mainsite.hostname),
-                    identifier=Equals("git-repository"),
-                    caveats=MatchesListwise(
-                        [
-                            MatchesStructure.byEquality(
-                                caveat_id="lp.git-repository %s"
-                                % repository.id
-                            ),
-                            MatchesStructure(
-                                caveat_id=StartsWith(
-                                    "lp.principal.openid-identifier "
-                                )
-                            ),
-                            MatchesStructure(
-                                caveat_id=StartsWith("lp.expires ")
-                            ),
-                        ]
-                    ),
-                ),
-            )
-
-    def test_issueAccessToken_anonymous(self):
-        # An anonymous user cannot request an access token via the
-        # webservice API.
-        repository = self.factory.makeGitRepository()
-        with person_logged_in(repository.owner):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(None, default_api_version="devel")
-        response = webservice.named_post(repository_url, "issueAccessToken")
-        self.assertEqual(401, response.status)
-        self.assertEqual(
-            b"git-repository macaroons may only be issued for a logged-in "
-            b"user.",
-            response.body,
-        )
-
-    def test_issueAccessToken_personal(self):
-        # A user can request a personal access token via the webservice API.
-        repository = self.factory.makeGitRepository()
-        # Write access to the repository isn't checked at this stage
-        # (although the access token will only be useful if the user has
-        # some kind of write access).
-        requester = self.factory.makePerson()
-        with person_logged_in(requester):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(
-            requester,
-            permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel",
-        )
-        response = webservice.named_post(
-            repository_url,
-            "issueAccessToken",
-            description="Test token",
-            scopes=["repository:build_status"],
-        )
-        self.assertEqual(200, response.status)
-        secret = response.jsonBody()
-        with person_logged_in(requester):
-            token = getUtility(IAccessTokenSet).getBySecret(secret)
-            self.assertThat(
-                token,
-                MatchesStructure(
-                    owner=Equals(requester),
-                    description=Equals("Test token"),
-                    target=Equals(repository),
-                    scopes=Equals([AccessTokenScope.REPOSITORY_BUILD_STATUS]),
-                    date_expires=Is(None),
-                ),
-            )
-
-    def test_issueAccessToken_personal_with_expiry(self):
-        # A user can set an expiry time when requesting a personal access
-        # token via the webservice API.
-        repository = self.factory.makeGitRepository()
-        # Write access to the repository isn't checked at this stage
-        # (although the access token will only be useful if the user has
-        # some kind of write access).
-        requester = self.factory.makePerson()
-        with person_logged_in(requester):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(
-            requester,
-            permission=OAuthPermission.WRITE_PUBLIC,
-            default_api_version="devel",
-        )
-        date_expires = datetime.now(timezone.utc) + timedelta(days=30)
-        response = webservice.named_post(
-            repository_url,
-            "issueAccessToken",
-            description="Test token",
-            scopes=["repository:build_status"],
-            date_expires=date_expires.isoformat(),
-        )
-        self.assertEqual(200, response.status)
-        secret = response.jsonBody()
-        with person_logged_in(requester):
-            token = getUtility(IAccessTokenSet).getBySecret(secret)
-            self.assertThat(
-                token,
-                MatchesStructure.byEquality(
-                    owner=requester,
-                    description="Test token",
-                    target=repository,
-                    scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
-                    date_expires=date_expires,
-                ),
-            )
-
-    def test_issueAccessToken_personal_anonymous(self):
-        # An anonymous user cannot request a personal access token via the
-        # webservice API.
-        repository = self.factory.makeGitRepository()
-        with person_logged_in(repository.owner):
-            repository_url = api_url(repository)
-        webservice = webservice_for_person(None, default_api_version="devel")
-        response = webservice.named_post(
-            repository_url,
-            "issueAccessToken",
-            description="Test token",
-            scopes=["repository:build_status"],
-        )
-        self.assertEqual(401, response.status)
-        self.assertEqual(
-            b"Personal access tokens may only be issued for a logged-in user.",
-            response.body,
         )
 
     def test_builder_constraints_commercial_admin(self):
