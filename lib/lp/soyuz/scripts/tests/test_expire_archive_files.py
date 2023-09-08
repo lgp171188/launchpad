@@ -13,7 +13,7 @@ from lp.services.log.logger import BufferLogger
 from lp.soyuz.scripts.expire_archive_files import ArchiveExpirer
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory
-from lp.testing.dbuser import switch_dbuser
+from lp.testing.dbuser import dbuser, switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -49,8 +49,8 @@ class ArchiveExpiryTestBase(TestCaseWithFactory):
     def runScript(self):
         """Run the expiry script and return."""
         script = self.getScript()
-        switch_dbuser(self.dbuser)
-        script.main()
+        with dbuser(self.dbuser):
+            script.main()
 
     def _setUpExpirablePublications(self, archive=None):
         """Helper to set up publications and indexes that are all expirable."""
@@ -320,8 +320,8 @@ class ArchiveExpiryCommonTests:
         # will remove the test publications we just created.
         self.layer.txn.commit()
         script = self.getScript(["--dry-run"])
-        switch_dbuser(self.dbuser)
-        script.main()
+        with dbuser(self.dbuser):
+            script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
         self.assertIndexNotExpired(index)
@@ -366,8 +366,8 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         script.never_expire = [
             self.archive.owner.name,
         ]
-        switch_dbuser(self.dbuser)
-        script.main()
+        with dbuser(self.dbuser):
+            script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
         self.assertIndexNotExpired(index)
@@ -381,8 +381,8 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         script.never_expire = [
             "%s/%s" % (self.archive.owner.name, self.archive.name)
         ]
-        switch_dbuser(self.dbuser)
-        script.main()
+        with dbuser(self.dbuser):
+            script.main()
         self.assertSourceNotExpired(source)
         self.assertBinaryNotExpired(binary)
         self.assertIndexNotExpired(index)
@@ -393,8 +393,8 @@ class TestPPAExpiry(ArchiveExpiryTestBase, ArchiveExpiryCommonTests):
         source, binary, index = self._setUpExpirablePublications(archive=p3a)
         script = self.getScript()
         script.always_expire = ["%s/%s" % (p3a.owner.name, p3a.name)]
-        switch_dbuser(self.dbuser)
-        script.main()
+        with dbuser(self.dbuser):
+            script.main()
         self.assertSourceExpired(source)
         self.assertBinaryExpired(binary)
         self.assertIndexExpired(index)
