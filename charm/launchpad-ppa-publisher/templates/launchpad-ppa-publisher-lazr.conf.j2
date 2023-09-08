@@ -12,6 +12,7 @@
 extends: ../launchpad-db-lazr.conf
 
 [archivepublisher]
+archives_dir: {{ archives_dir }}
 {{- opt("oval_data_rsync_endpoint", oval_data_rsync_endpoint) }}
 oval_data_root: {{ base_dir }}/oval-data
 
