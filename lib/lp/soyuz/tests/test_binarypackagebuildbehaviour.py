@@ -45,6 +45,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.config import config
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import BufferLogger
 from lp.services.macaroons.testing import MacaroonVerifies
@@ -53,11 +54,12 @@ from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import get_sources_list_for_building
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.tests.soyuz import Base64KeyMatches
-from lp.testing import TestCaseWithFactory
+from lp.testing import StormStatementRecorder, TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer, ZopelessDatabaseLayer
+from lp.testing.matchers import HasQueryCount
 
 
 class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
@@ -506,6 +508,34 @@ class TestBinaryBuildPackageBehaviour(StatsMixin, TestCaseWithFactory):
         behaviour.setBuilder(builder, None)
         extra_args = yield behaviour.extraBuildArgs()
         self.assertTrue(extra_args["arch_indep"])
+
+    @defer.inlineCallbacks
+    def test_determineFilesToSend_query_count(self):
+        build = self.factory.makeBinaryPackageBuild()
+        behaviour = IBuildFarmJobBehaviour(build)
+
+        def add_file(build):
+            build.source_package_release.addFile(
+                self.factory.makeLibraryFileAlias(db_only=True),
+                filetype=SourcePackageFileType.COMPONENT_ORIG_TARBALL,
+            )
+
+        # This is more or less `lp.testing.record_two_runs`, but that
+        # doesn't work with asynchronous code, and it's easy enough to
+        # inline the relevant bits.
+        for _ in range(2):
+            add_file(build)
+        flush_database_caches()
+        with StormStatementRecorder() as recorder1:
+            filemap = yield behaviour.determineFilesToSend()
+            self.assertEqual(2, len(list(filemap)))
+        for _ in range(2):
+            add_file(build)
+        flush_database_caches()
+        with StormStatementRecorder() as recorder2:
+            filemap = yield behaviour.determineFilesToSend()
+            self.assertEqual(4, len(list(filemap)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_archives_proposed(self):
