@@ -9,14 +9,23 @@ import signal
 from datetime import datetime, timedelta, timezone
 
 import transaction
+from pymacaroons import Macaroon
 from storm.store import Store
-from testtools.matchers import Is, MatchesStructure
+from testtools.matchers import (
+    Equals,
+    Is,
+    MatchesListwise,
+    MatchesStructure,
+    StartsWith,
+)
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.utils import create_access_token_secret
+from lp.services.config import config
 from lp.services.database.sqlbase import (
     disconnect_stores,
     get_transaction_timestamp,
@@ -24,6 +33,7 @@ from lp.services.database.sqlbase import (
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    ANONYMOUS,
     TestCaseWithFactory,
     api_url,
     login,
@@ -405,6 +415,10 @@ class TestAccessTokenTargetBase:
             self.owner, permission=OAuthPermission.WRITE_PRIVATE
         )
 
+    def _makePerson(self):
+        with person_logged_in(ANONYMOUS):
+            return self.factory.makePerson()
+
     def test_getAccessTokens(self):
         with person_logged_in(self.owner):
             for description in ("Test token 1", "Test token 2"):
@@ -468,9 +482,208 @@ class TestAccessTokenTargetBase:
         recorder1, recorder2 = record_two_runs(get_tokens, create_token, 2)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
+    def test_issueAccessToken(self):
+        # A user can request a personal access token via the webservice API.
+        # Write access to the repositories isn't checked at this stage
+        # (although the access token will only be useful if the user has
+        # some kind of write access).
+        requester = self._makePerson()
+        with person_logged_in(requester):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            target_url,
+            "issueAccessToken",
+            description="Test token",
+            scopes=["repository:build_status"],
+        )
+        self.assertEqual(200, response.status)
+        secret = response.jsonBody()
+        with person_logged_in(requester):
+            token = getUtility(IAccessTokenSet).getBySecret(secret)
+            self.assertThat(
+                token,
+                MatchesStructure(
+                    owner=Equals(requester),
+                    description=Equals("Test token"),
+                    target=Equals(self.target),
+                    scopes=Equals([AccessTokenScope.REPOSITORY_BUILD_STATUS]),
+                    date_expires=Is(None),
+                ),
+            )
+
+    def test_issueAccessToken_with_expiry(self):
+        # A user can set an expiry time when requesting a personal access
+        # token via the webservice API.
+        # Write access to the repositories isn't checked at this stage
+        # (although the access token will only be useful if the user has
+        # some kind of write access).
+        requester = self._makePerson()
+        with person_logged_in(requester):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        date_expires = datetime.now(timezone.utc) + timedelta(days=30)
+        response = webservice.named_post(
+            target_url,
+            "issueAccessToken",
+            description="Test token",
+            scopes=["repository:build_status"],
+            date_expires=date_expires.isoformat(),
+        )
+        self.assertEqual(200, response.status)
+        secret = response.jsonBody()
+        with person_logged_in(requester):
+            token = getUtility(IAccessTokenSet).getBySecret(secret)
+            self.assertThat(
+                token,
+                MatchesStructure.byEquality(
+                    owner=requester,
+                    description="Test token",
+                    target=self.target,
+                    scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
+                    date_expires=date_expires,
+                ),
+            )
+
+    def test_issueAccessToken_anonymous(self):
+        # An anonymous user cannot request a personal access token via the
+        # webservice API.
+        with person_logged_in(self.owner):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(None, default_api_version="devel")
+        response = webservice.named_post(
+            target_url,
+            "issueAccessToken",
+            description="Test token",
+            scopes=["repository:build_status"],
+        )
+        self.assertEqual(401, response.status)
+        self.assertEqual(
+            b"Personal access tokens may only be issued for a logged-in user.",
+            response.body,
+        )
+
+    def test_issueAccessToken_no_scope(self):
+        # Scopes are required to request a personal access token
+
+        if IGitRepository.providedBy(self.target):
+            self.skipTest(
+                "Currently, Git repositories allow requests without scopes."
+            )
+
+        with person_logged_in(self.owner):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(
+            self.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            target_url,
+            "issueAccessToken",
+            description="Test token",
+        )
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"scopes: Required input is missing.",
+            response.body,
+        )
+
+    def test_issueAccessToken_no_description(self):
+        # A description is required to request a personal access token
+
+        if IGitRepository.providedBy(self.target):
+            self.skipTest(
+                "Currently, Git repositories allow requests without a "
+                "description."
+            )
+
+        with person_logged_in(self.owner):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(
+            self.owner,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(
+            target_url,
+            "issueAccessToken",
+            scopes=["repository:build_status"],
+        )
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            b"description: Required input is missing.",
+            response.body,
+        )
+
 
 class TestAccessTokenTargetGitRepository(
     TestAccessTokenTargetBase, TestCaseWithFactory
 ):
     def makeTarget(self):
         return self.factory.makeGitRepository()
+
+    def test_issueAccessTokenMacaroon(self):
+        # A user can request a git repository access token via the webservice
+        # API without scopes and description (a Macaroon is returned)
+        self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
+        # Write access to the repositories isn't checked at this stage
+        # (although the access token will only be useful if the user has
+        # some kind of write access).
+        requester = self._makePerson()
+        with person_logged_in(requester):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(
+            requester,
+            permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel",
+        )
+        response = webservice.named_post(target_url, "issueAccessToken")
+        self.assertEqual(200, response.status)
+        macaroon = Macaroon.deserialize(response.jsonBody())
+        with person_logged_in(ANONYMOUS):
+            self.assertThat(
+                macaroon,
+                MatchesStructure(
+                    location=Equals(config.vhost.mainsite.hostname),
+                    identifier=Equals("git-repository"),
+                    caveats=MatchesListwise(
+                        [
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.git-repository %s"
+                                % self.target.id
+                            ),
+                            MatchesStructure(
+                                caveat_id=StartsWith(
+                                    "lp.principal.openid-identifier "
+                                )
+                            ),
+                            MatchesStructure(
+                                caveat_id=StartsWith("lp.expires ")
+                            ),
+                        ]
+                    ),
+                ),
+            )
+
+    def test_issueAccessTokenMacaroon_anonymous(self):
+        # An anonymous user cannot request a git repository access token
+        # without scopes and description (Macaroon) via the webservice
+        with person_logged_in(self.owner):
+            target_url = api_url(self.target)
+        webservice = webservice_for_person(None, default_api_version="devel")
+        response = webservice.named_post(target_url, "issueAccessToken")
+        self.assertEqual(401, response.status)
+        self.assertEqual(
+            b"git-repository macaroons may only be issued for a logged-in "
+            b"user.",
+            response.body,
+        )
