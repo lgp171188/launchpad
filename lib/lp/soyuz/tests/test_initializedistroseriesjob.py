@@ -51,12 +51,14 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
     def test_getOopsVars(self):
         parent = self.factory.makeDistroSeries()
         distroseries = self.factory.makeDistroSeries()
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         vars = job.getOopsVars()
         naked_job = removeSecurityProxy(job)
         self.assertIn(("distribution_id", distroseries.distribution.id), vars)
         self.assertIn(("distroseries_id", distroseries.id), vars)
         self.assertIn(("distribution_job_id", naked_job.context.id), vars)
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         self.assertIn(("parent_distroseries_ids", [str(parent.id)]), vars)
 
     def _getJobs(self):
@@ -80,11 +82,13 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         overlay_components = ("main", "universe")
         arches = ("i386", "amd64")
         archindep_archtag = "amd64"
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         packagesets = (str(packageset1.id), str(packageset2.id))
         rebuild = False
 
         job = self.job_source.create(
             distroseries,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent1.id), str(parent2.id)],
             arches,
             archindep_archtag,
@@ -121,11 +125,13 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         # If there's already a pending InitializeDistroSeriesJob for a
         # DistroSeries, InitializeDistroSeriesJob.create() raises an
         # exception.
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         exception = self.assertRaises(
             InitializationPending,
             self.job_source.create,
             distroseries,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
         )
         self.assertEqual(job, exception.job)
@@ -136,6 +142,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         # If there's already a completed InitializeDistroSeriesJob for a
         # DistroSeries, InitializeDistroSeriesJob.create() raises an
         # exception.
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         job.start()
         job.complete()
@@ -143,6 +150,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
             InitializationCompleted,
             self.job_source.create,
             distroseries,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
         )
         self.assertEqual(job, exception.job)
@@ -153,6 +161,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         # If there's already a failed InitializeDistroSeriesJob for a
         # DistroSeries, InitializeDistroSeriesJob.create() schedules a new
         # job.
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         job.start()
         job.fail()
@@ -167,6 +176,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
             distroseries, parent, initialized=True
         )
 
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         expected_message = (
             "Series {child.name} has already been initialised" "."
@@ -189,6 +199,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
 
         job = self.job_source.create(
             distroseries,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
             arches,
             archindep_archtag,
@@ -205,6 +216,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         self.assertEqual(naked_job.archindep_archtag, archindep_archtag)
         self.assertEqual(naked_job.packagesets, packagesets)
         self.assertEqual(naked_job.rebuild, False)
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         self.assertEqual(naked_job.parents, (str(parent.id),))
         self.assertEqual(naked_job.overlays, overlays)
         self.assertEqual(naked_job.overlay_pockets, overlay_pockets)
@@ -213,6 +225,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
     def test_parent(self):
         parent = self.factory.makeDistroSeries()
         distroseries = self.factory.makeDistroSeries()
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         naked_job = removeSecurityProxy(job)
         self.assertEqual((str(parent.id),), naked_job.parents)
@@ -224,6 +237,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         another_distroseries = self.factory.makeDistroSeries()
         self.assertIs(None, self.job_source.get(distroseries))
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         self.job_source.create(distroseries, [str(parent.id)])
         self.job_source.create(another_distroseries, [str(parent.id)])
         job = self.job_source.get(distroseries)
@@ -235,6 +249,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         # None when no error description is recorded.
         parent = self.factory.makeDistroSeries()
         distroseries = self.factory.makeDistroSeries()
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         self.assertIs(None, removeSecurityProxy(job).error_description)
 
@@ -242,6 +257,7 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         # error_description is set by notifyUserError().
         parent = self.factory.makeDistroSeries()
         distroseries = self.factory.makeDistroSeries()
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(distroseries, [str(parent.id)])
         message = "This is an example message."
         job.notifyUserError(InitializationError(message))
@@ -273,6 +289,7 @@ def create_child(factory):
         test1 = getUtility(IPackagesetSet).new(
             "test1", "test 1 packageset", parent.owner, distroseries=parent
         )
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         test1_packageset_id = str(test1.id)
         test1.addSources("udev")
     parent.updatePackageCount()
@@ -310,6 +327,7 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
 
     def test_job(self):
         parent, child, test1_packageset_id = create_child(self.factory)
+        # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
         job = self.job_source.create(child, [str(parent.id)])
         switch_dbuser("initializedistroseries")
 
@@ -323,6 +341,7 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
         arch = parent.nominatedarchindep.architecturetag
         job = self.job_source.create(
             child,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
             packagesets=(test1_packageset_id,),
             arches=(arch,),
@@ -344,6 +363,7 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
         parent, child, test1_packageset_id = create_child(self.factory)
         job = self.job_source.create(
             child,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
             archindep_archtag=None,
             packagesets=None,
@@ -363,6 +383,7 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
         parent, child, test1_packageset_id = create_child(self.factory)
         job = self.job_source.create(
             child,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
             archindep_archtag=None,
             packagesets=None,
@@ -386,6 +407,7 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
         self.setupDas(parent, "powerpc", "hppa")
         job = self.job_source.create(
             child,
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             [str(parent.id)],
             archindep_archtag="amd64",
             packagesets=None,
@@ -423,6 +445,7 @@ class TestViaCelery(TestCaseWithFactory):
         parent, child, test1 = create_child(self.factory)
         job_source = getUtility(IInitializeDistroSeriesJobSource)
         with block_on_job():
+            # XXX cjwatson 2023-09-11: Our JS code passes IDs as strings.
             job_source.create(child, [str(parent.id)])
             transaction.commit()
         child.updatePackageCount()
