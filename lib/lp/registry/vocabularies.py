@@ -174,7 +174,6 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     NamedStormVocabulary,
     SQLObjectVocabularyBase,
@@ -1592,11 +1591,11 @@ class CommercialProjectsVocabulary(NamedStormVocabulary):
         return self.context.inTeam(project.owner)
 
 
-class DistributionVocabulary(NamedSQLObjectVocabulary):
+class DistributionVocabulary(NamedStormVocabulary):
     """All `IDistribution` objects vocabulary."""
 
     _table = Distribution
-    _orderBy = "name"
+    _order_by = "name"
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
@@ -1612,11 +1611,10 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
             return self.emptySelectResults()
 
         rows = IStore(self._table).find(
-            self._table,
-            self._table.name.contains_string(six.ensure_text(query).lower()),
+            self._table, self._table.name.contains_string(query.lower())
         )
-        if self._orderBy:
-            rows = rows.order_by(self._orderBy)
+        if self._order_by:
+            rows = rows.order_by(self._order_by)
         return rows
 
 

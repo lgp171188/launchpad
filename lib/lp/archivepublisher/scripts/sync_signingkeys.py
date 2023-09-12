@@ -100,7 +100,7 @@ class SyncSigningKeysScript(LaunchpadScript):
         else:
             archives = IStore(Archive).find(
                 Archive,
-                PublisherConfig.distribution_id == Archive.distributionID,
+                PublisherConfig.distribution_id == Archive.distribution_id,
             )
             archives = archives.order_by(Archive.id)
         start = self.options.offset if self.options.offset else 0

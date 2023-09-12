@@ -285,9 +285,8 @@ class Archive(SQLBase):
 
     description = StringCol(dbName="description", notNull=False, default=None)
 
-    distribution = ForeignKey(
-        foreignKey="Distribution", dbName="distribution", notNull=False
-    )
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
 
     purpose = DBEnum(name="purpose", allow_none=False, enum=ArchivePurpose)
 
@@ -3591,7 +3590,7 @@ class ArchiveSet:
         store = Store.of(user)
         result = store.find(
             Distribution,
-            Distribution.id == Archive.distributionID,
+            Distribution.id == Archive.distribution_id,
             self._getPPAsForUserClause(user),
         )
         return result.config(distinct=True)
@@ -3657,7 +3656,7 @@ class ArchiveSet:
              ORDER BY C DESC, a.id
              LIMIT 5
         """ % sqlvalues(
-            distribution, ArchivePurpose.PPA
+            distribution.id, ArchivePurpose.PPA
         )
 
         cur.execute(query)

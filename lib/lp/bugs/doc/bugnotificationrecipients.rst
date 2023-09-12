@@ -69,7 +69,7 @@ Let's up some data for our test:
     >>> from lp.bugs.mail.bugnotificationrecipients import (
     ...     BugNotificationRecipients,
     ... )
-    >>> debian = Distribution.selectOneBy(name="debian")
+    >>> debian = IStore(Distribution).find(Distribution, name="debian").one()
     >>> pmount = debian.getSourcePackage("pmount")
     >>> alsa_utils = IStore(Product).find(Product, name="alsa-utils").one()
     >>> gnomebaker = IStore(Product).find(Product, name="gnomebaker").one()

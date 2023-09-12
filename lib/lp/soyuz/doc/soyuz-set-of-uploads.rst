@@ -75,15 +75,18 @@ Having set up that infrastructure we need to prepare a breezy distroseries
 for the ubuntutest distribution.
 
     >>> from lp.registry.model.distribution import Distribution
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.scripts.initialize_distroseries import (
     ...     InitializeDistroSeries,
     ... )
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.testing.factory import LaunchpadObjectFactory
-    >>> ubuntu = Distribution.byName("ubuntu")
+    >>> ubuntu = IStore(Distribution).find(Distribution, name="ubuntu").one()
     >>> breezy_autotest = ubuntu["breezy-autotest"]
-    >>> ubuntutest = Distribution.byName("ubuntutest")
+    >>> ubuntutest = (
+    ...     IStore(Distribution).find(Distribution, name="ubuntutest").one()
+    ... )
     >>> breezy = ubuntutest.newSeries(
     ...     "breezy",
     ...     "Breezy Badger",
@@ -215,7 +218,6 @@ Finally, as a very simplistic publishing process, we may need to punt any
 given upload into the published state, so here's a very simplistic publisher
 
     >>> from lp.registry.model.distroseries import DistroSeries
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.publishing import (
     ...     SourcePackagePublishingHistory as SPPH,

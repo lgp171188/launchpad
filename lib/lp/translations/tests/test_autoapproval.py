@@ -22,7 +22,7 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.sourcepackagename import SourcePackageNameSet
-from lp.services.database.interfaces import IPrimaryStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.fakemethod import FakeMethod
@@ -84,7 +84,9 @@ class TestCustomLanguageCode(TestCaseWithFactory):
             language=getUtility(ILanguageSet).getLanguageByCode("pt"),
         )
 
-        self.distro = Distribution.byName("ubuntu")
+        self.distro = (
+            IStore(Distribution).find(Distribution, name="ubuntu").one()
+        )
         self.sourcepackagename = getUtility(ISourcePackageNameSet)["evolution"]
         self.package_codes["Brazilian"] = CustomLanguageCode(
             translation_target=self.distro.getSourcePackage(
@@ -109,7 +111,9 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         self.assertEqual(fresh_product.getCustomLanguageCode("nocode"), None)
         self.assertEqual(fresh_product.getCustomLanguageCode("pt_PT"), None)
 
-        fresh_distro = Distribution.byName("gentoo")
+        fresh_distro = (
+            IStore(Distribution).find(Distribution, name="gentoo").one()
+        )
         gentoo_package = fresh_distro.getSourcePackage(self.sourcepackagename)
         nocode = gentoo_package.getCustomLanguageCode("nocode")
         self.assertEqual(nocode, None)

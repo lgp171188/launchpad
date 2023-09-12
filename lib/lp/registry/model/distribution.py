@@ -30,7 +30,7 @@ from storm.expr import (
     Table,
 )
 from storm.info import ClassAlias
-from storm.locals import Int, List, Reference
+from storm.locals import Bool, DateTime, Int, List, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -155,12 +155,11 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import BoolCol, ForeignKey, StringCol
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -223,7 +222,7 @@ specification_policy_default = {
 
 @implementer(IBugSummaryDimension, IDistribution)
 class Distribution(
-    SQLBase,
+    StormBase,
     BugTargetBase,
     MakesAnnouncements,
     HasSpecificationsMixin,
@@ -243,45 +242,42 @@ class Distribution(
 ):
     """A distribution of an operating system, e.g. Debian GNU/Linux."""
 
-    _table = "Distribution"
-    _defaultOrder = "name"
+    __storm_table__ = "Distribution"
+    __storm_order__ = "name"
 
-    name = StringCol(notNull=True, alternateID=True, unique=True)
-    display_name = StringCol(dbName="displayname", notNull=True)
-    _title = StringCol(dbName="title", notNull=True)
-    summary = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    homepage_content = StringCol(default=None)
+    id = Int(primary=True)
+    name = Unicode(allow_none=False)
+    display_name = Unicode(name="displayname", allow_none=False)
+    _title = Unicode(name="title", allow_none=False)
+    summary = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    homepage_content = Unicode(default=None)
     icon_id = Int(name="icon", default=None)
     icon = Reference(icon_id, "LibraryFileAlias.id")
-    logo = ForeignKey(
-        dbName="logo", foreignKey="LibraryFileAlias", default=None
-    )
-    mugshot = ForeignKey(
-        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
-    )
-    domainname = StringCol(notNull=True)
+    logo_id = Int(name="logo", default=None)
+    logo = Reference(logo_id, "LibraryFileAlias.id")
+    mugshot_id = Int(name="mugshot", default=None)
+    mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
+    domainname = Unicode(allow_none=False)
     owner_id = Int(
         name="owner",
         validator=validate_person_or_closed_team,
         allow_none=False,
     )
     owner = Reference(owner_id, "Person.id")
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    bug_supervisor = ForeignKey(
-        dbName="bug_supervisor",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
+    registrant = Reference(registrant_id, "Person.id")
+    bug_supervisor_id = Int(
+        name="bug_supervisor",
+        validator=validate_person,
+        allow_none=True,
         default=None,
     )
-    bug_reporting_guidelines = StringCol(default=None)
-    bug_reported_acknowledgement = StringCol(default=None)
+    bug_supervisor = Reference(bug_supervisor_id, "Person.id")
+    bug_reporting_guidelines = Unicode(default=None)
+    bug_reported_acknowledgement = Unicode(default=None)
     driver_id = Int(
         name="driver",
         validator=validate_public_person,
@@ -289,25 +285,21 @@ class Distribution(
         default=None,
     )
     driver = Reference(driver_id, "Person.id")
-    members = ForeignKey(
-        dbName="members",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    members_id = Int(
+        name="members", validator=validate_public_person, allow_none=False
     )
-    mirror_admin = ForeignKey(
-        dbName="mirror_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    members = Reference(members_id, "Person.id")
+    mirror_admin_id = Int(
+        name="mirror_admin", validator=validate_public_person, allow_none=False
     )
-    oci_project_admin = ForeignKey(
-        dbName="oci_project_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    mirror_admin = Reference(mirror_admin_id, "Person.id")
+    oci_project_admin_id = Int(
+        name="oci_project_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    oci_project_admin = Reference(oci_project_admin_id, "Person.id")
     translationgroup_id = Int(
         name="translationgroup", allow_none=True, default=None
     )
@@ -321,19 +313,19 @@ class Distribution(
     # Distributions can't be deactivated.  This is just here in order to
     # implement the `IPillar` interface.
     active = True
-    official_packages = BoolCol(notNull=True, default=False)
-    supports_ppas = BoolCol(notNull=True, default=False)
-    supports_mirrors = BoolCol(notNull=True, default=False)
-    package_derivatives_email = StringCol(notNull=False, default=None)
-    redirect_release_uploads = BoolCol(notNull=True, default=False)
-    development_series_alias = StringCol(notNull=False, default=None)
+    official_packages = Bool(allow_none=False, default=False)
+    supports_ppas = Bool(allow_none=False, default=False)
+    supports_mirrors = Bool(allow_none=False, default=False)
+    package_derivatives_email = Unicode(allow_none=True, default=None)
+    redirect_release_uploads = Bool(allow_none=False, default=False)
+    development_series_alias = Unicode(allow_none=True, default=None)
     vcs = DBEnum(enum=VCSType, allow_none=True)
     default_traversal_policy = DBEnum(
         enum=DistributionDefaultTraversalPolicy,
         allow_none=True,
         default=DistributionDefaultTraversalPolicy.SERIES,
     )
-    redirect_default_traversal = BoolCol(notNull=False, default=False)
+    redirect_default_traversal = Bool(allow_none=True, default=False)
     oci_registry_credentials_id = Int(name="oci_credentials", allow_none=True)
     oci_registry_credentials = Reference(
         oci_registry_credentials_id, "OCIRegistryCredentials.id"
@@ -630,14 +622,14 @@ class Distribution(
 
         return distro_uploaders
 
-    official_answers = BoolCol(
-        dbName="official_answers", notNull=True, default=False
+    official_answers = Bool(
+        name="official_answers", allow_none=False, default=False
     )
-    official_blueprints = BoolCol(
-        dbName="official_blueprints", notNull=True, default=False
+    official_blueprints = Bool(
+        name="official_blueprints", allow_none=False, default=False
     )
-    official_malone = BoolCol(
-        dbName="official_malone", notNull=True, default=False
+    official_malone = Bool(
+        name="official_malone", allow_none=False, default=False
     )
 
     @property
@@ -751,28 +743,30 @@ class Distribution(
         """Does this distribution actually use Launchpad?"""
         return self.official_anything
 
-    enable_bug_expiration = BoolCol(
-        dbName="enable_bug_expiration", notNull=True, default=False
+    enable_bug_expiration = Bool(
+        name="enable_bug_expiration", allow_none=False, default=False
     )
     translation_focus_id = Int(
         name="translation_focus", allow_none=True, default=None
     )
     translation_focus = Reference(translation_focus_id, "DistroSeries.id")
-    date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
-    language_pack_admin = ForeignKey(
-        dbName="language_pack_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    date_created = DateTime(
+        allow_none=True, default=UTC_NOW, tzinfo=timezone.utc
+    )
+    language_pack_admin_id = Int(
+        name="language_pack_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    security_admin = ForeignKey(
-        dbName="security_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    language_pack_admin = Reference(language_pack_admin_id, "Person.id")
+    security_admin_id = Int(
+        name="security_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    security_admin = Reference(security_admin_id, "Person.id")
     code_admin_id = Int(
         name="code_admin",
         validator=validate_public_person,
@@ -1889,7 +1883,7 @@ class Distribution(
         PackageUpload.archive = Archive.id AND
         PackageUpload.status = %s
         """ % sqlvalues(
-            ArchivePurpose.PPA, self, PackageUploadStatus.ACCEPTED
+            ArchivePurpose.PPA, self.id, PackageUploadStatus.ACCEPTED
         )
 
         return Archive.select(
@@ -2130,10 +2124,10 @@ class Distribution(
         distribution to have a task, we give no more weighting to a
         distroseries task than any other.
         """
-        distributionID = self.id
+        distribution_id = self.id
 
         def weight_function(bugtask):
-            if bugtask.distribution_id == distributionID:
+            if bugtask.distribution_id == distribution_id:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 
@@ -2323,15 +2317,15 @@ class DistributionSet:
 
     def get(self, distributionid):
         """See `IDistributionSet`."""
-        return Distribution.get(distributionid)
+        return IStore(Distribution).get(Distribution, distributionid)
 
     def count(self):
         """See `IDistributionSet`."""
-        return Distribution.select().count()
+        return IStore(Distribution).find(Distribution).count()
 
     def getDistros(self):
         """See `IDistributionSet`."""
-        distros = Distribution.select()
+        distros = IStore(Distribution).find(Distribution)
         return sorted(
             shortlist(distros, 100), key=lambda distro: distro._sort_key
         )

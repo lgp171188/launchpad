@@ -24,7 +24,7 @@ DistributionSourcePackage class is tested in:
 
 Combining Distribution and SourcePackageRelease:
 
-    >>> distribution = Distribution.get(1)
+    >>> distribution = IStore(Distribution).get(Distribution, 1)
     >>> print(distribution.name)
     ubuntu
 

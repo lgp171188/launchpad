@@ -354,7 +354,7 @@ class PackageDiffSet:
                 ),
             )
             archives = load(Archive, (spr.upload_archive_id for spr in sprs))
-            load(Distribution, (a.distributionID for a in archives))
+            load(Distribution, (a.distribution_id for a in archives))
 
         if preload_for_display:
             return DecoratedResultSet(result, pre_iter_hook=preload_hook)

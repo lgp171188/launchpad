@@ -505,7 +505,7 @@ class PopulateDistributionSourcePackageCache(TunableLoop):
             (
                 SourcePackagePublishingHistory.id,
                 Archive.id,
-                Archive.distributionID,
+                Archive.distribution_id,
                 SourcePackageName.id,
                 SourcePackageName.name,
             ),
