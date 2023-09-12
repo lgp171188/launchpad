@@ -79,6 +79,7 @@ from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.soyuz.enums import ArchivePurpose, PackagePublishingStatus
 from lp.soyuz.interfaces.archive import IArchiveSet
+from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
 )
@@ -2848,3 +2849,72 @@ class TestDistributionPublishedSources(TestCaseWithFactory):
         # source packages to them should not affect the number of queries
         # executed here.
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
+class TestDistributionSearchPPAs(TestCaseWithFactory):
+    # XXX cjwatson 2023-09-11: See also lib/lp/soyuz/doc/distribution.rst
+    # and lib/lp/soyuz/doc/distribution.rst for related doctests which
+    # haven't yet been turned into unit tests.
+
+    layer = DatabaseFunctionalLayer
+
+    def test_private_invisible_by_unprivileged_user(self):
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, private=True
+        )
+        with person_logged_in(self.factory.makePerson()) as user:
+            self.assertNotIn(
+                archive, distribution.searchPPAs(user=user, show_inactive=True)
+            )
+
+    def test_private_visible_by_owner(self):
+        distribution = self.factory.makeDistribution()
+        owner = self.factory.makePerson()
+        archive = self.factory.makeArchive(
+            distribution=distribution, owner=owner, private=True
+        )
+        with person_logged_in(owner):
+            self.assertIn(
+                archive,
+                distribution.searchPPAs(user=owner, show_inactive=True),
+            )
+
+    def test_private_visible_by_uploader(self):
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, private=True
+        )
+        uploader = self.factory.makePerson()
+        getUtility(IArchivePermissionSet).newComponentUploader(
+            archive, uploader, "main"
+        )
+        with person_logged_in(uploader):
+            self.assertIn(
+                archive,
+                distribution.searchPPAs(user=uploader, show_inactive=True),
+            )
+
+    def test_private_visible_by_commercial_admin(self):
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, private=True
+        )
+        with celebrity_logged_in("commercial_admin") as commercial_admin:
+            self.assertIn(
+                archive,
+                distribution.searchPPAs(
+                    user=commercial_admin, show_inactive=True
+                ),
+            )
+
+    def test_private_visible_by_admin(self):
+        distribution = self.factory.makeDistribution()
+        archive = self.factory.makeArchive(
+            distribution=distribution, private=True
+        )
+        with celebrity_logged_in("admin") as admin:
+            self.assertIn(
+                archive,
+                distribution.searchPPAs(user=admin, show_inactive=True),
+            )
