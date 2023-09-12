@@ -97,7 +97,7 @@ class TranslationsOverview:
             if product_id is not None:
                 pillar = IStore(Product).get(Product, product_id)
             elif distro_id is not None:
-                pillar = Distribution.get(distro_id)
+                pillar = IStore(Distribution).get(Distribution, distro_id)
             else:
                 raise MalformedKarmaCacheData(
                     "Lots of karma for non-existing product or distribution."

@@ -874,7 +874,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
         # coming from, and the version number in the DSD may have
         # changed.  We can however filter out DSDs that are from
         # different distributions, based on the job's target archive.
-        source_distro_id = self.source_archive.distributionID
+        source_distro_id = self.source_archive.distribution_id
         return [
             dsd
             for dsd in candidates

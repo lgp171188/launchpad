@@ -312,7 +312,7 @@ class PillarNameSet:
                 load_related(ProjectGroup, pillar_names, ["projectgroup_id"])
             )
             pillars.extend(
-                load_related(Distribution, pillar_names, ["distributionID"])
+                load_related(Distribution, pillar_names, ["distribution_id"])
             )
             load_related(LibraryFileAlias, pillars, ["icon_id"])
 
@@ -337,7 +337,8 @@ class PillarName(SQLBase):
     product = Reference(product_id, "Product.id")
     projectgroup_id = Int(name="project", allow_none=True)
     projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
-    distribution = ForeignKey(foreignKey="Distribution", dbName="distribution")
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
     active = BoolCol(dbName="active", notNull=True, default=True)
     alias_for = ForeignKey(
         foreignKey="PillarName", dbName="alias_for", default=None

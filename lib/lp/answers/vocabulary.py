@@ -9,7 +9,7 @@ __all__ = [
     "UsesAnswersProductVocabulary",
 ]
 
-from storm.expr import And
+from storm.expr import And, Is, Or
 from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
@@ -18,7 +18,6 @@ from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.model.product import Product
 from lp.registry.vocabularies import DistributionVocabulary, ProductVocabulary
-from lp.services.database.sqlobject import OR
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
@@ -106,11 +105,14 @@ class UsesAnswersDistributionVocabulary(DistributionVocabulary):
         self.distribution = IDistribution(self.context, None)
 
     @property
-    def _filter(self):
+    def _clauses(self):
         if self.distribution is None:
             distro_id = 0
         else:
             distro_id = self.distribution.id
-        return OR(
-            self._table.q.official_answers == True, self._table.id == distro_id
-        )
+        return [
+            Or(
+                Is(self._table.official_answers, True),
+                self._table.id == distro_id,
+            )
+        ]

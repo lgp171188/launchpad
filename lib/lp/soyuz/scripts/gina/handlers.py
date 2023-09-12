@@ -238,7 +238,7 @@ class ImporterHandler:
 
     def _get_distro(self, name):
         """Return the distro database object by name."""
-        distro = Distribution.selectOneBy(name=name)
+        distro = IStore(Distribution).find(Distribution, name=name).one()
         if not distro:
             raise DataSetupError("Error finding distribution %r" % name)
         return distro
