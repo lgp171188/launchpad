@@ -1035,9 +1035,12 @@ class SnapBuildChannelsField(Dict):
                     for snap_name in sorted(snap_names)
                 )
             )
+        # TODO: custom validation that validates `_byarch` values
+        # as dictionaries mapping architecture names to the current
+        # definition of `SnapBuildChannelsField`,
+        # and any other values to `TextLine`.
         super().__init__(
             key_type=Choice(values=snap_names),
-            value_type=TextLine(),
             description=description,
             **kwargs,
         )

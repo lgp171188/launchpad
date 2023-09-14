@@ -561,7 +561,7 @@ class Snap(StormBase, WebhookTargetMixin):
             clauses.extend(
                 [
                     DistroArchSeries.enabled,
-                    DistroArchSeries.distroseriesID == DistroSeries.id,
+                    DistroArchSeries.distroseries == DistroSeries.id,
                     DistroSeries.status.is_in(ACTIVE_STATUSES),
                 ]
             )
@@ -1269,6 +1269,7 @@ class Snap(StormBase, WebhookTargetMixin):
         return [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.CANCELLING,
         ]

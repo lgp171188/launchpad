@@ -169,7 +169,7 @@ class DistributionSourcePackageCache(StormBase):
             IStore(SourcePackageRelease)
             .find(
                 (
-                    SourcePackageRelease.sourcepackagenameID,
+                    SourcePackageRelease.sourcepackagename_id,
                     SourcePackageRelease.id,
                     SourcePackageRelease.version,
                 ),

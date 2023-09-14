@@ -1,0 +1,22 @@
+includes:
+  - layer:launchpad-db
+  - interface:memcache
+  - interface:apache-website
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - launchpad-soyuz-dependencies
+      - libapache2-mod-wsgi-py3
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - archivepublisher
+          - generate_contents_files
+          - generateppahtaccess
+          - ppa-apache-log-parser
+          - process_accepted
+          - process_death_row
+          - publish_distro

@@ -35,6 +35,7 @@ from lp.codehosting.vfs import branch_id_to_path
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.testing.profiled import profiled
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
@@ -210,7 +211,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         if productName is None:
             product = None
         else:
-            product = Product.selectOneBy(name=productName)
+            product = IStore(Product).find(Product, name=productName).one()
         namespace = get_branch_namespace(owner, product)
         return namespace.getByName(branchName)
 
@@ -338,7 +339,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         if product_name == "+junk":
             product = None
         else:
-            product = Product.selectOneBy(name=product_name)
+            product = IStore(Product).find(Product, name=product_name).one()
         if branch_type == BranchType.MIRRORED:
             url = "http://example.com"
         else:
@@ -399,7 +400,10 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         ZopelessAppServerLayer.txn.begin()
         branch = self.getDatabaseBranch("testuser", None, "test-branch")
         branch.owner.name = "renamed-user"
-        branch.setTarget(user=branch.owner, project=Product.byName("firefox"))
+        branch.setTarget(
+            user=branch.owner,
+            project=IStore(Product).find(Product, name="firefox").one(),
+        )
         branch.name = "renamed-branch"
         ZopelessAppServerLayer.txn.commit()
 
@@ -542,7 +546,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         # We can also push branches to URLs like /+branch/firefox
         # Hack 'firefox' so we have permission to do this.
         ZopelessAppServerLayer.txn.begin()
-        firefox = Product.selectOneBy(name="firefox")
+        firefox = IStore(Product).find(Product, name="firefox").one()
         testuser = Person.selectOneBy(name="testuser")
         firefox.development_focus.owner = testuser
         ZopelessAppServerLayer.txn.commit()

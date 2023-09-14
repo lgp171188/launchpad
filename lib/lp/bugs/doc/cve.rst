@@ -171,7 +171,7 @@ ICveSet.getBugCvesForBugTasks:
     >>> from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
     >>> from lp.registry.model.distribution import Distribution
     >>> params = BugTaskSearchParams(None)
-    >>> ubuntu = Distribution.selectOneBy(name="ubuntu")
+    >>> ubuntu = IStore(Distribution).find(Distribution, name="ubuntu").one()
     >>> ubuntu_tasks = ubuntu.searchTasks(params)
     >>> bugcves = cveset.getBugCvesForBugTasks(ubuntu_tasks)
     >>> for bug, cve in bugcves:

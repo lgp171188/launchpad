@@ -16,7 +16,6 @@ process. Matsubara's account was created during a code import.
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     IEmailAddressSet,
     ... )
-    >>> from lp.registry.interfaces.person import IPersonSet
 
     >>> emailset = getUtility(IEmailAddressSet)
     >>> emailaddress = emailset.getByEmail("matsubara@async.com.br")
@@ -68,9 +67,8 @@ them, so we'll assign one just to prove that deactivating their account
 will cause this spec to be reassigned.
 
 
-    >>> personset = getUtility(IPersonSet)
     >>> foobar_preferredemail = emailset.getByEmail("foo.bar@canonical.com")
-    >>> foobar = personset.get(foobar_preferredemail.personID)
+    >>> foobar = foobar_preferredemail.person
     >>> foobar.specifications(None).is_empty()
     False
 

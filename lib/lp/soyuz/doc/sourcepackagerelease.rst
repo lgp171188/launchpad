@@ -16,8 +16,9 @@ Basic attributes
 
 Let's get one from the database:
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> spr = SourcePackageRelease.get(20)
+    >>> spr = IStore(SourcePackageRelease).get(SourcePackageRelease, 20)
     >>> print(spr.name)
     pmount
     >>> print(spr.version)
@@ -88,7 +89,9 @@ All the builds returned are for non-PPA archives:
 
 Check that the uploaded changesfile works:
 
-    >>> commercial = SourcePackageRelease.get(36)
+    >>> commercial = IStore(SourcePackageRelease).get(
+    ...     SourcePackageRelease, 36
+    ... )
     >>> commercial.upload_changesfile.http_url
     'http://.../commercialpackage_1.0-1_source.changes'
 
@@ -214,7 +217,7 @@ Throw away the DB changes:
 
 Let's get a sample SourcePackageRelease:
 
-    >>> spr_test = SourcePackageRelease.get(20)
+    >>> spr_test = IStore(SourcePackageRelease).get(SourcePackageRelease, 20)
     >>> print(spr_test.name)
     pmount
 
@@ -226,7 +229,7 @@ The size of a source package can be obtained via the getPackageSize() method.
 It returns the sum of the size of all files comprising the source package (in
 kilo-bytes).
 
-    >>> spr = SourcePackageRelease.get(14)
+    >>> spr = IStore(SourcePackageRelease).get(SourcePackageRelease, 14)
     >>> print(spr.name)
     mozilla-firefox
     >>> spr.getPackageSize()
@@ -234,10 +237,18 @@ kilo-bytes).
 
 Verify that empty packages have a size of zero.
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> linux_src = SourcePackageName.selectOneBy(name="linux-source-2.6.15")
-    >>> spr = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagename=linux_src, version="2.6.15.3"
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> linux_src = getUtility(ISourcePackageNameSet)["linux-source-2.6.15"]
+    >>> spr = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=linux_src,
+    ...         version="2.6.15.3",
+    ...     )
+    ...     .one()
     ... )
     >>> spr.getPackageSize()
     0.0

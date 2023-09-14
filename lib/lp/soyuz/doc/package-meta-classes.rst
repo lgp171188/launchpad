@@ -4,8 +4,11 @@ Package Meta Classes
 There are a bunch of meta classes used for combine information from
 our Database Model for packages in a intuitive manner, they are:
 
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
     >>> from lp.registry.model.distribution import Distribution
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.distributionsourcepackagerelease import (
     ...     DistributionSourcePackageRelease,
     ... )
@@ -21,16 +24,22 @@ DistributionSourcePackage class is tested in:
 
 Combining Distribution and SourcePackageRelease:
 
-    >>> distribution = Distribution.get(1)
+    >>> distribution = IStore(Distribution).get(Distribution, 1)
     >>> print(distribution.name)
     ubuntu
 
-    >>> src_name = SourcePackageName.selectOneBy(name="pmount")
+    >>> src_name = getUtility(ISourcePackageNameSet)["pmount"]
     >>> print(src_name.name)
     pmount
 
-    >>> sourcepackagerelease = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=src_name.id, version="0.1-1"
+    >>> sourcepackagerelease = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=src_name,
+    ...         version="0.1-1",
+    ...     )
+    ...     .one()
     ... )
     >>> print(sourcepackagerelease.name)
     pmount

@@ -123,8 +123,8 @@ class BuildStatus(DBEnumeratedType):
         """
         Uploading build
 
-        The build has completed and is waiting to be processed by the
-        upload processor.
+        The build has completed, its output files have been gathered, and it
+        is waiting to be processed by the upload processor.
         """,
     )
 
@@ -145,6 +145,18 @@ class BuildStatus(DBEnumeratedType):
         Cancelled build
 
         A build was cancelled. This is a terminal state.
+        """,
+    )
+
+    # It would be clearer for this to be before UPLOADING, but unfortunately
+    # the mapping of this enumeration to integers is too dense.
+    GATHERING = DBItem(
+        11,
+        """
+        Gathering build output
+
+        The build has completed and buildd-manager is in the process of
+        downloading output files from the builder.
         """,
     )
 

@@ -6,6 +6,7 @@
 from storm.store import Store
 from testtools.matchers import Equals, LessThan
 
+from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
@@ -124,7 +125,9 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
         sourcepackagename = self.sourcepackagerelease.sourcepackagename
         publisher = SoyuzTestPublisher()
         publisher.updatePackageCache(self.distroarchseries.distroseries)
-        self.distroarchseries = DistroArchSeries.get(self.distroarchseries.id)
+        self.distroarchseries = IStore(DistroArchSeries).get(
+            DistroArchSeries, self.distroarchseries.id
+        )
         distribution = self.distroarchseries.distroseries.distribution
         releases = distribution.getCurrentSourceReleases([sourcepackagename])
         [(distribution_sourcepackage, dsp_release)] = releases.items()

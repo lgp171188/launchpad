@@ -87,7 +87,6 @@ from zope.interface import implementer
 from zope.schema.interfaces import IVocabularyTokenized
 from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.interfaces import Unauthorized
-from zope.security.proxy import isinstance as zisinstance
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.interfaces.question import IQuestion
@@ -147,8 +146,7 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import AND, CONTAINSSTRING, OR
+from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormexpr import (
     RegexpMatch,
     WithMaterialized,
@@ -176,7 +174,6 @@ from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
     IHugeVocabulary,
-    NamedSQLObjectVocabulary,
     NamedStormHugeVocabulary,
     NamedStormVocabulary,
     SQLObjectVocabularyBase,
@@ -247,26 +244,15 @@ class KarmaCategoryVocabulary(NamedStormVocabulary):
 
 
 @implementer(IHugeVocabulary)
-class ProductVocabulary(SQLObjectVocabularyBase):
+class ProductVocabulary(StormVocabularyBase):
     """All `IProduct` objects vocabulary."""
 
     step_title = "Search"
 
     _table = Product
-    _orderBy = "displayname"
+    _order_by = "displayname"
+    _clauses = [Product.active]
     displayname = "Select a project"
-
-    def __contains__(self, obj):
-        # Sometimes this method is called with an SQLBase instance, but
-        # z3 form machinery sends through integer ids. This might be due
-        # to a bug somewhere.
-        where = "active='t' AND id=%d"
-        if zisinstance(obj, SQLBase):
-            product = self._table.selectOne(where % obj.id)
-            return product is not None and product == obj
-        else:
-            product = self._table.selectOne(where % int(obj))
-            return product is not None
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -276,7 +262,11 @@ class ProductVocabulary(SQLObjectVocabularyBase):
         """See `IVocabularyTokenized`."""
         # Product names are always lowercase.
         token = token.lower()
-        product = self._table.selectOneBy(name=token, active=True)
+        product = (
+            IStore(self._table)
+            .find(self._table, self._table.active, name=token)
+            .one()
+        )
         if product is None:
             raise LookupError(token)
         return self.toTerm(product)
@@ -323,22 +313,14 @@ class ProductVocabulary(SQLObjectVocabularyBase):
 
 
 @implementer(IHugeVocabulary)
-class ProjectGroupVocabulary(SQLObjectVocabularyBase):
+class ProjectGroupVocabulary(StormVocabularyBase):
     """All `IProjectGroup` objects vocabulary."""
 
     _table = ProjectGroup
-    _orderBy = "displayname"
+    _order_by = "displayname"
+    _clauses = [ProjectGroup.active]
     displayname = "Select a project group"
     step_title = "Search"
-
-    def __contains__(self, obj):
-        where = "active='t' and id=%d"
-        if zisinstance(obj, SQLBase):
-            project = self._table.selectOne(where % obj.id)
-            return project is not None and project == obj
-        else:
-            project = self._table.selectOne(where % int(obj))
-            return project is not None
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -346,7 +328,11 @@ class ProjectGroupVocabulary(SQLObjectVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        project = self._table.selectOneBy(name=token, active=True)
+        project = (
+            IStore(self._table)
+            .find(self._table, self._table.active, name=token)
+            .one()
+        )
         if project is None:
             raise LookupError(token)
         return self.toTerm(project)
@@ -588,7 +574,7 @@ class ValidPersonOrTeamVocabulary(
     @cachedproperty
     def store(self):
         """The storm store."""
-        return IStore(Product)
+        return IStore(Person)
 
     @cachedproperty
     def _karma_context_constraint(self):
@@ -746,9 +732,11 @@ class ValidPersonOrTeamVocabulary(
         # description so we need to bulk load them for performance, otherwise
         # we get one query per person per attribute.
         def pre_iter_hook(persons):
-            emails = bulk.load_referencing(EmailAddress, persons, ["personID"])
+            emails = bulk.load_referencing(
+                EmailAddress, persons, ["person_id"]
+            )
             email_by_person = {
-                email.personID: email
+                email.person_id: email
                 for email in emails
                 if email.status == EmailAddressStatus.PREFERRED
             }
@@ -1352,11 +1340,11 @@ class ProductSeriesVocabulary(StormVocabularyBase):
         return result
 
 
-class FilteredDistroSeriesVocabulary(SQLObjectVocabularyBase):
+class FilteredDistroSeriesVocabulary(StormVocabularyBase):
     """Describes the series of a particular distribution."""
 
     _table = DistroSeries
-    _orderBy = "version"
+    _order_by = "version"
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -1365,13 +1353,14 @@ class FilteredDistroSeriesVocabulary(SQLObjectVocabularyBase):
         )
 
     def __iter__(self):
-        kw = {}
-        if self._orderBy:
-            kw["orderBy"] = self._orderBy
         launchbag = getUtility(ILaunchBag)
         if launchbag.distribution:
             distribution = launchbag.distribution
-            series = self._table.selectBy(distributionID=distribution.id, **kw)
+            series = IStore(DistroSeries).find(
+                DistroSeries, distribution=distribution
+            )
+            if self._order_by:
+                series = series.order_by(self._order_by)
             for series in sorted(series, key=attrgetter("sortkey")):
                 yield self.toTerm(series)
 
@@ -1525,7 +1514,7 @@ class MilestoneWithDateExpectedVocabulary(MilestoneVocabulary):
 
 
 @implementer(IHugeVocabulary)
-class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
+class CommercialProjectsVocabulary(NamedStormVocabulary):
     """List all commercial projects.
 
     A commercial project is an active project that can have a commercial
@@ -1535,7 +1524,7 @@ class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
     """
 
     _table = Product
-    _orderBy = "displayname"
+    _order_by = "displayname"
     step_title = "Search"
 
     @property
@@ -1602,11 +1591,11 @@ class CommercialProjectsVocabulary(NamedSQLObjectVocabulary):
         return self.context.inTeam(project.owner)
 
 
-class DistributionVocabulary(NamedSQLObjectVocabulary):
+class DistributionVocabulary(NamedStormVocabulary):
     """All `IDistribution` objects vocabulary."""
 
     _table = Distribution
-    _orderBy = "name"
+    _order_by = "name"
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
@@ -1622,28 +1611,22 @@ class DistributionVocabulary(NamedSQLObjectVocabulary):
             return self.emptySelectResults()
 
         rows = IStore(self._table).find(
-            self._table,
-            self._table.name.contains_string(six.ensure_text(query).lower()),
+            self._table, self._table.name.contains_string(query.lower())
         )
-        if self._orderBy:
-            rows = rows.order_by(self._orderBy)
+        if self._order_by:
+            rows = rows.order_by(self._order_by)
         return rows
 
 
-class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
+class DistroSeriesVocabulary(NamedStormVocabulary):
     """All `IDistroSeries` objects vocabulary."""
 
     _table = DistroSeries
-    _orderBy = ["Distribution.displayname", "-DistroSeries.date_created"]
-    _clauseTables = ["Distribution"]
+    _order_by = [Distribution.display_name, Desc(DistroSeries.date_created)]
+    _clauses = [DistroSeries.distribution == Distribution.id]
 
     def __iter__(self):
-        series = self._table.select(
-            DistroSeries.q.distributionID == Distribution.q.id,
-            orderBy=self._orderBy,
-            clauseTables=self._clauseTables,
-        )
-        for series in sorted(series, key=attrgetter("sortkey")):
+        for series in sorted(self._entries, key=attrgetter("sortkey")):
             yield self.toTerm(series)
 
     @staticmethod
@@ -1682,18 +1665,19 @@ class DistroSeriesVocabulary(NamedSQLObjectVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = six.ensure_text(query).lower()
-        objs = self._table.select(
-            AND(
-                Distribution.q.id == DistroSeries.q.distributionID,
-                OR(
-                    CONTAINSSTRING(Distribution.q.name, query),
-                    CONTAINSSTRING(DistroSeries.q.name, query),
+        query = query.lower()
+        return (
+            IStore(DistroSeries)
+            .find(
+                DistroSeries,
+                DistroSeries.distribution == Distribution.id,
+                Or(
+                    Distribution.name.contains_string(query),
+                    DistroSeries.name.contains_string(query),
                 ),
-            ),
-            orderBy=self._orderBy,
+            )
+            .order_by(self._order_by)
         )
-        return objs
 
 
 @implementer(IHugeVocabulary)
@@ -1802,10 +1786,10 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
             where.append(search)
         parent_distributions = list(
             IStore(DistroSeries).find(
-                parent.distributionID,
+                parent.distribution_id,
                 And(
-                    parent.distributionID != self.distribution.id,
-                    child.distributionID == self.distribution.id,
+                    parent.distribution_id != self.distribution.id,
+                    child.distribution_id == self.distribution.id,
                     child.id == DistroSeriesParent.derived_series_id,
                     parent.id == DistroSeriesParent.parent_series_id,
                 ),
@@ -1813,12 +1797,12 @@ class DistroSeriesDerivationVocabulary(FilteredVocabularyBase):
         )
         if parent_distributions != []:
             where.append(
-                DistroSeries.distributionID.is_in(parent_distributions)
+                DistroSeries.distribution_id.is_in(parent_distributions)
             )
             return self.find_terms(where)
         else:
             # Select only the series with architectures setup in LP.
-            where.append(DistroSeries.id == DistroArchSeries.distroseriesID)
+            where.append(DistroSeries.id == DistroArchSeries.distroseries_id)
             where.append(DistroSeries.distribution != self.distribution)
             return self.find_terms(where)
 
@@ -1986,7 +1970,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
         store = IStore(PillarName)
         origin = [
             PillarName,
-            LeftJoin(Product, Product.id == PillarName.productID),
+            LeftJoin(Product, Product.id == PillarName.product_id),
         ]
         base_clauses = [
             ProductSet.getProductPrivacyFilter(getUtility(ILaunchBag).user)
@@ -2132,7 +2116,7 @@ class SourcePackageNameVocabulary(NamedStormHugeVocabulary):
         if not query:
             return self.emptySelectResults()
 
-        query = six.ensure_text(query).lower()
+        query = query.lower()
         results = IStore(self._table).find(
             self._table,
             Or(

@@ -325,12 +325,19 @@ Now continue with the real upload.
 Let's check if packages were uploaded correctly.
 
     >>> from operator import attrgetter
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
-    >>> spn = SourcePackageName.selectOneBy(name="drdsl")
+    >>> spn = getUtility(ISourcePackageNameSet)["drdsl"]
     >>> print(spn.name)
     drdsl
-    >>> spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
+    >>> spr = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=spn)
+    ...     .one()
+    ... )
     >>> print(spr.title)
     drdsl - 1.2.0-0ubuntu1
     >>> print(spr.name)
@@ -359,10 +366,14 @@ Let's check if packages were uploaded correctly.
 
 Same thing for etherwake:
 
-    >>> spn = SourcePackageName.selectOneBy(name="etherwake")
+    >>> spn = getUtility(ISourcePackageNameSet)["etherwake"]
     >>> print(spn.name)
     etherwake
-    >>> spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
+    >>> spr = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=spn)
+    ...     .one()
+    ... )
     >>> print(spr.title)
     etherwake - 1.08-1
     >>> print(spr.name)
@@ -422,12 +433,15 @@ Also check the upload folders contain all the files we uploaded.
 Now let's see if all of the valid uploads are in the Upload queue marked
 as NEW and RELEASE.
 
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.queue import PackageUploadSource
     >>> for name in package_names:
     ...     print(name)
-    ...     spn = SourcePackageName.selectOneBy(name=name)
-    ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
+    ...     spn = getUtility(ISourcePackageNameSet)[name]
+    ...     spr = (
+    ...         IStore(SourcePackageRelease)
+    ...         .find(SourcePackageRelease, sourcepackagename=spn)
+    ...         .one()
+    ...     )
     ...     us = (
     ...         IStore(PackageUploadSource)
     ...         .find(PackageUploadSource, sourcepackagerelease=spr)
@@ -496,8 +510,12 @@ These packages must now be in the publishing history. Let's check it.
     ... )
     >>> package_names.sort()
     >>> for name in package_names:
-    ...     spn = SourcePackageName.selectOneBy(name=name)
-    ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
+    ...     spn = getUtility(ISourcePackageNameSet)[name]
+    ...     spr = (
+    ...         IStore(SourcePackageRelease)
+    ...         .find(SourcePackageRelease, sourcepackagename=spn)
+    ...         .one()
+    ...     )
     ...     sspph = IStore(SSPPH).find(SSPPH, sourcepackagerelease=spr).one()
     ...     if sspph:
     ...         print(name, sspph.status.title)

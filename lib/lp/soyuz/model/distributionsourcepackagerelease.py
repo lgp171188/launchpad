@@ -169,7 +169,7 @@ class DistributionSourcePackageRelease:
             ),
             Join(
                 DistroSeries,
-                DistroArchSeries.distroseriesID == DistroSeries.id,
+                DistroArchSeries.distroseries == DistroSeries.id,
             ),
             Join(
                 BinaryPackageRelease,
@@ -253,7 +253,7 @@ class DistributionSourcePackageRelease:
         binaries = store.using(*tables).find(
             result_row,
             And(
-                DistroArchSeries.distroseriesID == distroseries.id,
+                DistroArchSeries.distroseries == distroseries,
                 BinaryPackagePublishingHistory.archive_id.is_in(archive_ids),
                 BinaryPackageBuild.source_package_release
                 == self.sourcepackagerelease,

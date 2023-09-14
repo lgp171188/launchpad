@@ -1003,7 +1003,7 @@ The translation-managers detail may use ", and" to separate items, but
 since there is only one item in this case, we don't see that.
 
     >>> import re
-    >>> print(re.search("\band\b", managers))
+    >>> print(re.search(r"\band\b", managers))
     None
 
     >>> print(get_detail_tag(browser, "translation-access"))

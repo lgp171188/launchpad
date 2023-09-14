@@ -72,11 +72,11 @@ def _get_locals():
     if dbuser == "launchpad":
         # Create a few variables "in case they come in handy."
         # Do we really use these?  Are they worth carrying around?
-        d = Distribution.get(1)
+        d = store.get(Distribution, 1)
         p = Person.get(1)
-        ds = DistroSeries.get(1)
-        prod = Product.get(1)
-        proj = ProjectGroup.get(1)
+        ds = store.get(DistroSeries, 1)
+        prod = store.get(Product, 1)
+        proj = store.get(ProjectGroup, 1)
         b2 = store.get(Bug, 2)
         b1 = store.get(Bug, 1)
         s = store.get(Specification, 1)

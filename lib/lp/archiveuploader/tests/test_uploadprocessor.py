@@ -51,7 +51,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
-from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
@@ -68,6 +67,7 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.soyuz.interfaces.packageset import IPackagesetSet
@@ -80,7 +80,6 @@ from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
 )
 from lp.soyuz.model.archivepermission import ArchivePermission
-from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
@@ -1096,9 +1095,11 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         self._checkPartnerUploadEmailSuccess()
 
         # Find the sourcepackagerelease and check its component.
-        foocomm_name = SourcePackageName.selectOneBy(name="foocomm")
-        foocomm_spr = SourcePackageRelease.selectOneBy(
-            sourcepackagename=foocomm_name
+        foocomm_name = getUtility(ISourcePackageNameSet)["foocomm"]
+        foocomm_spr = (
+            IStore(SourcePackageRelease)
+            .find(SourcePackageRelease, sourcepackagename=foocomm_name)
+            .one()
         )
         self.assertEqual(foocomm_spr.component.name, "partner")
 
@@ -1160,7 +1161,7 @@ class TestUploadProcessor(StatsMixin, TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Find the binarypackagerelease and check its component.
-        foocomm_binname = BinaryPackageName.selectOneBy(name="foocomm")
+        foocomm_binname = getUtility(IBinaryPackageNameSet)["foocomm"]
         foocomm_bpr = (
             IStore(BinaryPackageRelease)
             .find(BinaryPackageRelease, binarypackagename=foocomm_binname)
@@ -3105,6 +3106,20 @@ class TestUploadHandler(TestUploadProcessorBase):
         self.assertEqual(BuildStatus.BUILDING, build.status)
         self.assertLogContains("Build status is BUILDING. Ignoring.")
 
+    def testBuildStillGathering(self):
+        # Builds that are still GATHERING should be left alone.  The
+        # upload directory may already be in place, but buildd-manager
+        # will set the status to UPLOADING when it's handed off.
+        build, leaf_name = self.processUploadWithBuildStatus(
+            BuildStatus.GATHERING
+        )
+        # The build status is not changed
+        self.assertTrue(
+            os.path.exists(os.path.join(self.incoming_folder, leaf_name))
+        )
+        self.assertEqual(BuildStatus.GATHERING, build.status)
+        self.assertLogContains("Build status is GATHERING. Ignoring.")
+
     def testBuildWithInvalidStatus(self):
         # Builds with an invalid (not UPLOADING or BUILDING) status
         # should trigger a failure. We've probably raced with
@@ -3121,8 +3136,8 @@ class TestUploadHandler(TestUploadProcessorBase):
         )
         self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
         self.assertLogContains(
-            "Expected build status to be UPLOADING or BUILDING, was "
-            "NEEDSBUILD."
+            "Expected build status to be BUILDING, GATHERING, or UPLOADING; "
+            "was NEEDSBUILD."
         )
 
     def testOrderFilenames(self):

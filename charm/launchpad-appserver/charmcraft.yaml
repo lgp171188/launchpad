@@ -21,7 +21,7 @@ parts:
       - "-charm-wheels"
   ols-layers:
     source: https://git.launchpad.net/ols-charm-deps
-    source-commit: "f63ae0386275bf9089b30c8abae252a0ea523633"
+    source-commit: "9c59a9804f1f40e2a74be7dac9bf18a655a7864f"
     source-submodules: []
     source-type: git
     plugin: dump
@@ -35,11 +35,12 @@ parts:
     after:
       - ols-layers
     source: https://git.launchpad.net/launchpad-layers
-    source-commit: "8b7d25a29b8297d491abe6a0c6b69f34e39dddba"
+    source-commit: "6ca1d670f636e1abb8328d88fc5fda80cb75152a"
     source-submodules: []
     source-type: git
     plugin: dump
     organize:
+      apache-vhost-config: layers/interface/apache-vhost-config
       launchpad-base: layers/layer/launchpad-base
       launchpad-db: layers/layer/launchpad-db
       launchpad-payload: layers/layer/launchpad-payload

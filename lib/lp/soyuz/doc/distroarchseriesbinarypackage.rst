@@ -2,14 +2,23 @@
 Distro Arch Series Binary Package
 =================================
 
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
     ...     DistroArchSeriesBinaryPackage,
     ... )
-    >>> hoary_i386 = DistroArchSeries.get(6)
-    >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
-    >>> firefox_name = BinaryPackageName.selectOneBy(name="mozilla-firefox")
+    >>> hoary_i386 = IStore(DistroArchSeries).get(DistroArchSeries, 6)
+    >>> pmount_name = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="pmount")
+    ...     .one()
+    ... )
+    >>> firefox_name = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="mozilla-firefox")
+    ...     .one()
+    ... )
     >>> pmount_hoary_i386 = DistroArchSeriesBinaryPackage(
     ...     hoary_i386, pmount_name
     ... )
@@ -28,7 +37,6 @@ builds that are in sampledata!
 
     >>> from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
     >>> from lp.services.database.constants import UTC_NOW
-    >>> from lp.services.database.interfaces import IStore
     >>> from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     >>> from lp.soyuz.model.component import Component
     >>> from lp.soyuz.model.section import Section
@@ -263,14 +271,12 @@ Then, supersede all pmount publications in warty for pmount (this sets
 us up to demonstrate bug 208233).
 
     >>> switch_dbuser("archivepublisher")
-    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
-    >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
-    >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
-    ...     DistroArchSeriesBinaryPackage,
+    >>> warty_i386 = IStore(DistroArchSeries).get(DistroArchSeries, 1)
+    >>> pmount_name = (
+    ...     IStore(BinaryPackageName)
+    ...     .find(BinaryPackageName, name="pmount")
+    ...     .one()
     ... )
-    >>> from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
-    >>> warty_i386 = DistroArchSeries.get(1)
-    >>> pmount_name = BinaryPackageName.selectOneBy(name="pmount")
     >>> pmount_warty_i386 = DistroArchSeriesBinaryPackage(
     ...     warty_i386, pmount_name
     ... )

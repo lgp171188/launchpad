@@ -50,12 +50,9 @@
         for="zope.interface.Interface"
         factory="lp.services.webapp.adapter.get_standby_store"
         />
-    <!-- Universal adapter needed here per Bug #591841.
-         We have no way of specifying that all subclasses of
-         storm.locals.Storm implement an Interface. -->
     <adapter
         provides="lp.services.database.interfaces.IPrimaryObject"
-        for="zope.interface.Interface"
+        for="lp.services.database.interfaces.IDBObject"
         trusted="yes"
         factory="lp.services.webapp.adapter.get_object_from_primary_store"
         />
@@ -64,6 +61,9 @@
         <allow attributes="get" />
     </class>
     <class class="lp.services.database.sqlbase.SQLBase">
+        <implements interface="lp.services.database.interfaces.IDBObject" />
+    </class>
+    <class class="lp.services.database.stormbase.StormBase">
         <implements interface="lp.services.database.interfaces.IDBObject" />
     </class>
 

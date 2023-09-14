@@ -17,7 +17,7 @@ middle of the data so we can ensure binary data is handled correctly.
 
     >>> import re
     >>> match = re.search(
-    ...     "Your ticket is &quot;([\w-]+)&quot;", anon_browser.contents
+    ...     r"Your ticket is &quot;([\w-]+)&quot;", anon_browser.contents
     ... )
     >>> match is not None
     True

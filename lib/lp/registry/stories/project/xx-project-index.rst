@@ -158,14 +158,15 @@ Inactive products are not included in that list, though.
     # Use the DB classes directly to avoid having to setup a zope interaction
     # (i.e. login()) and bypass the security proxy.
     >>> from lp.registry.model.product import Product
-    >>> firefox = Product.byName("firefox")
+    >>> from lp.services.database.interfaces import IStore
+    >>> firefox = IStore(Product).find(Product, name="firefox").one()
 
     # Unlink the source packages so the project can be deactivated.
     >>> from lp.testing import unlink_source_packages
     >>> login("admin@canonical.com")
     >>> unlink_source_packages(firefox)
     >>> firefox.active = False
-    >>> firefox.syncUpdate()
+    >>> IStore(firefox).flush()
 
     >>> logout()
     >>> browser.open("http://launchpad.test/mozilla")
@@ -176,7 +177,7 @@ Inactive products are not included in that list, though.
     <a...Mozilla Thunderbird</a>
 
     >>> firefox.active = True
-    >>> firefox.syncUpdate()
+    >>> IStore(firefox).flush()
 
 
 Project Group bug subscriptions

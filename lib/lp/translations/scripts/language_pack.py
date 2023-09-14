@@ -15,11 +15,13 @@ import tempfile
 from shutil import copyfileobj
 
 import transaction
+from storm.expr import Is
 from storm.store import Store
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
-from lp.services.database.sqlbase import cursor, sqlvalues
+from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces.client import (
     ILibrarianClient,
     UploadFailed,
@@ -28,6 +30,7 @@ from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.translations.enums import LanguagePackType
 from lp.translations.interfaces.languagepack import ILanguagePackSet
 from lp.translations.interfaces.vpoexport import IVPOExportSet
+from lp.translations.model.potemplate import POTemplate
 
 
 def iter_sourcepackage_translationdomain_mapping(series):
@@ -37,22 +40,12 @@ def iter_sourcepackage_translationdomain_mapping(series):
     With the output of this method we can know the translationdomains that
     a sourcepackage has.
     """
-    cur = cursor()
-    cur.execute(
-        """
-        SELECT SourcePackageName.name, POTemplate.translation_domain
-        FROM
-            SourcePackageName
-            JOIN POTemplate ON
-                POTemplate.sourcepackagename = SourcePackageName.id AND
-                POTemplate.distroseries = %s AND
-                POTemplate.languagepack = TRUE
-        ORDER BY SourcePackageName.name, POTemplate.translation_domain
-        """
-        % sqlvalues(series)
-    )
-
-    yield from cur.fetchall()
+    yield from IStore(SourcePackageName).find(
+        (SourcePackageName.name, POTemplate.translation_domain),
+        POTemplate.sourcepackagename == SourcePackageName.id,
+        POTemplate.distroseries == series,
+        Is(POTemplate.languagepack, True),
+    ).order_by(SourcePackageName.name, POTemplate.translation_domain)
 
 
 def export(distroseries, component, update, force_utf8, logger):

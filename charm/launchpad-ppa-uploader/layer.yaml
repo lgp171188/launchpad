@@ -1,0 +1,16 @@
+includes:
+  - layer:launchpad-db
+  - interface:upload-queue-processor
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - launchpad-soyuz-dependencies
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+         - archivepublisher
+         - package_diff_job
+         - process_upload

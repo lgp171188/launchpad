@@ -18,7 +18,7 @@ __all__ = [
     "WebBugTrackerVocabulary",
 ]
 
-from storm.expr import And, Or
+from storm.expr import And, Is, Or
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.schema.interfaces import IVocabularyTokenized
@@ -48,7 +48,6 @@ from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import OR
 from lp.services.helpers import shortlist
 from lp.services.webapp.escaping import html_escape, structured
 from lp.services.webapp.interfaces import ILaunchBag
@@ -74,14 +73,17 @@ class UsesBugsDistributionVocabulary(DistributionVocabulary):
         self.distribution = IDistribution(self.context, None)
 
     @property
-    def _filter(self):
+    def _clauses(self):
         if self.distribution is None:
             distro_id = 0
         else:
             distro_id = self.distribution.id
-        return OR(
-            self._table.q.official_malone == True, self._table.id == distro_id
-        )
+        return [
+            Or(
+                Is(self._table.official_malone, True),
+                self._table.id == distro_id,
+            )
+        ]
 
 
 class BugVocabulary(StormVocabularyBase):
@@ -208,21 +210,27 @@ class BugWatchVocabulary(StormVocabularyBase):
 class DistributionUsingMaloneVocabulary:
     """All the distributions that uses Malone officially."""
 
-    _orderBy = "display_name"
+    _order_by = Distribution.display_name
 
     def __init__(self, context=None):
         self.context = context
 
     def __iter__(self):
         """Return an iterator which provides the terms from the vocabulary."""
-        distributions_using_malone = Distribution.selectBy(
-            official_malone=True, orderBy=self._orderBy
+        distributions_using_malone = (
+            IStore(Distribution)
+            .find(Distribution, official_malone=True)
+            .order_by(self._order_by)
         )
         for distribution in distributions_using_malone:
             yield self.getTerm(distribution)
 
     def __len__(self):
-        return Distribution.selectBy(official_malone=True).count()
+        return (
+            IStore(Distribution)
+            .find(Distribution, official_malone=True)
+            .count()
+        )
 
     def __contains__(self, obj):
         return (
@@ -236,7 +244,11 @@ class DistributionUsingMaloneVocabulary:
         return SimpleTerm(obj, obj.name, obj.displayname)
 
     def getTermByToken(self, token):
-        found_dist = Distribution.selectOneBy(name=token, official_malone=True)
+        found_dist = (
+            IStore(Distribution)
+            .find(Distribution, name=token, official_malone=True)
+            .one()
+        )
         if found_dist is None:
             raise LookupError(token)
         return self.getTerm(found_dist)

@@ -9,5 +9,10 @@ options:
       - nodejs
       - python3-convoy
   ols:
+    # layer:ols-http uses this as part of providing the loadbalancer
+    # interface.  Note that we rename this to "cached-launchpad-assets" in
+    # squid-reverseproxy configuration in order that the apache2 charm can
+    # distinguish between haproxy and Squid.  (Apache only needs the cached
+    # version.)
     service_name: launchpad-assets
     tarball_payload_name: launchpad

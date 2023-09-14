@@ -24,13 +24,15 @@ Get the current counts of stuff in the database:
     >>> SSPPH = SourcePackagePublishingHistory
     >>> SBPPH = BinaryPackagePublishingHistory
 
-    >>> orig_spr_count = SourcePackageRelease.select().count()
+    >>> orig_spr_count = (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ... )
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
     >>> orig_person_count = Person.select().count()
     >>> orig_tp_count = (
     ...     IStore(TeamParticipation).find(TeamParticipation).count()
     ... )
-    >>> orig_email_count = EmailAddress.select().count()
+    >>> orig_email_count = IStore(EmailAddress).find(EmailAddress).count()
     >>> orig_bpr_count = (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
     ... )
@@ -234,16 +236,26 @@ forcefully (ubuntu-meta).
 
     >>> hc + bc
     16
-    >>> count = SourcePackageRelease.select().count()
+    >>> count = (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ... )
     >>> count - orig_spr_count
     17
 
 Check that x11proto-damage has its Build-Depends-Indep value correctly set:
 
-    >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> n = SourcePackageName.selectOneBy(name="x11proto-damage")
-    >>> x11p = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="6.8.99.7-2"
+    >>> from lp.registry.interfaces.sourcepackagename import (
+    ...     ISourcePackageNameSet,
+    ... )
+    >>> x11p_name = getUtility(ISourcePackageNameSet)["x11proto-damage"]
+    >>> x11p = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=x11p_name,
+    ...         version="6.8.99.7-2",
+    ...     )
+    ...     .one()
     ... )
 
     >>> print(x11p.builddependsindep)
@@ -292,8 +304,12 @@ Same for the copyright:
 Check that the dsc on the libcap package is correct, and that we
 only imported one:
 
-    >>> n = SourcePackageName.selectOneBy(name="libcap")
-    >>> cap = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> cap_name = getUtility(ISourcePackageNameSet)["libcap"]
+    >>> cap = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=cap_name)
+    ...     .one()
+    ... )
     >>> print(cap.dsc)
     -----BEGIN PGP SIGNED MESSAGE-----
     Hash: SHA1
@@ -324,9 +340,15 @@ only imported one:
 
 Test ubuntu-meta in breezy, which was forcefully imported.
 
-    >>> n = SourcePackageName.selectOneBy(name="ubuntu-meta")
-    >>> um = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="0.80"
+    >>> um_name = getUtility(ISourcePackageNameSet)["ubuntu-meta"]
+    >>> um = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=um_name,
+    ...         version="0.80",
+    ...     )
+    ...     .one()
     ... )
     >>> print(
     ...     um.section.name,
@@ -354,8 +376,12 @@ were calculated directly on the files):
 Check that the section on the python-pam package is correct, and that we
 only imported one:
 
-    >>> n = SourcePackageName.selectOneBy(name="python-pam")
-    >>> pp = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> pp_name = getUtility(ISourcePackageNameSet)["python-pam"]
+    >>> pp = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=pp_name)
+    ...     .one()
+    ... )
     >>> print(pp.component.name)
     main
 
@@ -367,8 +393,12 @@ this is cut up correctly:
 
 Make sure that we only imported one db1-compat source package.
 
-    >>> n = SourcePackageName.selectOneBy(name="db1-compat")
-    >>> db1 = SourcePackageRelease.selectOneBy(sourcepackagenameID=n.id)
+    >>> db1_name = getUtility(ISourcePackageNameSet)["db1-compat"]
+    >>> db1 = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(SourcePackageRelease, sourcepackagename=db1_name)
+    ...     .one()
+    ... )
     >>> print(db1.section.name)
     libs
 
@@ -444,11 +474,13 @@ work.
 Check that the shlibs parsing and bin-only-NMU version handling works as
 expected:
 
-    >>> from lp.soyuz.model.binarypackagename import BinaryPackageName
-    >>> n = BinaryPackageName.selectOneBy(name="rioutil")
+    >>> from lp.soyuz.interfaces.binarypackagename import (
+    ...     IBinaryPackageNameSet,
+    ... )
+    >>> rio_name = getUtility(IBinaryPackageNameSet)["rioutil"]
     >>> rio = (
     ...     IStore(BinaryPackageRelease)
-    ...     .find(BinaryPackageRelease, binarypackagename=n)
+    ...     .find(BinaryPackageRelease, binarypackagename=rio_name)
     ...     .one()
     ... )
     >>> print(rio.shlibdeps)
@@ -461,10 +493,10 @@ expected:
 Test all the data got to the ed BPR intact, and that the missing
 priority was correctly munged to "extra":
 
-    >>> n = BinaryPackageName.selectOneBy(name="ed")
+    >>> ed_name = getUtility(IBinaryPackageNameSet)["ed"]
     >>> ed = (
     ...     IStore(BinaryPackageRelease)
-    ...     .find(BinaryPackageRelease, binarypackagename=n)
+    ...     .find(BinaryPackageRelease, binarypackagename=ed_name)
     ...     .one()
     ... )
     >>> print(ed.version)
@@ -499,11 +531,13 @@ We now check if the Breezy publication record has the correct priority:
 Check binary package libgjc-dev in Breezy. Its version number must differ from
 its source version number.
 
-    >>> n = BinaryPackageName.selectOneBy(name="libgcj-dev")
+    >>> lib_name = getUtility(IBinaryPackageNameSet)["libgcj-dev"]
     >>> lib = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
-    ...         BinaryPackageRelease, binarypackagename=n, version="4:4.0.1-3"
+    ...         BinaryPackageRelease,
+    ...         binarypackagename=lib_name,
+    ...         version="4:4.0.1-3",
     ...     )
     ...     .one()
     ... )
@@ -516,10 +550,14 @@ its source version number.
 
 Check if the udeb was properly parsed and identified:
 
-    >>> n = BinaryPackageName.selectOneBy(name="archive-copier")
+    >>> ac_name = getUtility(IBinaryPackageNameSet)["archive-copier"]
     >>> ac = (
     ...     IStore(BinaryPackageRelease)
-    ...     .find(BinaryPackageRelease, binarypackagename=n, version="0.1.5")
+    ...     .find(
+    ...         BinaryPackageRelease,
+    ...         binarypackagename=ac_name,
+    ...         version="0.1.5",
+    ...     )
     ...     .one()
     ... )
     >>> print(ac.version)
@@ -537,11 +575,13 @@ Check if the udeb was properly parsed and identified:
 
 We check that the binary package publishing override facility works:
 
-    >>> n = BinaryPackageName.selectOneBy(name="libdb1-compat")
+    >>> db1_name = getUtility(IBinaryPackageNameSet)["libdb1-compat"]
     >>> db1 = (
     ...     IStore(BinaryPackageRelease)
     ...     .find(
-    ...         BinaryPackageRelease, binarypackagename=n, version="2.1.3-7"
+    ...         BinaryPackageRelease,
+    ...         binarypackagename=db1_name,
+    ...         version="2.1.3-7",
     ...     )
     ...     .one()
     ... )
@@ -583,7 +623,9 @@ Kamion, 2 being uploaded by mdz and 2 by doko).
     ...     - orig_tp_count
     ... )
     13
-    >>> print(EmailAddress.select().count() - orig_email_count)
+    >>> print(
+    ...     IStore(EmailAddress).find(EmailAddress).count() - orig_email_count
+    ... )
     13
 
 
@@ -670,7 +712,10 @@ run.
 Nothing should happen to most of our data -- no counts should have
 changed, etc.
 
-    >>> SourcePackageRelease.select().count() - orig_spr_count
+    >>> (
+    ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
+    ...     - orig_spr_count
+    ... )
     17
     >>> print(Person.select().count() - orig_person_count)
     13
@@ -679,7 +724,9 @@ changed, etc.
     ...     - orig_tp_count
     ... )
     13
-    >>> print(EmailAddress.select().count() - orig_email_count)
+    >>> print(
+    ...     IStore(EmailAddress).find(EmailAddress).count() - orig_email_count
+    ... )
     13
     >>> (
     ...     IStore(BinaryPackageRelease).find(BinaryPackageRelease).count()
@@ -727,9 +774,15 @@ package -- that's what overrides actually do.
     ... )
     >>> print(ed_pub.priority)
     Extra
-    >>> n = SourcePackageName.selectOneBy(name="archive-copier")
-    >>> ac = SourcePackageRelease.selectOneBy(
-    ...     sourcepackagenameID=n.id, version="0.3.6"
+    >>> ac_name = getUtility(ISourcePackageNameSet)["archive-copier"]
+    >>> ac = (
+    ...     IStore(SourcePackageRelease)
+    ...     .find(
+    ...         SourcePackageRelease,
+    ...         sourcepackagename=ac_name,
+    ...         version="0.3.6",
+    ...     )
+    ...     .one()
     ... )
     >>> ac_pub = (
     ...     IStore(SSPPH)

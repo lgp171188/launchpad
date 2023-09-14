@@ -83,7 +83,10 @@ from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IPersonRoles
 from lp.services.auth.enums import AccessTokenScope
-from lp.services.auth.interfaces import IAccessTokenTarget
+from lp.services.auth.interfaces import (
+    IAccessTokenTarget,
+    IAccessTokenTargetEdit,
+)
 from lp.services.fields import InlineObject, PersonChoice, PublicPersonChoice
 from lp.services.webhooks.interfaces import IWebhookTarget
 
@@ -129,7 +132,7 @@ def git_repository_name_validator(name):
     return True
 
 
-class IGitRepositoryView(IHasRecipes):
+class IGitRepositoryView(IHasRecipes, IAccessTokenTarget):
     """IGitRepository attributes that require launchpad.View permission."""
 
     id = exported(Int(title=_("ID"), readonly=True, required=True))
@@ -877,8 +880,14 @@ class IGitRepositoryView(IHasRecipes):
         :return: A `ResultSet` of `IGitActivity`.
         """
 
-    # XXX cjwatson 2021-10-13: This should move to IAccessTokenTarget, but
-    # currently has rather too much backward-compatibility code for that.
+    # XXX ines-almeida 2023-09-08: This overwrites the definition in
+    # IAccessTokenTarget because we want to generate serialised macaroons in
+    # certain cases for git repositories specifically. Once
+    # `snapcraft remote-build` stops using the old workflow (see
+    # https://github.com/snapcore/snapcraft/pull/4270), this can be removed in
+    # favour of the general definition in `IAccessTokenTarget`.
+    # Note that `snap info snapcraft` still lists a number of older versions
+    # of snapcraft from before that change that are still supported.
     @operation_parameters(
         description=TextLine(
             title=_("A short description of the token."), required=False
@@ -1054,7 +1063,7 @@ class IGitRepositoryExpensiveRequest(Interface):
         that is not an admin or a registry expert."""
 
 
-class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTarget):
+class IGitRepositoryEdit(IWebhookTarget, IAccessTokenTargetEdit):
     """IGitRepository methods that require launchpad.Edit permission."""
 
     @mutator_for(IGitRepositoryView["name"])

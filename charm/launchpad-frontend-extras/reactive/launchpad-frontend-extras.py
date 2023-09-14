@@ -132,3 +132,28 @@ def configure_apache_website():
 @when_not_all("apache-website.available", "service.configured")
 def deconfigure_apache_website():
     clear_flag("service.apache-website.configured")
+
+
+_rsync_path = "/etc/rsync-juju.d/020-librarian-logs.conf"
+
+
+@when("librarian-logs.connected", "service.configured")
+@when_not("service.librarian-logs.configured")
+def configure_librarian_logs():
+    config = dict(hookenv.config())
+    if config["librarian_log_hosts_allow"]:
+        hookenv.log("Writing librarian-logs rsync configuration.")
+        templating.render(
+            "librarian-logs-rsync.conf.j2", _rsync_path, config, perms=0o644
+        )
+    elif os.path.exists(_rsync_path):
+        os.unlink(_rsync_path)
+    set_flag("service.librarian-logs.configured")
+
+
+@when("service.librarian-logs.configured")
+@when_not_all("librarian-logs.connected", "service.configured")
+def deconfigure_librarian_logs():
+    if os.path.exists(_rsync_path):
+        os.unlink(_rsync_path)
+    clear_flag("service.librarian-logs.configured")

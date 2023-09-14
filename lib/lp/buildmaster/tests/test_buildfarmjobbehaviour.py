@@ -11,6 +11,7 @@ from collections import OrderedDict
 from datetime import datetime
 
 import six
+from fixtures import MockPatchObject
 from testtools import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
@@ -487,6 +488,29 @@ class TestHandleStatusMixin:
             )
         self.assertEqual(BuildStatus.UPLOADING, self.build.status)
         self.assertResultCount(1, "incoming")
+
+    @defer.inlineCallbacks
+    def test_handleStatus_WAITING_OK_gathering_status(self):
+        # handleStatus sets the build's status to GATHERING while
+        # downloading files from the builder.
+        def mock_downloadFiles(*args, **kwargs):
+            self.assertEqual(BuildStatus.GATHERING, self.build.status)
+
+        self.useFixture(
+            MockPatchObject(
+                self.behaviour, "_downloadFiles", mock_downloadFiles
+            )
+        )
+        with dbuser(config.builddmaster.dbuser):
+            yield self.behaviour.handleStatus(
+                self.build.buildqueue_record,
+                {
+                    "builder_status": "BuilderStatus.WAITING",
+                    "build_status": "BuildStatus.OK",
+                    "filemap": {"myfile.py": "test_file_hash"},
+                },
+            )
+        self.assertEqual(BuildStatus.UPLOADING, self.build.status)
 
     @defer.inlineCallbacks
     def test_handleStatus_WAITING_OK_absolute_filepath(self):

@@ -1,0 +1,21 @@
+<VirtualHost *:80>
+    ServerName api.{{ domain }}
+    ServerAdmin {{ webmaster_email }}
+
+    CustomLog /var/log/apache2/api.{{ domain }}-access.log combined
+    ErrorLog /var/log/apache2/api.{{ domain }}-error.log
+
+    <Directory {{ base_dir }}/www>
+        Require all granted
+    </Directory>
+
+    Alias /robots.txt {{ base_dir }}/www/robots.txt
+    Alias /offline.html {{ base_dir }}/www/offline.html
+
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteCond %{REQUEST_URI} !/server-status
+    RewriteCond %{REQUEST_URI} !/robots.txt
+    RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI}
+</VirtualHost>
+

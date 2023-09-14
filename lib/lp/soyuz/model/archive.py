@@ -285,9 +285,8 @@ class Archive(SQLBase):
 
     description = StringCol(dbName="description", notNull=False, default=None)
 
-    distribution = ForeignKey(
-        foreignKey="Distribution", dbName="distribution", notNull=False
-    )
+    distribution_id = Int(name="distribution", allow_none=True)
+    distribution = Reference(distribution_id, "Distribution.id")
 
     purpose = DBEnum(name="purpose", allow_none=False, enum=ArchivePurpose)
 
@@ -692,7 +691,7 @@ class Archive(SQLBase):
             # attrgetter).
             spn_ids = set(
                 map(
-                    attrgetter("sourcepackagerelease.sourcepackagenameID"),
+                    attrgetter("sourcepackagerelease.sourcepackagename_id"),
                     rows,
                 )
             )
@@ -853,7 +852,7 @@ class Archive(SQLBase):
                     SourcePackageRelease, SourcePackageRelease.id.is_in(ids)
                 )
             )
-            ids = set(map(attrgetter("creatorID"), releases))
+            ids = set(map(attrgetter("creator_id"), releases))
             ids.discard(None)
             if ids:
                 list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(ids))
@@ -1116,13 +1115,13 @@ class Archive(SQLBase):
             sprs = load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"]
             )
-            load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            load_related(SourcePackageName, sprs, ["sourcepackagename_id"])
             load_related(Component, bpphs, ["component_id"])
             load_related(Section, bpphs, ["section_id"])
             dases = load_related(
                 DistroArchSeries, bpphs, ["distroarchseries_id"]
             )
-            load_related(DistroSeries, dases, ["distroseriesID"])
+            load_related(DistroSeries, dases, ["distroseries_id"])
 
         if eager_load:
             result = DecoratedResultSet(result, pre_iter_hook=eager_load_api)
@@ -1156,7 +1155,7 @@ class Archive(SQLBase):
             [
                 BinaryPackagePublishingHistory.distroarchseries_id
                 == DistroArchSeries.id,
-                DistroArchSeries.distroseriesID == DistroSeries.id,
+                DistroArchSeries.distroseries == DistroSeries.id,
             ]
         )
 
@@ -1167,7 +1166,7 @@ class Archive(SQLBase):
         # It includes all architecture-independent binaries only once and the
         # architecture-specific built for 'nominatedarchindep'.
         nominated_arch_independent_clauses = clauses + [
-            DistroSeries.nominatedarchindepID
+            DistroSeries.nominatedarchindep_id
             == BinaryPackagePublishingHistory.distroarchseries_id,
         ]
         nominated_arch_independents = store.find(
@@ -1177,7 +1176,7 @@ class Archive(SQLBase):
         # Retrieve all architecture-specific binary publications except
         # 'nominatedarchindep' (already included in the previous query).
         no_nominated_arch_independent_clauses = clauses + [
-            DistroSeries.nominatedarchindepID
+            DistroSeries.nominatedarchindep_id
             != BinaryPackagePublishingHistory.distroarchseries_id,
             BinaryPackageRelease.architecturespecific == True,
         ]
@@ -1534,6 +1533,7 @@ class Archive(SQLBase):
             ),
             "pending": [
                 BuildStatus.BUILDING,
+                BuildStatus.GATHERING,
                 BuildStatus.UPLOADING,
             ],
             "succeeded": (BuildStatus.FULLYBUILT,),
@@ -1546,6 +1546,7 @@ class Archive(SQLBase):
                 BuildStatus.FAILEDTOUPLOAD,
                 BuildStatus.MANUALDEPWAIT,
                 BuildStatus.BUILDING,
+                BuildStatus.GATHERING,
                 BuildStatus.UPLOADING,
                 BuildStatus.FULLYBUILT,
                 BuildStatus.SUPERSEDED,
@@ -2960,7 +2961,7 @@ class Archive(SQLBase):
 
         clauses = [
             Processor.id == DistroArchSeries.processor_id,
-            DistroArchSeries.distroseriesID == DistroSeries.id,
+            DistroArchSeries.distroseries == DistroSeries.id,
             DistroSeries.distribution == self.distribution,
         ]
         if not self.permit_obsolete_series_uploads:
@@ -3589,7 +3590,7 @@ class ArchiveSet:
         store = Store.of(user)
         result = store.find(
             Distribution,
-            Distribution.id == Archive.distributionID,
+            Distribution.id == Archive.distribution_id,
             self._getPPAsForUserClause(user),
         )
         return result.config(distinct=True)
@@ -3655,7 +3656,7 @@ class ArchiveSet:
              ORDER BY C DESC, a.id
              LIMIT 5
         """ % sqlvalues(
-            distribution, ArchivePurpose.PPA
+            distribution.id, ArchivePurpose.PPA
         )
 
         cur.execute(query)

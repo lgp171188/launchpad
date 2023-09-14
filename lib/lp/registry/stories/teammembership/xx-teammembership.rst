@@ -88,11 +88,12 @@ the team's home page.
 If this was a moderated team, the membership would not have been automatically
 approved, though.
 
+    >>> from storm.locals import Store
     >>> from lp.registry.interfaces.person import TeamMembershipPolicy
     >>> from lp.registry.model.person import Person
     >>> myemail = Person.selectOneBy(name="myemail")
     >>> myemail.membership_policy = TeamMembershipPolicy.MODERATED
-    >>> myemail.syncUpdate()
+    >>> Store.of(myemail).flush()
 
     >>> browser = setupBrowser(
     ...     auth="Basic james.blackwell@ubuntulinux.com:test"
@@ -142,7 +143,7 @@ Delegated teams also require approval of direct membership.
 
     >>> login("test@canonical.com")
     >>> myemail.membership_policy = TeamMembershipPolicy.DELEGATED
-    >>> myemail.syncUpdate()
+    >>> Store.of(myemail).flush()
     >>> logout()
 
     >>> browser = setupBrowser(auth="Basic colin.watson@ubuntulinux.com:test")
@@ -180,7 +181,7 @@ Delegated teams also require approval of direct membership.
 If it was a restricted team, users wouldn't even see a link to join the team.
 
     >>> myemail.membership_policy = TeamMembershipPolicy.RESTRICTED
-    >>> myemail.syncUpdate()
+    >>> Store.of(myemail).flush()
 
     >>> browser = setupBrowser(auth="Basic jeff.waugh@ubuntulinux.com:test")
     >>> browser.open("http://launchpad.test/~myemail")

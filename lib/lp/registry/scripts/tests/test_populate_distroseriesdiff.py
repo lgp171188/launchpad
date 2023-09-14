@@ -113,7 +113,7 @@ class TestFindLatestSourcePackageReleases(TestCaseWithFactory, FactoryHelper):
             to return for `spph`.
         """
         spr = spph.sourcepackagerelease
-        return (spr.sourcepackagenameID, spr.id, spr.version)
+        return (spr.sourcepackagename_id, spr.id, spr.version)
 
     def test_baseline(self):
         distroseries = self.factory.makeDistroSeries()
@@ -327,7 +327,7 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         self.assertContentEqual(
             [
                 (
-                    spph.sourcepackagerelease.sourcepackagenameID,
+                    spph.sourcepackagerelease.sourcepackagename_id,
                     None,
                     spph.sourcepackagerelease.version,
                 )
@@ -343,7 +343,7 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         self.assertContentEqual(
             [
                 (
-                    spph.sourcepackagerelease.sourcepackagenameID,
+                    spph.sourcepackagerelease.sourcepackagename_id,
                     spph.sourcepackagerelease.version,
                     None,
                 )
@@ -361,12 +361,12 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         self.assertContentEqual(
             [
                 (
-                    parent_spph.sourcepackagerelease.sourcepackagenameID,
+                    parent_spph.sourcepackagerelease.sourcepackagename_id,
                     None,
                     parent_spph.sourcepackagerelease.version,
                 ),
                 (
-                    derived_spph.sourcepackagerelease.sourcepackagenameID,
+                    derived_spph.sourcepackagerelease.sourcepackagename_id,
                     derived_spph.sourcepackagerelease.version,
                     None,
                 ),
@@ -395,7 +395,7 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         self.assertContentEqual(
             [
                 (
-                    parent_spph.sourcepackagerelease.sourcepackagenameID,
+                    parent_spph.sourcepackagerelease.sourcepackagename_id,
                     derived_spph.sourcepackagerelease.version,
                     parent_spph.sourcepackagerelease.version,
                 )
@@ -427,7 +427,7 @@ class TestFindDifferences(TestCaseWithFactory, FactoryHelper):
         self.assertContentEqual(
             [
                 (
-                    parent_spph.sourcepackagerelease.sourcepackagenameID,
+                    parent_spph.sourcepackagerelease.sourcepackagename_id,
                     newer_spr.version,
                     shared_spr.version,
                 )

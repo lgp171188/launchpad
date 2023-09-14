@@ -609,9 +609,9 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )
         distroseries = load_related(
-            DistroSeries, distroarchseries, ["distroseriesID"]
+            DistroSeries, distroarchseries, ["distroseries_id"]
         )
-        load_related(Distribution, distroseries, ["distributionID"])
+        load_related(Distribution, distroseries, ["distribution_id"])
         snaps = load_related(Snap, builds, ["snap_id"])
         getUtility(ISnapSet).preloadDataForSnaps(snaps)
         snapbuild_ids = set(map(attrgetter("id"), builds))

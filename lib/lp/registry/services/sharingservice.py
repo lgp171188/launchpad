@@ -162,13 +162,13 @@ class SharingService:
             teams_sql = SQL("SELECT team from teams")
             store = store.with_(with_statement)
             if IProduct.implementedBy(pillar_class):
-                ownerID = pillar_class._ownerID
+                owner_id = pillar_class._owner_id
             else:
-                ownerID = pillar_class.ownerID
+                owner_id = pillar_class.owner_id
             filter = Or(
                 extra_filter or False,
-                ownerID.is_in(teams_sql),
-                pillar_class.driverID.is_in(teams_sql),
+                owner_id.is_in(teams_sql),
+                pillar_class.driver_id.is_in(teams_sql),
             )
         tables = [
             AccessPolicyGrantFlat,

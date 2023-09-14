@@ -311,7 +311,7 @@ class FTPArchiveHandler:
             Join(
                 SourcePackageName,
                 SourcePackageName.id
-                == SourcePackageRelease.sourcepackagenameID,
+                == SourcePackageRelease.sourcepackagename_id,
             ),
         )
 
@@ -723,7 +723,7 @@ class FTPArchiveHandler:
             Component.id == BinaryPackagePublishingHistory.component_id,
         ]
         select_conditions = [
-            DistroArchSeries.distroseriesID == distroseries.id,
+            DistroArchSeries.distroseries == distroseries,
             BinaryPackagePublishingHistory.archive == self.publisher.archive,
             BinaryPackagePublishingHistory.pocket == pocket,
             BinaryPackagePublishingHistory.status

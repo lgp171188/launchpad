@@ -28,6 +28,7 @@ from lp.soyuz.adapters.overrides import SourceOverride
 from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePurpose,
+    BinaryPackageFormat,
     PackagePublishingStatus,
     SourcePackageFormat,
 )
@@ -1222,12 +1223,13 @@ class CopyCheckerTestCase(TestCaseWithFactory):
             ),
         )
 
-    def test_checkCopy_non_debian(self):
-        build = self.factory.makeCIBuild()
+    def test_checkCopy_non_debian_without_binaries(self):
         distroseries = self.factory.makeDistroSeries()
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         archive = self.factory.makeArchive(
             distribution=distroseries.distribution
         )
+        build = self.factory.makeCIBuild(distro_arch_series=das)
         spn = self.factory.makeSourcePackageName()
         spr = build.createSourcePackageRelease(
             distroseries,
@@ -1240,6 +1242,46 @@ class CopyCheckerTestCase(TestCaseWithFactory):
             sourcepackagerelease=spr, format=SourcePackageType.CI_BUILD
         )
         copy_checker = CopyChecker(archive, include_binaries=False)
+        self.assertIsNone(
+            copy_checker.checkCopy(
+                spph, distroseries, spph.pocket, check_permissions=False
+            )
+        )
+
+    def test_checkCopy_non_debian_with_binaries(self):
+        distroseries = self.factory.makeDistroSeries()
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        spn = self.factory.makeSourcePackageName()
+        spr = build.createSourcePackageRelease(
+            distroseries,
+            spn,
+            "1.0",
+            creator=build.git_repository.owner,
+            archive=archive,
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagerelease=spr, format=SourcePackageType.CI_BUILD
+        )
+        bpn = self.factory.makeBinaryPackageName()
+        bpr = build.createBinaryPackageRelease(
+            bpn,
+            "1.0",
+            "test summary",
+            "test description",
+            BinaryPackageFormat.WHL,
+            True,
+        )
+        [bpph] = getUtility(IPublishingSet).publishBinaries(
+            spph.archive,
+            distroseries,
+            spph.pocket,
+            {bpr: (None, None, None, None)},
+        )
+        copy_checker = CopyChecker(archive, include_binaries=True)
         self.assertIsNone(
             copy_checker.checkCopy(
                 spph, distroseries, spph.pocket, check_permissions=False
@@ -2219,6 +2261,112 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
             move=True,
         )
         self.assertEqual(PackagePublishingStatus.PENDING, source.status)
+
+    def test_non_debian_without_binaries(self):
+        distroseries = self.factory.makeDistroSeries()
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        spn = self.factory.makeSourcePackageName()
+        spr = build.createSourcePackageRelease(
+            distroseries,
+            spn,
+            "1.0",
+            creator=build.git_repository.owner,
+            archive=archive,
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagerelease=spr, format=SourcePackageType.CI_BUILD
+        )
+        target_archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        [copied_spph] = do_copy(
+            [spph],
+            target_archive,
+            distroseries,
+            spph.pocket,
+            include_binaries=False,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
+        self.assertThat(
+            copied_spph,
+            MatchesStructure.byEquality(
+                archive=target_archive,
+                displayname="%s 1.0 in %s" % (spn.name, distroseries.name),
+                status=PackagePublishingStatus.PENDING,
+            ),
+        )
+
+    def test_non_debian_with_binaries(self):
+        distroseries = self.factory.makeDistroSeries()
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        build = self.factory.makeCIBuild(distro_arch_series=das)
+        spn = self.factory.makeSourcePackageName()
+        spr = build.createSourcePackageRelease(
+            distroseries,
+            spn,
+            "1.0",
+            creator=build.git_repository.owner,
+            archive=archive,
+        )
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagerelease=spr, format=SourcePackageType.CI_BUILD
+        )
+        bpn = self.factory.makeBinaryPackageName()
+        bpr = build.createBinaryPackageRelease(
+            bpn,
+            "1.0",
+            "test summary",
+            "test description",
+            BinaryPackageFormat.WHL,
+            True,
+        )
+        [bpph] = getUtility(IPublishingSet).publishBinaries(
+            spph.archive,
+            distroseries,
+            spph.pocket,
+            {bpr: (None, None, None, None)},
+        )
+        target_archive = self.factory.makeArchive(
+            distribution=distroseries.distribution
+        )
+        copied = do_copy(
+            [spph],
+            target_archive,
+            distroseries,
+            spph.pocket,
+            include_binaries=True,
+            person=target_archive.owner,
+            check_permissions=False,
+            send_email=False,
+        )
+        self.assertThat(
+            copied,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        archive=target_archive,
+                        displayname="%s 1.0 in %s"
+                        % (spn.name, distroseries.name),
+                        status=PackagePublishingStatus.PENDING,
+                    ),
+                    MatchesStructure.byEquality(
+                        archive=target_archive,
+                        displayname="%s 1.0 in %s %s"
+                        % (bpn.name, distroseries.name, das.architecturetag),
+                        status=PackagePublishingStatus.PENDING,
+                    ),
+                ]
+            ),
+        )
 
 
 class TestCopyBuildRecords(TestCaseWithFactory):

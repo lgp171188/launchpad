@@ -163,7 +163,7 @@ class TestBuildNotify(TestCaseWithFactory):
             duration = "not available"
             build_log = "not available"
             builder = "not available"
-        elif build.status == BuildStatus.UPLOADING:
+        elif build.status in (BuildStatus.GATHERING, BuildStatus.UPLOADING):
             duration = "uploading"
             build_log = "see builder page"
             builder = "not available"

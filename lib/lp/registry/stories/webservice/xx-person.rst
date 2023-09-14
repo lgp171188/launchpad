@@ -22,6 +22,7 @@ for teams (as they're defined in the ITeam interface).
     gpg_keys_collection_link: 'http://.../~salgado/gpg_keys'
     hide_email_addresses: False
     homepage_content: None
+    id: ...
     invited_members_collection_link: 'http://.../~salgado/invited_members'
     irc_nicknames_collection_link: 'http://.../~salgado/irc_nicknames'
     is_probationary: True
@@ -79,6 +80,7 @@ for teams (as they're defined in the ITeam interface).
     gpg_keys_collection_link: 'http://.../~ubuntu-team/gpg_keys'
     hide_email_addresses: False
     homepage_content: None
+    id: ...
     invited_members_collection_link:
         'http://.../~ubuntu-team/invited_members'
     irc_nicknames_collection_link: 'http://.../~ubuntu-team/irc_nicknames'

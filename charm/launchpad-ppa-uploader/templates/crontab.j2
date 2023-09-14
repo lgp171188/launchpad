@@ -1,0 +1,25 @@
+# m h  dom mon dow   command
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-ppa-uploader
+
+{% if active -%}
+* * * * * nice -n 5 {{ code_dir }}/scripts/process-upload.py -C insecure -q {{ ppa_queue_dir }}/ --log-file=DEBUG:{{ logs_dir }}/process-upload.log
+
+* * * * * nice -n 10 {{ code_dir }}/cronscripts/process-job-source.py IPackageDiffJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IPackageDiffJobSource.log
+
+# Per bug https://bugs.launchpad.net/launchpad/+bug/62612
+# Files in that directory older than 7 days
+00 00 * * * find {{ ppa_queue_dir }}/accepted -maxdepth 1 -type f -mtime +7 -delete > /dev/null 2>&1
+# Directories older than 7 days (we want to treat the directories as one distinct unit)
+00 00 * * * find {{ ppa_queue_dir }}/accepted -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/failed -maxdepth 1 -type f -mtime +7 -delete > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/failed -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/rejected -maxdepth 1 -type f -mtime +7 -delete > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/rejected -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
+{% endif %}
+
+# OOPS amqp
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

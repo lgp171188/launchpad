@@ -203,7 +203,6 @@ from lp.services.database.sqlbase import (
     SQLBase,
     convert_storm_clause_to_string,
     cursor,
-    quote,
     sqlvalues,
 )
 from lp.services.database.sqlobject import (
@@ -457,6 +456,11 @@ class Person(
                 .find(PersonSettings, PersonSettings.person == self)
                 .one()
             )
+
+    @property
+    def exported_id(self):
+        """See `IPerson`."""
+        return self.id
 
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
     # Redefine the default ordering into Storm syntax.
@@ -1181,12 +1185,12 @@ class Person(
             ownership_participation = ClassAlias(TeamParticipation)
             clauses.extend(
                 [
-                    Product._ownerID == ownership_participation.team_id,
+                    Product._owner_id == ownership_participation.team_id,
                     ownership_participation.person_id == self.id,
                 ]
             )
         else:
-            clauses.append(Product._ownerID == self.id)
+            clauses.append(Product._owner_id == self.id)
 
         # We only want to use the extra query if match_name is not None and it
         # is not the empty string ('' or u'').
@@ -1269,11 +1273,11 @@ class Person(
                     TeamParticipation, Person.id == TeamParticipation.person_id
                 ),
                 LeftJoin(
-                    Product, TeamParticipation.team_id == Product._ownerID
+                    Product, TeamParticipation.team_id == Product._owner_id
                 ),
                 LeftJoin(
                     Distribution,
-                    TeamParticipation.team_id == Distribution.ownerID,
+                    TeamParticipation.team_id == Distribution.owner_id,
                 ),
                 Join(
                     CommercialSubscription,
@@ -1300,31 +1304,25 @@ class Person(
         The given pillar must be either an IProduct or an IDistribution.
         """
         if IProduct.providedBy(pillar):
-            where_clause = "product = %s" % sqlvalues(pillar)
+            pillar_clause = KarmaCache.product == pillar
         elif IDistribution.providedBy(pillar):
-            where_clause = "distribution = %s" % sqlvalues(pillar)
+            pillar_clause = KarmaCache.distribution == pillar
         else:
             raise AssertionError(
                 "Pillar must be a product or distro, got %s" % pillar
             )
-        replacements = sqlvalues(person=self)
-        replacements["where_clause"] = where_clause
-        query = (
-            """
-            SELECT DISTINCT KarmaCategory.id
-            FROM KarmaCategory
-            JOIN KarmaCache ON KarmaCache.category = KarmaCategory.id
-            WHERE %(where_clause)s
-                AND category IS NOT NULL
-                AND person = %(person)s
-            """
-            % replacements
-        )
-        cur = cursor()
-        cur.execute(query)
-        ids = [id for [id] in cur.fetchall()]
-        return IStore(KarmaCategory).find(
-            KarmaCategory, KarmaCategory.id.is_in(ids)
+        return (
+            IStore(KarmaCategory)
+            .using(
+                KarmaCategory,
+                Join(KarmaCache, KarmaCache.category == KarmaCategory.id),
+            )
+            .find(
+                KarmaCategory,
+                pillar_clause,
+                IsNot(KarmaCache.category_id, None),
+                KarmaCache.person == self,
+            )
         )
 
     @property
@@ -2109,11 +2107,7 @@ class Person(
         )
 
     def _getEmailsByStatus(self, status):
-        return Store.of(self).find(
-            EmailAddress,
-            EmailAddress.personID == self.id,
-            EmailAddress.status == status,
-        )
+        return Store.of(self).find(EmailAddress, person=self, status=status)
 
     def checkInclusiveMembershipPolicyAllowed(self, policy="open"):
         """See `ITeam`"""
@@ -2258,7 +2252,7 @@ class Person(
             LeftJoin(
                 email_table,
                 And(
-                    email_table.personID == person_table.id,
+                    email_table.person_id == person_table.id,
                     email_table.status == EmailAddressStatus.PREFERRED,
                 ),
             )
@@ -3041,10 +3035,8 @@ class Person(
                 "Any person's email address must provide the IEmailAddress "
                 "interface. %s doesn't." % email
             )
-        # XXX Steve Alexander 2005-07-05:
-        # This is here because of an SQLobject comparison oddity.
-        assert email.personID == self.id, "Wrong person! %r, %r" % (
-            email.personID,
+        assert email.person == self, "Wrong person! %r, %r" % (
+            email.person_id,
             self.id,
         )
 
@@ -3056,7 +3048,7 @@ class Person(
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                EmailAddress.personID == self.id,
+                EmailAddress.person == self,
                 EmailAddress.status == EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -3095,9 +3087,7 @@ class Person(
             )
         else:
             mailing_list_email = None
-        all_addresses = IStore(EmailAddress).find(
-            EmailAddress, EmailAddress.personID == self.id
-        )
+        all_addresses = IStore(EmailAddress).find(EmailAddress, person=self)
         for address in all_addresses:
             # Delete all email addresses that are not the preferred email
             # address, or the team's email address. If this method was called
@@ -3112,7 +3102,7 @@ class Person(
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                personID=self.id,
+                person=self,
                 status=EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -3143,12 +3133,12 @@ class Person(
                 "Any person's email address must provide the IEmailAddress "
                 "interface. %s doesn't." % email
             )
-        assert email.personID == self.id
+        assert email.person == self
         existing_preferred_email = (
             IStore(EmailAddress)
             .find(
                 EmailAddress,
-                personID=self.id,
+                person=self,
                 status=EmailAddressStatus.PREFERRED,
             )
             .one()
@@ -3431,13 +3421,13 @@ class Person(
                         ),
                         order_by=[
                             spph.distroseries_id,
-                            SourcePackageRelease.sourcepackagenameID,
+                            SourcePackageRelease.sourcepackagename_id,
                             Desc(spph.datecreated),
                             Desc(spph.id),
                         ],
                         distinct=(
                             spph.distroseries_id,
-                            SourcePackageRelease.sourcepackagenameID,
+                            SourcePackageRelease.sourcepackagename_id,
                         ),
                     )
                 ),
@@ -4520,7 +4510,7 @@ class PersonSet:
         return (
             IStore(Person)
             .using(
-                Person, Join(EmailAddress, EmailAddress.personID == Person.id)
+                Person, Join(EmailAddress, EmailAddress.person_id == Person.id)
             )
             .find(
                 (EmailAddress, Person),
@@ -4561,14 +4551,14 @@ class PersonSet:
 
     def getPeopleWithBranches(self, product=None):
         """See `IPersonSet`."""
-        branch_clause = "SELECT owner FROM Branch"
+        # Circular import.
+        from lp.code.model.branch import Branch
+
+        branch_params = {}
         if product is not None:
-            branch_clause += " WHERE product = %s" % quote(product)
-        return Person.select(
-            """
-            Person.id in (%s)
-            """
-            % branch_clause
+            branch_params["where"] = Branch.product == product
+        return IStore(Person).find(
+            Person, Person.id.is_in(Select(Branch.owner_id, **branch_params))
         )
 
     def updatePersonalStandings(self):
@@ -5543,7 +5533,7 @@ def _get_recipients_for_team(team):
         # Find Persons that have a preferred email address and an active
         # account, or are a team, or both.
         intermediate_transitive_results = source.find(
-            (TeamMembership.person_id, EmailAddress.personID),
+            (TeamMembership.person_id, EmailAddress.person_id),
             TeamMembership.status.is_in(
                 (
                     TeamMembershipStatus.ADMIN,
@@ -5553,7 +5543,7 @@ def _get_recipients_for_team(team):
             TeamMembership.team_id.is_in(pending_team_ids),
             Or(
                 And(
-                    EmailAddress.personID != None,
+                    EmailAddress.person != None,
                     Account.status == AccountStatus.ACTIVE,
                 ),
                 Person.teamownerID != None,

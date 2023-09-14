@@ -185,7 +185,7 @@ def load_related(object_type, owning_objects, foreign_keys):
     :param object_type: The object type to load - e.g. Person.
     :param owning_objects: The objects holding the references. E.g. Bug.
     :param foreign_keys: A list of attributes that should be inspected for
-        keys. e.g. ['ownerID']
+        keys. e.g. ['owner_id']
     """
     keys = set()
     for owning_object in owning_objects:

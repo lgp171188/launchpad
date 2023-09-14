@@ -98,7 +98,7 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
         tables=[Archive, DistroSeries],
         where=And(
             DistroSeries.id == series_col,
-            Archive.distributionID == DistroSeries.distributionID,
+            Archive.distribution_id == DistroSeries.distribution_id,
             Archive.purpose == ArchivePurpose.PRIMARY,
         ),
     )
@@ -334,7 +334,7 @@ def eager_load_dsds(dsds):
     person_ids = set().union(
         (dsdc.message.owner_id for dsdc in latest_comments),
         (sprb.requester_id for sprb in sprbs),
-        (spr.creatorID for spr in sprs),
+        (spr.creator_id for spr in sprs),
         (spr.signing_key_owner_id for spr in sprs),
     )
     uploaders = getUtility(IPersonSet).getPrecachedPersonsFromIDs(
@@ -505,8 +505,8 @@ class DistroSeriesDifference(StormBase):
                 SPPH.distroseries == distro_series,
                 SPPH.sourcepackagerelease_id == SPR.id,
                 SPPH.status.is_in(active_publishing_status),
-                SPR.creatorID == TP.person_id,
-                SPR.sourcepackagenameID == DSD.source_package_name_id,
+                SPR.creator_id == TP.person_id,
+                SPR.sourcepackagename_id == DSD.source_package_name_id,
                 TP.team_id.is_in(person.id for person in changed_by),
             )
             differences_changed_by = store.find(

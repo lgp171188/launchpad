@@ -1,0 +1,63 @@
+options:
+  active:
+    type: boolean
+    default: true
+    description: If true, enable jobs that may change the database.
+  domain_ppa_private:
+    type: string
+    default: private-ppa.launchpad.test
+    description: |
+      Domain for private PPA requests.
+  domain_ppa_private_alt:
+    type: string
+    default:
+    description: |
+      If set, the requests to this alternative domain will also be allowed for
+      accessing private PPAs.
+  domain_ppa_public:
+    type: string
+    default: ppa.launchpad.test
+    description: |
+      Domain for public PPA requests.
+  domain_ppa_public_alt:
+    type: string
+    default:
+    description: |
+      If set, the requests to this alternative domain will also be allowed for
+      accessing public PPAs.
+  domain_ppa_buildd:
+    type: string
+    default:
+    description: Domain for PPA buildd route.
+  logparser_max_parsed_lines:
+    type: int
+    default: 10000000
+    description: > 
+      The maximum number of lines that should be parsed by the launchpad log
+      parser.
+  oval_data_rsync_endpoint:
+    type: string
+    default:
+    description: If set, use as rsync endpoint for synchronizing the OVAL data.
+  require_signing_keys:
+    type: boolean
+    description: > 
+      If true, PPAs and copy archives will only be published once their
+      signing-keys have been generated.
+    default: False
+  signing_client_private_key:
+    type: string
+    description: >
+      Private key for encrypting communication between client and signing
+      service. 
+    default: ""
+  signing_client_public_key:
+    type: string
+    description: >
+      Public key for encrypting communication between client and signing
+      service. 
+    default: ""
+  signing_endpoint:
+    type: string
+    default:
+    description: Endpoint for the signing service.

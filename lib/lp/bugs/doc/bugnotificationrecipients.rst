@@ -69,10 +69,10 @@ Let's up some data for our test:
     >>> from lp.bugs.mail.bugnotificationrecipients import (
     ...     BugNotificationRecipients,
     ... )
-    >>> debian = Distribution.selectOneBy(name="debian")
+    >>> debian = IStore(Distribution).find(Distribution, name="debian").one()
     >>> pmount = debian.getSourcePackage("pmount")
-    >>> alsa_utils = Product.selectOneBy(name="alsa-utils")
-    >>> gnomebaker = Product.selectOneBy(name="gnomebaker")
+    >>> alsa_utils = IStore(Product).find(Product, name="alsa-utils").one()
+    >>> gnomebaker = IStore(Product).find(Product, name="gnomebaker").one()
     >>> personset = getUtility(IPersonSet)
 
 Here's where getBugNotificationRecipients() starts off. First, a

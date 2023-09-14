@@ -1132,6 +1132,7 @@ class BuildImageDisplayAPI(ObjectImageDisplayAPI):
             BuildStatus.SUPERSEDED: {"src": "/@@/build-superseded"},
             BuildStatus.BUILDING: {"src": "/@@/processing"},
             BuildStatus.FAILEDTOUPLOAD: {"src": "/@@/build-failedtoupload"},
+            BuildStatus.GATHERING: {"src": "/@@/processing"},
             BuildStatus.UPLOADING: {"src": "/@@/processing"},
             BuildStatus.CANCELLING: {"src": "/@@/processing"},
             BuildStatus.CANCELLED: {"src": "/@@/build-failed"},

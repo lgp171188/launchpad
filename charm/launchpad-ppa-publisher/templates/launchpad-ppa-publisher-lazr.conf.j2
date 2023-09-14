@@ -1,0 +1,34 @@
+# Public configuration data.  The contents of this file may be freely shared
+# with developers if needed for debugging.
+
+# A schema's sections, keys, and values are automatically inherited,
+# except for '.optional' sections. Update this config to override key
+# values. Values are strings, except for numbers that look like ints.
+# The tokens true, false, and none are treated as True, False, and None.
+
+{% from "macros.j2" import opt -%}
+
+[meta]
+extends: ../launchpad-db-lazr.conf
+
+[archivepublisher]
+archives_dir: {{ archives_dir }}
+{{- opt("oval_data_rsync_endpoint", oval_data_rsync_endpoint) }}
+oval_data_root: {{ base_dir }}/oval-data
+
+[personalpackagearchive]
+root: {{ ppa_archive_root }}
+private_root: {{ ppa_archive_private_root }}
+signing_keys_root: {{ ppa_signing_keys_root }}
+require_signing_keys: {{ require_signing_keys }}
+
+[ppa_apache_log_parser]
+logs_root: /var/log/apache2
+
+[launchpad]
+{{- opt("logparser_max_parsed_lines", logparser_max_parsed_lines) }}
+
+[signing]
+client_public_key: {{ signing_client_public_key }}
+signing_endpoint: {{ signing_endpoint }}
+

@@ -329,19 +329,19 @@ class SQLObjectVocabularyBase(FilteredVocabularyBase):
         # Sometimes this method is called with an SQLBase instance, but
         # z3 form machinery sends through integer ids. This might be due
         # to a bug somewhere.
-        if zisinstance(obj, SQLBase):
-            clause = self._table.q.id == obj.id
+        if zisinstance(obj, (SQLBase, Storm)):  # noqa: B1
+            clause = self._table.id == obj.id
             if self._filter:
                 # XXX kiko 2007-01-16: this code is untested.
                 clause = AND(clause, self._filter)
-            found_obj = self._table.selectOne(clause)
+            found_obj = IStore(self._table).find(self._table, clause).one()
             return found_obj is not None and found_obj == obj
         else:
-            clause = self._table.q.id == int(obj)
+            clause = self._table.id == int(obj)
             if self._filter:
                 # XXX kiko 2007-01-16: this code is untested.
                 clause = AND(clause, self._filter)
-            found_obj = self._table.selectOne(clause)
+            found_obj = IStore(self._table).find(self._table, clause).one()
             return found_obj is not None
 
     def getTerm(self, value):
@@ -440,7 +440,7 @@ class StormVocabularyBase(FilteredVocabularyBase):
     should derive from StormVocabularyBase.
     """
 
-    _order_by = None
+    _order_by = None  # type: Optional[str]
     _clauses = []
 
     def __init__(self, context=None):

@@ -6,7 +6,7 @@ __all__ = ["DistroArchSeries", "PocketChroot"]
 import hashlib
 from io import BytesIO
 
-from storm.locals import Int, Join, Or, Reference, ReferenceSet
+from storm.locals import Bool, Int, Join, Or, Reference, ReferenceSet, Unicode
 from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
@@ -19,14 +19,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search, rank_by_fti
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.webapp.publisher import (
@@ -53,32 +46,47 @@ from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 
 
 @implementer(IDistroArchSeries, IHasBuildRecords)
-class DistroArchSeries(SQLBase):
-    _table = "DistroArchSeries"
-    _defaultOrder = "id"
+class DistroArchSeries(StormBase):
+    __storm_table__ = "DistroArchSeries"
+    __storm_order__ = "id"
 
-    distroseries = ForeignKey(
-        dbName="distroseries", foreignKey="DistroSeries", notNull=True
-    )
+    id = Int(primary=True)
+    distroseries_id = Int(name="distroseries", allow_none=False)
+    distroseries = Reference(distroseries_id, "DistroSeries.id")
     processor_id = Int(name="processor", allow_none=False)
     processor = Reference(processor_id, Processor.id)
-    architecturetag = StringCol(notNull=True)
-    official = BoolCol(notNull=True)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    architecturetag = Unicode(allow_none=False)
+    official = Bool(allow_none=False)
+    owner_id = Int(
+        name="owner", validator=validate_public_person, allow_none=False
     )
-    package_count = IntCol(notNull=True, default=DEFAULT)
-    enabled = BoolCol(notNull=False, default=True)
+    owner = Reference(owner_id, "Person.id")
+    package_count = Int(allow_none=False, default=DEFAULT)
+    enabled = Bool(allow_none=True, default=True)
 
     packages = ReferenceSet(
-        "<primary key>",
+        "id",
         "BinaryPackagePublishingHistory.distroarchseries_id",
         "BinaryPackagePublishingHistory.binarypackagerelease_id",
         "BinaryPackageRelease.id",
     )
+
+    def __init__(
+        self,
+        distroseries,
+        processor,
+        architecturetag,
+        official,
+        owner,
+        enabled=True,
+    ):
+        super().__init__()
+        self.distroseries = distroseries
+        self.processor = processor
+        self.architecturetag = architecturetag
+        self.official = official
+        self.owner = owner
+        self.enabled = enabled
 
     def __getitem__(self, name):
         return self.getBinaryPackage(name)
@@ -348,9 +356,12 @@ class DistroArchSeries(SQLBase):
         )
 
         if not IBinaryPackageName.providedBy(name):
-            try:
-                name = BinaryPackageName.byName(name)
-            except SQLObjectNotFound:
+            name = (
+                IStore(BinaryPackageName)
+                .find(BinaryPackageName, name=name)
+                .one()
+            )
+            if name is None:
                 return None
         return DistroArchSeriesBinaryPackage(self, name)
 
@@ -415,12 +426,13 @@ class DistroArchSeries(SQLBase):
 
 
 @implementer(IPocketChroot)
-class PocketChroot(SQLBase):
-    _table = "PocketChroot"
+class PocketChroot(StormBase):
+    __storm_table__ = "PocketChroot"
 
-    distroarchseries = ForeignKey(
-        dbName="distroarchseries", foreignKey="DistroArchSeries", notNull=True
-    )
+    id = Int(primary=True)
+
+    distroarchseries_id = Int(name="distroarchseries", allow_none=False)
+    distroarchseries = Reference(distroarchseries_id, "DistroArchSeries.id")
 
     pocket = DBEnum(
         enum=PackagePublishingPocket,
@@ -428,10 +440,24 @@ class PocketChroot(SQLBase):
         allow_none=False,
     )
 
-    chroot = ForeignKey(dbName="chroot", foreignKey="LibraryFileAlias")
+    chroot_id = Int(name="chroot", allow_none=True)
+    chroot = Reference(chroot_id, "LibraryFileAlias.id")
 
     image_type = DBEnum(
         enum=BuildBaseImageType,
         default=BuildBaseImageType.CHROOT,
         allow_none=False,
     )
+
+    def __init__(
+        self,
+        distroarchseries,
+        pocket,
+        chroot=None,
+        image_type=BuildBaseImageType.CHROOT,
+    ):
+        super().__init__()
+        self.distroarchseries = distroarchseries
+        self.pocket = pocket
+        self.chroot = chroot
+        self.image_type = image_type

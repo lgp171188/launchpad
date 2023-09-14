@@ -897,6 +897,7 @@ def _do_direct_copy(
             binary_uploads = {
                 bpph.binarypackagerelease.build.package_upload
                 for bpph in binary_copies
+                if bpph.binarypackagerelease.build is not None
             }
             for binary_upload in binary_uploads:
                 if binary_upload is not None:
@@ -914,7 +915,8 @@ def _do_direct_copy(
 
     # Always ensure the needed builds exist in the copy destination
     # after copying the binaries.
-    source_copy.createMissingBuilds(logger=logger)
+    if source_copy.sourcepackagerelease.ci_build is None:
+        source_copy.createMissingBuilds(logger=logger)
 
     if move:
         removal_comment = "Moved to %s" % series.getSuite(pocket)

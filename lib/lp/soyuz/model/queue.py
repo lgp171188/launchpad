@@ -451,7 +451,7 @@ class PackageUpload(StormBase):
                 AND bpf.libraryfile = lfa.id
                 AND lfa.filename IN (%%s)
         """ % sqlvalues(
-            self.archive, self.distroseries.distribution
+            self.archive, self.distroseries.distribution.id
         )
         # Inject the inner query.
         query %= inner_query
@@ -1655,7 +1655,7 @@ class PackageUploadSet:
             Join(
                 SourcePackageName,
                 SourcePackageName.id
-                == SourcePackageRelease.sourcepackagenameID,
+                == SourcePackageRelease.sourcepackagename_id,
             ),
         )
 
@@ -1886,7 +1886,7 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     load_related(BinaryPackageName, bprs, ["binarypackagename_id"])
     sprs = source_sprs + binary_sprs
 
-    load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+    load_related(SourcePackageName, sprs, ["sourcepackagename_id"])
     load_related(Section, sprs + bprs, ["section_id"])
     load_related(Component, sprs, ["component_id"])
     load_related(LibraryFileAlias, uploads, ["changes_file_id"])
@@ -1914,4 +1914,4 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         PackageCopyJob, uploads, ["package_copy_job_id"]
     )
     archives = load_related(Archive, package_copy_jobs, ["source_archive_id"])
-    load_related(Distribution, archives, ["distributionID"])
+    load_related(Distribution, archives, ["distribution_id"])

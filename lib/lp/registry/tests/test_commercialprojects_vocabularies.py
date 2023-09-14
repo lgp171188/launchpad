@@ -54,7 +54,7 @@ class TestCommProjVocabulary(TestCaseWithFactory):
     def test_attributes(self):
         self.assertEqual("Select a commercial project", self.vocab.displayname)
         self.assertEqual("Search", self.vocab.step_title)
-        self.assertEqual("displayname", self.vocab._orderBy)
+        self.assertEqual("displayname", self.vocab._order_by)
 
     def test_searchForTerms_empty(self):
         # An empty search will return all active maintained projects.

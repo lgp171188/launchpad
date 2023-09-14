@@ -123,7 +123,7 @@ def copy_active_translations(
 
     # Copy relevant POTemplates from existing series into a holding table,
     # complete with their original id fields.
-    where = "distroseries = %s AND iscurrent" % quote(source)
+    where = "distroseries = %s AND iscurrent" % quote(source.id)
     if sourcepackagenames is not None:
         if not sourcepackagenames:
             where += " AND false"
@@ -137,7 +137,7 @@ def copy_active_translations(
                 SELECT sourcepackagename FROM potemplate
                 WHERE distroseries = %s)
             """ % quote(
-            target
+            target.id
         )
     copier.extract("potemplate", [], where)
 
@@ -156,7 +156,7 @@ def copy_active_translations(
                 timezone('UTC'::text,
                     ('now'::text)::timestamp(6) with time zone)
     """
-        % (copier.getHoldingTableName("potemplate"), quote(target))
+        % (copier.getHoldingTableName("potemplate"), quote(target.id))
     )
 
     # Copy each TranslationTemplateItem whose template we copied, and let

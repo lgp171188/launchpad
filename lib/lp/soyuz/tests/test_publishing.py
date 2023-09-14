@@ -3,6 +3,7 @@
 
 """Test native publication workflow for Soyuz. """
 
+import hashlib
 import io
 import operator
 import os
@@ -1865,20 +1866,22 @@ class TestGetBuiltBinaries(TestNativePublishingBase):
         store.flush()
         store.invalidate()
 
-        # An initial invocation issues one query for the each of the
-        # SPPH, BPPHs and BPRs.
+        # An initial invocation issues one query for each of the SPPH, BPPHs
+        # and BPRs, as well as one query to check whether the SPR came from
+        # a CI build.
         with StormStatementRecorder() as recorder:
             bins = spph.getBuiltBinaries()
         self.assertEqual(0, len(bins))
-        self.assertThat(recorder, HasQueryCount(Equals(3)))
+        self.assertThat(recorder, HasQueryCount(Equals(4)))
 
         self.getPubBinaries(pub_source=spph)
         store.flush()
         store.invalidate()
 
         # A subsequent invocation with files preloaded queries the SPPH,
-        # BPPHs, BPRs, BPFs and LFAs. Checking the filenames of each
-        # BPF has no query penalty.
+        # BPPHs, BPRs, BPFs and LFAs, as well as one query to check whether
+        # the SPR came from a CI build.  Checking the filenames of each BPF
+        # has no query penalty.
         with StormStatementRecorder() as recorder:
             bins = spph.getBuiltBinaries(want_files=True)
             self.assertEqual(2, len(bins))
@@ -1887,7 +1890,64 @@ class TestGetBuiltBinaries(TestNativePublishingBase):
                 self.assertEqual(1, len(files))
                 for bpf in files:
                     bpf.libraryfile.filename
-        self.assertThat(recorder, HasQueryCount(Equals(5)))
+        self.assertThat(recorder, HasQueryCount(Equals(6)))
+
+    def test_ci_build(self):
+        with lp_dbuser():
+            distroseries = self.factory.makeDistroSeries()
+            dases = [
+                self.factory.makeDistroArchSeries(distroseries=distroseries)
+                for _ in range(2)
+            ]
+            archive = self.factory.makeArchive(
+                distribution=distroseries.distribution
+            )
+            repository = self.factory.makeGitRepository()
+            commit_sha1 = hashlib.sha1(
+                self.factory.getUniqueBytes()
+            ).hexdigest()
+            builds = [
+                self.factory.makeCIBuild(
+                    git_repository=repository,
+                    commit_sha1=commit_sha1,
+                    distro_arch_series=das,
+                )
+                for das in dases
+            ]
+            spn = self.factory.makeSourcePackageName()
+            spr = builds[0].createSourcePackageRelease(
+                distroseries,
+                spn,
+                "1.0",
+                creator=repository.owner,
+                archive=archive,
+            )
+            spph = self.factory.makeSourcePackagePublishingHistory(
+                archive=archive,
+                sourcepackagerelease=spr,
+                format=SourcePackageType.CI_BUILD,
+            )
+            bpn = self.factory.makeBinaryPackageName()
+            bpphs = []
+            for build in builds:
+                bpr = build.createBinaryPackageRelease(
+                    bpn,
+                    "1.0",
+                    "test summary",
+                    "test description",
+                    BinaryPackageFormat.WHL,
+                    True,
+                )
+                bpphs.extend(
+                    getUtility(IPublishingSet).publishBinaries(
+                        archive,
+                        distroseries,
+                        spph.pocket,
+                        {bpr: (None, None, None, None)},
+                    )
+                )
+
+        self.assertContentEqual(bpphs, spph.getBuiltBinaries())
 
 
 class TestGetActiveArchSpecificPublications(TestCaseWithFactory):

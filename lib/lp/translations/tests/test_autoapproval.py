@@ -19,12 +19,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.distribution import Distribution
-from lp.registry.model.sourcepackagename import (
-    SourcePackageName,
-    SourcePackageNameSet,
-)
-from lp.services.database.interfaces import IPrimaryStore
+from lp.registry.model.sourcepackagename import SourcePackageNameSet
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import TestCaseWithFactory, verifyObject
 from lp.testing.fakemethod import FakeMethod
@@ -86,8 +84,10 @@ class TestCustomLanguageCode(TestCaseWithFactory):
             language=getUtility(ILanguageSet).getLanguageByCode("pt"),
         )
 
-        self.distro = Distribution.byName("ubuntu")
-        self.sourcepackagename = SourcePackageName.byName("evolution")
+        self.distro = (
+            IStore(Distribution).find(Distribution, name="ubuntu").one()
+        )
+        self.sourcepackagename = getUtility(ISourcePackageNameSet)["evolution"]
         self.package_codes["Brazilian"] = CustomLanguageCode(
             translation_target=self.distro.getSourcePackage(
                 self.sourcepackagename
@@ -111,14 +111,16 @@ class TestCustomLanguageCode(TestCaseWithFactory):
         self.assertEqual(fresh_product.getCustomLanguageCode("nocode"), None)
         self.assertEqual(fresh_product.getCustomLanguageCode("pt_PT"), None)
 
-        fresh_distro = Distribution.byName("gentoo")
+        fresh_distro = (
+            IStore(Distribution).find(Distribution, name="gentoo").one()
+        )
         gentoo_package = fresh_distro.getSourcePackage(self.sourcepackagename)
         nocode = gentoo_package.getCustomLanguageCode("nocode")
         self.assertEqual(nocode, None)
         brazilian = gentoo_package.getCustomLanguageCode("Brazilian")
         self.assertEqual(brazilian, None)
 
-        cnews = SourcePackageName.byName("cnews")
+        cnews = getUtility(ISourcePackageNameSet)["cnews"]
         cnews_package = self.distro.getSourcePackage(cnews)
         self.assertEqual(cnews_package.getCustomLanguageCode("nocode"), None)
         self.assertEqual(
@@ -1203,7 +1205,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertTrue(self._exists(entry_id))
 
         entry.productseries.product.active = False
-        entry.productseries.product.syncUpdate()
+        self.store.flush()
 
         self.becomeTheGardener()
         self.queue._cleanUpInactiveProductEntries(self.store)
@@ -1219,7 +1221,7 @@ class TestCleanup(TestCaseWithFactory, GardenerDbUserMixin):
         self.assertTrue(self._exists(entry_id))
 
         entry.distroseries.status = SeriesStatus.OBSOLETE
-        entry.distroseries.syncUpdate()
+        self.store.flush()
 
         self.becomeTheGardener()
         self.queue._cleanUpObsoleteDistroEntries(self.store)

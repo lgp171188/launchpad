@@ -243,7 +243,7 @@ bug reporting guidelines can be changed, but admins do.
     ...     pass
     ...
 
-    >>> edit_url_re = re.compile(".*/\+edit$")
+    >>> edit_url_re = re.compile(r".*/\+edit$")
     >>> for context_name, context_path, view in contexts:
     ...     overview_url = "http://launchpad.test/%s" % (context_path,)
     ...     print("* " + context_name)

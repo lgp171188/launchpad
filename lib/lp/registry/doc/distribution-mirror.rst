@@ -18,6 +18,7 @@ to create a new mirror you should use the Distribution.newMirror method.
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.registry.interfaces.series import SeriesStatus
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.worlddata.interfaces.country import ICountrySet
     >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> mirrorset = getUtility(IDistributionMirrorSet)
@@ -79,7 +80,7 @@ associated with a given mirror, we use the ensureMirrorDistroArchSeries
 (or ensureMirrorDistroSeriesSource) method.
 
     >>> warty = getUtility(IDistroSeriesSet).get(1)
-    >>> warty_i386 = DistroArchSeries.get(1)
+    >>> warty_i386 = IStore(DistroArchSeries).get(DistroArchSeries, 1)
     >>> pocket = PackagePublishingPocket.RELEASE
     >>> warty_component = warty.components[0]
     >>> warty_i386_mirror = new_mirror.ensureMirrorDistroArchSeries(
@@ -458,8 +459,6 @@ single notification to the distribution's mirror admins.
 
 Now we delete the MirrorProbeRecord we've just created, to make sure this
 mirror is probed by our prober script.
-
-    >>> from lp.services.database.interfaces import IStore
 
     >>> IStore(proberecord).remove(proberecord)
     >>> transaction.commit()

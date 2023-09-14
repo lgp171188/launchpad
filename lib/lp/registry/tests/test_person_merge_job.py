@@ -48,8 +48,7 @@ def transfer_email(job):
     IPersonSet.merge() does not (yet) promise to do this.
     """
     from_email = removeSecurityProxy(job.from_person.preferredemail)
-    from_email.personID = job.to_person.id
-    from_email.account_id = job.to_person.account_id
+    from_email.person = job.to_person
     from_email.status = EmailAddressStatus.NEW
     IStore(from_email).flush()
 

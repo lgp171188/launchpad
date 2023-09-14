@@ -375,6 +375,7 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
         return self.status not in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
             BuildStatus.SUPERSEDED,
         ]
@@ -942,8 +943,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         das = load_related(DistroArchSeries, builds, ["distro_arch_series_id"])
         archives = load_related(Archive, builds, ["archive_id"])
         load_related(Person, archives, ["ownerID"])
-        distroseries = load_related(DistroSeries, das, ["distroseriesID"])
-        load_related(Distribution, distroseries, ["distributionID"])
+        distroseries = load_related(DistroSeries, das, ["distroseries_id"])
+        load_related(Distribution, distroseries, ["distribution_id"])
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""
@@ -1132,7 +1133,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             )
 
         # Ordering according status
-        # * NEEDSBUILD, BUILDING & UPLOADING by -lastscore
+        # * NEEDSBUILD, BUILDING, GATHERING & UPLOADING by -lastscore
         # * SUPERSEDED & All by -BinaryPackageBuild.id
         #   (nearly equivalent to -datecreated, but much more
         #   efficient.)
@@ -1143,6 +1144,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         if status in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
+            BuildStatus.GATHERING,
             BuildStatus.UPLOADING,
         ]:
             order_by = [Desc(BuildQueue.lastscore), BinaryPackageBuild.id]
@@ -1280,7 +1282,9 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             BuildStatus.FAILEDTOUPLOAD,
         )
         needsbuild = collect_builds(BuildStatus.NEEDSBUILD)
-        building = collect_builds(BuildStatus.BUILDING, BuildStatus.UPLOADING)
+        building = collect_builds(
+            BuildStatus.BUILDING, BuildStatus.GATHERING, BuildStatus.UPLOADING
+        )
         successful = collect_builds(BuildStatus.FULLYBUILT)
 
         # Note: the BuildStatus DBItems are used here to summarize the
@@ -1340,7 +1344,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             Join(
                 SourcePackageName,
                 SourcePackageName.id
-                == SourcePackageRelease.sourcepackagenameID,
+                == SourcePackageRelease.sourcepackagename_id,
             ),
             LeftJoin(
                 LibraryFileAlias,

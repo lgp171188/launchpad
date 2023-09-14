@@ -43,11 +43,15 @@ class ComponentVocabulary(StormVocabularyBase):
         return SimpleTerm(obj, obj.id, obj.name)
 
 
-class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
+class FilteredDistroArchSeriesVocabulary(StormVocabularyBase):
     """All arch series of a particular distribution."""
 
     _table = DistroArchSeries
-    _orderBy = ["DistroSeries.version", "architecturetag", "id"]
+    _order_by = [
+        "DistroSeries.version",
+        DistroArchSeries.architecturetag,
+        DistroArchSeries.id,
+    ]
 
     def toTerm(self, obj):
         name = "%s %s (%s)" % (
@@ -64,8 +68,8 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
                 IStore(DistroSeries)
                 .find(
                     self._table,
-                    DistroSeries.id == DistroArchSeries.distroseriesID,
-                    DistroSeries.distributionID == distribution.id,
+                    DistroSeries.id == DistroArchSeries.distroseries_id,
+                    DistroSeries.distribution == distribution,
                 )
                 .order_by(*self._orderBy)
             )
@@ -73,9 +77,9 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
                 yield self.toTerm(distroarchseries)
 
 
-class PackageReleaseVocabulary(SQLObjectVocabularyBase):
+class PackageReleaseVocabulary(StormVocabularyBase):
     _table = SourcePackageRelease
-    _orderBy = "id"
+    _order_by = "id"
 
     def toTerm(self, obj):
         return SimpleTerm(obj, obj.id, obj.name + " " + obj.version)

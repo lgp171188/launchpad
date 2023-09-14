@@ -42,7 +42,8 @@ Try to target a distribution bug to this milestone.  The form uses the
 database ID for the milestone, so we find the ID:
 
     >>> from lp.registry.model.distribution import Distribution
-    >>> ubuntu = Distribution.byName("ubuntu")
+    >>> from lp.services.database.interfaces import IStore
+    >>> ubuntu = IStore(Distribution).find(Distribution, name="ubuntu").one()
     >>> for milestone in ubuntu.milestones:
     ...     if milestone.name == "sounder01":
     ...         break

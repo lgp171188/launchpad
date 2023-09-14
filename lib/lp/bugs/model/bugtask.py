@@ -1282,7 +1282,7 @@ class BugTask(StormBase):
                         BugTask,
                         BugTask.bug_id == self.bug_id,
                         BugTask.distroseries_id == DistroSeries.id,
-                        DistroSeries.distributionID.is_in(
+                        DistroSeries.distribution_id.is_in(
                             distro.id for distro in distros if distro
                         ),
                     )
@@ -2131,7 +2131,7 @@ class BugTaskSet:
                     Distribution.id.is_in(
                         (
                             BugTaskFlat.distribution_id,
-                            DistroSeries.distributionID,
+                            DistroSeries.distribution_id,
                         )
                     ),
                 ),

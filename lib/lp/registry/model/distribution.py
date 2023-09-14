@@ -17,6 +17,7 @@ from storm.expr import (
     SQL,
     And,
     Coalesce,
+    Column,
     Desc,
     Exists,
     Func,
@@ -26,9 +27,10 @@ from storm.expr import (
     Not,
     Or,
     Select,
+    Table,
 )
 from storm.info import ClassAlias
-from storm.locals import Int, List, Reference
+from storm.locals import Bool, DateTime, Int, List, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
@@ -124,7 +126,10 @@ from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.pocket import suffixpocket
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
-from lp.registry.interfaces.sourcepackagename import ISourcePackageName
+from lp.registry.interfaces.sourcepackagename import (
+    ISourcePackageName,
+    ISourcePackageNameSet,
+)
 from lp.registry.model.accesspolicy import AccessPolicyGrantFlat
 from lp.registry.model.announcement import MakesAnnouncements
 from lp.registry.model.commercialsubscription import CommercialSubscription
@@ -150,17 +155,11 @@ from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    SQLObjectNotFound,
-    StringCol,
-)
+from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -183,10 +182,10 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES, IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
+from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
 from lp.soyuz.interfaces.publishing import active_publishing_status
-from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
 from lp.soyuz.model.archivefile import ArchiveFile
-from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
 )
@@ -223,7 +222,7 @@ specification_policy_default = {
 
 @implementer(IBugSummaryDimension, IDistribution)
 class Distribution(
-    SQLBase,
+    StormBase,
     BugTargetBase,
     MakesAnnouncements,
     HasSpecificationsMixin,
@@ -243,72 +242,64 @@ class Distribution(
 ):
     """A distribution of an operating system, e.g. Debian GNU/Linux."""
 
-    _table = "Distribution"
-    _defaultOrder = "name"
+    __storm_table__ = "Distribution"
+    __storm_order__ = "name"
 
-    name = StringCol(notNull=True, alternateID=True, unique=True)
-    display_name = StringCol(dbName="displayname", notNull=True)
-    _title = StringCol(dbName="title", notNull=True)
-    summary = StringCol(notNull=True)
-    description = StringCol(notNull=True)
-    homepage_content = StringCol(default=None)
-    icon = ForeignKey(
-        dbName="icon", foreignKey="LibraryFileAlias", default=None
+    id = Int(primary=True)
+    name = Unicode(allow_none=False)
+    display_name = Unicode(name="displayname", allow_none=False)
+    _title = Unicode(name="title", allow_none=False)
+    summary = Unicode(allow_none=False)
+    description = Unicode(allow_none=False)
+    homepage_content = Unicode(default=None)
+    icon_id = Int(name="icon", default=None)
+    icon = Reference(icon_id, "LibraryFileAlias.id")
+    logo_id = Int(name="logo", default=None)
+    logo = Reference(logo_id, "LibraryFileAlias.id")
+    mugshot_id = Int(name="mugshot", default=None)
+    mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
+    domainname = Unicode(allow_none=False)
+    owner_id = Int(
+        name="owner",
+        validator=validate_person_or_closed_team,
+        allow_none=False,
     )
-    logo = ForeignKey(
-        dbName="logo", foreignKey="LibraryFileAlias", default=None
+    owner = Reference(owner_id, "Person.id")
+    registrant_id = Int(
+        name="registrant", validator=validate_public_person, allow_none=False
     )
-    mugshot = ForeignKey(
-        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
-    )
-    domainname = StringCol(notNull=True)
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person_or_closed_team,
-        notNull=True,
-    )
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
-    )
-    bug_supervisor = ForeignKey(
-        dbName="bug_supervisor",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=False,
+    registrant = Reference(registrant_id, "Person.id")
+    bug_supervisor_id = Int(
+        name="bug_supervisor",
+        validator=validate_person,
+        allow_none=True,
         default=None,
     )
-    bug_reporting_guidelines = StringCol(default=None)
-    bug_reported_acknowledgement = StringCol(default=None)
-    driver = ForeignKey(
-        dbName="driver",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    bug_supervisor = Reference(bug_supervisor_id, "Person.id")
+    bug_reporting_guidelines = Unicode(default=None)
+    bug_reported_acknowledgement = Unicode(default=None)
+    driver_id = Int(
+        name="driver",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    members = ForeignKey(
-        dbName="members",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    driver = Reference(driver_id, "Person.id")
+    members_id = Int(
+        name="members", validator=validate_public_person, allow_none=False
     )
-    mirror_admin = ForeignKey(
-        dbName="mirror_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=True,
+    members = Reference(members_id, "Person.id")
+    mirror_admin_id = Int(
+        name="mirror_admin", validator=validate_public_person, allow_none=False
     )
-    oci_project_admin = ForeignKey(
-        dbName="oci_project_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    mirror_admin = Reference(mirror_admin_id, "Person.id")
+    oci_project_admin_id = Int(
+        name="oci_project_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
+    oci_project_admin = Reference(oci_project_admin_id, "Person.id")
     translationgroup_id = Int(
         name="translationgroup", allow_none=True, default=None
     )
@@ -322,19 +313,19 @@ class Distribution(
     # Distributions can't be deactivated.  This is just here in order to
     # implement the `IPillar` interface.
     active = True
-    official_packages = BoolCol(notNull=True, default=False)
-    supports_ppas = BoolCol(notNull=True, default=False)
-    supports_mirrors = BoolCol(notNull=True, default=False)
-    package_derivatives_email = StringCol(notNull=False, default=None)
-    redirect_release_uploads = BoolCol(notNull=True, default=False)
-    development_series_alias = StringCol(notNull=False, default=None)
+    official_packages = Bool(allow_none=False, default=False)
+    supports_ppas = Bool(allow_none=False, default=False)
+    supports_mirrors = Bool(allow_none=False, default=False)
+    package_derivatives_email = Unicode(allow_none=True, default=None)
+    redirect_release_uploads = Bool(allow_none=False, default=False)
+    development_series_alias = Unicode(allow_none=True, default=None)
     vcs = DBEnum(enum=VCSType, allow_none=True)
     default_traversal_policy = DBEnum(
         enum=DistributionDefaultTraversalPolicy,
         allow_none=True,
         default=DistributionDefaultTraversalPolicy.SERIES,
     )
-    redirect_default_traversal = BoolCol(notNull=False, default=False)
+    redirect_default_traversal = Bool(allow_none=True, default=False)
     oci_registry_credentials_id = Int(name="oci_credentials", allow_none=True)
     oci_registry_credentials = Reference(
         oci_registry_credentials_id, "OCIRegistryCredentials.id"
@@ -631,14 +622,14 @@ class Distribution(
 
         return distro_uploaders
 
-    official_answers = BoolCol(
-        dbName="official_answers", notNull=True, default=False
+    official_answers = Bool(
+        name="official_answers", allow_none=False, default=False
     )
-    official_blueprints = BoolCol(
-        dbName="official_blueprints", notNull=True, default=False
+    official_blueprints = Bool(
+        name="official_blueprints", allow_none=False, default=False
     )
-    official_malone = BoolCol(
-        dbName="official_malone", notNull=True, default=False
+    official_malone = Bool(
+        name="official_malone", allow_none=False, default=False
     )
 
     @property
@@ -752,30 +743,30 @@ class Distribution(
         """Does this distribution actually use Launchpad?"""
         return self.official_anything
 
-    enable_bug_expiration = BoolCol(
-        dbName="enable_bug_expiration", notNull=True, default=False
+    enable_bug_expiration = Bool(
+        name="enable_bug_expiration", allow_none=False, default=False
     )
-    translation_focus = ForeignKey(
-        dbName="translation_focus",
-        foreignKey="DistroSeries",
-        notNull=False,
+    translation_focus_id = Int(
+        name="translation_focus", allow_none=True, default=None
+    )
+    translation_focus = Reference(translation_focus_id, "DistroSeries.id")
+    date_created = DateTime(
+        allow_none=True, default=UTC_NOW, tzinfo=timezone.utc
+    )
+    language_pack_admin_id = Int(
+        name="language_pack_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    date_created = UtcDateTimeCol(notNull=False, default=UTC_NOW)
-    language_pack_admin = ForeignKey(
-        dbName="language_pack_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
+    language_pack_admin = Reference(language_pack_admin_id, "Person.id")
+    security_admin_id = Int(
+        name="security_admin",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
     )
-    security_admin = ForeignKey(
-        dbName="security_admin",
-        foreignKey="Person",
-        storm_validator=validate_public_person,
-        notNull=False,
-        default=None,
-    )
+    security_admin = Reference(security_admin_id, "Person.id")
     code_admin_id = Int(
         name="code_admin",
         validator=validate_public_person,
@@ -1004,16 +995,16 @@ class Distribution(
         """See `IDistribution`."""
         ParentDistroSeries = ClassAlias(DistroSeries)
         # XXX rvb 2011-04-08 bug=754750: The clause
-        # 'DistroSeries.distributionID!=self.id' is only required
+        # 'DistroSeries.distribution_id!=self.id' is only required
         # because the previous_series attribute has been (mis-)used
         # to denote other relations than proper derivation
         # relationships. We should be rid of this condition once
         # the bug is fixed.
         ret = Store.of(self).find(
             DistroSeries,
-            ParentDistroSeries.id == DistroSeries.previous_seriesID,
-            ParentDistroSeries.distributionID == self.id,
-            DistroSeries.distributionID != self.id,
+            ParentDistroSeries.id == DistroSeries.previous_series_id,
+            ParentDistroSeries.distribution_id == self.id,
+            DistroSeries.distribution_id != self.id,
         )
         return ret.config(distinct=True).order_by(
             Desc(DistroSeries.date_created)
@@ -1070,7 +1061,7 @@ class Distribution(
         ds_ids = Select(
             DistroSeries.id,
             tables=[DistroSeries],
-            where=DistroSeries.distributionID == self.id,
+            where=DistroSeries.distribution_id == self.id,
         )
         clauses = [
             DistroSeries.id.is_in(ds_ids),
@@ -1359,9 +1350,10 @@ class Distribution(
         if ISourcePackageName.providedBy(name):
             sourcepackagename = name
         else:
-            try:
-                sourcepackagename = SourcePackageName.byName(name)
-            except SQLObjectNotFound:
+            sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
+                name
+            )
+            if sourcepackagename is None:
                 return None
         return DistributionSourcePackage(self, sourcepackagename)
 
@@ -1466,7 +1458,7 @@ class Distribution(
 
         Return True when the Question's distribution is self.
         """
-        if question.distribution is not self:
+        if question.distribution != self:
             return False
         return True
 
@@ -1749,7 +1741,9 @@ class Distribution(
                 "published in it" % (self.displayname, pkgname)
             )
 
-        sourcepackagename = SourcePackageName.selectOneBy(name=pkgname)
+        sourcepackagename = getUtility(ISourcePackageNameSet).queryByName(
+            pkgname
+        )
         if sourcepackagename:
             # Note that in the source package case, we don't restrict
             # the search to the distribution release, making a best
@@ -1790,7 +1784,9 @@ class Distribution(
         # At this point we don't have a published source package by
         # that name, so let's try to find a binary package and work
         # back from there.
-        binarypackagename = BinaryPackageName.selectOneBy(name=pkgname)
+        binarypackagename = getUtility(IBinaryPackageNameSet).queryByName(
+            pkgname
+        )
         if binarypackagename:
             # Ok, so we have a binarypackage with that name. Grab its
             # latest publication in the distribution (this may be an old
@@ -1847,54 +1843,37 @@ class Distribution(
 
     def searchPPAs(self, text=None, show_inactive=False, user=None):
         """See `IDistribution`."""
+        ValidPersonOrTeamCache = Table("ValidPersonOrTeamCache")
         clauses = [
-            """
-        Archive.purpose = %s AND
-        Archive.distribution = %s AND
-        Archive.owner = ValidPersonOrTeamCache.id
-        """
-            % sqlvalues(ArchivePurpose.PPA, self)
+            Archive.distribution == self,
+            Archive.owner == Column("id", ValidPersonOrTeamCache),
         ]
 
-        clauseTables = ["ValidPersonOrTeamCache"]
-        orderBy = ["Archive.displayname"]
+        order_by = [Archive.displayname]
 
         if not show_inactive:
             clauses.append(
-                """
-            Archive.id IN (
-                SELECT archive FROM SourcepackagePublishingHistory
-                WHERE status IN %s)
-            """
-                % sqlvalues(active_publishing_status)
+                Archive.id.is_in(
+                    Select(
+                        SourcePackagePublishingHistory.archive_id,
+                        SourcePackagePublishingHistory.status.is_in(
+                            active_publishing_status
+                        ),
+                    )
+                )
             )
 
         if text:
-            orderBy.insert(0, rank_by_fti(Archive, text))
+            order_by.insert(0, rank_by_fti(Archive, text))
             clauses.append(fti_search(Archive, text))
 
-        if user is not None:
-            if not user.inTeam(getUtility(ILaunchpadCelebrities).admin):
-                clauses.append(
-                    """
-                ((Archive.private = FALSE AND Archive.enabled = TRUE) OR
-                 Archive.owner = %s OR
-                 %s IN (SELECT TeamParticipation.person
-                        FROM TeamParticipation
-                        WHERE TeamParticipation.person = %s AND
-                              TeamParticipation.team = Archive.owner)
-                )
-                """
-                    % sqlvalues(user, user, user)
-                )
-        else:
-            clauses.append(
-                "Archive.private = FALSE AND Archive.enabled = TRUE"
+        clauses.append(
+            get_enabled_archive_filter(
+                user, purpose=ArchivePurpose.PPA, include_public=True
             )
-
-        return Archive.select(
-            And(*clauses), orderBy=orderBy, clauseTables=clauseTables
         )
+
+        return IStore(Archive).find(Archive, *clauses).order_by(order_by)
 
     def getPendingAcceptancePPAs(self):
         """See `IDistribution`."""
@@ -1904,7 +1883,7 @@ class Distribution(
         PackageUpload.archive = Archive.id AND
         PackageUpload.status = %s
         """ % sqlvalues(
-            ArchivePurpose.PPA, self, PackageUploadStatus.ACCEPTED
+            ArchivePurpose.PPA, self.id, PackageUploadStatus.ACCEPTED
         )
 
         return Archive.select(
@@ -2091,6 +2070,7 @@ class Distribution(
         # RBC 20100816.
         del get_property_cache(self).series
 
+        IStore(series).flush()
         return series
 
     @property
@@ -2144,10 +2124,10 @@ class Distribution(
         distribution to have a task, we give no more weighting to a
         distroseries task than any other.
         """
-        distributionID = self.id
+        distribution_id = self.id
 
         def weight_function(bugtask):
-            if bugtask.distribution_id == distributionID:
+            if bugtask.distribution_id == distribution_id:
                 return OrderedBugTask(1, bugtask.id, bugtask)
             return OrderedBugTask(2, bugtask.id, bugtask)
 
@@ -2337,15 +2317,15 @@ class DistributionSet:
 
     def get(self, distributionid):
         """See `IDistributionSet`."""
-        return Distribution.get(distributionid)
+        return IStore(Distribution).get(Distribution, distributionid)
 
     def count(self):
         """See `IDistributionSet`."""
-        return Distribution.select().count()
+        return IStore(Distribution).find(Distribution).count()
 
     def getDistros(self):
         """See `IDistributionSet`."""
-        distros = Distribution.select()
+        distros = IStore(Distribution).find(Distribution)
         return sorted(
             shortlist(distros, 100), key=lambda distro: distro._sort_key
         )
@@ -2459,7 +2439,7 @@ class DistributionSet:
                 SourcePackagePublishingHistory.distroseries_id
                 == DistroSeries.id
             ],
-            DistroSeries.distributionID,
+            DistroSeries.distribution_id,
         )
         result = {}
         for spr, distro_id in releases:
@@ -2476,9 +2456,9 @@ class DistributionSet:
             IStore(DistroSeries)
             .find(
                 Distribution,
-                Distribution.id == DistroSeries.distributionID,
+                Distribution.id == DistroSeries.distribution_id,
                 DistroSeries.id == DistroSeriesParent.derived_series_id,
-                DistroSeries.distributionID != ubuntu_id,
+                DistroSeries.distribution_id != ubuntu_id,
             )
             .config(distinct=True)
         )

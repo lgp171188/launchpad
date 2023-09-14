@@ -18,13 +18,13 @@ from lp.buildmaster.model.processor import Processor
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import Concatenate
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp.vocabulary import NamedSQLObjectVocabulary
+from lp.services.webapp.vocabulary import NamedStormVocabulary
 
 
-class ProcessorVocabulary(NamedSQLObjectVocabulary):
+class ProcessorVocabulary(NamedStormVocabulary):
     displayname = "Select a processor"
     _table = Processor
-    _orderBy = "name"
+    _order_by = "name"
 
 
 @implementer(IVocabularyTokenized)

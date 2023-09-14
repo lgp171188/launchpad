@@ -107,7 +107,7 @@ def sane_version(version):
     import re
 
     if re.search(
-        """^(?ix)
+        """(?ix)^
         [0-9a-z]
         ( [0-9a-z] | [0-9a-z._-]*[0-9a-z] )*
         $""",

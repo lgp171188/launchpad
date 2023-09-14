@@ -1604,7 +1604,7 @@ class QuestionTargetMixin:
 
     def questionIsForTarget(self, question):
         """Verify that this question is actually for this target."""
-        if question.target is not self:
+        if question.target != self:
             return False
         return True
 

@@ -215,7 +215,7 @@ def configure_loadbalancer():
         service_options_main = yaml.safe_load(
             config["haproxy_service_options_main"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_main YAML")
         hookenv.status_set(
             "blocked", "Bad haproxy_service_options_main YAML configuration"
@@ -225,7 +225,7 @@ def configure_loadbalancer():
         service_options_xmlrpc = yaml.safe_load(
             config["haproxy_service_options_xmlrpc"]
         )
-    except Exception:
+    except yaml.YAMLError:
         hookenv.log("Could not parse haproxy_service_options_xmlrpc YAML")
         hookenv.status_set(
             "blocked", "Bad haproxy_service_options_xmlrpc YAML configuration"
@@ -235,36 +235,50 @@ def configure_loadbalancer():
 
     unit_name = hookenv.local_unit().replace("/", "-")
     unit_ip = hookenv.unit_private_ip()
-    services = [
-        {
-            "service_name": "appserver-main",
-            "service_port": config["port_main"],
-            "service_host": "0.0.0.0",
-            "service_options": list(service_options_main),
-            "servers": [
-                [
-                    f"main_{unit_name}",
-                    unit_ip,
-                    config["port_main"],
-                    server_options,
-                ]
-            ],
-        },
-        {
-            "service_name": "appserver-xmlrpc",
-            "service_port": config["port_xmlrpc"],
-            "service_host": "0.0.0.0",
-            "service_options": list(service_options_xmlrpc),
-            "servers": [
-                [
-                    f"xmlrpc_{unit_name}",
-                    unit_ip,
-                    config["port_xmlrpc"],
-                    server_options,
-                ]
-            ],
-        },
-    ]
+    main_service = {
+        "service_name": "launchpad-appserver-main",
+        "service_port": config["port_main"],
+        "service_host": "0.0.0.0",
+        "service_options": list(service_options_main)
+        + [
+            f"errorfile {code} {base.base_dir()}/www/offline-haproxy.html"
+            for code in (500, 502, 503)
+        ],
+        "servers": [
+            [
+                f"main_{unit_name}",
+                unit_ip,
+                config["port_main"],
+                server_options,
+            ]
+        ],
+    }
+    # Add a copy of launchpad-appserver-main which should be explicitly
+    # cached.  This cooperates with configuration in launchpad-mojo-specs
+    # which arranges for Squid to only re-export some of the services it
+    # receives: as a result of this, balancer://launchpad-appserver-main/ in
+    # Apache configuration goes directly to haproxy, while
+    # balancer://cached-launchpad-appserver-main/ (renamed in
+    # squid-reverseproxy configuration in order that the apache2 charm can
+    # distinguish between haproxy and Squid) goes via Squid to haproxy.
+    main_cached_service = main_service.copy()
+    main_cached_service["service_name"] = "to-cache-launchpad-appserver-main"
+    main_cached_service["service_port"] = config["port_main_cached"]
+    xmlrpc_service = {
+        "service_name": "launchpad-appserver-xmlrpc",
+        "service_port": config["port_xmlrpc"],
+        "service_host": "0.0.0.0",
+        "service_options": list(service_options_xmlrpc),
+        "servers": [
+            [
+                f"xmlrpc_{unit_name}",
+                unit_ip,
+                config["port_xmlrpc"],
+                server_options,
+            ]
+        ],
+    }
+    services = [main_service, main_cached_service, xmlrpc_service]
     services_yaml = yaml.dump(services)
 
     for rel in hookenv.relations_of_type("loadbalancer"):
@@ -277,3 +291,67 @@ def configure_loadbalancer():
 @when_not_all("loadbalancer.available", "service.configured")
 def deconfigure_loadbalancer():
     remove_state("launchpad.loadbalancer.configured")
+
+
+@when("vhost-config.available", "service.configured")
+@when_not("launchpad.vhost.configured")
+def configure_vhost():
+    vhost_config = endpoint_from_flag("vhost-config.available")
+    config = dict(hookenv.config())
+    config["base_dir"] = base.base_dir()
+    vhost_names = ("mainsite", "feeds", "xmlrpc")
+    vhost_config.publish_vhosts(
+        [
+            vhost_config.make_vhost(
+                80,
+                "\n".join(
+                    templating.render(
+                        f"vhosts/{vhost_name}-http.conf.j2", None, config
+                    )
+                    for vhost_name in vhost_names
+                ),
+            ),
+            vhost_config.make_vhost(
+                443,
+                "\n".join(
+                    templating.render(
+                        f"vhosts/{vhost_name}-https.conf.j2", None, config
+                    )
+                    for vhost_name in vhost_names
+                ),
+            ),
+        ]
+    )
+    set_state("launchpad.vhost.configured")
+
+
+@when("launchpad.vhost.configured")
+@when_not_all("vhost-config.available", "service.configured")
+def deconfigure_vhost():
+    remove_state("launchpad.vhost.configured")
+
+
+@when("api-vhost-config.available", "service.configured")
+@when_not("launchpad.api-vhost.configured")
+def configure_api_vhost():
+    vhost_config = endpoint_from_flag("api-vhost-config.available")
+    config = dict(hookenv.config())
+    config["base_dir"] = base.base_dir()
+    vhost_config.publish_vhosts(
+        [
+            vhost_config.make_vhost(
+                80, templating.render("vhosts/api-http.conf.j2", None, config)
+            ),
+            vhost_config.make_vhost(
+                443,
+                templating.render("vhosts/api-https.conf.j2", None, config),
+            ),
+        ]
+    )
+    set_state("launchpad.api-vhost.configured")
+
+
+@when("launchpad.api-vhost.configured")
+@when_not_all("api-vhost-config.available", "service.configured")
+def deconfigure_api_vhost():
+    remove_state("launchpad.api-vhost.configured")

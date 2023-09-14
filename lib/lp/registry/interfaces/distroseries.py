@@ -273,7 +273,7 @@ class IDistroSeriesPublic(
             description=_("The distribution for which this is a series."),
         )
     )
-    distributionID = Attribute("The distribution ID.")
+    distribution_id = Attribute("The distribution ID.")
     named_version = Attribute("The combined display name and version.")
     parent = Attribute("The structural parent of this series - the distro")
     components = Attribute("The series components.")

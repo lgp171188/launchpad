@@ -473,7 +473,7 @@ class InitializeDistroSeries:
             GROUP BY processor, architecturetag
             """
             % (
-                sqlvalues(self.distroseries, self.distroseries.owner)
+                sqlvalues(self.distroseries.id, self.distroseries.owner.id)
                 + (das_filter,)
             )
         )

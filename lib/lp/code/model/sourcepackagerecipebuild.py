@@ -330,7 +330,7 @@ class SourcePackageRecipeBuild(
         archives = load_related(Archive, builds, ["archive_id"])
         load_related(Person, archives, ["ownerID"])
         distroseries = load_related(DistroSeries, builds, ["distroseries_id"])
-        load_related(Distribution, distroseries, ["distributionID"])
+        load_related(Distribution, distroseries, ["distribution_id"])
         sprs = load_related(SourcePackageRecipe, builds, ["recipe_id"])
         SourcePackageRecipe.preLoadDataForSourcePackageRecipes(sprs)
 

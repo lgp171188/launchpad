@@ -27,13 +27,14 @@ Evolution has no external links.
 Now update Tomcat to actually have this data:
 
     >>> import transaction
-    >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.registry.enums import VCSType
     >>> from lp.registry.model.product import Product
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.testing import ANONYMOUS, login, logout
     >>> login(ANONYMOUS)
 
-    >>> tomcat = Product.selectOneBy(name="tomcat")
+    >>> tomcat = IStore(Product).find(Product, name="tomcat").one()
     >>> tomcat.vcs = VCSType.GIT
     >>> tomcat.homepageurl = "http://home.page/"
     >>> tomcat.sourceforgeproject = "sf-tomcat"
@@ -67,7 +68,7 @@ When the sourceforge URL is identical to the homepage, we omit the homepage:
 
     >>> login(ANONYMOUS)
 
-    >>> tomcat = Product.selectOneBy(name="tomcat")
+    >>> tomcat = IStore(Product).find(Product, name="tomcat").one()
     >>> tomcat.homepageurl = "http://sourceforge.net/projects/sf-tomcat"
 
     >>> logout()
@@ -130,7 +131,7 @@ If the project doesn't qualify for free hosting, or if it doesn't have
 much time left on its commercial subscription, a portlet is displayed to
 direct the owner to purchase a subscription.
 
-    >>> firefox = Product.selectOneBy(name="firefox")
+    >>> firefox = IStore(Product).find(Product, name="firefox").one()
     >>> ignored = login_person(firefox.owner)
     >>> firefox.licenses = [License.OTHER_PROPRIETARY]
     >>> firefox.license_info = "Internal project."
@@ -285,7 +286,9 @@ Aliases
 When a project has one or more aliases, they're shown on the project's
 home page.
 
-    >>> Product.byName("firefox").setAliases(["iceweasel", "snowchicken"])
+    >>> IStore(Product).find(Product, name="firefox").one().setAliases(
+    ...     ["iceweasel", "snowchicken"]
+    ... )
     >>> anon_browser.open("http://launchpad.test/firefox")
     >>> print(extract_text(find_tag_by_id(anon_browser.contents, "aliases")))
     Also known as: iceweasel, snowchicken

@@ -393,21 +393,41 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
 
     def getBuiltBinaries(self, want_files=False):
         """See `ISourcePackagePublishingHistory`."""
+        # Circular import.
+        from lp.code.model.cibuild import CIBuild
+
+        clauses = [
+            BinaryPackagePublishingHistory.binarypackagerelease_id
+            == BinaryPackageRelease.id,
+            BinaryPackagePublishingHistory.distroarchseries_id
+            == DistroArchSeries.id,
+            BinaryPackagePublishingHistory.archive == self.archive_id,
+            BinaryPackagePublishingHistory.pocket == self.pocket,
+            DistroArchSeries.distroseries == self.distroseries_id,
+        ]
+        if self.sourcepackagerelease.ci_build_id is not None:
+            # Source and binary publications may come from different CI
+            # builds, so just match the git commit.
+            clauses.extend(
+                [
+                    BinaryPackageRelease.ci_build == CIBuild.id,
+                    CIBuild.git_repository_id
+                    == self.sourcepackagerelease.ci_build.git_repository_id,
+                    CIBuild.commit_sha1
+                    == self.sourcepackagerelease.ci_build.commit_sha1,
+                ]
+            )
+        else:
+            clauses.extend(
+                [
+                    BinaryPackageRelease.build == BinaryPackageBuild.id,
+                    BinaryPackageBuild.source_package_release
+                    == self.sourcepackagerelease_id,
+                ]
+            )
         binary_publications = list(
             Store.of(self)
-            .find(
-                BinaryPackagePublishingHistory,
-                BinaryPackagePublishingHistory.binarypackagerelease_id
-                == BinaryPackageRelease.id,
-                BinaryPackagePublishingHistory.distroarchseries_id
-                == DistroArchSeries.id,
-                BinaryPackagePublishingHistory.archive == self.archive_id,
-                BinaryPackagePublishingHistory.pocket == self.pocket,
-                BinaryPackageBuild.id == BinaryPackageRelease.build_id,
-                BinaryPackageBuild.source_package_release_id
-                == self.sourcepackagerelease_id,
-                DistroArchSeries.distroseriesID == self.distroseries_id,
-            )
+            .find(BinaryPackagePublishingHistory, *clauses)
             .order_by(Desc(BinaryPackagePublishingHistory.id))
         )
 
@@ -1881,7 +1901,7 @@ class PublishingSet:
             BinaryPackageRelease.build == BinaryPackageBuild.id,
             BinaryPackageRelease.binarypackagename_id == BinaryPackageName.id,
             SourcePackagePublishingHistory.distroseries_id
-            == DistroArchSeries.distroseriesID,
+            == DistroArchSeries.distroseries_id,
             BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
             BinaryPackagePublishingHistory.binarypackagerelease
@@ -2066,7 +2086,7 @@ class PublishingSet:
             BinaryPackagePublishingHistory.archive == archive,
             BinaryPackagePublishingHistory.distroarchseries_id
             == DistroArchSeries.id,
-            DistroArchSeries.distroseriesID == distroseries.id,
+            DistroArchSeries.distroseries == distroseries,
             BinaryPackagePublishingHistory.pocket == pocket,
             BinaryPackagePublishingHistory.status.is_in(
                 active_publishing_status
@@ -2108,7 +2128,9 @@ class PublishingSet:
             sprs = bulk.load_related(
                 SourcePackageRelease, spphs, ["sourcepackagerelease_id"]
             )
-            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(
+                SourcePackageName, sprs, ["sourcepackagename_id"]
+            )
             spr_ids = set(map(attrgetter("id"), sprs))
             sprfs = list(
                 IStore(SourcePackageReleaseFile)
@@ -2183,7 +2205,9 @@ class PublishingSet:
                 LibraryFileAlias, bpfs, ["libraryfile_id"]
             )
             bulk.load_related(LibraryFileContent, lfas, ["contentID"])
-            bulk.load_related(SourcePackageName, sprs, ["sourcepackagenameID"])
+            bulk.load_related(
+                SourcePackageName, sprs, ["sourcepackagename_id"]
+            )
             bulk.load_related(
                 BinaryPackageName, bprs, ["binarypackagename_id"]
             )
@@ -2212,8 +2236,8 @@ class PublishingSet:
             PackageUpload.id == PackageUploadSource.packageupload_id,
             PackageUpload.status == PackageUploadStatus.DONE,
             PackageUpload.distroseries
-            == SourcePackageRelease.upload_distroseriesID,
-            PackageUpload.archive == SourcePackageRelease.upload_archiveID,
+            == SourcePackageRelease.upload_distroseries_id,
+            PackageUpload.archive == SourcePackageRelease.upload_archive_id,
             PackageUploadSource.sourcepackagerelease
             == SourcePackageRelease.id,
             SourcePackageRelease.id
@@ -2527,9 +2551,9 @@ def get_current_source_releases(
             Or(*series_clauses),
             *extra_clauses,
         )
-        .config(distinct=(SourcePackageRelease.sourcepackagenameID, key_col))
+        .config(distinct=(SourcePackageRelease.sourcepackagename_id, key_col))
         .order_by(
-            SourcePackageRelease.sourcepackagenameID,
+            SourcePackageRelease.sourcepackagename_id,
             key_col,
             Desc(SourcePackagePublishingHistory.id),
         )

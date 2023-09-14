@@ -441,6 +441,10 @@ class BuildFarmJobBehaviourBase:
         )
         os.makedirs(upload_path)
 
+        # Indicate that downloads are in progress.
+        build.updateStatus(BuildStatus.GATHERING, worker_status=worker_status)
+        transaction.commit()
+
         yield self._downloadFiles(worker_status, upload_path, logger)
 
         transaction.commit()

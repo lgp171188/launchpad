@@ -6,9 +6,15 @@
 
 # DO NOT set LPCONFIG here, it should come from the crontab or the shell.
 # Define common variables (also used by cron.daily-ppa).
-PPAROOT=/srv/launchpad.net/ppa-archive
+if [ -z "$PPAROOT" ]; then
+    PPAROOT=/srv/launchpad.net/ppa-archive
+fi
+
 # shellcheck disable=SC2034  # not used here, but used by cron.daily-ppa
-P3AROOT=/srv/launchpad.net/private-ppa-archive
+if [ -z "$P3AROOT" ]; then
+    P3AROOT=/srv/launchpad.net/private-ppa-archive
+fi
+
 LOCKFILE=$PPAROOT/.lock
 # Default lockfile options, retry once if it's locked.
 if [ "$LOCKFILEOPTIONS" == "" ]; then
@@ -26,7 +32,7 @@ fi
 # Cleanup the lockfile on exit.
 cleanup () {
   echo "Cleaning up lockfile."
-  rm -f $LOCKFILE
+  rm -f "$LOCKFILE"
 }
 
 trap cleanup EXIT
