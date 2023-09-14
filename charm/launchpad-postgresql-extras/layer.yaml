@@ -1,0 +1,10 @@
+includes:
+  - layer:basic
+  - layer:apt
+  - interface:pgsql
+repo: https://git.launchpad.net/launchpad
+options:
+  apt:
+    packages:
+      - launchpad-database-dependencies
+      - pgbouncer

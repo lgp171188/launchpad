@@ -1,0 +1,9 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+
+{% if push_backups_databases and push_backups_destination -%}
+# The PostgreSQL charm handles backups, but on production we also need to
+# push backups to staging for weekly restores.
+22 * * * * postgres	{{ scripts_dir }}/push-backups --bwlimit=10m {% if push_backups_private_ssh_key_path %}--ssh-key {{ push_backups_private_ssh_key_path }} {% endif %}{{ push_backups_databases }} {{ push_backups_destination }}
+{% endif %}
+

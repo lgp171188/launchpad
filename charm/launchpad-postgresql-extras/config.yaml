@@ -1,0 +1,56 @@
+options:
+  cron_mailto:
+    type: string
+    description: Email address for output from cron jobs.
+    default: "error-reports@launchpad.test"
+  install_sources:
+    default: |
+      - ppa:launchpad/ppa
+  install_keys:
+    default: |
+      - null  # PPA keys securely added via Launchpad.
+  pgbouncer_db_config:
+    type: string
+    default: ""
+    description: Content of pgbouncer.ini's [databases] section.
+  pgbouncer_extra_config:
+    type: string
+    default: |
+      client_idle_timeout = 0
+      client_login_timeout = 60
+      default_pool_size = 50
+      idle_transaction_timeout = 90
+      ignore_startup_parameters = application_name,extra_float_digits
+      max_client_conn = 3000
+      pool_mode = transaction
+      reserve_pool_size = 0
+      reserve_pool_timeout = 1
+      server_check_delay = 30
+      server_connect_timeout = 15
+      server_idle_timeout = 600
+      server_login_retry = 15
+      stats_users = nagios,telegraf_stats
+    description: >
+      Extra pgbouncer configuration, included as-is from the main config file.
+  pgbouncer_port:
+    type: int
+    default: 5433
+    description: Port number for pgbouncer.
+  pgbouncer_userlist:
+    type: string
+    default: ""
+    description: Content of pgbouncer's userlist.txt.
+  push_backups_databases:
+    type: string
+    default: ""
+    description: >
+      Space-separated list of database names for which to push full backups.
+  push_backups_destination:
+    type: string
+    default: ""
+    description: If set, push full database backups here.
+  push_backups_private_ssh_key:
+    type: string
+    default: ""
+    description: >
+      Base64-encoded private SSH key to use to push full database backups.
