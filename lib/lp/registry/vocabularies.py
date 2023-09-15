@@ -1944,7 +1944,7 @@ class PillarVocabularyBase(NamedStormHugeVocabulary):
     def toTerm(self, obj):
         """See `IVocabulary`."""
         if type(obj) == int:
-            return self.toTerm(PillarName.get(obj))
+            return self.toTerm(IStore(PillarName).get(PillarName, obj))
         if IPillarName.providedBy(obj):
             assert obj.active, "Inactive object %s %d" % (
                 obj.__class__.__name__,
