@@ -778,7 +778,7 @@ class LoggingTransaction:
         self.log.append("ABORT")
 
 
-class TestWebServiceAccessTokens(TestCaseWithFactory):
+class TestWebServiceAccessTokensBase:
     """Test personal access tokens for the webservice.
 
     These are bearer tokens with an owner, a context, and some scopes.  We
@@ -791,7 +791,9 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
     def test_valid(self):
         owner = self.factory.makePerson()
         secret, token = self.factory.makeAccessToken(
-            owner=owner, scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS]
+            owner=owner,
+            target=self.makeTarget(owner=owner),
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
         )
         self.assertIsNone(removeSecurityProxy(token).date_last_used)
         transaction.commit()
@@ -828,6 +830,7 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
         owner = self.factory.makePerson()
         secret, token = self.factory.makeAccessToken(
             owner=owner,
+            target=self.makeTarget(owner=owner),
             date_expires=datetime.now(timezone.utc) - timedelta(days=1),
         )
         transaction.commit()
@@ -859,7 +862,9 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
 
     def test_inactive_account(self):
         owner = self.factory.makePerson(account_status=AccountStatus.SUSPENDED)
-        secret, token = self.factory.makeAccessToken(owner=owner)
+        secret, token = self.factory.makeAccessToken(
+            owner=owner, target=self.makeTarget(owner=owner)
+        )
         transaction.commit()
 
         request, publication = get_request_and_publication(
@@ -889,13 +894,13 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
         request.setPrincipal(principal)
 
     def test_checkRequest_valid(self):
-        repository = self.factory.makeGitRepository()
+        target = self.makeTarget()
         self._makeAccessTokenVerifiedRequest(
-            target=repository,
+            target=target,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
         )
         getUtility(IWebServiceConfiguration).checkRequest(
-            repository, ["repository:build_status", "repository:another_scope"]
+            target, ["repository:build_status", "repository:another_scope"]
         )
 
     def test_checkRequest_contains_context(self):
@@ -909,9 +914,9 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
         )
 
     def test_checkRequest_bad_context(self):
-        repository = self.factory.makeGitRepository()
+        target = self.makeTarget()
         self._makeAccessTokenVerifiedRequest(
-            target=repository,
+            target=target,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
         )
         self.assertRaisesWithContent(
@@ -923,23 +928,23 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
         )
 
     def test_checkRequest_unscoped_method(self):
-        repository = self.factory.makeGitRepository()
+        target = self.makeTarget()
         self._makeAccessTokenVerifiedRequest(
-            target=repository,
+            target=target,
             scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
         )
         self.assertRaisesWithContent(
             Unauthorized,
             "Current authentication only allows calling scoped methods.",
             getUtility(IWebServiceConfiguration).checkRequest,
-            repository,
+            target,
             None,
         )
 
     def test_checkRequest_wrong_scope(self):
-        repository = self.factory.makeGitRepository()
+        target = self.makeTarget()
         self._makeAccessTokenVerifiedRequest(
-            target=repository,
+            target=target,
             scopes=[
                 AccessTokenScope.REPOSITORY_BUILD_STATUS,
                 AccessTokenScope.REPOSITORY_PUSH,
@@ -951,9 +956,16 @@ class TestWebServiceAccessTokens(TestCaseWithFactory):
             "(one of these scopes is required: "
             "'repository:scope_1', 'repository:scope_2').",
             getUtility(IWebServiceConfiguration).checkRequest,
-            repository,
+            target,
             ["repository:scope_1", "repository:scope_2"],
         )
+
+
+class TestWebServiceAccessTokensGitRepository(
+    TestWebServiceAccessTokensBase, TestCaseWithFactory
+):
+    def makeTarget(self, owner=None):
+        return self.factory.makeGitRepository(owner=owner)
 
 
 def test_suite():
