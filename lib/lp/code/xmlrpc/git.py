@@ -195,7 +195,10 @@ class GitAPI(LaunchpadXMLRPCView):
             or access_token.owner.account_status != AccountStatus.ACTIVE
         ):
             raise faults.Unauthorized()
-        if repository is not None and access_token.target != repository:
+        if repository is not None and (
+            access_token.target != repository
+            and access_token.target != repository.target
+        ):
             raise faults.Unauthorized()
         access_token.updateLastUsed()
         return AccessTokenVerificationResult(access_token)

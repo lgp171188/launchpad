@@ -73,7 +73,15 @@ class IAccessToken(Interface):
         description=_("The Git repository for which the token was issued."),
         # Really IGitRepository, patched in lp.services.auth.webservice.
         schema=Interface,
-        required=True,
+        required=False,
+        readonly=True,
+    )
+
+    project = Reference(
+        title=_("Project"),
+        description=_("The Project for which the token was issued."),
+        schema=Interface,
+        required=False,
         readonly=True,
     )
 

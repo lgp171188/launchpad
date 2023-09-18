@@ -21,6 +21,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.product import IProduct
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
@@ -50,8 +51,11 @@ class AccessToken(StormBase):
 
     description = Unicode(name="description", allow_none=False)
 
-    git_repository_id = Int(name="git_repository", allow_none=False)
+    git_repository_id = Int(name="git_repository", allow_none=True)
     git_repository = Reference(git_repository_id, "GitRepository.id")
+
+    project_id = Int(name="project", allow_none=True)
+    project = Reference(project_id, "Product.id")
 
     _scopes = JSON(name="scopes", allow_none=False)
 
@@ -76,6 +80,8 @@ class AccessToken(StormBase):
         self.description = description
         if IGitRepository.providedBy(target):
             self.git_repository = target
+        elif IProduct.providedBy(target):
+            self.project = target
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
         self.scopes = scopes
@@ -85,7 +91,7 @@ class AccessToken(StormBase):
     @property
     def target(self):
         """See `IAccessToken`."""
-        return self.git_repository
+        return self.git_repository or self.project
 
     @property
     def scopes(self):
@@ -205,6 +211,18 @@ class AccessTokenSet:
                         ),
                     )
                 )
+        elif IProduct.providedBy(target):
+            clauses.append(AccessToken.project == target)
+            if visible_by_user is not None:
+                clauses.append(
+                    AccessToken.owner_id.is_in(
+                        Select(
+                            TeamParticipation.team_id,
+                            where=TeamParticipation.person == visible_by_user,
+                        )
+                    )
+                )
+
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
         if not include_expired:

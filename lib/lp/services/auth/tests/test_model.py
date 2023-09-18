@@ -197,6 +197,11 @@ class TestAccessTokenGitRepository(TestAccessTokenBase, TestCaseWithFactory):
         return self.factory.makeGitRepository(owner=owner)
 
 
+class TestAccessTokenProduct(TestAccessTokenBase, TestCaseWithFactory):
+    def makeTarget(self, owner=None):
+        return self.factory.makeProduct(owner=owner)
+
+
 class TestAccessTokenSetBase:
     layer = DatabaseFunctionalLayer
 
@@ -312,6 +317,26 @@ class TestAccessTokenSetBase:
                 expected_tokens,
                 getUtility(IAccessTokenSet).findByTarget(
                     targets[target_index], visible_by_user=owners[owner_index]
+                ),
+            )
+
+    def test_findByTarget_visible_by_user_from_a_team_that_owns_token(self):
+        # Method with a visible_by_user parameter, returns only tokens that
+        # are owned by the `visible_by_user` Person or by a team that the
+        # `visible_by_user` Person belongs to.
+        target = self.makeTarget()
+        team = self.factory.makeTeam()
+        team_member = self.factory.makePerson()
+        with person_logged_in(team.teamowner):
+            team.addMember(team_member, team.teamowner)
+        _, token = self.factory.makeAccessToken(owner=team, target=target)
+        self.factory.makeAccessToken(target=target)
+
+        for user in [team.teamowner, team_member]:
+            self.assertContentEqual(
+                [token],
+                getUtility(IAccessTokenSet).findByTarget(
+                    target, visible_by_user=user
                 ),
             )
 
@@ -434,6 +459,11 @@ class TestGitRepositoryAccessTokenSet(
 ):
     def makeTarget(self):
         return self.factory.makeGitRepository()
+
+
+class TestProjectAccessTokenSet(TestAccessTokenSetBase, TestCaseWithFactory):
+    def makeTarget(self):
+        return self.factory.makeProduct()
 
 
 class TestAccessTokenTargetBase:
