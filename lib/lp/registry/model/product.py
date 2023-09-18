@@ -151,6 +151,7 @@ from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.sharingpolicy import SharingPolicyMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -249,6 +250,7 @@ specification_policy_default = {
 @implementer(IBugSummaryDimension, IHasCustomLanguageCodes, IProduct)
 class Product(
     StormBase,
+    AccessTokenTargetMixin,
     BugTargetBase,
     HasDriversMixin,
     OfficialBugTagTargetMixin,

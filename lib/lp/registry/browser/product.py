@@ -469,6 +469,11 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
         return Link("+configure-blueprints", text, summary, icon="edit")
 
     @enabled_with_permission("launchpad.Edit")
+    def access_tokens(self):
+        text = "Manage access tokens"
+        return Link("+access-tokens", text, icon="edit")
+
+    @enabled_with_permission("launchpad.Edit")
     def branding(self):
         text = "Change branding"
         return Link("+branding", text, icon="edit")
@@ -546,6 +551,7 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
             "sharing",
             "search_oci_project",
             "new_oci_project",
+            "access_tokens",
             "webhooks",
         ]
         add_subscribe_link(links)

@@ -535,11 +535,6 @@ class TestProjectAccessTokenSet(TestAccessTokenSetBase, TestCaseWithFactory):
         return self.factory.makeProduct(**kwargs)
 
 
-class TestProjectAccessTokenSet(TestAccessTokenSetBase, TestCaseWithFactory):
-    def makeTarget(self):
-        return self.factory.makeProduct()
-
-
 class TestAccessTokenTargetBase:
     layer = DatabaseFunctionalLayer
 
