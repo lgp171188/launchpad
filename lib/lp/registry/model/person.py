@@ -209,7 +209,6 @@ from lp.services.database.sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLObjectNotFound,
     StringCol,
 )
 from lp.services.database.stormbase import StormBase
@@ -1370,11 +1369,9 @@ class Person(
         # This is prepopulated by various queries in and out of person.py.
         if self.is_team:
             return False
-        try:
-            ValidPersonCache.get(self.id)
-            return True
-        except SQLObjectNotFound:
-            return False
+        return (
+            IStore(ValidPersonCache).get(ValidPersonCache, self.id) is not None
+        )
 
     @property
     def is_probationary(self):
@@ -2607,7 +2604,7 @@ class Person(
             spec.assignee = None
 
         registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
-        for team in Person.selectBy(teamowner=self):
+        for team in IStore(Person).find(Person, teamowner=self):
             team.teamowner = registry_experts
         for pillar_name in self.getAffiliatedPillars(self):
             pillar = pillar_name.pillar
@@ -2664,7 +2661,7 @@ class Person(
         """Return a unique name."""
         new_name = base_new_name
         count = 1
-        while Person.selectOneBy(name=new_name) is not None:
+        while not IStore(Person).find(Person, name=new_name).is_empty():
             new_name = base_new_name + str(count)
             count += 1
         return new_name
@@ -3834,17 +3831,21 @@ class PersonSet:
         """See `IPersonSet`."""
         # The odd ordering here is to ensure we hit the PostgreSQL
         # indexes. It will not make any real difference outside of tests.
-        query = (
-            """
-            id IN (
-                SELECT person FROM KarmaTotalCache
-                ORDER BY karma_total DESC, person DESC
-                LIMIT %s
-                )
-            """
-            % limit
+        top_people = shortlist(
+            IStore(Person).find(
+                Person,
+                Person.id.is_in(
+                    Select(
+                        KarmaTotalCache.person_id,
+                        order_by=(
+                            Desc(KarmaTotalCache.karma_total),
+                            Desc(KarmaTotalCache.person_id),
+                        ),
+                        limit=limit,
+                    )
+                ),
+            )
         )
-        top_people = shortlist(Person.select(query))
         return sorted(
             top_people,
             key=lambda obj: (obj.karma, obj.displayname, obj.id),
@@ -4304,10 +4305,10 @@ class PersonSet:
 
     def getByName(self, name, ignore_merged=True):
         """See `IPersonSet`."""
-        query = Person.name == name
+        clauses = [Person.name == name]
         if ignore_merged:
-            query = And(query, Person.mergedID == None)
-        return Person.selectOne(query)
+            clauses.append(Is(Person.mergedID, None))
+        return IStore(Person).find(Person, *clauses).one()
 
     def getByAccount(self, account):
         """See `IPersonSet`."""
@@ -4316,14 +4317,26 @@ class PersonSet:
     def updateStatistics(self):
         """See `IPersonSet`."""
         stats = getUtility(ILaunchpadStatisticSet)
-        people_count = Person.select(
-            And(Person.teamownerID == None, Person.mergedID == None)
-        ).count()
+        people_count = (
+            IStore(Person)
+            .find(
+                Person,
+                Is(Person.teamownerID, None),
+                Is(Person.mergedID, None),
+            )
+            .count()
+        )
         stats.update("people_count", people_count)
         transaction.commit()
-        teams_count = Person.select(
-            And(Person.q.teamownerID != None, Person.q.mergedID == None)
-        ).count()
+        teams_count = (
+            IStore(Person)
+            .find(
+                Person,
+                IsNot(Person.teamownerID, None),
+                Is(Person.mergedID, None),
+            )
+            .count()
+        )
         stats.update("teams_count", teams_count)
         transaction.commit()
 
@@ -4483,10 +4496,7 @@ class PersonSet:
 
     def get(self, personid):
         """See `IPersonSet`."""
-        try:
-            return Person.get(personid)
-        except SQLObjectNotFound:
-            return None
+        return IStore(Person).get(Person, personid)
 
     def getByEmail(self, email, filter_status=True):
         """See `IPersonSet`."""
@@ -4543,8 +4553,8 @@ class PersonSet:
         # not hit the DB.
         valid_person_ids = {
             person_id.id
-            for person_id in ValidPersonCache.select(
-                "id IN %s" % sqlvalues(person_ids)
+            for person_id in IStore(ValidPersonCache).find(
+                ValidPersonCache, ValidPersonCache.id.is_in(person_ids)
             )
         }
         return [person for person in persons if person.id in valid_person_ids]

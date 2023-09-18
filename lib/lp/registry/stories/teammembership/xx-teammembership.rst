@@ -28,9 +28,11 @@ Regular users can create teams.
 The owner of a team is always added as an administrator of their team.
 
     >>> from lp.registry.model.person import Person
-    >>> for a in Person.byName("myemail").adminmembers:
+    >>> from lp.services.database.interfaces import IStore
+    >>> for a in (
+    ...     IStore(Person).find(Person, name="myemail").one().adminmembers
+    ... ):
     ...     print(a.name)
-    ...
     name12
 
 
@@ -90,8 +92,7 @@ approved, though.
 
     >>> from storm.locals import Store
     >>> from lp.registry.interfaces.person import TeamMembershipPolicy
-    >>> from lp.registry.model.person import Person
-    >>> myemail = Person.selectOneBy(name="myemail")
+    >>> myemail = IStore(Person).find(Person, name="myemail").one()
     >>> myemail.membership_policy = TeamMembershipPolicy.MODERATED
     >>> Store.of(myemail).flush()
 

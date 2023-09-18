@@ -28,7 +28,7 @@ Get the current counts of stuff in the database:
     ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
     ... )
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
-    >>> orig_person_count = Person.select().count()
+    >>> orig_person_count = IStore(Person).find(Person).count()
     >>> orig_tp_count = (
     ...     IStore(TeamParticipation).find(TeamParticipation).count()
     ... )
@@ -612,11 +612,14 @@ Ensure only one Kamion was created (he's an uploader on multiple packages),
 and that we imported exactly 9 people (13 packages with 3 being uploaded by
 Kamion, 2 being uploaded by mdz and 2 by doko).
 
-    >>> from lp.services.database.sqlobject import LIKE
-    >>> p = Person.selectOne(LIKE(Person.q.name, "cjwatson%"))
+    >>> p = (
+    ...     IStore(Person)
+    ...     .find(Person, Person.name.startswith("cjwatson"))
+    ...     .one()
+    ... )
     >>> print(p.name)
     cjwatson
-    >>> print(Person.select().count() - orig_person_count)
+    >>> print(IStore(Person).find(Person).count() - orig_person_count)
     13
     >>> print(
     ...     IStore(TeamParticipation).find(TeamParticipation).count()
@@ -717,7 +720,7 @@ changed, etc.
     ...     - orig_spr_count
     ... )
     17
-    >>> print(Person.select().count() - orig_person_count)
+    >>> print(IStore(Person).find(Person).count() - orig_person_count)
     13
     >>> print(
     ...     IStore(TeamParticipation).find(TeamParticipation).count()

@@ -207,7 +207,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
 
     def getDatabaseBranch(self, personName, productName, branchName):
         """Look up and return the specified branch from the database."""
-        owner = Person.byName(personName)
+        owner = IStore(Person).find(Person, name=personName).one()
         if productName is None:
             product = None
         else:
@@ -335,7 +335,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         branch_type=BranchType.HOSTED,
     ):
         """Create a new branch in the database."""
-        owner = Person.selectOneBy(name=owner_name)
+        owner = IStore(Person).find(Person, name=owner_name).one()
         if product_name == "+junk":
             product = None
         else:
@@ -508,8 +508,10 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         # the branch doesn't exist.
 
         # 'salgado' is a member of landscape-developers.
-        salgado = Person.selectOneBy(name="salgado")
-        landscape_dev = Person.selectOneBy(name="landscape-developers")
+        salgado = IStore(Person).find(Person, name="salgado").one()
+        landscape_dev = (
+            IStore(Person).find(Person, name="landscape-developers").one()
+        )
         self.assertTrue(
             salgado.inTeam(landscape_dev),
             "salgado should be a member of landscape-developers, but isn't.",
@@ -547,7 +549,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         # Hack 'firefox' so we have permission to do this.
         ZopelessAppServerLayer.txn.begin()
         firefox = IStore(Product).find(Product, name="firefox").one()
-        testuser = Person.selectOneBy(name="testuser")
+        testuser = IStore(Person).find(Person, name="testuser").one()
         firefox.development_focus.owner = testuser
         ZopelessAppServerLayer.txn.commit()
         remote_url = self.getTransportURL("+branch/firefox")

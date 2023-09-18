@@ -21,7 +21,7 @@ Get the current counts of stuff in the database:
     ...     IStore(SourcePackageRelease).find(SourcePackageRelease).count()
     ... )
     >>> orig_sspph_count = IStore(SSPPH).find(SSPPH).count()
-    >>> orig_person_count = Person.select().count()
+    >>> orig_person_count = IStore(Person).find(Person).count()
     >>> orig_tp_count = (
     ...     IStore(TeamParticipation).find(TeamParticipation).count()
     ... )
@@ -147,7 +147,7 @@ breezy:
 Each source package has its own maintainer (in this case, fabbione and
 porridge):
 
-    >>> print(Person.select().count() - orig_person_count)
+    >>> print(IStore(Person).find(Person).count() - orig_person_count)
     2
     >>> print(
     ...     IStore(TeamParticipation).find(TeamParticipation).count()

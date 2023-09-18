@@ -73,7 +73,7 @@ def _get_locals():
         # Create a few variables "in case they come in handy."
         # Do we really use these?  Are they worth carrying around?
         d = store.get(Distribution, 1)
-        p = Person.get(1)
+        p = store.get(Person, 1)
         ds = store.get(DistroSeries, 1)
         prod = store.get(Product, 1)
         proj = store.get(ProjectGroup, 1)

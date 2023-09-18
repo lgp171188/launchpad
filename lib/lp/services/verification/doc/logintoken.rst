@@ -19,17 +19,18 @@ follows:
     4) The token is now marked as consumed, together with any other
        tokens of the same type and for the same email address.
 
+    >>> import transaction
+    >>> from lp.registry.model.person import Person
+    >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.database.sqlbase import flush_database_updates
+    >>> from lp.services.mail import stub
     >>> from lp.services.verification.interfaces.authtoken import (
     ...     LoginTokenType,
     ... )
-    >>> from lp.registry.model.person import Person
     >>> from lp.services.verification.interfaces.logintoken import (
     ...     ILoginTokenSet,
     ... )
-    >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> from lp.services.mail import stub
-    >>> import transaction
-    >>> foobar = Person.byName("name16")
+    >>> foobar = IStore(Person).find(Person, name="name16").one()
 
 Let's create a new LoginToken to confirm an email address for foobar.
 

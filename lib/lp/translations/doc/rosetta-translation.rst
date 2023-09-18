@@ -42,7 +42,7 @@ Get a translation for a particular message and check it has a translation.
 Get a person to create a translation with.
 
     >>> from lp.registry.model.person import Person
-    >>> person = Person.get(1)
+    >>> person = IStore(Person).get(Person, 1)
     >>> pofile.canEditTranslations(person)
     True
 
@@ -96,9 +96,9 @@ Now we want to test the interaction of the "upstream" translations with the
 "active translations". There are several things we want to be able to test.
 First, let's setup some useful variables.
 
-    >>> Pa = Person.get(50)
-    >>> Pb = Person.get(46)
-    >>> Pc = Person.get(16)
+    >>> Pa = IStore(Person).get(Person, 50)
+    >>> Pb = IStore(Person).get(Person, 46)
+    >>> Pc = IStore(Person).get(Person, 16)
 
 Pa, Pb and Pc are three useful Person's.
 
