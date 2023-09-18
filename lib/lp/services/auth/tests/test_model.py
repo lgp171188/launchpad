@@ -824,3 +824,10 @@ class TestAccessTokenTargetGitRepository(
             b"user.",
             response.body,
         )
+
+
+class TestAccessTokenTargetProject(
+    TestAccessTokenTargetBase, TestCaseWithFactory
+):
+    def makeTarget(self):
+        return self.factory.makeProduct()
