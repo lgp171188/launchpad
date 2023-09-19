@@ -128,6 +128,7 @@ from lp.registry.interfaces.teammembership import (
     TeamMembershipStatus,
 )
 from lp.registry.interfaces.wikiname import IWikiName
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.fields import (
     BlocklistableContentNameField,
@@ -172,7 +173,7 @@ def validate_person_common(
     # Importing here to avoid a cyclic import.
     from lp.registry.model.person import Person
 
-    person = Person.get(value)
+    person = IStore(Person).get(Person, value)
     if not validate_func(person):
         raise error_class(
             "Cannot link person (name=%s, visibility=%s) to %s (name=%s)"

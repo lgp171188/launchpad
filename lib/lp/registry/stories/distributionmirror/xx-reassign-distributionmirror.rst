@@ -52,7 +52,10 @@ We also try to use the name of an unvalidated account, which can't be used as
 the owner of something.
 
     >>> from lp.registry.model.person import Person
-    >>> Person.byName("matsubara").is_valid_person_or_team
+    >>> from lp.services.database.interfaces import IStore
+    >>> IStore(Person).find(
+    ...     Person, name="matsubara"
+    ... ).one().is_valid_person_or_team
     False
     >>> browser.getControl(name="field.owner").value = "matsubara"
     >>> browser.getControl("Change").click()
@@ -80,7 +83,7 @@ Now we try to create a team using a name that is already taken.
 Okay, let's do it properly now and reassign it to an existing (and validated)
 account.
 
-    >>> salgado = Person.byName("salgado")
+    >>> salgado = IStore(Person).find(Person, name="salgado").one()
     >>> salgado.is_valid_person_or_team
     True
 

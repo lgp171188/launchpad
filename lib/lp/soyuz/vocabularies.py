@@ -95,7 +95,7 @@ class PPAVocabulary(SQLObjectVocabularyBase):
     # longer see.
     _filter = And(
         Archive._enabled == True,
-        Person.q.id == Archive.q.ownerID,
+        Archive.owner == Person.id,
         Archive.q.purpose == ArchivePurpose.PPA,
     )
     displayname = "Select a PPA"

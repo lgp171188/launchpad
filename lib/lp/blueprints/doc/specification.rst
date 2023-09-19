@@ -21,11 +21,12 @@ IMilestoneSet can be accessed as a utility.
 To create a new Specification, use ISpecificationSet.new:
 
     >>> from lp.registry.interfaces.product import IProductSet
+    >>> from lp.registry.model.person import Person
+    >>> from lp.services.database.interfaces import IStore
 
     >>> productset = getUtility(IProductSet)
     >>> upstream_firefox = productset.get(4)
-    >>> from lp.registry.model.person import Person
-    >>> mark = Person.byName("mark")
+    >>> mark = IStore(Person).find(Person, name="mark").one()
     >>> newspec = specset.new(
     ...     "mng",
     ...     "Support MNG Format",
@@ -78,7 +79,7 @@ We attach now a spec to a distribution.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-    >>> mark = Person.byName("mark")
+    >>> mark = IStore(Person).find(Person, name="mark").one()
     >>> ubuspec = specset.new(
     ...     "fix-spec-permissions",
     ...     "Fix Specification Permissions",
@@ -99,7 +100,7 @@ member, and therefore should be able to edit any spec attached to it
     >>> print(ubuntu.owner.name)
     ubuntu-team
 
-    >>> jdub = Person.byName("jdub")
+    >>> jdub = IStore(Person).find(Person, name="jdub").one()
     >>> jdub.inTeam(ubuntu.owner)
     True
 

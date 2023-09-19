@@ -66,8 +66,10 @@ as an inactive one.
     # listed anywhere.
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.teammembership import TeamMembershipSet
+    >>> from lp.services.database.interfaces import IStore
     >>> membership = TeamMembershipSet().getByPersonAndTeam(
-    ...     Person.byName("name12"), Person.byName("ubuntu-team")
+    ...     IStore(Person).find(Person, name="name12").one(),
+    ...     IStore(Person).find(Person, name="ubuntu-team").one(),
     ... )
     >>> membership.status.title
     'Declined'

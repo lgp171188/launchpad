@@ -946,12 +946,12 @@ class TestPersonStates(TestCaseWithFactory):
         is already in use. If this happens, we'll simply append an integer to
         that name until we can find one that is free.
         """
-        sample_person = Person.byName("name12")
+        sample_person = IStore(Person).find(Person, name="name12").one()
         login(sample_person.preferredemail.email)
         sample_person.deactivate(comment="blah!")
         self.assertEqual(sample_person.name, "name12-deactivatedaccount")
         # Now that name12 is free Foo Bar can use it.
-        foo_bar = Person.byName("name16")
+        foo_bar = IStore(Person).find(Person, name="name16").one()
         foo_bar.name = "name12"
         # If Foo Bar deactivates their account, though, we'll have to use a
         # name other than name12-deactivatedaccount because that is already
@@ -980,9 +980,9 @@ class TestPersonStates(TestCaseWithFactory):
         self.assertIs(None, product.bug_supervisor)
 
     def test_getDirectMemberIParticipateIn(self):
-        sample_person = Person.byName("name12")
-        warty_team = Person.byName("name20")
-        ubuntu_team = Person.byName("ubuntu-team")
+        sample_person = IStore(Person).find(Person, name="name12").one()
+        warty_team = IStore(Person).find(Person, name="name20").one()
+        ubuntu_team = IStore(Person).find(Person, name="ubuntu-team").one()
         # Sample Person is an active member of Warty Security Team which in
         # turn is a proposed member of Ubuntu Team. That means
         # sample_person._getDirectMemberIParticipateIn(ubuntu_team) will fail
@@ -1061,7 +1061,7 @@ class TestPersonStates(TestCaseWithFactory):
     def test_visibility_validator_team_ss_prod_pub_to_private(self):
         # A PUBLIC team with a structural subscription to a product can
         # convert to a PRIVATE team.
-        foo_bar = Person.byName("name16")
+        foo_bar = IStore(Person).find(Person, name="name16").one()
         self.bzr.addSubscription(self.otherteam, foo_bar)
         self.otherteam.visibility = PersonVisibility.PRIVATE
 
