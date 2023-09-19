@@ -942,7 +942,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         self._prefetchBuildData(builds)
         das = load_related(DistroArchSeries, builds, ["distro_arch_series_id"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         distroseries = load_related(DistroSeries, das, ["distroseries_id"])
         load_related(Distribution, distroseries, ["distribution_id"])
 

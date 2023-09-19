@@ -14,18 +14,20 @@ __all__ = [
 import logging
 import re
 import typing
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from operator import attrgetter
 from pathlib import PurePath
 
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.expr import (
+    Alias,
     And,
     Cast,
     Count,
     Desc,
     Exists,
+    Is,
     Join,
     Not,
     Or,
@@ -33,7 +35,7 @@ from storm.expr import (
     Sum,
     Union,
 )
-from storm.properties import JSON, Int, Unicode
+from storm.properties import JSON, Bool, DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import EmptyResultSet, Store
 from zope.component import getAdapter, getUtility
@@ -81,17 +83,9 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database.bulk import create, load_referencing, load_related
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStandbyStore, IStore
-from lp.services.database.sqlbase import SQLBase, cursor, sqlvalues
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
-)
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import BulkUpdate
 from lp.services.features import getFeatureFlag
@@ -209,23 +203,21 @@ def storm_validate_external_dependencies(archive, attr, value):
 
 
 @implementer(IArchive, IHasOwner, IHasBuildRecords)
-class Archive(SQLBase):
-    _table = "Archive"
-    _defaultOrder = "id"
+class Archive(StormBase):
+    __storm_table__ = "Archive"
+    __storm_order__ = "id"
 
-    owner = ForeignKey(
-        dbName="owner",
-        foreignKey="Person",
-        storm_validator=validate_person,
-        notNull=True,
-    )
+    id = Int(primary=True)
+
+    owner_id = Int(name="owner", validator=validate_person, allow_none=False)
+    owner = Reference(owner_id, "Person.id")
 
     def _validate_archive_name(self, attr, value):
         """Only allow renaming of COPY archives.
 
         Also assert the name is valid when set via an unproxied object.
         """
-        if not self._SO_creating:
+        if not self._creating:
             renamable = self.is_copy or (
                 self.is_ppa and self.status == ArchiveStatus.DELETED
             )
@@ -277,13 +269,13 @@ class Archive(SQLBase):
 
         return value
 
-    name = StringCol(
-        dbName="name", notNull=True, storm_validator=_validate_archive_name
+    name = Unicode(
+        name="name", allow_none=False, validator=_validate_archive_name
     )
 
-    displayname = StringCol(dbName="displayname", notNull=True)
+    displayname = Unicode(name="displayname", allow_none=False)
 
-    description = StringCol(dbName="description", notNull=False, default=None)
+    description = Unicode(name="description", allow_none=True, default=None)
 
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
@@ -297,78 +289,76 @@ class Archive(SQLBase):
         default=ArchiveStatus.ACTIVE,
     )
 
-    _enabled = BoolCol(dbName="enabled", notNull=True, default=True)
+    _enabled = Bool(name="enabled", allow_none=False, default=True)
     enabled = property(lambda x: x._enabled)
 
-    publish = BoolCol(dbName="publish", notNull=True, default=True)
+    publish = Bool(name="publish", allow_none=False, default=True)
 
-    private = BoolCol(
-        dbName="private",
-        notNull=True,
+    private = Bool(
+        name="private",
+        allow_none=False,
         default=False,
-        storm_validator=_validate_archive_privacy,
+        validator=_validate_archive_privacy,
     )
 
-    require_virtualized = BoolCol(
-        dbName="require_virtualized", notNull=True, default=True
+    require_virtualized = Bool(
+        name="require_virtualized", allow_none=False, default=True
     )
 
-    build_debug_symbols = BoolCol(
-        dbName="build_debug_symbols", notNull=True, default=False
+    build_debug_symbols = Bool(
+        name="build_debug_symbols", allow_none=False, default=False
     )
-    publish_debug_symbols = BoolCol(
-        dbName="publish_debug_symbols", notNull=False, default=False
-    )
-
-    permit_obsolete_series_uploads = BoolCol(
-        dbName="permit_obsolete_series_uploads", default=False
+    publish_debug_symbols = Bool(
+        name="publish_debug_symbols", allow_none=True, default=False
     )
 
-    authorized_size = IntCol(dbName="authorized_size", notNull=False)
-
-    sources_cached = IntCol(dbName="sources_cached", notNull=False, default=0)
-
-    binaries_cached = IntCol(
-        dbName="binaries_cached", notNull=False, default=0
+    permit_obsolete_series_uploads = Bool(
+        name="permit_obsolete_series_uploads", default=False
     )
 
-    package_description_cache = StringCol(
-        dbName="package_description_cache", notNull=False, default=None
+    authorized_size = Int(name="authorized_size", allow_none=True)
+
+    sources_cached = Int(name="sources_cached", allow_none=True, default=0)
+
+    binaries_cached = Int(name="binaries_cached", allow_none=True, default=0)
+
+    package_description_cache = Unicode(
+        name="package_description_cache", allow_none=True, default=None
     )
 
-    total_count = IntCol(dbName="total_count", notNull=True, default=0)
+    total_count = Int(name="total_count", allow_none=False, default=0)
 
-    pending_count = IntCol(dbName="pending_count", notNull=True, default=0)
+    pending_count = Int(name="pending_count", allow_none=False, default=0)
 
-    succeeded_count = IntCol(dbName="succeeded_count", notNull=True, default=0)
+    succeeded_count = Int(name="succeeded_count", allow_none=False, default=0)
 
-    building_count = IntCol(dbName="building_count", notNull=True, default=0)
+    building_count = Int(name="building_count", allow_none=False, default=0)
 
-    failed_count = IntCol(dbName="failed_count", notNull=True, default=0)
+    failed_count = Int(name="failed_count", allow_none=False, default=0)
 
-    date_created = UtcDateTimeCol(dbName="date_created")
+    date_created = DateTime(name="date_created", tzinfo=timezone.utc)
 
     signing_key_owner_id = Int(name="signing_key_owner")
     signing_key_owner = Reference(signing_key_owner_id, "Person.id")
     signing_key_fingerprint = Unicode()
 
-    relative_build_score = IntCol(
-        dbName="relative_build_score", notNull=True, default=0
+    relative_build_score = Int(
+        name="relative_build_score", allow_none=False, default=0
     )
 
     # This field is specifically and only intended for OEM migration to
     # Launchpad and should be re-examined in October 2010 to see if it
     # is still relevant.
-    external_dependencies = StringCol(
-        dbName="external_dependencies",
-        notNull=False,
+    external_dependencies = Unicode(
+        name="external_dependencies",
+        allow_none=True,
         default=None,
-        storm_validator=storm_validate_external_dependencies,
+        validator=storm_validate_external_dependencies,
     )
 
-    suppress_subscription_notifications = BoolCol(
-        dbName="suppress_subscription_notifications",
-        notNull=True,
+    suppress_subscription_notifications = Bool(
+        name="suppress_subscription_notifications",
+        allow_none=False,
         default=False,
     )
 
@@ -382,10 +372,50 @@ class Archive(SQLBase):
         name="repository_format", allow_none=True, enum=ArchiveRepositoryFormat
     )
 
-    def _init(self, *args, **kw):
-        """Provide the right interface for URL traversal."""
-        SQLBase._init(self, *args, **kw)
+    _creating = False
 
+    def __init__(
+        self,
+        owner,
+        distribution,
+        name,
+        displayname,
+        purpose,
+        description=None,
+        publish=True,
+        require_virtualized=True,
+        signing_key_owner=None,
+        signing_key_fingerprint=None,
+        publishing_method=None,
+        repository_format=None,
+    ):
+        super().__init__()
+        try:
+            self._creating = True
+            self.owner = owner
+            self.distribution = distribution
+            self.name = name
+            self.displayname = displayname
+            self.purpose = purpose
+            self.description = description
+            self.publish = publish
+            self.require_virtualized = require_virtualized
+            self.signing_key_owner = signing_key_owner
+            self.signing_key_fingerprint = signing_key_fingerprint
+            self.publishing_method = publishing_method
+            self.repository_format = repository_format
+        except Exception:
+            # If validating references such as `owner` fails, then the new
+            # object may have been added to the store first.  Remove it
+            # again in that case.
+            store = Store.of(self)
+            if store is not None:
+                store.remove(self)
+            raise
+        self.__storm_loaded__()
+        del self._creating
+
+    def __storm_loaded__(self):
         # Provide the additional marker interface depending on what type
         # of archive this is.  See also the lp:url declarations in
         # zcml/archive.zcml.
@@ -3246,7 +3276,7 @@ class ArchiveSet:
 
     def get(self, archive_id):
         """See `IArchiveSet`."""
-        return Archive.get(archive_id)
+        return IStore(Archive).get(Archive, archive_id)
 
     def getByReference(self, reference, check_permissions=False, user=None):
         """See `IArchiveSet`."""
@@ -3351,8 +3381,12 @@ class ArchiveSet:
         if name is None:
             name = self._getDefaultArchiveNameByPurpose(purpose)
 
-        return Archive.selectOneBy(
-            distribution=distribution, purpose=purpose, name=name
+        return (
+            IStore(Archive)
+            .find(
+                Archive, distribution=distribution, purpose=purpose, name=name
+            )
+            .one()
         )
 
     def getByDistroAndName(self, distribution, name):
@@ -3443,11 +3477,16 @@ class ArchiveSet:
                     % (name, distribution.name)
                 )
         else:
-            archive = Archive.selectOneBy(
-                owner=owner,
-                distribution=distribution,
-                name=name,
-                purpose=ArchivePurpose.PPA,
+            archive = (
+                IStore(Archive)
+                .find(
+                    Archive,
+                    owner=owner,
+                    distribution=distribution,
+                    name=name,
+                    purpose=ArchivePurpose.PPA,
+                )
+                .one()
             )
             if archive is not None:
                 raise AssertionError(
@@ -3477,12 +3516,12 @@ class ArchiveSet:
             signing_key_owner=signing_key_owner,
             signing_key_fingerprint=signing_key_fingerprint,
             require_virtualized=require_virtualized,
-            _publishing_method=publishing_method,
-            _repository_format=repository_format,
+            publishing_method=publishing_method,
+            repository_format=repository_format,
         )
 
         # Upon creation archives are enabled by default.
-        if enabled == False:
+        if not enabled:
             new_archive.disable()
 
         # Private teams cannot have public PPAs.
@@ -3508,11 +3547,12 @@ class ArchiveSet:
             ]
         new_archive.setProcessors(processors)
 
+        Store.of(new_archive).flush()
         return new_archive
 
     def __iter__(self):
         """See `IArchiveSet`."""
-        return iter(Archive.select())
+        return iter(IStore(Archive).find(Archive))
 
     def getPPAOwnedByPerson(
         self,
@@ -3545,9 +3585,9 @@ class ArchiveSet:
         direct_membership = Select(
             Archive.id,
             where=And(
-                Archive._enabled == True,
+                Is(Archive._enabled, True),
                 Archive.purpose == ArchivePurpose.PPA,
-                TeamParticipation.team == Archive.ownerID,
+                TeamParticipation.team == Archive.owner_id,
                 TeamParticipation.person == user,
             ),
         )
@@ -3576,7 +3616,7 @@ class ArchiveSet:
         result.order_by(Archive.displayname)
 
         def preload_owners(rows):
-            load_related(Person, rows, ["ownerID"])
+            load_related(Person, rows, ["owner_id"])
 
         return DecoratedResultSet(result, pre_iter_hook=preload_owners)
 
@@ -3611,7 +3651,7 @@ class ArchiveSet:
                 Archive,
                 Archive.signing_key_fingerprint == None,
                 Archive.purpose == purpose,
-                Archive._enabled == True,
+                Is(Archive._enabled, True),
             )
         )
         results.order_by(Archive.date_created)
@@ -3628,8 +3668,8 @@ class ArchiveSet:
                 SourcePackagePublishingHistory,
                 SourcePackagePublishingHistory.archive == Archive.id,
                 SourcePackagePublishingHistory.distroseries == DistroSeries.id,
-                Archive.private == False,
-                Archive._enabled == True,
+                Is(Archive.private, False),
+                Is(Archive._enabled, True),
                 Archive.distribution == distribution,
                 DistroSeries.distribution == distribution,
                 Archive.purpose == ArchivePurpose.PPA,
@@ -3642,28 +3682,24 @@ class ArchiveSet:
 
     def getMostActivePPAsForDistribution(self, distribution):
         """See `IArchiveSet`."""
-        cur = cursor()
-        query = """
-             SELECT a.id, count(*) as C
-             FROM Archive a, SourcePackagePublishingHistory spph
-             WHERE
-                 spph.archive = a.id AND
-                 a.private = FALSE AND
-                 spph.datecreated >= now() - INTERVAL '1 week' AND
-                 a.distribution = %s AND
-                 a.purpose = %s
-             GROUP BY a.id
-             ORDER BY C DESC, a.id
-             LIMIT 5
-        """ % sqlvalues(
-            distribution.id, ArchivePurpose.PPA
+        spph_count = Alias(Count(SourcePackagePublishingHistory.id))
+        results = (
+            IStore(Archive)
+            .find(
+                (Archive, spph_count),
+                SourcePackagePublishingHistory.archive == Archive.id,
+                Is(Archive.private, False),
+                SourcePackagePublishingHistory.datecreated
+                >= UTC_NOW - Cast(timedelta(weeks=1), "interval"),
+                Archive.distribution == distribution,
+                Archive.purpose == ArchivePurpose.PPA,
+            )
+            .group_by(Archive.id)
+            .order_by(Desc(spph_count), Archive.id)[:5]
         )
 
-        cur.execute(query)
-
         most_active = []
-        for archive_id, number_of_uploads in cur.fetchall():
-            archive = Archive.get(int(archive_id))
+        for archive, number_of_uploads in results:
             the_dict = {"archive": archive, "uploads": number_of_uploads}
             most_active.append(the_dict)
 
@@ -3673,7 +3709,7 @@ class ArchiveSet:
         """See `IArchiveSet`."""
         return IStore(Archive).find(
             Archive,
-            Archive.private == True,
+            Is(Archive.private, True),
             Archive.purpose == ArchivePurpose.PPA,
         )
 
@@ -3702,7 +3738,7 @@ class ArchiveSet:
             extra_exprs.append(Archive.name == name)
 
         public_archive = And(
-            Archive.private == False, Archive._enabled == True
+            Is(Archive.private, False), Is(Archive._enabled, True)
         )
 
         if not check_permissions:
@@ -3720,14 +3756,14 @@ class ArchiveSet:
                     TeamParticipation.team_id,
                     where=And(
                         TeamParticipation.person == user,
-                        TeamParticipation.team_id == Archive.ownerID,
+                        TeamParticipation.team_id == Archive.owner_id,
                     ),
                 )
 
                 # Append the extra expression to capture either public
                 # archives, or archives owned by the user, or archives
                 # owned by a team of which the user is a member:
-                # Note: 'Archive.ownerID == user.id'
+                # Note: 'Archive.owner_id == user.id'
                 # is unnecessary below because there is a TeamParticipation
                 # entry showing that each person is a member of the "team"
                 # that consists of themselves.
@@ -3736,7 +3772,7 @@ class ArchiveSet:
                 extra_exprs.append(
                     Or(
                         public_archive,
-                        Archive.ownerID.is_in(user_teams_subselect),
+                        Archive.owner_id.is_in(user_teams_subselect),
                     )
                 )
         else:
@@ -3745,7 +3781,7 @@ class ArchiveSet:
             extra_exprs.append(public_archive)
 
         if exclude_disabled:
-            extra_exprs.append(Archive._enabled == True)
+            extra_exprs.append(Is(Archive._enabled, True))
 
         if exclude_pristine:
             extra_exprs.append(
@@ -3842,7 +3878,7 @@ class ArchiveSet:
             # when a user is the direct owner of the PPA.
             # Team ownership is accounted for in `get_enabled_archive_filter`
             # below
-            elif user.id == removeSecurityProxy(archive).ownerID:
+            elif user.id == removeSecurityProxy(archive).owner_id:
                 allowed_ids.add(archive.id)
 
             else:
@@ -3888,7 +3924,7 @@ def get_archive_privacy_filter(user):
     else:
         privacy_filter = Or(
             Not(Archive.private),
-            Archive.ownerID.is_in(
+            Archive.owner_id.is_in(
                 Select(
                     TeamParticipation.team_id,
                     where=(TeamParticipation.person == user),
@@ -3912,8 +3948,8 @@ def get_enabled_archive_filter(
         if include_public:
             terms = [
                 purpose_term,
-                Archive.private == False,
-                Archive._enabled == True,
+                Is(Archive.private, False),
+                Is(Archive._enabled, True),
             ]
             return And(*terms)
         else:
@@ -3929,7 +3965,7 @@ def get_enabled_archive_filter(
         TeamParticipation.team_id, where=TeamParticipation.person == user
     )
 
-    is_owner = Archive.ownerID.is_in(user_teams)
+    is_owner = Archive.owner_id.is_in(user_teams)
 
     from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 
@@ -3970,6 +4006,6 @@ def get_enabled_archive_filter(
 
     if include_public:
         filter_terms.append(
-            And(Archive._enabled == True, Archive.private == False)
+            And(Is(Archive._enabled, True), Is(Archive.private, False))
         )
     return And(purpose_term, Or(*filter_terms))

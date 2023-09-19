@@ -451,7 +451,7 @@ class PackageUpload(StormBase):
                 AND bpf.libraryfile = lfa.id
                 AND lfa.filename IN (%%s)
         """ % sqlvalues(
-            self.archive, self.distroseries.distribution.id
+            self.archive_id, self.distroseries.distribution_id
         )
         # Inject the inner query.
         query %= inner_query

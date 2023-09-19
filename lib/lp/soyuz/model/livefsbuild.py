@@ -429,7 +429,7 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Person, builds, ["requester_id"])
         load_related(LibraryFileAlias, builds, ["log_id"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         load_related(LiveFS, builds, ["livefs_id"])
 
     def getByBuildFarmJobs(self, build_farm_jobs):

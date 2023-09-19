@@ -3573,8 +3573,10 @@ class Person(
     @property
     def ppas(self):
         """See `IPerson`."""
-        return Archive.selectBy(
-            owner=self, purpose=ArchivePurpose.PPA, orderBy="name"
+        return (
+            IStore(Archive)
+            .find(Archive, owner=self, purpose=ArchivePurpose.PPA)
+            .order_by(Archive.name)
         )
 
     def getVisiblePPAs(self, user):

@@ -576,7 +576,7 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             if not archive_id.isdigit():
                 return None
             return traverse_archive_subscription_for_subscriber(
-                self.context, archive_id
+                self.context, int(archive_id)
             )
         else:
             # Otherwise we return the normal view for a person's

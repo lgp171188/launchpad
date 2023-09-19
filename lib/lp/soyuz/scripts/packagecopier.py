@@ -171,7 +171,7 @@ def check_copy_permissions(
             # checks on each source archive.  Not all of this is currently
             # preloadable.
             archives = load_related(Archive, sources, ["archive_id"])
-            load_related(Person, archives, ["ownerID"])
+            load_related(Person, archives, ["owner_id"])
 
     # If there is a requester, check that they have upload permission into
     # the destination (archive, component, pocket). This check is done

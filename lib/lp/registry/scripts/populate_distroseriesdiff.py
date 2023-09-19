@@ -56,7 +56,7 @@ def compose_sql_find_latest_source_package_releases(distroseries):
     parameters = {
         "active_status": quote(active_publishing_status),
         "distroseries": quote(distroseries.id),
-        "main_archive": quote(distroseries.distribution.main_archive),
+        "main_archive": quote(distroseries.distribution.main_archive.id),
         "release_pocket": quote(PackagePublishingPocket.RELEASE),
     }
     return (

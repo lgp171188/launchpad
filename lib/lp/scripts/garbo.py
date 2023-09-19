@@ -1994,7 +1994,7 @@ class ArchiveAuthTokenDeactivator(BulkPruner):
             )
         )
         affected_ppas = load_related(Archive, tokens, ["archive_id"])
-        load_related(Person, affected_ppas, ["ownerID"])
+        load_related(Person, affected_ppas, ["owner_id"])
         getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             [token.person_id for token in tokens], need_preferred_email=True
         )
