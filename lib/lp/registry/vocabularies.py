@@ -272,7 +272,7 @@ class ProductVocabulary(StormVocabularyBase):
         return self.toTerm(product)
 
     def search(self, query, vocab_filter=None):
-        """See `SQLObjectVocabularyBase`.
+        """See `StormVocabularyBase`.
 
         Returns products where the product name, displayname, title,
         summary, or description contain the given query. Returns an empty list
@@ -338,7 +338,7 @@ class ProjectGroupVocabulary(StormVocabularyBase):
         return self.toTerm(project)
 
     def search(self, query, vocab_filter=None):
-        """See `SQLObjectVocabularyBase`.
+        """See `StormVocabularyBase`.
 
         Returns projects where the project name, displayname, title,
         summary, or description contain the given query. Returns an empty list
@@ -1570,7 +1570,7 @@ class CommercialProjectsVocabulary(NamedStormVocabulary):
         raise LookupError(token)
 
     def searchForTerms(self, query=None, vocab_filter=None):
-        """See `SQLObjectVocabularyBase`."""
+        """See `StormVocabularyBase`."""
         results = self._doSearch(query)
         num = results.count()
         return CountableIterator(num, results, self.toTerm)
