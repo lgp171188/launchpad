@@ -405,8 +405,9 @@ class Archive(StormBase):
             self.publishing_method = publishing_method
             self.repository_format = repository_format
         except Exception:
-            # If validation fails, then the new object may have been added
-            # to the store first.  Remove it again in that case.
+            # If validating references such as `owner` fails, then the new
+            # object may have been added to the store first.  Remove it
+            # again in that case.
             store = Store.of(self)
             if store is not None:
                 store.remove(self)
