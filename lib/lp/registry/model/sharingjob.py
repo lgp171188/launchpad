@@ -20,6 +20,7 @@ from zope.component import getUtility
 from zope.interface import implementer, provider
 
 from lp.app.enums import InformationType
+from lp.app.errors import NotFoundError
 from lp.blueprints.interfaces.specification import ISpecification
 from lp.blueprints.model.specification import Specification
 from lp.blueprints.model.specificationsearch import (
@@ -61,7 +62,6 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import EnumeratedSubclass, Job
 from lp.services.job.runner import BaseRunnableJob
@@ -193,12 +193,12 @@ class SharingJobDerived(BaseRunnableJob, metaclass=EnumeratedSubclass):
 
         :return: the SharingJob with the specified id, as the
             current SharingJobDereived subclass.
-        :raises: SQLObjectNotFound if there is no job with the specified id,
+        :raises: NotFoundError if there is no job with the specified id,
             or its job_type does not match the desired subclass.
         """
         job = SharingJob.get(job_id)
         if job.job_type != cls.class_job_type:
-            raise SQLObjectNotFound(
+            raise NotFoundError(
                 "No object found with id %d and type %s"
                 % (job_id, cls.class_job_type.title)
             )

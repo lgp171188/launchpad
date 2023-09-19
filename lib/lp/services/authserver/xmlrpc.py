@@ -9,12 +9,12 @@ __all__ = [
 ]
 
 from pymacaroons import Macaroon
-from storm.sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.interface.interfaces import ComponentLookupError
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import NotFoundError
 from lp.code.interfaces.cibuild import ICIBuildSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.registry.interfaces.person import IPersonSet
@@ -69,7 +69,7 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
             # The context is a `LibraryFileAlias` ID.
             try:
                 return getUtility(ILibraryFileAliasSet)[context]
-            except SQLObjectNotFound:
+            except NotFoundError:
                 return None
         elif context_type == "BinaryPackageBuild":
             # The context is a `BinaryPackageBuild` ID.

@@ -26,7 +26,6 @@ from storm.sqlobject import (  # noqa: F401
     SQLMultipleJoin,
     SQLObjectBase,
     SQLObjectMoreThanOneResultError,
-    SQLObjectNotFound,
     SQLObjectResultSet,
     SQLRelatedJoin,
     StringCol,
