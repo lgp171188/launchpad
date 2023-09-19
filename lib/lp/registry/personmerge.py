@@ -1230,8 +1230,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         cur.execute("SELECT id FROM Person WHERE name = %s" % sqlvalues(name))
         i += 1
     cur.execute(
-        "UPDATE Person SET name = %s WHERE id = %s"
-        % sqlvalues(name, from_person)
+        "UPDATE Person SET name = %s WHERE id = %s" % sqlvalues(name, from_id)
     )
 
     # Since we've updated the database behind Storm's back,

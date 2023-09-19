@@ -611,7 +611,6 @@ Any person that's already merged is not part of this vocabulary:
 
     >>> naked_cprov = removeSecurityProxy(cprov)
     >>> naked_cprov.merged = 1
-    >>> naked_cprov.syncUpdate()
     >>> cprov in vocab
     False
 

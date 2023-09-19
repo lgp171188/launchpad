@@ -62,7 +62,7 @@ from storm.expr import (
     With,
 )
 from storm.info import ClassAlias
-from storm.locals import Int, Reference, ReferenceSet, Unicode
+from storm.locals import Bool, DateTime, Int, Reference, ReferenceSet, Unicode
 from storm.store import EmptyResultSet, Store
 from twisted.conch.ssh.common import getNS
 from twisted.conch.ssh.keys import Key
@@ -193,23 +193,15 @@ from lp.registry.model.teammembership import (
 )
 from lp.services.config import config
 from lp.services.database import bulk, postgresql
-from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.policy import PrimaryDatabasePolicy
 from lp.services.database.sqlbase import (
-    SQLBase,
     convert_storm_clause_to_string,
     cursor,
     sqlvalues,
-)
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    StringCol,
 )
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import WithMaterialized, fti_search
@@ -282,7 +274,7 @@ class TeamInvitationEvent:
         self.team = team
 
 
-class ValidPersonCache(SQLBase):
+class ValidPersonCache(StormBase):
     """Flags if a Person is active and usable in Launchpad.
 
     This is readonly, as this is a view in the database.
@@ -293,6 +285,10 @@ class ValidPersonCache(SQLBase):
     https://bugs.launchpad.net/launchpad/+bug/615237 for some
     corroborating information.
     """
+
+    __storm_table__ = "ValidPersonCache"
+
+    id = Int(primary=True)
 
 
 def validate_person_visibility(person, attr, value):
@@ -355,14 +351,14 @@ class PersonSettings(StormBase):
 
     __storm_table__ = "PersonSettings"
 
-    personID = Int("person", default=None, primary=True)
-    person = Reference(personID, "Person.id")
+    person_id = Int("person", default=None, primary=True)
+    person = Reference(person_id, "Person.id")
 
-    selfgenerated_bugnotifications = BoolCol(notNull=True, default=False)
+    selfgenerated_bugnotifications = Bool(allow_none=False, default=False)
 
-    expanded_notification_footers = BoolCol(notNull=False, default=False)
+    expanded_notification_footers = Bool(allow_none=True, default=False)
 
-    require_strong_email_authentication = BoolCol(notNull=False, default=False)
+    require_strong_email_authentication = Bool(allow_none=True, default=False)
 
 
 def readonly_settings(message, interface):
@@ -420,7 +416,7 @@ _readonly_person_settings = readonly_settings(
 @implementer(IPerson)
 @delegate_to(IPersonSettings, context="_person_settings")
 class Person(
-    SQLBase,
+    StormBase,
     HasBugsBase,
     HasSpecificationsMixin,
     HasTranslationImportsMixin,
@@ -431,14 +427,54 @@ class Person(
 ):
     """A Person."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Initialize our PersonSettings object/record.
+    __storm_table__ = "Person"
+
+    id = Int(primary=True)
+
+    _creating = False
+
+    def __init__(
+        self,
+        name,
+        display_name,
+        account=None,
+        teamowner=None,
+        description=None,
+        membership_policy=DEFAULT,
+        defaultrenewalperiod=None,
+        defaultmembershipperiod=None,
+        creation_rationale=None,
+        creation_comment=None,
+        registrant=None,
+        hide_email_addresses=False,
+    ):
+        super().__init__()
+        self._creating = True
+        self.name = name
+        self.display_name = display_name
+        self.account = account
+        self.teamowner = teamowner
+        self.description = description
+        self.membership_policy = membership_policy
+        self.defaultrenewalperiod = defaultrenewalperiod
+        self.defaultmembershipperiod = defaultmembershipperiod
+        self.creation_rationale = creation_rationale
+        self.creation_comment = creation_comment
+        self.registrant = registrant
+        self.hide_email_addresses = hide_email_addresses
         if not self.is_team:
-            # This is a Person, not a team.  Teams may want a TeamSettings
-            # in the future.
+            # Initialize our PersonSettings object/record.  This is a
+            # Person, not a team.  Teams may want a TeamSettings in the
+            # future.
             settings = PersonSettings()
             settings.person = self
+        self.__storm_loaded__()
+        del self._creating
+
+    def __storm_loaded__(self):
+        """Mark the person as a team when created or fetched from database."""
+        if self.is_team:
+            alsoProvides(self, ITeam)
 
     @cachedproperty
     def _person_settings(self):
@@ -462,13 +498,11 @@ class Person(
         return self.id
 
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
-    # Redefine the default ordering into Storm syntax.
-    _storm_sortingColumns = ("Person.displayname", "Person.name")
     # When doing any sort of set operations (union, intersect, except_) with
-    # SQLObject we can't use sortingColumns because the table name Person is
-    # not available in that context, so we use this one.
+    # Storm we can't use sortingColumns because the table name Person is not
+    # available in that context, so we use this one.
     _sortingColumnsForSetOperations = SQL("person_sort_key(displayname, name)")
-    _defaultOrder = sortingColumns
+    __storm_order__ = sortingColumns
     _visibility_warning_cache_key = None
     _visibility_warning_cache = None
 
@@ -490,7 +524,7 @@ class Person(
         else:
             mailing_list = getUtility(IMailingListSet).get(self.name)
         can_rename = (
-            self._SO_creating
+            self._creating
             or not self.is_team
             or mailing_list is None
             or mailing_list.status == MailingListStatus.PURGED
@@ -499,35 +533,27 @@ class Person(
         # Everything's okay, so let SQLObject do the normal thing.
         return value
 
-    name = StringCol(
-        dbName="name",
-        alternateID=True,
-        notNull=True,
-        storm_validator=_validate_name,
-    )
+    name = Unicode(name="name", allow_none=False, validator=_validate_name)
 
     def __repr__(self):
         displayname = backslashreplace(self.displayname)
         return "<Person %s (%s)>" % (self.name, displayname)
 
-    display_name = StringCol(dbName="displayname", notNull=True)
+    display_name = Unicode(name="displayname", allow_none=False)
 
     @property
     def displayname(self):
         return self.display_name
 
-    teamdescription = StringCol(dbName="teamdescription", default=None)
-    homepage_content = StringCol(default=None)
-    _description = StringCol(dbName="description", default=None)
-    icon = ForeignKey(
-        dbName="icon", foreignKey="LibraryFileAlias", default=None
-    )
-    logo = ForeignKey(
-        dbName="logo", foreignKey="LibraryFileAlias", default=None
-    )
-    mugshot = ForeignKey(
-        dbName="mugshot", foreignKey="LibraryFileAlias", default=None
-    )
+    teamdescription = Unicode(name="teamdescription", default=None)
+    homepage_content = Unicode(default=None)
+    _description = Unicode(name="description", default=None)
+    icon_id = Int(name="icon", allow_none=True, default=None)
+    icon = Reference(icon_id, "LibraryFileAlias.id")
+    logo_id = Int(name="logo", allow_none=True, default=None)
+    logo = Reference(logo_id, "LibraryFileAlias.id")
+    mugshot_id = Int(name="mugshot", allow_none=True, default=None)
+    mugshot = Reference(mugshot_id, "LibraryFileAlias.id")
 
     @property
     def account_status(self):
@@ -546,12 +572,13 @@ class Person(
             raise NoAccountError()
         self.account.setStatus(status, user, comment)
 
-    teamowner = ForeignKey(
-        dbName="teamowner",
-        foreignKey="Person",
+    teamowner_id = Int(
+        name="teamowner",
+        validator=validate_public_person,
+        allow_none=True,
         default=None,
-        storm_validator=validate_public_person,
     )
+    teamowner = Reference(teamowner_id, "Person.id")
 
     sshkeys = ReferenceSet("id", "SSHKey.person_id")
 
@@ -565,30 +592,32 @@ class Person(
         default=TeamMembershipPolicy.RESTRICTED,
         validator=validate_membership_policy,
     )
-    defaultrenewalperiod = IntCol(dbName="defaultrenewalperiod", default=None)
-    defaultmembershipperiod = IntCol(
-        dbName="defaultmembershipperiod", default=None
-    )
+    defaultrenewalperiod = Int(name="defaultrenewalperiod", default=None)
+    defaultmembershipperiod = Int(name="defaultmembershipperiod", default=None)
     mailing_list_auto_subscribe_policy = DBEnum(
         enum=MailingListAutoSubscribePolicy,
         default=MailingListAutoSubscribePolicy.ON_REGISTRATION,
     )
 
-    merged = ForeignKey(dbName="merged", foreignKey="Person", default=None)
+    merged_id = Int(name="merged", allow_none=True, default=None)
+    merged = Reference(merged_id, "Person.id")
 
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    creation_rationale = DBEnum(enum=PersonCreationRationale, default=None)
-    creation_comment = StringCol(default=None)
-    registrant = ForeignKey(
-        dbName="registrant",
-        foreignKey="Person",
-        default=None,
-        storm_validator=validate_public_person,
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
     )
-    hide_email_addresses = BoolCol(notNull=True, default=False)
-    verbose_bugnotifications = BoolCol(notNull=True, default=True)
+    creation_rationale = DBEnum(enum=PersonCreationRationale, default=None)
+    creation_comment = Unicode(default=None)
+    registrant_id = Int(
+        name="registrant",
+        validator=validate_public_person,
+        allow_none=True,
+        default=None,
+    )
+    registrant = Reference(registrant_id, "Person.id")
+    hide_email_addresses = Bool(allow_none=False, default=False)
+    verbose_bugnotifications = Bool(allow_none=False, default=True)
 
-    signedcocs = ReferenceSet("<primary key>", "SignedCodeOfConduct.owner_id")
+    signedcocs = ReferenceSet("id", "SignedCodeOfConduct.owner_id")
     _ircnicknames = ReferenceSet("id", "IrcID.person_id")
     jabberids = ReferenceSet("id", "JabberID.person_id")
 
@@ -604,7 +633,7 @@ class Person(
         allow_none=False,
     )
 
-    personal_standing_reason = StringCol(default=None)
+    personal_standing_reason = Unicode(default=None)
 
     @property
     def description(self):
@@ -702,12 +731,6 @@ class Person(
             return
         person_language.delete()
         self.deleteLanguagesCache()
-
-    def _init(self, *args, **kw):
-        """Mark the person as a team when created or fetched from database."""
-        SQLBase._init(self, *args, **kw)
-        if self.teamownerID is not None:
-            alsoProvides(self, ITeam)
 
     def convertToTeam(self, team_owner):
         """See `IPerson`."""
@@ -1009,7 +1032,7 @@ class Person(
     @property
     def is_team(self):
         """See `IPerson`."""
-        return self.teamownerID is not None
+        return self.teamowner_id is not None
 
     @property
     def mailing_list(self):
@@ -1117,7 +1140,7 @@ class Person(
                     OR product.bug_supervisor = %(person)s
                 )
         """ % sqlvalues(
-            person=self
+            person=self.id
         )
 
         return "%s AND (%s)" % (
@@ -1157,7 +1180,7 @@ class Person(
                 ) _pillar
                 ON PillarName.name = _pillar.name
             """
-            % sqlvalues(person=self)
+            % sqlvalues(person=self.id)
         )
 
         results = IStore(self).using(SQL(origin)).find(find_spec)
@@ -1260,7 +1283,6 @@ class Person(
             CommercialSubscription,
         )
         from lp.registry.model.distribution import Distribution
-        from lp.registry.model.person import Person
         from lp.registry.model.product import Product
         from lp.registry.model.teammembership import TeamParticipation
 
@@ -1599,7 +1621,6 @@ class Person(
     def getAssignedSpecificationWorkItemsDueBefore(self, date, user):
         """See `IPerson`."""
         from lp.registry.model.distribution import Distribution
-        from lp.registry.model.person import Person
         from lp.registry.model.product import Product
 
         store = Store.of(self)
@@ -1811,7 +1832,7 @@ class Person(
             And(
                 TeamParticipation.team_id == self.id,
                 TeamParticipation.person_id != self.id,
-                Person.teamownerID != None,
+                IsNot(Person.teamowner_id, None),
             ),
             need_api=True,
         )
@@ -2061,7 +2082,7 @@ class Person(
                         Select(
                             Person.id,
                             tables=[Person],
-                            where=Person.teamownerID.is_in(team_select),
+                            where=Person.teamowner_id.is_in(team_select),
                         ),
                         Select(
                             TeamMembership.team_id,
@@ -2942,7 +2963,7 @@ class Person(
                 Person,
                 Person.id == TeamParticipation.team_id,
                 TeamParticipation.person == self,
-                IsNot(Person.teamownerID, None),
+                IsNot(Person.teamowner_id, None),
             )
             .order_by(Person.sortingColumns)
         )
@@ -2950,11 +2971,10 @@ class Person(
     @property
     def teams_indirectly_participated_in(self):
         """See `IPerson`."""
-        Team = ClassAlias(Person, "Team")
         store = Store.of(self)
         origin = [
-            Team,
-            Join(TeamParticipation, Team.id == TeamParticipation.team_id),
+            Person,
+            Join(TeamParticipation, Person.id == TeamParticipation.team_id),
             LeftJoin(
                 TeamMembership,
                 And(
@@ -2969,9 +2989,8 @@ class Person(
                 ),
             ),
         ]
-        find_objects = Team
         return store.using(*origin).find(
-            find_objects,
+            Person,
             And(
                 TeamParticipation.person == self.id,
                 TeamParticipation.person != TeamParticipation.team_id,
@@ -2988,8 +3007,8 @@ class Person(
                 Person,
                 Person.id == TeamParticipation.team_id,
                 TeamParticipation.person == self,
-                IsNot(Person.teamownerID, None),
-                IsNot(Person.iconID, None),
+                IsNot(Person.teamowner_id, None),
+                IsNot(Person.icon_id, None),
                 TeamParticipation.team != self,
             )
             .order_by(Person.sortingColumns)
@@ -4155,6 +4174,9 @@ class PersonSet:
             defaultrenewalperiod=defaultrenewalperiod,
             membership_policy=membership_policy,
         )
+        store = IStore(Person)
+        store.add(team)
+        store.flush()
         notify(ObjectCreatedEvent(team))
         # Here we add the owner as a team admin manually because we know what
         # we're doing (so we don't need to do any sanity checks) and we don't
@@ -4267,19 +4289,18 @@ class PersonSet:
         if not displayname:
             displayname = name.capitalize()
 
-        if account is None:
-            account_id = None
-        else:
-            account_id = account.id
         person = Person(
             name=name,
             display_name=displayname,
-            account_id=account_id,
+            account=account,
             creation_rationale=rationale,
             creation_comment=comment,
             hide_email_addresses=hide_email_addresses,
             registrant=registrant,
         )
+        store = IStore(Person)
+        store.add(person)
+        store.flush()
         return person
 
     def ensurePerson(
@@ -4309,7 +4330,7 @@ class PersonSet:
         """See `IPersonSet`."""
         clauses = [Person.name == name]
         if ignore_merged:
-            clauses.append(Is(Person.mergedID, None))
+            clauses.append(Is(Person.merged_id, None))
         return IStore(Person).find(Person, *clauses).one()
 
     def getByAccount(self, account):
@@ -4323,8 +4344,8 @@ class PersonSet:
             IStore(Person)
             .find(
                 Person,
-                Is(Person.teamownerID, None),
-                Is(Person.mergedID, None),
+                Is(Person.teamowner_id, None),
+                Is(Person.merged_id, None),
             )
             .count()
         )
@@ -4334,8 +4355,8 @@ class PersonSet:
             IStore(Person)
             .find(
                 Person,
-                IsNot(Person.teamownerID, None),
-                Is(Person.mergedID, None),
+                IsNot(Person.teamowner_id, None),
+                Is(Person.merged_id, None),
             )
             .count()
         )
@@ -4601,15 +4622,15 @@ class PersonSet:
         """See `IPersonSet`."""
         aliases = []
         aliases.extend(
-            person.iconID for person in people if person.iconID is not None
+            person.icon_id for person in people if person.icon_id is not None
         )
         aliases.extend(
-            person.logoID for person in people if person.logoID is not None
+            person.logo_id for person in people if person.logo_id is not None
         )
         aliases.extend(
-            person.mugshotID
+            person.mugshot_id
             for person in people
-            if person.mugshotID is not None
+            if person.mugshot_id is not None
         )
         if not aliases:
             return
@@ -4805,7 +4826,7 @@ class PersonSet:
 
         def preload_for_people(rows):
             if need_teamowner or need_api:
-                bulk.load(Person, [row[0].teamownerID for row in rows])
+                bulk.load(Person, [row[0].teamowner_id for row in rows])
 
         def prepopulate_person(row):
             result = row[0]
@@ -5559,7 +5580,7 @@ def _get_recipients_for_team(team):
                     EmailAddress.person != None,
                     Account.status == AccountStatus.ACTIVE,
                 ),
-                Person.teamownerID != None,
+                IsNot(Person.teamowner_id, None),
             ),
         ).config(distinct=True)
         next_ids = []

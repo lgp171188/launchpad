@@ -278,6 +278,7 @@ create, and then delete, the needed two people.
 
     >>> from lp.registry.model.person import PersonSet, Person
     >>> from lp.registry.interfaces.person import PersonCreationRationale
+    >>> from lp.services.database.interfaces import IStore
     >>> personset = PersonSet()
 
     >>> skip = []
@@ -312,11 +313,14 @@ create, and then delete, the needed two people.
     ...             display_name="Merge Winner",
     ...             creation_rationale=lp,
     ...         )
+    ...         IStore(Person).add(winner)
     ...         loser = Person(
     ...             name=name + ".loser",
     ...             display_name="Merge Loser",
     ...             creation_rationale=lp,
     ...         )
+    ...         IStore(Person).add(loser)
+    ...         IStore(Person).flush()
     ...         yield winner, loser
     ...
     >>> endless_supply_of_players = new_players()

@@ -236,7 +236,7 @@ def close_account(username, log):
     # Keep the corresponding PersonSettings row, but reset everything to the
     # defaults.
     table_notification("PersonSettings")
-    store.find(PersonSettings, PersonSettings.personID == person.id).set(
+    store.find(PersonSettings, PersonSettings.person == person).set(
         selfgenerated_bugnotifications=DEFAULT,
         # XXX cjwatson 2018-11-29: These two columns have NULL defaults, but
         # perhaps shouldn't?

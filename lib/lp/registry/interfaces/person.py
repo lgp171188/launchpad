@@ -220,7 +220,7 @@ def validate_membership_policy(obj, attr, value):
         return None
 
     # If we are just creating a new team, it can have any membership policy.
-    if getattr(obj, "_SO_creating", True):
+    if getattr(obj, "_creating", True):
         return value
 
     team = obj
@@ -792,7 +792,7 @@ class IPersonLimitedView(IHasIcon, IHasLogo):
             "in listings of bugs or on a person's membership table."
         ),
     )
-    iconID = Int(title=_("Icon ID"), required=True, readonly=True)
+    icon_id = Int(title=_("Icon ID"), required=True, readonly=True)
     logo = exported(
         LogoImageUpload(
             title=_("Logo"),
@@ -806,7 +806,7 @@ class IPersonLimitedView(IHasIcon, IHasLogo):
             ),
         )
     )
-    logoID = Int(title=_("Logo ID"), required=True, readonly=True)
+    logo_id = Int(title=_("Logo ID"), required=True, readonly=True)
     # title is required for the Launchpad Page Layout main template
     title = Attribute("Person Page Title")
     is_probationary = exported(
@@ -890,7 +890,7 @@ class IPersonViewRestricted(
             ),
         )
     )
-    mugshotID = Int(title=_("Mugshot ID"), required=True, readonly=True)
+    mugshot_id = Int(title=_("Mugshot ID"), required=True, readonly=True)
 
     languages = exported(
         CollectionField(
@@ -1111,7 +1111,7 @@ class IPersonViewRestricted(
         ),
         exported_as="team_owner",
     )
-    teamownerID = Int(
+    teamowner_id = Int(
         title=_("The Team Owner's ID or None"), required=False, readonly=True
     )
     preferredemail = exported(

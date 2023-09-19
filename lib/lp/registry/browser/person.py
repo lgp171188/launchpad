@@ -2099,7 +2099,7 @@ class PersonParticipationView(LaunchpadView):
             # The member is a direct member; use the membership data.
             datejoined = membership.datejoined
             dateexpires = membership.dateexpires
-            if membership.person_id == team.teamownerID:
+            if membership.person_id == team.teamowner_id:
                 role = "Owner"
             elif membership.status == TeamMembershipStatus.ADMIN:
                 role = "Admin"

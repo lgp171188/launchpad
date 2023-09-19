@@ -29,8 +29,9 @@ from storm.expr import (
     Row,
     Select,
     Union,
+    With,
 )
-from storm.info import ClassAlias
+from storm.info import ClassAlias, get_cls_info
 from storm.references import Reference
 from zope.component import getUtility
 from zope.security.proxy import isinstance as zope_isinstance
@@ -77,10 +78,6 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    convert_storm_clause_to_string,
-    sqlvalues,
-)
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -224,10 +221,10 @@ def search_bugs(pre_iter_hook, alternatives, just_bug_ids=False):
             clauseTables,
             bugtask_decorator,
             join_tables,
-            with_clause,
+            with_clauses,
         ] = _build_query(alternatives[0])
-        if with_clause:
-            store = store.with_(with_clause)
+        if with_clauses:
+            store = store.with_(with_clauses)
         decorators.append(bugtask_decorator)
         origin = _build_origin(
             join_tables + orderby_joins, clauseTables, start
@@ -242,12 +239,12 @@ def search_bugs(pre_iter_hook, alternatives, just_bug_ids=False):
                 clauseTables,
                 decorator,
                 join_tables,
-                with_clause,
+                with_clauses,
             ] = _build_query(params)
             origin = _build_origin(join_tables, clauseTables, start)
             localstore = store
-            if with_clause:
-                localstore = store.with_(with_clause)
+            if with_clauses:
+                localstore = store.with_(with_clauses)
             next_result = localstore.using(*origin).find(BugTaskFlat, query)
             results.append(next_result)
             # NB: assumes the decorators are all compatible.
@@ -492,9 +489,16 @@ def _build_query(params):
 
     if params.structural_subscriber is not None:
         with_clauses.append(
-            """ss as (SELECT * from StructuralSubscription
-            WHERE StructuralSubscription.subscriber = %s)"""
-            % sqlvalues(params.structural_subscriber)
+            With(
+                "ss",
+                Select(
+                    get_cls_info(StructuralSubscription).columns,
+                    where=(
+                        StructuralSubscription.subscriber
+                        == params.structural_subscriber
+                    ),
+                ),
+            )
         )
 
         class StructuralSubscriptionCTE(StructuralSubscription):
@@ -761,27 +765,23 @@ def _build_query(params):
         )
         store = IStore(Bug)
         with_clauses.append(
-            convert_storm_clause_to_string(
-                WithMaterialized(
-                    "commented_bug_ids",
-                    store,
-                    Union(commented_messages, commented_activities),
-                )
+            WithMaterialized(
+                "commented_bug_ids",
+                store,
+                Union(commented_messages, commented_activities),
             )
         )
         with_clauses.append(
-            convert_storm_clause_to_string(
-                WithMaterialized(
-                    "commented_bugtask_ids",
-                    store,
-                    Select(
-                        BugTaskFlat.bugtask_id,
-                        tables=[BugTaskFlat],
-                        where=BugTaskFlat.bug_id.is_in(
-                            Select(Column("bug", "commented_bug_ids"))
-                        ),
+            WithMaterialized(
+                "commented_bugtask_ids",
+                store,
+                Select(
+                    BugTaskFlat.bugtask_id,
+                    tables=[BugTaskFlat],
+                    where=BugTaskFlat.bug_id.is_in(
+                        Select(Column("bug", "commented_bug_ids"))
                     ),
-                )
+                ),
             )
         )
         extra_clauses.append(
@@ -921,11 +921,7 @@ def _build_query(params):
                 obj = decor(obj)
             return obj
 
-    if with_clauses:
-        with_clause = SQL(", ".join(with_clauses))
-    else:
-        with_clause = None
-    return (query, clauseTables, decorator, join_tables, with_clause)
+    return (query, clauseTables, decorator, join_tables, with_clauses)
 
 
 def _process_order_by(params):

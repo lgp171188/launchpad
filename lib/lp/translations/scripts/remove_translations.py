@@ -444,11 +444,11 @@ def remove_translations(
     conditions = set()
     if submitter is not None:
         conditions.add(
-            "TranslationMessage.submitter = %s" % sqlvalues(submitter)
+            "TranslationMessage.submitter = %s" % sqlvalues(submitter.id)
         )
     if reviewer is not None:
         conditions.add(
-            "TranslationMessage.reviewer = %s" % sqlvalues(reviewer)
+            "TranslationMessage.reviewer = %s" % sqlvalues(reviewer.id)
         )
     if date_created is not None:
         conditions.add(
