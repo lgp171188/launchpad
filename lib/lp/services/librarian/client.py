@@ -28,9 +28,8 @@ from storm.store import Store
 from zope.interface import implementer
 
 from lp.services.config import config, dbconfig
-from lp.services.database.interfaces import IPrimaryStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.postgresql import ConnectionString
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
     DownloadFailed,
@@ -410,10 +409,7 @@ class FileDownloadClient:
         """
         from lp.services.librarian.model import LibraryFileAlias
 
-        try:
-            lfa = LibraryFileAlias.get(aliasID)
-        except SQLObjectNotFound:
-            lfa = None
+        lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, aliasID)
 
         if lfa is None:
             raise DownloadFailed("Alias %d not found" % aliasID)

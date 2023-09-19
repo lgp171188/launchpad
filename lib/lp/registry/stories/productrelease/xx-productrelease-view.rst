@@ -41,9 +41,12 @@ downloaded and the date of the last download on that table as well.
     # Manually update the download counter for that file above so that we can
     # test it.
     >>> from datetime import date, datetime, timezone
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.librarian.model import LibraryFileAlias
-    >>> lfa = LibraryFileAlias.selectOne(
-    ...     LibraryFileAlias.q.filename == "firefox_0.9.2.orig.tar.gz"
+    >>> lfa = (
+    ...     IStore(LibraryFileAlias)
+    ...     .find(LibraryFileAlias, filename="firefox_0.9.2.orig.tar.gz")
+    ...     .one()
     ... )
     >>> lfa.updateDownloadCount(date(2006, 5, 4), None, 1)
 

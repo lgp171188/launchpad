@@ -19,6 +19,7 @@ from fixtures import Fixture, FunctionFixture
 
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacException, TacTestSetup
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver.storage import _relFileLocation
 from lp.services.osutils import get_pid_from_file
@@ -255,7 +256,7 @@ class LibrarianServerFixture(TacTestSetup):
 def fillLibrarianFile(fileid, content=None):
     """Write contents in disk for a librarian sampledata."""
     with dbuser("librariangc"):
-        lfc = LibraryFileContent.get(fileid)
+        lfc = IStore(LibraryFileContent).get(LibraryFileContent, fileid)
         if content is None:
             content = b"x" * lfc.filesize
         else:

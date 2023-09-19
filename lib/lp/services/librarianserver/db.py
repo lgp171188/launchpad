@@ -49,7 +49,12 @@ class Library:
     # The following methods are read-only queries.
 
     def lookupBySHA1(self, digest):
-        return [fc.id for fc in LibraryFileContent.selectBy(sha1=digest)]
+        return [
+            fc.id
+            for fc in IStore(LibraryFileContent).find(
+                LibraryFileContent, sha1=digest
+            )
+        ]
 
     @defer.inlineCallbacks
     def _verifyMacaroon(self, macaroon, aliasid):

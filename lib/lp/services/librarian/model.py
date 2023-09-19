@@ -19,6 +19,7 @@ from storm.locals import Date, Desc, Int, Reference, ReferenceSet, Store
 from zope.component import adapter, getUtility
 from zope.interface import Interface, implementer
 
+from lp.app.errors import NotFoundError
 from lp.registry.errors import InvalidFilename
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT, UTC_NOW
@@ -278,17 +279,17 @@ class LibraryFileAliasSet:
 
     def __getitem__(self, key):
         """See ILibraryFileAliasSet.__getitem__"""
-        return LibraryFileAlias.get(key)
+        lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, key)
+        if lfa is None:
+            raise NotFoundError(key)
+        return lfa
 
     def findBySHA256(self, sha256):
         """See ILibraryFileAliasSet."""
-        return LibraryFileAlias.select(
-            """
-            content = LibraryFileContent.id
-            AND LibraryFileContent.sha256 = '%s'
-            """
-            % sha256,
-            clauseTables=["LibraryFileContent"],
+        return IStore(LibraryFileAlias).find(
+            LibraryFileAlias,
+            LibraryFileAlias.content == LibraryFileContent.id,
+            LibraryFileContent.sha256 == sha256,
         )
 
     def preloadLastDownloaded(self, lfas):

@@ -120,9 +120,10 @@ already requests a package diff against the immediate ancestry.
 Before starting let's enable the universe component and add the i386
 chroot in hoary in order to be able to accept the NEW packages.
 
-    >>> from lp.soyuz.model.component import ComponentSelection
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.soyuz.interfaces.component import IComponentSet
+    >>> from lp.soyuz.model.component import ComponentSelection
 
     >>> hoary = ubuntu.getSeries("hoary")
     >>> breezy_autotest = ubuntu.getSeries("breezy-autotest")
@@ -130,7 +131,7 @@ chroot in hoary in order to be able to accept the NEW packages.
     >>> universe = getUtility(IComponentSet)["universe"]
     >>> selection = ComponentSelection(distroseries=hoary, component=universe)
 
-    >>> fake_chroot = LibraryFileAlias.get(1)
+    >>> fake_chroot = IStore(LibraryFileAlias).get(LibraryFileAlias, 1)
     >>> hoary_i386 = hoary["i386"]
     >>> unused = hoary_i386.addOrUpdateChroot(fake_chroot)
     >>> breezy_autotest_i386 = breezy_autotest["i386"]

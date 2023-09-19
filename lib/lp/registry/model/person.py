@@ -233,7 +233,7 @@ from lp.services.identity.interfaces.emailaddress import (
 )
 from lp.services.identity.model.account import Account
 from lp.services.identity.model.emailaddress import EmailAddress, HasOwnerMixin
-from lp.services.librarian.model import LibraryFileAlias
+from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.mail.helpers import (
     get_contact_email_addresses,
     get_email_template,
@@ -4613,9 +4613,10 @@ class PersonSet:
             return
         # Listify, since this is a pure cache.
         list(
-            LibraryFileAlias.select(
-                "LibraryFileAlias.id IN %s" % sqlvalues(aliases),
-                prejoins=["content"],
+            IStore(LibraryFileAlias).find(
+                (LibraryFileAlias, LibraryFileContent),
+                LibraryFileAlias.id.is_in(aliases),
+                LibraryFileAlias.content == LibraryFileContent.id,
             )
         )
 

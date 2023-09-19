@@ -22,13 +22,12 @@ from swiftclient import client as swiftclient
 from testtools.matchers import AnyMatch, Equals, MatchesListwise, MatchesRegex
 
 from lp.services.config import config
-from lp.services.database.interfaces import IPrimaryStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     ISOLATION_LEVEL_AUTOCOMMIT,
     connect,
     cursor,
 )
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -50,6 +49,7 @@ class TestLibrarianGarbageCollectionBase:
 
     def setUp(self):
         super().setUp()
+        self.store = IStore(LibraryFileContent)
         self.client = LibrarianClient()
         self.patch(librariangc, "log", BufferLogger())
 
@@ -74,8 +74,7 @@ class TestLibrarianGarbageCollectionBase:
         # Make sure that every file the database knows about exists on disk.
         # We manually remove them for tests that need to cope with missing
         # library items.
-        store = IPrimaryStore(LibraryFileContent)
-        for content in store.find(LibraryFileContent):
+        for content in self.store.find(LibraryFileContent):
             path = librariangc.get_file_path(content.id)
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
@@ -121,14 +120,14 @@ class TestLibrarianGarbageCollectionBase:
             io.BytesIO(content),
             "text/plain",
         )
-        f1 = LibraryFileAlias.get(f1_id)
+        f1 = self.store.get(LibraryFileAlias, f1_id)
         f2_id = self.client.addFile(
             "foo.txt",
             len(content),
             io.BytesIO(content),
             "text/plain",
         )
-        f2 = LibraryFileAlias.get(f2_id)
+        f2 = self.store.get(LibraryFileAlias, f2_id)
 
         # Make sure the duplicates really are distinct
         self.assertNotEqual(f1_id, f2_id)
@@ -165,16 +164,16 @@ class TestLibrarianGarbageCollectionBase:
 
         # Confirm that the duplicates have been merged
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
-        f2 = LibraryFileAlias.get(self.f2_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
+        f2 = self.store.get(LibraryFileAlias, self.f2_id)
         self.assertEqual(f1.contentID, f2.contentID)
 
     def test_DeleteUnreferencedAliases(self):
         self.ztm.begin()
 
         # Confirm that our sample files are there.
-        f1 = LibraryFileAlias.get(self.f1_id)
-        f2 = LibraryFileAlias.get(self.f2_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
+        f2 = self.store.get(LibraryFileAlias, self.f2_id)
         # Grab the content IDs related to these
         # unreferenced LibraryFileAliases
         c1_id = f1.contentID
@@ -188,13 +187,13 @@ class TestLibrarianGarbageCollectionBase:
         # This should have committed
         self.ztm.begin()
 
-        # Confirm that the LibaryFileContents are still there.
-        LibraryFileContent.get(c1_id)
-        LibraryFileContent.get(c2_id)
+        # Confirm that the LibraryFileContents are still there.
+        self.assertIsNotNone(self.store.get(LibraryFileContent, c1_id))
+        self.assertIsNotNone(self.store.get(LibraryFileContent, c2_id))
 
         # But the LibraryFileAliases should be gone
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f1_id)
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f2_id)
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f1_id))
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f2_id))
 
     def test_DeleteUnreferencedAliases2(self):
         # Don't delete LibraryFileAliases accessed recently
@@ -205,8 +204,8 @@ class TestLibrarianGarbageCollectionBase:
 
         # We now have two aliases sharing the same content.
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
-        f2 = LibraryFileAlias.get(self.f2_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
+        f2 = self.store.get(LibraryFileAlias, self.f2_id)
         self.assertEqual(f1.content, f2.content)
 
         # Flag one of our LibraryFileAliases as being recently created
@@ -222,8 +221,8 @@ class TestLibrarianGarbageCollectionBase:
         librariangc.delete_unreferenced_aliases(self.con)
 
         self.ztm.begin()
-        LibraryFileAlias.get(self.f1_id)
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f2_id)
+        self.assertIsNotNone(self.store.get(LibraryFileAlias, self.f1_id))
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f2_id))
 
     def test_DeleteUnreferencedAndWellExpiredAliases(self):
         # LibraryFileAliases can be removed after they have expired
@@ -234,7 +233,7 @@ class TestLibrarianGarbageCollectionBase:
 
         # Flag one of our LibraryFileAliases with an expiry date in the past
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         f1.expires = self.ancient_past
         del f1
         self.ztm.commit()
@@ -246,8 +245,8 @@ class TestLibrarianGarbageCollectionBase:
 
         # Make sure both our example files are gone
         self.ztm.begin()
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f1_id)
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f2_id)
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f1_id))
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f2_id))
 
     def test_DoneDeleteUnreferencedButNotExpiredAliases(self):
         # LibraryFileAliases can be removed only after they have expired.
@@ -261,7 +260,7 @@ class TestLibrarianGarbageCollectionBase:
         # Flag one of our LibraryFileAliases with an expiry date in the
         # recent past.
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         f1.expires = self.recent_past
         del f1
         self.ztm.commit()
@@ -274,7 +273,7 @@ class TestLibrarianGarbageCollectionBase:
         # Make sure both our example files are still there
         self.ztm.begin()
         # Our recently expired LibraryFileAlias is still available.
-        LibraryFileAlias.get(self.f1_id)
+        self.assertIsNotNone(self.store.get(LibraryFileAlias, self.f1_id))
 
     def test_deleteWellExpiredAliases(self):
         # LibraryFileAlias records that are expired are unlinked from their
@@ -282,7 +281,7 @@ class TestLibrarianGarbageCollectionBase:
 
         # Flag one of our LibraryFileAliases with an expiry date in the past
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         f1.expires = self.ancient_past
         del f1
         self.ztm.commit()
@@ -292,10 +291,10 @@ class TestLibrarianGarbageCollectionBase:
 
         self.ztm.begin()
         # Make sure the well expired f1 is still there, but has no content.
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         self.assertIsNone(f1.content)
         # f2 should still have content, as it isn't flagged for expiry.
-        f2 = LibraryFileAlias.get(self.f2_id)
+        f2 = self.store.get(LibraryFileAlias, self.f2_id)
         self.assertIsNotNone(f2.content)
 
     def test_ignoreRecentlyExpiredAliases(self):
@@ -305,7 +304,7 @@ class TestLibrarianGarbageCollectionBase:
         # Flag one of our LibraryFileAliases with an expiry date in the
         # recent past.
         self.ztm.begin()
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         f1.expires = self.recent_past  # Within stay of execution.
         del f1
         self.ztm.commit()
@@ -316,10 +315,10 @@ class TestLibrarianGarbageCollectionBase:
         self.ztm.begin()
         # Make sure f1 is still there and has content. This ensures that
         # our stay of execution is still working.
-        f1 = LibraryFileAlias.get(self.f1_id)
+        f1 = self.store.get(LibraryFileAlias, self.f1_id)
         self.assertIsNotNone(f1.content)
         # f2 should still have content, as it isn't flagged for expiry.
-        f2 = LibraryFileAlias.get(self.f2_id)
+        f2 = self.store.get(LibraryFileAlias, self.f2_id)
         self.assertIsNotNone(f2.content)
 
     def test_DeleteUnreferencedContent(self):
@@ -583,11 +582,11 @@ class TestLibrarianGarbageCollectionBase:
 
         # Make sure that our example files have been garbage collected
         self.ztm.begin()
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f1_id)
-        self.assertRaises(SQLObjectNotFound, LibraryFileAlias.get, self.f2_id)
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f1_id))
+        self.assertIsNone(self.store.get(LibraryFileAlias, self.f2_id))
 
         # And make sure stuff that *is* referenced remains
-        LibraryFileAlias.get(2)
+        self.assertIsNotNone(self.store.get(LibraryFileAlias, 2))
         cur = cursor()
         cur.execute("SELECT count(*) FROM LibraryFileAlias")
         count = cur.fetchone()[0]
@@ -625,19 +624,21 @@ class TestDiskLibrarianGarbageCollection(
         # original file, ignoring the extension.
         switch_dbuser("testadmin")
         content = b"foo"
-        lfa = LibraryFileAlias.get(
+        lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         id_aborted = lfa.contentID
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
-        lfa = LibraryFileAlias.get(
+        lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         transaction.commit()
         id_committed = lfa.contentID
@@ -811,17 +812,19 @@ class TestSwiftLibrarianGarbageCollection(
         # by a manifest. GC treats the segments like the original file.
         switch_dbuser("testadmin")
         content = b"uploading to swift bigly"
-        big1_lfa = LibraryFileAlias.get(
+        big1_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         big1_id = big1_lfa.contentID
 
-        big2_lfa = LibraryFileAlias.get(
+        big2_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         big2_id = big2_lfa.contentID
         transaction.commit()
@@ -872,17 +875,19 @@ class TestSwiftLibrarianGarbageCollection(
         # suggest that it might happen.
         switch_dbuser("testadmin")
         content = b"uploading to swift"
-        f1_lfa = LibraryFileAlias.get(
+        f1_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         f1_id = f1_lfa.contentID
 
-        f2_lfa = LibraryFileAlias.get(
+        f2_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         f2_id = f2_lfa.contentID
         transaction.commit()
@@ -937,17 +942,19 @@ class TestSwiftLibrarianGarbageCollection(
         # to delete it.  It's not clear why this happens in practice.
         switch_dbuser("testadmin")
         content = b"uploading to swift"
-        f1_lfa = LibraryFileAlias.get(
+        f1_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         f1_id = f1_lfa.contentID
 
-        f2_lfa = LibraryFileAlias.get(
+        f2_lfa = self.store.get(
+            LibraryFileAlias,
             self.client.addFile(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
-            )
+            ),
         )
         f2_id = f2_lfa.contentID
         transaction.commit()
@@ -1017,10 +1024,11 @@ class TestTwoSwiftsLibrarianGarbageCollection(
         switch_dbuser("testadmin")
         content = b"foo"
         lfas = [
-            LibraryFileAlias.get(
+            self.store.get(
+                LibraryFileAlias,
                 self.client.addFile(
                     "foo.txt", len(content), io.BytesIO(content), "text/plain"
-                )
+                ),
             )
             for _ in range(12)
         ]
@@ -1103,10 +1111,11 @@ class TestTwoSwiftsLibrarianGarbageCollection(
         switch_dbuser("testadmin")
         content = b"foo"
         lfas = [
-            LibraryFileAlias.get(
+            self.store.get(
+                LibraryFileAlias,
                 self.client.addFile(
                     "foo.txt", len(content), io.BytesIO(content), "text/plain"
-                )
+                ),
             )
             for _ in range(12)
         ]
