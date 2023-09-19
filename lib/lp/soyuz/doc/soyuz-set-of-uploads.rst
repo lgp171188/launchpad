@@ -76,11 +76,11 @@ for the ubuntutest distribution.
 
     >>> from lp.registry.model.distribution import Distribution
     >>> from lp.services.database.interfaces import IStore
+    >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.scripts.initialize_distroseries import (
     ...     InitializeDistroSeries,
     ... )
-    >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> ubuntu = IStore(Distribution).find(Distribution, name="ubuntu").one()
     >>> breezy_autotest = ubuntu["breezy-autotest"]
@@ -110,7 +110,7 @@ for the ubuntutest distribution.
     INFO:...:Copying permissions from parents.
     INFO:...:Creating DistroSeriesDifferences.
     >>> breezy.changeslist = "breezy-changes@ubuntu.com"
-    >>> fake_chroot = LibraryFileAlias.get(1)
+    >>> fake_chroot = IStore(LibraryFileAlias).get(LibraryFileAlias, 1)
     >>> unused = breezy["i386"].addOrUpdateChroot(fake_chroot)
 
 Add disk content for file inherited from ubuntu/breezy-autotest:

@@ -7,10 +7,11 @@ for IDistroSeries context (IDistroSeriesView)
 Let's instantiate the view for +queue for anonymous access:
 
     >>> from zope.component import queryMultiAdapter
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.services.librarian.model import LibraryFileAlias
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> from lp.registry.interfaces.distribution import IDistributionSet
-    >>> fake_chroot = LibraryFileAlias.get(1)
+    >>> fake_chroot = IStore(LibraryFileAlias).get(LibraryFileAlias, 1)
 
     >>> ubuntu = getUtility(IDistributionSet)["ubuntu"]
     >>> breezy_autotest = ubuntu["breezy-autotest"]

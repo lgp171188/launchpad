@@ -105,7 +105,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
         newfile = self.storage.startAddFile("file", len(data))
         newfile.append(data)
         lfc_id, lfa_id = newfile.store()
-        lfc = LibraryFileContent.get(lfc_id)
+        lfc = self.store.get(LibraryFileContent, lfc_id)
         self.assertEqual(md5, lfc.md5)
         self.assertEqual(sha1, lfc.sha1)
         self.assertEqual(sha256, lfc.sha256)
