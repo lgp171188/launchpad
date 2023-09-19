@@ -75,7 +75,6 @@ from lp.services.browser_helpers import (
     get_user_agent_distroseries,
 )
 from lp.services.database.bulk import load_related
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.helpers import english_list
 from lp.services.job.model.job import Job
 from lp.services.librarian.browser import (
@@ -433,9 +432,8 @@ class ArchiveNavigation(Navigation, FileNavigationMixin):
             # Not a number.
             return None
 
-        try:
-            archive = getUtility(IArchiveSet).get(id)
-        except SQLObjectNotFound:
+        archive = getUtility(IArchiveSet).get(id)
+        if archive is None:
             return None
 
         return self.context.getArchiveDependency(archive)

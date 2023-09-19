@@ -77,7 +77,6 @@ from lp.code.interfaces.sourcepackagerecipebuild import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.log.logger import BufferLogger
 from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 from lp.services.webapp.adapter import (
@@ -1020,9 +1019,8 @@ def parse_upload_path(relative_path):
 
     elif first_path.isdigit():
         # This must be a binary upload from a build worker.
-        try:
-            archive = getUtility(IArchiveSet).get(int(first_path))
-        except SQLObjectNotFound:
+        archive = getUtility(IArchiveSet).get(int(first_path))
+        if archive is None:
             raise UploadPathError(
                 "Could not find archive with id=%s." % first_path
             )

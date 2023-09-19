@@ -9,7 +9,6 @@ __all__ = [
 
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.model.pofile import POFile
 from lp.translations.model.potmsgset import POTMsgSet
@@ -83,8 +82,6 @@ def fix_plurals_in_all_pofiles(ztm, logger):
     cur.execute("""SELECT MAX(id) FROM POFile""")
     (max_pofile_id,) = cur.fetchall()[0]
     for pofile_id in range(1, max_pofile_id):
-        try:
-            pofile = IStore(POFile).get(POFile, pofile_id)
+        pofile = IStore(POFile).get(POFile, pofile_id)
+        if pofile is not None:
             fix_pofile_plurals(pofile, logger, ztm)
-        except SQLObjectNotFound:
-            pass
