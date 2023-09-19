@@ -71,6 +71,8 @@ from storm.expr import (
     And,
     Column,
     Desc,
+    Is,
+    IsNot,
     Join,
     LeftJoin,
     Not,
@@ -176,7 +178,6 @@ from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
     NamedStormHugeVocabulary,
     NamedStormVocabulary,
-    SQLObjectVocabularyBase,
     StormVocabularyBase,
     VocabularyFilter,
 )
@@ -208,7 +209,6 @@ class BasePersonVocabulary:
         If the token contains an '@', treat it like an email. Otherwise,
         treat it like a name.
         """
-        token = six.ensure_text(token)
         if "@" in token:
             # This looks like an email token, so let's do an object
             # lookup based on that.
@@ -369,11 +369,11 @@ def project_products_vocabulary_factory(context):
     )
 
 
-class UserTeamsParticipationVocabulary(SQLObjectVocabularyBase):
+class UserTeamsParticipationVocabulary(StormVocabularyBase):
     """Describes the public teams in which the current user participates."""
 
     _table = Person
-    _orderBy = "display_name"
+    _order_by = "display_name"
 
     INCLUDE_PRIVATE_TEAM = False
 
@@ -401,7 +401,7 @@ class UserTeamsParticipationVocabulary(SQLObjectVocabularyBase):
             teams = list(
                 IStore(Person)
                 .find(Person, *clauses)
-                .order_by(Person._storm_sortingColumns)
+                .order_by(Person._sortingColumns)
             )
             # Users can view all the teams they belong to.
             precache_permission_for_objects(
@@ -428,7 +428,7 @@ class UserTeamsParticipationVocabulary(SQLObjectVocabularyBase):
 
 @implementer(IHugeVocabulary)
 class NonMergedPeopleAndTeamsVocabulary(
-    BasePersonVocabulary, SQLObjectVocabularyBase
+    BasePersonVocabulary, StormVocabularyBase
 ):
     """The set of all non-merged people and teams.
 
@@ -437,7 +437,7 @@ class NonMergedPeopleAndTeamsVocabulary(
     a preferred email address, that is, unvalidated person profiles.
     """
 
-    _orderBy = ["display_name"]
+    _order_by = ["display_name"]
     displayname = "Select a Person or Team"
     step_title = "Search"
 
@@ -449,7 +449,7 @@ class NonMergedPeopleAndTeamsVocabulary(
         return getUtility(IPersonSet).find(text)
 
     def search(self, text, vocab_filter=None):
-        """See `SQLObjectVocabularyBase`.
+        """See `StormVocabularyBase`.
 
         Return people/teams whose fti or email address match :text.
         """
@@ -461,7 +461,7 @@ class NonMergedPeopleAndTeamsVocabulary(
 
 @implementer(IHugeVocabulary)
 class PersonAccountToMergeVocabulary(
-    BasePersonVocabulary, SQLObjectVocabularyBase
+    BasePersonVocabulary, StormVocabularyBase
 ):
     """The set of all non-merged people with at least one email address.
 
@@ -469,7 +469,7 @@ class PersonAccountToMergeVocabulary(
     accounts to merge. You *don't* want to use it.
     """
 
-    _orderBy = ["display_name"]
+    _order_by = ["display_name"]
     displayname = "Select a Person to Merge"
     step_title = "Search"
     must_have_email = True
@@ -486,7 +486,7 @@ class PersonAccountToMergeVocabulary(
         )
 
     def search(self, text, vocab_filter=None):
-        """See `SQLObjectVocabularyBase`.
+        """See `StormVocabularyBase`.
 
         Return people whose fti or email address match :text.
         """
@@ -516,7 +516,7 @@ class VocabularyFilterPerson(VocabularyFilter):
 
     @property
     def filter_terms(self):
-        return [Person.teamownerID == None]
+        return [Is(Person.teamowner_id, None)]
 
 
 class VocabularyFilterTeam(VocabularyFilter):
@@ -529,13 +529,11 @@ class VocabularyFilterTeam(VocabularyFilter):
 
     @property
     def filter_terms(self):
-        return [Person.teamownerID != None]
+        return [IsNot(Person.teamowner_id, None)]
 
 
 @implementer(IHugeVocabulary)
-class ValidPersonOrTeamVocabulary(
-    BasePersonVocabulary, SQLObjectVocabularyBase
-):
+class ValidPersonOrTeamVocabulary(BasePersonVocabulary, StormVocabularyBase):
     """The set of valid, viewable Persons/Teams in Launchpad.
 
     A Person is considered valid if they have a preferred email address, and

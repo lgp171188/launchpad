@@ -175,7 +175,7 @@ class TranslationGroup(StormBase):
             Translator,
             Language,
             Person,
-            LeftJoin(LibraryFileAlias, LibraryFileAlias.id == Person.iconID),
+            LeftJoin(LibraryFileAlias, LibraryFileAlias.id == Person.icon_id),
             LeftJoin(
                 LibraryFileContent,
                 LibraryFileContent.id == LibraryFileAlias.contentID,

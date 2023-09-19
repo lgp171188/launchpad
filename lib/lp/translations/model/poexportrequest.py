@@ -92,7 +92,7 @@ class POExportRequestSet:
         )
 
         query_params = {
-            "person": quote(person),
+            "person": quote(person.id),
             "format": quote(format),
             "templates": potemplate_ids,
             "pofiles": pofile_ids,
