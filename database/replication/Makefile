@@ -28,16 +28,20 @@ MULTIPROC=
 
 NEW_STAGING_CONFIG=staging-setup # For building the db with a different name.
 STAGING_CONFIG=staging-db # For swapping fresh db into place.
-STAGING_DBNAME_MAIN=lpmain_staging
-STAGING_DBNAME_SESSION=session_staging
 STAGING_DUMP=launchpad.dump # Dumpfile to build new staging from.
 STAGING_TABLESPACE=pg_default # 'pg_default' for default
 STAGING_LOGDIR=/srv/staging.launchpad.net/staging-logs
+STAGING_POSTGRESQL_VERSION=10
+DOGFOOD_DUMP=launchpad.dump
+
+# Names of underlying PostgreSQL databases.
+STAGING_DBNAME_MAIN=lpmain_staging
+STAGING_DBNAME_SESSION=session_staging
+DOGFOOD_DBNAME=launchpad_dogfood
+
+# Names in pgbouncer.ini's `[databases]` section.
 STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_slave
 STAGING_PGBOUNCER_SESSION=session_staging
-STAGING_POSTGRESQL_VERSION=10
-DOGFOOD_DBNAME=launchpad_dogfood
-DOGFOOD_DUMP=launchpad.dump
 
 STAGING_PGBOUNCER=psql -p 6432 -U pgbouncer -d pgbouncer
 
