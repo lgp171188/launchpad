@@ -25,6 +25,7 @@ from transaction.interfaces import ISynchronizer
 from zope.interface import implementer
 
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.client import get_libraryfilealias_download_path
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import (
@@ -102,7 +103,7 @@ class FakeLibrarian(Fixture):
             )
 
         file_ref = self._makeLibraryFileContent(content)
-        alias = self._makeAlias(file_ref.id, name, content, contentType)
+        alias = self._makeAlias(file_ref, name, content, contentType)
         self.aliases[alias.id] = alias
         return alias
 
@@ -142,12 +143,13 @@ class FakeLibrarian(Fixture):
         for alias in self.aliases.values():
             alias.file_committed = True
 
-    def _makeAlias(self, file_id, name, content, content_type):
+    def _makeAlias(self, lfc, name, content, content_type):
         """Create a `LibraryFileAlias`."""
         alias = InstrumentedLibraryFileAlias(
-            contentID=file_id, filename=name, mimetype=content_type
+            content=lfc, filename=name, mimetype=content_type
         )
         alias.content_bytes = content
+        IStore(LibraryFileAlias).flush()
         return alias
 
     def _makeLibraryFileContent(self, content):
@@ -160,6 +162,7 @@ class FakeLibrarian(Fixture):
         content_object = LibraryFileContent(
             filesize=size, md5=md5, sha1=sha1, sha256=sha256
         )
+        IStore(LibraryFileContent).add(content_object)
         return content_object
 
     def create(

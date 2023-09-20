@@ -270,15 +270,16 @@ class LibraryFileUpload:
             # If we haven't got a contentID, we need to create one and return
             # it to the client.
             if self.contentID is None:
-                contentID = self.storage.library.add(
+                content = self.storage.library.add(
                     dstDigest,
                     self.size,
                     self.md5_digester.hexdigest(),
                     self.sha256_digester.hexdigest(),
                 )
+                contentID = content.id
                 aliasID = self.storage.library.addAlias(
-                    contentID, self.filename, self.mimetype, self.expires
-                )
+                    content, self.filename, self.mimetype, self.expires
+                ).id
                 self.debugLog.append(
                     "created contentID: %r, aliasID: %r."
                     % (contentID, aliasID)

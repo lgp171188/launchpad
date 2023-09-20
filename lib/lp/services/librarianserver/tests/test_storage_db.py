@@ -10,6 +10,7 @@ from testtools.testcase import ExpectedException
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.model import LibraryFileContent
@@ -129,11 +130,16 @@ class LibrarianStorageDBTests(TestCase):
         fileid2, aliasid2 = newfile2.store()
 
         # Create rows in the database for these files.
-        LibraryFileContent(
-            filesize=0, sha1="foo", md5="xx", sha256="xx", id=6661
+        store = IStore(LibraryFileContent)
+        store.add(
+            LibraryFileContent(
+                filesize=0, sha1="foo", md5="xx", sha256="xx", id=6661
+            )
         )
-        LibraryFileContent(
-            filesize=0, sha1="foo", md5="xx", sha256="xx", id=6662
+        store.add(
+            LibraryFileContent(
+                filesize=0, sha1="foo", md5="xx", sha256="xx", id=6662
+            )
         )
 
         flush_database_updates()

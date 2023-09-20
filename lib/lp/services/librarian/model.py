@@ -15,7 +15,16 @@ from datetime import datetime, timezone
 from urllib.parse import urlparse
 
 from lazr.delegates import delegate_to
-from storm.locals import Date, Desc, Int, Reference, ReferenceSet, Store
+from storm.locals import (
+    Bool,
+    Date,
+    DateTime,
+    Desc,
+    Int,
+    Reference,
+    Store,
+    Unicode,
+)
 from zope.component import adapter, getUtility
 from zope.interface import Interface, implementer
 
@@ -23,16 +32,8 @@ from lp.app.errors import NotFoundError
 from lp.registry.errors import InvalidFilename
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlbase import SQLBase, session_store
-from lp.services.database.sqlobject import (
-    BoolCol,
-    ForeignKey,
-    IntCol,
-    SQLRelatedJoin,
-    StringCol,
-)
+from lp.services.database.sqlbase import session_store
 from lp.services.database.stormbase import StormBase
 from lp.services.librarian.interfaces import (
     ILibraryFileAlias,
@@ -52,48 +53,65 @@ from lp.services.tokens import create_token
 
 
 @implementer(ILibraryFileContent)
-class LibraryFileContent(SQLBase):
+class LibraryFileContent(StormBase):
     """A pointer to file content in the librarian."""
 
-    _table = "LibraryFileContent"
+    __storm_table__ = "LibraryFileContent"
 
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    filesize = IntCol(notNull=True)
-    sha256 = StringCol()
-    sha1 = StringCol(notNull=True)
-    md5 = StringCol(notNull=True)
+    id = Int(primary=True)
+    datecreated = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
+    filesize = Int(allow_none=False)
+    sha256 = Unicode()
+    sha1 = Unicode(allow_none=False)
+    md5 = Unicode(allow_none=False)
+
+    def __init__(self, filesize, md5, sha1, sha256, id=None):
+        super().__init__()
+        if id is not None:
+            self.id = id
+        self.filesize = filesize
+        self.md5 = md5
+        self.sha1 = sha1
+        self.sha256 = sha256
 
 
 @implementer(ILibraryFileAlias)
-class LibraryFileAlias(SQLBase):
+class LibraryFileAlias(StormBase):
     """A filename and mimetype that we can serve some given content with."""
 
-    _table = "LibraryFileAlias"
-    date_created = UtcDateTimeCol(notNull=False, default=DEFAULT)
-    content = ForeignKey(
-        foreignKey="LibraryFileContent",
-        dbName="content",
-        notNull=False,
-    )
-    filename = StringCol(notNull=True)
-    mimetype = StringCol(notNull=True)
-    expires = UtcDateTimeCol(notNull=False, default=None)
-    restricted = BoolCol(notNull=True, default=False)
-    hits = IntCol(notNull=True, default=0)
+    __storm_table__ = "LibraryFileAlias"
 
-    products = SQLRelatedJoin(
-        "ProductRelease",
-        joinColumn="libraryfile",
-        otherColumn="productrelease",
-        intermediateTable="ProductReleaseFile",
+    id = Int(primary=True)
+    date_created = DateTime(
+        allow_none=True, default=DEFAULT, tzinfo=timezone.utc
     )
+    content_id = Int(name="content", allow_none=True)
+    content = Reference(content_id, "LibraryFileContent.id")
+    filename = Unicode(allow_none=False)
+    mimetype = Unicode(allow_none=False)
+    expires = DateTime(allow_none=True, default=None, tzinfo=timezone.utc)
+    restricted = Bool(allow_none=False, default=False)
+    hits = Int(allow_none=False, default=0)
 
-    sourcepackages = ReferenceSet(
-        "id",
-        "SourcePackageReleaseFile.libraryfile_id",
-        "SourcePackageReleaseFile.sourcepackagerelease_id",
-        "SourcePackageRelease.id",
-    )
+    def __init__(
+        self,
+        content,
+        filename,
+        mimetype,
+        id=None,
+        expires=None,
+        restricted=False,
+    ):
+        super().__init__()
+        if id is not None:
+            self.id = id
+        self.content = content
+        self.filename = filename
+        self.mimetype = mimetype
+        self.expires = expires
+        self.restricted = restricted
 
     @property
     def client(self):
@@ -199,23 +217,9 @@ class LibraryFileAlias(SQLBase):
             entry.count += count
         self.hits += count
 
-    products = SQLRelatedJoin(
-        "ProductRelease",
-        joinColumn="libraryfile",
-        otherColumn="productrelease",
-        intermediateTable="ProductReleaseFile",
-    )
-
-    sourcepackages = ReferenceSet(
-        "id",
-        "SourcePackageReleaseFile.libraryfile_id",
-        "SourcePackageReleaseFile.sourcepackagerelease_id",
-        "SourcePackageRelease.id",
-    )
-
     @property
     def deleted(self):
-        return self.contentID is None
+        return self.content_id is None
 
     def __storm_invalidated__(self):
         """Make sure that the file is closed across transaction boundary."""
@@ -327,7 +331,7 @@ class LibraryFileAliasSet:
 
 
 @implementer(ILibraryFileDownloadCount)
-class LibraryFileDownloadCount(SQLBase):
+class LibraryFileDownloadCount(StormBase):
     """See `ILibraryFileDownloadCount`"""
 
     __storm_table__ = "LibraryFileDownloadCount"
@@ -340,16 +344,23 @@ class LibraryFileDownloadCount(SQLBase):
     country_id = Int(name="country", allow_none=True)
     country = Reference(country_id, "Country.id")
 
+    def __init__(self, libraryfilealias, day, count, country=None):
+        super().__init__()
+        self.libraryfilealias = libraryfilealias
+        self.day = day
+        self.count = count
+        self.country = country
+
 
 class TimeLimitedToken(StormBase):
     """A time limited access token for accessing a private file."""
 
     __storm_table__ = "TimeLimitedToken"
 
-    created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    path = StringCol(notNull=True)
+    created = DateTime(allow_none=False, default=UTC_NOW, tzinfo=timezone.utc)
+    path = Unicode(allow_none=False)
     # The hex SHA-256 hash of the token.
-    token = StringCol(notNull=True)
+    token = Unicode(allow_none=False)
 
     __storm_primary__ = ("path", "token")
 

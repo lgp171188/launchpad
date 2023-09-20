@@ -334,7 +334,7 @@ class SnapBuild(PackageBuildMixin, StormBase):
             (SnapFile, LibraryFileAlias, LibraryFileContent),
             SnapFile.snapbuild == self.id,
             LibraryFileAlias.id == SnapFile.libraryfile_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by([LibraryFileAlias.filename, SnapFile.id])
 
@@ -602,7 +602,7 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         archives = load_related(Archive, builds, ["archive_id"])
         load_related(Person, archives, ["owner_id"])
         distroarchseries = load_related(

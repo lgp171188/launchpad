@@ -277,7 +277,7 @@ class LiveFSBuild(PackageBuildMixin, StormBase):
             (LiveFSFile, LibraryFileAlias, LibraryFileContent),
             LiveFSFile.livefsbuild == self.id,
             LibraryFileAlias.id == LiveFSFile.libraryfile_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by([LibraryFileAlias.filename, LiveFSFile.id])
 

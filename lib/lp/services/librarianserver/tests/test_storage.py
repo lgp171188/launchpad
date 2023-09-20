@@ -77,7 +77,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
         self.storage.library = StubLibrary()
         data = b"data " * 50
         newfile = self.storage.startAddFile("file", len(data))
-        newfile.contentID = 0x11111111
+        newfile.content_id = 0x11111111
         newfile.append(data)
         fileid1, aliasid = newfile.store()
         # First id from stub library should be 0x11111111
@@ -111,17 +111,22 @@ class LibrarianStorageTestCase(unittest.TestCase):
         self.assertEqual(sha256, lfc.sha256)
 
 
+class StubLibraryFileContent:
+    def __init__(self, id):
+        self.id = id
+
+
 class StubLibrary:
     # Used by test_multipleFilesInOnePrefixedDirectory
 
     def lookupBySHA1(self, digest):
         return []
 
-    def addAlias(self, fileid, filename, mimetype):
+    def addAlias(self, content, filename, mimetype):
         pass
 
     id = 0x11111110
 
     def add(self, digest, size):
         self.id += 1
-        return self.id
+        return StubLibraryFileContent(self.id)

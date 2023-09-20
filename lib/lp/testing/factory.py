@@ -3283,6 +3283,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 sha1=hashlib.sha1(content).hexdigest(),
                 md5=hashlib.md5(content).hexdigest(),
             )
+            IStore(LibraryFileContent).add(lfc)
             lfa = ProxyFactory(
                 LibraryFileAlias(
                     content=lfc,
@@ -3292,6 +3293,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                     restricted=restricted,
                 )
             )
+            IStore(LibraryFileAlias).flush()
         else:
             lfa = getUtility(ILibraryFileAliasSet).create(
                 filename,

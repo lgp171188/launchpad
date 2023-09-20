@@ -550,7 +550,7 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
 
         files = self.sourcepackagerelease.files
         lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfile_id"])
-        bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+        bulk.load_related(LibraryFileContent, lfas, ["content_id"])
         return files
 
     def getSourceAndBinaryLibraryFiles(self):
@@ -731,7 +731,7 @@ class SourcePackagePublishingHistory(StormBase, ArchivePublisherBase):
         """See `ISourcePackagePublishingHistory`."""
         sources = Store.of(self).find(
             (LibraryFileAlias, LibraryFileContent),
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
             == self.sourcepackagerelease_id,
@@ -947,7 +947,7 @@ class BinaryPackagePublishingHistory(StormBase, ArchivePublisherBase):
         """See `IPublishing`."""
         files = self.binarypackagerelease.files
         lfas = bulk.load_related(LibraryFileAlias, files, ["libraryfile_id"])
-        bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+        bulk.load_related(LibraryFileContent, lfas, ["content_id"])
         return files
 
     @property
@@ -1367,7 +1367,7 @@ class BinaryPackagePublishingHistory(StormBase, ArchivePublisherBase):
         """See `IBinaryPackagePublishingHistory`."""
         binaries = Store.of(self).find(
             (LibraryFileAlias, LibraryFileContent),
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease
             == self.binarypackagerelease_id,
@@ -1976,7 +1976,7 @@ class PublishingSet:
                 LibraryFileAlias,
                 LibraryFileContent,
             ),
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
             BinaryPackageFile.binarypackagerelease == BinaryPackageRelease.id,
             BinaryPackageRelease.build_id == BinaryPackageBuild.id,
@@ -2004,7 +2004,7 @@ class PublishingSet:
                 LibraryFileAlias,
                 LibraryFileContent,
             ),
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
             LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
             SourcePackageReleaseFile.sourcepackagerelease
             == SourcePackagePublishingHistory.sourcepackagerelease_id,
@@ -2150,7 +2150,7 @@ class PublishingSet:
             lfas = bulk.load_related(
                 LibraryFileAlias, sprfs, ["libraryfile_id"]
             )
-            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+            bulk.load_related(LibraryFileContent, lfas, ["content_id"])
 
         return DecoratedResultSet(spphs, pre_iter_hook=eager_load)
 
@@ -2204,7 +2204,7 @@ class PublishingSet:
             lfas = bulk.load_related(
                 LibraryFileAlias, bpfs, ["libraryfile_id"]
             )
-            bulk.load_related(LibraryFileContent, lfas, ["contentID"])
+            bulk.load_related(LibraryFileContent, lfas, ["content_id"])
             bulk.load_related(
                 SourcePackageName, sprs, ["sourcepackagename_id"]
             )
@@ -2231,7 +2231,7 @@ class PublishingSet:
                 LibraryFileAlias,
                 LibraryFileContent,
             ),
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
             LibraryFileAlias.id == PackageUpload.changes_file_id,
             PackageUpload.id == PackageUploadSource.packageupload_id,
             PackageUpload.status == PackageUploadStatus.DONE,

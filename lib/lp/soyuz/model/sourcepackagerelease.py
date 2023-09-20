@@ -480,7 +480,7 @@ class SourcePackageRelease(StormBase):
             ),
             Join(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
         ]
         results = store.using(*origin).find(

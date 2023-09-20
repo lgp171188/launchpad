@@ -2610,7 +2610,7 @@ class Bug(StormBase, InformationTypeMixin):
                 ),
                 LeftJoin(
                     LibraryFileContent,
-                    LibraryFileContent.id == LibraryFileAlias.contentID,
+                    LibraryFileContent.id == LibraryFileAlias.content_id,
                 ),
             )
             .find(
@@ -2618,7 +2618,7 @@ class Bug(StormBase, InformationTypeMixin):
                 BugAttachment.bug == self,
                 Or(
                     BugAttachment.url != None,
-                    LibraryFileAlias.contentID != None,
+                    LibraryFileAlias.content_id != None,
                 ),
             )
             .order_by(BugAttachment.id)

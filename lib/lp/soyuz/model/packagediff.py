@@ -346,7 +346,7 @@ class PackageDiffSet:
 
         def preload_hook(rows):
             lfas = load(LibraryFileAlias, (pd.diff_content_id for pd in rows))
-            load(LibraryFileContent, (lfa.contentID for lfa in lfas))
+            load(LibraryFileContent, (lfa.content_id for lfa in lfas))
             sprs = load(
                 SourcePackageRelease,
                 itertools.chain.from_iterable(
