@@ -821,7 +821,7 @@ class TestTeamMembership(TestCaseWithFactory):
             TeamMembershipStatus.DEACTIVATED,
             getUtility(IPersonSet).getByName("name16"),
         )
-        # Bypass SQLObject to make sure the update was really flushed to the
+        # Bypass Storm to make sure the update was really flushed to the
         # database.
         cur = cursor()
         cur.execute("SELECT status FROM teammembership WHERE id = %d" % tm.id)

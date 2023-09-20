@@ -56,7 +56,7 @@ class TestCodeReviewKarma(TestCaseWithFactory):
         # target as there would be other karma events for the branch
         # creations.
         self.karma_events = []
-        # The normal SQLObject events use the logged in person.
+        # The normal Storm events use the logged in person.
         login_person(registrant)
         source_branch.addLandingTarget(registrant, target_branch)
         self.assertOneKarmaEvent(registrant, "branchmergeproposed")

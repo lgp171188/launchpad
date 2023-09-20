@@ -83,9 +83,6 @@ class StupidCache:
     This class is basically equivalent to Storm's standard Cache class
     with a very large size but without the overhead of maintaining the
     LRU list.
-
-    This provides caching behaviour equivalent to what we were using
-    under SQLObject.
     """
 
     def __init__(self, size):
@@ -485,25 +482,28 @@ def convert_storm_clause_to_string(storm_clause):
 def flush_database_updates():
     """Flushes all pending database updates.
 
-    When SQLObject's _lazyUpdate flag is set, then it's possible to have
-    changes written to objects that aren't flushed to the database, leading to
-    inconsistencies when doing e.g.::
+    Storm normally flushes changes to objects before it needs to issue the
+    next query, but there are situations where it doesn't realize that it
+    needs to do so.  One common case is when creating an object and
+    immediately fetching its ID, which is typically assigned by the database
+    based on a sequence when the row is inserted::
 
-        # Assuming the Beer table already has a 'Victoria Bitter' row...
-        assert Beer.select("name LIKE 'Vic%'").count() == 1  # This will pass
-        beer = Beer.byName('Victoria Bitter')
-        beer.name = 'VB'
-        assert Beer.select("name LIKE 'Vic%'").count() == 0  # This will fail
+        store = IStore(Beer)
+        beer = Beer(name="Victoria Bitter")
+        store.add(beer)
+        assert beer.id is not None  # This will fail
 
     To avoid this problem, use this function::
 
-        # Assuming the Beer table already has a 'Victoria Bitter' row...
-        assert Beer.select("name LIKE 'Vic%'").count() == 1  # This will pass
-        beer = Beer.byName('Victoria Bitter')
-        beer.name = 'VB'
+        store = IStore(Beer)
+        beer = Beer(name="Victoria Bitter")
+        store.add(beer)
         flush_database_updates()
-        assert Beer.select("name LIKE 'Vic%'").count() == 0  # This will pass
+        assert beer.id is not None  # This will pass
 
+    (You can also flush individual stores using `store.flush()`, which is
+    normally sufficient, but sometimes this function is a convenient
+    shorthand if you don't already have a store object handy.)
     """
     zstorm = getUtility(IZStorm)
     for name, store in zstorm.iterstores():
@@ -513,14 +513,13 @@ def flush_database_updates():
 def flush_database_caches():
     """Flush all database caches.
 
-    SQLObject caches field values from the database in SQLObject
-    instances.  If SQL statements are issued that change the state of
-    the database behind SQLObject's back, these cached values will be
-    invalid.
+    Storm caches field values from the database in Storm instances.  If SQL
+    statements are issued that change the state of the database behind
+    Storm's back, these cached values will be invalid.
 
-    This function iterates through all the objects in the SQLObject
-    connection's cache, and synchronises them with the database.  This
-    ensures that they all reflect the values in the database.
+    This function iterates through all the objects in the Storm connection's
+    cache, and synchronises them with the database.  This ensures that they
+    all reflect the values in the database.
     """
     zstorm = getUtility(IZStorm)
     for name, store in zstorm.iterstores():

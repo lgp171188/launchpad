@@ -932,7 +932,7 @@ class BugTask(StormBase):
         for synched_attr in self._CONJOINED_ATTRIBUTES:
             replica_attr_value = getattr(conjoined_replica, synched_attr)
             # Bypass our checks that prevent setting attributes on
-            # conjoined primaries by calling the underlying sqlobject
+            # conjoined primaries by calling the underlying Storm
             # setter methods directly.
             setattr(self, synched_attr, PassthroughValue(replica_attr_value))
 

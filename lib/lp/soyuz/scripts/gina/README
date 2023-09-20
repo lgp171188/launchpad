@@ -28,7 +28,7 @@ Using the Gina output:
     -> Tons of packages (13k binaries and 7k sources)*
     -> Person-related information (name, multiple mails, gpgkey, etc)
     
-    * the current implementation of Soyuz/SQLObject is quite slow to 
+    * the current implementation of Soyuz/Storm is quite slow to
       fetch all information from DB, so don't forget to use "renice" 
       to reduce the postgres and the zope priority if your machine is
       `normal' (non-dual-Xeon), otherwise it will CRASH (I'm serious).

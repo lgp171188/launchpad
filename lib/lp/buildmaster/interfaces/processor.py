@@ -40,7 +40,7 @@ class ProcessorNotFound(NameLookupFailed):
 # 'devel' as their version.
 @exported_as_webservice_entry(publish_web_link=False, as_of="beta")
 class IProcessor(Interface):
-    """The SQLObject Processor Interface"""
+    """The Storm Processor Interface"""
 
     id = Attribute("The Processor ID")
     name = exported(

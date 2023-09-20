@@ -120,16 +120,10 @@ class ILanguage(Interface):
     )
 
     def addCountry(country):
-        """Add a country to a list of countries this language is spoken in.
-
-        Provided by SQLObject.
-        """
+        """Add a country to a list of countries this language is spoken in."""
 
     def removeCountry(country):
-        """Remove country from list of countries this language is spoken in.
-
-        Provided by SQLObject.
-        """
+        """Remove country from list of countries this language is spoken in."""
 
     visible = exported(
         Bool(

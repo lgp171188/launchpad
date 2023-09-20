@@ -100,7 +100,7 @@ class PillarNameSet:
         # We could attempt to do this in a single database query, but I
         # expect that doing two queries will be faster that OUTER JOINing
         # the Project, Product and Distribution tables (and this approach
-        # works better with SQLObject too.
+        # is easier with Storm too).
 
         # Retrieve information out of the PillarName table.
         query = """

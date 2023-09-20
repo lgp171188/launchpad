@@ -36,7 +36,7 @@ from lp.translations.utilities.rosettastats import RosettaStats
 class DistroSeriesLanguage(StormBase, RosettaStats):
     """See `IDistroSeriesLanguage`.
 
-    A SQLObject based implementation of IDistroSeriesLanguage.
+    A Storm implementation of IDistroSeriesLanguage.
     """
 
     __storm_table__ = "DistroSeriesLanguage"

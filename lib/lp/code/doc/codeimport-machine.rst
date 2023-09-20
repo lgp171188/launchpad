@@ -213,7 +213,7 @@ setQuiescing methods must fail.
 
 Since our scripts and daemons run at "READ COMMITTED" isolation level,
 there are races that we cannot easily detect within the limitation of
-SQLObject, when the watchdog process and the controller daemon
+Storm, when the watchdog process and the controller daemon
 concurrently call setOffline. Those undetected races will lead to the
 creation of redundant OFFLINE events with different reason values, where
 one of the reasons will be WATCHDOG. Those races should not have any

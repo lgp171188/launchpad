@@ -4,8 +4,7 @@ destroySelf
 (Note: this test runs as rosettaadmin to obtain the necessary
 privileges)
 
-With this method, we allow to remove a submission, it comes from SQLObject,
-but we test it here to be sure it appears in our public interface.
+With this method, we allow removing a submission.
 
 We will need extra permissions to use this method.
 

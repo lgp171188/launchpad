@@ -3,8 +3,8 @@ Rosetta gives Karma to the users that do some kind of actions.
 This test documents when and why Rosetta does it.
 
 Note, that once we commit the transaction, we need to fetch again any
-SQLObject we need to use to be sure we have the right information. Seems
-like SQLObjects are not persistent between transactions.
+Storm instance we need to use to be sure we have the right information. Seems
+like Storm instances are not persistent between transactions.
 
     >>> import transaction
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
