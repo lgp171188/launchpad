@@ -498,6 +498,11 @@ class Person(
         return self.id
 
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
+    # If we're using SELECT DISTINCT, then we can't use sortingColumns
+    # unless `person_sort_key(Person.displayname, Person.name)` is also in
+    # the select list, which usually isn't convenient.  Provide a separated
+    # version instead.
+    _separated_sortingColumns = ("Person.displayname", "Person.name")
     # When doing any sort of set operations (union, intersect, except_) with
     # Storm we can't use sortingColumns because the table name Person is not
     # available in that context, so we use this one.

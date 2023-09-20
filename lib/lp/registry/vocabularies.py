@@ -401,7 +401,7 @@ class UserTeamsParticipationVocabulary(StormVocabularyBase):
             teams = list(
                 IStore(Person)
                 .find(Person, *clauses)
-                .order_by(Person._sortingColumns)
+                .order_by(Person.sortingColumns)
             )
             # Users can view all the teams they belong to.
             precache_permission_for_objects(

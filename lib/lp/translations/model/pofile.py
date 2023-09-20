@@ -456,7 +456,7 @@ class POFile(StormBase, POFileMixIn):
             )
             .config(distinct=True)
         )
-        contributors = contributors.order_by(*Person._sortingColumns)
+        contributors = contributors.order_by(Person._separated_sortingColumns)
         contributors = contributors.config(distinct=True)
         return contributors
 
