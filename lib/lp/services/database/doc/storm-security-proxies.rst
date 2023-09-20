@@ -1,5 +1,5 @@
-Demonstrate that SQLObject works with security proxies
-------------------------------------------------------
+Demonstrate that Storm works with security proxies
+--------------------------------------------------
 
 Do some imports.
 

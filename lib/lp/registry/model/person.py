@@ -520,10 +520,9 @@ class Person(
         # mailing list.  This is because renaming a mailing list is not
         # trivial in Mailman 2.1 (see Mailman FAQ item 4.70).  We prohibit
         # such renames in the team edit details view, but just to be safe, we
-        # also assert that such an attempt is not being made here.  To do
-        # this, we must override the SQLObject method for setting the 'name'
-        # database column.  Watch out for when SQLObject is creating this row,
-        # because in that case self.name isn't yet available.
+        # also assert that such an attempt is not being made here.  Watch
+        # out for when Storm is creating this row, because in that case
+        # self.name isn't yet available.
         if self.name is None:
             mailing_list = None
         else:
@@ -535,7 +534,7 @@ class Person(
             or mailing_list.status == MailingListStatus.PURGED
         )
         assert can_rename, "Cannot rename teams with mailing lists"
-        # Everything's okay, so let SQLObject do the normal thing.
+        # Everything's okay, so let Storm do the normal thing.
         return value
 
     name = Unicode(name="name", allow_none=False, validator=_validate_name)

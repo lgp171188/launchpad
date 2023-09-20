@@ -336,8 +336,7 @@ class MailingList(StormBase):
             ), "Email already associated with another team."
 
     def _setAndNotifyDateActivated(self):
-        """Set the date_activated field and fire a
-        SQLObjectModified event.
+        """Set the date_activated field and fire an ObjectModifiedEvent.
 
         The date_activated field is only set once - repeated calls
         will not change the field's value.

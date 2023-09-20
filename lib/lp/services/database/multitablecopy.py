@@ -353,9 +353,9 @@ class MultiTableCopy:
             extracted.  The WHERE clause may refer to rows from table being
             extracted as "source."
         :param id_sequence: SQL sequence that should assign new identifiers
-            for the extracted rows.  Defaults to `source_table` with "_seq_id"
-            appended, which by SQLObject/Launchpad convention is the sequence
-            that provides `source_table`'s primary key values.  Used verbatim,
+            for the extracted rows.  Defaults to `source_table` with "_id_seq"
+            appended, which by Launchpad convention is the sequence that
+            provides `source_table`'s primary key values.  Used verbatim,
             without quoting.
         :param inert_where: Boolean SQL expression characterizing rows that
             are extracted, but should not poured back into `source_table`

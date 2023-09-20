@@ -248,8 +248,8 @@ class RestrictedMembershipsPersonView(LaunchpadView):
         Private teams are filtered out if the user is not a member of them.
         """
         # This method returns a list as opposed to the database object's
-        # getLatestApprovedMembershipsForPerson which returns a sqlobject
-        # result set.
+        # getLatestApprovedMembershipsForPerson which returns a Storm
+        # ResultSet.
         membership_list = self.context.getLatestApprovedMembershipsForPerson()
         return [
             membership
@@ -265,8 +265,7 @@ class RestrictedMembershipsPersonView(LaunchpadView):
         Private teams are filtered out if the user is not a member of them.
         """
         # This method returns a list as opposed to the database object's
-        # teams_with_icons which returns a sqlobject
-        # result set.
+        # teams_with_icons which returns a Storm ResultSet.
         return [
             team
             for team in self.context.teams_with_icons

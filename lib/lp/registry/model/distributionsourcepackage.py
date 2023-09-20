@@ -91,8 +91,8 @@ class DistributionSourcePackage(
     HasDriversMixin,
     WebhookTargetMixin,
 ):
-    """This is a "Magic Distribution Source Package". It is not an
-    SQLObject, but instead it represents a source package with a particular
+    """This is a "Magic Distribution Source Package". It is not a
+    Storm model, but instead it represents a source package with a particular
     name in a particular distribution. You can then ask it all sorts of
     things about the releases that are published under its name, the latest
     or current release, etc.

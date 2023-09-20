@@ -334,8 +334,8 @@ def _build_query(params):
     # * a searchbuilder.any object, representing a set of acceptable
     #   filter values
     # * a searchbuilder.NULL object
-    # * an sqlobject
-    # * a dbschema item
+    # * a Storm instance
+    # * a `DBItem`
     # * None (meaning no filter criteria specified for that arg_name)
     #
     # XXX: kiko 2006-03-16:

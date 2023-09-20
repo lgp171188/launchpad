@@ -13,16 +13,6 @@ import tarfile
 import tempfile
 import time
 
-# A note about tarballs, BytesIO and unicode. SQLObject returns unicode
-# values for columns which are declared as StringCol. We have to be careful
-# not to pass unicode instances to the tarfile module, because when the
-# tarfile's filehandle is a BytesIO object, the BytesIO object gets upset
-# later when we ask it for its value and it tries to join together its
-# buffers. This is why the tarball code is sprinkled with ".encode('ascii')".
-# If we get separate StringCol and UnicodeCol column types, we won't need this
-# any longer.
-# -- Dafydd Harries, 2005-04-07.
-
 
 class LaunchpadWriteTarFile:
     """Convenience wrapper around the tarfile module.
