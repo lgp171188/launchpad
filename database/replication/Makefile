@@ -31,8 +31,17 @@ STAGING_CONFIG=staging-db # For swapping fresh db into place.
 STAGING_DUMP=launchpad.dump # Dumpfile to build new staging from.
 STAGING_TABLESPACE=pg_default # 'pg_default' for default
 STAGING_LOGDIR=/srv/staging.launchpad.net/staging-logs
-DOGFOOD_DBNAME=launchpad_dogfood
+STAGING_POSTGRESQL_VERSION=10
 DOGFOOD_DUMP=launchpad.dump
+
+# Names of underlying PostgreSQL databases.
+STAGING_DBNAME_MAIN=lpmain_staging
+STAGING_DBNAME_SESSION=session_staging
+DOGFOOD_DBNAME=launchpad_dogfood
+
+# Names in pgbouncer.ini's `[databases]` section.
+STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_slave
+STAGING_PGBOUNCER_SESSION=session_staging
 
 STAGING_PGBOUNCER=psql -p 6432 -U pgbouncer -d pgbouncer
 
@@ -60,28 +69,27 @@ stagingsetup:
 	    grep -v -E 'TRIGGER public [^ ]+ _sl_' > ${DUMPLIST}
 
 	# Deny new connections to the main DBs and kill any leftovers.
-	${STAGING_PGBOUNCER} -c 'DISABLE launchpad_staging'
-	${STAGING_PGBOUNCER} -c 'DISABLE launchpad_staging_slave'
-	${STAGING_PGBOUNCER} -c 'KILL launchpad_staging'
-	${STAGING_PGBOUNCER} -c 'KILL launchpad_staging_slave'
-	${STAGING_PGBOUNCER} -c 'RESUME launchpad_staging'
-	${STAGING_PGBOUNCER} -c 'RESUME launchpad_staging_slave'
-	-${PGMASSACRE} lpmain_staging
+	set -e; for verb in DISABLE KILL RESUME; do \
+		for db in ${STAGING_PGBOUNCER_MAIN}; do \
+			${STAGING_PGBOUNCER} -c "$$verb $$db"; \
+		done; \
+	done
+	-${PGMASSACRE} ${STAGING_DBNAME_MAIN}
 
 	# Quickly clear out the session DB. No need to DISABLE here, as
 	# we bring the DB back quickly.
-	${STAGING_PGBOUNCER} -c 'KILL session_staging'
-	psql -d session_staging -c 'TRUNCATE sessiondata CASCADE;'
-	${STAGING_PGBOUNCER} -c 'RESUME session_staging'
+	${STAGING_PGBOUNCER} -c 'KILL ${STAGING_PGBOUNCER_SESSION}'
+	psql -d ${STAGING_DBNAME_SESSION} -c 'TRUNCATE sessiondata CASCADE;'
+	${STAGING_PGBOUNCER} -c 'RESUME ${STAGING_PGBOUNCER_SESSION}'
 
 	# Create the DB with the desired default tablespace.
-	${CREATEDB} --tablespace ${STAGING_TABLESPACE} lpmain_staging
+	${CREATEDB} --tablespace ${STAGING_TABLESPACE} ${STAGING_DBNAME_MAIN}
 	# Restore the database. We need to restore permissions, despite
 	# later running security.py, to pull in permissions granted on
 	# production to users not maintained by security.py.
 	cat ${STAGING_DUMP} \
-	    | ./walblock.py -n 5000 -d /var/lib/postgresql/10/staging/pg_wal \
-	    | pg_restore --dbname=lpmain_staging --no-owner ${EXIT_ON_ERROR} \
+	    | ./walblock.py -n 5000 -d /var/lib/postgresql/${STAGING_POSTGRESQL_VERSION}/staging/pg_wal \
+	    | pg_restore --dbname=${STAGING_DBNAME_MAIN} --no-owner ${EXIT_ON_ERROR} \
 		--use-list=${DUMPLIST} -v
 	rm ${DUMPLIST}
 	# Apply database patches.
@@ -92,10 +100,11 @@ stagingsetup:
 	LPCONFIG=${STAGING_CONFIG} ${SHHH} ../schema/security.py \
 	    --log-file=INFO:${STAGING_LOGDIR}/dbupgrade.log
 	@echo Setting feature flags
-	psql -d lpmain_staging -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('profiling.enabled', 'team:launchpad', 0, 'on') ON CONFLICT DO NOTHING"
-	psql -d lpmain_staging -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('librarian.swift.enabled', 'default', 0, 'on') ON CONFLICT DO NOTHING"
-	${STAGING_PGBOUNCER} -c 'ENABLE launchpad_staging'
-	${STAGING_PGBOUNCER} -c 'ENABLE launchpad_staging_slave'
+	psql -d ${STAGING_DBNAME_MAIN} -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('profiling.enabled', 'team:launchpad', 0, 'on') ON CONFLICT DO NOTHING"
+	psql -d ${STAGING_DBNAME_MAIN} -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('librarian.swift.enabled', 'default', 0, 'on') ON CONFLICT DO NOTHING"
+	set -e; for db in ${STAGING_PGBOUNCER_MAIN}; do \
+		${STAGING_PGBOUNCER} -c "ENABLE $$db"; \
+	done
 
 stagingswitch:
 	echo Nothing to do. Staging already built inplace.
