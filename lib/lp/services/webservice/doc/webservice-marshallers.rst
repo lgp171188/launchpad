@@ -25,10 +25,10 @@ application root.
     >>> getUtility(IOpenLaunchBag).add(root)
 
 
-Choice of SQLObjectVocabularyBase
-.................................
+Choice of StormVocabularyBase
+.............................
 
-For vocabularies based on SQLObjectVocabularyBase, the values are
+For vocabularies based on StormVocabularyBase, the values are
 interpreted as URLs referencing objects on the web service. If the given
 string is a URL corresponding to a vocabulary item, the marshaller
 returns that item. Otherwise it raises a ValueError.
@@ -94,7 +94,7 @@ resource and not a random string.
     >>> print(marshaller.representation_name)
     some_person_link
 
-If you export a Choice that uses an SQLObjectVocabularyBase then you
+If you export a Choice that uses a StormVocabularyBase then you
 get an error, as you should be using a ReferenceChoice instead to
 ensure that the resulting wadl matches lazr.restful conventions.
 
@@ -104,9 +104,9 @@ ensure that the resulting wadl matches lazr.restful conventions.
     ... # doctest: +NORMALIZE_WHITESPACE
     Traceback (most recent call last):
     ...
-    AssertionError: You exported some_person as an IChoice based on an
-    SQLObjectVocabularyBase/StormVocabularyBase; you should use
-    lazr.restful.fields.ReferenceChoice instead.
+    AssertionError: You exported some_person as an IChoice based on a
+    StormVocabularyBase; you should use lazr.restful.fields.ReferenceChoice
+    instead.
 
 Cleanup.
 
