@@ -16,7 +16,6 @@ __all__ = [
     "ISOLATION_LEVEL_REPEATABLE_READ",
     "ISOLATION_LEVEL_SERIALIZABLE",
     "quote",
-    "quoteIdentifier",
     "quote_identifier",
     "reset_store",
     "session_store",
@@ -407,21 +406,18 @@ def quote_identifier(identifier):
     In SQL, identifiers are quoted using " rather than ' which is reserved
     for strings.
 
-    >>> print(quoteIdentifier("hello"))
+    >>> print(quote_identifier("hello"))
     "hello"
-    >>> print(quoteIdentifier("'"))
+    >>> print(quote_identifier("'"))
     "'"
-    >>> print(quoteIdentifier('"'))
+    >>> print(quote_identifier('"'))
     """"
-    >>> print(quoteIdentifier("\\"))
+    >>> print(quote_identifier("\\"))
     "\"
-    >>> print(quoteIdentifier('\\"'))
+    >>> print(quote_identifier('\\"'))
     "\"""
     '''
     return '"%s"' % identifier.replace('"', '""')
-
-
-quoteIdentifier = quote_identifier  # Backwards compatibility for now.
 
 
 def convert_storm_clause_to_string(storm_clause):

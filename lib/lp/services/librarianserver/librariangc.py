@@ -20,7 +20,7 @@ from lp.services.config import config
 from lp.services.database.postgresql import (
     drop_tables,
     listReferences,
-    quoteIdentifier,
+    quote_identifier,
 )
 from lp.services.features import getFeatureFlag
 from lp.services.librarianserver import swift
@@ -436,8 +436,8 @@ class UnreferencedLibraryFileAliasPruner:
                 WHERE LibraryFileAlias.id = %(table)s.%(column)s
                 """
                 % {
-                    "table": quoteIdentifier(table),
-                    "column": quoteIdentifier(column),
+                    "table": quote_identifier(table),
+                    "column": quote_identifier(column),
                 }
             )
             log.debug(
