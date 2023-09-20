@@ -15,7 +15,7 @@ import apt_pkg
 from debian.changelog import Changelog, Version
 from lazr.enum import DBItem
 from storm.expr import And, Cast, Column, Desc, Or, Select, Table
-from storm.locals import Int, Reference
+from storm.locals import Int, Reference, Unicode
 from storm.zope.interfaces import IResultSet
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -48,7 +48,6 @@ from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
-from lp.services.database.sqlobject import StringCol
 from lp.services.database.stormbase import StormBase
 from lp.services.messages.model.message import Message, MessageChunk
 from lp.services.propertycache import (
@@ -389,11 +388,11 @@ class DistroSeriesDifference(StormBase):
         allow_none=False,
         enum=DistroSeriesDifferenceType,
     )
-    source_version = StringCol(dbName="source_version", notNull=False)
-    parent_source_version = StringCol(
-        dbName="parent_source_version", notNull=False
+    source_version = Unicode(name="source_version", allow_none=True)
+    parent_source_version = Unicode(
+        name="parent_source_version", allow_none=True
     )
-    base_version = StringCol(dbName="base_version", notNull=False)
+    base_version = Unicode(name="base_version", allow_none=True)
 
     @staticmethod
     def new(derived_series, source_package_name, parent_series):
