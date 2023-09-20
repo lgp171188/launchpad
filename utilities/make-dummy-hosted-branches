@@ -29,7 +29,7 @@ from lp.code.model.branch import Branch
 from lp.codehosting.tests.helpers import create_branch_with_one_revision
 from lp.codehosting.vfs import branch_id_to_path
 from lp.services.config import config
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.interfaces import IStore
 from lp.services.scripts import execute_zcml_for_scripts
 
 
@@ -51,8 +51,8 @@ def main(argv):
         shutil.rmtree(config.codehosting.mirrored_branches_root)
     execute_zcml_for_scripts()
     try:
-        branches = Branch.select(
-            "Branch.branch_type = %s" % sqlvalues(BranchType.HOSTED)
+        branches = IStore(Branch).find(
+            Branch, Branch.branch_type == BranchType.HOSTED
         )
         for branch in branches:
             make_bazaar_branch_and_tree(branch)
