@@ -1938,8 +1938,8 @@ class ZopelessAppServerLayer(LaunchpadZopelessLayer):
         LayerProcessController.postTestInvariants()
 
 
-class YUITestLayer(FunctionalLayer):
-    """The layer for all YUITests cases."""
+class WebBrowserLayer(BaseLayer):
+    """A layer that runs a web browser."""
 
     browser = None
 
@@ -1954,6 +1954,32 @@ class YUITestLayer(FunctionalLayer):
         if cls.browser:
             cls.browser.close()
             cls.browser = None
+
+    @classmethod
+    @profiled
+    def testSetUp(cls):
+        pass
+
+    @classmethod
+    @profiled
+    def testTearDown(cls):
+        pass
+
+
+class YUITestLayer(FunctionalLayer, WebBrowserLayer):
+    """The layer for all YUI test cases."""
+
+    browser = None
+
+    @classmethod
+    @profiled
+    def setUp(cls):
+        pass
+
+    @classmethod
+    @profiled
+    def tearDown(cls):
+        pass
 
     @classmethod
     @profiled

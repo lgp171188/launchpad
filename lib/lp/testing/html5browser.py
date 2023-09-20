@@ -125,4 +125,4 @@ class Browser:
         return json.loads(results)
 
     def close(self):
-        self.driver.close()
+        self.driver.quit()

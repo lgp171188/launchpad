@@ -4,11 +4,13 @@
 from tempfile import NamedTemporaryFile
 
 from lp.testing import TestCase
-from lp.testing.html5browser import Browser
+from lp.testing.layers import WebBrowserLayer
 
 
 class TestBrowser(TestCase):
     """Verify Browser methods."""
+
+    layer = WebBrowserLayer
 
     def setUp(self):
         super().setUp()
@@ -51,11 +53,9 @@ class TestBrowser(TestCase):
         self.file.flush()
         self.file_uri = "file://{}".format(self.file.name)
         self.addCleanup(self.file.close)
-        self.browser = Browser()
-        self.addCleanup(self.browser.close)
 
     def test_load_test_results(self):
-        results = self.browser.run_tests(self.file_uri, timeout=10000)
+        results = self.layer.browser.run_tests(self.file_uri, timeout=10000)
         self.assertEqual(results.status, results.Status.SUCCESS)
         self.assertEqual(
             results.results,
@@ -66,7 +66,7 @@ class TestBrowser(TestCase):
         )
 
     def test_timeout_error(self):
-        results = self.browser.run_tests(self.file_uri, timeout=1500)
+        results = self.layer.browser.run_tests(self.file_uri, timeout=1500)
         self.assertEqual(results.status, results.Status.TIMEOUT)
         self.assertIsNone(results.results)
         self.assertEqual(
@@ -75,7 +75,7 @@ class TestBrowser(TestCase):
         )
 
     def test_incremental_timeout_success(self):
-        results = self.browser.run_tests(
+        results = self.layer.browser.run_tests(
             self.file_uri, timeout=10000, incremental_timeout=3000
         )
         self.assertEqual(results.status, results.Status.SUCCESS)
@@ -88,7 +88,7 @@ class TestBrowser(TestCase):
         )
 
     def test_incremental_timeout_error(self):
-        results = self.browser.run_tests(
+        results = self.layer.browser.run_tests(
             self.file_uri, timeout=10000, incremental_timeout=1500
         )
         self.assertEqual(results.status, results.Status.TIMEOUT)
