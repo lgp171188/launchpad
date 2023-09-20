@@ -10,7 +10,7 @@ import time
 from zope.interface import implementer
 
 from lp.services.database import postgresql
-from lp.services.database.sqlbase import cursor, quote, quoteIdentifier
+from lp.services.database.sqlbase import cursor, quote, quote_identifier
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 
 
@@ -295,7 +295,7 @@ class MultiTableCopy:
         Return value is properly quoted for use as an SQL identifier.
         """
         raw_name = self.getRawHoldingTableName(tablename, suffix)
-        return quoteIdentifier(raw_name)
+        return quote_identifier(raw_name)
 
     def _pointsToTable(self, source_table, foreign_key):
         """Name of table that source_table.foreign_key refers to.
