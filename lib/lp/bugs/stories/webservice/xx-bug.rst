@@ -387,6 +387,51 @@ We don't have to submit a subject when we add a new message.
     subject: 'Re: Firefox install instructions should be complete'
     web_link: '...'
 
+The "visible" field is exported in the "devel" version of the web service API
+and it defaults to True.
+
+    >>> response = webservice.get("/bugs/5/messages", api_version="devel")
+    >>> messages = response.jsonBody()["entries"]
+    >>> pprint_entry(messages[0])
+    bug_attachments_collection_link:
+     'http://.../firefox/+bug/5/comments/0/bug_attachments'
+    content: 'All ways of downloading firefox should provide...'
+    date_created: '2005-01-14T17:27:03.702622+00:00'
+    date_deleted: None
+    date_last_edited: None
+    owner_link: 'http://.../~name12'
+    parent_link: None
+    resource_type_link: 'http://.../#message'
+    revisions_collection_link: 'http://.../firefox/+bug/5/comments/0/revisions'
+    self_link: 'http://.../firefox/+bug/5/comments/0'
+    subject: 'Firefox install instructions should be complete'
+    visible: True
+    web_link: 'http://bugs.../firefox/+bug/5/comments/0'
+
+The "visible" field will be False when a comment is hidden.
+
+    >>> response = webservice.named_post(
+    ...     "/bugs/5", "setCommentVisibility", comment_number=0, visible=False
+    ... )
+    >>> response.status
+    200
+    >>> response = webservice.get("/bugs/5/messages", api_version="devel")
+    >>> messages = response.jsonBody()["entries"]
+    >>> pprint_entry(messages[0])
+    bug_attachments_collection_link:
+     'http://.../firefox/+bug/5/comments/0/bug_attachments'
+    content: 'All ways of downloading firefox should provide...'
+    date_created: '2005-01-14T17:27:03.702622+00:00'
+    date_deleted: None
+    date_last_edited: None
+    owner_link: 'http://.../~name12'
+    parent_link: None
+    resource_type_link: 'http://.../#message'
+    revisions_collection_link: 'http://.../firefox/+bug/5/comments/0/revisions'
+    self_link: 'http://.../firefox/+bug/5/comments/0'
+    subject: 'Firefox install instructions should be complete'
+    visible: False
+    web_link: 'http://bugs.../firefox/+bug/5/comments/0'
 
 Bug tasks
 ---------
