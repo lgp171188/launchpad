@@ -60,9 +60,6 @@
         <implements interface="lp.services.database.interfaces.IStore" />
         <allow attributes="get" />
     </class>
-    <class class="lp.services.database.sqlbase.SQLBase">
-        <implements interface="lp.services.database.interfaces.IDBObject" />
-    </class>
     <class class="lp.services.database.stormbase.StormBase">
         <implements interface="lp.services.database.interfaces.IDBObject" />
     </class>

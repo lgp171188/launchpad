@@ -19,16 +19,13 @@ __all__ = [
     "quote_identifier",
     "reset_store",
     "session_store",
-    "SQLBase",
     "sqlvalues",
     "StupidCache",
 ]
 
-
-from datetime import datetime, timezone
+from datetime import timezone
 
 import psycopg2
-import storm
 import transaction
 from psycopg2.extensions import (
     ISOLATION_LEVEL_AUTOCOMMIT,
@@ -41,27 +38,18 @@ from psycopg2.extensions import (
 from storm.databases.postgres import compile as postgres_compile
 from storm.expr import State
 from storm.expr import compile as storm_compile
-from storm.locals import Storm  # noqa: B1
-from storm.locals import Store
 from storm.zope.interfaces import IZStorm
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
-from zope.interface import implementer
-from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import dbconfig
 from lp.services.database.interfaces import (
     DEFAULT_FLAVOR,
     MAIN_STORE,
     DisallowedStore,
-    IPrimaryObject,
-    IPrimaryStore,
-    ISQLBase,
-    IStore,
     IStoreSelector,
 )
 from lp.services.database.sqlobject import sqlrepr
-from lp.services.propertycache import clear_property_cache
 
 # Default we want for scripts, and the PostgreSQL default. Note psycopg1 will
 # use SERIALIZABLE unless we override, but psycopg2 will not.
@@ -108,168 +96,15 @@ class StupidCache:
         return self._cache.keys()
 
 
-def _get_sqlobject_store():
-    """Return the store used by the SQLObject compatibility layer."""
-    return getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+def _get_main_default_store():
+    """Return the main store using the default flavor.
 
-
-class LaunchpadStyle(storm.sqlobject.SQLObjectStyle):
-    """A SQLObject style for launchpad.
-
-    Python attributes and database columns are lowercase.
-    Class names and database tables are MixedCase. Using this style should
-    simplify SQLBase class definitions since more defaults will be correct.
+    For web requests, the default flavor uses a primary or standby database
+    depending on the type of request (see
+    `lp.services.database.policy.LaunchpadDatabasePolicy`); in all other
+    situations, it uses the primary database.
     """
-
-    def pythonAttrToDBColumn(self, attr):
-        return attr
-
-    def dbColumnToPythonAttr(self, col):
-        return col
-
-    def pythonClassToDBTable(self, className):
-        return className
-
-    def dbTableToPythonClass(self, table):
-        return table
-
-    def idForTable(self, table):
-        return "id"
-
-    def pythonClassToAttr(self, className):
-        return className.lower()
-
-    # dsilvers: 20050322: If you take this method out; then RelativeJoin
-    # instances in our SQLObject classes cause the following error:
-    # AttributeError: 'LaunchpadStyle' object has no attribute
-    # 'tableReference'
-    def tableReference(self, table):
-        """Return the tablename mapped for use in RelativeJoin statements."""
-        return table.__str__()
-
-
-@implementer(ISQLBase)
-class SQLBase(storm.sqlobject.SQLObjectBase):
-    """Base class emulating SQLObject for legacy database classes."""
-
-    _style = LaunchpadStyle()
-
-    # Silence warnings in linter script, which complains about all
-    # SQLBase-derived objects missing an id.
-    id = None
-
-    def __init__(self, *args, **kwargs):
-        """Extended version of the SQLObjectBase constructor.
-
-        We force use of the primary Store.
-
-        We refetch any parameters from different stores from the
-        correct primary Store.
-        """
-        # Make it simple to write dumb-invalidators - initialized
-        # _cached_properties to a valid list rather than just-in-time
-        # creation.
-        self._cached_properties = []
-        store = IPrimaryStore(self.__class__)
-
-        # The constructor will fail if objects from a different Store
-        # are passed in. We need to refetch these objects from the correct
-        # primary Store if necessary so the foreign key references can be
-        # constructed.
-        # XXX StuartBishop 2009-03-02 bug=336867: We probably want to remove
-        # this code - there are enough other places developers have to be
-        # aware of the replication # set boundaries. Why should
-        # Person(..., account=an_account) work but
-        # some_person.account = an_account fail?
-        for key, argument in kwargs.items():
-            argument = removeSecurityProxy(argument)
-            if not isinstance(argument, Storm):  # noqa: B1
-                continue
-            argument_store = Store.of(argument)
-            if argument_store is not store:
-                new_argument = store.find(
-                    argument.__class__, id=argument.id
-                ).one()
-                assert (
-                    new_argument is not None
-                ), "%s not yet synced to this store" % repr(argument)
-                kwargs[key] = new_argument
-
-        store.add(self)
-        try:
-            self._create(None, **kwargs)
-        except Exception:
-            store.remove(self)
-            raise
-
-    @classmethod
-    def _get_store(cls):
-        return IStore(cls)
-
-    def __repr__(self):
-        return "<%s object>" % (self.__class__.__name__)
-
-    def destroySelf(self):
-        my_primary = IPrimaryObject(self)
-        if self is my_primary:
-            super().destroySelf()
-        else:
-            my_primary.destroySelf()
-
-    def __eq__(self, other):
-        """Equality operator.
-
-        Objects compare equal if they have the same class and id, and the id
-        is not None.
-
-        This rule allows objects retrieved from different stores to compare
-        equal.  Newly-created objects may not yet have an id; in such cases
-        we flush the store so that we can find out their id.
-        """
-        naked_self = removeSecurityProxy(self)
-        naked_other = removeSecurityProxy(other)
-        if naked_self.__class__ != naked_other.__class__:
-            return False
-        try:
-            self_id = naked_self.id
-        except KeyError:
-            self.syncUpdate()
-            self_id = naked_self.id
-        if self_id is None:
-            return False
-        try:
-            other_id = naked_other.id
-        except KeyError:
-            other.syncUpdate()
-            other_id = naked_other.id
-        return self_id == other_id
-
-    def __ne__(self, other):
-        """Inverse of __eq__."""
-        return not (self == other)
-
-    def __hash__(self):
-        """Hash operator.
-
-        We must define __hash__ since we define __eq__ (Python 3 requires
-        this), but we need to take care to preserve the invariant that
-        objects that compare equal have the same hash value.  Newly-created
-        objects may not yet have an id; in such cases we flush the store so
-        that we can find out their id.
-        """
-        try:
-            id = self.id
-        except KeyError:
-            self.syncUpdate()
-            id = self.id
-        return hash((self.__class__, id))
-
-    def __storm_invalidated__(self):
-        """Flush cached properties."""
-        # XXX: RobertCollins 2010-08-16 bug=622648: Note this is not directly
-        # tested, but the entire test suite blows up awesomely if it's broken.
-        # It's entirely unclear where tests for this should be.
-        clear_property_cache(self)
+    return getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
 
 
 def get_transaction_timestamp(store):
@@ -314,22 +149,13 @@ def quote(x):
 
     >>> from datetime import datetime, date, time
     >>> quote(datetime(2003, 12, 4, 13, 45, 50))
-    "'2003-12-04 13:45:50'"
+    "'2003-12-04T13:45:50'"
     >>> quote(date(2003, 12, 4))
     "'2003-12-04'"
     >>> quote(time(13, 45, 50))
     "'13:45:50'"
 
-    This function special cases datetime objects, due to a bug that has
-    since been fixed in SQLOS (it installed an SQLObject converter that
-    stripped the time component from the value).  By itself, the sqlrepr
-    function has the following output:
-
-    >>> sqlrepr(datetime(2003, 12, 4, 13, 45, 50), "postgres")
-    "'2003-12-04T13:45:50'"
-
-    This function also special cases set objects, which SQLObject's
-    sqlrepr() doesn't know how to handle.
+    sqlrepr() also special-cases set objects.
 
     >>> quote(set([1, 2, 3]))
     '(1, 2, 3)'
@@ -337,14 +163,6 @@ def quote(x):
     >>> quote(frozenset([1, 2, 3]))
     '(1, 2, 3)'
     """
-    if isinstance(x, datetime):
-        return "'%s'" % x
-    elif ISQLBase(x, None) is not None:
-        return str(x.id)
-    elif isinstance(x, (set, frozenset)):
-        # SQLObject can't cope with sets, so convert to a list, which it
-        # /does/ know how to handle.
-        x = list(x)
     return sqlrepr(x, "postgres")
 
 
@@ -532,7 +350,7 @@ def block_implicit_flushes(func):
 
     def block_implicit_flushes_decorator(*args, **kwargs):
         try:
-            store = _get_sqlobject_store()
+            store = _get_main_default_store()
         except DisallowedStore:
             return func(*args, **kwargs)
         store.block_implicit_flushes()
@@ -551,7 +369,7 @@ def reset_store(func):
         try:
             return func(*args, **kwargs)
         finally:
-            _get_sqlobject_store().reset()
+            _get_main_default_store().reset()
 
     return mergeFunctionMetadata(func, reset_store_decorator)
 
@@ -603,7 +421,7 @@ class cursor:
     """
 
     def __init__(self):
-        self._connection = _get_sqlobject_store()._connection
+        self._connection = _get_main_default_store()._connection
         self._result = None
 
     def execute(self, query, params=None):

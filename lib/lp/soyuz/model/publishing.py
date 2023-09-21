@@ -34,8 +34,6 @@ from storm.info import ClassAlias
 from storm.properties import DateTime, Int, Unicode
 from storm.references import Reference
 from storm.store import Store
-from storm.zope import IResultSet
-from storm.zope.interfaces import ISQLObjectResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import isinstance as zope_isinstance
@@ -1586,8 +1584,6 @@ class PublishingSet:
             if len(bpphs) == 0:
                 return
         else:
-            if ISQLObjectResultSet.providedBy(bpphs):
-                bpphs = IResultSet(bpphs)
             if bpphs.is_empty():
                 return
 
