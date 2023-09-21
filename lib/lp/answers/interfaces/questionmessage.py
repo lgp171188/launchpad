@@ -10,7 +10,7 @@ __all__ = [
 from lazr.restful.declarations import exported, exported_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import Bool, Choice, Int
+from zope.schema import Choice, Int
 
 from lp import _
 from lp.answers.enums import QuestionAction, QuestionStatus
@@ -73,14 +73,6 @@ class IQuestionMessageView(IMessageView):
             readonly=True,
         ),
         exported_as="index",
-    )
-    visible = exported(
-        Bool(
-            title=_("Message visibility."),
-            description=_("Whether or not the message is visible."),
-            readonly=True,
-        ),
-        as_of="devel",
     )
 
 
