@@ -1108,8 +1108,11 @@ class AbstractYUITestCase(TestCase):
         The tests are run during `setUp()`, but failures need to be reported
         from here.
         """
-        assert self.layer.browser
-        results = self.layer.browser.run_tests(
+        # Circular import.
+        from lp.testing.layers import WebBrowserLayer
+
+        assert WebBrowserLayer.browser
+        results = WebBrowserLayer.browser.run_tests(
             self.html_uri,
             timeout=self.suite_timeout,
             incremental_timeout=self.incremental_timeout,
