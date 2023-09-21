@@ -9,14 +9,24 @@ __all__ = [
 
 
 import transaction
+from storm.expr import And, Column, Insert, Is, Join, Not, Or, Select, Table
 from zope.interface import implementer
 
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.stormexpr import BulkUpdate
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.packagecloner import IPackageCloner
-from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
+from lp.soyuz.interfaces.publishing import active_publishing_status
+from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
+from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
+from lp.soyuz.model.packagesetsources import PackagesetSources
+from lp.soyuz.model.publishing import (
+    BinaryPackagePublishingHistory,
+    SourcePackagePublishingHistory,
+)
+from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 @implementer(IPackageCloner)
@@ -141,68 +151,63 @@ class PackageCloner:
         @type sourcepackagenames: Iterable
         """
         use_names = sourcepackagenames and len(sourcepackagenames) > 0
-        clause_tables = "FROM BinaryPackagePublishingHistory AS bpph"
+        BPB = BinaryPackageBuild
+        BPPH = BinaryPackagePublishingHistory
+        BPR = BinaryPackageRelease
+        SPN = SourcePackageName
+        SPR = SourcePackageRelease
+        clauses = [
+            BPPH.distroarchseries == origin_das,
+            BPPH.status.is_in(active_publishing_status),
+            BPPH.pocket == origin.pocket,
+            BPPH.archive == origin.archive,
+        ]
         if use_names:
-            clause_tables += """,
-                BinaryPackageRelease AS bpr,
-                BinaryPackageBuild AS bpb,
-                SourcePackageRelease AS spr,
-                SourcePackageName AS spn
-                """
+            clauses.extend(
+                [
+                    BPPH.binarypackagerelease == BPR.id,
+                    BPR.build == BPB.id,
+                    BPB.source_package_release == SPR.id,
+                    SPR.sourcepackagename == SPN.id,
+                    SPN.name.is_in(sourcepackagenames),
+                ]
+            )
         # We do not need to set phased_update_percentage; that is heavily
         # context-dependent and should be set afresh for the new location if
         # required.
-        query = """
-            INSERT INTO BinaryPackagePublishingHistory (
-                binarypackagerelease, distroarchseries, status,
-                component, section, priority, archive, datecreated,
-                datepublished, pocket, binarypackagename)
-            SELECT
-                bpph.binarypackagerelease,
-                %s as distroarchseries,
-                bpph.status,
-                bpph.component,
-                bpph.section,
-                bpph.priority,
-                %s as archive,
-                %s as datecreated,
-                %s as datepublished,
-                %s as pocket,
-                bpph.binarypackagename
-            """ % sqlvalues(
-            destination_das.id,
-            destination.archive.id,
-            UTC_NOW,
-            UTC_NOW,
-            destination.pocket,
-        )
-        query += clause_tables
-        query += """
-            WHERE
-                bpph.distroarchseries = %s AND
-                bpph.status in (%s, %s) AND
-                bpph.pocket = %s AND
-                bpph.archive = %s
-            """ % sqlvalues(
-            origin_das.id,
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            origin.pocket,
-            origin.archive.id,
-        )
-
-        if use_names:
-            query += """
-                AND bpph.binarypackagerelease = bpr.id
-                AND bpb.id = bpr.build
-                AND bpb.source_package_release = spr.id
-                AND spr.sourcepackagename = spn.id
-                AND spn.name IN %s
-            """ % sqlvalues(
-                sourcepackagenames
+        IStore(BPPH).execute(
+            Insert(
+                (
+                    BPPH.binarypackagerelease_id,
+                    BPPH.distroarchseries_id,
+                    BPPH.status,
+                    BPPH.component_id,
+                    BPPH.section_id,
+                    BPPH.priority,
+                    BPPH.archive_id,
+                    BPPH.datecreated,
+                    BPPH.datepublished,
+                    BPPH.pocket,
+                    BPPH.binarypackagename_id,
+                ),
+                values=Select(
+                    (
+                        BPPH.binarypackagerelease_id,
+                        destination_das.id,
+                        BPPH.status,
+                        BPPH.component_id,
+                        BPPH.section_id,
+                        BPPH.priority,
+                        destination.archive.id,
+                        UTC_NOW,
+                        UTC_NOW,
+                        destination.pocket.value,
+                        BPPH.binarypackagename_id,
+                    ),
+                    where=And(*clauses),
+                ),
             )
-
-        IStore(BinaryPackagePublishingHistory).execute(query)
+        )
 
     def mergeCopy(self, origin, destination):
         """Please see `IPackageCloner`."""
@@ -211,47 +216,62 @@ class PackageCloner:
         self.packageSetDiff(origin, destination)
 
         # Now copy the fresher or new packages.
-        store = IStore(BinaryPackagePublishingHistory)
+        MCD = Table("tmp_merge_copy_data")
+        SPPH = SourcePackagePublishingHistory
+        store = IStore(SPPH)
         store.execute(
-            """
-            INSERT INTO SourcePackagePublishingHistory (
-                sourcepackagerelease, distroseries, status, component,
-                section, archive, datecreated, datepublished, pocket,
-                sourcepackagename)
-            SELECT
-                mcd.s_sourcepackagerelease AS sourcepackagerelease,
-                %s AS distroseries, mcd.s_status AS status,
-                mcd.s_component AS component, mcd.s_section AS section,
-                %s AS archive, %s AS datecreated, %s AS datepublished,
-                %s AS pocket,
-                sourcepackagename_id
-            FROM tmp_merge_copy_data mcd
-            WHERE mcd.obsoleted = True OR mcd.missing = True
-            """
-            % sqlvalues(
-                destination.distroseries.id,
-                destination.archive.id,
-                UTC_NOW,
-                UTC_NOW,
-                destination.pocket,
+            Insert(
+                (
+                    SPPH.sourcepackagerelease_id,
+                    SPPH.distroseries_id,
+                    SPPH.status,
+                    SPPH.component_id,
+                    SPPH.section_id,
+                    SPPH.archive_id,
+                    SPPH.datecreated,
+                    SPPH.datepublished,
+                    SPPH.pocket,
+                    SPPH.sourcepackagename_id,
+                ),
+                values=Select(
+                    (
+                        Column("s_sourcepackagerelease", MCD),
+                        destination.distroseries.id,
+                        Column("s_status", MCD),
+                        Column("s_component", MCD),
+                        Column("s_section", MCD),
+                        destination.archive.id,
+                        UTC_NOW,
+                        UTC_NOW,
+                        destination.pocket.value,
+                        Column("sourcepackagename_id", MCD),
+                    ),
+                    where=Or(
+                        Is(Column("obsoleted", MCD), True),
+                        Is(Column("missing", MCD), True),
+                    ),
+                ),
             )
         )
 
         # Finally set the publishing status for the packages obsoleted in the
         # target archive accordingly (i.e make them superseded).
         store.execute(
-            """
-            UPDATE sourcepackagepublishinghistory secsrc
-            SET
-                status = %s,
-                datesuperseded = %s,
-                supersededby = mcd.s_sourcepackagerelease
-            FROM
-                tmp_merge_copy_data mcd
-            WHERE
-                secsrc.id = mcd.t_sspph AND mcd.obsoleted = True
-            """
-            % sqlvalues(PackagePublishingStatus.SUPERSEDED, UTC_NOW)
+            BulkUpdate(
+                {
+                    SPPH.status: PackagePublishingStatus.SUPERSEDED.value,
+                    SPPH.datesuperseded: UTC_NOW,
+                    SPPH.supersededby_id: Column(
+                        "s_sourcepackagerelease", MCD
+                    ),
+                },
+                table=SPPH,
+                values=MCD,
+                where=And(
+                    SPPH.id == Column("t_sspph", MCD),
+                    Is(Column("obsoleted", MCD), True),
+                ),
+            )
         )
 
         self._create_missing_builds(
@@ -267,85 +287,93 @@ class PackageCloner:
         This means finding out which packages in a given source archive are
         fresher or new with respect to a target archive.
         """
-        store = IStore(BinaryPackagePublishingHistory)
+        MCD = Table("tmp_merge_copy_data")
+        SPN = SourcePackageName
+        SPPH = SourcePackagePublishingHistory
+        SPR = SourcePackageRelease
+        store = IStore(SPPH)
+
         # The query below will find all packages in the source archive that
         # are fresher than their counterparts in the target archive.
-        find_newer_packages = """
-            UPDATE tmp_merge_copy_data mcd SET
-                s_sspph = secsrc.id,
-                s_sourcepackagerelease = spr.id,
-                s_version = spr.version,
-                obsoleted = True,
-                s_status = secsrc.status,
-                s_component = secsrc.component,
-                s_section = secsrc.section
-            FROM
-                SourcePackagePublishingHistory secsrc,
-                SourcePackageRelease spr,
-                SourcePackageName spn
-            WHERE
-                secsrc.archive = %s AND secsrc.status IN (%s, %s) AND
-                secsrc.distroseries = %s AND secsrc.pocket = %s AND
-                secsrc.sourcepackagerelease = spr.id AND
-                spr.sourcepackagename = spn.id AND
-                spn.name = mcd.sourcepackagename AND
-                spr.version > mcd.t_version
-        """ % sqlvalues(
-            origin.archive.id,
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            origin.distroseries.id,
-            origin.pocket,
-        )
-
+        newer_packages_clauses = [
+            SPPH.archive == origin.archive,
+            SPPH.status.is_in(active_publishing_status),
+            SPPH.distroseries == origin.distroseries,
+            SPPH.pocket == origin.pocket,
+            SPPH.sourcepackagerelease == SPR.id,
+            SPR.sourcepackagename == SPN.id,
+            SPN.name == Column("sourcepackagename", MCD),
+            SPR.version > Column("t_version", MCD),
+        ]
         if origin.component is not None:
-            find_newer_packages += (
-                " AND secsrc.component = %s" % origin.component.id
+            newer_packages_clauses.append(SPPH.component == origin.component)
+        store.execute(
+            BulkUpdate(
+                {
+                    Column("s_sspph", MCD): SPPH.id,
+                    Column("s_sourcepackagerelease", MCD): SPR.id,
+                    Column("s_version", MCD): SPR.version,
+                    Column("obsoleted", MCD): True,
+                    Column("s_status", MCD): SPPH.status,
+                    Column("s_component", MCD): SPPH.component_id,
+                    Column("s_section", MCD): SPPH.section_id,
+                },
+                table=MCD,
+                values=(SPPH, SPR, SPN),
+                where=And(*newer_packages_clauses),
             )
-        store.execute(find_newer_packages)
+        )
 
         # Now find the packages that exist in the source archive but *not* in
         # the target archive.
-        find_origin_only_packages = """
-            INSERT INTO tmp_merge_copy_data (
-                s_sspph, s_sourcepackagerelease, sourcepackagename,
-                sourcepackagename_id, s_version, missing, s_status,
-                s_component, s_section)
-            SELECT
-                secsrc.id AS s_sspph,
-                secsrc.sourcepackagerelease AS s_sourcepackagerelease,
-                spn.name AS sourcepackagename,
-                spn.id AS sourcepackagename_id,
-                spr.version AS s_version,
-                True AS missing,
-                secsrc.status AS s_status,
-                secsrc.component AS s_component,
-                secsrc.section AS s_section
-            FROM SourcePackagePublishingHistory secsrc
-            JOIN SourcePackageRelease AS spr ON
-                spr.id = secsrc.sourcepackagerelease
-            JOIN SourcePackageName AS spn ON
-                spn.id = spr.sourcepackagename
-            WHERE
-                secsrc.archive = %s AND
-                secsrc.status IN (%s, %s) AND
-                secsrc.distroseries = %s AND
-                secsrc.pocket = %s AND
-                spn.name NOT IN (
-                    SELECT sourcepackagename FROM tmp_merge_copy_data)
-        """ % sqlvalues(
-            origin.archive.id,
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            origin.distroseries.id,
-            origin.pocket,
-        )
-
+        origin_only_packages_clauses = [
+            SPPH.archive == origin.archive,
+            SPPH.status.is_in(active_publishing_status),
+            SPPH.distroseries == origin.distroseries,
+            SPPH.pocket == origin.pocket,
+            Not(SPN.name.is_in(Select(Column("sourcepackagename", MCD)))),
+        ]
         if origin.component is not None:
-            find_origin_only_packages += (
-                " AND secsrc.component = %s" % origin.component.id
+            origin_only_packages_clauses.append(
+                SPPH.component == origin.component
             )
-        store.execute(find_origin_only_packages)
+        store.execute(
+            Insert(
+                (
+                    Column(col_name, MCD)
+                    for col_name in (
+                        "s_sspph",
+                        "s_sourcepackagerelease",
+                        "sourcepackagename",
+                        "sourcepackagename_id",
+                        "s_version",
+                        "missing",
+                        "s_status",
+                        "s_component",
+                        "s_section",
+                    )
+                ),
+                values=Select(
+                    (
+                        SPPH.id,
+                        SPPH.sourcepackagerelease_id,
+                        SPN.name,
+                        SPN.id,
+                        SPR.version,
+                        True,
+                        SPPH.status,
+                        SPPH.component_id,
+                        SPPH.section_id,
+                    ),
+                    tables=(
+                        SPPH,
+                        Join(SPR, SPPH.sourcepackagerelease == SPR.id),
+                        Join(SPN, SPR.sourcepackagename == SPN.id),
+                    ),
+                    where=And(*origin_only_packages_clauses),
+                ),
+            )
+        )
 
     def _init_packageset_delta(self, destination):
         """Set up a temp table with data about target archive packages.
@@ -360,7 +388,12 @@ class PackageCloner:
         table that lists what packages exist in the target archive
         (additionally considering the distroseries, pocket and component).
         """
-        store = IStore(BinaryPackagePublishingHistory)
+        MCD = Table("tmp_merge_copy_data")
+        SPN = SourcePackageName
+        SPPH = SourcePackagePublishingHistory
+        SPR = SourcePackageRelease
+        store = IStore(SPPH)
+
         # Use a temporary table to hold the data needed for the package set
         # delta computation. This will prevent multiple, parallel delta
         # calculations from interfering with each other.
@@ -393,39 +426,43 @@ class PackageCloner:
         )
         # Populate the temporary table with package data from the target
         # archive considering the distroseries, pocket and component.
-        pop_query = """
-            INSERT INTO tmp_merge_copy_data (
-                t_sspph, t_sourcepackagerelease, sourcepackagename,
-                sourcepackagename_id, t_version)
-            SELECT
-                secsrc.id AS t_sspph,
-                secsrc.sourcepackagerelease AS t_sourcepackagerelease,
-                spn.name AS sourcepackagerelease,
-                spn.id AS sourcepackagename_id,
-                spr.version AS t_version
-            FROM SourcePackagePublishingHistory secsrc
-            JOIN SourcePackageRelease AS spr ON
-                spr.id = secsrc.sourcepackagerelease
-            JOIN SourcePackageName AS spn ON
-                spn.id = spr.sourcepackagename
-            WHERE
-                secsrc.archive = %s AND
-                secsrc.status IN (%s, %s) AND
-                secsrc.distroseries = %s AND
-                secsrc.pocket = %s
-        """ % sqlvalues(
-            destination.archive.id,
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            destination.distroseries.id,
-            destination.pocket,
-        )
-
+        pop_clauses = [
+            SPPH.archive == destination.archive,
+            SPPH.status.is_in(active_publishing_status),
+            SPPH.distroseries == destination.distroseries,
+            SPPH.pocket == destination.pocket,
+        ]
         if destination.component is not None:
-            pop_query += (
-                " AND secsrc.component = %s" % destination.component.id
+            pop_clauses.append(SPPH.component == destination.component)
+        store.execute(
+            Insert(
+                (
+                    Column(col_name, MCD)
+                    for col_name in (
+                        "t_sspph",
+                        "t_sourcepackagerelease",
+                        "sourcepackagename",
+                        "sourcepackagename_id",
+                        "t_version",
+                    )
+                ),
+                values=Select(
+                    (
+                        SPPH.id,
+                        SPPH.sourcepackagerelease_id,
+                        SPN.name,
+                        SPN.id,
+                        SPR.version,
+                    ),
+                    tables=(
+                        SPPH,
+                        Join(SPR, SPPH.sourcepackagerelease == SPR.id),
+                        Join(SPN, SPR.sourcepackagename == SPN.id),
+                    ),
+                    where=And(*pop_clauses),
+                ),
             )
-        store.execute(pop_query)
+        )
 
     def _clone_source_packages(self, origin, destination, sourcepackagenames):
         """Copy source publishing data from origin to destination.
@@ -440,73 +477,92 @@ class PackageCloner:
         @param sourcepackagenames: List of source packages to restrict
             the copy to
         """
-        store = IStore(BinaryPackagePublishingHistory)
-        query = """
-            INSERT INTO SourcePackagePublishingHistory (
-                sourcepackagerelease, distroseries, status, component,
-                section, archive, datecreated, datepublished, pocket,
-                sourcepackagename)
-            SELECT
-                spph.sourcepackagerelease,
-                %s as distroseries,
-                spph.status,
-                spph.component,
-                spph.section,
-                %s as archive,
-                %s as datecreated,
-                %s as datepublished,
-                %s as pocket,
-                spph.sourcepackagename
-            FROM SourcePackagePublishingHistory AS spph
-            WHERE
-                spph.distroseries = %s AND
-                spph.status in (%s, %s) AND
-                spph.pocket = %s AND
-                spph.archive = %s
-            """ % sqlvalues(
-            destination.distroseries.id,
-            destination.archive.id,
-            UTC_NOW,
-            UTC_NOW,
-            destination.pocket,
-            origin.distroseries.id,
-            PackagePublishingStatus.PENDING,
-            PackagePublishingStatus.PUBLISHED,
-            origin.pocket,
-            origin.archive.id,
-        )
+        FPSI = Table("FlatPackagesetInclusion")
+        SPN = SourcePackageName
+        SPPH = SourcePackagePublishingHistory
+        SPR = SourcePackageRelease
+        store = IStore(SPPH)
 
-        if sourcepackagenames and len(sourcepackagenames) > 0:
-            query += """
-                AND spph.sourcepackagerelease IN (
-                    SELECT spr.id
-                    FROM SourcePackageRelease AS spr
-                    JOIN SourcePackageName AS spn ON
-                        spn.id = spr.sourcepackagename
-                    WHERE spn.name IN %s
-                )""" % sqlvalues(
-                sourcepackagenames
+        clauses = [
+            SPPH.distroseries == origin.distroseries,
+            SPPH.status.is_in(active_publishing_status),
+            SPPH.pocket == origin.pocket,
+            SPPH.archive == origin.archive,
+        ]
+
+        if sourcepackagenames:
+            clauses.append(
+                SPPH.sourcepackagerelease_id.is_in(
+                    Select(
+                        SPR.id,
+                        tables=(
+                            SPR,
+                            Join(SPN, SPR.sourcepackagename == SPN.id),
+                        ),
+                        where=SPN.name.is_in(sourcepackagenames),
+                    )
+                )
             )
 
         if origin.packagesets:
-            query += """
-                AND spph.sourcepackagerelease IN (
-                    SELECT spr.id
-                    FROM SourcePackageRelease AS spr
-                    JOIN PackagesetSources AS pss ON
-                        PSS.sourcepackagename = spr.sourcepackagename
-                    JOIN FlatPackagesetInclusion AS fpsi ON
-                        fpsi.child = pss.packageset
-                    WHERE fpsi.parent in %s
+            clauses.append(
+                SPPH.sourcepackagerelease_id.is_in(
+                    Select(
+                        SPR.id,
+                        tables=(
+                            SPR,
+                            Join(
+                                PackagesetSources,
+                                PackagesetSources.sourcepackagename_id
+                                == SPR.sourcepackagename_id,
+                            ),
+                            Join(
+                                FPSI,
+                                Column("child", FPSI)
+                                == PackagesetSources.packageset_id,
+                            ),
+                        ),
+                        where=Column("parent", FPSI).is_in(
+                            [p.id for p in origin.packagesets]
+                        ),
+                    )
                 )
-                     """ % sqlvalues(
-                [p.id for p in origin.packagesets]
             )
 
         if origin.component:
-            query += "AND spph.component = %s" % origin.component.id
+            clauses.append(SPPH.component == origin.component)
 
-        store.execute(query)
+        store.execute(
+            Insert(
+                (
+                    SPPH.sourcepackagerelease_id,
+                    SPPH.distroseries_id,
+                    SPPH.status,
+                    SPPH.component_id,
+                    SPPH.section_id,
+                    SPPH.archive_id,
+                    SPPH.datecreated,
+                    SPPH.datepublished,
+                    SPPH.pocket,
+                    SPPH.sourcepackagename_id,
+                ),
+                values=Select(
+                    (
+                        SPPH.sourcepackagerelease_id,
+                        destination.distroseries.id,
+                        SPPH.status,
+                        SPPH.component_id,
+                        SPPH.section_id,
+                        destination.archive.id,
+                        UTC_NOW,
+                        UTC_NOW,
+                        destination.pocket.value,
+                        SPPH.sourcepackagename_id,
+                    ),
+                    where=And(*clauses),
+                ),
+            )
+        )
 
     def packageSetDiff(self, origin, destination, logger=None):
         """Please see `IPackageCloner`."""
