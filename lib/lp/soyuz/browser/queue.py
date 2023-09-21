@@ -233,7 +233,7 @@ class QueueItemsView(LaunchpadView):
         file_lfas = load_related(
             LibraryFileAlias, source_files + binary_files, ["libraryfile_id"]
         )
-        load_related(LibraryFileContent, file_lfas, ["contentID"])
+        load_related(LibraryFileContent, file_lfas, ["content_id"])
 
         # Get a dictionary of lists of binary files keyed by upload ID.
         package_upload_builds_dict = self.builds_dict(upload_ids, binary_files)

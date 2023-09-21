@@ -102,7 +102,7 @@ class TestPackageDiffs(TestCaseWithFactory):
         if expire:
             update_map[LibraryFileAlias.expires] = datetime.now(timezone.utc)
         if delete:
-            update_map[LibraryFileAlias.contentID] = None
+            update_map[LibraryFileAlias.content_id] = None
         with dbuser("launchpad"):
             IStore(LibraryFileAlias).execute(
                 BulkUpdate(

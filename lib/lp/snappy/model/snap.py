@@ -1143,7 +1143,7 @@ class Snap(StormBase, WebhookTargetMixin):
 
         # Prefetch data to keep DB query count constant
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
 
         for build in builds:
             if build.date is not None:

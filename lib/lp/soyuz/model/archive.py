@@ -957,7 +957,7 @@ class Archive(StormBase):
             SourcePackagePublishingHistory.sourcepackagerelease_id
             == SourcePackageReleaseFile.sourcepackagerelease_id,
             SourcePackageReleaseFile.libraryfile_id == LibraryFileAlias.id,
-            LibraryFileAlias.contentID == LibraryFileContent.id,
+            LibraryFileAlias.content_id == LibraryFileContent.id,
         )
 
         # Note: we can't use the LFC.sha1 instead of LFA.filename above
@@ -1246,7 +1246,7 @@ class Archive(StormBase):
             BinaryPackagePublishingHistory.binarypackagerelease_id
             == BinaryPackageFile.binarypackagerelease_id,
             BinaryPackageFile.libraryfile_id == LibraryFileAlias.id,
-            LibraryFileAlias.contentID == LibraryFileContent.id,
+            LibraryFileAlias.content_id == LibraryFileContent.id,
         )
         # See `IArchive.sources_size`.
         result = result.config(distinct=True)
@@ -2956,7 +2956,7 @@ class Archive(StormBase):
                 == SourcePackageReleaseFile.sourcepackagerelease_id,
                 LibraryFileAlias.id == SourcePackageReleaseFile.libraryfile_id,
                 LibraryFileAlias.filename.is_in(source_files),
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             )
             .config(distinct=True)
         )

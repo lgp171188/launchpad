@@ -131,7 +131,7 @@ class TestLibrarianGarbageCollectionBase:
 
         # Make sure the duplicates really are distinct
         self.assertNotEqual(f1_id, f2_id)
-        self.assertNotEqual(f1.contentID, f2.contentID)
+        self.assertNotEqual(f1.content_id, f2.content_id)
 
         f1.date_created = self.ancient_past
         f2.date_created = self.ancient_past
@@ -140,8 +140,8 @@ class TestLibrarianGarbageCollectionBase:
 
         # Set the time on disk to match the database timestamp.
         utime = calendar.timegm(self.ancient_past.utctimetuple())
-        os.utime(librariangc.get_file_path(f1.contentID), (utime, utime))
-        os.utime(librariangc.get_file_path(f2.contentID), (utime, utime))
+        os.utime(librariangc.get_file_path(f1.content_id), (utime, utime))
+        os.utime(librariangc.get_file_path(f2.content_id), (utime, utime))
 
         del f1, f2
 
@@ -166,7 +166,7 @@ class TestLibrarianGarbageCollectionBase:
         self.ztm.begin()
         f1 = self.store.get(LibraryFileAlias, self.f1_id)
         f2 = self.store.get(LibraryFileAlias, self.f2_id)
-        self.assertEqual(f1.contentID, f2.contentID)
+        self.assertEqual(f1.content_id, f2.content_id)
 
     def test_DeleteUnreferencedAliases(self):
         self.ztm.begin()
@@ -176,8 +176,8 @@ class TestLibrarianGarbageCollectionBase:
         f2 = self.store.get(LibraryFileAlias, self.f2_id)
         # Grab the content IDs related to these
         # unreferenced LibraryFileAliases
-        c1_id = f1.contentID
-        c2_id = f2.contentID
+        c1_id = f1.content_id
+        c2_id = f2.content_id
         del f1, f2
         self.ztm.abort()
 
@@ -630,7 +630,7 @@ class TestDiskLibrarianGarbageCollection(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        id_aborted = lfa.contentID
+        id_aborted = lfa.content_id
         # Roll back the database changes, leaving the file on disk.
         transaction.abort()
 
@@ -641,7 +641,7 @@ class TestDiskLibrarianGarbageCollection(
             ),
         )
         transaction.commit()
-        id_committed = lfa.contentID
+        id_committed = lfa.content_id
 
         switch_dbuser(config.librarian_gc.dbuser)
 
@@ -818,7 +818,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        big1_id = big1_lfa.contentID
+        big1_id = big1_lfa.content_id
 
         big2_lfa = self.store.get(
             LibraryFileAlias,
@@ -826,7 +826,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        big2_id = big2_lfa.contentID
+        big2_id = big2_lfa.content_id
         transaction.commit()
 
         for lfc_id in (big1_id, big2_id):
@@ -881,7 +881,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        f1_id = f1_lfa.contentID
+        f1_id = f1_lfa.content_id
 
         f2_lfa = self.store.get(
             LibraryFileAlias,
@@ -889,7 +889,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        f2_id = f2_lfa.contentID
+        f2_id = f2_lfa.content_id
         transaction.commit()
 
         for lfc_id in (f1_id, f2_id):
@@ -948,7 +948,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "foo.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        f1_id = f1_lfa.contentID
+        f1_id = f1_lfa.content_id
 
         f2_lfa = self.store.get(
             LibraryFileAlias,
@@ -956,7 +956,7 @@ class TestSwiftLibrarianGarbageCollection(
                 "bar.txt", len(content), io.BytesIO(content), "text/plain"
             ),
         )
-        f2_id = f2_lfa.contentID
+        f2_id = f2_lfa.content_id
         transaction.commit()
 
         for lfc_id in (f1_id, f2_id):
@@ -1032,7 +1032,7 @@ class TestTwoSwiftsLibrarianGarbageCollection(
             )
             for _ in range(12)
         ]
-        lfc_ids = [lfa.contentID for lfa in lfas]
+        lfc_ids = [lfa.content_id for lfa in lfas]
         transaction.commit()
 
         # Simulate a migration in progress.  Some files are only in the old
@@ -1119,7 +1119,7 @@ class TestTwoSwiftsLibrarianGarbageCollection(
             )
             for _ in range(12)
         ]
-        lfc_ids = [lfa.contentID for lfa in lfas]
+        lfc_ids = [lfa.content_id for lfa in lfas]
         transaction.commit()
 
         for lfc_id in lfc_ids:

@@ -282,7 +282,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
             LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by([LibraryFileAlias.filename, OCIFile.id])
 
@@ -421,7 +421,7 @@ class OCIRecipeBuild(PackageBuildMixin, StormBase):
                 (OCIFile, LibraryFileAlias, LibraryFileContent),
                 OCIFile.build == self.id,
                 LibraryFileAlias.id == OCIFile.library_file_id,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
                 OCIFile.layer_file_digest == layer_file_digest,
             )
             .one()
@@ -593,7 +593,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         recipes = load_related(OCIRecipe, builds, ["recipe_id"])
         getUtility(IOCIRecipeSet).preloadDataForOCIRecipes(recipes)
         # XXX twom 2019-12-05 This needs to be extended to include

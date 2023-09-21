@@ -365,7 +365,7 @@ class ProductReleaseSet:
                 ),
                 LeftJoin(
                     LibraryFileContent,
-                    LibraryFileAlias.contentID == LibraryFileContent.id,
+                    LibraryFileAlias.content == LibraryFileContent.id,
                 ),
                 Join(
                     ProductRelease,

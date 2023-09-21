@@ -42,21 +42,20 @@ class DBTestCase(TestCase):
         self.assertEqual([], library.lookupBySHA1("deadbeef"))
 
         # Add a file, check it is found by lookupBySHA1
-        fileID = library.add("deadbeef", 1234, "abababab", "babababa")
-        self.assertEqual([fileID], library.lookupBySHA1("deadbeef"))
+        content = library.add("deadbeef", 1234, "abababab", "babababa")
+        self.assertEqual([content.id], library.lookupBySHA1("deadbeef"))
 
         # Add a new file with the same digest
-        newFileID = library.add("deadbeef", 1234, "abababab", "babababa")
+        new_content = library.add("deadbeef", 1234, "abababab", "babababa")
         # Check it gets a new ID anyway
-        self.assertNotEqual(fileID, newFileID)
+        self.assertNotEqual(content.id, new_content.id)
         # Check it is found by lookupBySHA1
         self.assertEqual(
-            sorted([fileID, newFileID]),
+            sorted([content.id, new_content.id]),
             sorted(library.lookupBySHA1("deadbeef")),
         )
 
-        aliasID = library.addAlias(fileID, "file1", "text/unknown")
-        alias = library.getAlias(aliasID, None, "/")
+        alias = library.addAlias(content, "file1", "text/unknown")
         self.assertEqual("file1", alias.filename)
         self.assertEqual("text/unknown", alias.mimetype)
 
@@ -97,7 +96,9 @@ class TestLibrarianStuff(TestCase):
         super().setUp()
         switch_dbuser("librarian")
         self.store = IStore(LibraryFileContent)
-        self.content_id = db.Library().add("deadbeef", 1234, "abababab", "ba")
+        self.content_id = (
+            db.Library().add("deadbeef", 1234, "abababab", "ba").id
+        )
         self.file_content = self._getTestFileContent()
         transaction.commit()
 

@@ -130,7 +130,7 @@ class LibraryFileAliasResource(resource.Resource):
         try:
             alias = self.storage.getFileAlias(aliasID, token, path)
             return (
-                alias.contentID,
+                alias.content_id,
                 alias.filename,
                 alias.mimetype,
                 alias.date_created,

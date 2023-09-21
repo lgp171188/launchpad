@@ -24,7 +24,6 @@ from urllib.request import urlopen
 
 import six
 from lazr.restful.utils import get_current_browser_request
-from storm.store import Store
 from zope.interface import implementer
 
 from lp.services.config import config, dbconfig
@@ -249,6 +248,7 @@ class FileUploadClient:
                 sha1=sha1_digester.hexdigest(),
                 md5=md5_digester.hexdigest(),
             )
+            store.add(content)
             LibraryFileAlias(
                 id=aliasID,
                 content=content,
@@ -258,7 +258,7 @@ class FileUploadClient:
                 restricted=self.restricted,
             )
 
-            Store.of(content).flush()
+            store.flush()
 
             assert isinstance(aliasID, int), "aliasID %r not an integer" % (
                 aliasID,

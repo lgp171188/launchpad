@@ -143,7 +143,7 @@ class ArchiveFileSet:
             clauses.extend(
                 [
                     ArchiveFile.library_file == LibraryFileAlias.id,
-                    LibraryFileAlias.contentID == LibraryFileContent.id,
+                    LibraryFileAlias.content_id == LibraryFileContent.id,
                     LibraryFileContent.sha256 == sha256,
                 ]
             )
@@ -189,7 +189,7 @@ class ArchiveFileSet:
 
         def eager_load(rows):
             lfas = load_related(LibraryFileAlias, rows, ["library_file_id"])
-            load_related(LibraryFileContent, lfas, ["contentID"])
+            load_related(LibraryFileContent, lfas, ["content_id"])
 
         if eager_load:
             return DecoratedResultSet(archive_files, pre_iter_hook=eager_load)
