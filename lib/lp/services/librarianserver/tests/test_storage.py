@@ -77,7 +77,7 @@ class LibrarianStorageTestCase(unittest.TestCase):
         self.storage.library = StubLibrary()
         data = b"data " * 50
         newfile = self.storage.startAddFile("file", len(data))
-        newfile.content_id = 0x11111111
+        newfile.contentID = 0x11111111
         newfile.append(data)
         fileid1, aliasid = newfile.store()
         # First id from stub library should be 0x11111111
