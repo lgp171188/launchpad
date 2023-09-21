@@ -15,6 +15,7 @@ from lazr.delegates import delegate_to
 from storm.expr import And, LeftJoin
 from storm.locals import (
     Bool,
+    DateTime,
     Desc,
     Int,
     Reference,
@@ -44,7 +45,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import DEFAULT, UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import Greatest, NullsLast
@@ -95,8 +95,8 @@ class SourcePackageRecipe(StormBase):
     daily_build_archive_id = Int(name="daily_build_archive", allow_none=True)
     daily_build_archive = Reference(daily_build_archive_id, "Archive.id")
 
-    date_created = UtcDateTimeCol(notNull=True)
-    date_last_modified = UtcDateTimeCol(notNull=True)
+    date_created = DateTime(allow_none=False, tzinfo=timezone.utc)
+    date_last_modified = DateTime(allow_none=False, tzinfo=timezone.utc)
 
     owner_id = Int(name="owner", allow_none=True)
     owner = Reference(owner_id, "Person.id")

@@ -3,12 +3,13 @@
 
 __all__ = ["SprintAttendance"]
 
-from storm.locals import Bool, Int, Reference
+from datetime import timezone
+
+from storm.locals import Bool, DateTime, Int, Reference
 from zope.interface import implementer
 
 from lp.blueprints.interfaces.sprintattendance import ISprintAttendance
 from lp.registry.interfaces.person import validate_public_person
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.stormbase import StormBase
 
 
@@ -26,8 +27,8 @@ class SprintAttendance(StormBase):
     attendeeID = Int(name="attendee", validator=validate_public_person)
     attendee = Reference(attendeeID, "Person.id")
 
-    time_starts = UtcDateTimeCol(notNull=True)
-    time_ends = UtcDateTimeCol(notNull=True)
+    time_starts = DateTime(allow_none=False, tzinfo=timezone.utc)
+    time_ends = DateTime(allow_none=False, tzinfo=timezone.utc)
     _is_physical = Bool(name="is_physical", default=True)
 
     def __init__(self, sprint, attendee):
