@@ -13,7 +13,6 @@ import six
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.interface import implementer
 
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features.interfaces import IFeatureRules
@@ -54,7 +53,7 @@ class FeatureFlagChangelogEntry(StormBase):
     __storm_table__ = "FeatureFlagChangelogEntry"
 
     id = Int(primary=True)
-    date_changed = UtcDateTimeCol(notNull=True)
+    date_changed = DateTime(allow_none=False, tzinfo=timezone.utc)
     diff = Unicode(allow_none=False)
     comment = Unicode(allow_none=False)
     person_id = Int(name="person", allow_none=False)
