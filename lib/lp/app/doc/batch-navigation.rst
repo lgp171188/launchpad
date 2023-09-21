@@ -8,8 +8,7 @@ This documents and tests the Launchpad-specific elements of its usage.
 
 Note that our use of the batching code relies on the registration of
 lp.services.webapp.batching.FiniteSequenceAdapter for
-storm.zope.interfaces.IResultSet and
-storm.zope.interfaces.ISQLObjectResultSet.
+storm.zope.interfaces.IResultSet.
 
 Batch navigation provides a way to navigate batch results in a web
 page by providing URL links to the next, previous and numbered pages

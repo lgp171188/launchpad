@@ -7,30 +7,6 @@
 import datetime
 
 from storm.expr import SQL
-from storm.sqlobject import (  # noqa: F401
-    AND,
-    CONTAINSSTRING,
-    DESC,
-    IN,
-    LIKE,
-    NOT,
-    OR,
-    BoolCol,
-    DateCol,
-    FloatCol,
-    ForeignKey,
-    IntCol,
-    IntervalCol,
-    SingleJoin,
-    SQLConstant,
-    SQLMultipleJoin,
-    SQLObjectBase,
-    SQLObjectMoreThanOneResultError,
-    SQLObjectResultSet,
-    SQLRelatedJoin,
-    StringCol,
-    UtcDateTimeCol,
-)
 
 _sqlStringReplace = [
     ("\\", "\\\\"),
@@ -69,7 +45,7 @@ def sqlrepr(value, dbname=None):
         return repr(value)
     elif value is None:
         return "NULL"
-    elif isinstance(value, (list, set, tuple)):
+    elif isinstance(value, (frozenset, list, set, tuple)):
         return "(%s)" % ", ".join(sqlrepr(v, dbname) for v in value)
     elif isinstance(value, datetime.datetime):
         return value.strftime("'%Y-%m-%dT%H:%M:%S'")

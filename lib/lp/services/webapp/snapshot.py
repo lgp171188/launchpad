@@ -19,13 +19,12 @@ HARD_LIMIT_FOR_SNAPSHOT = 1000
 
 
 @implementer(ISnapshotValueFactory)
-@adapter(IResultSet)  # And ISQLObjectResultSet.
+@adapter(IResultSet)
 def snapshot_sql_result(value):
     """Snapshot adapter for the Storm result set."""
-    # SQLMultipleJoin and SQLRelatedJoin return
-    # SelectResults, which doesn't really help the Snapshot
-    # object. We therefore list()ify the values; this isn't
-    # perfect but allows deltas to be generated reliably.
+    # ReferenceSet returns ResultSets, which doesn't really help the
+    # Snapshot object. We therefore list()ify the values; this isn't perfect
+    # but allows deltas to be generated reliably.
     return shortlist(
         value, longest_expected=100, hardlimit=HARD_LIMIT_FOR_SNAPSHOT
     )

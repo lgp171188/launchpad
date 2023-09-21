@@ -425,12 +425,7 @@ class HasSprintsMixin:
 
         Subclasses must overwrite this method if it doesn't suit them.
         """
-        try:
-            table = getattr(self, "__storm_table__")
-        except AttributeError:
-            # XXX cjwatson 2020-09-10: Remove this once all inheritors have
-            # been converted from SQLObject to Storm.
-            table = getattr(self, "_table")
+        table = getattr(self, "__storm_table__")
         return [
             getattr(Specification, table.lower()) == self,
             Specification.id == SprintSpecification.specification_id,
