@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from storm.databases.postgres import JSON
 from storm.expr import SQL, And, Cast, Or, Select, Update
+from storm.info import ClassAlias
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -214,15 +215,34 @@ class AccessTokenSet:
         elif IProduct.providedBy(target):
             clauses.append(AccessToken.project == target)
             if visible_by_user is not None:
-                clauses.append(
-                    AccessToken.owner_id.is_in(
-                        Select(
-                            TeamParticipation.team_id,
-                            where=TeamParticipation.person == visible_by_user,
-                        )
-                    )
+                # Avoid circular import
+                from lp.registry.model.product import Product, ProductSet
+
+                clauses.append(Product.active)
+
+                team_participation_ids = Select(
+                    TeamParticipation.team_id,
+                    where=TeamParticipation.person == visible_by_user,
                 )
 
+                # getProductPrivacyFilter may also use TeamParticipation, so
+                # ensure we use a different one.
+                ownership_participation = ClassAlias(TeamParticipation)
+                owned_projects = Select(
+                    Product.id,
+                    where=And(
+                        Product._owner_id == ownership_participation.team_id,
+                        ownership_participation.person_id
+                        == visible_by_user.id,
+                        ProductSet.getProductPrivacyFilter(visible_by_user),
+                    ),
+                )
+                clauses.append(
+                    Or(
+                        AccessToken.owner_id.is_in(team_participation_ids),
+                        AccessToken.project_id.is_in(owned_projects),
+                    )
+                )
         else:
             raise TypeError("Unsupported target: {!r}".format(target))
         if not include_expired:
@@ -235,6 +255,7 @@ class AccessTokenSet:
         return (
             IStore(AccessToken)
             .find(AccessToken, *clauses)
+            .config(distinct=True)
             .order_by(AccessToken.date_created)
         )
 

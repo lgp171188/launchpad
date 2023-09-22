@@ -79,7 +79,7 @@ class IAccessToken(Interface):
 
     project = Reference(
         title=_("Project"),
-        description=_("The Project for which the token was issued."),
+        description=_("The project for which the token was issued."),
         schema=Interface,
         required=False,
         readonly=True,

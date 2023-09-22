@@ -2744,7 +2744,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             )
 
     def test_translatePath_user_project_access_token_push(self):
-        # A user with a suitable project access token can pull from a
+        # A user with a suitable project access token can push from a
         # repository that belongs to that project, but not others, even if they
         # own them.
         requester = self.factory.makePerson()
@@ -2875,10 +2875,15 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def _assert_translatePath_permission_denied_wrong_scope(
         self, requester, repository, token_target, scope
     ):
+        wrong_scope = (
+            AccessTokenScope.REPOSITORY_PUSH
+            if scope == "read"
+            else AccessTokenScope.REPOSITORY_PULL
+        )
         _, token = self.factory.makeAccessToken(
             owner=requester,
             target=token_target,
-            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS, wrong_scope],
         )
         self.assertPermissionDenied(
             requester,
@@ -3110,7 +3115,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_getMergeProposalURL_user_git_access_token(self):
         # The merge proposal URL is returned by LP for a non-default branch
         # pushed by a user with a suitable git repository access token that has
-        # their ordinary privileges on the corresponding repository.
+        # their ordinary privileges on a repository in that project.
         requester = self.factory.makePerson()
         repository = self._makeGitRepositoryWithRefs(owner=requester)
         self._assert_getMergeProposalURL_user_access_token(
@@ -3120,7 +3125,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_getMergeProposalURL_user_project_access_token(self):
         # The merge proposal URL is returned by LP for a non-default branch
         # pushed by a user with a suitable project access token that has
-        # their ordinary privileges on the corresponding repository.
+        # their ordinary privileges on a repository in that project.
         requester = self.factory.makePerson()
         project = self.factory.makeProduct(owner=requester)
         repository = self._makeGitRepositoryWithRefs(target=project)
@@ -4140,9 +4145,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 scopes=[AccessTokenScope.REPOSITORY_PUSH],
             )
 
-        for repository, expected_sucess in repositories:
+        for repository, expected_success in repositories:
             self._assert_checkRefPermissions_permissions(
-                requester, token, repository, expected_sucess
+                requester, token, repository, expected_success
             )
 
     def test_checkRefPermissions_user_git_access_token(self):
@@ -4171,7 +4176,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         for i, repository in enumerate(repositories):
             for j, token in enumerate(tokens):
                 self._assert_checkRefPermissions_permissions(
-                    requester, token, repository, expected_success=i == j
+                    requester, token, repository, expected_success=(i == j)
                 )
 
     def _assert_checkRefPermissions_user_access_token_wrong_scope(

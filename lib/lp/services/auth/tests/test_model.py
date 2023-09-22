@@ -328,7 +328,7 @@ class TestAccessTokenSetBase:
         team = self.factory.makeTeam()
         team_member = self.factory.makePerson()
         with person_logged_in(team.teamowner):
-            team.addMember(team_member, team.teamowner)
+            team.addMember(team_member, team)
         _, token = self.factory.makeAccessToken(owner=team, target=target)
         self.factory.makeAccessToken(target=target)
 
@@ -457,13 +457,13 @@ class TestAccessTokenSetBase:
 class TestGitRepositoryAccessTokenSet(
     TestAccessTokenSetBase, TestCaseWithFactory
 ):
-    def makeTarget(self):
-        return self.factory.makeGitRepository()
+    def makeTarget(self, **kwargs):
+        return self.factory.makeGitRepository(**kwargs)
 
 
 class TestProjectAccessTokenSet(TestAccessTokenSetBase, TestCaseWithFactory):
-    def makeTarget(self):
-        return self.factory.makeProduct()
+    def makeTarget(self, **kwargs):
+        return self.factory.makeProduct(**kwargs)
 
 
 class TestAccessTokenTargetBase:
