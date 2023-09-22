@@ -31,6 +31,7 @@ from storm.expr import (
     Or,
     Select,
 )
+from storm.info import ClassAlias
 from storm.locals import (
     Bool,
     DateTime,
@@ -1891,6 +1892,10 @@ class ProductSet:
         if roles.in_admin or roles.in_commercial_admin:
             return True
 
+        # In places where this method is used, they might want to use
+        # TeamParticipation. This ensures that we use a different one.
+        ownership_participation = ClassAlias(TeamParticipation)
+
         # Normal users can see any project for which they can see either
         # an entire policy or an artifact.
         # XXX wgrant 2015-06-26: This is slower than ideal for people in
@@ -1905,12 +1910,12 @@ class ProductSet:
                     tables=(
                         AccessPolicyGrantFlat,
                         Join(
-                            TeamParticipation,
-                            TeamParticipation.team_id
+                            ownership_participation,
+                            ownership_participation.team_id
                             == AccessPolicyGrantFlat.grantee_id,
                         ),
                     ),
-                    where=(TeamParticipation.person == user),
+                    where=(ownership_participation.person_id == user.id),
                 ),
             ),
             False,

@@ -13,7 +13,6 @@ from datetime import datetime, timedelta, timezone
 
 from storm.databases.postgres import JSON
 from storm.expr import SQL, And, Cast, Or, Select, Update
-from storm.info import ClassAlias
 from storm.locals import DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer
@@ -188,63 +187,57 @@ class AccessTokenSet:
         self, target, visible_by_user=None, include_expired=False
     ):
         """See `IAccessTokenSet`."""
+
         clauses = []
         if IGitRepository.providedBy(target):
             clauses.append(AccessToken.git_repository == target)
-            if visible_by_user is not None:
-                collection = (
-                    getUtility(IAllGitRepositories)
-                    .visibleByUser(visible_by_user)
-                    .ownedByTeamMember(visible_by_user)
-                )
-                ids = collection.getRepositoryIds()
-                clauses.append(
-                    Or(
-                        AccessToken.owner_id.is_in(
-                            Select(
-                                TeamParticipation.team_id,
-                                where=TeamParticipation.person
-                                == visible_by_user,
-                            )
-                        ),
-                        AccessToken.git_repository_id.is_in(
-                            removeSecurityProxy(ids)._get_select()
-                        ),
-                    )
-                )
         elif IProduct.providedBy(target):
             clauses.append(AccessToken.project == target)
-            if visible_by_user is not None:
+        else:
+            raise TypeError("Unsupported target: {!r}".format(target))
+
+        if visible_by_user is not None:
+            # Evaluate if user owns the target (directly or indirectly).
+            # The queries below might look more complex than they should to
+            # evaluate ownership, but they are more performant as this will run
+            # in one single query in the end.
+            if IGitRepository.providedBy(target):
+                user_owns_target = AccessToken.git_repository_id.is_in(
+                    removeSecurityProxy(
+                        (
+                            getUtility(IAllGitRepositories)
+                            .visibleByUser(visible_by_user)
+                            .ownedByTeamMember(visible_by_user)
+                        ).getRepositoryIds()
+                    )._get_select()
+                )
+            else:
                 # Avoid circular import
                 from lp.registry.model.product import Product, ProductSet
 
-                clauses.append(Product.active)
-
-                team_participation_ids = Select(
-                    TeamParticipation.team_id,
-                    where=TeamParticipation.person == visible_by_user,
-                )
-
-                # getProductPrivacyFilter may also use TeamParticipation, so
-                # ensure we use a different one.
-                ownership_participation = ClassAlias(TeamParticipation)
-                owned_projects = Select(
-                    Product.id,
-                    where=And(
-                        Product._owner_id == ownership_participation.team_id,
-                        ownership_participation.person_id
-                        == visible_by_user.id,
-                        ProductSet.getProductPrivacyFilter(visible_by_user),
-                    ),
-                )
-                clauses.append(
-                    Or(
-                        AccessToken.owner_id.is_in(team_participation_ids),
-                        AccessToken.project_id.is_in(owned_projects),
+                clauses.extend([Product.active, Product.id == target.id])
+                user_owns_target = AccessToken.project_id.is_in(
+                    Select(
+                        Product.id,
+                        where=And(
+                            Product._owner_id == TeamParticipation.team_id,
+                            TeamParticipation.person_id == visible_by_user.id,
+                            ProductSet.getProductPrivacyFilter(
+                                visible_by_user
+                            ),
+                        ),
                     )
                 )
-        else:
-            raise TypeError("Unsupported target: {!r}".format(target))
+
+            user_owns_token = AccessToken.owner_id.is_in(
+                Select(
+                    TeamParticipation.team_id,
+                    where=TeamParticipation.person_id == visible_by_user.id,
+                )
+            )
+
+            clauses.append(Or(user_owns_target, user_owns_token))
+
         if not include_expired:
             clauses.append(
                 Or(
@@ -255,7 +248,6 @@ class AccessTokenSet:
         return (
             IStore(AccessToken)
             .find(AccessToken, *clauses)
-            .config(distinct=True)
             .order_by(AccessToken.date_created)
         )
 

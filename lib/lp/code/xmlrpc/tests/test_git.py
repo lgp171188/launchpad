@@ -4122,7 +4122,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         repositories = [
             (self.factory.makeGitRepository(), False),
             (self.factory.makeGitRepository(owner=requester), False),
-            (self.factory.makeGitRepository(target=project), True),
+            (self.factory.makeGitRepository(target=project), False),
             (
                 self.factory.makeGitRepository(
                     owner=requester, target=project
