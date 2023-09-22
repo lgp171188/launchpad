@@ -10,10 +10,10 @@
 <div metal:fill-slot="main">
   <div>
     <p>
-      A snap package is a self-contained application that can be installed
-      on <a href="https://developer.ubuntu.com/en/snappy/">snappy Ubuntu
-      Core</a>.  Launchpad can build snap packages using <a
-      href="https://developer.ubuntu.com/en/snappy/snapcraft/">snapcraft</a>,
+      Snaps are Linux app packages for desktop, cloud and IoT that are
+      simple to install, secure, cross-platform, and dependency-free.
+      Launchpad can build snap packages using <a
+      href="https://snapcraft.io/docs/snapcraft">snapcraft</a>,
       from any Git or Bazaar branch on Launchpad that has a
       <tt>snap/snapcraft.yaml</tt>, <tt>build-aux/snap/snapcraft.yaml</tt>,
       <tt>snapcraft.yaml</tt>, or <tt>.snapcraft.yaml</tt> file at its top
