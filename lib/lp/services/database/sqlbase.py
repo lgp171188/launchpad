@@ -23,7 +23,7 @@ __all__ = [
     "StupidCache",
 ]
 
-from datetime import timezone
+from datetime import datetime, timezone
 
 import psycopg2
 import transaction
@@ -149,7 +149,9 @@ def quote(x):
 
     >>> from datetime import datetime, date, time
     >>> quote(datetime(2003, 12, 4, 13, 45, 50))
-    "'2003-12-04T13:45:50'"
+    "'2003-12-04 13:45:50'"
+    >>> quote(datetime(2003, 12, 4, 13, 45, 50, 123456))
+    "'2003-12-04 13:45:50.123456'"
     >>> quote(date(2003, 12, 4))
     "'2003-12-04'"
     >>> quote(time(13, 45, 50))
@@ -163,6 +165,8 @@ def quote(x):
     >>> quote(frozenset([1, 2, 3]))
     '(1, 2, 3)'
     """
+    if isinstance(x, datetime):
+        return "'%s'" % x
     return sqlrepr(x, "postgres")
 
 
