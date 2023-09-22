@@ -179,6 +179,22 @@ class TestPersonExportedID(TestCaseWithFactory):
         )
         self.assertEqual(person_id, body["id"])
 
+    def test_commercial_admin_can_see_id(self):
+        # A member of ~commercial-admins can read the `id` field.
+        person = self.factory.makePerson()
+        person_id = person.id
+        person_url = api_url(person)
+
+        body = (
+            webservice_for_person(
+                self.factory.makeCommercialAdmin(),
+                permission=OAuthPermission.WRITE_PRIVATE,
+            )
+            .get(person_url, api_version="devel")
+            .jsonBody()
+        )
+        self.assertEqual(person_id, body["id"])
+
 
 class TestPersonRepresentation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer

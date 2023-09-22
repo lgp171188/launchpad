@@ -126,9 +126,27 @@ class ModerateProjectGroupSet(ModerateByRegistryExpertsOrAdmins):
     usedfor = IProjectGroupSet
 
 
-class ModeratePerson(ModerateByRegistryExpertsOrAdmins):
+class ModeratePerson(AuthorizationBase):
     permission = "launchpad.Moderate"
     usedfor = IPerson
+
+    def checkAuthenticated(self, user):
+        """Allow admins, commercial admins, and registry experts.
+
+        Allowing commercial admins here is a bit of a cheat, but it allows
+        IS automation to see Person.id
+        (https://portal.admin.canonical.com/C158967) without needing to use
+        an account that's a fully-fledged member of ~admins.  The only extra
+        exposure here is that commercial admins gain the ability to set the
+        status of other people's accounts, which isn't completely ideal, but
+        in practice people in the commercial admins team are always
+        highly-privileged anyway.
+        """
+        return (
+            user.in_admin
+            or user.in_commercial_admin
+            or user.in_registry_experts
+        )
 
 
 class ViewPillar(AuthorizationBase):
