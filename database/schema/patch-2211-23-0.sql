@@ -3,7 +3,7 @@
 
 SET client_min_messages=ERROR;
 
-ALTER TABLE Snap ADD COLUMN pro_enable boolean DEFAULT false;;
+ALTER TABLE Snap ADD COLUMN pro_enable boolean;
 
 COMMENT ON COLUMN Snap.pro_enable IS 'Whether the use of private archive dependencies of the base is allowed.';
 
