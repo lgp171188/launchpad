@@ -1,0 +1,18 @@
+#! /bin/sh
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+# Part of the launchpad-codehosting Juju charm.
+
+set -e
+
+wantdir="$1/launchpad-bzr-sftp.service.wants"
+template=/lib/systemd/system/launchpad-bzr-sftp@.service
+
+# Generate systemd unit dependency symlinks for all configured
+# launchpad-bzr-sftp instances.
+mkdir -p "$wantdir"
+for i in $(seq {{ workers }}); do
+    ln -s "$template" "$wantdir/launchpad-bzr-sftp@$i.service"
+done
+

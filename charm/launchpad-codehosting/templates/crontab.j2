@@ -1,0 +1,29 @@
+TZ=UTC
+MAILFROM={{ bounce_address }}
+MAILTO={{ cron_mailto }}
+LPCONFIG=launchpad-codehosting
+
+{%- if active %}
+
+* * * * * {% if http_proxy %}http_proxy={{ http_proxy }} https_proxy={{ http_proxy }}{% endif %}{{ code_dir }}/cronscripts/supermirror-pull.py -q --log-file=INFO:{{ logs_dir }}/puller.log
+
+# remove from disk, deleted branches
+10 0 * * * {{ code_dir }}/cronscripts/process-job-source.py IReclaimBranchSpaceJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IReclaimBranchSpaceJobSource.log
+
+# Archive supermirror SFTP log files per https://portal.admin.canonical.com/C26974
+5 0 * * * {{ scripts_dir }}/cleanlogs
+
+# Translations to branch script https://portal.admin.canonical.com/C35040
+30 04 * * * {{ code_dir }}/cronscripts/translations-export-to-branch.py -q --log-file=DEBUG:{{ logs_dir }}/translations-export-to-branch.log
+
+# Upgrade branches script
+*/10 * * * * {{ code_dir }}/cronscripts/process-job-source.py IBranchUpgradeJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IBranchUpgradeJobSource.log
+
+# cleanup old crud in /tmp cf. https://bugs.launchpad.net/launchpad/+bug/979511
+6 4 * * *  find /tmp -maxdepth 1 -name 'bzr-index-*' -type f -mtime +15 -delete
+
+{%- endif %}
+
+# OOPS amqp
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+

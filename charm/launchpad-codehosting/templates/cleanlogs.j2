@@ -1,0 +1,16 @@
+#!/bin/bash
+
+ROOTDIR={{ logs_dir }}/sftp-logs
+DEST=$ROOTDIR/archives/$(date +%F)
+
+mkdir -p $DEST
+find -L $ROOTDIR -maxdepth 1 -type f -name 'bzr-sftp?.log.*' -exec mv {} $DEST/ \;
+
+cd $DEST
+for i in $(ls)
+do
+	gzip $i
+done
+
+# Remove older than 90 days
+find -L $ROOTDIR/archives -maxdepth 1 -type d -mtime +90 -print0 | xargs -0r rm -r

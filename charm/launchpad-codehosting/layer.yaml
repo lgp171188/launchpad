@@ -1,0 +1,15 @@
+includes:
+  - layer:launchpad-db
+  - interface:apache-website
+  - interface:http
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+        roles:
+          - branch-rewrite
+          - reclaim-branch-space
+          - translationstobranch
+          - upgrade-branches
+repo: https://git.launchpad.net/launchpad
