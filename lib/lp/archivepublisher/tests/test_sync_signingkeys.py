@@ -53,6 +53,9 @@ from lp.testing.script import run_script
 
 class TestSyncSigningKeysScript(TestCaseWithFactory):
     layer = ZopelessDatabaseLayer
+    # A timeout of 30 seconds is slightly too short and can lead to
+    # non-relevant test failures. 45 seconds is a value estimated from trial
+    # and error.
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=45)
 
     def setUp(self):
