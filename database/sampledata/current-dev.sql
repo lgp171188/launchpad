@@ -8947,8 +8947,6 @@ ALTER TABLE public.revisionstatusartifact ENABLE TRIGGER ALL;
 
 ALTER TABLE public.scriptactivity DISABLE TRIGGER ALL;
 
-INSERT INTO public.scriptactivity (id, name, hostname, date_started, date_completed) VALUES (1, 'launchpad-targetnamecacheupdater', 'whatever', '2007-08-08 17:02:22.963565', '2007-08-08 17:02:23.869575');
-INSERT INTO public.scriptactivity (id, name, hostname, date_started, date_completed) VALUES (2, 'script-monitor-test', 'localhost', '2007-05-23 00:00:00', '2007-05-23 01:00:00');
 
 
 ALTER TABLE public.scriptactivity ENABLE TRIGGER ALL;
