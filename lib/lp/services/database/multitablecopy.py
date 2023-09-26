@@ -10,7 +10,7 @@ import time
 from zope.interface import implementer
 
 from lp.services.database import postgresql
-from lp.services.database.sqlbase import cursor, quote, quoteIdentifier
+from lp.services.database.sqlbase import cursor, quote, quote_identifier
 from lp.services.looptuner import DBLoopTuner, ITunableLoop
 
 
@@ -295,7 +295,7 @@ class MultiTableCopy:
         Return value is properly quoted for use as an SQL identifier.
         """
         raw_name = self.getRawHoldingTableName(tablename, suffix)
-        return quoteIdentifier(raw_name)
+        return quote_identifier(raw_name)
 
     def _pointsToTable(self, source_table, foreign_key):
         """Name of table that source_table.foreign_key refers to.
@@ -353,9 +353,9 @@ class MultiTableCopy:
             extracted.  The WHERE clause may refer to rows from table being
             extracted as "source."
         :param id_sequence: SQL sequence that should assign new identifiers
-            for the extracted rows.  Defaults to `source_table` with "_seq_id"
-            appended, which by SQLObject/Launchpad convention is the sequence
-            that provides `source_table`'s primary key values.  Used verbatim,
+            for the extracted rows.  Defaults to `source_table` with "_id_seq"
+            appended, which by Launchpad convention is the sequence that
+            provides `source_table`'s primary key values.  Used verbatim,
             without quoting.
         :param inert_where: Boolean SQL expression characterizing rows that
             are extracted, but should not poured back into `source_table`

@@ -13,7 +13,7 @@ import sys
 from optparse import OptionParser
 
 from lp.services.database.postgresql import listReferences
-from lp.services.database.sqlbase import connect, quoteIdentifier, sqlvalues
+from lp.services.database.sqlbase import connect, quote_identifier, sqlvalues
 from lp.services.scripts import db_options
 
 
@@ -76,8 +76,8 @@ def main():
     for referring_table, referring_column in sorted(references):
         if referring_table == "libraryfiledownloadcount":
             continue
-        quoted_referring_table = quoteIdentifier(referring_table)
-        quoted_referring_column = quoteIdentifier(referring_column)
+        quoted_referring_table = quote_identifier(referring_table)
+        quoted_referring_column = quote_identifier(referring_column)
         cur.execute(
             """
             SELECT

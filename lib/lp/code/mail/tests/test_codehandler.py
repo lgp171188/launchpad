@@ -149,7 +149,7 @@ class TestCodeHandler(TestCaseWithFactory):
             self.code_handler.process(mail, email_addr, None),
             "Succeeded, but didn't return True",
         )
-        # if the message has not been created, this raises SQLObjectNotFound
+        # if the message has not been created, this raises NotFoundError.
         MessageSet().get("<my-id>")
 
     def test_process_packagebranch(self):

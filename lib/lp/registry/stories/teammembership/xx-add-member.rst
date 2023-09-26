@@ -23,8 +23,10 @@ Let's make sure that 'cprov' is now an Approved member of
     >>> from lp.registry.model.person import Person
     >>> from lp.registry.model.teammembership import TeamMembership
     >>> from lp.services.database.interfaces import IStore
-    >>> cprov = Person.byName("cprov")
-    >>> landscape_team = Person.byName("landscape-developers")
+    >>> cprov = IStore(Person).find(Person, name="cprov").one()
+    >>> landscape_team = (
+    ...     IStore(Person).find(Person, name="landscape-developers").one()
+    ... )
     >>> cprov_landscape_membership = (
     ...     IStore(TeamMembership)
     ...     .find(TeamMembership, person=cprov, team=landscape_team)
@@ -56,7 +58,7 @@ become a member.
 As we can see, the launchpad team will not be one of the team's active
 members.
 
-    >>> launchpad = Person.byName("launchpad")
+    >>> launchpad = IStore(Person).find(Person, name="launchpad").one()
     >>> launchpad in landscape_team.activemembers
     False
     >>> membership = (

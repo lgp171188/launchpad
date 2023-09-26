@@ -1045,7 +1045,7 @@ class IBranchView(
 
         :param notification_levels: An iterable of
             `BranchSubscriptionNotificationLevel`s
-        :return: An SQLObject query result.
+        :return: A `ResultSet` of `BranchSubscription`s.
         """
 
     def getBranchRevision(sequence=None, revision=None, revision_id=None):

@@ -12,6 +12,7 @@ from lp.archiveuploader.nascentupload import NascentUpload
 from lp.archiveuploader.tests import datadir, getPolicy
 from lp.archiveuploader.uploadpolicy import ArchiveUploadType
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.interfaces.component import IComponentSet
@@ -76,7 +77,7 @@ def prepareHoaryForUploads(test):
     ComponentSelection(distroseries=hoary, component=universe)
 
     # Create a fake hoary/i386 chroot.
-    fake_chroot = LibraryFileAlias.get(1)
+    fake_chroot = IStore(LibraryFileAlias).get(LibraryFileAlias, 1)
     hoary["i386"].addOrUpdateChroot(fake_chroot)
 
     LaunchpadZopelessLayer.txn.commit()

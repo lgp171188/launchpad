@@ -49,7 +49,12 @@ class Library:
     # The following methods are read-only queries.
 
     def lookupBySHA1(self, digest):
-        return [fc.id for fc in LibraryFileContent.selectBy(sha1=digest)]
+        return [
+            fc.id
+            for fc in IStore(LibraryFileContent).find(
+                LibraryFileContent, sha1=digest
+            )
+        ]
 
     @defer.inlineCallbacks
     def _verifyMacaroon(self, macaroon, aliasid):
@@ -142,7 +147,7 @@ class Library:
     def getAliases(self, fileid):
         results = IStore(LibraryFileAlias).find(
             LibraryFileAlias,
-            LibraryFileAlias.contentID == LibraryFileContent.id,
+            LibraryFileAlias.content_id == LibraryFileContent.id,
             LibraryFileAlias.restricted == self.restricted,
             LibraryFileContent.id == fileid,
         )
@@ -151,20 +156,22 @@ class Library:
     # the following methods are used for adding to the library
 
     def add(self, digest, size, md5_digest, sha256_digest):
+        store = IStore(LibraryFileContent)
         lfc = LibraryFileContent(
             filesize=size, sha1=digest, md5=md5_digest, sha256=sha256_digest
         )
-        return lfc.id
+        store.add(lfc)
+        store.flush()
+        return lfc
 
-    def addAlias(self, fileid, filename, mimetype, expires=None):
-        """Add an alias, and return its ID.
-
-        If a matching alias already exists, it will return that ID instead.
-        """
-        return LibraryFileAlias(
-            contentID=fileid,
+    def addAlias(self, content, filename, mimetype, expires=None):
+        """Add an alias and return it."""
+        lfa = LibraryFileAlias(
+            content=content,
             filename=filename,
             mimetype=mimetype,
             expires=expires,
             restricted=self.restricted,
-        ).id
+        )
+        IStore(LibraryFileAlias).flush()
+        return lfa

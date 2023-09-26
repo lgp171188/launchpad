@@ -901,7 +901,7 @@ class CIBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         distroarchseries = load_related(
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )

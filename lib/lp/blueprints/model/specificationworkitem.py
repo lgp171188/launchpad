@@ -5,7 +5,9 @@ __all__ = [
     "SpecificationWorkItem",
 ]
 
-from storm.locals import Bool, Int, Reference, Unicode
+from datetime import timezone
+
+from storm.locals import Bool, DateTime, Int, Reference, Unicode
 from storm.store import Store
 from zope.interface import implementer
 
@@ -16,7 +18,6 @@ from lp.blueprints.interfaces.specificationworkitem import (
 )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import backslashreplace
@@ -40,7 +41,9 @@ class SpecificationWorkItem(StormBase):
         allow_none=False,
         default=SpecificationWorkItemStatus.TODO,
     )
-    date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
+    date_created = DateTime(
+        allow_none=False, default=DEFAULT, tzinfo=timezone.utc
+    )
     sequence = Int(allow_none=False)
     deleted = Bool(allow_none=False, default=False)
 

@@ -377,7 +377,7 @@ class CharmRecipeBuild(PackageBuildMixin, StormBase):
             (CharmFile, LibraryFileAlias, LibraryFileContent),
             CharmFile.build == self.id,
             LibraryFileAlias.id == CharmFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by([LibraryFileAlias.filename, CharmFile.id])
 
@@ -520,7 +520,7 @@ class CharmRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
-        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(LibraryFileContent, lfas, ["content_id"])
         distroarchserieses = load_related(
             DistroArchSeries, builds, ["distro_arch_series_id"]
         )

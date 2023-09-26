@@ -141,7 +141,9 @@ class InitializeDistroSeriesJob(DistributionJobDerived):
         parts += ", parent[overlay?/pockets/components]: "
         parents = []
         for i in range(len(self.overlays)):
-            series = IStore(DistroSeries).get(DistroSeries, self.parents[i])
+            series = IStore(DistroSeries).get(
+                DistroSeries, int(self.parents[i])
+            )
             parents.append(
                 "%s[%s/%s/%s]"
                 % (

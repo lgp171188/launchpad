@@ -5,10 +5,11 @@
 
 __all__ = ["SessionData", "SessionPkgData"]
 
-from storm.locals import Pickle, Unicode
+from datetime import timezone
+
+from storm.locals import DateTime, Pickle, Unicode
 from zope.interface import implementer, provider
 
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.stormbase import StormBase
 from lp.services.session.interfaces import IUseSessionStore
 
@@ -20,8 +21,8 @@ class SessionData(StormBase):
 
     __storm_table__ = "SessionData"
     client_id = Unicode(primary=True)
-    created = UtcDateTimeCol()
-    last_accessed = UtcDateTimeCol()
+    created = DateTime(tzinfo=timezone.utc)
+    last_accessed = DateTime(tzinfo=timezone.utc)
 
 
 @implementer(IUseSessionStore)

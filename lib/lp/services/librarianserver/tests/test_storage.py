@@ -105,10 +105,15 @@ class LibrarianStorageTestCase(unittest.TestCase):
         newfile = self.storage.startAddFile("file", len(data))
         newfile.append(data)
         lfc_id, lfa_id = newfile.store()
-        lfc = LibraryFileContent.get(lfc_id)
+        lfc = self.store.get(LibraryFileContent, lfc_id)
         self.assertEqual(md5, lfc.md5)
         self.assertEqual(sha1, lfc.sha1)
         self.assertEqual(sha256, lfc.sha256)
+
+
+class StubLibraryFileContent:
+    def __init__(self, id):
+        self.id = id
 
 
 class StubLibrary:
@@ -117,11 +122,11 @@ class StubLibrary:
     def lookupBySHA1(self, digest):
         return []
 
-    def addAlias(self, fileid, filename, mimetype):
+    def addAlias(self, content, filename, mimetype):
         pass
 
     id = 0x11111110
 
     def add(self, digest, size):
         self.id += 1
-        return self.id
+        return StubLibraryFileContent(self.id)

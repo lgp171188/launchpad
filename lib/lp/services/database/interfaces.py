@@ -9,7 +9,6 @@ __all__ = [
     "IPrimaryObject",
     "IPrimaryStore",
     "IRequestExpired",
-    "ISQLBase",
     "IStandbyStore",
     "IStore",
     "IStoreSelector",
@@ -21,22 +20,12 @@ __all__ = [
 
 from zope.interface import Interface
 from zope.interface.common.interfaces import IRuntimeError
-from zope.schema import Int
 
 
 class IRequestExpired(IRuntimeError):
     """A RequestExpired exception is raised if the current request has
     timed out.
     """
-
-
-# XXX 2007-02-09 jamesh:
-# This derived from sqlos.interfaces.ISQLObject before hand.  I don't
-# think it is ever used though ...
-class ISQLBase(Interface):
-    """An extension of ISQLObject that provides an ID."""
-
-    id = Int(title="The integer ID for the instance")
 
 
 #

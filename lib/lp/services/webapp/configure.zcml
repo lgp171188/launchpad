@@ -50,10 +50,6 @@
         factory='.batching.FiniteSequenceAdapter' />
 
     <adapter
-        factory='.batching.FiniteSequenceAdapter'
-        for='storm.zope.interfaces.ISQLObjectResultSet' />
-
-    <adapter
         factory='.batching.BoundReferenceSetAdapter'
         for='storm.references.BoundReferenceSet' />
 
@@ -246,10 +242,6 @@
 
     <adapter
         factory="lp.services.webapp.snapshot.snapshot_sql_result" />
-    <!-- It also works for the legacy SQLObject interface. -->
-    <adapter
-        factory="lp.services.webapp.snapshot.snapshot_sql_result"
-        for="storm.zope.interfaces.ISQLObjectResultSet" />
 
     <class class="lp.services.webapp.publisher.RenamedView">
         <allow interface="zope.publisher.interfaces.browser.IBrowserPublisher"

@@ -248,8 +248,8 @@ class RestrictedMembershipsPersonView(LaunchpadView):
         Private teams are filtered out if the user is not a member of them.
         """
         # This method returns a list as opposed to the database object's
-        # getLatestApprovedMembershipsForPerson which returns a sqlobject
-        # result set.
+        # getLatestApprovedMembershipsForPerson which returns a Storm
+        # ResultSet.
         membership_list = self.context.getLatestApprovedMembershipsForPerson()
         return [
             membership
@@ -265,8 +265,7 @@ class RestrictedMembershipsPersonView(LaunchpadView):
         Private teams are filtered out if the user is not a member of them.
         """
         # This method returns a list as opposed to the database object's
-        # teams_with_icons which returns a sqlobject
-        # result set.
+        # teams_with_icons which returns a Storm ResultSet.
         return [
             team
             for team in self.context.teams_with_icons
@@ -576,7 +575,7 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
             if not archive_id.isdigit():
                 return None
             return traverse_archive_subscription_for_subscriber(
-                self.context, archive_id
+                self.context, int(archive_id)
             )
         else:
             # Otherwise we return the normal view for a person's
@@ -2099,7 +2098,7 @@ class PersonParticipationView(LaunchpadView):
             # The member is a direct member; use the membership data.
             datejoined = membership.datejoined
             dateexpires = membership.dateexpires
-            if membership.person_id == team.teamownerID:
+            if membership.person_id == team.teamowner_id:
                 role = "Owner"
             elif membership.status == TeamMembershipStatus.ADMIN:
                 role = "Admin"

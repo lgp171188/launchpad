@@ -1161,6 +1161,15 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
+    def _makeGitRepositoryWithRefs(self, **kwargs):
+        """Helper method to create a git repository with a default branch"""
+        repository = self.factory.makeGitRepository(**kwargs)
+        self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/main"]
+        )
+        removeSecurityProxy(repository).default_branch = "refs/heads/main"
+        return repository
+
     def test_confirm_git_repository_creation(self):
         owner = self.factory.makePerson()
         repo = removeSecurityProxy(self.factory.makeGitRepository(owner=owner))
@@ -2821,11 +2830,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # pushed by a user that has their ordinary privileges on the
         # corresponding repository.
         requester_owner = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester_owner)
-        self.factory.makeGitRefs(
-            repository=repository, paths=["refs/heads/master"]
-        )
-        removeSecurityProxy(repository).default_branch = "refs/heads/master"
+        repository = self._makeGitRepositoryWithRefs(owner=requester_owner)
         pushed_branch = "branch1"
         self.assertHasMergeProposalURL(
             repository, pushed_branch, {"uid": requester_owner.id}
@@ -2857,12 +2862,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
         self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
         requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
+        repository = self._makeGitRepositoryWithRefs(owner=requester)
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        self.factory.makeGitRefs(
-            repository=repository, paths=["refs/heads/master"]
-        )
-        removeSecurityProxy(repository).default_branch = "refs/heads/master"
 
         pushed_branch = "branch1"
         with person_logged_in(requester):
@@ -2890,11 +2891,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         )
         requesters = [self.factory.makePerson() for _ in range(2)]
         owner = self.factory.makeTeam(members=requesters)
-        repository = self.factory.makeGitRepository(owner=owner)
-        self.factory.makeGitRefs(
-            repository=repository, paths=["refs/heads/master"]
-        )
-        removeSecurityProxy(repository).default_branch = "refs/heads/master"
+        repository = self._makeGitRepositoryWithRefs(owner=owner)
         pushed_branch = "branch1"
         macaroon = issuer.issueMacaroon(repository)
 
@@ -2935,11 +2932,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # pushed by a user with a suitable access token that has their
         # ordinary privileges on the corresponding repository.
         requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
-        self.factory.makeGitRefs(
-            repository=repository, paths=["refs/heads/main"]
-        )
-        removeSecurityProxy(repository).default_branch = "refs/heads/main"
+        repository = self._makeGitRepositoryWithRefs(owner=requester)
         _, token = self.factory.makeAccessToken(
             owner=requester,
             target=repository,
@@ -2954,11 +2947,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # getMergeProposalURL refuses access tokens for a different
         # repository.
         requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
-        self.factory.makeGitRefs(
-            repository=repository, paths=["refs/heads/main"]
-        )
-        removeSecurityProxy(repository).default_branch = "refs/heads/main"
+        repository = self._makeGitRepositoryWithRefs(owner=requester)
         _, token = self.factory.makeAccessToken(
             owner=requester, scopes=[AccessTokenScope.REPOSITORY_PUSH]
         )

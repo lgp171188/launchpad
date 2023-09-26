@@ -100,8 +100,8 @@ class TestRevisionAuthorMatching(MakeHarryTestCase):
         # Check a VALIDATED email address is used to link.
         harry = self._makeHarry(EmailAddressStatus.VALIDATED)
         author = self._createRevisionAuthor()
-        # Reget harry as the SQLObject cache has been flushed on
-        # transaction boundary.
+        # Reget harry as the Storm cache has been flushed on transaction
+        # boundary.
         harry = getUtility(IPersonSet).getByName("harry")
         self.assertEqual("harry@canonical.com", author.email)
         self.assertEqual(harry, author.person)
@@ -110,8 +110,8 @@ class TestRevisionAuthorMatching(MakeHarryTestCase):
         # Check a OLD email address is used to link.
         harry = self._makeHarry(EmailAddressStatus.OLD)
         author = self._createRevisionAuthor()
-        # Reget harry as the SQLObject cache has been flushed on
-        # transaction boundary.
+        # Reget harry as the Storm cache has been flushed on transaction
+        # boundary.
         harry = getUtility(IPersonSet).getByName("harry")
         self.assertEqual("harry@canonical.com", author.email)
         self.assertEqual(harry, author.person)
@@ -120,8 +120,8 @@ class TestRevisionAuthorMatching(MakeHarryTestCase):
         # Check a PREFERRED email address is used to link.
         harry = self._makeHarry(EmailAddressStatus.PREFERRED)
         author = self._createRevisionAuthor()
-        # Reget harry as the SQLObject cache has been flushed on
-        # transaction boundary.
+        # Reget harry as the Storm cache has been flushed on transaction
+        # boundary.
         harry = getUtility(IPersonSet).getByName("harry")
         self.assertEqual("harry@canonical.com", author.email)
         self.assertEqual(harry, author.person)

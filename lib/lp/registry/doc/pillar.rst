@@ -269,13 +269,17 @@ by that pillar name
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.projectgroup import IProjectGroupSet
     >>> from lp.registry.model.pillar import PillarName
+    >>> from lp.services.database.interfaces import IStore
 
     >>> ubuntu = getUtility(IDistributionSet).getByName("ubuntu")
     >>> gnome = getUtility(IProjectGroupSet).getByName("gnome")
-    >>> ubuntu_pillarname = PillarName.selectOneBy(name="ubuntu")
+    >>> ubuntu_pillarname = (
+    ...     IStore(PillarName).find(PillarName, name="ubuntu").one()
+    ... )
     >>> ubuntu_pillarname.pillar == ubuntu
     True
-    >>> gnome_pillarname = PillarName.selectOneBy(name="gnome")
+    >>> gnome_pillarname = (
+    ...     IStore(PillarName).find(PillarName, name="gnome").one()
+    ... )
     >>> gnome_pillarname.pillar == gnome
     True
-

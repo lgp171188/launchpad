@@ -169,7 +169,7 @@ Celso is a member of ubuntu-team, so he can edit this release too:
 
 And if no-priv drives the series...
 
-    >>> no_priv = Person.selectOneBy(name="no-priv")
+    >>> no_priv = IStore(Person).find(Person, name="no-priv").one()
     >>> tomcat.getSeries("trunk").driver = no_priv
 
 ... they can edit existing releases as well, even if they are owned by

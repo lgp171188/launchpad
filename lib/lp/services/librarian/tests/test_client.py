@@ -20,7 +20,7 @@ from testtools.testcase import ExpectedException
 
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
-from lp.services.database.interfaces import IStandbyStore
+from lp.services.database.interfaces import IStandbyStore, IStore
 from lp.services.database.policy import StandbyDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
@@ -387,8 +387,9 @@ class LibrarianClientTestCase(TestCase):
         sha256 = hashlib.sha256(data).hexdigest()
 
         client = LibrarianClient()
-        lfa = LibraryFileAlias.get(
-            client.addFile("file", len(data), io.BytesIO(data), "text/plain")
+        lfa = IStore(LibraryFileAlias).get(
+            LibraryFileAlias,
+            client.addFile("file", len(data), io.BytesIO(data), "text/plain"),
         )
 
         self.assertEqual(md5, lfa.content.md5)
@@ -427,7 +428,7 @@ class LibrarianClientTestCase(TestCase):
                 "expected %s to start with %s" % (download_url, expected_host),
             )
             # If the alias has been deleted, _getURLForDownload returns None.
-            lfa = LibraryFileAlias.get(alias_id)
+            lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, alias_id)
             lfa.content = None
             call = block_implicit_flushes(  # Prevent a ProgrammingError
                 LibrarianClient._getURLForDownload
@@ -469,7 +470,7 @@ class LibrarianClientTestCase(TestCase):
                 "expected %s to start with %s" % (download_url, expected_host),
             )
             # If the alias has been deleted, _getURLForDownload returns None.
-            lfa = LibraryFileAlias.get(alias_id)
+            lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, alias_id)
             lfa.content = None
             call = block_implicit_flushes(  # Prevent a ProgrammingError
                 RestrictedLibrarianClient._getURLForDownload

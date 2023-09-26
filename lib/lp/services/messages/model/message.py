@@ -720,8 +720,7 @@ class UserToUserEmail(StormBase):
         # On the other hand, we really don't need a UserToUserEmailSet for any
         # other purpose.  There isn't any other relationship that can be
         # inferred, so in this case I think it makes fine sense for the
-        # constructor to add self to the store.  Also, this closely mimics
-        # what the SQLObject compatibility layer does.
+        # constructor to add self to the store.
         Store.of(sender).add(self)
 
 

@@ -15,7 +15,7 @@ We'll start by adding some attachments to the bug:
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.testing import login, logout
     >>> login("foo.bar@canonical.com")
-    >>> mark = Person.selectOneBy(name="mark")
+    >>> mark = IStore(Person).find(Person, name="mark").one()
     >>> mark.display_name = "M\xe1rk Sh\xfattlew\xf2rth"
     >>> bug = IStore(Bug).get(Bug, 1)
     >>> content = BytesIO(b"<html><body>bogus</body></html>")

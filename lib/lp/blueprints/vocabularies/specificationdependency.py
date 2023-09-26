@@ -168,7 +168,7 @@ class SpecificationDepCandidatesVocabulary(StormVocabularyBase):
         raise LookupError(token)
 
     def search(self, query, vocab_filter=None):
-        """See `SQLObjectVocabularyBase.search`.
+        """See `StormVocabularyBase.search`.
 
         We find specs where query is in the text of name or title, or matches
         the full text index and then filter out ineligible specs using

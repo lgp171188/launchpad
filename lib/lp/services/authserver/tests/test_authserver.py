@@ -6,12 +6,12 @@
 import xmlrpc.client
 
 from pymacaroons import Macaroon
-from storm.sqlobject import SQLObjectNotFound
 from testtools.matchers import Equals, Is, MatchesListwise, MatchesStructure
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.publisher.xmlrpc import TestRequest
 
+from lp.app.errors import NotFoundError
 from lp.services.authserver.interfaces import (
     IAuthServer,
     IAuthServerApplication,
@@ -266,7 +266,7 @@ class MacaroonTests(TestCaseWithFactory):
         # Pick a large ID that doesn't exist in sampledata.
         lfa_id = 1000000
         self.assertRaises(
-            SQLObjectNotFound,
+            NotFoundError,
             getUtility(ILibraryFileAliasSet).__getitem__,
             lfa_id,
         )

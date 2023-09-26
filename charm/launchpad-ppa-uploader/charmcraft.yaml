@@ -61,3 +61,4 @@ parts:
       - CHARM_INTERFACES_DIR: $CRAFT_STAGE/layers/interface
       - PIP_NO_INDEX: "true"
       - PIP_FIND_LINKS: $CRAFT_STAGE/charm-wheels
+    reactive-charm-build-arguments: [--binary-wheels-from-source]

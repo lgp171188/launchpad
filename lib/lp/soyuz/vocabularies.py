@@ -11,6 +11,7 @@ __all__ = [
     "PPAVocabulary",
 ]
 
+from storm.expr import Is
 from storm.locals import And, Or
 from zope.component import getUtility
 from zope.interface import implementer
@@ -22,11 +23,7 @@ from lp.registry.model.person import Person
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import fti_search
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.vocabulary import (
-    IHugeVocabulary,
-    SQLObjectVocabularyBase,
-    StormVocabularyBase,
-)
+from lp.services.webapp.vocabulary import IHugeVocabulary, StormVocabularyBase
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.model.archive import Archive, get_enabled_archive_filter
@@ -86,18 +83,17 @@ class PackageReleaseVocabulary(StormVocabularyBase):
 
 
 @implementer(IHugeVocabulary)
-class PPAVocabulary(SQLObjectVocabularyBase):
+class PPAVocabulary(StormVocabularyBase):
     _table = Archive
-    _orderBy = ["Person.name, Archive.name"]
-    _clauseTables = ["Person"]
+    _order_by = ["Person.name", "Archive.name"]
     # This should probably also filter by privacy, but that becomes
     # problematic when you need to remove a dependency that you can no
     # longer see.
-    _filter = And(
-        Archive._enabled == True,
-        Person.q.id == Archive.q.ownerID,
-        Archive.q.purpose == ArchivePurpose.PPA,
-    )
+    _clauses = [
+        Is(Archive._enabled, True),
+        Archive.owner == Person.id,
+        Archive.purpose == ArchivePurpose.PPA,
+    ]
     displayname = "Select a PPA"
     step_title = "Search"
 
@@ -121,7 +117,7 @@ class PPAVocabulary(SQLObjectVocabularyBase):
     def search(self, query, vocab_filter=None):
         """Return a resultset of archives.
 
-        This is a helper required by `SQLObjectVocabularyBase.searchForTerms`.
+        This is a helper required by `StormVocabularyBase.searchForTerms`.
         """
         if not query:
             return self.emptySelectResults()
@@ -147,17 +143,18 @@ class PPAVocabulary(SQLObjectVocabularyBase):
                 Person.name == owner_name, Archive.name == archive_name
             )
 
-        clause = And(
-            self._filter,
+        extra_clauses = [
             get_enabled_archive_filter(
                 getUtility(ILaunchBag).user,
                 purpose=ArchivePurpose.PPA,
                 include_public=True,
             ),
             search_clause,
-        )
-        return self._table.select(
-            clause, orderBy=self._orderBy, clauseTables=self._clauseTables
+        ]
+        return (
+            IStore(self._table)
+            .find(self._table, *self._clauses, *extra_clauses)
+            .order_by(self._order_by)
         )
 
 

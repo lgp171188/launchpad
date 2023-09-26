@@ -482,8 +482,8 @@ class IQuestion(IHasOwner):
 
         Return the created IQuestionMessage.
 
-        (Note this method is named expireQuestion and not expire because of
-        conflicts with SQLObject.)
+        (Note this method is named expireQuestion and not expire because it
+        used to conflict with SQLObject.)
 
         This method should fire an IObjectCreatedEvent for the created
         IQuestionMessage and an IObjectModifiedEvent for the question.

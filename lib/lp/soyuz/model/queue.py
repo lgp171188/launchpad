@@ -451,7 +451,7 @@ class PackageUpload(StormBase):
                 AND bpf.libraryfile = lfa.id
                 AND lfa.filename IN (%%s)
         """ % sqlvalues(
-            self.archive, self.distroseries.distribution.id
+            self.archive_id, self.distroseries.distribution_id
         )
         # Inject the inner query.
         query %= inner_query
@@ -1899,7 +1899,7 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     )
 
     puc_lfas = load_related(LibraryFileAlias, pucs, ["libraryfilealias_id"])
-    load_related(LibraryFileContent, puc_lfas, ["contentID"])
+    load_related(LibraryFileContent, puc_lfas, ["content_id"])
 
     for spr_cache in sprs:
         get_property_cache(spr_cache).published_archives = []

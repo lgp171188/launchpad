@@ -341,7 +341,7 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
             ),
             Join(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
         ]
         results = store.using(*origin).find(
@@ -483,7 +483,7 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
             BinaryPackageRelease.id
             == BinaryPackageFile.binarypackagerelease_id,
             LibraryFileAlias.id == BinaryPackageFile.libraryfile_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by(
             [LibraryFileAlias.filename, BinaryPackageRelease.id]
@@ -942,7 +942,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
         self._prefetchBuildData(builds)
         das = load_related(DistroArchSeries, builds, ["distro_arch_series_id"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         distroseries = load_related(DistroSeries, das, ["distroseries_id"])
         load_related(Distribution, distroseries, ["distribution_id"])
 
@@ -1352,7 +1352,7 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
             ),
             LeftJoin(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
             LeftJoin(Builder, Builder.id == BinaryPackageBuild.builder_id),
         )

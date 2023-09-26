@@ -3,15 +3,16 @@
 
 __all__ = ["ParsedApacheLog"]
 
+from datetime import timezone
+
 import six
-from storm.locals import Int, Unicode
+from storm.locals import DateTime, Int, Unicode
 from zope.interface import implementer
 
 from lp.services.apachelogparser.interfaces.parsedapachelog import (
     IParsedApacheLog,
 )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 
@@ -25,7 +26,9 @@ class ParsedApacheLog(StormBase):
     id = Int(primary=True)
     first_line = Unicode(allow_none=False)
     bytes_read = Int(allow_none=False)
-    date_last_parsed = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    date_last_parsed = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )
 
     def __init__(self, first_line, bytes_read):
         super().__init__()

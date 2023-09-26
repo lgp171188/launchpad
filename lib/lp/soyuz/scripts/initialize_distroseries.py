@@ -857,7 +857,7 @@ class InitializeDistroSeries:
                     FROM Archivepermission WHERE packageset = %s
                     """
                     % sqlvalues(
-                        self.distroseries.main_archive,
+                        self.distroseries.main_archive.id,
                         child_ps.id,
                         parent_ps.id,
                     )
@@ -913,7 +913,7 @@ class InitializeDistroSeries:
                     WHERE pocket IS NOT NULL AND distroseries = %s
                     """
                     % sqlvalues(
-                        self.distroseries.main_archive,
+                        self.distroseries.main_archive.id,
                         self.distroseries.id,
                         parent.id,
                     )

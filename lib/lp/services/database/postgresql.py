@@ -8,7 +8,7 @@ and table manipulation
 
 import re
 
-from lp.services.database.sqlbase import quote, quoteIdentifier, sqlvalues
+from lp.services.database.sqlbase import quote, quote_identifier, sqlvalues
 
 
 def listReferences(cur, table, column, indirect=True, _state=None):
@@ -308,8 +308,8 @@ def generateResetSequencesSQL(cur):
         if table is None or column is None:
             continue
         sql = "SELECT max(%s) FROM %s" % (
-            quoteIdentifier(column),
-            quoteIdentifier(table),
+            quote_identifier(column),
+            quote_identifier(table),
         )
         cur.execute(sql)
         last_value = cur.fetchone()[0]

@@ -94,7 +94,7 @@ IBugLinkTarget.
     >>> print(view.cancel_url)
     http://bugs.launchpad.test/bugs/cve/2005-2730
 
-After removing the bugs, it sends a SQLObjectModified event.
+After removing the bugs, it sends an ObjectModifiedEvent.
 
     >>> request = LaunchpadTestRequest(
     ...     method="POST",

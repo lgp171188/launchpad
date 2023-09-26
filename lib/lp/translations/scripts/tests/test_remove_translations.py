@@ -420,7 +420,7 @@ class TestRemoveTranslations(TestCase):
         # on reviewer instead.
         new_nl_message.reviewer = self.potemplate.owner
 
-        self._removeMessages(submitter=carlos)
+        self._removeMessages(submitter=carlos.id)
         self._checkInvariant()
 
     def test_RemoveByReviewer(self):
@@ -434,7 +434,7 @@ class TestRemoveTranslations(TestCase):
         new_nl_message.reviewer = carlos
         new_de_message.reviewer = carlos
 
-        self._removeMessages(reviewer=carlos)
+        self._removeMessages(reviewer=carlos.id)
         self._checkInvariant()
 
     def test_RemoveByDateCreated(self):
@@ -473,7 +473,7 @@ class TestRemoveTranslations(TestCase):
         )
         removeSecurityProxy(new_de_message).submitter = mark
 
-        self._removeMessages(submitter=carlos, date_created="2015-05-12")
+        self._removeMessages(submitter=carlos.id, date_created="2015-05-12")
 
         # First make sure we're not reading out of cache.
         Store.of(self.nl_pofile).flush()
@@ -502,7 +502,7 @@ class TestRemoveTranslations(TestCase):
         )
 
         rowcount = self._removeMessages(
-            submitter=carlos, date_created="2015-05-12"
+            submitter=carlos.id, date_created="2015-05-12"
         )
 
         self.assertEqual(rowcount, 1)

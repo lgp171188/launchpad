@@ -13,20 +13,17 @@ __all__ = [
     "FilteredVocabularyBase",
     "ForgivingSimpleVocabulary",
     "IHugeVocabulary",
-    "NamedSQLObjectVocabulary",
     "NamedStormHugeVocabulary",
     "NamedStormVocabulary",
-    "SQLObjectVocabularyBase",
     "StormVocabularyBase",
     "VocabularyFilter",
 ]
 
 from collections import namedtuple
-from typing import Optional, Union
+from typing import Optional
 
 import six
 from storm.base import Storm  # noqa: B1
-from storm.expr import Expr
 from storm.store import EmptyResultSet
 from zope.interface import Attribute, Interface, implementer
 from zope.schema.interfaces import IVocabularyTokenized
@@ -34,8 +31,6 @@ from zope.schema.vocabulary import SimpleTerm, SimpleVocabulary
 from zope.security.proxy import isinstance as zisinstance
 
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import AND, CONTAINSSTRING
 
 
 class ForgivingSimpleVocabulary(SimpleVocabulary):
@@ -263,164 +258,6 @@ class FilteredVocabularyBase:
 
     def supportedFilters(self):
         return []
-
-
-@implementer(IVocabularyTokenized)
-class SQLObjectVocabularyBase(FilteredVocabularyBase):
-    """A base class for widgets that are rendered to collect values
-    for attributes that are SQLObjects, e.g. ForeignKey.
-
-    So if a content class behind some form looks like:
-
-    class Foo(SQLObject):
-        id = IntCol(...)
-        bar = ForeignKey(...)
-        ...
-
-    Then the vocabulary for the widget that captures a value for bar
-    should derive from SQLObjectVocabularyBase.
-    """
-
-    _orderBy = None  # type: Optional[str]
-    _filter = None  # type: Optional[Union[Expr, bool]]
-    _clauseTables = None
-
-    def __init__(self, context=None):
-        self.context = context
-
-    # XXX kiko 2007-01-16: note that the method searchForTerms is part of
-    # IHugeVocabulary, and so should not necessarily need to be
-    # implemented here; however, many of our vocabularies depend on
-    # searchForTerms for popup functionality so I have chosen to just do
-    # that. It is possible that a better solution would be to have the
-    # search functionality produce a new vocabulary restricted to the
-    # desired subset.
-    def searchForTerms(self, query=None, vocab_filter=None):
-        results = self.search(query, vocab_filter)
-        return CountableIterator(results.count(), results, self.toTerm)
-
-    def search(self, query, vocab_filter=None):
-        # This default implementation of searchForTerms glues together
-        # the legacy API of search() with the toTerm method. If you
-        # don't reimplement searchForTerms you will need to at least
-        # provide your own search() method.
-        raise NotImplementedError
-
-    def toTerm(self, obj):
-        # This default implementation assumes that your object has a
-        # title attribute. If it does not you will need to reimplement
-        # toTerm, or reimplement the whole searchForTerms.
-        return SimpleTerm(obj, obj.id, obj.title)
-
-    def __iter__(self):
-        """Return an iterator which provides the terms from the vocabulary."""
-        params = {}
-        if self._orderBy is not None:
-            params["orderBy"] = self._orderBy
-        if self._clauseTables is not None:
-            params["clauseTables"] = self._clauseTables
-        for obj in self._table.select(self._filter, **params):
-            yield self.toTerm(obj)
-
-    def __len__(self):
-        return len(list(iter(self)))
-
-    def __contains__(self, obj):
-        # Sometimes this method is called with an SQLBase instance, but
-        # z3 form machinery sends through integer ids. This might be due
-        # to a bug somewhere.
-        if zisinstance(obj, (SQLBase, Storm)):  # noqa: B1
-            clause = self._table.id == obj.id
-            if self._filter:
-                # XXX kiko 2007-01-16: this code is untested.
-                clause = AND(clause, self._filter)
-            found_obj = IStore(self._table).find(self._table, clause).one()
-            return found_obj is not None and found_obj == obj
-        else:
-            clause = self._table.id == int(obj)
-            if self._filter:
-                # XXX kiko 2007-01-16: this code is untested.
-                clause = AND(clause, self._filter)
-            found_obj = IStore(self._table).find(self._table, clause).one()
-            return found_obj is not None
-
-    def getTerm(self, value):
-        # Short circuit. There is probably a design problem here since
-        # we sometimes get the id and sometimes an SQLBase instance.
-        if zisinstance(value, SQLBase):
-            return self.toTerm(value)
-
-        try:
-            value = int(value)
-        except ValueError:
-            raise LookupError(value)
-
-        clause = self._table.q.id == value
-        if self._filter:
-            clause = AND(clause, self._filter)
-        try:
-            obj = self._table.selectOne(clause)
-        except ValueError:
-            raise LookupError(value)
-
-        if obj is None:
-            raise LookupError(value)
-
-        return self.toTerm(obj)
-
-    def getTermByToken(self, token):
-        return self.getTerm(token)
-
-    def emptySelectResults(self):
-        """Return a SelectResults object without any elements.
-
-        This is to be used when no search string is given to the search()
-        method of subclasses, in order to be consistent and always return
-        a SelectResults object.
-        """
-        return self._table.select("1 = 2")
-
-
-class NamedSQLObjectVocabulary(SQLObjectVocabularyBase):
-    """A SQLObjectVocabulary base for database tables that have a unique
-    *and* ASCII name column.
-
-    Provides all methods required by IHugeVocabulary, although it
-    doesn't actually specify this interface since it may not actually
-    be huge and require the custom widgets.
-    """
-
-    _orderBy = "name"
-
-    def toTerm(self, obj):
-        """See SQLObjectVocabularyBase.
-
-        This implementation uses name as a token instead of the object's
-        ID, and tries to be smart about deciding to present an object's
-        title if it has one.
-        """
-        if getattr(obj, "title", None) is None:
-            return SimpleTerm(obj, obj.name, obj.name)
-        else:
-            return SimpleTerm(obj, obj.name, obj.title)
-
-    def getTermByToken(self, token):
-        clause = self._table.q.name == token
-        if self._filter:
-            clause = AND(clause, self._filter)
-        objs = list(self._table.select(clause))
-        if not objs:
-            raise LookupError(token)
-        return self.toTerm(objs[0])
-
-    def search(self, query, vocab_filter=None):
-        """Return terms where query is a substring of the name."""
-        if query:
-            clause = CONTAINSSTRING(self._table.q.name, six.ensure_text(query))
-            if self._filter:
-                clause = AND(clause, self._filter)
-            return self._table.select(clause, orderBy=self._orderBy)
-        return self.emptySelectResults()
 
 
 @implementer(IVocabularyTokenized)

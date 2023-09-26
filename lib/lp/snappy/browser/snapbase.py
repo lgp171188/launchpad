@@ -10,7 +10,6 @@ __all__ = [
 
 from zope.component import getUtility
 
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.webapp import GetitemNavigation, Navigation, stepthrough
 from lp.snappy.interfaces.snapbase import ISnapBase, ISnapBaseSet
 from lp.soyuz.interfaces.archive import IArchiveSet
@@ -35,9 +34,8 @@ class SnapBaseNavigation(Navigation):
             # Not a number.
             return None
 
-        try:
-            archive = getUtility(IArchiveSet).get(id)
-        except SQLObjectNotFound:
+        archive = getUtility(IArchiveSet).get(id)
+        if archive is None:
             return None
 
         return self.context.getArchiveDependency(archive)

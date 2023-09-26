@@ -342,7 +342,7 @@ class LibrarianWebTestCase(LibrarianWebTestMixin, TestCaseWithFactory):
 
         # Delete the on-disk file.
         storage = LibrarianStorage(config.librarian_server.root, None)
-        os.remove(storage._fileLocation(file_alias.contentID))
+        os.remove(storage._fileLocation(file_alias.content_id))
 
         # The URL now 500s, since the DB says it should exist.
         response = requests.get(url)

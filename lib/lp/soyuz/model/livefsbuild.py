@@ -277,7 +277,7 @@ class LiveFSBuild(PackageBuildMixin, StormBase):
             (LiveFSFile, LibraryFileAlias, LibraryFileContent),
             LiveFSFile.livefsbuild == self.id,
             LibraryFileAlias.id == LiveFSFile.libraryfile_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.content_id,
         )
         return result.order_by([LibraryFileAlias.filename, LiveFSFile.id])
 
@@ -429,7 +429,7 @@ class LiveFSBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Person, builds, ["requester_id"])
         load_related(LibraryFileAlias, builds, ["log_id"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         load_related(LiveFS, builds, ["livefs_id"])
 
     def getByBuildFarmJobs(self, build_farm_jobs):

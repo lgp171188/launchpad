@@ -44,6 +44,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
 )
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.registry.enums import PersonVisibility, TeamMembershipPolicy
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
@@ -52,7 +53,6 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.services.authserver.testing import InProcessAuthServerFixture
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
 from lp.services.features import getFeatureFlag
 from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.interfaces import (
@@ -116,6 +116,7 @@ from lp.soyuz.model.archivepermission import (
     ArchivePermission,
     ArchivePermissionSet,
 )
+from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagerelease import (
     BinaryPackageReleaseDownloadCount,
 )
@@ -398,20 +399,18 @@ class TestArchiveEnableDisable(TestCaseWithFactory):
 
     def _getBuildQueuesByStatus(self, archive, status):
         # Return the count for archive build jobs with the given status.
-        query = """
-            SELECT COUNT(BuildQueue.id)
-            FROM BinaryPackageBuild, BuildQueue
-            WHERE
-                BinaryPackageBuild.build_farm_job =
-                    BuildQueue.build_farm_job
-                AND BinaryPackageBuild.archive = %s
-                AND BinaryPackageBuild.status = %s
-                AND BuildQueue.status = %s;
-        """ % sqlvalues(
-            archive, BuildStatus.NEEDSBUILD, status
+        return (
+            IStore(BuildQueue)
+            .find(
+                BuildQueue.id,
+                BinaryPackageBuild.build_farm_job_id
+                == BuildQueue._build_farm_job_id,
+                BinaryPackageBuild.archive == archive,
+                BinaryPackageBuild.status == BuildStatus.NEEDSBUILD,
+                BuildQueue.status == status,
+            )
+            .count()
         )
-
-        return IStore(Archive).execute(query).get_one()[0]
 
     def assertNoBuildQueuesHaveStatus(self, archive, status):
         # Check that that the jobs attached to this archive do not have this

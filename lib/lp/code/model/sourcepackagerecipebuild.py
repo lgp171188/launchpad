@@ -328,7 +328,7 @@ class SourcePackageRecipeBuild(
 
         load_related(LibraryFileAlias, builds, ["log_id"])
         archives = load_related(Archive, builds, ["archive_id"])
-        load_related(Person, archives, ["ownerID"])
+        load_related(Person, archives, ["owner_id"])
         distroseries = load_related(DistroSeries, builds, ["distroseries_id"])
         load_related(Distribution, distroseries, ["distribution_id"])
         sprs = load_related(SourcePackageRecipe, builds, ["recipe_id"])

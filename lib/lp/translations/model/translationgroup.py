@@ -175,10 +175,10 @@ class TranslationGroup(StormBase):
             Translator,
             Language,
             Person,
-            LeftJoin(LibraryFileAlias, LibraryFileAlias.id == Person.iconID),
+            LeftJoin(LibraryFileAlias, LibraryFileAlias.id == Person.icon_id),
             LeftJoin(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
         ]
         tables = (
@@ -223,7 +223,7 @@ class TranslationGroup(StormBase):
         )
         get_precached_products(products, need_licences=True)
         icons = bulk.load_related(LibraryFileAlias, products, ["icon_id"])
-        bulk.load_related(LibraryFileContent, icons, ["contentID"])
+        bulk.load_related(LibraryFileContent, icons, ["content_id"])
         return products
 
     def fetchProjectGroupsForDisplay(self):
@@ -238,7 +238,7 @@ class TranslationGroup(StormBase):
             ),
             LeftJoin(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
         ]
         tables = (
@@ -271,7 +271,7 @@ class TranslationGroup(StormBase):
             ),
             LeftJoin(
                 LibraryFileContent,
-                LibraryFileContent.id == LibraryFileAlias.contentID,
+                LibraryFileContent.id == LibraryFileAlias.content_id,
             ),
         ]
         tables = (

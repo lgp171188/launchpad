@@ -33,8 +33,8 @@ from lp.soyuz.model.publishing import (
 @implementer(IDistributionSourcePackageRelease)
 @delegate_to(ISourcePackageRelease, context="sourcepackagerelease")
 class DistributionSourcePackageRelease:
-    """This is a "Magic Distribution Source Package Release". It is not an
-    SQLObject, but it represents the concept of a specific source package
+    """This is a "Magic Distribution Source Package Release". It is not a
+    Storm model, but it represents the concept of a specific source package
     release in the distribution. You can then query it for useful
     information.
     """

@@ -21,7 +21,9 @@ class TestTransactionDecorators(unittest.TestCase):
     def setUp(self):
         switch_dbuser("librarian")
         self.store = IStore(LibraryFileContent)
-        self.content_id = db.Library().add("deadbeef", 1234, "abababab", "ba")
+        self.content_id = (
+            db.Library().add("deadbeef", 1234, "abababab", "ba").id
+        )
         self.file_content = self._getTestFileContent()
         transaction.commit()
 

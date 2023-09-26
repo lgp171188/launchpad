@@ -24,13 +24,11 @@ from urllib.request import urlopen
 
 import six
 from lazr.restful.utils import get_current_browser_request
-from storm.store import Store
 from zope.interface import implementer
 
 from lp.services.config import config, dbconfig
-from lp.services.database.interfaces import IPrimaryStore
+from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.postgresql import ConnectionString
-from lp.services.database.sqlobject import SQLObjectNotFound
 from lp.services.librarian.interfaces.client import (
     LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
     DownloadFailed,
@@ -250,6 +248,7 @@ class FileUploadClient:
                 sha1=sha1_digester.hexdigest(),
                 md5=md5_digester.hexdigest(),
             )
+            store.add(content)
             LibraryFileAlias(
                 id=aliasID,
                 content=content,
@@ -259,7 +258,7 @@ class FileUploadClient:
                 restricted=self.restricted,
             )
 
-            Store.of(content).flush()
+            store.flush()
 
             assert isinstance(aliasID, int), "aliasID %r not an integer" % (
                 aliasID,
@@ -410,10 +409,7 @@ class FileDownloadClient:
         """
         from lp.services.librarian.model import LibraryFileAlias
 
-        try:
-            lfa = LibraryFileAlias.get(aliasID)
-        except SQLObjectNotFound:
-            lfa = None
+        lfa = IStore(LibraryFileAlias).get(LibraryFileAlias, aliasID)
 
         if lfa is None:
             raise DownloadFailed("Alias %d not found" % aliasID)

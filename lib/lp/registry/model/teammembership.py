@@ -499,12 +499,25 @@ def _cleanTeamParticipation(child, parent):
                      * onto the parent.team, since we want the top and
                      * bottom of the hierarchy to calculate the
                      * TeamParticipation. The query above makes sure
-                     * that we do this for all the ancestors.
+                     * that we do this for all the ancestors. We exclude
+                     * direct members that weren't already ancestors or
+                     * descendants of the child from the TeamParticipation
+                     * table, since they can't help us to establish entries
+                     * that we need to keep.
                      */
                     SELECT child.person, parent.team
                     FROM TeamMembership child
                         JOIN parent ON child.team = parent.person
                     WHERE child.status IN %(active_states)s
+                        AND child.person IN (
+                            SELECT team
+                            FROM TeamParticipation
+                            WHERE person = %(child)s
+                            UNION
+                            SELECT person
+                            FROM TeamParticipation
+                            WHERE team = %(child)s
+                        )
                 )
                 SELECT person, team
                 FROM parent

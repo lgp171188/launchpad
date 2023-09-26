@@ -16,9 +16,9 @@ updating the counts of every LFA, in order to get through the backlog.
 
 import _pythonpath  # noqa: F401
 
-from storm.sqlobject import SQLObjectNotFound
 from zope.component import getUtility
 
+from lp.app.errors import NotFoundError
 from lp.services.apachelogparser.script import ParseApacheLogs
 from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
@@ -47,10 +47,11 @@ class ParseLibrarianApacheLogs(ParseApacheLogs):
     def getDownloadCountUpdater(self, file_id):
         """See `ParseApacheLogs`."""
         try:
-            return self.libraryfilealias_set[file_id].updateDownloadCount
-        except SQLObjectNotFound:
-            # This file has been deleted from the librarian, so don't
-            # try to store download counters for it.
+            return self.libraryfilealias_set[int(file_id)].updateDownloadCount
+        except (ValueError, NotFoundError):
+            # Either this isn't a valid file ID or this file has been
+            # deleted from the librarian, so don't try to store download
+            # counters for it.
             return None
 
 

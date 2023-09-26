@@ -579,7 +579,7 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
         to another date value. Trickery is required because SQLBuilder truth
         semantics cause UTC_NOW to appear equal to all dates.
 
-        :param sql_object: a security-proxied SQLObject instance.
+        :param sql_object: a security-proxied Storm instance.
         :param attribute_name: the name of a database column in the table
             associated to this object.
         :param date: `datetime.datetime` object or `UTC_NOW`.
@@ -1108,8 +1108,11 @@ class AbstractYUITestCase(TestCase):
         The tests are run during `setUp()`, but failures need to be reported
         from here.
         """
-        assert self.layer.browser
-        results = self.layer.browser.run_tests(
+        # Circular import.
+        from lp.testing.layers import WebBrowserLayer
+
+        assert WebBrowserLayer.browser
+        results = WebBrowserLayer.browser.run_tests(
             self.html_uri,
             timeout=self.suite_timeout,
             incremental_timeout=self.incremental_timeout,

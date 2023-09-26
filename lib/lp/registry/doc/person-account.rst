@@ -130,7 +130,7 @@ will cause this spec to be reassigned.
     >>> len(foobar_pillars) > 0
     True
 
-    >>> foobar_teams = list(Person.selectBy(teamowner=foobar))
+    >>> foobar_teams = list(IStore(Person).find(Person, teamowner=foobar))
     >>> len(foobar_teams) > 0
     True
 
@@ -202,7 +202,7 @@ adds a '-deactivatedaccount' suffix to the person's name...
 
 ...no owned teams...
 
-    >>> Person.selectBy(teamowner=foobar).is_empty()
+    >>> IStore(Person).find(Person, teamowner=foobar).is_empty()
     True
 
 ...no owned or driven pillars...
@@ -226,7 +226,9 @@ Bar are now owned/driven by the registry admins team.
     >>> registry_pillars.issuperset(foobar_pillars)
     True
 
-    >>> registry_teams = set(Person.selectBy(teamowner=registry_experts))
+    >>> registry_teams = set(
+    ...     IStore(Person).find(Person, teamowner=registry_experts)
+    ... )
     >>> registry_teams.issuperset(foobar_teams)
     True
 

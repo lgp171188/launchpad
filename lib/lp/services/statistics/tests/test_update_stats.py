@@ -281,7 +281,7 @@ class UpdateTranslationStatsTest(unittest.TestCase):
 
         flush_database_caches()
 
-        # The transaction changed, we need to refetch SQLObjects.
+        # The transaction changed, we need to refetch Storm instances.
         ubuntu = self.distribution["ubuntu"]
         hoary = self.distroseriesset.queryByName(ubuntu, "hoary")
         spanish = self.languageset["es"]

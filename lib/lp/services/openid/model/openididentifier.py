@@ -5,10 +5,11 @@
 
 __all__ = ["OpenIdIdentifier"]
 
-from storm.locals import Int, Reference, Unicode
+from datetime import timezone
+
+from storm.locals import DateTime, Int, Reference, Unicode
 
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.stormbase import StormBase
 
 
@@ -19,4 +20,6 @@ class OpenIdIdentifier(StormBase):
     identifier = Unicode(primary=True)
     account_id = Int("account")
     account = Reference(account_id, "Account.id")
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    date_created = DateTime(
+        allow_none=False, default=UTC_NOW, tzinfo=timezone.utc
+    )

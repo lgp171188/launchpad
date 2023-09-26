@@ -13,7 +13,7 @@ import six
 from storm.databases.postgres import Case
 from storm.expr import And, Coalesce, Desc, LeftJoin, Lower, Or
 from storm.info import ClassAlias
-from storm.locals import Int, Reference
+from storm.locals import Bool, Int, Reference, Unicode
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer, provider
@@ -33,8 +33,7 @@ from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
-from lp.services.database.sqlobject import BoolCol, ForeignKey, StringCol
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import fti_search, rank_by_fti
 from lp.services.librarian.model import LibraryFileAlias
 
@@ -101,7 +100,7 @@ class PillarNameSet:
         # We could attempt to do this in a single database query, but I
         # expect that doing two queries will be faster that OUTER JOINing
         # the Project, Product and Distribution tables (and this approach
-        # works better with SQLObject too.
+        # is easier with Storm too).
 
         # Retrieve information out of the PillarName table.
         query = """
@@ -326,23 +325,26 @@ class PillarNameSet:
 
 
 @implementer(IPillarName)
-class PillarName(SQLBase):
-    _table = "PillarName"
-    _defaultOrder = "name"
+class PillarName(StormBase):
+    __storm_table__ = "PillarName"
+    __storm_order__ = "name"
 
-    name = StringCol(
-        dbName="name", notNull=True, unique=True, alternateID=True
-    )
+    id = Int(primary=True)
+    name = Unicode(name="name", allow_none=False)
     product_id = Int(name="product", allow_none=True)
     product = Reference(product_id, "Product.id")
     projectgroup_id = Int(name="project", allow_none=True)
     projectgroup = Reference(projectgroup_id, "ProjectGroup.id")
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
-    active = BoolCol(dbName="active", notNull=True, default=True)
-    alias_for = ForeignKey(
-        foreignKey="PillarName", dbName="alias_for", default=None
-    )
+    active = Bool(name="active", allow_none=False, default=True)
+    alias_for_id = Int(name="alias_for", allow_none=True, default=None)
+    alias_for = Reference(alias_for_id, "PillarName.id")
+
+    def __init__(self, name, alias_for=None):
+        super().__init__()
+        self.name = name
+        self.alias_for = alias_for
 
     @property
     def pillar(self):
@@ -366,7 +368,10 @@ class HasAliasMixin:
     @property
     def aliases(self):
         """See `IHasAlias`."""
-        aliases = PillarName.selectBy(alias_for=PillarName.byName(self.name))
+        store = IStore(PillarName)
+        aliases = store.find(
+            PillarName, alias_for=store.find(PillarName, name=self.name).one()
+        )
         return [alias.name for alias in aliases]
 
     def setAliases(self, names):

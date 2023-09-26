@@ -1,7 +1,7 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""`SQLObject` implementation of `IPOFile` interface."""
+"""Storm implementation of `IPOFile` interface."""
 
 __all__ = [
     "PlaceholderPOFile",
@@ -456,7 +456,7 @@ class POFile(StormBase, POFileMixIn):
             )
             .config(distinct=True)
         )
-        contributors = contributors.order_by(*Person._storm_sortingColumns)
+        contributors = contributors.order_by(Person._separated_sortingColumns)
         contributors = contributors.config(distinct=True)
         return contributors
 
