@@ -74,9 +74,9 @@ class TestAccessTokenViewBase:
         return view
 
     def test_access_tokens_link(self):
-        target_url = canonical_url(self.target, rootsite="code")
+        target_url = canonical_url(self.target, rootsite=self.rootsite)
         expected_tokens_url = canonical_url(
-            self.target, view_name="+access-tokens", rootsite="code"
+            self.target, view_name="+access-tokens", rootsite=self.rootsite
         )
         browser = self.getUserBrowser(target_url, user=self.owner)
         tokens_link = browser.getLink("Manage access tokens")
@@ -114,20 +114,14 @@ class TestAccessTokenViewBase:
     def test_empty(self):
         self.assertThat(
             self.makeView("+access-tokens")(),
-            MatchesAll(
-                token_listing_constants,
-                soupmatchers.HTMLContains(token_listing_tag),
-            ),
+            MatchesAll(*self.getPageContent(token_matchers=[])),
         )
 
     def test_existing_tokens(self):
         token_matchers = self.makeTokensAndMatchers(10)
         self.assertThat(
             self.makeView("+access-tokens")(),
-            MatchesAll(
-                token_listing_constants,
-                soupmatchers.HTMLContains(token_listing_tag, *token_matchers),
-            ),
+            MatchesAll(*self.getPageContent(token_matchers)),
         )
 
     def test_revoke(self):
@@ -190,8 +184,29 @@ class TestAccessTokenViewBase:
 class TestAccessTokenViewGitRepository(
     TestAccessTokenViewBase, TestCaseWithFactory
 ):
+    rootsite = "code"
+
     def makeTarget(self):
         return self.factory.makeGitRepository()
 
     def getTraversalStack(self, obj):
         return [obj.target, obj]
+
+    def getPageContent(self, token_matchers):
+        return [
+            token_listing_constants,
+            soupmatchers.HTMLContains(token_listing_tag, *token_matchers),
+        ]
+
+
+class TestAccessTokenViewProject(TestAccessTokenViewBase, TestCaseWithFactory):
+    rootsite = None
+
+    def makeTarget(self):
+        return self.factory.makeProduct()
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+    def getPageContent(self, token_matchers):
+        return [soupmatchers.HTMLContains(token_listing_tag, *token_matchers)]
