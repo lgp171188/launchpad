@@ -1206,13 +1206,10 @@ class Person(
         ]
 
         if transitive:
-            # getProductPrivacyFilter may also use TeamParticipation, so
-            # ensure we use a different one.
-            ownership_participation = ClassAlias(TeamParticipation)
             clauses.extend(
                 [
-                    Product._owner_id == ownership_participation.team_id,
-                    ownership_participation.person_id == self.id,
+                    Product._owner_id == TeamParticipation.team_id,
+                    TeamParticipation.person_id == self.id,
                 ]
             )
         else:
