@@ -495,7 +495,28 @@ class Person(
     @property
     def exported_id(self):
         """See `IPerson`."""
-        return self.id
+        # Unfortunately, none of the standard permissions are suitable for
+        # what we need here: launchpad.Moderate comes closest, but it isn't
+        # quite right because that permission is defined with
+        # access_level="write", so it only works with OAuth tokens that have
+        # write permission.  Instead, we have to just use launchpad.View and
+        # do the security checks manually.
+        user = getUtility(ILaunchBag).user
+        if user is None:
+            raise Unauthorized
+        roles = IPersonRoles(user)
+        if (
+            roles.in_admin
+            # Allowing commercial admins is a bit of a cheat, but it allows
+            # IS automation to see Person.id
+            # (https://portal.admin.canonical.com/C158967) without needing
+            # to use an account that's a fully-fledged member of ~admins.
+            or roles.in_commercial_admin
+            or roles.in_registry_experts
+        ):
+            return self.id
+        else:
+            raise Unauthorized
 
     sortingColumns = SQL("person_sort_key(Person.displayname, Person.name)")
     # If we're using SELECT DISTINCT, then we can't use sortingColumns
