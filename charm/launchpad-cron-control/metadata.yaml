@@ -1,0 +1,15 @@
+name: launchpad-cron-control
+display-name: launchpad-cron-control
+summary: Launchpad cron controller
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm provides a centralized control mechanism for Launchpad's cron
+  jobs.
+subordinate: true
+requires:
+  apache-website:
+    interface: apache-website
+    scope: container

@@ -1,0 +1,20 @@
+disable-cron:
+  description: Disable a single cron job in this Launchpad environment.
+  params:
+    job:
+      type: string
+      description: The name of the cron job to disable.
+disable-cron-all:
+  description: >
+    Disable all cron jobs in this Launchpad environment by default.
+    (Individual jobs can be enabled using `enable-cron`.)
+enable-cron:
+  description: >
+    Enable a single cron job in this Launchpad environment.  (Only useful if
+    all cron jobs have been disabled by default using `disable-cron-all`.)
+  params:
+    job:
+      type: string
+      description: The name of the cron job to enable.
+enable-cron-all:
+  description: Enable all cron jobs in this Launchpad environment.
