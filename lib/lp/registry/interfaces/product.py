@@ -117,6 +117,10 @@ from lp.registry.interfaces.role import (
     IHasDrivers,
     IHasOwner,
 )
+from lp.services.auth.interfaces import (
+    IAccessTokenTarget,
+    IAccessTokenTargetEdit,
+)
 from lp.services.fields import (
     Description,
     IconImageUpload,
@@ -606,6 +610,7 @@ class IProductView(
     IHasCodeImports,
     IServiceUsage,
     IHasGitRepositories,
+    IAccessTokenTarget,
 ):
     """Public IProduct properties."""
 
@@ -1099,7 +1104,11 @@ class IProductView(
         """
 
 
-class IProductEditRestricted(IOfficialBugTagTargetRestricted, IWebhookTarget):
+class IProductEditRestricted(
+    IOfficialBugTagTargetRestricted,
+    IWebhookTarget,
+    IAccessTokenTargetEdit,
+):
     """`IProduct` properties which require launchpad.Edit permission."""
 
     @mutator_for(IProductView["bug_sharing_policy"])

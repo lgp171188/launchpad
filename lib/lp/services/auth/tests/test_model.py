@@ -22,6 +22,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.auth.interfaces import IAccessTokenSet
 from lp.services.auth.utils import create_access_token_secret
@@ -197,6 +198,11 @@ class TestAccessTokenGitRepository(TestAccessTokenBase, TestCaseWithFactory):
         return self.factory.makeGitRepository(owner=owner)
 
 
+class TestAccessTokenProduct(TestAccessTokenBase, TestCaseWithFactory):
+    def makeTarget(self, owner=None):
+        return self.factory.makeProduct(owner=owner)
+
+
 class TestAccessTokenSetBase:
     layer = DatabaseFunctionalLayer
 
@@ -226,7 +232,7 @@ class TestAccessTokenSetBase:
         )
 
     def test_getByID(self):
-        secret, token = self.factory.makeAccessToken(target=self.makeTarget())
+        _, token = self.factory.makeAccessToken(target=self.makeTarget())
         token_id = removeSecurityProxy(token).id
         self.assertEqual(token, getUtility(IAccessTokenSet).getByID(token_id))
         self.assertIsNone(getUtility(IAccessTokenSet).getByID(token_id + 1))
@@ -312,6 +318,94 @@ class TestAccessTokenSetBase:
                 expected_tokens,
                 getUtility(IAccessTokenSet).findByTarget(
                     targets[target_index], visible_by_user=owners[owner_index]
+                ),
+            )
+
+    def test_findByTarget_visible_by_owner(self):
+        # If a user owns a target, they can see all the tokens for that target
+        # regadless if they own the tokens.
+        owner = self.factory.makePerson()
+        owned_target = self.makeTarget(owner=owner)
+        owned_target_tokens = [
+            self.factory.makeAccessToken(target=owned_target)[1],
+            self.factory.makeAccessToken(target=owned_target)[1],
+        ]
+        self.factory.makeAccessToken(target=self.makeTarget())[1]
+        self.factory.makeAccessToken(target=self.makeTarget())[1]
+
+        self.assertContentEqual(
+            owned_target_tokens,
+            getUtility(IAccessTokenSet).findByTarget(
+                owned_target, visible_by_user=owner
+            ),
+        )
+
+    def test_findByTarget_visible_by_team_member(self):
+        # If a user belongs to a team that owns a target, they can see all the
+        # tokens for that target regardless if they own the tokens.
+
+        # Only restricted or moderated teams can own certain targets (Product)
+        team = self.factory.makeTeam(
+            membership_policy=TeamMembershipPolicy.RESTRICTED
+        )
+        team_member = self.factory.makePerson()
+        with person_logged_in(team.teamowner):
+            team.addMember(team_member, team)
+
+        owned_target = self.makeTarget(owner=team)
+        owned_target_tokens = [
+            self.factory.makeAccessToken(target=owned_target)[1],
+            self.factory.makeAccessToken(target=owned_target)[1],
+        ]
+
+        self.factory.makeAccessToken(target=self.makeTarget())[1]
+        self.factory.makeAccessToken(target=self.makeTarget())[1]
+
+        self.assertContentEqual(
+            owned_target_tokens,
+            getUtility(IAccessTokenSet).findByTarget(
+                owned_target, visible_by_user=team_member
+            ),
+        )
+
+    def test_findByTarget_visible_by_user_inactive_target(self):
+        # User cannot see tokens for inactive targets.
+
+        owner = self.factory.makePerson()
+        target = self.makeTarget(owner=owner)
+
+        if IGitRepository.providedBy(target):
+            self.skipTest(
+                "Currently, Git repositories allow requests without scopes."
+            )
+
+        removeSecurityProxy(target).active = False
+        self.factory.makeAccessToken(target=target, owner=owner)[1]
+
+        self.assertContentEqual(
+            [],
+            getUtility(IAccessTokenSet).findByTarget(
+                target, visible_by_user=owner
+            ),
+        )
+
+    def test_findByTarget_visible_by_user_from_a_team_that_owns_token(self):
+        # Method with a visible_by_user parameter, returns only tokens that
+        # are owned by the `visible_by_user` Person or by a team that the
+        # `visible_by_user` Person belongs to.
+        target = self.makeTarget()
+        team = self.factory.makeTeam()
+        team_member = self.factory.makePerson()
+        with person_logged_in(team.teamowner):
+            team.addMember(team_member, team)
+        _, token = self.factory.makeAccessToken(owner=team, target=target)
+        self.factory.makeAccessToken(target=target)
+
+        for user in [team.teamowner, team_member]:
+            self.assertContentEqual(
+                [token],
+                getUtility(IAccessTokenSet).findByTarget(
+                    target, visible_by_user=user
                 ),
             )
 
@@ -432,8 +526,13 @@ class TestAccessTokenSetBase:
 class TestGitRepositoryAccessTokenSet(
     TestAccessTokenSetBase, TestCaseWithFactory
 ):
-    def makeTarget(self):
-        return self.factory.makeGitRepository()
+    def makeTarget(self, **kwargs):
+        return self.factory.makeGitRepository(**kwargs)
+
+
+class TestProjectAccessTokenSet(TestAccessTokenSetBase, TestCaseWithFactory):
+    def makeTarget(self, **kwargs):
+        return self.factory.makeProduct(**kwargs)
 
 
 class TestAccessTokenTargetBase:
@@ -720,3 +819,10 @@ class TestAccessTokenTargetGitRepository(
             b"user.",
             response.body,
         )
+
+
+class TestAccessTokenTargetProject(
+    TestAccessTokenTargetBase, TestCaseWithFactory
+):
+    def makeTarget(self):
+        return self.factory.makeProduct()

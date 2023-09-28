@@ -968,6 +968,13 @@ class TestWebServiceAccessTokensGitRepository(
         return self.factory.makeGitRepository(owner=owner)
 
 
+class TestWebServiceAccessTokensProject(
+    TestWebServiceAccessTokensBase, TestCaseWithFactory
+):
+    def makeTarget(self, owner=None):
+        return self.factory.makeProduct(owner=owner)
+
+
 def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(

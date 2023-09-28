@@ -1407,6 +1407,27 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             access_token_id=removeSecurityProxy(token).id,
         )
 
+    def test_confirm_git_repository_with_project_access_token(self):
+        # Similarly to git repository tokens, a project access token cannot be
+        # used to authorize confirming repository creation.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self.factory.makeGitRepository(
+            target=project,
+            owner=requester,
+            status=GitRepositoryStatus.CREATING,
+        )
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=project,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        self.assertConfirmRepoCreationUnauthorized(
+            requester,
+            repository,
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
     def test_abort_repo_creation(self):
         requester = self.factory.makePerson()
         repo = self.factory.makeGitRepository(owner=requester)
@@ -1628,6 +1649,27 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         _, token = self.factory.makeAccessToken(
             owner=requester,
             target=repository,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
+        )
+        self.assertAbortRepoCreationUnauthorized(
+            requester,
+            repository,
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_abort_git_repository_with_project_access_token(self):
+        # Similarly to git repository tokens, a project access token cannot be
+        # used to authorize aborting repository creation.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self.factory.makeGitRepository(
+            target=project,
+            owner=requester,
+            status=GitRepositoryStatus.CREATING,
+        )
+        _, token = self.factory.makeAccessToken(
+            owner=requester,
+            target=project,
             scopes=[AccessTokenScope.REPOSITORY_PUSH],
         )
         self.assertAbortRepoCreationUnauthorized(
@@ -2634,6 +2676,110 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     macaroon_raw=macaroon.serialize(),
                 )
 
+    def _assert_translatePath_expected(
+        self, requester, token, repository, expected_success=True, scope="read"
+    ):
+        with person_logged_in(requester):
+            path = "/%s" % repository.unique_name
+            private = (
+                repository.information_type == InformationType.PRIVATESECURITY
+            )
+
+        login(ANONYMOUS)
+        if expected_success:
+            self.assertTranslates(
+                requester,
+                path,
+                repository,
+                permission=scope,
+                readable=(scope == "read"),
+                writable=(scope == "write"),
+                private=private,
+                access_token_id=removeSecurityProxy(token).id,
+            )
+        else:
+            self.assertUnauthorized(
+                requester,
+                path,
+                permission=scope,
+                access_token_id=removeSecurityProxy(token).id,
+            )
+
+    def test_translatePath_user_project_access_token_pull(self):
+        # A user with a suitable project access token can pull from a
+        # repository that belongs to that project, but not others, even if they
+        # own them.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        with person_logged_in(requester):
+            _, token = self.factory.makeAccessToken(
+                owner=requester,
+                target=project,
+                scopes=[AccessTokenScope.REPOSITORY_PULL],
+            )
+
+        repositories_access = [
+            (self.factory.makeGitRepository(), False),
+            (self.factory.makeGitRepository(owner=requester), False),
+            (self.factory.makeGitRepository(target=project), True),
+            (
+                self.factory.makeGitRepository(
+                    owner=requester, target=project
+                ),
+                True,
+            ),
+            (
+                self.factory.makeGitRepository(
+                    owner=requester,
+                    target=project,
+                    information_type=InformationType.PRIVATESECURITY,
+                ),
+                True,
+            ),
+        ]
+
+        for repository, expected_success in repositories_access:
+            self._assert_translatePath_expected(
+                requester, token, repository, expected_success
+            )
+
+    def test_translatePath_user_project_access_token_push(self):
+        # A user with a suitable project access token can push from a
+        # repository that belongs to that project, but not others, even if they
+        # own them.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        with person_logged_in(requester):
+            _, token = self.factory.makeAccessToken(
+                owner=requester,
+                target=project,
+                scopes=[AccessTokenScope.REPOSITORY_PUSH],
+            )
+
+        repositories_access = [
+            (self.factory.makeGitRepository(), False),
+            (self.factory.makeGitRepository(owner=requester), False),
+            (
+                self.factory.makeGitRepository(
+                    owner=requester, target=project
+                ),
+                True,
+            ),
+            (
+                self.factory.makeGitRepository(
+                    owner=requester,
+                    target=project,
+                    information_type=InformationType.PRIVATESECURITY,
+                ),
+                True,
+            ),
+        ]
+
+        for repository, expected_success in repositories_access:
+            self._assert_translatePath_expected(
+                requester, token, repository, expected_success, "write"
+            )
+
     def test_translatePath_user_access_token_pull(self):
         # A user with a suitable access token can pull from the
         # corresponding repository, but not others, even if they own them.
@@ -2678,23 +2824,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                         permission="read",
                         access_token_id=removeSecurityProxy(token).id,
                     )
-
-    def test_translatePath_user_access_token_pull_wrong_scope(self):
-        # A user with an access token that does not have the repository:pull
-        # scope cannot pull from the corresponding repository.
-        requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
-        _, token = self.factory.makeAccessToken(
-            owner=requester,
-            target=repository,
-            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS],
-        )
-        self.assertPermissionDenied(
-            requester,
-            "/%s" % repository.unique_name,
-            permission="read",
-            access_token_id=removeSecurityProxy(token).id,
-        )
 
     def test_translatePath_user_access_token_push(self):
         # A user with a suitable access token can push to the corresponding
@@ -2743,21 +2872,64 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                         access_token_id=removeSecurityProxy(token).id,
                     )
 
-    def test_translatePath_user_access_token_push_wrong_scope(self):
-        # A user with an access token that does not have the repository:push
-        # scope cannot push to the corresponding repository.
-        requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
+    def _assert_translatePath_permission_denied_wrong_scope(
+        self, requester, repository, token_target, scope
+    ):
+        wrong_scope = (
+            AccessTokenScope.REPOSITORY_PUSH
+            if scope == "read"
+            else AccessTokenScope.REPOSITORY_PULL
+        )
         _, token = self.factory.makeAccessToken(
             owner=requester,
-            target=repository,
-            scopes=[AccessTokenScope.REPOSITORY_PULL],
+            target=token_target,
+            scopes=[AccessTokenScope.REPOSITORY_BUILD_STATUS, wrong_scope],
         )
         self.assertPermissionDenied(
             requester,
             "/%s" % repository.unique_name,
-            permission="write",
+            permission=scope,
             access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_translatePath_user_git_access_token_pull_wrong_scope(self):
+        # A user with a git repository access token that does not have the
+        # repository:pull scope cannot pull from the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self._assert_translatePath_permission_denied_wrong_scope(
+            requester, repository, token_target=repository, scope="read"
+        )
+
+    def test_translatePath_user_project_access_token_pull_wrong_scope(self):
+        # A user with a project access token that does not have the
+        # repository:pull scope cannot pull from the corresponding repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self.factory.makeGitRepository(
+            owner=requester, target=project
+        )
+        self._assert_translatePath_permission_denied_wrong_scope(
+            requester, repository, token_target=project, scope="read"
+        )
+
+    def test_translatePath_user_git_access_token_push_wrong_scope(self):
+        # A user with a git repository access token that does not have the
+        # repository:push scope cannot push to the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self._assert_translatePath_permission_denied_wrong_scope(
+            requester, repository, token_target=repository, scope="write"
+        )
+
+    def test_translatePath_user_project_access_token_push_wrong_scope(self):
+        # A user with a project access token that does not have the
+        # repository:push scope cannot push to the corresponding repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self.factory.makeGitRepository(target=project)
+        self._assert_translatePath_permission_denied_wrong_scope(
+            requester, repository, token_target=project, scope="write"
         )
 
     def test_translatePath_user_access_token_nonexistent(self):
@@ -2927,15 +3099,12 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     auth_params,
                 )
 
-    def test_getMergeProposalURL_user_access_token(self):
-        # The merge proposal URL is returned by LP for a non-default branch
-        # pushed by a user with a suitable access token that has their
-        # ordinary privileges on the corresponding repository.
-        requester = self.factory.makePerson()
-        repository = self._makeGitRepositoryWithRefs(owner=requester)
+    def _assert_getMergeProposalURL_user_access_token(
+        self, requester, repository, token_target
+    ):
         _, token = self.factory.makeAccessToken(
             owner=requester,
-            target=repository,
+            target=token_target,
             scopes=[AccessTokenScope.REPOSITORY_PUSH],
         )
         auth_params = _make_auth_params(
@@ -2943,13 +3112,35 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         )
         self.assertHasMergeProposalURL(repository, "branch", auth_params)
 
-    def test_getMergeProposalURL_user_access_token_wrong_repository(self):
-        # getMergeProposalURL refuses access tokens for a different
-        # repository.
+    def test_getMergeProposalURL_user_git_access_token(self):
+        # The merge proposal URL is returned by LP for a non-default branch
+        # pushed by a user with a suitable git repository access token that has
+        # their ordinary privileges on a repository in that project.
         requester = self.factory.makePerson()
         repository = self._makeGitRepositoryWithRefs(owner=requester)
+        self._assert_getMergeProposalURL_user_access_token(
+            requester, repository, token_target=repository
+        )
+
+    def test_getMergeProposalURL_user_project_access_token(self):
+        # The merge proposal URL is returned by LP for a non-default branch
+        # pushed by a user with a suitable project access token that has
+        # their ordinary privileges on a repository in that project.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self._makeGitRepositoryWithRefs(target=project)
+        self._assert_getMergeProposalURL_user_access_token(
+            requester, repository, token_target=repository
+        )
+
+    def _assert_getMergeProposalURL_user_access_token_wrong_repository(
+        self, requester, token_target
+    ):
+        repository = self._makeGitRepositoryWithRefs(owner=requester)
         _, token = self.factory.makeAccessToken(
-            owner=requester, scopes=[AccessTokenScope.REPOSITORY_PUSH]
+            target=token_target,
+            owner=requester,
+            scopes=[AccessTokenScope.REPOSITORY_PUSH],
         )
         auth_params = _make_auth_params(
             requester, access_token_id=removeSecurityProxy(token).id
@@ -2961,6 +3152,26 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             repository.getInternalPath(),
             "branch",
             auth_params,
+        )
+
+    def test_getMergeProposalURL_user_git_access_token_wrong_repository(self):
+        # getMergeProposalURL refuses access tokens for a different
+        # repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self._assert_getMergeProposalURL_user_access_token_wrong_repository(
+            requester, token_target=repository
+        )
+
+    def test_getMergeProposalURL_user_project_access_token_wrong_repository(
+        self,
+    ):
+        # getMergeProposalURL refuses access tokens for repository from a
+        # different project.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        self._assert_getMergeProposalURL_user_access_token_wrong_repository(
+            requester, token_target=project
         )
 
     def test_getMergeProposalURL_code_import(self):
@@ -3464,12 +3675,15 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     macaroon.serialize(),
                 )
 
-    def test_authenticateWithPassword_user_access_token(self):
+    def _assert_authenticateWithPassword_user_access_token(
+        self,
+        requester,
+        secret,
+        token,
+    ):
         # A user with a suitable access token can authenticate using it, in
         # which case we return both the access token and the uid for use by
         # later calls.
-        requester = self.factory.makePerson()
-        secret, token = self.factory.makeAccessToken(owner=requester)
         self.assertIsNone(removeSecurityProxy(token).date_last_used)
         self.assertEqual(
             {
@@ -3489,6 +3703,30 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 username,
                 secret,
             )
+
+    def test_authenticateWithPassword_user_git_access_token(self):
+        # A user with a suitable git repository access token can authenticate
+        # using it
+        requester = self.factory.makePerson()
+        secret, token = self.factory.makeAccessToken(owner=requester)
+        self._assert_authenticateWithPassword_user_access_token(
+            requester,
+            secret,
+            token,
+        )
+
+    def test_authenticateWithPassword_user_project_access_token(self):
+        # A user with a suitable project access token can authenticate using it
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        secret, token = self.factory.makeAccessToken(
+            owner=requester, target=project
+        )
+        self._assert_authenticateWithPassword_user_access_token(
+            requester,
+            secret,
+            token,
+        )
 
     def test_authenticateWithPassword_user_access_token_expired(self):
         # An expired access token is rejected.
@@ -3855,21 +4093,76 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     macaroon_raw=macaroon.serialize(),
                 )
 
-    def test_checkRefPermissions_user_access_token(self):
+    def _assert_checkRefPermissions_permissions(
+        self, requester, token, repository, expected_success
+    ):
+        ref_path = b"refs/heads/main"
+        login(ANONYMOUS)
+        if expected_success:
+            # This expects that since we don't add any permission rules and the
+            # requester is the owner of the repository, then the call returns
+            # all 3 permissions
+            expected_permissions = ["create", "push", "force_push"]
+        else:
+            expected_permissions = []
+        self.assertHasRefPermissions(
+            requester,
+            repository,
+            [ref_path],
+            {ref_path: expected_permissions},
+            access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_checkRefPermissions_user_project_access_token(self):
+        # A user with a suitable access token targetted at a project, has their
+        # ordinary privileges on repositories from the same project, but not
+        # others, even if they own them.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repositories = [
+            (self.factory.makeGitRepository(), False),
+            (self.factory.makeGitRepository(owner=requester), False),
+            (self.factory.makeGitRepository(target=project), False),
+            (
+                self.factory.makeGitRepository(
+                    owner=requester, target=project
+                ),
+                True,
+            ),
+            (
+                self.factory.makeGitRepository(
+                    target=project,
+                    owner=requester,
+                    information_type=InformationType.PRIVATESECURITY,
+                ),
+                True,
+            ),
+        ]
+        with person_logged_in(requester):
+            _, token = self.factory.makeAccessToken(
+                owner=requester,
+                target=project,
+                scopes=[AccessTokenScope.REPOSITORY_PUSH],
+            )
+
+        for repository, expected_success in repositories:
+            self._assert_checkRefPermissions_permissions(
+                requester, token, repository, expected_success
+            )
+
+    def test_checkRefPermissions_user_git_access_token(self):
         # A user with a suitable access token has their ordinary privileges
         # on the corresponding repository, but not others, even if they own
         # them.
         requester = self.factory.makePerson()
         repositories = [
-            self.factory.makeGitRepository(owner=requester) for _ in range(2)
-        ]
-        repositories.append(
+            self.factory.makeGitRepository(owner=requester),
+            self.factory.makeGitRepository(owner=requester),
             self.factory.makeGitRepository(
                 owner=requester,
                 information_type=InformationType.PRIVATESECURITY,
-            )
-        )
-        ref_path = b"refs/heads/main"
+            ),
+        ]
         tokens = []
         with person_logged_in(requester):
             for repository in repositories:
@@ -3879,29 +4172,21 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     scopes=[AccessTokenScope.REPOSITORY_PUSH],
                 )
                 tokens.append(token)
+
         for i, repository in enumerate(repositories):
             for j, token in enumerate(tokens):
-                login(ANONYMOUS)
-                if i == j:
-                    expected_permissions = ["create", "push", "force_push"]
-                else:
-                    expected_permissions = []
-                self.assertHasRefPermissions(
-                    requester,
-                    repository,
-                    [ref_path],
-                    {ref_path: expected_permissions},
-                    access_token_id=removeSecurityProxy(token).id,
+                self._assert_checkRefPermissions_permissions(
+                    requester, token, repository, expected_success=(i == j)
                 )
 
-    def test_checkRefPermissions_user_access_token_wrong_scope(self):
+    def _assert_checkRefPermissions_user_access_token_wrong_scope(
+        self, requester, repository, token_target
+    ):
         # A user with an access token that does not have the repository:push
         # scope cannot push to any branch in the corresponding repository.
-        requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
         _, token = self.factory.makeAccessToken(
             owner=requester,
-            target=repository,
+            target=token_target,
             scopes=[AccessTokenScope.REPOSITORY_PULL],
         )
         ref_path = b"refs/heads/main"
@@ -3911,6 +4196,25 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             [ref_path],
             {ref_path: []},
             access_token_id=removeSecurityProxy(token).id,
+        )
+
+    def test_checkRefPermissions_user_git_access_token_wrong_scope(self):
+        # A user with an access token that does not have the repository:push
+        # scope cannot push to any branch in the corresponding repository.
+        requester = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester)
+        self._assert_checkRefPermissions_user_access_token_wrong_scope(
+            requester, repository, token_target=repository
+        )
+
+    def test_checkRefPermissions_user_project_access_token_wrong_scope(self):
+        # A user with an access token that does not have the repository:push
+        # scope cannot push to any branch in the corresponding repository.
+        requester = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=requester)
+        repository = self.factory.makeGitRepository(target=project)
+        self._assert_checkRefPermissions_user_access_token_wrong_scope(
+            requester, repository, token_target=project
         )
 
     def assertUpdatesRepackStats(self, repo):
