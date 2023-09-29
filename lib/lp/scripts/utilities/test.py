@@ -23,9 +23,7 @@ import signal
 import sys
 import time
 import warnings
-from unittest import mock
 
-import distro
 import six
 from zope.testrunner import options
 from zope.testrunner.feature import Feature
@@ -90,21 +88,6 @@ def configure_environment():
 
     # Suppress accessibility warning because the test runner does not have UI.
     os.environ["GTK_MODULES"] = ""
-
-    if distro.linux_distribution()[:2] == ("Ubuntu", "18.04"):
-        # XXX cjwatson 2020-10-09: Certain versions of Python crash when
-        # importing readline into a process that has libedit loaded
-        # (https://bugs.python.org/issue38634,
-        # https://bugs.launchpad.net/bugs/1899076), so stub out readline to
-        # prevent this.  This unfortunately makes debugging less pleasant.
-        #
-        # So far the only LTS version of Ubuntu that exhibits this behaviour
-        # is 18.04; 16.04 doesn't seem to end up loading libedit because its
-        # libGL is laid out differently in a way that doesn't end up loading
-        # libedit, and 20.04 has the Python bug fixed.  We should drop this
-        # once 18.04 is fixed or once we no longer care about it, since this
-        # workaround is pretty nasty.
-        sys.modules["readline"] = mock.Mock()
 
 
 def filter_warnings():
