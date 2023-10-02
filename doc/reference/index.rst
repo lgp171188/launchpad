@@ -9,6 +9,14 @@ Reference
    python
    tests
 
+Services
+--------
+
+.. toctree::
+   :maxdepth: 1
+
+   services/signing
+
 Possibly out-of-date
 --------------------
 
