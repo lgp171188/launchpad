@@ -111,13 +111,15 @@ from lp.testing.views import create_initialized_view, create_view
 class TestPersonNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def assertRedirect(self, path, redirect):
+    def assertRedirect(self, path, redirect, status_code=None):
         view = test_traverse(path)[1]
         self.assertIsInstance(view, RedirectionView)
         self.assertEqual(
             urljoin(allvhosts.configs["mainsite"].rooturl, redirect),
             removeSecurityProxy(view).target,
         )
+        if status_code:
+            self.assertEqual(status_code, removeSecurityProxy(view).status)
 
     def test_traverse_archive_distroful(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
@@ -171,9 +173,13 @@ class TestPersonNavigation(TestCaseWithFactory):
             archive.distribution.name,
             archive.name,
         )
-        self.assertRedirect(in_suf, out_suf)
-        self.assertRedirect("/api/devel" + in_suf, "/api/devel" + out_suf)
-        self.assertRedirect("/api/1.0" + in_suf, "/api/1.0" + out_suf)
+        self.assertRedirect(in_suf, out_suf, status_code=303)
+        self.assertRedirect(
+            "/api/devel" + in_suf, "/api/devel" + out_suf, status_code=303
+        )
+        self.assertRedirect(
+            "/api/1.0" + in_suf, "/api/1.0" + out_suf, status_code=303
+        )
 
     def test_traverse_git_repository_project(self):
         project = self.factory.makeProduct()
