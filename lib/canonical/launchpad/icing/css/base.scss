@@ -366,8 +366,14 @@ body {
   table {
     &.listing {
       margin: 0;
+      margin-bottom: 1.5rem;
       width: 100%;
       border-bottom: 1px solid #d2d2d2;
+
+      form {
+        /* Remove margin from forms when they are embedded within a table */
+        margin-bottom: 0;
+      }
 
       tbody, td.end-of-section {
         border-bottom: 1px solid #d2d2d2;
@@ -440,7 +446,8 @@ body {
       }
 
       th, td {
-        padding: 0.25em;
+        padding: 0.5rem;
+        padding-top: calc(.5rem - 1px);
       }
 
       table {
