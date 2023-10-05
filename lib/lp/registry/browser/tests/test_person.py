@@ -111,13 +111,14 @@ from lp.testing.views import create_initialized_view, create_view
 class TestPersonNavigation(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def assertRedirect(self, path, redirect):
+    def assertRedirect(self, path, redirect, status_code=303):
         view = test_traverse(path)[1]
         self.assertIsInstance(view, RedirectionView)
         self.assertEqual(
             urljoin(allvhosts.configs["mainsite"].rooturl, redirect),
             removeSecurityProxy(view).target,
         )
+        self.assertEqual(status_code, removeSecurityProxy(view).status)
 
     def test_traverse_archive_distroful(self):
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)

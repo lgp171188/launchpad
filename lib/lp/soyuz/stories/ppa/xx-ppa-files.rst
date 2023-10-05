@@ -472,7 +472,7 @@ redirect to the files for the default named PPA.
     ...         )
     ...     )
     ... )  # noqa
-    HTTP/1.1 301 Moved Permanently
+    HTTP/1.1 303 See Other
     ...
     Location: http://localhost/~no-priv/+archive/ubuntu/ppa/+files/test-pkg_1.0.dsc
     ...
@@ -492,7 +492,7 @@ The same redirection happens for +archive/+build/blah urls:
     ...         )
     ...     )
     ... )
-    HTTP/1.1 301 Moved Permanently
+    HTTP/1.1 303 See Other
     ...
     Location: http://.../~no-priv/+archive/ubuntu/ppa/+build/1/+files/...
     ...

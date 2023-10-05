@@ -100,7 +100,7 @@ stagingsetup:
 	# Restore the database. We need to restore permissions, despite
 	# later running security.py, to pull in permissions granted on
 	# production to users not maintained by security.py.
-	< ${STAGING_DUMP} ${STAGING_WALBLOCK}
+	< ${STAGING_DUMP} ${STAGING_WALBLOCK} \
 	    | pg_restore --dbname=${STAGING_DBNAME_MAIN} --no-owner ${EXIT_ON_ERROR} \
 		--use-list=${DUMPLIST} -v
 	rm ${DUMPLIST}
