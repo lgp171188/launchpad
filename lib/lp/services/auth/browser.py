@@ -16,7 +16,13 @@ from lp.app.browser.launchpadform import LaunchpadFormView, action
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.date import DateTimeWidget
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
-from lp.services.auth.interfaces import IAccessToken, IAccessTokenSet
+from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.product import IProduct
+from lp.services.auth.interfaces import (
+    IAccessToken,
+    IAccessTokenSet,
+    IAccessTokenTarget,
+)
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 
@@ -49,6 +55,14 @@ class AccessTokensView(LaunchpadFormView):
 
     page_title = "Personal access tokens"
 
+    @property
+    def context_type(self):
+        if IGitRepository.providedBy(self.context):
+            return "Git repository"
+        elif IProduct.providedBy(self.context):
+            return "project"
+        return "target"
+
     @cachedproperty
     def access_tokens(self):
         return list(
@@ -56,6 +70,18 @@ class AccessTokensView(LaunchpadFormView):
                 self.context, visible_by_user=self.user
             )
         )
+
+    @cachedproperty
+    def parent_tokens(self):
+        if IGitRepository.providedBy(
+            self.context
+        ) and IAccessTokenTarget.providedBy(self.context.target):
+            return list(
+                getUtility(IAccessTokenSet).findByTarget(
+                    self.context.target, visible_by_user=self.user
+                )
+            )
+        return []
 
     @action("Revoke", name="revoke")
     def revoke_action(self, action, data):

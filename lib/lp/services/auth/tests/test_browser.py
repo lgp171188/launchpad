@@ -17,6 +17,7 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import TestCaseWithFactory, login_person
@@ -33,7 +34,13 @@ token_listing_constants = soupmatchers.HTMLContains(
     soupmatchers.Within(breadcrumbs_tag, tokens_page_crumb_tag)
 )
 token_listing_tag = soupmatchers.Tag(
-    "tokens table", "table", attrs={"class": "listing"}
+    "tokens table", "table", attrs={"id": "access_tokens"}
+)
+
+project_token_listing_tag = soupmatchers.Tag(
+    "project tokens table",
+    "table",
+    attrs={"id": "parent_tokens"},
 )
 
 
@@ -82,9 +89,11 @@ class TestAccessTokenViewBase:
         tokens_link = browser.getLink("Manage access tokens")
         self.assertEqual(expected_tokens_url, tokens_link.url)
 
-    def makeTokensAndMatchers(self, count):
+    def makeTokensAndMatchers(self, count, target=None):
+        if target is None:
+            target = self.target
         tokens = [
-            self.factory.makeAccessToken(target=self.target)[1]
+            self.factory.makeAccessToken(target=target)[1]
             for _ in range(count)
         ]
         # There is a row for each token.
@@ -122,6 +131,23 @@ class TestAccessTokenViewBase:
         self.assertThat(
             self.makeView("+access-tokens")(),
             MatchesAll(*self.getPageContent(token_matchers)),
+        )
+
+    def test_extra_tokens(self):
+        if not IGitRepository.providedBy(self.target):
+            self.skipTest("Test only relevant for Git Repository tests.")
+
+        project = self.factory.makeProduct(owner=self.owner)
+        self.target.setTarget(target=project, user=self.owner)
+        token_matchers = self.makeTokensAndMatchers(5)
+        extra_matchers = self.makeTokensAndMatchers(5, target=project)
+        self.assertThat(
+            self.makeView("+access-tokens")(),
+            MatchesAll(
+                *self.getPageContent(
+                    token_matchers, extra_matchers=extra_matchers
+                )
+            ),
         )
 
     def test_revoke(self):
@@ -192,11 +218,19 @@ class TestAccessTokenViewGitRepository(
     def getTraversalStack(self, obj):
         return [obj.target, obj]
 
-    def getPageContent(self, token_matchers):
-        return [
+    def getPageContent(self, token_matchers, extra_matchers=None):
+        contents = [
             token_listing_constants,
             soupmatchers.HTMLContains(token_listing_tag, *token_matchers),
         ]
+
+        if extra_matchers is not None:
+            contents.append(
+                soupmatchers.HTMLContains(
+                    project_token_listing_tag, *extra_matchers
+                )
+            )
+        return contents
 
 
 class TestAccessTokenViewProject(TestAccessTokenViewBase, TestCaseWithFactory):
