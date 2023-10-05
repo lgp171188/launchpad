@@ -32,6 +32,60 @@
   </script>
 </metal:block>
 
+
+<metal:macros fill-slot="bogus">
+  <metal:access-tokens-table define-macro="access-tokens-table">
+    <tal:comment condition="nothing">
+      This macro requires a string value for 'access_tokens_attribute', which
+      will be the name of the view function used to fetch the access tokens.
+    </tal:comment>
+    <table tal:attributes="id access_tokens_attribute" 
+           class="listing access-tokens-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Owner</th>
+          <th>Scopes</th>
+          <th>Created</th>
+          <th>Last used</th>
+          <th>Expires</th>
+          <th><tal:comment condition="nothing">Revoke button</tal:comment></th>
+        </tr>
+      </thead>
+      <tbody id="access-tokens-tbody">
+        <tr tal:repeat="token python:getattr(view, access_tokens_attribute)"
+            tal:attributes="
+              class python: 'yui3-lazr-even' if repeat['token'].even()
+                            else 'yui3-lazr-odd';
+              token-id token/id">
+          <td tal:content="token/description" />
+          <td tal:content="structure token/owner/fmt:link" />
+          <td tal:content="
+            python: ', '.join(scope.title for scope in token.scopes)" />
+          <td tal:content="
+            structure token/date_created/fmt:approximatedatetitle" />
+          <td tal:content="
+            structure token/date_last_used/fmt:approximatedatetitle" />
+          <td>
+            <tal:expires
+              condition="token/date_expires"
+              replace="
+                structure token/date_expires/fmt:approximatedatetitle" />
+            <span tal:condition="not: token/date_expires">Never</span>
+          </td>
+          <td>
+            <form method="post" tal:attributes="name string:revoke-${token/id}">
+              <input type="hidden" name="token_id"
+                    tal:attributes="value token/id" />
+              <input type="submit" name="field.actions.revoke" value="Revoke" />
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </metal:access-tokens-table>
+</metal:macros>
+
 <div metal:fill-slot="main">
   <p>Personal access tokens allow using certain parts of the Launchpad API.</p>
 
@@ -74,48 +128,24 @@
   </div>
 
   <h2>Active tokens</h2>
-  <table class="listing access-tokens-table"
-         style="max-width: 80em;">
-    <thead>
-      <tr>
-        <th>Description</th>
-        <th>Scopes</th>
-        <th>Created</th>
-        <th>Last used</th>
-        <th>Expires</th>
-        <th><tal:comment condition="nothing">Revoke button</tal:comment></th>
-      </tr>
-    </thead>
-    <tbody id="access-tokens-tbody">
-      <tr tal:repeat="token view/access_tokens"
-          tal:attributes="
-            class python: 'yui3-lazr-even' if repeat['token'].even()
-                          else 'yui3-lazr-odd';
-            token-id token/id">
-        <td tal:content="token/description" />
-        <td tal:content="
-          python: ', '.join(scope.title for scope in token.scopes)" />
-        <td tal:content="
-          structure token/date_created/fmt:approximatedatetitle" />
-        <td tal:content="
-          structure token/date_last_used/fmt:approximatedatetitle" />
-        <td>
-          <tal:expires
-            condition="token/date_expires"
-            replace="
-              structure token/date_expires/fmt:approximatedatetitle" />
-          <span tal:condition="not: token/date_expires">Never</span>
-        </td>
-        <td>
-          <form method="post" tal:attributes="name string:revoke-${token/id}">
-            <input type="hidden" name="token_id"
-                   tal:attributes="value token/id" />
-            <input type="submit" name="field.actions.revoke" value="Revoke" />
-          </form>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <p>Active personal access tokens for
+    <a tal:replace="structure context/fmt:link" />
+    <span tal:content="view/context_type" />.
+  </p>
+  <tal:access-tokens-table define="access_tokens_attribute string:access_tokens">
+    <metal:access-tokens-table use-macro="template/macros/access-tokens-table" />
+  </tal:access-tokens-table>
+  <div tal:condition="view/parent_tokens">
+    <h2>Project tokens</h2>
+    <p>Your project access tokens for this Git repository's project:
+      <a tal:replace="structure context/target/fmt:link" />.
+    </p>
+    <p>Project tokens grant access to all the project's Git repositories
+    accessible to a user.</p>
+    <tal:access-tokens-table define="access_tokens_attribute string:parent_tokens">
+      <metal:access-tokens-table use-macro="template/macros/access-tokens-table" />
+    </tal:access-tokens-table>
+  </div>
 </div>
 
 </body>
