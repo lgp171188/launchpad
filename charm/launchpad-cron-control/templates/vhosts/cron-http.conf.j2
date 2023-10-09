@@ -9,5 +9,11 @@
     <Directory "{{ www_dir }}/">
         Require all granted
     </Directory>
+
+    # XXX cjwatson 2023-10-09: Temporarily redirect old URLs until we've
+    # finished migration.
+    Redirect /production.ini /cron.ini
+    Redirect /qastaging.ini /cron.ini
+    Redirect /staging.ini /cron.ini
 </VirtualHost>
 
