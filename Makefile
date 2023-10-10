@@ -91,8 +91,8 @@ PIP_BIN = \
 # XXX cjwatson 2023-04-11: Should be "git branch --show-current", but
 # xenial's git doesn't support that.  Use the more concise form once we
 # require focal.
-GIT_BRANCH := $(shell git rev-parse --abbrev-ref HEAD)
-TARBALL_REVISION ?= $(shell git rev-parse HEAD)
+GIT_BRANCH := $(shell if [ -d .git ]; then git rev-parse --abbrev-ref HEAD; fi)
+TARBALL_REVISION ?= $(shell if [ -d .git ]; then git rev-parse HEAD; fi)
 ifeq ($(GIT_BRANCH),db-devel)
 TARBALL_SUFFIX := db
 else
