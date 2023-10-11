@@ -1,0 +1,22 @@
+#! /bin/sh
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+# Part of the launchpad-db-update Juju charm.
+
+set -e
+
+export LPCONFIG=launchpad-db-update
+
+{% if pgbouncer_primary -%}
+# Fastdowntime update, managing connections using pgbouncer.
+{{ code_dir }}/database/schema/full-update.py \
+    --pgbouncer='{{ pgbouncer_primary }}'
+{% else -%}
+# We can't manage connections using pgbouncer in this environment.  Attempt
+# a simple schema upgrade, which may fail if anything has an active database
+# connection.
+{{ code_dir }}/database/schema/upgrade.py
+{{ code_dir }}/database/schema/security.py
+{% endif %}
+
