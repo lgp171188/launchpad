@@ -849,6 +849,26 @@ class IPersonViewRestricted(
 ):
     """IPerson attributes that require launchpad.View permission."""
 
+    # Most API clients have no need for the ID, but some systems need it as
+    # a stable identifier for users even across username changes (see
+    # https://portal.admin.canonical.com/C158967).  Access to this is
+    # restricted by checks in the property implementation to limit the scope
+    # of privacy issues.
+    exported_id = exported(
+        doNotSnapshot(
+            Int(
+                title=_("ID"),
+                description=_(
+                    "Internal immutable identifier for this person.  Only "
+                    "visible by privileged users."
+                ),
+                required=True,
+                readonly=True,
+            )
+        ),
+        exported_as="id",
+    )
+
     account = Object(schema=IAccount)
     account_id = Int(title=_("Account ID"), required=True, readonly=True)
     karma = exported(
@@ -2197,23 +2217,6 @@ class IPersonModerate(IPersonSettingsModerate):
 
 class IPersonModerateRestricted(Interface):
     """IPerson attributes that require launchpad.Moderate permission."""
-
-    # Most API clients have no need for the ID, but some systems need it as
-    # a stable identifier for users even across username changes (see
-    # https://portal.admin.canonical.com/C158967).  Access to this is
-    # restricted to limit the scope of privacy issues.
-    exported_id = exported(
-        Int(
-            title=_("ID"),
-            description=_(
-                "Internal immutable identifier for this person.  Only visible "
-                "by privileged users."
-            ),
-            required=True,
-            readonly=True,
-        ),
-        exported_as="id",
-    )
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
