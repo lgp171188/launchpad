@@ -1,0 +1,43 @@
+options:
+  haproxy_server_options:
+    type: string
+    description: Options to add to HAProxy "server" lines.
+    default: check inter 10000 rise 2 fall 2 maxconn 15
+  haproxy_service_options:
+    type: string
+    description: HAProxy options for codebrowse services.
+    default: |
+      - mode http
+      - option httplog
+      - option httpchk GET /robots.txt HTTP/1.0
+      - option forwardfor
+      - balance leastconn
+  internal_branch_by_id_root:
+    type: string
+    description: |
+      The URL prefix for where branches are served by URLs based on the
+      branch ID.
+    default:
+  nagios_check_branch:
+    type: string
+    description: If set, add Nagios checks for this branch.
+    default: ""
+  port_loggerhead:
+    type: int
+    description: >
+      Port to expose to the public (indirectly; we expect Apache on the
+      Bazaar codehosting system to ProxyPass to this port).  This serves
+      both public and private branches, but requests for private branches
+      must be authenticated.
+    default: 10007
+  port_loggerhead_api:
+    type: int
+    description: >
+      Private port for read-only API requests.  This must not be exposed to
+      the public; other parts of Launchpad with access to this port must
+      ensure that the appropriate security checks are performed.
+    default: 10017
+  session_secret:
+    type: string
+    description: A base64-encoded secret key used to sign session cookies.
+    default: ""

@@ -1,0 +1,22 @@
+[Unit]
+Description=Launchpad Bazaar/Breezy code browsing server
+After=network.target
+ConditionPathExists=!{{ code_dir }}/maintenance.txt
+
+[Service]
+Type=notify
+User=launchpad
+Group=launchpad
+WorkingDirectory={{ code_dir }}
+Environment=BRZ_PLUGIN_PATH=brzplugins
+Environment=LPCONFIG=launchpad-loggerhead
+SyslogIdentifier=loggerhead
+ExecStart={{ code_dir }}/scripts/start-loggerhead.py
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=mixed
+Restart=on-failure
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
