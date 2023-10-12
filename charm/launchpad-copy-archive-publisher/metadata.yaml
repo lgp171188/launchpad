@@ -7,4 +7,8 @@ maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
 description: |
   Launchpad is an open source suite of tools that help people and teams
   to work together on software projects.
-subordinate: false
+subordinate: true
+requires:
+  apache-website:
+    interface: apache-website
+    scope: container

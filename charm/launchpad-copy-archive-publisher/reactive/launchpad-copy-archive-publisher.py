@@ -3,18 +3,32 @@
 
 import os
 
+import yaml
 from charmhelpers.core import hookenv, host, templating
 from charms.launchpad.base import configure_email, get_service_config
 from charms.launchpad.payload import configure_cron, configure_lazr
 from charms.launchpad.publisher_parts import publisher_parts_dir
 from charms.reactive import (
-    remove_state,
-    set_state,
+    clear_flag,
+    endpoint_from_flag,
+    set_flag,
     when,
     when_not,
     when_not_all,
 )
 from ols import base
+
+
+def get_data_dir():
+    return os.path.join(base.base_dir(), "data")
+
+
+def archives_dir():
+    return os.path.join(get_data_dir(), "archives")
+
+
+def rebuilds_dir():
+    return os.path.join(get_data_dir(), "rebuilds")
 
 
 def configure_logrotate(config):
@@ -52,6 +66,13 @@ def configure():
     config = get_service_config()
     config["run_parts_location"] = publisher_parts_dir()
 
+    host.mkdir(
+        archives_dir(), owner=base.user(), group=base.user(), perms=0o775
+    )
+    host.mkdir(
+        rebuilds_dir(), owner=base.user(), group=base.user(), perms=0o775
+    )
+
     configure_lazr(
         config,
         template="launchpad-copy-archive-publisher-lazr.conf.j2",
@@ -67,7 +88,7 @@ def configure():
     configure_logrotate(config)
     configure_copy_publish_archives_cronjob(config)
     configure_cron(config, "crontab.j2")
-    set_state("service.configured")
+    set_flag("service.configured")
 
 
 @when("service.configured")
@@ -81,4 +102,37 @@ def check_is_running():
     "launchpad.publisher-parts.configured",
 )
 def deconfigure():
-    remove_state("service.configured")
+    clear_flag("service.configured")
+
+
+@when("apache-website.available", "service.configured")
+@when_not("service.apache-website.configured")
+def configure_apache_website():
+    apache_website = endpoint_from_flag("apache-website.available")
+    config = dict(hookenv.config())
+    config["archives_dir"] = archives_dir()
+    config["rebuilds_dir"] = rebuilds_dir()
+    config["domain_test_rebuild_aliases"] = yaml.safe_load(
+        config["domain_test_rebuild_aliases"]
+    )
+
+    vhost_names = ["derived", "rebuild-test"]
+    site_configs = []
+    for vhost_name in vhost_names:
+        site_configs.append(
+            templating.render(f"vhosts/{vhost_name}.conf.j2", None, config)
+        )
+
+    apache_website.set_remote(
+        domain=config["domain"],
+        enabled="true",
+        ports="80",
+        site_config="\n".join(site_configs),
+    )
+    set_flag("service.apache-website.configured")
+
+
+@when("service.apache-website.configured")
+@when_not_all("apache-website.available", "service.configured")
+def deconfigure_apache_website():
+    clear_flag("service.apache-website.configured")
