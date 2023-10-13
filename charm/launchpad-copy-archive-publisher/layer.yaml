@@ -7,7 +7,7 @@ options:
   apt:
     packages:
       - launchpad-soyuz-dependencies
-      - procmail # Needed for the 'lockfile' command.
+      - procmail # Needed only for the 'lockfile' command.
   ols-pg:
     databases:
       db:
