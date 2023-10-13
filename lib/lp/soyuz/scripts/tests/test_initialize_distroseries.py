@@ -96,6 +96,7 @@ class InitializationHelperTestCase(TestCaseWithFactory):
         parent.publish_by_hash = True
         parent.advertise_by_hash = True
         parent.strict_supported_component_dependencies = False
+        parent.publish_i18n_index = False
         self._populate_parent(parent, parent_das, packages, pocket)
         return parent, parent_das
 
@@ -842,6 +843,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.assertTrue(child.publish_by_hash)
         self.assertTrue(child.advertise_by_hash)
         self.assertFalse(child.strict_supported_component_dependencies)
+        self.assertFalse(child.publish_i18n_index)
 
     def test_initialize(self):
         # Test a full initialize with no errors.

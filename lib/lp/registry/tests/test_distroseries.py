@@ -448,6 +448,17 @@ class TestDistroSeries(TestCaseWithFactory):
             ]
         )
 
+    def test_publish_i18n_index(self):
+        distroseries = self.factory.makeDistroSeries()
+        self.assertTrue(distroseries.publish_i18n_index)
+        with admin_logged_in():
+            distroseries.publish_i18n_index = False
+        self.assertFalse(distroseries.publish_i18n_index)
+        naked_distroseries = removeSecurityProxy(distroseries)
+        self.assertFalse(
+            naked_distroseries.publishing_options["publish_i18n_index"]
+        )
+
 
 class TestDistroSeriesPackaging(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer

@@ -94,6 +94,7 @@ For distroseries we publish a subset of its attributes.
     parent_series_link: 'http://.../ubuntu/warty'
     proposed_not_automatic: False
     publish_by_hash: False
+    publish_i18n_index: True
     registrant_link: 'http://.../~mark'
     resource_type_link: ...
     self_link: 'http://.../ubuntu/hoary'
