@@ -8,6 +8,7 @@ options:
     packages:
       - launchpad-soyuz-dependencies
       - libapache2-mod-wsgi-py3
+      - procmail # Needed only for the 'lockfile' command.
   ols-pg:
     databases:
       db:

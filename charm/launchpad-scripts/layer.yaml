@@ -5,7 +5,7 @@ repo: https://git.launchpad.net/launchpad
 options:
   apt:
     packages:
-      - procmail # Needed for the 'lockfile' command.
+      - procmail # Needed only for the 'lockfile' command.
   ols-pg:
     databases:
       db:
