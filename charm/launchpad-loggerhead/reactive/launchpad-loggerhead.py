@@ -31,10 +31,6 @@ from charms.reactive import (
 from ols import base
 
 
-def reload_or_restart(service):
-    subprocess.run(["systemctl", "reload-or-restart", service], check=True)
-
-
 @host.restart_on_change(
     {
         "/lib/systemd/system/launchpad-loggerhead.service": [
@@ -44,14 +40,12 @@ def reload_or_restart(service):
 )
 def configure_systemd(config):
     hookenv.log("Writing systemd service.")
-    config = dict(config)
     templating.render(
         "launchpad-loggerhead.service.j2",
         "/lib/systemd/system/launchpad-loggerhead.service",
         config,
     )
     subprocess.run(["systemctl", "daemon-reload"], check=True)
-    host.add_user_to_group("syslog", base.user())
 
 
 def configure_logrotate(config):
