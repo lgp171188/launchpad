@@ -1,0 +1,10 @@
+TZ=UTC
+MAILTO={{ cron_mailto }}
+
+# Clean up cache directory.
+25 0 * * * find {{ cache_dir }} -maxdepth 1 -type d -mtime +240 -execdir rm -rf {} +
+
+# Catch up with publishing OOPSes that were temporarily spooled to disk due
+# to RabbitMQ being unavailable.
+*/15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
+
