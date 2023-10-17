@@ -123,7 +123,10 @@ modified by mod_compress as though it were the original ETag.
     >>> headers = {"If-None-Match": etag}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
-    ...
+    Etag: "..."
+    Vary: Accept
+    <BLANKLINE>
+    <BLANKLINE>
 
 Some versions of mod_compress turn '"foo"' into '"foo"-gzip', and some
 versions turn it into '"foo-gzip"'. We treat all three forms the same.
@@ -131,12 +134,18 @@ versions turn it into '"foo-gzip"'. We treat all three forms the same.
     >>> headers = {"If-None-Match": etag + "-gzip"}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
-    ...
+    Etag: "..."
+    Vary: Accept
+    <BLANKLINE>
+    <BLANKLINE>
 
     >>> headers = {"If-None-Match": etag[:-1] + "-gzip" + etag[-1]}
     >>> print(webservice.get(url, headers=headers))
     HTTP/1.1 304 Not Modified
-    ...
+    Etag: "..."
+    Vary: Accept
+    <BLANKLINE>
+    <BLANKLINE>
 
 Any other modification to the ETag is treated as a distinct ETag.
 
