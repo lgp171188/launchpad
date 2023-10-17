@@ -1,13 +1,13 @@
 <VirtualHost *:80>
     ServerName {{ domain_ftpmaster }}
 
-    DocumentRoot {{ archives_dir }}/
+    DocumentRoot {{ archives_dir }}/ubuntu-archive/
 
     CustomLog /var/log/apache2/{{ domain_ftpmaster }}-access.log combined
     ErrorLog /var/log/apache2/{{ domain_ftpmaster }}-error.log
 
 {% for distribution in ("ubuntu", "ubuntu-partner") %}
-    <Directory "{{ archives_dir }}/{{ distribution }}/">
+    <Directory "{{ archives_dir }}/ubuntu-archive/{{ distribution }}/">
         IndexOptions NameWidth=* +SuppressDescription
         Options +Indexes +FollowSymLinks
         IndexIgnore favicon.ico
