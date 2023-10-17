@@ -60,6 +60,34 @@ def configure():
     configure_email(config, "launchpad-ftpmaster-publisher")
     configure_logrotate(config)
     configure_cron(config, "crontab.j2")
+    if config["rsync_secrets"]:
+        rsync_secrets_path = "/etc/rsyncd/ftp.secrets"
+        templating.render(
+            "ftp.secrets.j2",
+            rsync_secrets_path,
+            config,
+            perms=0o644,
+        )
+        config["rsync_secrets_path"] = rsync_secrets_path
+    elif os.path.exists("/etc/rsyncd/ftp.secrets"):
+        os.unlink("/etc/rsyncd/ftp.secrets")
+    if (
+        config["ubuntu_auth_users"]
+        and config["ubuntu_partner_auth_users"]
+        and config["ubuntu_dists_hosts_allow"]
+        and config["ubuntu_germinate_hosts_allow"]
+        and config["rsync_secrets_path"]
+    ):
+        templating.render(
+            "020-launchpad-ftpmaster-publisher.conf.j2",
+            "/etc/rsync-juju.d/020-launchpad-ftpmaster-publisher.conf",
+            config,
+            perms=0o644,
+        )
+    elif os.path.exists(
+        "/etc/rsync-juju.d/020-launchpad-ftpmaster-publisher.conf"
+    ):
+        os.unlink("/etc/rsync-juju.d/020-launchpad-ftpmaster-publisher.conf")
     set_state("service.configured")
 
 
