@@ -1,0 +1,15 @@
+<VirtualHost *:80>
+    ServerName {{ domain_derived_archive }}
+
+    CustomLog /var/log/apache2/{{ domain_derived_archive }}-access.log combined
+    ErrorLog /var/log/apache2/{{ domain_derived_archive }}-error.log
+
+    DocumentRoot {{ archives_dir }}
+
+    <Directory {{ archives_dir }}>
+        Options Indexes FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+</VirtualHost>
+

@@ -11,7 +11,7 @@ not Launchpad users.
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     IEmailAddressSet,
     ... )
-    >>> from lp.testing import verifyObject
+    >>> from lp.testing import celebrity_logged_in, verifyObject
     >>> from lp.registry.interfaces.person import (
     ...     IHasStanding,
     ...     IPerson,
@@ -22,21 +22,27 @@ not Launchpad users.
     ...     IHasTranslationImports,
     ... )
 
-Any Person object (either a person or a team) implements IPerson...
+Any Person object (either a person or a team) implements IPerson.  We have
+to check this as a registry expert, because evaluating
+``Person.exported_id`` requires high privileges.
 
     >>> personset = getUtility(IPersonSet)
     >>> foobar = personset.getByName("name16")
     >>> foobar.is_team
     False
 
-    >>> verifyObject(IPerson, foobar)
+    >>> with celebrity_logged_in("registry_experts"):
+    ...     verifyObject(IPerson, foobar)
+    ...
     True
 
     >>> ubuntu_team = personset.getByName("ubuntu-team")
     >>> ubuntu_team.is_team
     True
 
-    >>> verifyObject(IPerson, ubuntu_team)
+    >>> with celebrity_logged_in("registry_experts"):
+    ...     verifyObject(IPerson, ubuntu_team)
+    ...
     True
 
 
@@ -416,7 +422,9 @@ property of IPerson or check if the object provides the ITeam interface.
     >>> ITeam.providedBy(landscape_devs)
     True
 
-    >>> verifyObject(ITeam, landscape_devs)
+    >>> with celebrity_logged_in("registry_experts"):
+    ...     verifyObject(ITeam, landscape_devs)
+    ...
     True
 
 Also note that a team will never have a Launchpad account, so its
@@ -503,7 +511,9 @@ entries into teams.
     >>> ITeam.providedBy(not_a_person)
     True
 
-    >>> verifyObject(ITeam, not_a_person)
+    >>> with celebrity_logged_in("registry_experts"):
+    ...     verifyObject(ITeam, not_a_person)
+    ...
     True
 
 The team owner is also added as an administrator of its team.

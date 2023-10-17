@@ -1,0 +1,10 @@
+includes:
+  - layer:launchpad-db
+repo: https://git.launchpad.net/launchpad
+options:
+  ols-pg:
+    databases:
+      db:
+        name: launchpad_dev
+      pgbouncer:
+        name: pgbouncer_dev

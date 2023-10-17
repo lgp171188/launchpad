@@ -1,0 +1,11 @@
+#! /bin/sh
+# Copyright 2023 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+# Part of the launchpad-db-update Juju charm.
+
+set -e
+
+LPCONFIG=launchpad-db-update {{ code_dir }}/database/schema/preflight.py \
+    --skip-connection-check --pgbouncer='{{ pgbouncer_primary }}'
+

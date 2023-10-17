@@ -1,0 +1,18 @@
+name: launchpad-loggerhead
+display-name: launchpad-loggerhead
+summary: Launchpad Bazaar/Breezy code browsing server
+maintainer: Launchpad Developers <launchpad-dev@lists.launchpad.net>
+description: |
+  Launchpad is an open source suite of tools that help people and teams
+  to work together on software projects.
+
+  This charm runs a code browsing server for Bazaar/Breezy branches.
+tags:
+  # https://juju.is/docs/charm-metadata#heading--charm-store-fields
+  - network
+series:
+  - focal
+subordinate: false
+provides:
+  loadbalancer:
+    interface: http

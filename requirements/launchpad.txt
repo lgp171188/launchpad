@@ -81,7 +81,7 @@ lazr.delegates==2.0.4
 lazr.enum==1.2.1
 lazr.jobrunner==0.17
 lazr.lifecycle==1.2.1
-lazr.restful==2.0.1
+lazr.restful==2.0.2
 lazr.restfulclient==0.14.5
 lazr.sshserver==0.1.13
 lazr.uri==1.0.6

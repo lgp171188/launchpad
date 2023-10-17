@@ -41,21 +41,19 @@ parts:
     plugin: dump
     organize:
       launchpad-base: layers/layer/launchpad-base
-      launchpad-db: layers/layer/launchpad-db
       launchpad-payload: layers/layer/launchpad-payload
-      launchpad-publisher-parts: layers/layer/launchpad-publisher-parts
     stage:
       - layers
     prime:
       - "-layers"
-  interface-apache-website:
-    source: https://github.com/juju-solutions/interface-apache-website
-    source-commit: "2f736ebcc90d19ac142a2d898a2ec7e1aafaa13f"
+  layer-coordinator:
+    source: https://git.launchpad.net/layer-coordinator
+    source-commit: "fa27fc93e0b08000963e83a6bfe49812d890dfcf"
     source-submodules: []
     source-type: git
     plugin: dump
     organize:
-      "*": layers/interface/apache-website/
+      "*": layers/layer/coordinator/
     stage:
       - layers
     prime:
@@ -64,7 +62,7 @@ parts:
     after:
       - charm-wheels
       - launchpad-layers
-      - interface-apache-website
+      - layer-coordinator
     source: .
     plugin: reactive
     build-snaps: [charm]

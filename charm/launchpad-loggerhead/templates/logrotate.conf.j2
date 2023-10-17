@@ -1,0 +1,15 @@
+{{ logs_dir }}/access.log {{ logs_dir }}/debug.log
+{
+    rotate 21
+    daily
+    dateext
+    delaycompress
+    compress
+    notifempty
+    missingok
+    create 0644 {{ user }} {{ user }}
+    postrotate
+        systemctl restart launchpad-loggerhead.service
+    endscript
+}
+

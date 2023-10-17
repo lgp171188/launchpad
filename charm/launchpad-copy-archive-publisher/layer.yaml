@@ -1,12 +1,13 @@
 includes:
   - layer:launchpad-db
   - layer:launchpad-publisher-parts
+  - interface:apache-website
 repo: https://git.launchpad.net/launchpad
 options:
   apt:
     packages:
       - launchpad-soyuz-dependencies
-      - procmail # Needed for the 'lockfile' command.
+      - procmail # Needed only for the 'lockfile' command.
   ols-pg:
     databases:
       db:

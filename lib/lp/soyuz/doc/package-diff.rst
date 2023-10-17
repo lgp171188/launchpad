@@ -36,7 +36,7 @@ Requesting a diff from pmount_0.1-1 to pmount_0.1-2.
 
 Let's inspect the PackageDiff record created.
 
-    >>> from lp.testing import verifyObject
+    >>> from lp.testing import celebrity_logged_in, verifyObject
     >>> from lp.soyuz.interfaces.packagediff import IPackageDiff
 
     >>> verifyObject(IPackageDiff, package_diff)
@@ -45,10 +45,13 @@ Let's inspect the PackageDiff record created.
 Its main attributes are:
 
  * 'requester', which maps to a `IPerson`, the user who made the diff
-   request.
+   request.  (We have to check this as a registry expert, because evaluating
+   ``Person.exported_id`` requires high privileges.)
 
     >>> from lp.registry.interfaces.person import IPerson
-    >>> verifyObject(IPerson, package_diff.requester)
+    >>> with celebrity_logged_in("registry_experts"):
+    ...     verifyObject(IPerson, package_diff.requester)
+    ...
     True
 
     >>> print(package_diff.requester.displayname)

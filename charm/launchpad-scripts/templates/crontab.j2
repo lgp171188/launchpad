@@ -44,7 +44,7 @@ LPCONFIG=launchpad-scripts
 
 # Rosetta
 */10 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-approve-imports.py -q --log-file=INFO:{{ logs_dir }}/rosetta-approve-imports.log
-*/4 * * * * {{ code_dir }}/cronscripts/rosetta-export-queue.py -q --log-file=INFO:{{ logs_dir }}/rosetta-export-queue.log
+*/4 * * * * {{ code_dir }}/cronscripts/rosetta-export-queue.py -v --log-file=INFO:{{ logs_dir }}/rosetta-export-queue.log
 */3 * * * * nice -16 {{ code_dir }}/cronscripts/rosetta-poimport.py -q --log-file=INFO:{{ logs_dir }}/rosetta-poimport.log
 
 {% if language_pack_exporter_schedule -%}

@@ -1,0 +1,5 @@
+includes:
+  - layer:launchpad-base
+  - layer:coordinator
+  - interface:http
+repo: https://git.launchpad.net/launchpad
