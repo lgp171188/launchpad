@@ -49,7 +49,7 @@
     RewriteRule ^/(\+apidoc.*)$ balancer://cached-launchpad-assets/$1 [P,L]
     RewriteRule ^/(\+combo/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
     RewriteRule ^/(\+icing/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
-    RewriteRule ^/(\+tour.*)$ balancer://cached-launchpad-assets/$1 [P,L]
+    RewriteRule ^/(\+tour.*)$ balancer://cached-launchpad-appserver-main/$1 [P,L]
     RewriteRule ^/(@@/.*)$ balancer://cached-launchpad-assets/$1 [P,L]
     RewriteRule ^/(favicon\.(?:ico|gif|png))$ balancer://cached-launchpad-assets/$1 [P,L]
 
