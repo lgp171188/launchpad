@@ -116,6 +116,8 @@ from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookJobSource
 from lp.services.webhooks.model import WebhookJob
+from lp.snappy.interfaces.snap import ISnapSet
+from lp.snappy.model.snap import Snap
 from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJobType
 from lp.soyuz.enums import (
@@ -2259,6 +2261,35 @@ class ArchiveFileDatePopulator(TunableLoop):
         transaction.commit()
 
 
+class SnapProEnablePopulator(TunableLoop):
+    """Populates Snap.pro_enable."""
+
+    maximum_chunk_size = 100
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IPrimaryStore(Snap)
+
+    def findSnaps(self):
+        snaps = self.store.find(
+            Snap,
+            Snap.id >= self.start_at,
+            Snap._pro_enable == None,
+        )
+        return snaps.order_by(Snap.id)
+
+    def isDone(self):
+        return self.findSnaps().is_empty()
+
+    def __call__(self, chunk_size):
+        snaps = list(self.findSnaps()[:chunk_size])
+        for snap in snaps:
+            snap._pro_enable = getUtility(ISnapSet).inferProEnable(snap.source)
+        self.start_at = snaps[-1].id + 1
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
 
@@ -2595,6 +2626,7 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         ScrubPOFileTranslator,
         SnapBuildJobPruner,
         SnapFilePruner,
+        SnapProEnablePopulator,
         SourcePackagePublishingHistoryFormatPopulator,
         SuggestiveTemplatesCacheUpdater,
         TeamMembershipPruner,
