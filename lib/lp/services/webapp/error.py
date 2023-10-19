@@ -67,7 +67,7 @@ class SystemErrorView(LaunchpadView):
         self.request.response.removeAllNotifications()
         if self.response_code is not None:
             self.request.response.setStatus(self.response_code)
-        if getattr(self.request, "oopsid") is not None:
+        if self.request.oopsid is not None:
             self.request.response.addHeader(
                 "X-Lazr-OopsId", self.request.oopsid
             )

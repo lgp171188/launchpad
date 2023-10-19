@@ -1443,9 +1443,9 @@ class TestProduct(TestCaseWithFactory):
             )
         ordinary_user = self.factory.makePerson()
         with person_logged_in(ordinary_user):
-            setattr(product, "date_next_suggest_packaging", "foo")
+            product.date_next_suggest_packaging = "foo"
         with person_logged_in(product.owner):
-            setattr(product, "date_next_suggest_packaging", "foo")
+            product.date_next_suggest_packaging = "foo"
 
     def test_set_launchpad_AnyAllowedPerson_proprietary_product(self):
         # Only people with grants for a private product can set
@@ -1473,7 +1473,7 @@ class TestProduct(TestCaseWithFactory):
                 "foo",
             )
         with person_logged_in(owner):
-            setattr(product, "date_next_suggest_packaging", "foo")
+            product.date_next_suggest_packaging = "foo"
         # A user with a policy grant for the product can access attributes
         # of a private product.
         with person_logged_in(owner):
@@ -1484,7 +1484,7 @@ class TestProduct(TestCaseWithFactory):
                 {InformationType.PROPRIETARY: SharingPermission.ALL},
             )
         with person_logged_in(ordinary_user):
-            setattr(product, "date_next_suggest_packaging", "foo")
+            product.date_next_suggest_packaging = "foo"
 
     def test_userCanView_caches_known_users(self):
         # userCanView() maintains a cache of users known to have the
