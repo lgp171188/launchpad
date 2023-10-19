@@ -1552,8 +1552,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
             # Sort them
             related_series_branch_info = sorted_version_numbers(
-                series_branch_info,
-                key=lambda branch_info: (getattr(branch_info[1], "name")),
+                series_branch_info, key=lambda branch_info: branch_info[1].name
             )
 
             # Add a development branch at the start of the list.
@@ -1641,7 +1640,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
             related_package_branch_info = sorted_version_numbers(
                 related_package_branch_info,
-                key=lambda branch_info: (getattr(branch_info[1], "name")),
+                key=lambda branch_info: branch_info[1].name,
             )
 
         return (

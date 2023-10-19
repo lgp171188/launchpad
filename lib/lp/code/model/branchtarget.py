@@ -184,10 +184,7 @@ class PackageBranchTarget(_BaseBranchTarget):
 
         result = sorted_version_numbers(
             result,
-            key=lambda branch_info: (
-                getattr(branch_info[1], "name"),
-                branch_info[0].id,
-            ),
+            key=lambda branch_info: (branch_info[1].name, branch_info[0].id),
         )
 
         if limit_results is not None:
@@ -438,10 +435,7 @@ class ProductBranchTarget(_BaseBranchTarget):
 
         result = sorted_version_numbers(
             result,
-            key=lambda branch_info: (
-                getattr(branch_info[1], "name"),
-                branch_info[0].id,
-            ),
+            key=lambda branch_info: (branch_info[1].name, branch_info[0].id),
         )
 
         if limit_results is not None:

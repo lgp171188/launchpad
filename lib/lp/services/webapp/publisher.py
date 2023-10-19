@@ -185,7 +185,7 @@ class redirection:
         redirections = getattr(fn, "__redirections__", None)
         if redirections is None:
             redirections = {}
-            setattr(fn, "__redirections__", redirections)
+            fn.__redirections__ = redirections
         redirections[self.name] = self.status
         return fn
 
