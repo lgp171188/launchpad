@@ -292,7 +292,7 @@ class TestSourcePackageRecipeMixin:
 
     def createSourcePackageRecipe(self, number_of_branches=2):
         branches = []
-        for i in range(number_of_branches):
+        for _ in range(number_of_branches):
             branches.append(self.makeBranch())
         sp_recipe = self.makeSourcePackageRecipe(branches=branches)
         transaction.commit()

@@ -37,7 +37,7 @@ class TestMessageTraversal(TestCaseWithFactory):
         # Traversal over bug messages attachments has no errors.
         expected_messages = []
         with person_logged_in(bug.owner):
-            for i in range(3):
+            for _ in range(3):
                 att = self.factory.makeBugAttachment(bug)
                 expected_messages.append(att.message.subject)
         bug_url = api_url(bug)

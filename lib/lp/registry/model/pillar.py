@@ -245,9 +245,7 @@ class PillarNameSet:
             )
         pillars = []
         products = []
-        for pillar_name, other, product, projectgroup, distro in result[
-            :limit
-        ]:
+        for pillar_name, _, _, _, _ in result[:limit]:
             pillar = pillar_name.pillar
             if IProduct.providedBy(pillar):
                 products.append(pillar)

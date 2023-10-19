@@ -137,6 +137,6 @@ class CurrentTranslations:
         )
         for msgset in msgsets:
             cache = getattr(msgset, "_current_translations_cache", {})
-            for key, message in current_translations.items():
+            for key in current_translations:
                 cache[key] = current_translations[key]
             msgset._current_translations_cache = cache

@@ -116,7 +116,7 @@ class GPGHandler:
         """See IGPGHandler."""
         stored_errors = []
 
-        for i in range(3):
+        for _ in range(3):
             try:
                 signature = self.getVerifiedSignature(content, signature)
             except GPGKeyNotFoundError as info:
@@ -255,7 +255,7 @@ class GPGHandler:
         # a secret key.  We can't rely on result.secret_imported here
         # because if there's a secret key which is already imported,
         # result.secret_imported will be 0.
-        for fingerprint, res, status in result.imports:
+        for fingerprint, _, status in result.imports:
             if status & gpgme.IMPORT_SECRET != 0:
                 raise SecretGPGKeyImportDetected(
                     "GPG key '%s' is a secret key." % fingerprint

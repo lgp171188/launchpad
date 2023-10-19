@@ -122,7 +122,7 @@ def build_test_suite(
             )
 
     # Add the special doctests.
-    for key, special_suite in sorted(special_tests.items()):
+    for _, special_suite in sorted(special_tests.items()):
         suite.addTest(special_suite)
 
     tests_path = os.path.join(os.path.pardir, "doc")

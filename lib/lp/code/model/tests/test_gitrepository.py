@@ -1867,7 +1867,7 @@ class TestGitRepositoryModificationNotifications(TestCaseWithFactory):
                 getUtility(IGitRepositoryModifiedMailJobSource)
             ).runAll()
         bodies_by_recipient = {}
-        for from_addr, to_addrs, message in stub.test_emails:
+        for _from_addr, to_addrs, message in stub.test_emails:
             body = (
                 email.message_from_bytes(message)
                 .get_payload(decode=True)
@@ -4517,7 +4517,7 @@ class TestGitRepositoryRules(TestCaseWithFactory):
                         prefix="refs/heads/"
                     ),
                 )
-                for i in range(2):
+                for _i in range(2):
                     self.factory.makeGitRuleGrant(rule=rule)
 
         def get_rules():
@@ -5805,7 +5805,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual([], response.jsonBody())
         with person_logged_in(person):
             repo = []
-            for i in range(5):
+            for _i in range(5):
                 repo.append(self.factory.makeGitRepository())
             for i in range(3):
                 removeSecurityProxy(repo[i]).loose_object_count = 7000 + i
@@ -5844,9 +5844,9 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertEqual(0, response.jsonBody())
         with person_logged_in(person):
-            for item in range(5):
+            for _item in range(5):
                 self.factory.makeGitRepository()
-            for item in range(3):
+            for _item in range(3):
                 repo = self.factory.makeGitRepository()
                 removeSecurityProxy(repo).loose_object_count = 7000
                 removeSecurityProxy(repo).pack_count = 43

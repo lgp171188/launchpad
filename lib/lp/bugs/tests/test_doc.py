@@ -485,7 +485,7 @@ def test_suite():
     )
 
     # Add special needs tests
-    for key, special_suite in sorted(special.items()):
+    for _, special_suite in sorted(special.items()):
         suite.addTest(special_suite)
 
     # Add tests using default setup/teardown

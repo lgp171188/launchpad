@@ -191,7 +191,7 @@ def group_comments_with_activity(comments, activities):
 
     event_windows = gen_event_windows(events)
     event_windows_grouper = groupby(event_windows, itemgetter(0))
-    for window_index, window_group in event_windows_grouper:
+    for _, window_group in event_windows_grouper:
         window_group = [(kind, event) for (index, kind, event) in window_group]
         for kind, event in window_group:
             if kind is comment_kind:

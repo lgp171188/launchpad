@@ -76,7 +76,7 @@ class BugBranchLinker:
         except InvalidBugStatus:
             return
         bug_set = getUtility(IBugSet)
-        for bug_id, status in bug_info.items():
+        for bug_id in bug_info:
             try:
                 bug = bug_set.get(bug_id)
             except NotFoundError:

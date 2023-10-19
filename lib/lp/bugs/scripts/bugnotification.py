@@ -300,7 +300,7 @@ def get_bug_and_owner(notification):
 def notification_batches(notifications):
     """Batch notifications for `get_email_notifications`."""
     notifications_grouped = groupby(notifications, get_bug_and_owner)
-    for (bug, person), notification_group in notifications_grouped:
+    for _, notification_group in notifications_grouped:
         batches = notification_comment_batches(notification_group)
         for comment_group, batch in groupby(batches, itemgetter(0)):
             yield [notification for (comment_group, notification) in batch]

@@ -282,7 +282,7 @@ class SigningUpload(CustomUpload):
             SigningKeyType.FIT: self.signFit,
         }
 
-        for dirpath, dirnames, filenames in os.walk(self.tmpdir):
+        for dirpath, _, filenames in os.walk(self.tmpdir):
             for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
                 if filename.endswith(".efi"):

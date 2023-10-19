@@ -1064,12 +1064,12 @@ class TestCodeImportJobWorkflowFinishJob(
         intervals = []
         interval = running_job.code_import.effective_update_interval
         expected_intervals = []
-        for i in range(config.codeimport.consecutive_failure_limit - 1):
+        for _ in range(config.codeimport.consecutive_failure_limit - 1):
             expected_intervals.append(interval)
             interval *= 2
         # Fail an import a bunch of times and record how far in the future the
         # next job was scheduled.
-        for i in range(config.codeimport.consecutive_failure_limit - 1):
+        for _ in range(config.codeimport.consecutive_failure_limit - 1):
             code_import = running_job.code_import
             getUtility(ICodeImportJobWorkflow).finishJob(
                 running_job, CodeImportResultStatus.FAILURE, None
@@ -1274,7 +1274,7 @@ class TestCodeImportJobWorkflowFinishJob(
         # times in a row, the import is marked as FAILING.
         code_import = self.factory.makeCodeImport()
         failure_limit = config.codeimport.consecutive_failure_limit
-        for i in range(failure_limit - 1):
+        for _ in range(failure_limit - 1):
             running_job = self.makeRunningJob(code_import)
             getUtility(ICodeImportJobWorkflow).finishJob(
                 running_job, CodeImportResultStatus.FAILURE, None

@@ -404,7 +404,7 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         # stderr spam, and this keeps happening. We test more than
         # once to ensure that we will keep trying to reconnect even
         # after several failures.
-        for count in range(5):
+        for _ in range(5):
             out = self.request("foo")
             self.assertEqual(out, "NULL")
 
@@ -422,7 +422,7 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
 
         self.spawn()
 
-        for count in range(5):
+        for _ in range(5):
             out = self.request("foo")
             self.assertEqual(out, "NULL")
 

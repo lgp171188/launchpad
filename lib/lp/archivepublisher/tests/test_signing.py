@@ -71,7 +71,7 @@ class SignedMatches(Matcher):
 
     def match(self, base):
         content = []
-        for root, dirs, files in os.walk(base):
+        for root, _, files in os.walk(base):
             content.extend(
                 [os.path.relpath(os.path.join(root, f), base) for f in files]
             )

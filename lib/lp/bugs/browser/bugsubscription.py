@@ -591,7 +591,7 @@ class BugPortletSubscribersWithDetails(LaunchpadView):
         """
         data = []
         details = list(bug.getDirectSubscribersWithDetails())
-        for person, subscribed_by, subscription in details:
+        for person, _subscribed_by, subscription in details:
             can_edit = subscription.canBeUnsubscribedByUser(self.user)
             if person == self.user:
                 # Skip the current user viewing the page.

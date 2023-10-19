@@ -354,7 +354,7 @@ class BaseLayer:
         if BaseLayer.disable_thread_check:
             new_threads = None
         else:
-            for loop in range(0, 100):
+            for _ in range(0, 100):
                 # Check for tests that leave live threads around early.
                 # A live thread may be the cause of other failures, such as
                 # uncollectable garbage.

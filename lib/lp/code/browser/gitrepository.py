@@ -205,7 +205,7 @@ class GitRepositoryNavigation(WebhookTargetNavigationMixin, Navigation):
             ref_segments.append(segments.pop())
             ref = self.context.getRefByPath("/".join(ref_segments))
             if ref is not None:
-                for unused in range(len(ref_segments)):
+                for _unused in range(len(ref_segments)):
                     self.request.stepstogo.consume()
                 return ref
         raise NotFoundError
@@ -1445,7 +1445,7 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
             key=lambda item: (item[1]["action"] != "add", item[2], item[0])
         )
 
-        for ref_pattern, parsed_rule, position in ordered_rules:
+        for ref_pattern, parsed_rule, _position in ordered_rules:
             rule = rule_map.get(parsed_rule["pattern"])
             action = parsed_rule["action"]
             if action not in ("add", "change", "delete"):

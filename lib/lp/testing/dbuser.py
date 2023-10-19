@@ -29,7 +29,7 @@ def update_store_connections():
     underlying connection of *existing* stores, leaving existing objects
     functional.
     """
-    for name, store in getUtility(IZStorm).iterstores():
+    for _, store in getUtility(IZStorm).iterstores():
         connection = store._connection
         if connection._state == STATE_CONNECTED:
             if connection._raw_connection is not None:

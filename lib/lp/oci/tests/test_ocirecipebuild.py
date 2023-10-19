@@ -249,7 +249,7 @@ class TestOCIRecipeBuild(OCIConfigHelperMixin, TestCaseWithFactory):
         oci_build = self.factory.makeOCIRecipeBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(seconds=335)
         )
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeOCIRecipeBuild(
                 requester=oci_build.requester,
                 recipe=oci_build.recipe,

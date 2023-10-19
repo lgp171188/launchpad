@@ -70,7 +70,7 @@ class XpiHeader:
             parse = cElementTree.iterparse(
                 io.BytesIO(raw_content), forbid_dtd=True
             )
-            for event, elem in parse:
+            for _, elem in parse:
                 if elem.tag == contributor_tag:
                     # An XPI header can list multiple contributors, but
                     # here we care only about the latest one listed as a

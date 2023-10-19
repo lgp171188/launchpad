@@ -153,7 +153,7 @@ class TestGetPublicationsInArchive(TestCaseWithFactory):
     def makeArchivesForOneDistribution(self, count=3):
         distribution = self.factory.makeDistribution()
         archives = []
-        for i in range(count):
+        for _ in range(count):
             archives.append(
                 self.factory.makeArchive(distribution=distribution)
             )
@@ -3854,7 +3854,7 @@ class TestGetPublishedSourcesWebService(TestCaseWithFactory):
         # 'addSource' to a `PackageUpload` ('launchpad.Edit'). It seems
         # too restrive to me.
         with person_logged_in(ppa.owner):
-            for i in range(5):
+            for _ in range(5):
                 upload = self.factory.makePackageUpload(
                     distroseries=distroseries, archive=ppa
                 )

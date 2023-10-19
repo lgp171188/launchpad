@@ -380,7 +380,7 @@ class TestBugPortletSubscribers(TestCaseWithFactory):
         # number of duplicate bugs.
         user = self.factory.makePerson()
         bug = self.factory.makeBug()
-        for n in range(20):
+        for _ in range(20):
             dupe = self.factory.makeBug()
             removeSecurityProxy(dupe)._markAsDuplicate(bug, set())
             removeSecurityProxy(dupe).subscribe(user, dupe.owner)
@@ -963,7 +963,7 @@ class TestBugActivityView(TestCaseWithFactory):
         ten_minutes_ago = datetime.now(timezone.utc) - timedelta(minutes=10)
         with person_logged_in(bug.owner):
             attachment = self.factory.makeBugAttachment(bug=bug)
-            for i in range(10):
+            for _ in range(10):
                 bug.addChange(
                     BugAttachmentChange(
                         ten_minutes_ago,

@@ -313,7 +313,7 @@ class TestPPAPackages(TestCaseWithFactory):
         viewer = self.factory.makePerson()
         browser = self.getUserBrowser(user=viewer)
         with person_logged_in(viewer):
-            for i in range(2):
+            for _ in range(2):
                 pkg = self.factory.makeSourcePackagePublishingHistory(
                     archive=ppa
                 )
@@ -350,7 +350,7 @@ class TestPPAPackages(TestCaseWithFactory):
         viewer = self.factory.makePerson()
         browser = self.getUserBrowser(user=viewer)
         with person_logged_in(viewer):
-            for i in range(3):
+            for _ in range(3):
                 pkg = self.factory.makeBinaryPackagePublishingHistory(
                     archive=ppa, distroarchseries=pkg.distroarchseries
                 )

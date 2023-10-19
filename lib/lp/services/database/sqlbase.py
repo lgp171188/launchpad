@@ -328,7 +328,7 @@ def flush_database_updates():
     shorthand if you don't already have a store object handy.)
     """
     zstorm = getUtility(IZStorm)
-    for name, store in zstorm.iterstores():
+    for _, store in zstorm.iterstores():
         store.flush()
 
 
@@ -344,7 +344,7 @@ def flush_database_caches():
     all reflect the values in the database.
     """
     zstorm = getUtility(IZStorm)
-    for name, store in zstorm.iterstores():
+    for _, store in zstorm.iterstores():
         store.flush()
         store.invalidate()
 

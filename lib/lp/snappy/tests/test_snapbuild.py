@@ -279,7 +279,7 @@ class TestSnapBuild(TestCaseWithFactory):
             status=BuildStatus.FULLYBUILT,
             duration=timedelta(seconds=335),
         )
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeSnapBuild(
                 requester=self.build.requester,
                 snap=self.build.snap,

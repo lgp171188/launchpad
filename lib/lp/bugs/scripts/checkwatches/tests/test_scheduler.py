@@ -81,7 +81,7 @@ class TestBugWatchScheduler(TestCaseWithFactory):
         # The scheduler only looks at the last 5 activity items, so even
         # if there have been more failures the maximum delay will be 7
         # days.
-        for count in range(10):
+        for _ in range(10):
             self.bug_watch.addActivity(
                 result=BugWatchActivityStatus.BUG_NOT_FOUND
             )

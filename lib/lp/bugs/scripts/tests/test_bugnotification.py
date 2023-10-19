@@ -316,7 +316,7 @@ class TestGetEmailNotifications(TestCase):
         email_notifications = get_email_notifications(notifications_to_send)
         to_addresses = set()
         sent_notifications = []
-        for notifications, omitted, messages in email_notifications:
+        for notifications, _, messages in email_notifications:
             for message in messages:
                 to_addresses.add(message["to"])
             recipients = {}
@@ -715,11 +715,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
     def get_messages(self):
         notifications = self.notification_set.getNotificationsToSend()
         email_notifications = get_email_notifications(notifications)
-        for (
-            bug_notifications,
-            omitted_notifications,
-            messages,
-        ) in email_notifications:
+        for _, _, messages in email_notifications:
             for message in messages:
                 yield message, message.get_payload(decode=True)
 
@@ -1408,7 +1404,7 @@ class TestDeferredNotifications(TestCaseWithFactory):
         # Create some deferred notifications and show that processing them
         # puts then in the state where they are ready to send.
         num = 5
-        for i in range(num):
+        for _ in range(num):
             self._make_deferred_notification()
         deferred = self.notification_set.getDeferredNotifications()
         self.assertEqual(num, deferred.count())
@@ -1451,7 +1447,7 @@ class TestSendBugNotifications(TestCaseWithFactory):
         # in the way of sending other notifications.
         set_immediate_mail_delivery(False)
         subscribers = []
-        for i in range(3):
+        for _ in range(3):
             bug = self.factory.makeBug()
             subscriber = self.factory.makePerson()
             subscribers.append(subscriber.preferredemail.email)
@@ -1487,7 +1483,7 @@ class TestSendBugNotifications(TestCaseWithFactory):
             "SMTPException: test requested delivery failure",
             self.oopses[0]["tb_text"],
         )
-        for i, (bug_notifications, _, messages) in enumerate(notifications):
+        for i, (bug_notifications, _, _) in enumerate(notifications):
             for bug_notification in bug_notifications:
                 if i == 1:
                     self.assertEqual(

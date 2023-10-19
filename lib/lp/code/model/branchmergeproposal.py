@@ -1514,7 +1514,7 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         entries.extend(self._getNewerRevisions())
         entries.sort()
         current_group = []
-        for sortkey, entry in entries:
+        for _, entry in entries:
             if ICodeReviewComment.providedBy(entry):
                 if current_group != []:
                     yield current_group
@@ -1743,7 +1743,7 @@ class BranchMergeProposalGetter:
             (CodeReviewVoteReference, Person, CodeReviewComment),
             CodeReviewVoteReference.branch_merge_proposal_id.is_in(ids),
         )
-        for reference, person, comment in results:
+        for reference, _, _ in results:
             result[reference.branch_merge_proposal].append(reference)
         return result
 

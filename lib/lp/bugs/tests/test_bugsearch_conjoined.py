@@ -152,7 +152,7 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
         self.projectgroup = self.factory.makeProject()
         self.bug_count = 2
         self.bug_products = {}
-        for i in range(self.bug_count):
+        for _ in range(self.bug_count):
             product = self.factory.makeProduct(projectgroup=self.projectgroup)
             product_milestone = self.factory.makeMilestone(
                 product=product, name="foo"
@@ -219,7 +219,7 @@ class TestProjectGroupExcludeConjoinedPrimarySearch(TestSearchBase):
         # group doesn't cause a bugtask on another project in the group
         # to be excluded from the project group milestone's bugs.
         extra_bugtasks = 0
-        for bug, product in self.bug_products.items():
+        for bug in self.bug_products:
             extra_bugtasks += 1
             other_product = self.factory.makeProduct(
                 projectgroup=self.projectgroup

@@ -716,7 +716,7 @@ class TestHelpers(TestCaseWithFactory):
             for counter in range(2)
         ]
         for series in productseries:
-            for counter in range(2):
+            for _ in range(2):
                 self.factory.makeTranslationImportQueueEntry(
                     productseries=series
                 )
@@ -807,7 +807,7 @@ class TestHelpers(TestCaseWithFactory):
         self.useFixture(FakeLibrarian())
         series = self.factory.makeDistroSeries()
         series.defer_translation_imports = False
-        for counter in range(2):
+        for _ in range(2):
             self.factory.makeTranslationImportQueueEntry(distroseries=series)
         self.assertEqual([series], list_distroseries_request_targets(True))
 

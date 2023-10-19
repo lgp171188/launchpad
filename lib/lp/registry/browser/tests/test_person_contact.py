@@ -149,7 +149,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         sender = self.factory.makePerson()
         user = self.factory.makePerson(name="pting")
         recipient_set = ContactViaWebNotificationRecipientSet(sender, user)
-        for email, recipient in recipient_set.getRecipientPersons():
+        for email, _ in recipient_set.getRecipientPersons():
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             'using the "Contact this user" link on your profile page '
@@ -162,7 +162,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         sender = self.factory.makePerson()
         team = self.factory.makeTeam(name="pting")
         recipient_set = ContactViaWebNotificationRecipientSet(sender, team)
-        for email, recipient in recipient_set.getRecipientPersons():
+        for email, _ in recipient_set.getRecipientPersons():
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             'using the "Contact this team\'s admins" link '
@@ -176,7 +176,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         team = self.factory.makeTeam(name="pting")
         sender = team.teamowner
         recipient_set = ContactViaWebNotificationRecipientSet(sender, team)
-        for email, recipient in recipient_set.getRecipientPersons():
+        for email, _ in recipient_set.getRecipientPersons():
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             "to each member of the Pting team using the "
@@ -281,7 +281,7 @@ class EmailToPersonViewTestCase(TestCaseWithFactory):
         sender = self.factory.makePerson(email="me@eg.dom")
         old_message = self.factory.makeSignedMessage(email_address="me@eg.dom")
         authorization = IDirectEmailAuthorization(sender)
-        for action in range(authorization.message_quota):
+        for _ in range(authorization.message_quota):
             authorization.record(old_message)
         return sender
 

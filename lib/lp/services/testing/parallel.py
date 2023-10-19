@@ -21,7 +21,7 @@ def prepare_argv(argv):
     """Remove options from argv that would be added by ListTestCase."""
     result = []
     skipn = 0
-    for pos, arg in enumerate(argv):
+    for arg in argv:
         if skipn:
             skipn -= 1
             continue

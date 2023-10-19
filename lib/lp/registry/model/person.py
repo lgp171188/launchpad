@@ -1099,7 +1099,7 @@ class Person(
         """See `IPerson`."""
         contributions = []
         results = self._getProjectsWithTheMostKarma(user, limit=limit)
-        for product, distro, karma in results:
+        for product, distro, _karma in results:
             pillar = product or distro
             contributions.append(
                 {
@@ -2808,7 +2808,14 @@ class Person(
 
         warnings = set()
         ref_query = []
-        for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
+        for (
+            src_tab,
+            src_col,
+            _ref_tab,
+            _ref_col,
+            _updact,
+            _delact,
+        ) in references:
             if (src_tab, src_col) in skip:
                 continue
             query = (

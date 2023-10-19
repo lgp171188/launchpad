@@ -498,7 +498,7 @@ def end_request(event):
             triggers.items(), key=lambda x: len(x[1]), reverse=True
         )
         top_triggers = []
-        for key, ixs in triggers:
+        for _, ixs in triggers:
             if len(ixs) == 1:
                 break
             info = trace[ixs[0] - 1]["app_stack"][-1].copy()
@@ -649,7 +649,7 @@ def _make_condition_function(condition_string):
     conditions = []
     included = []
     ignored = []
-    for constraint, partition, value in (
+    for constraint, _, value in (
         c.strip().partition(" ") for c in condition_string.upper().split("|")
     ):
         # Process each condition.

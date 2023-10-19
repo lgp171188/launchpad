@@ -2149,7 +2149,7 @@ class TestSpecifications(TestCaseWithFactory):
     def test_specifications_quantity(self):
         # Ensure the quantity controls the maximum number of entries.
         owner = self.factory.makePerson()
-        for count in range(10):
+        for _ in range(10):
             self.factory.makeSpecification(owner=owner)
         self.assertEqual(10, get_specs(owner).count())
         self.assertEqual(10, get_specs(owner, quantity=None).count())

@@ -190,7 +190,7 @@ def sexecute(con, sql):
 
 def nullify(con):
     """Set all fti index columns to NULL"""
-    for table, ignored in ALL_FTI:
+    for table, _ in ALL_FTI:
         table = quote_identifier(table)
         log.info("Removing full text index data from %s", table)
         sexecute(con, "ALTER TABLE %s DISABLE TRIGGER tsvectorupdate" % table)
@@ -205,7 +205,7 @@ def liverebuild(con):
     batch_size = 50
 
     cur = con.cursor()
-    for table, ignored in ALL_FTI:
+    for table, _ in ALL_FTI:
         table = quote_identifier(table)
         cur.execute("SELECT max(id) FROM %s" % table)
         max_id = cur.fetchone()[0]

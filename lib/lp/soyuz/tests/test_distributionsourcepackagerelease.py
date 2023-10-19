@@ -148,7 +148,7 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
         self.assertThat(recorder, HasQueryCount(LessThan(5)))
         self.assertEqual(1, self.dsp_release.sample_binary_packages.count())
 
-        for iteration in range(5):
+        for _ in range(5):
             self.makeBinaryPackageRelease()
         self.updatePackageCache()
         with StormStatementRecorder() as recorder:
@@ -161,7 +161,7 @@ class TestDistributionSourcePackageRelease(TestCaseWithFactory):
         # DistributionSourcePackageRelease objects do not try to
         # retrieve DistroSeriesPackageCache records if they know
         # that such records do not exist.
-        for iteration in range(5):
+        for _ in range(5):
             self.makeBinaryPackageRelease()
         with StormStatementRecorder() as recorder:
             for ds_package in self.dsp_release.sample_binary_packages:

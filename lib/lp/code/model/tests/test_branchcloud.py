@@ -116,7 +116,7 @@ class TestBranchCloud(TestCaseWithFactory):
             delta=timedelta(days=2),
         )
         store = Store.of(product)
-        for i in range(4):
+        for _ in range(4):
             revision = self.factory.makeRevision(
                 revision_date=next(date_generator)
             )
@@ -132,10 +132,10 @@ class TestBranchCloud(TestCaseWithFactory):
         # getProductsWithInfo returns a result set sorted so that the products
         # with the most commits come first.
         product1 = self.factory.makeProduct()
-        for i in range(3):
+        for _ in range(3):
             self.makeBranch(product=product1)
         product2 = self.factory.makeProduct()
-        for i in range(5):
+        for _ in range(5):
             self.makeBranch(product=product2)
         self.assertEqual(
             [product2.name, product1.name],
@@ -147,13 +147,13 @@ class TestBranchCloud(TestCaseWithFactory):
         # number of products in the result set. The products with the fewest
         # branches are discarded first.
         product1 = self.factory.makeProduct()
-        for i in range(3):
+        for _ in range(3):
             self.makeBranch(product=product1)
         product2 = self.factory.makeProduct()
-        for i in range(5):
+        for _ in range(5):
             self.makeBranch(product=product2)
         product3 = self.factory.makeProduct()
-        for i in range(7):
+        for _ in range(7):
             self.makeBranch(product=product3)
         self.assertEqual(
             [product3.name, product2.name],

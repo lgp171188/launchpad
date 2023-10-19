@@ -887,7 +887,7 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
                 self.assertAccessUnauthorized(names, self.proprietary_series)
 
             # They cannot change any attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(names, self.public_series)
                 self.assertChangeUnauthorized(names, self.proprietary_series)
 
@@ -1047,38 +1047,38 @@ class ProductSeriesSecurityAdaperTestCase(TestCaseWithFactory):
                 self.assertAccessUnauthorized(names, self.proprietary_series)
 
             # They cannot change any attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(names, self.proprietary_series)
 
     def test_access_for_product_owner(self):
         # The owner of a project has access to all attributes of
         # a product series.
         with person_logged_in(self.proprietary_product_owner):
-            for permission, names in self.expected_get_permissions.items():
+            for names in self.expected_get_permissions.values():
                 self.assertAccessAuthorized(names, self.proprietary_series)
 
             # They can change all attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeAuthorized(names, self.proprietary_series)
 
         with person_logged_in(self.public_product.owner):
-            for permission, names in self.expected_get_permissions.items():
+            for names in self.expected_get_permissions.values():
                 self.assertAccessAuthorized(names, self.public_series)
 
             # They can change all attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeAuthorized(names, self.public_series)
 
     def test_access_for_lp_admins(self):
         # Launchpad admins can access and change any attribute of a series
         # of public and private product.
         with celebrity_logged_in("admin"):
-            for permission, names in self.expected_get_permissions.items():
+            for names in self.expected_get_permissions.values():
                 self.assertAccessAuthorized(names, self.public_series)
                 self.assertAccessAuthorized(names, self.proprietary_series)
 
             # They can change all attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeAuthorized(names, self.public_series)
                 self.assertChangeAuthorized(names, self.proprietary_series)
 

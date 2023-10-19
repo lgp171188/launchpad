@@ -589,7 +589,7 @@ class TestGetDeferredNotifications(TestCaseWithFactory):
 
     def test_many_deferred_notification(self):
         num = 5
-        for i in range(num):
+        for _ in range(num):
             self._make_deferred_notification()
         results = self.bns.getDeferredNotifications()
         self.assertEqual(num, results.count())

@@ -477,7 +477,7 @@ class TestQueueItemsView(TestCaseWithFactory):
         dsc = self.factory.makeLibraryFileAlias(filename="foo_0.1.dsc")
         deb = self.factory.makeLibraryFileAlias(filename="foo.deb")
         transaction.commit()
-        for i in range(5):
+        for _ in range(5):
             uploads.append(self.factory.makeSourcePackageUpload(distroseries))
             sprs.append(uploads[-1].sources[0].sourcepackagerelease)
             sprs[-1].addFile(dsc)
@@ -504,7 +504,7 @@ class TestQueueItemsView(TestCaseWithFactory):
         )
         for i in (0, 2, 3):
             self.factory.makePackageDiff(to_source=sprs[i])
-        for i in range(15):
+        for _ in range(15):
             uploads.append(self.factory.makeBuildPackageUpload(distroseries))
             uploads[-1].builds[0].build.binarypackages[0].addFile(deb)
         queue_admin = self.factory.makeArchiveAdmin(distroseries.main_archive)
@@ -520,7 +520,7 @@ class TestQueueItemsView(TestCaseWithFactory):
         uploads = []
         distroseries = self.factory.makeDistroSeries()
 
-        for i in range(11):
+        for _ in range(11):
             uploads.append(self.factory.makeSourcePackageUpload(distroseries))
         queue_admin = self.factory.makeArchiveAdmin(distroseries.main_archive)
 

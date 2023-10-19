@@ -409,7 +409,7 @@ class FeatureController:
     def _currentValueAndScope(self, flag):
         self._needRules()
         if flag in self._rules:
-            for scope, priority, value in self._rules[flag]:
+            for scope, _, value in self._rules[flag]:
                 if self._known_scopes.lookup(scope):
                     self._debugMessage(
                         "feature match flag=%r value=%r scope=%r"
@@ -481,7 +481,7 @@ class FeatureController:
         """Return the flag's value in the default scope."""
         self._needRules()
         if flag in self._rules:
-            for scope, priority, value in self._rules[flag]:
+            for scope, _, value in self._rules[flag]:
                 if scope == "default":
                     return value
         return None

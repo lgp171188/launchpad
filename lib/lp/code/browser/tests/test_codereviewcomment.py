@@ -122,7 +122,7 @@ class TestCodeReviewCommentInlineComments(TestCaseWithFactory):
         person = self.factory.makePerson()
         merge_proposal = self.factory.makeBranchMergeProposal()
         with person_logged_in(person):
-            for i in range(5):
+            for _ in range(5):
                 comment = self.factory.makeCodeReviewComment(
                     merge_proposal=merge_proposal
                 )

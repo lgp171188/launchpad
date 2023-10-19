@@ -399,7 +399,7 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
 
     def add_bug(self, count):
         login_person(self.product_owner)
-        for i in range(count):
+        for _ in range(count):
             bug = self.factory.makeBug(target=self.product)
             bug.bugtasks[0].transitionToMilestone(
                 self.milestone, self.product.owner
@@ -537,7 +537,7 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
 
     def add_bug(self, count):
         login_person(self.owner)
-        for i in range(count):
+        for _ in range(count):
             bug = self.factory.makeBug(target=self.product_milestone.product)
             bug.bugtasks[0].transitionToMilestone(
                 self.product_milestone, self.owner
@@ -591,7 +591,7 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
 
     def add_bug(self, count):
         login_person(self.owner)
-        for i in range(count):
+        for _ in range(count):
             bug = self.factory.makeBug(target=self.ubuntu)
             distrosourcepackage = self.factory.makeDistributionSourcePackage(
                 distribution=self.ubuntu
@@ -652,7 +652,7 @@ class TestMilestoneTagView(TestQueryCountBase):
 
     def add_bug(self, count):
         with person_logged_in(self.owner):
-            for n in range(count):
+            for _ in range(count):
                 self.factory.makeBug(
                     target=self.product,
                     owner=self.owner,

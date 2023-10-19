@@ -271,7 +271,7 @@ class TestCommandSpawnerAcceptance(TestCase):
 
         processes = 10
         seconds = 0.2
-        for counter in range(processes):
+        for _ in range(processes):
             spawner.start(["/bin/sleep", str(seconds)])
 
         before = datetime.now(timezone.utc)

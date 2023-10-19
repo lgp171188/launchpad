@@ -564,7 +564,7 @@ class TestBranchView(BrowserTestCase):
             # record linked bug info for use below
             linked_bug_urls = []
             linked_bug_text = []
-            for x in range(0, 2):
+            for _ in range(0, 2):
                 bug = self.factory.makeBug()
                 mp.source_branch.linkBug(bug, branch.owner)
                 linked_bug_urls.append(
@@ -637,7 +637,7 @@ class TestBranchView(BrowserTestCase):
     def test_query_count_landing_candidates(self):
         product = self.factory.makeProduct()
         branch = self.factory.makeBranch(product=product)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchMergeProposal(target_branch=branch)
         stacked = self.factory.makeBranch(product=product)
         source = self.factory.makeBranch(stacked_on=stacked, product=product)
@@ -657,7 +657,7 @@ class TestBranchView(BrowserTestCase):
     def test_query_count_landing_targets(self):
         product = self.factory.makeProduct()
         branch = self.factory.makeBranch(product=product)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchMergeProposal(source_branch=branch)
         stacked = self.factory.makeBranch(product=product)
         target = self.factory.makeBranch(stacked_on=stacked, product=product)
@@ -676,7 +676,7 @@ class TestBranchView(BrowserTestCase):
 
     def test_query_count_subscriber_content(self):
         branch = self.factory.makeBranch()
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchSubscription(branch=branch)
         Store.of(branch).flush()
         Store.of(branch).invalidate()
@@ -689,7 +689,7 @@ class TestBranchView(BrowserTestCase):
 
     def test_query_count_index_with_subscribers(self):
         branch = self.factory.makeBranch()
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchSubscription(branch=branch)
         Store.of(branch).flush()
         Store.of(branch).invalidate()

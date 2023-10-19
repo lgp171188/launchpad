@@ -1882,7 +1882,7 @@ class DirectoryHash:
         ]
         with open(path, "rb") as in_file:
             for chunk in iter(lambda: in_file.read(256 * 1024), b""):
-                for checksum_file, hashobj in hashes:
+                for _, hashobj in hashes:
                     hashobj.update(chunk)
 
         for checksum_file, hashobj in hashes:
@@ -1894,10 +1894,10 @@ class DirectoryHash:
 
     def add_dir(self, path):
         """Recursively add a directory path to be checksummed."""
-        for dirpath, dirnames, filenames in os.walk(path):
+        for dirpath, _, filenames in os.walk(path):
             for filename in filenames:
                 self.add(os.path.join(dirpath, filename))
 
     def close(self):
-        for checksum_path, checksum_file, archive_hash in self.checksum_hash:
+        for _, checksum_file, _ in self.checksum_hash:
             checksum_file.close()

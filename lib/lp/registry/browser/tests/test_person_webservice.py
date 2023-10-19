@@ -324,7 +324,7 @@ class PersonWebServiceTests(TestCaseWithFactory):
         snapshot.HARD_LIMIT_FOR_SNAPSHOT = 3
         try:
             with person_logged_in(owner):
-                for count in range(snapshot.HARD_LIMIT_FOR_SNAPSHOT + 1):
+                for _ in range(snapshot.HARD_LIMIT_FOR_SNAPSHOT + 1):
                     self.factory.makeArchive(owner=team)
                 team_url = api_url(team)
                 new_member_url = api_url(new_member)

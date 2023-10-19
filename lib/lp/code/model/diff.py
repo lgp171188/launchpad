@@ -290,7 +290,7 @@ class Diff(StormBase):
         else:
             added_lines_count = 0
             removed_lines_count = 0
-            for path, (added, removed) in diffstat.items():
+            for added, removed in diffstat.values():
                 added_lines_count += added
                 removed_lines_count += removed
         diff = cls(

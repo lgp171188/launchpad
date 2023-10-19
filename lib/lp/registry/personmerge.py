@@ -1192,7 +1192,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.
     # We can tell this by looking at the skip list.
-    for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
+    for src_tab, src_col, ref_tab, ref_col, _, _ in references:
         uniques = postgresql.listUniques(cur, src_tab, src_col)
         if len(uniques) > 0 and (src_tab, src_col) not in skip:
             raise NotImplementedError(
@@ -1202,7 +1202,7 @@ def merge_people(from_person, to_person, reviewer, delete=False):
             )
 
     # Handle all simple cases
-    for src_tab, src_col, ref_tab, ref_col, updact, delact in references:
+    for src_tab, src_col, _, _, _, _ in references:
         if (src_tab, src_col) in skip:
             continue
         cur.execute(

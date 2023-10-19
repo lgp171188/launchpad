@@ -584,7 +584,7 @@ class WebhookDeliveryJob(WebhookJobDerived):
     @memoize
     def _get_broadcast_addresses(cls):
         addrs = []
-        for net, addresses in psutil.net_if_addrs().items():
+        for addresses in psutil.net_if_addrs().values():
             for i in addresses:
                 try:
                     addrs.append(ipaddress.ip_address(str(i.broadcast)))

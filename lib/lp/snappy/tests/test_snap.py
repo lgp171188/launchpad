@@ -2463,7 +2463,7 @@ class TestSnapSet(TestCaseWithFactory):
         owners = [self.factory.makePerson() for i in range(2)]
         snaps = []
         for owner in owners:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(
                     self.factory.makeSnap(registrant=owner, owner=owner)
                 )
@@ -2560,7 +2560,7 @@ class TestSnapSet(TestCaseWithFactory):
         branches = [self.factory.makeAnyBranch() for i in range(2)]
         snaps = []
         for branch in branches:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(self.factory.makeSnap(branch=branch))
         snap_set = getUtility(ISnapSet)
         self.assertContentEqual(snaps[:2], snap_set.findByBranch(branches[0]))
@@ -2572,7 +2572,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         snaps = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
@@ -2588,7 +2588,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         snaps = []
         for repository in repositories:
-            for i in range(3):
+            for _ in range(3):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
@@ -2615,7 +2615,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         refs = []
         snaps = []
-        for repository in repositories:
+        for _ in repositories:
             refs.extend(
                 self.factory.makeGitRefs(
                     paths=["refs/heads/master", "refs/heads/other"]
@@ -3403,7 +3403,7 @@ class TestSnapSet(TestCaseWithFactory):
         branches = [self.factory.makeAnyBranch() for i in range(2)]
         snaps = []
         for branch in branches:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(
                     self.factory.makeSnap(
                         branch=branch, date_created=ONE_DAY_AGO
@@ -3427,7 +3427,7 @@ class TestSnapSet(TestCaseWithFactory):
         paths = []
         refs = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 paths.append(ref.path)
                 refs.append(ref)

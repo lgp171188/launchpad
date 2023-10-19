@@ -357,7 +357,7 @@ class TestCharmBaseWebservice(TestCaseWithFactory):
         webservice.default_api_version = "devel"
         distroseries_urls = []
         with celebrity_logged_in("registry_experts"):
-            for i in range(3):
+            for _ in range(3):
                 distroseries = self.factory.makeDistroSeries()
                 distroseries_urls.append(
                     webservice.getAbsoluteUrl(api_url(distroseries))

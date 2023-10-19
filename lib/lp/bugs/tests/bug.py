@@ -93,7 +93,7 @@ def print_remote_bugtasks(content):
     """
     affects_table = find_tags_by_class(content, "listing")[0]
     for span in affects_table.find_all("span"):
-        for key, value in span.attrs.items():
+        for value in span.attrs.values():
             if "bug-remote" in value:
                 target = extract_text(span.find_all_previous("td")[-2])
                 print(target, extract_text(span.find_next("a")))

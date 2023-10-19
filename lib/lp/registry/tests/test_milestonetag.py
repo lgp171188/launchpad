@@ -107,7 +107,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
     def _create_bugtasks(self, num, milestone=None):
         bugtasks = []
         with person_logged_in(self.owner):
-            for n in range(num):
+            for _ in range(num):
                 bugtask = self.factory.makeBugTask(
                     target=self.product, owner=self.owner
                 )
@@ -119,7 +119,7 @@ class ProjectGroupMilestoneTagTest(TestCaseWithFactory):
     def _create_specifications(self, num, milestone=None):
         specifications = []
         with person_logged_in(self.owner):
-            for n in range(num):
+            for _ in range(num):
                 specification = self.factory.makeSpecification(
                     product=self.product, owner=self.owner, milestone=milestone
                 )

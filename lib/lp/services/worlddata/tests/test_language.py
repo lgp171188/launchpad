@@ -46,7 +46,7 @@ class TestTranslatorsCounts(TestCaseWithFactory):
         super().setUp()
         self.translated_lang = self.factory.makeLanguage(pluralforms=None)
         self.untranslated_lang = self.factory.makeLanguage(pluralforms=None)
-        for i in range(3):
+        for _ in range(3):
             translator = self.factory.makePerson()
             translator.addLanguage(self.translated_lang)
             with dbuser("karma"):

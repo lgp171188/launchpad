@@ -310,7 +310,7 @@ class DatabasePreflight:
         """Report what patches are due to be applied from this tree."""
         con = self.lpmain_primary_node.con
         upgrade.log = self.log
-        for patch_num, patch_file in upgrade.get_patchlist(con):
+        for _, patch_file in upgrade.get_patchlist(con):
             self.log.info("%s is pending", os.path.basename(patch_file))
 
     def check_all(self):
@@ -381,7 +381,7 @@ class KillConnectionsPreflight(DatabasePreflight):
                     """
                     % sqlvalues(SYSTEM_USERS)
                 )
-                for pid, datname, usename, ignored in cur.fetchall():
+                for pid, datname, usename, _ in cur.fetchall():
                     all_clear = False
                     if loop_count == num_tries - 1:
                         self.log.fatal(

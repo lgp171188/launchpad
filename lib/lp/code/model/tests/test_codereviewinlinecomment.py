@@ -210,7 +210,7 @@ class TestCodeReviewInlineComment(TestCaseWithFactory):
         expected_relations = {}
         comments = []
         person = self.factory.makePerson()
-        for i in range(5):
+        for _ in range(5):
             comment = self.factory.makeCodeReviewComment()
             comments.append(comment)
             inline_comment = self.makeCodeReviewInlineComment(

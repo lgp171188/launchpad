@@ -237,7 +237,7 @@ class TestCustomUploadsCopier(TestCaseWithFactory, CommonTestHelpers):
         # XXX JeroenVermeulen 2011-08-17, bug=827967: Should compare by
         # Debian version string, not id.
         source_series = self.factory.makeDistroSeries()
-        for counter in range(5):
+        for _ in range(5):
             self.makeUpload(source_series)
         copier = CustomUploadsCopier(FakeDistroSeries())
         candidate_ids = [

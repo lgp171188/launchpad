@@ -87,7 +87,7 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         return script
 
     def makeArchives(self):
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeArchive()
         conditions = PublisherConfig.distribution_id == Archive.distribution_id
         return IStore(Archive).find(Archive, conditions).order_by(Archive.id)

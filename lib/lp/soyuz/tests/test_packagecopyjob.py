@@ -640,7 +640,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
     def test_iterReady_preempt(self):
         # Ordinary ("insecure") copy jobs that arrive in the middle of a
         # long mass-sync run take precedence immediately.
-        for i in range(2):
+        for _ in range(2):
             self.makeJob(copy_policy=PackageCopyPolicy.MASS_SYNC)
         iterator = getUtility(IPlainPackageCopyJobSource).iterReady()
         self.assertEqual(

@@ -1248,7 +1248,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
     def makeStackedOnBranchChain(self, depth=5, **kwargs):
         branch = None
-        for i in range(depth):
+        for _ in range(depth):
             branch = self.makeAnyBranch(stacked_on=branch, **kwargs)
         return branch
 
@@ -2011,7 +2011,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         revision_set = getUtility(IRevisionSet)
         if author is None:
             author = self.getUniqueString("author")
-        for index in range(count):
+        for _ in range(count):
             revision = revision_set.new(
                 revision_id=self.getUniqueString("revision-id"),
                 log_body=self.getUniqueString("log-body"),

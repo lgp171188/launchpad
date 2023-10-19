@@ -236,7 +236,7 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         source = getUtility(ITranslationTemplatesBuildSource)
         build_farm_jobs = []
         builds = []
-        for i in range(10):
+        for _ in range(10):
             branch = self.factory.makeBranch()
             build = source.create(branch)
             builds.append(build)

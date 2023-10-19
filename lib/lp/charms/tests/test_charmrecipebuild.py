@@ -240,7 +240,7 @@ class TestCharmRecipeBuild(TestCaseWithFactory):
             status=BuildStatus.FULLYBUILT,
             duration=timedelta(seconds=335),
         )
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeCharmRecipeBuild(
                 requester=self.build.requester,
                 recipe=self.build.recipe,

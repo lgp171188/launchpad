@@ -73,7 +73,7 @@ class TestSpecifications(TestCaseWithFactory):
     def test_specifications_quantity(self):
         # Ensure the quantity controls the maximum number of entries.
         sprint = self.factory.makeSprint()
-        for count in range(10):
+        for _ in range(10):
             self.makeSpec(sprint)
         self.assertEqual(10, sprint.specifications(None).count())
         result = sprint.specifications(None, quantity=None).count()

@@ -196,7 +196,7 @@ class TestBulkPruner(TestCase):
         self.store = IPrimaryStore(CommercialSubscription)
         self.store.execute("CREATE TABLE BulkFoo (id serial PRIMARY KEY)")
 
-        for i in range(10):
+        for _ in range(10):
             self.store.add(BulkFoo())
 
         self.log = logging.getLogger("garbo")
@@ -1177,7 +1177,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         # Creating a bunch of old stale repositories to be deleted,
         # to make sure the chunk size is being respected.
-        for i in range(5):
+        for _ in range(5):
             repo = removeSecurityProxy(self.factory.makeGitRepository())
             [ref1, ref2] = self.factory.makeGitRefs(
                 repository=repo, paths=["refs/heads/a-20.04", "b"]
@@ -1383,7 +1383,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # between calls.
         switch_dbuser("testadmin")
         potmsgset_pofile = {}
-        for n in range(4):
+        for _ in range(4):
             pofile = self.factory.makePOFile()
             translation_message = self.factory.makeCurrentTranslationMessage(
                 pofile=pofile
@@ -2295,7 +2295,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             report=report1, artifact_type=RevisionStatusArtifactType.BINARY
         )
         artifact1_3 = self.factory.makeRevisionStatusArtifact(report=report1)
-        for i in range(0, 5):
+        for _ in range(0, 5):
             self.factory.makeRevisionStatusArtifact(
                 report=report2, artifact_type=RevisionStatusArtifactType.BINARY
             )

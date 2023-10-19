@@ -577,14 +577,14 @@ class TestSharingService(
             )
 
         # Make some grants and check the count.
-        for x in range(5):
+        for _ in range(5):
             makeGrants()
         with StormStatementRecorder() as recorder:
             grantees = list(func(pillar))
         self.assertEqual(11, len(grantees))
         self.assertThat(recorder, HasQueryCount(LessThan(count)))
         # Make some more grants and check again.
-        for x in range(5):
+        for _ in range(5):
             makeGrants()
         with StormStatementRecorder() as recorder:
             grantees = list(func(pillar))
@@ -1674,7 +1674,7 @@ class TestSharingService(
         # specifications, ocirecipes, and vulnerabilities.
         bugs = []
         bug_tasks = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             bug = self.factory.makeBug(
                 target=pillar,
                 owner=pillar.owner,
@@ -1683,7 +1683,7 @@ class TestSharingService(
             bugs.append(bug)
             bug_tasks.append(bug.default_bugtask)
         branches = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             branch = self._makeBranch(
                 pillar=pillar,
                 owner=pillar.owner,
@@ -1691,7 +1691,7 @@ class TestSharingService(
             )
             branches.append(branch)
         gitrepositories = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             gitrepository = self._makeGitRepository(
                 pillar=pillar,
                 owner=pillar.owner,
@@ -1700,7 +1700,7 @@ class TestSharingService(
             gitrepositories.append(gitrepository)
         snaps = []
         if IProduct.providedBy(pillar):
-            for x in range(0, 10):
+            for _ in range(0, 10):
                 snap = self.factory.makeSnap(
                     project=pillar,
                     owner=pillar.owner,
@@ -1709,7 +1709,7 @@ class TestSharingService(
                 )
                 snaps.append(snap)
         specs = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             spec = self._makeSpecification(
                 pillar=pillar,
                 owner=pillar.owner,
@@ -1717,7 +1717,7 @@ class TestSharingService(
             )
             specs.append(spec)
         ocirecipes = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             ociproject = self.factory.makeOCIProject(
                 pillar=pillar, registrant=pillar.owner
             )
@@ -2119,7 +2119,7 @@ class TestSharingService(
             members=[member_with_access]
         )
         people.append(team_without_access)
-        for x in range(0, 10):
+        for _ in range(0, 10):
             person = self.factory.makePerson()
             people.append(person)
         people.append(team_with_access)
@@ -2156,7 +2156,7 @@ class TestSharingService(
         login_person(owner)
 
         bugs = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             bug = self.factory.makeBug(
                 target=pillar,
                 owner=owner,
@@ -2164,7 +2164,7 @@ class TestSharingService(
             )
             bugs.append(bug)
         branches = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             branch = self._makeBranch(
                 pillar=pillar,
                 owner=owner,
@@ -2172,7 +2172,7 @@ class TestSharingService(
             )
             branches.append(branch)
         gitrepositories = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             gitrepository = self._makeGitRepository(
                 pillar=pillar,
                 owner=owner,
@@ -2180,7 +2180,7 @@ class TestSharingService(
             )
             gitrepositories.append(gitrepository)
         specifications = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             spec = self._makeSpecification(
                 pillar=pillar,
                 owner=owner,
@@ -2307,7 +2307,7 @@ class TestSharingService(
         )
 
         bugs = []
-        for x in range(0, 10):
+        for _ in range(0, 10):
             bug = self.factory.makeBug(
                 target=pillar,
                 owner=owner,
