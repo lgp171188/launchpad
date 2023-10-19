@@ -66,7 +66,7 @@ def configure():
             "ftp.secrets.j2",
             rsync_secrets_path,
             config,
-            perms=0o644,
+            perms=0o640,
         )
         config["rsync_secrets_path"] = rsync_secrets_path
     elif os.path.exists("/etc/rsyncd/ftp.secrets"):
