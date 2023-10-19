@@ -524,6 +524,7 @@ class ISnapEditSchema(Interface):
             "auto_build",
             "auto_build_channels",
             "store_upload",
+            "pro_enable",
         ],
     )
 
@@ -933,6 +934,7 @@ class SnapAdminView(BaseSnapEditView):
         "information_type",
         "require_virtualized",
         "allow_internet",
+        "pro_enable",
     ]
 
     @property

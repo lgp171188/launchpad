@@ -834,6 +834,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertIsNone(snap.project)
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
+        self.assertFalse(snap.pro_enable)
 
         self.factory.makeAccessPolicy(
             pillar=project, type=InformationType.PRIVATESECURITY
@@ -845,6 +846,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl("Require virtualized builders").selected = False
         browser.getControl(name="field.information_type").value = private
         browser.getControl("Allow external network access").selected = False
+        browser.getControl("Enable Ubuntu Pro").selected = True
         browser.getControl("Update snap package").click()
 
         login_admin()
@@ -852,6 +854,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertFalse(snap.require_virtualized)
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
+        self.assertTrue(snap.pro_enable)
 
     def test_admin_snap_private_without_project(self):
         # Cannot make snap private if it doesn't have a project associated.
