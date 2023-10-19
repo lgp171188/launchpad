@@ -973,7 +973,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     @defer.inlineCallbacks
     def test_extraBuildArgs_snap_base_with_private_archive_dependencies(self):
         # If the build is using a snap base that has archive dependencies on
-        # private PPAs, extraBuildArgs sends them.
+        # private PPAs, extraBuildArgs excludes them.
         self.useFixture(InProcessAuthServerFixture())
         self.pushConfig(
             "launchpad", internal_macaroon_secret_key="some-secret"
@@ -997,10 +997,51 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         job.build.updateStatus(BuildStatus.BUILDING)
+
+        expected_archives = [
+            "deb %s %s main universe"
+            % (job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-security main universe"
+            % (job.archive.archive_url, job.build.distro_series.name),
+            "deb %s %s-updates main universe"
+            % (job.archive.archive_url, job.build.distro_series.name),
+        ]
+        self.assertEqual(expected_archives, args["archives"])
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_pro_enabled_snap_base_private_dependencies(self):
+        # If the build is using a snap base that has archive dependencies on
+        # private PPAs, extraBuildArgs doesn't excluse them if snap base is
+        # pro-enabled
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret"
+        )
+        snap_base = self.factory.makeSnapBase()
+        job = self.makeJob(snap_base=snap_base, pro_enable=True)
+        dependency = self.factory.makeArchive(
+            distribution=job.archive.distribution, private=True
+        )
+        snap_base.addArchiveDependency(
+            dependency,
+            PackagePublishingPocket.RELEASE,
+            getUtility(IComponentSet)["main"],
+        )
+        self.factory.makeBinaryPackagePublishingHistory(
+            archive=dependency,
+            distroarchseries=job.build.distro_arch_series,
+            pocket=PackagePublishingPocket.RELEASE,
+            status=PackagePublishingStatus.PUBLISHED,
+        )
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        job.build.updateStatus(BuildStatus.BUILDING)
+
         self.assertThat(
             [SourceEntry(item) for item in args["archives"]],
             MatchesListwise(
                 [
+                    # Private dependency
                     MatchesStructure(
                         type=Equals("deb"),
                         uri=AfterPreprocessing(
@@ -1025,6 +1066,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
                         dist=Equals(job.build.distro_series.name),
                         comps=Equals(["main"]),
                     ),
+                    # Non private dependencies
                     MatchesStructure.byEquality(
                         type="deb",
                         uri=job.archive.archive_url,
