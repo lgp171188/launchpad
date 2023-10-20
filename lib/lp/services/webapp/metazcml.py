@@ -73,7 +73,7 @@ def authorizations(_context, module):
             "module attribute must be a module: %s, %s" % module, type(module)
         )
     provides = IAuthorization
-    for nameinmodule, authorization in inspect.getmembers(
+    for _, authorization in inspect.getmembers(
         module, lambda member: _isAuthorization(module, member)
     ):
         if (

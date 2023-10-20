@@ -645,7 +645,7 @@ class TestPopulateDistroSeriesDiffScript(TestCaseWithFactory, FactoryHelper):
 
     def test_finds_all_distroseries(self):
         spphs = []
-        for counter in range(2):
+        for _ in range(2):
             dsp = self.makeDerivedDistroSeries()
             spphs.append(self.makeSPPH(dsp.derived_series))
         script = self.makeScript(["--all"])

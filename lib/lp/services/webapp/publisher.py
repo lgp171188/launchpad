@@ -535,14 +535,7 @@ class LaunchpadView(UserAttributeCache):
         from lp.services.features.flags import flag_info
 
         beta_info = {}
-        for (
-            flag_name,
-            value_domain,
-            documentation,
-            default_behaviour,
-            title,
-            url,
-        ) in flag_info:
+        for flag_name, _, _, _, title, url in flag_info:
             if flag_name not in self.related_features:
                 continue
             # A feature is always in beta if it's not enabled for

@@ -21,7 +21,7 @@ from lp.translations.model.translator import Translator
 
 def has_translators(translators_list):
     """Did `getTranslators` find any translators?"""
-    for group, translator, team in translators_list:
+    for _, _, team in translators_list:
         if team is not None:
             return True
     return False
@@ -29,7 +29,7 @@ def has_translators(translators_list):
 
 def is_in_one_of_translators(translators_list, person):
     """Is `person` a member of one of the entries in `getTranslators`?"""
-    for group, translator, team in translators_list:
+    for _, _, team in translators_list:
         if team is not None and person.inTeam(team):
             return True
     return False

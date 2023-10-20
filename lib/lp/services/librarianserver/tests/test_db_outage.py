@@ -84,7 +84,7 @@ class TestLibrarianDBOutage(TestCase):
         # connections are in use.
         num_librarian_threads = 20
         codes = set()
-        for count in range(num_librarian_threads):
+        for _ in range(num_librarian_threads):
             try:
                 urlopen(self.url).read()
                 codes.add(200)

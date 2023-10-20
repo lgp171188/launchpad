@@ -188,7 +188,7 @@ class Upgrader:
         repo = self.bzr_branch.repository
         revision_ids = repo.all_revision_ids()
         for tree in repo.revision_trees(revision_ids):
-            for path, entry in tree.iter_entries_by_dir():
+            for _, entry in tree.iter_entries_by_dir():
                 if entry.kind == "tree-reference":
                     return True
         return False

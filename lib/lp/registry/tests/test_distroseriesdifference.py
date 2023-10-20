@@ -455,7 +455,7 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         # Helper method to create packages sets.
         packagesets = []
         with celebrity_logged_in("admin"):
-            for i in range(nb_packagesets):
+            for _ in range(nb_packagesets):
                 ps = self.factory.makePackageset(
                     packages=[ds_diff.source_package_name],
                     distroseries=distroseries,

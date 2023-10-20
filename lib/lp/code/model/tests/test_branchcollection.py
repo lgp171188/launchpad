@@ -176,7 +176,7 @@ class TestGenericBranchCollection(TestCaseWithFactory):
         # the collection.
         collection = GenericBranchCollection(self.store)
         self.assertEqual(0, collection.count())
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeAnyBranch()
         self.assertEqual(3, collection.count())
 
@@ -197,7 +197,7 @@ class TestGenericBranchCollection(TestCaseWithFactory):
         depth = 3
         # Create private branches person can see.
         branches = []
-        for i in range(branch_number):
+        for _ in range(branch_number):
             branches.append(
                 self.factory.makeStackedOnBranchChain(
                     owner=person,
@@ -218,7 +218,7 @@ class TestGenericBranchCollection(TestCaseWithFactory):
         depth = 3
         # Create public branches.
         branches = []
-        for i in range(branch_number):
+        for _ in range(branch_number):
             branches.append(self.factory.makeStackedOnBranchChain(depth=depth))
         all_branches = GenericBranchCollection.preloadVisibleStackedOnBranches(
             branches
@@ -231,7 +231,7 @@ class TestGenericBranchCollection(TestCaseWithFactory):
         depth = 3
         # Create public branches.
         branches = []
-        for i in range(branch_number):
+        for _ in range(branch_number):
             branches.append(
                 self.factory.makeStackedOnBranchChain(
                     owner=person, depth=depth
@@ -922,7 +922,7 @@ class TestExtendedBranchRevisionDetails(TestCaseWithFactory):
 
         linked_bugtasks = []
         with person_logged_in(branch.owner):
-            for x in range(0, 2):
+            for _ in range(0, 2):
                 bug = self.factory.makeBug()
                 merge_proposals[0].source_branch.linkBug(bug, branch.owner)
                 linked_bugtasks.append(bug.default_bugtask)

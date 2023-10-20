@@ -28,7 +28,7 @@ def is_intltool_structure(tree):
     :returns: True if signs of an intltool structure were found.
     """
     with read_lock_tree(tree):
-        for thedir, files in tree.walkdirs():
+        for _, files in tree.walkdirs():
             for afile in files:
                 file_path, file_name, file_type = afile[:3]
                 if file_type != "file":

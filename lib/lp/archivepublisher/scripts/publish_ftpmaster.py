@@ -351,7 +351,7 @@ class PublishFTPMaster(LaunchpadCronScript):
     def setUpDirs(self):
         """Create archive roots and such if they did not yet exist."""
         for distro_configs in self.configs.values():
-            for archive_purpose, archive_config in distro_configs.items():
+            for archive_config in distro_configs.values():
                 archiveroot = archive_config.archiveroot
                 if not file_exists(archiveroot):
                     self.logger.debug("Creating archive root %s.", archiveroot)

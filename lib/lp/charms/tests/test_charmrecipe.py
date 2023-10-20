@@ -1417,7 +1417,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         owners = [self.factory.makePerson() for i in range(2)]
         recipes = []
         for owner in owners:
-            for i in range(2):
+            for _ in range(2):
                 recipes.append(
                     self.factory.makeCharmRecipe(registrant=owner, owner=owner)
                 )
@@ -1470,7 +1470,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         recipes = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
@@ -1487,7 +1487,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         recipes = []
         for repository in repositories:
-            for i in range(3):
+            for _ in range(3):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 recipes.append(self.factory.makeCharmRecipe(git_ref=ref))
         recipe_set = getUtility(ICharmRecipeSet)
@@ -1514,7 +1514,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         refs = []
         recipes = []
-        for repository in repositories:
+        for _ in repositories:
             refs.extend(
                 self.factory.makeGitRefs(
                     paths=["refs/heads/master", "refs/heads/other"]
@@ -1796,7 +1796,7 @@ class TestCharmRecipeSet(TestCaseWithFactory):
         paths = []
         refs = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 paths.append(ref.path)
                 refs.append(ref)

@@ -146,7 +146,7 @@ class BugNotificationSet:
         pending_notifications = []
         people_ids = set()
         bug_ids = set()
-        for notification, ignore, ignore in results:
+        for notification, _, _ in results:
             if notification.message.datecreated > time_limit:
                 last_omitted_notification = notification
             elif (

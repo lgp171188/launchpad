@@ -118,7 +118,7 @@ class TestMirroringForMirroredBranches(TestMirroringForImportedBranches):
         """If a branch repeatedly fails to mirror, back off exponentially."""
         branch = self.makeAnyBranch()
         num_failures = 3
-        for i in range(num_failures):
+        for _ in range(num_failures):
             branch.requestMirror()
             branch.startMirroring()
             branch.mirrorFailed("No particular reason")
@@ -132,7 +132,7 @@ class TestMirroringForMirroredBranches(TestMirroringForImportedBranches):
         mirroring.
         """
         branch = self.makeAnyBranch()
-        for i in range(self.max_failures):
+        for _ in range(self.max_failures):
             branch.requestMirror()
             branch.startMirroring()
             branch.mirrorFailed("No particular reason")

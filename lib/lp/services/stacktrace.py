@@ -68,7 +68,7 @@ def format_list(extracted_list):
     whose source text line or supplement or info are not None.
     """
     list = []
-    for filename, lineno, name, line, modname, supp, info in extracted_list:
+    for filename, lineno, name, line, _, supp, info in extracted_list:
         item = []
         item.append('  File "%s", line %d, in %s' % (filename, lineno, name))
         if line:

@@ -55,7 +55,7 @@ class TestPublisherConfig(TestCaseWithFactory):
         # Only one config for each distro is allowed.
 
         def make_conflicting_configs():
-            for counter in range(2):
+            for _ in range(2):
                 self.factory.makePublisherConfig(self.distribution)
             IStore(PublisherConfig).flush()
 

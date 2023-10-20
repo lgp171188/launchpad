@@ -139,7 +139,7 @@ class TestTranslationImportQueueEntryView(WithScenarios, TestCaseWithFactory):
         # Many translatable series.  The list is cut short; there's an
         # ellipsis to indicate this.
         series_count = len(product.translatable_series)
-        for counter in range(series_count, view.max_series_to_display + 1):
+        for _ in range(series_count, view.max_series_to_display + 1):
             extra_series = self.factory.makeProductSeries(product=product)
             self.factory.makePOTemplate(productseries=extra_series)
         series_text = view.product_translatable_series

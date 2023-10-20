@@ -56,7 +56,7 @@ def text_replaced(text, replacements, _cache={}):
     cachekey = tuple(replacements.items())
     if cachekey not in _cache:
         L = []
-        for find, replace in sorted(
+        for find, _ in sorted(
             replacements.items(), key=lambda item: len(item[0]), reverse=True
         ):
             L.append("(%s)" % re.escape(find))

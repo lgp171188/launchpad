@@ -51,7 +51,7 @@ class TestgetSpecificJobs(TestCaseWithFactory):
 
     def createBuilds(self):
         builds = []
-        for i in range(2):
+        for _ in range(2):
             builds.append(self.createBinaryPackageBuild())
             builds.append(self.createTranslationTemplateBuild())
             builds.append(self.createSourcePackageRecipeBuild())

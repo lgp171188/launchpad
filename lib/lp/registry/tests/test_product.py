@@ -2357,7 +2357,7 @@ class TestSpecifications(TestCaseWithFactory):
     def test_specifications_quantity(self):
         # Ensure the quantity controls the maximum number of entries.
         product = self.factory.makeProduct()
-        for count in range(10):
+        for _ in range(10):
             self.factory.makeSpecification(product=product)
         self.assertEqual(10, get_specs(product).count())
         self.assertEqual(10, get_specs(product, quantity=None).count())

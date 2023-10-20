@@ -1080,7 +1080,7 @@ class TestOCIRecipeAccessControl(TestCaseWithFactory, OCIConfigHelperMixin):
             registrant=person,
         )
         recipes = []
-        for i in range(10):
+        for _ in range(10):
             recipes.append(
                 self.factory.makeOCIRecipe(
                     registrant=person,
@@ -1587,7 +1587,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         oci_recipes = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(
                     repository=repository, paths=["refs/heads/v1.0-20.04"]
                 )
@@ -1642,7 +1642,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         paths = []
         refs = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(
                     repository=repository, paths=["refs/heads/v1.0-20.04"]
                 )

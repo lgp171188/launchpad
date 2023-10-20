@@ -689,7 +689,7 @@ class TestBugWatchActivityPruner(TestCaseWithFactory):
     def setUp(self):
         super().setUp("foo.bar@canonical.com")
         self.bug_watch = self.factory.makeBugWatch()
-        for i in range(MAX_SAMPLE_SIZE + 1):
+        for _ in range(MAX_SAMPLE_SIZE + 1):
             self.bug_watch.addActivity()
         transaction.commit()
 

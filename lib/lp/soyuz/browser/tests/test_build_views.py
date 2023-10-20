@@ -349,7 +349,7 @@ class TestBuildViews(TestCaseWithFactory):
         # The BuildRecordsView can also be used to filter by architecture tag.
         distroseries = self.factory.makeDistroSeries()
         arch_list = []
-        for i in range(5):
+        for _ in range(5):
             das = self.factory.makeDistroArchSeries(distroseries=distroseries)
             arch_list.append(das.architecturetag)
             build = self.factory.makeBinaryPackageBuild(

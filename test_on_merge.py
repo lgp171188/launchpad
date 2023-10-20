@@ -67,7 +67,7 @@ def setup_test_database():
 
     # If there are existing database connections, terminate. We have
     # rogue processes still connected to the database.
-    for loop in range(2):
+    for _ in range(2):
         cur.execute(
             """
             SELECT usename, query

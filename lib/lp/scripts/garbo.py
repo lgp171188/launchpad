@@ -1077,8 +1077,8 @@ class PersonPruner(TunableLoop):
             from_column,
             to_table,
             to_column,
-            uflag,
-            dflag,
+            _,
+            _,
         ) in postgresql.listReferences(cursor(), "person", "id"):
             # Skip things that don't link to Person.id or that link to it from
             # TeamParticipation or EmailAddress, as all Person entries will be

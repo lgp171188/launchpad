@@ -741,7 +741,7 @@ class TestBeforeTraverseHandler(TestCleanupProfiler):
 class TestInlineProfiling(BaseRequestEndHandlerTest):
     def make_work(self, count=1):
         def work():
-            for i in range(count):
+            for _ in range(count):
                 profile.start()
                 random.random()
                 profile.stop()

@@ -1469,7 +1469,7 @@ class GroupedDistributionSourcePackageBranchesView(
         and merge proposal links for badges.
         """
         visible_branches = []
-        for branches, count in self.series_branches_map.values():
+        for branches, _count in self.series_branches_map.values():
             visible_branches.extend(branches)
         return visible_branches
 

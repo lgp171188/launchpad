@@ -60,7 +60,7 @@ class TestFilterTests(TestCase):
         suite = unittest.TestSuite()
         for t in testnames:
             # Each test will be repeated equal to the number represented.
-            for i in range(int(t)):
+            for _ in range(int(t)):
                 suite.addTest(FakeTestCase(t))
         return suite
 

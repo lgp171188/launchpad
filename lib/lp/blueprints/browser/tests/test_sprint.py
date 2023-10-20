@@ -27,7 +27,7 @@ class TestSprintIndex(BrowserTestCase):
     def test_query_count(self):
         sprint = self.factory.makeSprint()
         with person_logged_in(sprint.owner):
-            for x in range(30):
+            for _ in range(30):
                 sprint.attend(
                     self.factory.makePerson(),
                     sprint.time_starts,
@@ -39,7 +39,7 @@ class TestSprintIndex(BrowserTestCase):
     def test_blueprint_listing_query_count(self):
         """Set a maximum number of queries for sprint blueprint lists."""
         sprint = self.factory.makeSprint()
-        for count in range(10):
+        for _ in range(10):
             blueprint = self.factory.makeSpecification()
             link = blueprint.linkSprint(sprint, blueprint.owner)
             link.acceptBy(sprint.owner)
@@ -50,7 +50,7 @@ class TestSprintIndex(BrowserTestCase):
     def test_proprietary_blueprint_listing_query_count(self):
         """Set a maximum number of queries for sprint blueprint lists."""
         sprint = self.factory.makeSprint()
-        for count in range(10):
+        for _ in range(10):
             blueprint = self.factory.makeSpecification(
                 information_type=InformationType.PROPRIETARY
             )

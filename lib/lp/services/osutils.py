@@ -112,7 +112,7 @@ def two_stage_kill(pid, poll_interval=0.1, num_polls=50, get_status=True):
     _kill_may_race(pid, SIGTERM)
 
     # Poll until the process has ended.
-    for i in range(num_polls):
+    for _ in range(num_polls):
         try:
             if get_status:
                 # Reap the child process and get its return value. If it's

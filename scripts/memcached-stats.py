@@ -33,7 +33,7 @@ INTERESTING_KEYS = [
 def get_summary(all_raw_stats):
     """Aggregate individual server statistics into a summary."""
     totals = {key: 0 for key in INTERESTING_KEYS}
-    for server, raw_stats in all_raw_stats:
+    for _, raw_stats in all_raw_stats:
         for key in INTERESTING_KEYS:
             totals[key] += int(raw_stats.get(key, 0))
     return totals

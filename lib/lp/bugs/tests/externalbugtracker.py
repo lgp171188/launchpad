@@ -1069,8 +1069,8 @@ class TestBugzillaAPIXMLRPCTransport(TestBugzillaXMLRPCTransport):
         if arguments.get("comment_ids") is not None:
             # We need to return all the comments listed.
             comments_to_return = {}
-            for bug_id, comments in self.bug_comments.items():
-                for comment_number, comment in comments.items():
+            for comments in self.bug_comments.values():
+                for comment in comments.values():
                     if comment["id"] in arguments["comment_ids"]:
                         comments_to_return[comment["id"]] = self._copy_comment(
                             comment, fields_to_return

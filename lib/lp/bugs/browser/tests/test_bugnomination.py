@@ -105,7 +105,7 @@ class TestBugNominationView(TestCaseWithFactory):
         )
         # Ensure we have some older series so test data better reflects
         # actual usage.
-        for index in range(3):
+        for _ in range(3):
             self.factory.makeDistroSeries(distribution=distro)
         bug = self.factory.makeBug(target=distro, series=current_series)
         series_bugtask = bug.bugtasks[1]
@@ -125,7 +125,7 @@ class TestBugNominationView(TestCaseWithFactory):
         )
         # Ensure we have some older series so test data better reflects
         # actual usage.
-        for index in range(3):
+        for _ in range(3):
             self.factory.makeDistroSeries(distribution=distro)
         package = self.factory.makeDistributionSourcePackage(
             distribution=distro
@@ -146,7 +146,7 @@ class TestBugNominationView(TestCaseWithFactory):
         current_series = self.factory.makeProductSeries(product=product)
         # Ensure we have some older series so test data better reflects
         # actual usage.
-        for index in range(3):
+        for _ in range(3):
             self.factory.makeProductSeries(product=product)
         bug = self.factory.makeBug(target=product, series=current_series)
         series_bugtask = bug.bugtasks[1]
@@ -190,7 +190,7 @@ class TestBugEditLinks(TestCaseWithFactory):
     def _createBug(self, bug_task_number=1):
         series = self.factory.makeProductSeries()
         bug = self.factory.makeBug(series=series)
-        for i in range(bug_task_number):
+        for _ in range(bug_task_number):
             self.factory.makeBugTask(bug=bug)
         launchbag = getUtility(ILaunchBag)
         launchbag.add(series.product)

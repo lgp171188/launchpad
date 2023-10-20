@@ -1742,7 +1742,7 @@ def get_precached_products(
             release_caches = {}
             all_releases = []
             milestones_and_releases = get_milestones_and_releases(products)
-            for milestone, release, product_id in milestones_and_releases:
+            for milestone, release, _ in milestones_and_releases:
                 release_cache = get_property_cache(release)
                 release_caches[release.id] = release_cache
                 if not hasattr(release_cache, "files"):

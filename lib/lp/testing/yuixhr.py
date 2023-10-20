@@ -451,7 +451,7 @@ class YUITestFixtureControllerView(LaunchpadView):
 
 
 def find_tests(root):
-    for dirpath, dirnames, filenames in os.walk(root):
+    for dirpath, _, filenames in os.walk(root):
         dirpath = os.path.relpath(dirpath, root)
         for filename in filenames:
             if fnmatchcase(filename, "test_*.js"):

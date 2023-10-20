@@ -20,7 +20,7 @@ def test_suite():
 
     # Find all the doctests in wadllib.
     packages = []
-    for dirpath, dirnames, filenames in os.walk(topdir):
+    for dirpath, dirnames, _ in os.walk(topdir):
         if "docs" in dirnames:
             docsdir = os.path.join(dirpath, "docs")[len(topdir) + 1 :]
             packages.append(docsdir)

@@ -20,14 +20,12 @@ def main():
     con.set_isolation_level(0)  # autocommit
     cur = con.cursor()
 
-    for table, ignored in ALL_FTI:
-        print("Doing %(table)s" % vars(), end="")
-        cur.execute("SELECT id FROM %(table)s" % vars())
+    for table, _ in ALL_FTI:
+        print("Doing %s" % table, end="")
+        cur.execute("SELECT id FROM %s" % table)
         ids = [row[0] for row in cur.fetchall()]
         for id in ids:
-            cur.execute(
-                "UPDATE %(table)s SET fti=NULL WHERE id=%(id)s" % vars()
-            )
+            cur.execute("UPDATE %s SET fti=NULL WHERE id=%s" % (table, id))
             if id % 100 == 0:
                 print(".", end="")
         print()

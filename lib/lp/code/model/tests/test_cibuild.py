@@ -304,7 +304,7 @@ class TestCIBuild(TestCaseWithFactory):
             status=BuildStatus.FULLYBUILT,
             duration=timedelta(seconds=335),
         )
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeCIBuild(
                 git_repository=build.git_repository,
                 distro_arch_series=build.distro_arch_series,

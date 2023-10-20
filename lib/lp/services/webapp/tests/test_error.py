@@ -98,7 +98,7 @@ class TestDatabaseErrorViews(TestCase):
         Raise a TimeoutException if the connection cannot be established.
         """
         browser = Browser()
-        for i in range(retries):
+        for _ in range(retries):
             try:
                 browser.open(url)
                 return

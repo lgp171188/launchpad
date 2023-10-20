@@ -178,7 +178,7 @@ class TestExposeAdministeredTeams(TestCaseWithFactory):
 
         # Create some new public teams owned by the user, and a private
         # team administered by the user.
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeTeam(owner=self.user)
         pt = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE, members=[self.user]

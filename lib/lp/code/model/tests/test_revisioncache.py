@@ -89,7 +89,7 @@ class TestRevisionCache(TestCaseWithFactory):
 
     def test_simple_total_count(self):
         # Test that the count does in fact count the revisions we add.
-        for i in range(4):
+        for _ in range(4):
             self.makeCachedRevision()
         cache = getUtility(IRevisionCache)
         self.assertEqual(4, cache.count())
@@ -135,7 +135,7 @@ class TestRevisionCache(TestCaseWithFactory):
             delta=timedelta(days=-2),
         )
         # Make four cached revisions spanning 33, 31, 29, and 27 days ago.
-        for i in range(4):
+        for _ in range(4):
             self.makeCachedRevision(
                 revision=self.factory.makeRevision(revision_date=next(tc))
             )
@@ -363,7 +363,7 @@ class TestRevisionCache(TestCaseWithFactory):
         # If there are multiple revisions with the same revision author text,
         # but not linked to a Launchpad person, then that revision_text is
         # counted as one author.
-        for counter in range(4):
+        for _ in range(4):
             self.makeCachedRevision(
                 revision=self.factory.makeRevision(
                     author="Foo <foo@example.com>"

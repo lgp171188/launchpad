@@ -55,7 +55,7 @@ def rollback_prepared_transactions(database):
     )
     xids = [row[0] for row in cur.fetchall()]
     for xid in xids:
-        cur.execute("ROLLBACK PREPARED %(xid)s", vars())
+        cur.execute("ROLLBACK PREPARED %(xid)s", {"xid": xid})
     con.close()
 
 

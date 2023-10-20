@@ -985,7 +985,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
             datetime.now(timezone.utc) - timedelta(days=33),
             delta=timedelta(days=2),
         )
-        for i in range(4):
+        for _ in range(4):
             revision = self.factory.makeRevision(
                 revision_date=next(date_generator)
             )
@@ -1000,7 +1000,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
             datetime.now(timezone.utc) - timedelta(days=33),
             delta=timedelta(days=2),
         )
-        for i in range(4):
+        for _ in range(4):
             revision = self.factory.makeRevision(
                 revision_date=next(date_generator)
             )

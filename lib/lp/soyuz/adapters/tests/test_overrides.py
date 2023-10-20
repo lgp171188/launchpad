@@ -175,7 +175,7 @@ class TestFromExistingOverridePolicy(TestCaseWithFactory):
         spns = []
         distroseries = self.factory.makeDistroSeries()
         pocket = self.factory.getAnyPocket()
-        for i in range(10):
+        for _ in range(10):
             spph = self.factory.makeSourcePackagePublishingHistory(
                 distroseries=distroseries,
                 archive=distroseries.main_archive,
@@ -473,7 +473,7 @@ class TestFromExistingOverridePolicy(TestCaseWithFactory):
         distroseries = distroarchseries.distroseries
         distroseries.nominatedarchindep = distroarchseries
         pocket = self.factory.getAnyPocket()
-        for i in range(10):
+        for _ in range(10):
             bpph = self.factory.makeBinaryPackagePublishingHistory(
                 distroarchseries=distroarchseries,
                 archive=distroseries.main_archive,
@@ -690,7 +690,7 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
         expected = {spns[0]: SourceOverride(component=universe, new=True)}
         distroseries = self.factory.makeDistroSeries()
         pocket = self.factory.getAnyPocket()
-        for i in range(8):
+        for _ in range(8):
             spph = self.factory.makeSourcePackagePublishingHistory(
                 distroseries=distroseries,
                 archive=distroseries.main_archive,
@@ -732,7 +732,7 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
         bpn = self.factory.makeBinaryPackageName()
         bpns = []
         expected = {}
-        for i in range(3):
+        for _ in range(3):
             distroarchseries = self.factory.makeDistroArchSeries(
                 distroseries=distroseries
             )
@@ -756,7 +756,7 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
                 new=False,
                 version=bpph.binarypackagerelease.version,
             )
-        for i in range(2):
+        for _ in range(2):
             distroarchseries = self.factory.makeDistroArchSeries(
                 distroseries=distroseries
             )

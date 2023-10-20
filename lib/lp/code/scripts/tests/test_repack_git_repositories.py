@@ -284,7 +284,7 @@ class TestRequestGitRepack(TestCaseWithFactory):
             repo[i].loose_object_count = 7000
             repo[i].pack_count = 43
 
-        for i in range(3):
+        for _ in range(3):
             repo.append(self.factory.makeGitRepository())
 
         # we should only have 7 candidates at this point

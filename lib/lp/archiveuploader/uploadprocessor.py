@@ -295,7 +295,7 @@ class UploadHandler:
         """
         changes_files = []
 
-        for dirpath, dirnames, filenames in os.walk(self.upload_path):
+        for dirpath, _, filenames in os.walk(self.upload_path):
             relative_path = dirpath[len(self.upload_path) + 1 :]
             for filename in filenames:
                 if filename.endswith(".changes"):

@@ -98,7 +98,7 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         exactly the same priority."""
         for file_extension in TranslationImporter().supported_file_extensions:
             priorities = []
-            for format, importer in importers.items():
+            for importer in importers.values():
                 if file_extension in importer.file_extensions:
                     self.assertNotIn(importer.priority, priorities)
                     priorities.append(importer.priority)

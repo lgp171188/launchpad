@@ -123,7 +123,7 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
     def start(self, retries=20, sleep=0.5):
         """Start PGBouncer, waiting for it to accept connections."""
         super().start()
-        for i in range(retries):
+        for _ in range(retries):
             try:
                 socket.create_connection((self.host, self.port))
             except OSError:

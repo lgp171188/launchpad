@@ -258,7 +258,7 @@ class TestRequestTokens(TestOAuth):
         """It's possible to get a person's request tokens."""
         person = self.factory.makePerson()
         self.assertEqual(person.oauth_request_tokens.count(), 0)
-        for i in range(0, 3):
+        for _ in range(0, 3):
             self.factory.makeOAuthRequestToken(reviewed_by=person)
         self.assertEqual(person.oauth_request_tokens.count(), 3)
 
@@ -389,7 +389,7 @@ class TestAccessTokens(TestOAuth):
         """It's possible to get a person's access tokens."""
         person = self.factory.makePerson()
         self.assertEqual(person.oauth_access_tokens.count(), 0)
-        for i in range(0, 3):
+        for _ in range(0, 3):
             self.factory.makeOAuthAccessToken(self.consumer, person)
         self.assertEqual(person.oauth_access_tokens.count(), 3)
 

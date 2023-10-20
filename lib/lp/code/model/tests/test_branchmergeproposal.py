@@ -2865,7 +2865,7 @@ class TestGetRevisionsSinceReviewStart(TestCaseWithFactory):
             bmp.requestReview(review_date)
         revision_date = review_date + timedelta(days=1)
         revisions = []
-        for date in range(2):
+        for _ in range(2):
             revisions.append(
                 add_revision_to_branch(
                     self.factory, bmp.source_branch, revision_date

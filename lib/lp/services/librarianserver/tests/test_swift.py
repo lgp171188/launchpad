@@ -196,7 +196,7 @@ class TestFeedSwift(TestCase):
 
         old_swift_client = old_swift_fixture.connect()
         try:
-            for lfc, contents in zip(self.lfcs, self.contents):
+            for lfc, _ in zip(self.lfcs, self.contents):
                 container, name = swift.swift_location(lfc.id)
                 self.assertRaises(
                     swiftclient.ClientException,

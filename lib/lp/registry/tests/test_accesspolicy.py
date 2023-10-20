@@ -883,7 +883,7 @@ class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
         def create_bugs():
             while len(bugs):
                 bugs.pop()
-            for i in range(10):
+            for _ in range(10):
                 bugs.append(self.factory.makeBug())
 
         def reconcile():

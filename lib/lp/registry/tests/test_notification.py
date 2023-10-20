@@ -62,7 +62,7 @@ class SendDirectContactEmailTestCase(TestCaseWithFactory):
         recipients_set = NotificationRecipientSet()
         old_message = self.factory.makeSignedMessage(email_address="me@eg.dom")
         authorization = IDirectEmailAuthorization(user)
-        for action in range(authorization.message_quota):
+        for _ in range(authorization.message_quota):
             authorization.record(old_message)
         self.assertRaises(
             QuotaReachedError,
@@ -82,7 +82,7 @@ class SendDirectContactEmailTestCase(TestCaseWithFactory):
         recipients_set = NotificationRecipientSet()
         old_message = self.factory.makeSignedMessage(email_address="me@eg.dom")
         authorization = IDirectEmailAuthorization(user)
-        for action in range(authorization.message_quota - 1):
+        for _ in range(authorization.message_quota - 1):
             authorization.record(old_message)
         pop_notifications()
         send_direct_contact_email(

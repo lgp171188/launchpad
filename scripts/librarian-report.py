@@ -107,9 +107,7 @@ def main():
         total_bytes, formatted_size, num_files = cur.fetchone()
         totals.add((total_bytes, referring_table, formatted_size, num_files))
 
-    for total_bytes, tab_name, formatted_size, num_files in sorted(
-        totals, reverse=True
-    ):
+    for _, tab_name, formatted_size, num_files in sorted(totals, reverse=True):
         print("%-10s %s in %d files" % (formatted_size, tab_name, num_files))
 
     return 0

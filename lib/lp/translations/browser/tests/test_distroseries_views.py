@@ -75,7 +75,7 @@ class TestLanguagePacksView(TestCaseWithFactory):
         distroseries = self.factory.makeUbuntuDistroSeries()
         # This is one more than the default for shortlist.
         number_of_language_packs = 16
-        for i in range(number_of_language_packs):
+        for _ in range(number_of_language_packs):
             self.factory.makeLanguagePack(distroseries)
 
         view = create_initialized_view(

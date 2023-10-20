@@ -638,7 +638,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         self.view = BugTasksNominationsView(self.bug, LaunchpadTestRequest())
 
     def test_not_many_bugtasks(self):
-        for count in range(10 - len(self.bug.bugtasks) - 1):
+        for _ in range(10 - len(self.bug.bugtasks) - 1):
             self.factory.makeBugTask(bug=self.bug)
         self.view.initialize()
         self.assertFalse(self.view.many_bugtasks)
@@ -648,7 +648,7 @@ class TestBugTasksTableView(TestCaseWithFactory):
         self.assertFalse(row_view.many_bugtasks)
 
     def test_many_bugtasks(self):
-        for count in range(10 - len(self.bug.bugtasks)):
+        for _ in range(10 - len(self.bug.bugtasks)):
             self.factory.makeBugTask(bug=self.bug)
         self.view.initialize()
         self.assertTrue(self.view.many_bugtasks)
@@ -2349,7 +2349,7 @@ class TestBugTaskBatchedCommentsAndActivityView(TestCaseWithFactory):
         bug = self.factory.makeBug()
         with person_logged_in(bug.owner):
             if not comments_only:
-                for i in range(number_of_changes):
+                for _ in range(number_of_changes):
                     change = BugTaskStatusChange(
                         bug.default_bugtask,
                         UTC_NOW,

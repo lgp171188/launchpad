@@ -510,7 +510,7 @@ class CopyCheckerQueries(TestCaseWithFactory, CopyCheckerHarness):
 
     def _setupSources(self, nb_of_sources):
         sources = []
-        for i in range(nb_of_sources):
+        for _ in range(nb_of_sources):
             source = self.test_publisher.getPubSource(
                 version="%d" % self.factory.getUniqueInteger(),
                 sourcename="name-%d" % self.factory.getUniqueInteger(),

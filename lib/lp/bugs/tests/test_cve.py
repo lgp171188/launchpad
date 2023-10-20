@@ -34,7 +34,7 @@ class TestCveSet(TestCaseWithFactory):
         self.cves = []
         self.cve_index = 0
         with person_logged_in(self.distroseries.owner):
-            for count in range(4):
+            for _ in range(4):
                 task = self.factory.makeBugTask(target=self.distroseries)
                 bug = task.bug
                 self.bugs.append(bug)

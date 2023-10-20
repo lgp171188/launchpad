@@ -1539,7 +1539,7 @@ class TestCheckTeamParticipationScriptPerformance(TestCaseWithFactory):
         """
         # Create a deeply nested team and member structure.
         team = self.factory.makeTeam()
-        for num in range(10):
+        for _ in range(10):
             another_team = self.factory.makeTeam()
             another_person = self.factory.makePerson()
             with person_logged_in(team.teamowner):

@@ -68,9 +68,10 @@ class TestTranslationSplitter(TestCaseWithFactory):
         splitter = make_translation_splitter(self.factory)
         make_shared_potmsgset(self.factory, splitter)
         make_shared_potmsgset(self.factory, splitter)
-        for num, (upstream, ubuntu) in enumerate(splitter.findShared()):
+        shared = list(splitter.findShared())
+        for upstream, ubuntu in shared:
             self.assertEqual(upstream.potmsgset, ubuntu.potmsgset)
-        self.assertEqual(1, num)
+        self.assertEqual(1, len(shared))
 
     def test_splitPOTMsgSet(self):
         """Splitting a POTMsgSet clones it and updates TemplateItem."""

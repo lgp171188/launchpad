@@ -512,7 +512,7 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
         for distro, ppa, segments, redirect in attempts:
             ppa = traverse_named_ppa(self.context, distro, ppa)
             if ppa is not None:
-                for i in range(segments):
+                for _i in range(segments):
                     self.request.stepstogo.consume()
                 if redirect:
                     return self.redirectSubTree(

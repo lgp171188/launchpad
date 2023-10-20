@@ -191,7 +191,7 @@ class TestBug(TestCaseWithFactory):
     def test_get_direct_subscribers_query_count(self):
         bug = self.factory.makeBug()
         # Make lots of subscribers.
-        for i in range(10):
+        for _ in range(10):
             subscriber = self.factory.makePerson()
             with person_logged_in(subscriber):
                 bug.subscribe(subscriber, subscriber)
@@ -205,10 +205,10 @@ class TestBug(TestCaseWithFactory):
         bug = self.factory.makeBug()
         # Make lots of duplicate bugs.
         previous_dup = None
-        for i in range(10):
+        for _ in range(10):
             dup = self.factory.makeBug()
             # Make lots of subscribers.
-            for j in range(10):
+            for _ in range(10):
                 subscriber = self.factory.makePerson()
                 with person_logged_in(subscriber):
                     dup.subscribe(subscriber, subscriber)
@@ -236,7 +236,7 @@ class TestBug(TestCaseWithFactory):
         return self._get_notifications(BugNotificationStatus.DEFERRED)
 
     def _add_subscribers(self, bug, number):
-        for i in range(number):
+        for _ in range(number):
             subscriber = self.factory.makePerson()
             with person_logged_in(subscriber):
                 bug.subscribe(subscriber, subscriber)

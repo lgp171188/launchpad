@@ -2384,7 +2384,7 @@ class TestCreateBranchRevisionFromIDs(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         revision_to_number = {}
         revision_id_sequence_pairs = []
-        for i in range(10):
+        for _i in range(10):
             rev = self.factory.makeRevision()
             revision_number = self.factory.getUniqueInteger()
             revision_to_number[rev] = revision_number

@@ -236,7 +236,7 @@ def make_project_cloud_data(factory, details):
         start_date = last_commit - delta * (num_commits - 1)
         gen = time_counter(start_date, delta)
         commits_each = num_commits // num_authors
-        for committer in range(num_authors - 1):
+        for _ in range(num_authors - 1):
             make_project_branch_with_revisions(
                 factory, gen, project, commits_each
             )
