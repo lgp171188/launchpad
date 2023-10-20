@@ -6,14 +6,19 @@
     CustomLog /var/log/apache2/{{ domain_ftpmaster }}-access.log combined
     ErrorLog /var/log/apache2/{{ domain_ftpmaster }}-error.log
 
-{% for distribution in ("ubuntu", "ubuntu-partner") %}
-    <Directory "{{ archives_dir }}/ubuntu-archive/{{ distribution }}/">
+    <Directory "{{ archives_dir }}/ubuntu-archive/">
         IndexOptions NameWidth=* +SuppressDescription
         Options +Indexes +FollowSymLinks
         IndexIgnore favicon.ico
         AllowOverride None
         Require all granted
     </Directory>
-{% endfor %}
+
+    # Deny access to subdirectories other than "ubuntu" and
+    # "ubuntu-partner".  (This also has the effect of including only those
+    # subdirectories in the top-level directory index.)
+    <DirectoryMatch "{{ archives_dir }}/ubuntu-archive/[^/]+(?<!/ubuntu|/ubuntu-partner)/">
+        Require all denied
+    </DirectoryMatch>
 </VirtualHost>
 
