@@ -27,7 +27,7 @@ def configure():
     config = get_service_config()
     config["debian_suites"] = yaml.safe_load(config["debian_suites"])
     config["debian_components"] = []
-    for _, components in config["debian_suites"].items():
+    for components in config["debian_suites"].values():
         for component in components:
             if component not in config["debian_components"]:
                 config["debian_components"].append(component)

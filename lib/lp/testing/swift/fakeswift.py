@@ -63,7 +63,7 @@ class FakeKeystone(resource.Resource):
             if token is not None and self._isValidToken(token, tenant_name):
                 return token
         else:
-            for _, token in self.tokens.items():
+            for token in self.tokens.values():
                 if self._isValidToken(token, tenant_name):
                     return token
 

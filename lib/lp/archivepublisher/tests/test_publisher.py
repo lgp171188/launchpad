@@ -2710,7 +2710,7 @@ class TestPublisher(TestPublisherBase):
         self.assertTrue(
             os.path.exists(os.path.join(self.config.distsroot, expected))
         )
-        for _, suffix in pocketsuffix.items():
+        for suffix in pocketsuffix.values():
             path = os.path.join(self.config.distsroot, "devel%s" % suffix)
             expected_path = os.path.join(
                 self.config.distsroot, expected + suffix
