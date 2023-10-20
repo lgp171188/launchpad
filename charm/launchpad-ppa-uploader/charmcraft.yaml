@@ -35,7 +35,7 @@ parts:
     after:
       - ols-layers
     source: https://git.launchpad.net/launchpad-layers
-    source-commit: "58edb3e5a88794c3baa2274a94e21d3a298a6c79"
+    source-commit: "91defc30732b2565251101196630e5303fed7a64"
     source-submodules: []
     source-type: git
     plugin: dump
