@@ -1011,7 +1011,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
     @defer.inlineCallbacks
     def test_extraBuildArgs_pro_enabled_snap_base_private_dependencies(self):
         # If the build is using a snap base that has archive dependencies on
-        # private PPAs, extraBuildArgs doesn't excluse them if snap base is
+        # private PPAs, extraBuildArgs doesn't exclude them if snap base is
         # pro-enabled
         self.useFixture(InProcessAuthServerFixture())
         self.pushConfig(
