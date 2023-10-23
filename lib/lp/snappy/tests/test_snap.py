@@ -15,6 +15,7 @@ import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
 from nacl.public import PrivateKey
+from psycopg2 import IntegrityError
 from pymacaroons import Macaroon
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -284,11 +285,6 @@ class TestSnap(TestCaseWithFactory):
          - Else, default to False
         """
 
-        # XXX ines-almeida 2023-10-18: If an `IntegrityError` is raised in this
-        # test, then pro_enable is now enforced by DB NOT NULL constraint;
-        # inferring a value is no longer necessary, and this test and
-        # `test_inferProEnable` below can be removed
-
         refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
         blobs = {
             ref.repository.getInternalPath(): blob
@@ -304,6 +300,13 @@ class TestSnap(TestCaseWithFactory):
         snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
         for snap in snaps:
             removeSecurityProxy(snap)._pro_enable = None
+
+        try:
+            Store.of(snaps[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; inferring a value is
+            # no longer necessary.
+            return
 
         self.assertTrue(snaps[0].pro_enable)  # Snap with no base
         self.assertTrue(removeSecurityProxy(snaps[0])._pro_enable)
