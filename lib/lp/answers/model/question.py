@@ -1045,7 +1045,7 @@ class QuestionSet:
         # Only packages with open questions are included in the query
         # result, so initialize each package to 0.
         counts = {package: 0 for package in packages}
-        for distro_id, spn_id, open_questions in results:
+        for _, spn_id, open_questions in results:
             # The SourcePackageNames here should already be pre-fetched,
             # so that .get(spn_id) won't issue a DB query.
             sourcepackagename = sourcepackagename_set.get(spn_id)

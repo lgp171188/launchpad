@@ -624,7 +624,7 @@ class TestLiveFSSet(TestCaseWithFactory):
         owners = [self.factory.makePerson() for i in range(2)]
         livefses = []
         for owner in owners:
-            for i in range(2):
+            for _ in range(2):
                 livefses.append(
                     self.factory.makeLiveFS(registrant=owner, owner=owner)
                 )

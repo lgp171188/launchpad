@@ -138,7 +138,7 @@ class TestClosingBugs(TestCaseWithFactory):
         # Make 4 bugs and corresponding bugtasks and put them in an array
         # as tuples.
         bugs = []
-        for i in range(6):
+        for _ in range(6):
             if target_series is None:
                 target_series = spr.upload_distroseries
             target = target_series.getSourcePackage(spr.sourcepackagename)
@@ -228,7 +228,7 @@ class TestClosingBugs(TestCaseWithFactory):
 
         close_bugs_for_sourcepublication(target_spph, since_version="1.0")
 
-        for bug, bugtask in bugs:
+        for _, bugtask in bugs:
             self.assertEqual(BugTaskStatus.FIXRELEASED, bugtask.status)
 
 

@@ -9,6 +9,12 @@ options:
       Credentials for reading from Artifactory repositories (formatted as
       "user:token").
     default: ""
+  authentication_timeout:
+    type: int
+    description: >
+      The time in seconds that the builddmaster will wait for a reply from
+      the authserver.
+    default: 60
   builder_proxy_auth_api_admin_secret:
     type: string
     description: >

@@ -89,7 +89,7 @@ class TranslationsOverview:
         # them to appropriate font size values.
         minimum = None
         maximum = None
-        for name, product_id, distro_id, relative_karma in cur.fetchall():
+        for _, product_id, distro_id, relative_karma in cur.fetchall():
             if minimum is None or relative_karma < minimum:
                 minimum = relative_karma
             if maximum is None or relative_karma > maximum:

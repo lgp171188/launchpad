@@ -90,7 +90,7 @@ class BugTrackerTestCase(TestCaseWithFactory):
     def setUp(self):
         super().setUp()
         self.bug_tracker = self.factory.makeBugTracker()
-        for i in range(5):
+        for _ in range(5):
             self.factory.makeBugWatch(bugtracker=self.bug_tracker)
 
         store = Store.of(self.bug_tracker)

@@ -28,7 +28,7 @@ def find_lp_scripts():
     scripts = []
     for script_location in SCRIPT_LOCATIONS:
         location = os.path.join(LP_TREE, script_location)
-        for path, dirs, filenames in os.walk(location):
+        for path, _, filenames in os.walk(location):
             for filename in filenames:
                 script_path = os.path.join(path, filename)
                 if filename.startswith("_") or not filename.endswith(".py"):

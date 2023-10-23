@@ -264,21 +264,21 @@ class DistroSeriesIndexFunctionalTestCase(TestCaseWithFactory):
                 )
             )
         first_parent_series = dsps[0].parent_series
-        for i in range(nb_diff_versions):
+        for _ in range(nb_diff_versions):
             diff_type = DistroSeriesDifferenceType.DIFFERENT_VERSIONS
             self.factory.makeDistroSeriesDifference(
                 derived_series=derived_series,
                 difference_type=diff_type,
                 parent_series=first_parent_series,
             )
-        for i in range(nb_diff_child):
+        for _ in range(nb_diff_child):
             diff_type = DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES
             self.factory.makeDistroSeriesDifference(
                 derived_series=derived_series,
                 difference_type=diff_type,
                 parent_series=first_parent_series,
             )
-        for i in range(nb_diff_parent):
+        for _ in range(nb_diff_parent):
             diff_type = DistroSeriesDifferenceType.UNIQUE_TO_DERIVED_SERIES
             self.factory.makeDistroSeriesDifference(
                 derived_series=derived_series,
@@ -1606,7 +1606,7 @@ class TestDistroSeriesLocalDifferences(
         self.assertThat(recorder1, HasQueryCount(LessThan(12)))
 
         # The query count does not increase with the number of upgrades.
-        for index in range(3):
+        for _ in range(3):
             self.makePackageUpgrade(derived_series=derived_series)
         flush_database_caches()
         with StormStatementRecorder() as recorder2:

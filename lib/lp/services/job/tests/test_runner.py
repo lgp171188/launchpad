@@ -590,7 +590,7 @@ class StaticJobSource(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         if not cls.done:
-            for index, args in enumerate(cls.jobs):
+            for index, _ in enumerate(cls.jobs):
                 yield cls.get(index)
         cls.done = True
 

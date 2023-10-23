@@ -294,7 +294,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
                 )
 
             # They cannot change any attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(names, self.public_milestone)
                 self.assertChangeUnauthorized(
                     names, self.proprietary_milestone
@@ -361,7 +361,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
                 )
 
             # They cannot change attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeUnauthorized(names, self.public_milestone)
                 self.assertChangeUnauthorized(
                     names, self.proprietary_milestone
@@ -468,7 +468,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
                 self.assertAccessAuthorized(names, self.proprietary_milestone)
 
             # They can change attributes.
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeAuthorized(names, self.proprietary_milestone)
 
     def test_access_for_product_driver(self):
@@ -477,7 +477,7 @@ class MilestoneSecurityAdaperTestCase(TestCaseWithFactory):
         with person_logged_in(self.proprietary_product_owner):
             self.proprietary_product.driver = driver
         with person_logged_in(driver):
-            for permission, names in self.expected_set_permissions.items():
+            for names in self.expected_set_permissions.values():
                 self.assertChangeAuthorized(names, self.proprietary_milestone)
 
 
@@ -531,7 +531,7 @@ class MilestoneBugTaskSpecificationTest(TestCaseWithFactory):
     def _create_items(self, num, factory, **kwargs):
         items = []
         with person_logged_in(self.owner):
-            for n in range(num):
+            for _ in range(num):
                 items.append(factory(**kwargs))
         return items
 

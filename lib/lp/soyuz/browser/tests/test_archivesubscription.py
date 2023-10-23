@@ -34,7 +34,7 @@ class TestArchiveSubscribersView(TestCaseWithFactory):
                 owner=self.p3a_owner, private=True, name="p3a"
             )
         with person_logged_in(self.p3a_owner):
-            for count in range(3):
+            for _ in range(3):
                 subscriber = self.factory.makePerson()
                 self.private_ppa.newSubscription(subscriber, self.p3a_owner)
 

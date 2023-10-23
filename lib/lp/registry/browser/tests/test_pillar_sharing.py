@@ -432,7 +432,7 @@ class PillarSharingViewTestMixin:
         )
         # Add 4 members to the team, so we should have the team owner + 4
         # other members with access to the artifacts.
-        for i in range(4):
+        for _ in range(4):
             self.factory.makePerson(member_of=[team])
 
         items = [

@@ -591,7 +591,7 @@ class TestParallelLimitedTaskConsumer(TestCase):
         del log[:]
         consumer.taskStarted(self._neverEndingTask)
         self.assertEqual(0, log.count("stop"))
-        for i in range(worker_limit - 1):
+        for _ in range(worker_limit - 1):
             consumer.taskStarted(self._neverEndingTask)
         self.assertEqual(1, log.count("stop"))
 

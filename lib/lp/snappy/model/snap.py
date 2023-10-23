@@ -390,6 +390,8 @@ class Snap(StormBase, WebhookTargetMixin):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
+    _pro_enable = Bool(name="pro_enable", allow_none=True)
+
     def __init__(
         self,
         registrant,
@@ -414,6 +416,7 @@ class Snap(StormBase, WebhookTargetMixin):
         store_secrets=None,
         store_channels=None,
         project=None,
+        pro_enable=False,
     ):
         """Construct a `Snap`."""
         super().__init__()
@@ -448,6 +451,7 @@ class Snap(StormBase, WebhookTargetMixin):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
+        self._pro_enable = pro_enable
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
@@ -674,6 +678,18 @@ class Snap(StormBase, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
+
+    # XXX ines-almeida 2023-10-18: Simplify this once the database column has
+    # been backfilled.
+    @property
+    def pro_enable(self):
+        if self._pro_enable is None:
+            return getUtility(ISnapSet).inferProEnable(self.source)
+        return self._pro_enable
+
+    @pro_enable.setter
+    def pro_enable(self, value):
+        self._pro_enable = value
 
     def getAllowedInformationTypes(self, user):
         """See `ISnap`."""
@@ -1515,6 +1531,7 @@ class SnapSet:
         store_secrets=None,
         store_channels=None,
         project=None,
+        pro_enable=None,
     ):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
@@ -1571,6 +1588,9 @@ class SnapSet:
         ):
             raise SnapPrivacyMismatch
 
+        if pro_enable is None:
+            pro_enable = self.inferProEnable(branch or git_ref)
+
         store = IPrimaryStore(Snap)
         snap = Snap(
             registrant,
@@ -1595,6 +1615,7 @@ class SnapSet:
             store_secrets=store_secrets,
             store_channels=store_channels,
             project=project,
+            pro_enable=pro_enable,
         )
         store.add(snap)
         snap._reconcileAccess()
@@ -1631,6 +1652,29 @@ class SnapSet:
             return False
 
         return True
+
+    # XXX ines-almeida 2023-10-18: Remove this once we have self-service Pro
+    # enablement for snap recipes.
+    def inferProEnable(self, context):
+        """See `ISnapSet`."""
+        if context is None:
+            # Recipe has been detached from its source.
+            return False
+
+        try:
+            snapcraft_data = self.getSnapcraftYaml(context)
+        except (
+            MissingSnapcraftYaml,
+            CannotFetchSnapcraftYaml,
+            CannotParseSnapcraftYaml,
+        ):
+            pass
+        else:
+            base = snapcraft_data.get("base")
+            if base is None or base == "core":
+                return True
+
+        return False
 
     def _getByName(self, owner, name):
         return (

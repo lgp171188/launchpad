@@ -193,7 +193,7 @@ class SpriteUtil:
         # Paste each sprite into the combined image.
         y = 0
         positions = {}
-        for index, sprite in enumerate(self.sprite_info):
+        for sprite in self.sprite_info:
             sprite_image = sprite_images[sprite["filename"]]
             try:
                 position = [0, y]

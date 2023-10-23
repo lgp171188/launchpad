@@ -62,7 +62,7 @@ class MySimpleXMLRPCServer(xmlrpc.server.SimpleXMLRPCServer):
     allow_reuse_address = True
 
     def serve_2_requests(self):
-        for i in range(2):
+        for _ in range(2):
             self.handle_request()
         self.server_close()
 

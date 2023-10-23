@@ -55,7 +55,7 @@ class TestDistributionSourcePackageChangelogView(TestCaseWithFactory):
         )
         self.assertThat(dsp, changelog_browses_under_limit)
         with celebrity_logged_in("admin"):
-            for i in range(5):
+            for _ in range(5):
                 self.factory.makePackageDiff(
                     to_source=spph.sourcepackagerelease
                 )

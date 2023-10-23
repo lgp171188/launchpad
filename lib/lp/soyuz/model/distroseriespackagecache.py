@@ -186,7 +186,7 @@ class DistroSeriesPackageCache(StormBase):
             return
 
         details_map = defaultdict(list)
-        for bpn_id, summary, description, datecreated in all_details:
+        for bpn_id, summary, description, _ in all_details:
             bpn = IStore(BinaryPackageName).get(BinaryPackageName, bpn_id)
             details_map[bpn].append((summary, description))
 

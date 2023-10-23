@@ -293,7 +293,7 @@ def report_naughty_imports():
                 sorted_violations, attrgetter("name")
             ):
                 print("You should not import %s into:" % name)
-                for import_into, unused_duplicates_seq in itertools.groupby(
+                for import_into, _ in itertools.groupby(
                     sequence, attrgetter("import_into")
                 ):
                     # Show first occurrence only, to avoid duplicates.

@@ -254,7 +254,7 @@ def merge_duplicates(con):
             WHERE sha1=%(sha1)s AND filesize=%(filesize)s
             ORDER BY datecreated DESC
             """,
-            vars(),
+            {"sha1": sha1, "filesize": filesize},
         )
         dupes = cur.fetchall()
 
@@ -268,7 +268,7 @@ def merge_duplicates(con):
                     SELECT id, filename, mimetype FROM LibraryFileAlias
                     WHERE content = %(dupe_id)s
                     """,
-                    vars(),
+                    {"dupe_id": dupe_id},
                 )
                 for id, filename, mimetype in cur.fetchall():
                     log.debug3("> %d %s %s" % (id, filename, mimetype))
@@ -316,7 +316,7 @@ def merge_duplicates(con):
                 UPDATE LibraryFileAlias SET content=%(prime_id)s
                 WHERE content = %(other_id)s
                 """,
-                vars(),
+                {"prime_id": prime_id, "other_id": other_id},
             )
         prime_count += 1
         dupe_count += len(dupes)

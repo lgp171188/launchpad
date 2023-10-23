@@ -1884,7 +1884,7 @@ class TestStatusCountsForProductSeries(TestCaseWithFactory):
         for status in statuses:
             self.factory.makeBug(milestone=self.milestone, status=status)
             self.factory.makeBug(series=self.series, status=status)
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeBug(series=self.series)
         expected = {
             BugTaskStatus.INVALID: 2,

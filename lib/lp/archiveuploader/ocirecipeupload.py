@@ -51,7 +51,7 @@ class OCIRecipeUpload:
 
             # Foreach id in digest file, find matching layer
             for single_digest in digests:
-                for diff_id, data in single_digest.items():
+                for data in single_digest.values():
                     digest = data["digest"]
                     layer_id = data["layer_id"]
                     layer_path = os.path.join(

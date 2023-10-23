@@ -179,7 +179,7 @@ class TestGenericGitCollection(TestCaseWithFactory):
         # the collection.
         collection = GenericGitCollection(self.store)
         self.assertEqual(0, collection.count())
-        for i in range(3):
+        for _ in range(3):
             self.factory.makeGitRepository()
         self.assertEqual(3, collection.count())
 

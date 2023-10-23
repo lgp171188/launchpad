@@ -426,7 +426,7 @@ class RequestInfoTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.assertRaises(Unauthorized, getattr, self.question, "requestInfo")
 
         login_person(self.answerer)
-        getattr(self.question, "requestInfo")
+        self.question.requestInfo
 
 
 class GiveInfoTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -473,7 +473,7 @@ class GiveInfoTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.assertRaises(Unauthorized, getattr, self.question, "giveInfo")
 
         login_person(self.owner)
-        getattr(self.question, "giveInfo")
+        self.question.giveInfo
 
 
 class GiveAnswerTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -588,7 +588,7 @@ class GiveAnswerTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.assertRaises(Unauthorized, getattr, self.question, "giveAnswer")
 
         login_person(self.answerer)
-        getattr(self.question, "giveAnswer")
+        self.question.giveAnswer
 
 
 class LinkFAQTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -680,7 +680,7 @@ class LinkFAQTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.assertRaises(Unauthorized, getattr, self.question, "linkFAQ")
 
         login_person(self.answerer)
-        getattr(self.question, "linkFAQ")
+        self.question.linkFAQ
 
 
 class ConfirmAnswerTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -856,7 +856,7 @@ class ConfirmAnswerTestCase(BaseAnswerTrackerWorkflowTestCase):
         )
 
         login_person(self.owner)
-        getattr(self.question, "confirmAnswer")
+        self.question.confirmAnswer
 
 
 class ReopenTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -971,7 +971,7 @@ class ReopenTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.assertRaises(Unauthorized, getattr, self.question, "reopen")
 
         login_person(self.owner)
-        getattr(self.question, "reopen")
+        self.question.reopen
 
 
 class ExpireQuestionTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -1014,7 +1014,7 @@ class ExpireQuestionTestCase(BaseAnswerTrackerWorkflowTestCase):
         )
 
         login_person(self.answerer)
-        getattr(self.question, "expireQuestion")
+        self.question.expireQuestion
 
 
 class RejectTestCase(BaseAnswerTrackerWorkflowTestCase):
@@ -1103,13 +1103,10 @@ class RejectTestCase(BaseAnswerTrackerWorkflowTestCase):
         # clear authorization cache for check_permission
         clear_cache()
         self.assertTrue(
-            getattr(self.question, "reject"),
-            "Answer contact cannot reject question.",
+            self.question.reject, "Answer contact cannot reject question."
         )
         login_person(self.admin)
-        self.assertTrue(
-            getattr(self.question, "reject"), "Admin cannot reject question."
-        )
+        self.assertTrue(self.question.reject, "Admin cannot reject question.")
 
     def testRejectPermission_indirect_answer_contact(self):
         # Indirect answer contacts (for a distribution) can reject
@@ -1121,6 +1118,5 @@ class RejectTestCase(BaseAnswerTrackerWorkflowTestCase):
         self.answerer.addLanguage(getUtility(ILanguageSet)["en"])
         self.ubuntu.addAnswerContact(self.answerer, self.answerer)
         self.assertTrue(
-            getattr(self.question, "reject"),
-            "Answer contact cannot reject question.",
+            self.question.reject, "Answer contact cannot reject question."
         )

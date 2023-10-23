@@ -37,7 +37,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def makeStormResultSet(self):
         bug = self.factory.makeBug()
-        for count in range(5):
+        for _ in range(5):
             person = self.factory.makePerson()
             with person_logged_in(person):
                 bug.markUserAffected(person, True)
@@ -46,7 +46,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
     def makeDecoratedStormResultSet(self):
         bug = self.factory.makeBug()
         with person_logged_in(bug.owner):
-            for count in range(5):
+            for _ in range(5):
                 self.factory.makeBugAttachment(bug=bug, owner=bug.owner)
         result = bug.attachments
         self.assertTrue(zope_isinstance(result, DecoratedResultSet))
@@ -619,7 +619,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         with person_logged_in(bug.owner):
             for filename in ("file-a", "file-b"):
                 for content_type in ("text/a", "text/b"):
-                    for count in range(2):
+                    for _ in range(2):
                         self.factory.makeBugAttachment(
                             bug=bug,
                             owner=bug.owner,

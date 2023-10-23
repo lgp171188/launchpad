@@ -1267,7 +1267,7 @@ class TestGitRefView(BrowserTestCase):
     def test_query_count_landing_candidates(self):
         project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs(target=project)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchMergeProposalForGit(target_ref=ref)
         [source] = self.factory.makeGitRefs(target=project)
         [prereq] = self.factory.makeGitRefs(target=project)
@@ -1284,7 +1284,7 @@ class TestGitRefView(BrowserTestCase):
     def test_query_count_landing_targets(self):
         project = self.factory.makeProduct()
         [ref] = self.factory.makeGitRefs(target=project)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeBranchMergeProposalForGit(source_ref=ref)
         [target] = self.factory.makeGitRefs(target=project)
         [prereq] = self.factory.makeGitRefs(target=project)

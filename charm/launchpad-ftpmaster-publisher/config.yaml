@@ -7,13 +7,17 @@ options:
     type: string
     description: Domain name for the published Ubuntu archive.
     default: "archive.ubuntu.test"
-  signing_client_public_key:
+  rsync_secrets:
     type: string
-    description: Public key for encrypting communication between client and signing service. 
+    description: Secrets for rsync
     default: ""
   signing_client_private_key:
     type: string
     description: Private key for encrypting communication between client and signing service. 
+    default: ""
+  signing_client_public_key:
+    type: string
+    description: Public key for encrypting communication between client and signing service. 
     default: ""
   signing_endpoint:
     type: string
@@ -23,3 +27,19 @@ options:
     type: string
     description: Webmaster contact address.
     default: "webmaster@launchpad.test"
+  ubuntu_auth_users:
+    type: string
+    description: Authenticated users for rsync ubuntu
+    default: ""
+  ubuntu_dists_hosts_allow:
+    type: string
+    description: IP addresses permitted to connect to ubuntu/dists.
+    default: ""
+  ubuntu_germinate_hosts_allow:
+    type: string
+    description: IP addresses permitted to connect to ubuntu-germinate.
+    default: ""
+  ubuntu_partner_auth_users:
+    type: string
+    description: Authenticated users for rsync ubuntu-partner
+    default: ""

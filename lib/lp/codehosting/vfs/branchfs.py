@@ -502,7 +502,7 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
         @no_traceback_failures
         def real_mkdir(result):
             transport, path = result
-            return getattr(transport, "mkdir")(path, mode)
+            return transport.mkdir(path, mode)
 
         deferred.addCallback(real_mkdir)
         deferred.addErrback(maybe_make_branch_in_db)

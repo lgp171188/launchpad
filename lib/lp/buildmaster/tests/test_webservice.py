@@ -33,7 +33,7 @@ class TestBuildersCollection(TestCaseWithFactory):
 
     def test_list(self):
         names = ["bob", "frog"]
-        for i in range(3):
+        for _ in range(3):
             builder = self.factory.makeBuilder()
             self.factory.makeBinaryPackageBuild().queueBuild().markAsBuilding(
                 builder

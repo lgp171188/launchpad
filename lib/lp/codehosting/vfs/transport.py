@@ -247,7 +247,7 @@ class AsyncVirtualTransport(Transport):
                         "cannot move between underlying transports"
                     )
                 )
-            return getattr(from_transport, "rename")(from_path, to_path)
+            return from_transport.rename(from_path, to_path)
 
         deferred.addCallback(check_transports_and_rename)
         return deferred

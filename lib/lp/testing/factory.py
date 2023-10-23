@@ -1248,7 +1248,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
     def makeStackedOnBranchChain(self, depth=5, **kwargs):
         branch = None
-        for i in range(depth):
+        for _ in range(depth):
             branch = self.makeAnyBranch(stacked_on=branch, **kwargs)
         return branch
 
@@ -1552,8 +1552,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
             # Sort them
             related_series_branch_info = sorted_version_numbers(
-                series_branch_info,
-                key=lambda branch_info: (getattr(branch_info[1], "name")),
+                series_branch_info, key=lambda branch_info: branch_info[1].name
             )
 
             # Add a development branch at the start of the list.
@@ -1641,7 +1640,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
             related_package_branch_info = sorted_version_numbers(
                 related_package_branch_info,
-                key=lambda branch_info: (getattr(branch_info[1], "name")),
+                key=lambda branch_info: branch_info[1].name,
             )
 
         return (
@@ -2012,7 +2011,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         revision_set = getUtility(IRevisionSet)
         if author is None:
             author = self.getUniqueString("author")
-        for index in range(count):
+        for _ in range(count):
             revision = revision_set.new(
                 revision_id=self.getUniqueString("revision-id"),
                 log_body=self.getUniqueString("log-body"),
@@ -6209,6 +6208,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         store_secrets=None,
         store_channels=None,
         project=_DEFAULT,
+        pro_enable=False,
     ):
         """Make a new Snap."""
         assert information_type is None or private is None
@@ -6289,6 +6289,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             store_secrets=store_secrets,
             store_channels=store_channels,
             project=project,
+            pro_enable=pro_enable,
         )
         if is_stale is not None:
             removeSecurityProxy(snap).is_stale = is_stale

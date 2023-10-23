@@ -159,7 +159,7 @@ def main(dbname):
         print_row("Unused indexes", "N/A")
     else:
         print_row("Unused indexes", rows[0][1])
-        for table, index in rows[1:]:
+        for _, index in rows[1:]:
             print_row("", index)
 
 

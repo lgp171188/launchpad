@@ -1651,7 +1651,7 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
         )
 
     def test_batching(self):
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeProduct(owner=self.user)
         view = create_initialized_view(self.user, "+related-projects")
         next_match = soupmatchers.HTMLContains(

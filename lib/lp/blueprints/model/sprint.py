@@ -425,7 +425,7 @@ class HasSprintsMixin:
 
         Subclasses must overwrite this method if it doesn't suit them.
         """
-        table = getattr(self, "__storm_table__")
+        table = self.__storm_table__
         return [
             getattr(Specification, table.lower()) == self,
             Specification.id == SprintSpecification.specification_id,

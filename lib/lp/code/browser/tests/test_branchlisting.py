@@ -517,7 +517,7 @@ class TestGroupedDistributionSourcePackageBranchesView(TestCaseWithFactory):
         official = []
         # Sort the pocket items so RELEASE is last, and thus first popped.
         pockets = sorted(PackagePublishingPocket.items, reverse=True)
-        for i in range(official_count):
+        for _ in range(official_count):
             branch = branches.pop()
             pocket = pockets.pop()
             SeriesSourcePackageBranchSet.new(
@@ -790,7 +790,7 @@ class TestProjectGroupBranches(TestCaseWithFactory, AjaxBatchNavigationMixin):
         # The Javascript to wire up the ajax batch navigation behaviour is
         # correctly hidden behind a feature flag.
         product = self.factory.makeProduct(projectgroup=self.projectgroup)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeProductBranch(product=product)
         self._test_ajax_batch_navigation_feature_flag(
             product, view_name="+branches"

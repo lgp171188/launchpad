@@ -1,0 +1,32 @@
+max connections = 25
+
+[ftp]
+  path = {{ archives_dir }}/ubuntu-archive/ubuntu
+  comment = Ubuntu Archive
+  list = false
+  read only = true
+  auth users = {{ ubuntu_auth_users }}
+  secrets file = {{ rsync_secrets_path }}
+
+[partner]
+  path = {{ archives_dir }}/ubuntu-archive/ubuntu-partner/
+  comment = Partner
+  list = false
+  read only = true
+  auth users = {{ ubuntu_partner_auth_users }}
+  secrets file = {{ rsync_secrets_path }}
+
+[ubuntu-dists]
+  path = {{ archives_dir }}/ubuntu-archive/ubuntu/dists
+  comment = Ubuntu Archive Dists
+  list = false
+  read only = true
+  hosts allow = {{ ubuntu_dists_hosts_allow }}
+
+[ubuntu-germinate]
+  path = {{ archives_dir }}/ubuntu-archive/ubuntu-germinate
+  comment = Ubuntu Archive Germinate output
+  list = false
+  read only = true
+  hosts allow = {{ ubuntu_germinate_hosts_allow }}
+

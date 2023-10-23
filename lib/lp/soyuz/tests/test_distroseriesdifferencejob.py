@@ -163,7 +163,7 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
 
     def createSPPHs(self, derived_series, nb_spph=10):
         res_spph = []
-        for i in range(nb_spph):
+        for _ in range(nb_spph):
             packagename = self.factory.makeSourcePackageName()
             spph = self.factory.makeSourcePackagePublishingHistory(
                 sourcepackagename=packagename,
@@ -455,7 +455,7 @@ class TestDistroSeriesDifferenceJobSource(TestCaseWithFactory):
         spn = spph.sourcepackagerelease.sourcepackagename
 
         create_jobs = list(range(1, 3))
-        for counter in create_jobs:
+        for _ in create_jobs:
             self.getJobSource().createForSPPHs([spph])
 
         job_count = len(

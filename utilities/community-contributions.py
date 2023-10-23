@@ -536,7 +536,7 @@ class LogExCons(log.LogFormatter):
         # Go through the shallowest authored revisions and add their
         # top level revisions.
         for excon in self.all_ex_cons.values():
-            for rev, top_level_rev in excon.seen_revs.values():
+            for _, top_level_rev in excon.seen_revs.values():
                 excon.add_top_level_revision(top_level_rev)
 
         # Divide contributors into non-Canonical and Canonical.

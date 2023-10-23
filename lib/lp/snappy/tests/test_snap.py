@@ -15,6 +15,7 @@ import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
 from nacl.public import PrivateKey
+from psycopg2 import IntegrityError
 from pymacaroons import Macaroon
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -275,6 +276,42 @@ class TestSnap(TestCaseWithFactory):
         with notify_modified(removeSecurityProxy(snap), ["name"]):
             pass
         self.assertSqlAttributeEqualsDate(snap, "date_last_modified", UTC_NOW)
+
+    def test_pro_enable_value_for_existing_snaps(self):
+        """For existing snaps without pro-enable values, the value is set as
+        expected once called:
+         - If snap has snapcraft.yaml file, and no base - True
+         - If snap has snapcraft.yaml file, and is 'core'-based snap - True
+         - Else, default to False
+        """
+
+        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
+        blobs = {
+            ref.repository.getInternalPath(): blob
+            for ref, blob in (
+                (refs[0], b"name: test-snap\n"),
+                (refs[1], b"name: test-snap\nbase: core\n"),
+                (refs[2], b"name: test-snap\nbase: core18\n"),
+            )
+        }
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+        snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
+        for snap in snaps:
+            removeSecurityProxy(snap)._pro_enable = None
+
+        try:
+            Store.of(snaps[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; inferring a value is
+            # no longer necessary.
+            return
+
+        self.assertTrue(snaps[0].pro_enable)  # Snap with no base
+        self.assertTrue(snaps[1].pro_enable)  # Snap with 'core' base
+        self.assertFalse(snaps[2].pro_enable)  # Snap with 'core18' base
+        self.assertFalse(snaps[3].pro_enable)  # Snap without snapcraft.yaml
 
     def makeBuildableDistroArchSeries(self, **kwargs):
         das = self.factory.makeDistroArchSeries(**kwargs)
@@ -2248,6 +2285,7 @@ class TestSnapSet(TestCaseWithFactory):
             owner=self.factory.makeTeam(owner=registrant),
             distro_series=self.factory.makeDistroSeries(),
             name=self.factory.getUniqueUnicode("snap-name"),
+            pro_enable=False,
         )
         if branch is None and git_ref is None:
             branch = self.factory.makeAnyBranch()
@@ -2279,6 +2317,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
+        self.assertFalse(snap.pro_enable)
 
     def test_creation_git(self):
         # The metadata entries supplied when a Snap is created for a Git
@@ -2302,6 +2341,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
+        self.assertFalse(snap.pro_enable)
 
     def test_creation_git_url(self):
         # A Snap can be backed directly by a URL for an external Git
@@ -2463,7 +2503,7 @@ class TestSnapSet(TestCaseWithFactory):
         owners = [self.factory.makePerson() for i in range(2)]
         snaps = []
         for owner in owners:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(
                     self.factory.makeSnap(registrant=owner, owner=owner)
                 )
@@ -2560,7 +2600,7 @@ class TestSnapSet(TestCaseWithFactory):
         branches = [self.factory.makeAnyBranch() for i in range(2)]
         snaps = []
         for branch in branches:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(self.factory.makeSnap(branch=branch))
         snap_set = getUtility(ISnapSet)
         self.assertContentEqual(snaps[:2], snap_set.findByBranch(branches[0]))
@@ -2572,7 +2612,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         snaps = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
@@ -2588,7 +2628,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         snaps = []
         for repository in repositories:
-            for i in range(3):
+            for _ in range(3):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 snaps.append(self.factory.makeSnap(git_ref=ref))
         snap_set = getUtility(ISnapSet)
@@ -2615,7 +2655,7 @@ class TestSnapSet(TestCaseWithFactory):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         refs = []
         snaps = []
-        for repository in repositories:
+        for _ in repositories:
             refs.extend(
                 self.factory.makeGitRefs(
                     paths=["refs/heads/master", "refs/heads/other"]
@@ -3403,7 +3443,7 @@ class TestSnapSet(TestCaseWithFactory):
         branches = [self.factory.makeAnyBranch() for i in range(2)]
         snaps = []
         for branch in branches:
-            for i in range(2):
+            for _ in range(2):
                 snaps.append(
                     self.factory.makeSnap(
                         branch=branch, date_created=ONE_DAY_AGO
@@ -3427,7 +3467,7 @@ class TestSnapSet(TestCaseWithFactory):
         paths = []
         refs = []
         for repository in repositories:
-            for i in range(2):
+            for _ in range(2):
                 [ref] = self.factory.makeGitRefs(repository=repository)
                 paths.append(ref.path)
                 refs.append(ref)
@@ -3601,6 +3641,55 @@ class TestSnapProcessors(TestCaseWithFactory):
                 [self.default_procs[0], self.arm, hppa], snap.processors
             )
 
+    def test_pro_enabled_default_value_for_new_snap(self):
+        """Snap pro_enable value defaults to False when creating a new Snap."""
+
+        git_ref = self.factory.makeGitRefs()[0]
+        blob = b"name: test-snap\nbase: core18\n"
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blob
+
+        registrant = self.factory.makePerson()
+        components = dict(
+            registrant=registrant,
+            owner=self.factory.makeTeam(owner=registrant),
+            distro_series=self.factory.makeDistroSeries(),
+            name=self.factory.getUniqueUnicode("snap-name"),
+            git_ref=git_ref,
+            pro_enable=None,
+        )
+
+        snap = getUtility(ISnapSet).new(**components)
+        self.assertFalse(snap.pro_enable)
+
+    def test_inferProEnable(self):
+        """inferProEnable returns expected bool value depending on context:
+        - Context and snapcraft.yaml file exist, and no base - True
+        - Context and snapcraft.yaml file exist, and base is 'core' - True
+        - Else, default to False
+        """
+
+        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
+        blobs = {
+            ref.repository.getInternalPath(): blob
+            for ref, blob in (
+                (refs[0], b"name: test-snap\n"),
+                (refs[1], b"name: test-snap\nbase: core\n"),
+                (refs[2], b"name: test-snap\nbase: core18\n"),
+            )
+        }
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+
+        inferProEnable = getUtility(ISnapSet).inferProEnable
+        self.assertTrue(inferProEnable(refs[0]))  # Snap with no base
+        self.assertTrue(inferProEnable(refs[1]))  # Snap with 'core' base
+        self.assertFalse(inferProEnable(refs[2]))  # Snap with 'core18' base
+        self.assertFalse(inferProEnable(refs[3]))  # Snap w/out snapcraft.yaml
+        self.assertFalse(inferProEnable(None))  # Snap w/out ref or branch
+
 
 class TestSnapWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
@@ -3705,6 +3794,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertTrue(snap["require_virtualized"])
             self.assertTrue(snap["allow_internet"])
             self.assertFalse(snap["build_source_tarball"])
+            self.assertFalse(snap["pro_enable"])
 
     def test_new_git(self):
         # Ensure Snap creation based on a Git branch works.
@@ -3730,6 +3820,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertTrue(snap["require_virtualized"])
             self.assertTrue(snap["allow_internet"])
             self.assertFalse(snap["build_source_tarball"])
+            self.assertFalse(snap["pro_enable"])
 
     def test_new_private(self):
         # Ensure private Snap creation works.

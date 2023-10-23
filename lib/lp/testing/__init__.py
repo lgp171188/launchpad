@@ -436,7 +436,7 @@ def record_two_runs(
         recorder_factory = StormStatementRecorder
     if login_method is not None:
         login_method()
-    for i in range(first_round_number):
+    for _ in range(first_round_number):
         item_creator()
     # Record how many queries are issued when {tested_method} is
     # called after {item_creator} has been run {first_round_number}
@@ -452,7 +452,7 @@ def record_two_runs(
         second_round_number = first_round_number
     if login_method is not None:
         login_method()
-    for i in range(second_round_number):
+    for _ in range(second_round_number):
         item_creator()
     # Record again the number of queries issued.
     flush_database_caches()
@@ -1206,7 +1206,7 @@ def build_yui_unittest_suite(app_testing_path, yui_test_class):
 
 
 def _harvest_yui_test_files(file_path):
-    for dirpath, dirnames, filenames in os.walk(file_path):
+    for dirpath, _, filenames in os.walk(file_path):
         for filename in filenames:
             if fnmatchcase(filename, "test_*.html"):
                 yield os.path.join(dirpath, filename)

@@ -215,7 +215,7 @@ class TestBugScaling(TestCaseWithFactory):
         with_2_count = collector.count
         self.assertEqual(response.status, 200)
         login(USER_EMAIL)
-        for i in range(5):
+        for _ in range(5):
             self.factory.makeBugAttachment(self.bug)
         logout()
         # Second request.
@@ -252,7 +252,7 @@ class TestBugScaling(TestCaseWithFactory):
         with_2_count = collector.count
         self.assertEqual(response.status, 200)
         login(USER_EMAIL)
-        for i in range(50):
+        for _ in range(50):
             self.factory.makeBugComment(bug)
         self.factory.makeBugAttachment(bug)
         logout()
@@ -341,7 +341,7 @@ class TestPostBugWithLargeCollections(TestCaseWithFactory):
         )
         try:
             login(ADMIN_EMAIL)
-            for count in range(snapshot.HARD_LIMIT_FOR_SNAPSHOT + 1):
+            for _ in range(snapshot.HARD_LIMIT_FOR_SNAPSHOT + 1):
                 person = self.factory.makePerson()
                 bug.subscribe(person, person)
             logout()

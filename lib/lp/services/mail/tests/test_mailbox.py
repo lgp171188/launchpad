@@ -58,6 +58,6 @@ class TestDirectoryMailBox(TestCase):
         self._add_mailfile("bar", "More content")
         self._add_mailfile("baz", "More content")
         box = DirectoryMailBox(self.email_dir)
-        for id, content in box.items():
+        for id, _ in box.items():
             box.delete(id)
         self.assertEqual(0, len(list(box.items())))

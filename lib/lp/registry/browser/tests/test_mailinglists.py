@@ -277,7 +277,7 @@ class TeamMailingListModerationViewTestCase(MailingListTestCase):
     def test_batching(self):
         team = self.makeTeamWithMailingList()
         sender, message, held_message = self.makeHeldMessage(team)
-        for i in range(5):
+        for _ in range(5):
             self.makeHeldMessage(team, sender)
         view = create_initialized_view(
             team, name="+mailinglist-moderate", principal=team.teamowner

@@ -808,7 +808,7 @@ class TestSpecifications(TestCaseWithFactory):
         # Ensure the quantity controls the maximum number of entries.
         context = getUtility(ISpecificationSet)
         product = self.factory.makeProduct()
-        for count in range(10):
+        for _ in range(10):
             self.factory.makeSpecification(product=product)
         self.assertEqual(20, context.specifications(None).count())
         result = context.specifications(None, quantity=None).count()

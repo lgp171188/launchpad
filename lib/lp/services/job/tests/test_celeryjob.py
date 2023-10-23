@@ -47,7 +47,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
         """
         from lp.services.job.celeryjob import FindMissingReady
 
-        for x in range(600):
+        for _ in range(600):
             find_missing = FindMissingReady(job_source)
             if len(find_missing.queue_contents) == expected_len:
                 return find_missing
@@ -65,7 +65,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
         """
         from lazr.jobrunner.celerytask import list_queued
 
-        for x in range(600):
+        for _ in range(600):
             actual_len = len(list_queued(app, queues))
             if actual_len == expected_len:
                 return

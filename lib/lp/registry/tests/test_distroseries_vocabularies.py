@@ -216,7 +216,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
         self.assertEqual(expected_distroseries, observed_distroseries)
 
     def test_queries_for_distribution_with_non_derived_series(self):
-        for index in range(10):
+        for _ in range(10):
             self.factory.makeDistroSeries()
         distribution = self.factory.makeDistribution()
         distroseries = self.factory.makeDistroSeries(distribution=distribution)
@@ -231,7 +231,7 @@ class TestDistroSeriesDerivationVocabulary(TestCaseWithFactory):
             self.assertThat(recorder, HasQueryCount(Equals(2)))
 
     def test_queries_for_distribution_with_derived_series(self):
-        for index in range(10):
+        for _ in range(10):
             self.factory.makeDistroSeries()
         distribution = self.factory.makeDistribution()
         parent_distroseries = self.factory.makeDistroSeries()

@@ -132,10 +132,10 @@ class TestTargetGitListingView:
 
     def test_query_count(self):
         main_repo = self.factory.makeGitRepository(target=self.target)
-        for i in range(10):
+        for _ in range(10):
             self.factory.makeGitRefs(main_repo)
 
-        for i in range(10):
+        for _ in range(10):
             other_repo = self.factory.makeGitRepository(target=self.target)
             self.factory.makeGitRefs(other_repo)
 

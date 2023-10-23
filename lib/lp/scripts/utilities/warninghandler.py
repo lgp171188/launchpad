@@ -93,7 +93,7 @@ def find_important_info():
         important_objects = {}
         metadata = {}  # cls -> (filename, lineno, funcname)
 
-        for frame, filename, lineno, func_name, context, lineidx in stack:
+        for frame, filename, lineno, func_name, _, _ in stack:
             try:
                 if (
                     filename.startswith("<doctest ")

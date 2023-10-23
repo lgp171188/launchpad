@@ -127,7 +127,7 @@ class TestBugSubscription(TestCaseWithFactory):
             )
             self.bug.subscribe(team, team.teamowner)
         with person_logged_in(team_2.teamowner):
-            for i in range(25):
+            for _ in range(25):
                 person = self.factory.makePerson()
                 team_2.addMember(
                     person, team_2.teamowner, status=TeamMembershipStatus.ADMIN

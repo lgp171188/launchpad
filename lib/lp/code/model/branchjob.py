@@ -955,7 +955,7 @@ class RosettaUploadJob(BranchJobDerived):
 
         to_tree.lock_read()
         try:
-            for dir, files in to_tree.walkdirs():
+            for _, files in to_tree.walkdirs():
                 for afile in files:
                     file_path, file_name, file_type = afile[:3]
                     if file_type != "file":

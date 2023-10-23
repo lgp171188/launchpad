@@ -67,9 +67,9 @@ class TestBugTargetTags(WithScenarios, TestCaseWithFactory):
     def test_tags_order(self):
         """Test that the tags are ordered by most used first"""
         self.factory.makeBug(target=self.bug_target, tags=["tag-last"])
-        for counter in range(0, 2):
+        for _ in range(0, 2):
             self.factory.makeBug(target=self.bug_target, tags=["tag-middle"])
-        for counter in range(0, 3):
+        for _ in range(0, 3):
             self.factory.makeBug(target=self.bug_target, tags=["tag-first"])
         view = create_view(
             self.view_context, name="+bugtarget-portlet-tags-content"

@@ -340,7 +340,7 @@ class TestDistroSeries(TestCaseWithFactory):
         spec2 = self.factory.makeSpecification(
             distribution=distribution, goal=distroseries
         )
-        for i in range(5):
+        for _ in range(5):
             self.factory.makeSpecificationWorkItem(specification=spec1)
             self.factory.makeSpecificationWorkItem(specification=spec2)
         IStore(spec1.__class__).flush()

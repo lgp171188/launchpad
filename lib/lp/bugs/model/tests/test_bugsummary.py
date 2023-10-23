@@ -66,7 +66,7 @@ class TestBugSummary(TestCaseWithFactory):
 
         product = self.factory.makeProduct()
 
-        for count in range(3):
+        for _ in range(3):
             bug = self.factory.makeBug(target=product)
             bug_tag = BugTag(bug=bug, tag=tag)
             self.store.add(bug_tag)
@@ -87,7 +87,7 @@ class TestBugSummary(TestCaseWithFactory):
 
         product = self.factory.makeProduct()
 
-        for count in range(3):
+        for _ in range(3):
             bug = self.factory.makeBug(target=product)
             bug_tag = BugTag(bug=bug, tag=old_tag)
             self.store.add(bug_tag)
@@ -114,7 +114,7 @@ class TestBugSummary(TestCaseWithFactory):
 
         product = self.factory.makeProduct()
 
-        for count in range(3):
+        for _ in range(3):
             bug = self.factory.makeBug(target=product)
             bug_tag = BugTag(bug=bug, tag=tag)
             self.store.add(bug_tag)
