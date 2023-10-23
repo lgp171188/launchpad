@@ -309,13 +309,9 @@ class TestSnap(TestCaseWithFactory):
             return
 
         self.assertTrue(snaps[0].pro_enable)  # Snap with no base
-        self.assertTrue(removeSecurityProxy(snaps[0])._pro_enable)
         self.assertTrue(snaps[1].pro_enable)  # Snap with 'core' base
-        self.assertTrue(removeSecurityProxy(snaps[1])._pro_enable)
         self.assertFalse(snaps[2].pro_enable)  # Snap with 'core18' base
-        self.assertFalse(removeSecurityProxy(snaps[2])._pro_enable)
         self.assertFalse(snaps[3].pro_enable)  # Snap without snapcraft.yaml
-        self.assertFalse(removeSecurityProxy(snaps[3])._pro_enable)
 
     def makeBuildableDistroArchSeries(self, **kwargs):
         das = self.factory.makeDistroArchSeries(**kwargs)
