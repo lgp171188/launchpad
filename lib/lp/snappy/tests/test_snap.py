@@ -3654,8 +3654,15 @@ class TestSnapProcessors(TestCaseWithFactory):
             GitHostingFixture()
         ).getBlob = lambda path, *args, **kwargs: blob
 
-        components = self.makeSnapComponents(git_ref=git_ref)
-        components["pro_enable"] = None
+        registrant = self.factory.makePerson()
+        components = dict(
+            registrant=registrant,
+            owner=self.factory.makeTeam(owner=registrant),
+            distro_series=self.factory.makeDistroSeries(),
+            name=self.factory.getUniqueUnicode("snap-name"),
+            git_ref=git_ref,
+            pro_enable=None,
+        )
 
         snap = getUtility(ISnapSet).new(**components)
         self.assertFalse(snap.pro_enable)
