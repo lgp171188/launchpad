@@ -276,6 +276,44 @@ class TestSnap(TestCaseWithFactory):
             pass
         self.assertSqlAttributeEqualsDate(snap, "date_last_modified", UTC_NOW)
 
+    def test_pro_enable_value_for_existing_snaps(self):
+        """For existing snaps without pro-enable values, the value is set as
+        expected once called:
+         - If snap has snapcraft.yaml file, and no base - True
+         - If snap has snapcraft.yaml file, and is 'core'-based snap - True
+         - Else, default to False
+        """
+
+        # XXX ines-almeida 2023-10-18: If an `IntegrityError` is raised in this
+        # test, then pro_enable is now enforced by DB NOT NULL constraint;
+        # inferring a value is no longer necessary, and this test and
+        # `test_inferProEnable` below can be removed
+
+        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
+        blobs = {
+            ref.repository.getInternalPath(): blob
+            for ref, blob in (
+                (refs[0], b"name: test-snap\n"),
+                (refs[1], b"name: test-snap\nbase: core\n"),
+                (refs[2], b"name: test-snap\nbase: core18\n"),
+            )
+        }
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+        snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
+        for snap in snaps:
+            removeSecurityProxy(snap)._pro_enable = None
+
+        self.assertTrue(snaps[0].pro_enable)  # Snap with no base
+        self.assertTrue(removeSecurityProxy(snaps[0])._pro_enable)
+        self.assertTrue(snaps[1].pro_enable)  # Snap with 'core' base
+        self.assertTrue(removeSecurityProxy(snaps[1])._pro_enable)
+        self.assertFalse(snaps[2].pro_enable)  # Snap with 'core18' base
+        self.assertFalse(removeSecurityProxy(snaps[2])._pro_enable)
+        self.assertFalse(snaps[3].pro_enable)  # Snap without snapcraft.yaml
+        self.assertFalse(removeSecurityProxy(snaps[3])._pro_enable)
+
     def makeBuildableDistroArchSeries(self, **kwargs):
         das = self.factory.makeDistroArchSeries(**kwargs)
         fake_chroot = self.factory.makeLibraryFileAlias(
@@ -2248,6 +2286,7 @@ class TestSnapSet(TestCaseWithFactory):
             owner=self.factory.makeTeam(owner=registrant),
             distro_series=self.factory.makeDistroSeries(),
             name=self.factory.getUniqueUnicode("snap-name"),
+            pro_enable=False,
         )
         if branch is None and git_ref is None:
             branch = self.factory.makeAnyBranch()
@@ -3600,6 +3639,48 @@ class TestSnapProcessors(TestCaseWithFactory):
             self.assertContentEqual(
                 [self.default_procs[0], self.arm, hppa], snap.processors
             )
+
+    def test_pro_enabled_default_value_for_new_snap(self):
+        """Snap pro_enable value defaults to False when creating a new Snap."""
+
+        git_ref = self.factory.makeGitRefs()[0]
+        blob = b"name: test-snap\nbase: core18\n"
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blob
+
+        components = self.makeSnapComponents(git_ref=git_ref)
+        components["pro_enable"] = None
+
+        snap = getUtility(ISnapSet).new(**components)
+        self.assertFalse(snap.pro_enable)
+
+    def test_inferProEnable(self):
+        """inferProEnable returns expected bool value depending on context:
+        - Context and snapcraft.yaml file exist, and no base - True
+        - Context and snapcraft.yaml file exist, and base is 'core' - True
+        - Else, default to False
+        """
+
+        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
+        blobs = {
+            ref.repository.getInternalPath(): blob
+            for ref, blob in (
+                (refs[0], b"name: test-snap\n"),
+                (refs[1], b"name: test-snap\nbase: core\n"),
+                (refs[2], b"name: test-snap\nbase: core18\n"),
+            )
+        }
+        self.useFixture(
+            GitHostingFixture()
+        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+
+        inferProEnable = getUtility(ISnapSet).inferProEnable
+        self.assertTrue(inferProEnable(refs[0]))  # Snap with no base
+        self.assertTrue(inferProEnable(refs[1]))  # Snap with 'core' base
+        self.assertFalse(inferProEnable(refs[2]))  # Snap with 'core18' base
+        self.assertFalse(inferProEnable(refs[3]))  # Snap w/out snapcraft.yaml
+        self.assertFalse(inferProEnable(None))  # Snap w/out ref or branch
 
 
 class TestSnapWebservice(TestCaseWithFactory):
