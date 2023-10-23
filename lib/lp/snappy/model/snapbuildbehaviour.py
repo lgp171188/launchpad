@@ -137,7 +137,15 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             tools_fingerprint = None
         archive_dependencies = list(build.archive.dependencies)
         if build.snap_base is not None:
-            archive_dependencies.extend(build.snap_base.dependencies)
+            # Private dependencies are only listed for pro-enabled snaps
+            archive_dependencies.extend(
+                [
+                    dependency
+                    for dependency in build.snap_base.dependencies
+                    if build.snap.pro_enable
+                    or not dependency.dependency.private
+                ]
+            )
         (
             args["archives"],
             args["trusted_keys"],

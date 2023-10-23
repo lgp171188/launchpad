@@ -15,6 +15,7 @@ import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
 from nacl.public import PrivateKey
+from psycopg2 import IntegrityError
 from pymacaroons import Macaroon
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -284,11 +285,6 @@ class TestSnap(TestCaseWithFactory):
          - Else, default to False
         """
 
-        # XXX ines-almeida 2023-10-18: If an `IntegrityError` is raised in this
-        # test, then pro_enable is now enforced by DB NOT NULL constraint;
-        # inferring a value is no longer necessary, and this test and
-        # `test_inferProEnable` below can be removed
-
         refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
         blobs = {
             ref.repository.getInternalPath(): blob
@@ -304,6 +300,13 @@ class TestSnap(TestCaseWithFactory):
         snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
         for snap in snaps:
             removeSecurityProxy(snap)._pro_enable = None
+
+        try:
+            Store.of(snaps[0]).flush()
+        except IntegrityError:
+            # Now enforced by DB NOT NULL constraint; inferring a value is
+            # no longer necessary.
+            return
 
         self.assertTrue(snaps[0].pro_enable)  # Snap with no base
         self.assertTrue(removeSecurityProxy(snaps[0])._pro_enable)
@@ -2318,6 +2321,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
+        self.assertFalse(snap.pro_enable)
 
     def test_creation_git(self):
         # The metadata entries supplied when a Snap is created for a Git
@@ -2341,6 +2345,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
+        self.assertFalse(snap.pro_enable)
 
     def test_creation_git_url(self):
         # A Snap can be backed directly by a URL for an external Git
@@ -3786,6 +3791,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertTrue(snap["require_virtualized"])
             self.assertTrue(snap["allow_internet"])
             self.assertFalse(snap["build_source_tarball"])
+            self.assertFalse(snap["pro_enable"])
 
     def test_new_git(self):
         # Ensure Snap creation based on a Git branch works.
@@ -3811,6 +3817,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.assertTrue(snap["require_virtualized"])
             self.assertTrue(snap["allow_internet"])
             self.assertFalse(snap["build_source_tarball"])
+            self.assertFalse(snap["pro_enable"])
 
     def test_new_private(self):
         # Ensure private Snap creation works.
