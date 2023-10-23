@@ -316,7 +316,7 @@ def merge_duplicates(con):
                 UPDATE LibraryFileAlias SET content=%(prime_id)s
                 WHERE content = %(other_id)s
                 """,
-                {"other_id": other_id},
+                {"prime_id": prime_id, "other_id": other_id},
             )
         prime_count += 1
         dupe_count += len(dupes)
