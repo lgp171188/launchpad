@@ -117,6 +117,7 @@ def configure():
 def restart():
     hookenv.log("Restarting application server")
     host.service_restart("launchpad-loggerhead.service")
+    host.service_resume("launchpad-loggerhead.service")
     set_flag("service.configured")
 
 
