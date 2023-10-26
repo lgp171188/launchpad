@@ -112,6 +112,10 @@ from lp.services.scripts.base import (
     SilentLaunchpadScriptFailure,
 )
 from lp.services.session.model import SessionData
+from lp.services.timeout import (
+    get_default_timeout_function,
+    set_default_timeout_function,
+)
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookJobSource
@@ -2283,11 +2287,14 @@ class SnapProEnablePopulator(TunableLoop):
         return self.findSnaps().is_empty()
 
     def __call__(self, chunk_size):
+        current_default_timeout_function = get_default_timeout_function()
+        set_default_timeout_function(lambda: 300.0)
         snaps = list(self.findSnaps()[:chunk_size])
         for snap in snaps:
             snap._pro_enable = getUtility(ISnapSet).inferProEnable(snap.source)
         self.start_at = snaps[-1].id + 1
         transaction.commit()
+        set_default_timeout_function(current_default_timeout_function)
 
 
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
