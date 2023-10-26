@@ -1,0 +1,18 @@
+<VirtualHost *:{{ port_bzr_internal }}>
+  ServerName {{ domain_bzr_internal }}
+
+  CustomLog /var/log/apache2/{{ domain_bzr_internal }}-access.log combined_timer
+  ErrorLog /var/log/apache2/{{ domain_bzr_internal }}-error.log
+
+  # Default location is for all the .bzr repositories in mirrors/*
+  # We serve .bzr/* via http or bzr+ssh; not https
+  DocumentRoot {{ bzr_repositories_root }}
+
+  <Directory {{ bzr_repositories_root }}>
+    Options SymLinksIfOwnerMatch Indexes
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+</VirtualHost>
+

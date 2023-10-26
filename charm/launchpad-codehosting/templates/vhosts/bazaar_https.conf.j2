@@ -1,0 +1,38 @@
+<VirtualHost *:8080>
+  ServerName      {{ domain_bzr }}
+  ServerAdmin     webmaster@launchpad.net
+
+  CustomLog       /var/log/apache2/{{ domain_bzr }}-access.log combined_timer
+  ErrorLog        /var/log/apache2/{{ domain_bzr }}-error.log
+
+  # This virtual host serves a few files/statics only; all else is reverse
+  # proxy to codebrowse.
+  DocumentRoot {{ loggerhead_static_dir }}
+
+  <Directory {{ loggerhead_static_dir }}>
+    Options -Indexes +SymLinksIfOwnerMatch
+    Require all granted
+  </Directory>
+
+  ProxyRequests off
+  <Proxy *>
+    <RequireAll>
+      Require all granted
+      # Cowboy to stop Sogou web spider smashing bazaar, 13-03-18
+      Require expr %{HTTP_USER_AGENT} !~ /^Sogou web spider/
+   </RequireAll>
+    ErrorDocument 500 /offline.html
+    ErrorDocument 502 /offline.html
+    ErrorDocument 503 /offline.html
+  </Proxy>
+  ProxyTimeout 20
+  ProxyPassReverse / {{ internal_codebrowse_root }}
+
+  RewriteEngine On
+  RewriteRule ^/offline.html$ - [L]
+  RewriteRule ^/robots.txt$ - [L]
+  RewriteRule ^/favicon.ico$ {{ loggerhead_static_dir }}/images/favicon.ico [L]
+  RewriteRule ^/static/(.*)$ /$1 [L]
+  RewriteRule ^/(.*)$ {{ codebrowse_internal_endpoint }}/$1 [P,L]
+</VirtualHost>
+

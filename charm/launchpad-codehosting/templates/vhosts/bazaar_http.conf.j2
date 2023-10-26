@@ -1,0 +1,79 @@
+<VirtualHost *:80>
+  ServerName {{ domain_bzr }}
+
+  CustomLog /var/log/apache2/{{ domain_bzr }}-access.log combined_timer
+  ErrorLog /var/log/apache2/{{ domain_bzr }}-error.log
+
+  ProxyRequests off
+  <Proxy *>
+    <RequireAll>
+      Require all granted
+      # Cowboy to stop Sogou web spider smashing bazaar, 13-03-18
+      Require expr %{HTTP_USER_AGENT} !~ /^Sogou web spider/
+    </RequireAll>
+
+    ErrorDocument 500 /offline.html
+    ErrorDocument 502 /offline.html
+    ErrorDocument 503 /offline.html
+  </Proxy>
+  ProxyTimeout 20
+
+  Alias /robots.txt {{ code_dir }}/lib/launchpad_loggerhead/static/robots.txt
+  Alias /favicon.ico {{ loggerhead_static_dir }}/images/favicon.ico
+  Alias /offline.html {{ code_dir }}/lib/canonical/launchpad/offline-unplanned.html
+  Alias /static {{ loggerhead_static_dir }}
+
+  <Directory {{ code_dir }}/lib/launchpad_loggerhead/static>
+    Options -Indexes +SymLinksIfOwnerMatch
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  <Directory {{ loggerhead_static_dir }}>
+    Options -Indexes +SymLinksIfOwnerMatch
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  <Directory {{ code_dir }}/lib/canonical/launchpad/>
+    Options -Indexes +SymLinksIfOwnerMatch
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  # Rewrite Logic Flow:
+  # (1) People hitting the frontpage (i.e. /) are redirected to the
+  # Launchpad frontpage
+  # (2) The /favicon.ico file is served normally.
+  # (3) The /robots.txt file is served normally.
+  # (4) The /offline.html file is served normally.
+  # (5) Any /static/* files are served normally.
+  # (6) Everything else is passed through the branch-rewrite wrapper script
+
+  RewriteEngine On
+  RewriteMap branch-rewrite prg:{{ scripts_dir }}/rewrite_wrapper.sh
+
+  # (1) / -> Launchpad frontpage
+  RewriteRule ^/$ https://{{ domain }} [L]
+  # (2) The /favicon.ico file is served normally.
+  RewriteRule ^/favicon.ico$ - [L]
+  # (3) The /robots.txt file is served normally.
+  RewriteRule ^/robots.txt$ - [L]
+  # (4) The /offline.html file is served normally.
+  RewriteRule ^/offline.html$ - [L]
+  # (5) Any /static/* files are served normally.
+  RewriteRule ^/static/(.*)$ - [L]
+
+  # (6) The branch-rewrite wrapper script. This sets the appropriate ENV
+  # setting(s) necessary.
+  RewriteMap escape int:escape
+  RewriteMap unescape int:unescape
+  RewriteRule ^(/.*)$ ${unescape:${branch-rewrite:${escape:$1}}} [L,P]
+
+  # https://portal.admin.canonical.com/C79782 yes this looks mad but it
+  # is just making NOOP proxypass commands so
+  # the rewrite [P] lines have persistent pools to work with.
+  ProxyPass / !
+  ProxyPass / http://{{ domain_bzr }}/
+</VirtualHost>
+
