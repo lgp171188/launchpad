@@ -64,6 +64,7 @@ def configure_copy_publish_archives_cronjob(config):
 def configure():
     hookenv.log("Configuring copy-archive-publisher")
     config = get_service_config()
+    config["archives_dir"] = archives_dir()
     config["run_parts_location"] = publisher_parts_dir()
 
     host.mkdir(
