@@ -1,0 +1,16 @@
+{{ logs_dir }}/puller.log {{ logs_dir }}/rewrite.log {
+        rotate 30
+        daily
+        dateext
+        compress
+        delaycompress
+}
+
+{{ logs_dir }}/codehosting-*-access.log {{ logs_dir }}/process-job-source.*.log {
+        rotate 90
+        daily
+        dateext
+        compress
+        delaycompress
+}
+

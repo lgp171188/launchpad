@@ -1,0 +1,18 @@
+# This service is really a systemd target, but we use a service since
+# targets cannot be reloaded.  Starting, stopping, or reloading this service
+# causes all the individual instances (defined in
+# launchpad-bzr-sftp@.service) to be started, stopped, or reloaded
+# respectively.
+
+[Unit]
+Description=Launchpad bzr sftp
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/true
+ExecReload=/bin/true
+
+[Install]
+WantedBy=multi-user.target
+

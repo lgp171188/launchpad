@@ -1,0 +1,27 @@
+# Public configuration data.  The contents of this file may be freely shared
+# with developers if needed for debugging.
+
+# A schema's sections, keys, and values are automatically inherited,
+# except for '.optional' sections. Update this config to override key
+# values. Values are strings, except for numbers that look like ints.
+# The tokens true, false, and none are treated as True, False, and None.
+
+{% from "macros.j2" import opt -%}
+
+[meta]
+extends: ../launchpad-db-lazr.conf
+
+[launchpad]
+launch: False
+
+[codehosting]
+blacklisted_hostnames: localhost,127.0.0.1
+host_key_pair_path: {{ base_dir }}/keys/
+{{- opt("internal_branch_by_id_root", internal_branch_by_id_root) }}
+{{- opt("internal_codebrowse_root", internal_codebrowse_root) }}
+mirrored_branches_root: {{ base_dir }}/data/mirrors
+rewrite_script_log_file: {{ logs_dir }}/rewrite.log
+
+[error_reports]
+error_dir: {{ var_dir }}/local-oopses-codehost
+

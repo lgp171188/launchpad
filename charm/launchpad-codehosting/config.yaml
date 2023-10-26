@@ -1,0 +1,110 @@
+options:
+  active:
+    type: boolean
+    description: If true, enable jobs that may change the database.
+    default: true
+  codehosting_private_ssh_key:
+    type: string
+    description: >
+      Base64-encoded private SSH RSA host key to be used by the codehosting
+      service. Existing key pair, if any, will be deleted if this is unset.
+    default: ""
+  codehosting_public_ssh_key:
+    type: string
+    description: >
+      Base64-encoded public SSH RSA host key to be used by the codehosting
+      service. Existing key pair, if any, will be deleted if this is unset.
+    default: ""
+  domain_bzr_internal:
+    type: string
+    description: |
+      The internal-only domain name to expose the bazaar 'get branch by ID'
+      service on.
+  haproxy_fe_server_options:
+    type: string
+    description: Options to add to the frontend HAProxy http(s) "server" lines.
+    default: check inter 5000 rise 2 fall 5 maxconn 16
+  haproxy_fe_server_options_ssh:
+    type: string
+    description: Options to add to the frontend HAProxy ssh "server" lines.
+    default: check inter 2000 rise 2 fall 5 maxconn 200
+  haproxy_server_options:
+    type: string
+    description: Options to add to the HAProxy http(s) "server" lines.
+    default: check inter 2000 rise 2 fall 5 maxconn 16
+  haproxy_service_https_cert_type:
+    type: string
+    description: |
+      The type of certificate to use for the https service. Either "DEFAULT"
+      or "EXTERNAL".
+    default: "DEFAULT"
+  haproxy_service_options_internal_branch_by_id:
+    type: string
+    description: |
+      YAML-encoded list of options for the codehosting internal branch
+      by ID service.
+    default: |
+      - mode http
+      - option httplog
+      - option httpchk HEAD / HTTP/1.0
+      - option forwardfor
+      - balance leastconn
+  haproxy_service_options_http:
+    type: string
+    description: |
+      YAML-encoded list of options for the codehosting http service.
+    default: |
+      - mode http
+      - option httplog
+      - option httpchk HEAD / HTTP/1.0
+      - option forwardfor
+      - balance leastconn
+  haproxy_service_options_https:
+    type: string
+    description: |
+      YAML-encoded list of options for the codehosting https service.
+    default: |
+      - mode http
+      - option httplog
+      - option httpchk HEAD / HTTP/1.0
+      - option forwardfor
+      - balance leastconn
+  haproxy_service_options_ssh:
+    type: string
+    description: |
+      YAML-encoded list of options for the codehosting ssh service.
+    default: |
+      - mode tcp
+      - balance leastconn
+      - option httpchk HEAD / HTTP/1.0
+      - option tcpka
+      - timeout queue 50
+      - timeout connect 2000
+      - "# Increased to 2 hours as per https://portal.admin.canonical.com/C47161"
+      - timeout client 7200000
+      - timeout server 7200000
+  internal_codebrowse_root:
+    type: string
+    description: |
+      The internal-only endpoint at which the codebrowse service is
+      accessible.
+  port_bzr_internal:
+    type: int
+    description: |
+      The port to expose the bzr 'get branch by ID' service on.
+    default: 8081
+  port_bzr_sftp_base:
+    type: int
+    description: Base port number for the bzr-sftp service.
+    default: 2224
+  port_web_status_base:
+    type: int
+    description: Base port for the web status service.
+    default: 8024
+  workers:
+    type: int
+    description: >
+      Number of bzr-sftp worker processes.  If set, each worker will listen
+      on consecutive ports starting from each of `port_bzr_sftp_base` and
+      `port_web_status`, so make sure there is enough space between those.
+    default: 1
