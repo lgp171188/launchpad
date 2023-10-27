@@ -596,7 +596,9 @@ class WorkerScanner:
         builder = self.builder_factory[self.builder_name]
         try:
             labels = get_statsd_labels(builder, builder.current_build)
-            self.statsd_client.incr("builders.failure", labels=labels)
+            self.statsd_client.incr(
+                "builders.failure.scan_failed", labels=labels
+            )
 
             builder.gotFailure()
             if builder.current_build is not None:

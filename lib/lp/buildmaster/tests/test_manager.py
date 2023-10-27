@@ -562,7 +562,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
                     "build.reset,arch=386,env=test,job_type=PACKAGEBUILD"
                 ),
                 mock.call(
-                    "builders.failure,builder_name=bob,env=test,"
+                    "builders.failure.scan_failed,builder_name=bob,env=test,"
                     "region=,virtualized=False"
                 ),
                 mock.call(
