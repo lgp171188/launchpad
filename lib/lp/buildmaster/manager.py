@@ -501,6 +501,8 @@ class WorkerScanner:
         self.date_cancel = None
         self.date_scanned = None
 
+        self.can_retry = True
+
         # We cache the build cookie, keyed on the BuildQueue, to avoid
         # hitting the DB on every scan.
         self._cached_build_cookie = None
@@ -537,13 +539,10 @@ class WorkerScanner:
 
         self.logger.debug("Scanning builder %s" % self.builder_name)
 
-        # Errors should normally be able to be retried a few times. Bits
-        # of scan() which don't want retries will call _scanFailed
-        # directly.
         try:
             yield self.scan()
         except Exception as e:
-            self._scanFailed(True, e)
+            self._scanFailed(self.can_retry, e)
 
         self.logger.debug("Scan finished for builder %s" % self.builder_name)
         self.date_scanned = datetime.datetime.utcnow()
@@ -683,6 +682,7 @@ class WorkerScanner:
         vitals = self.builder_factory.getVitals(self.builder_name)
         interactor = self.interactor_factory()
         worker = self.worker_factory(vitals)
+        self.can_retry = True
 
         if vitals.build_queue is not None:
             if vitals.clean_status != BuilderCleanStatus.DIRTY:
@@ -755,15 +755,14 @@ class WorkerScanner:
                         "%s is in manual mode, not dispatching.", vitals.name
                     )
                     return
-                # Try to find and dispatch a job. If it fails, don't
-                # attempt to just retry the scan; we need to reset
-                # the job so the dispatch will be reattempted.
+                # Try to find and dispatch a job. If it fails, don't attempt to
+                # just retry the scan; we need to reset the job so the dispatch
+                # will be reattempted.
                 builder = self.builder_factory[self.builder_name]
-                d = interactor.findAndStartJob(
+                self.can_retry = False
+                yield interactor.findAndStartJob(
                     vitals, builder, worker, self.builder_factory
                 )
-                d.addErrback(functools.partial(self._scanFailed, False))
-                yield d
                 if builder.currentjob is not None:
                     # After a successful dispatch we can reset the
                     # failure_count.
