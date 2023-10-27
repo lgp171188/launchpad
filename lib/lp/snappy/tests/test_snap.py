@@ -3670,13 +3670,16 @@ class TestSnapProcessors(TestCaseWithFactory):
         - Else, default to False
         """
 
-        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
+        refs = [self.factory.makeGitRefs()[0] for _ in range(7)]
         blobs = {
             ref.repository.getInternalPath(): blob
             for ref, blob in (
                 (refs[0], b"name: test-snap\n"),
                 (refs[1], b"name: test-snap\nbase: core\n"),
                 (refs[2], b"name: test-snap\nbase: core18\n"),
+                (refs[3], b"name: test-snap\nbuild-base: devel\n"),
+                (refs[4], b"name: core\ntype: base\n"),
+                (refs[5], b"name: core18\ntype: base\n"),
             )
         }
         self.useFixture(
@@ -3687,7 +3690,10 @@ class TestSnapProcessors(TestCaseWithFactory):
         self.assertTrue(inferProEnable(refs[0]))  # Snap with no base
         self.assertTrue(inferProEnable(refs[1]))  # Snap with 'core' base
         self.assertFalse(inferProEnable(refs[2]))  # Snap with 'core18' base
-        self.assertFalse(inferProEnable(refs[3]))  # Snap w/out snapcraft.yaml
+        self.assertFalse(inferProEnable(refs[3]))  # Snap with only build-base
+        self.assertTrue(inferProEnable(refs[4]))  # 'core' snap itself
+        self.assertFalse(inferProEnable(refs[5]))  # 'core18' snap itself
+        self.assertFalse(inferProEnable(refs[6]))  # Snap w/out snapcraft.yaml
         self.assertFalse(inferProEnable(None))  # Snap w/out ref or branch
 
 

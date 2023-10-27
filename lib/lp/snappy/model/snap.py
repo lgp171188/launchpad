@@ -1671,7 +1671,18 @@ class SnapSet:
             pass
         else:
             base = snapcraft_data.get("base")
-            if base is None or base == "core":
+            build_base = snapcraft_data.get("build-base")
+            name = snapcraft_data.get("name")
+            snap_type = snapcraft_data.get("type")
+
+            if build_base is not None:
+                snap_base_name = build_base
+            elif name is not None and snap_type == "base":
+                snap_base_name = name
+            else:
+                snap_base_name = base
+
+            if snap_base_name is None or snap_base_name == "core":
                 return True
 
         return False
