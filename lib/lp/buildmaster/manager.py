@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 import datetime
-import functools
 import logging
 import os.path
 import shutil
@@ -520,6 +519,7 @@ class WorkerScanner:
         """Terminate the LoopingCall."""
         self.loop.stop()
 
+    @defer.inlineCallbacks
     def singleCycle(self):
         # Inhibit scanning if the BuilderFactory hasn't updated since
         # the last run. This doesn't matter for the base BuilderFactory,
@@ -533,22 +533,22 @@ class WorkerScanner:
             self.logger.debug(
                 "Skipping builder %s (cache out of date)" % self.builder_name
             )
-            return defer.succeed(None)
+            return
 
         self.logger.debug("Scanning builder %s" % self.builder_name)
+
         # Errors should normally be able to be retried a few times. Bits
         # of scan() which don't want retries will call _scanFailed
         # directly.
-        d = self.scan()
-        d.addErrback(functools.partial(self._scanFailed, True))
-        d.addBoth(self._updateDateScanned)
-        return d
+        try:
+            yield self.scan()
+        except Exception as e:
+            self._scanFailed(True, e)
 
-    def _updateDateScanned(self, ignored):
         self.logger.debug("Scan finished for builder %s" % self.builder_name)
         self.date_scanned = datetime.datetime.utcnow()
 
-    def _scanFailed(self, retry, failure):
+    def _scanFailed(self, retry, exc):
         """Deal with failures encountered during the scan cycle.
 
         1. Print the error in the log
@@ -562,26 +562,22 @@ class WorkerScanner:
 
         # If we don't recognise the exception include a stack trace with
         # the error.
-        error_message = failure.getErrorMessage()
-        if failure.check(
-            BuildWorkerFailure,
-            CannotBuild,
-            CannotResumeHost,
-            BuildDaemonError,
-            CannotFetchFile,
+        if isinstance(
+            exc,
+            (
+                BuildWorkerFailure,
+                CannotBuild,
+                CannotResumeHost,
+                BuildDaemonError,
+                CannotFetchFile,
+            ),
         ):
             self.logger.info(
-                "Scanning %s failed with: %s"
-                % (self.builder_name, error_message)
+                "Scanning %s failed with: %r" % (self.builder_name, exc)
             )
         else:
             self.logger.info(
-                "Scanning %s failed with: %s\n%s"
-                % (
-                    self.builder_name,
-                    failure.getErrorMessage(),
-                    failure.getTraceback(),
-                )
+                "Scanning %s failed" % self.builder_name, exc_info=exc
             )
 
         # Decide if we need to terminate the job or reset/fail the builder.
@@ -602,7 +598,7 @@ class WorkerScanner:
             else:
                 labels["build"] = False
             self.statsd_client.incr("builders.judged_failed", labels=labels)
-            recover_failure(self.logger, vitals, builder, retry, failure.value)
+            recover_failure(self.logger, vitals, builder, retry, exc)
             transaction.commit()
         except Exception:
             # Catastrophic code failure! Not much we can do.
