@@ -373,7 +373,7 @@ def configure_frontend_loadbalancer():
         },
         {
             "service_name": "launchpad-codehosting-ssh",
-            "service_port": 922,
+            "service_port": config["port_lb_bzr_sftp"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_ssh),
             "servers": [
