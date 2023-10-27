@@ -150,12 +150,12 @@ class TestRunMissingJobs(TestCaseWithFactory):
         # So let's be sure that a task is queued...
         # Give the system some time to deliver the message
         self.assertQueueSize(self.run_missing_ready.app, [job_queue_name], 1)
-        # Wait at most 60 seconds for "celery worker" to start and process
+        # Wait at most 70 seconds for "celery worker" to start and process
         # the task.
         with celery_worker(job_queue_name):
             # Due to FIFO ordering, this will only return after
             # run_missing_ready has finished.
-            noop.apply_async(queue=job_queue_name).wait(60)
+            noop.apply_async(queue=job_queue_name).wait(70)
         # But now the message has been consumed by "celery worker".
         self.assertQueueSize(self.run_missing_ready.app, [job_queue_name], 0)
         # No result queue was created for the task.

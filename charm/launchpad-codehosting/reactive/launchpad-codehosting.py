@@ -369,11 +369,11 @@ def configure_frontend_loadbalancer():
                     server_options,
                 ],
             ],
-            "crts": [config["haproxy_service_https_cert_type"]],
+            "crts": ["DEFAULT"],
         },
         {
             "service_name": "launchpad-codehosting-ssh",
-            "service_port": 922,
+            "service_port": config["port_lb_bzr_sftp"],
             "service_host": "0.0.0.0",
             "service_options": list(service_options_ssh),
             "servers": [
