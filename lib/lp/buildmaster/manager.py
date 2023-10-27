@@ -312,6 +312,23 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         return self.candidates.pop(vitals)
 
 
+def get_statsd_labels(builder, build):
+    labels = {
+        "builder_name": builder.name,
+        "region": builder.region,
+        "virtualized": str(builder.virtualized),
+    }
+    if build is not None:
+        labels.update(
+            {
+                "build": True,
+                "arch": build.processor.name,
+                "job_type": build.job_type.name,
+            }
+        )
+    return labels
+
+
 def judge_failure(builder_count, job_count, exc, retry=True):
     """Judge how to recover from a scan failure.
 
@@ -394,22 +411,15 @@ def recover_failure(logger, vitals, builder, retry, exception):
             job_action,
         )
 
-    if job is not None and job_action is not None:
-        statsd_client = getUtility(IStatsdClient)
-        labels = {
-            "build": True,
-            "arch": job.specific_build.processor.name,
-            "region": builder.region,
-            "builder_name": builder.name,
-            "virtualized": str(builder.virtualized),
-            "job_type": job.specific_build.job_type.name,
-        }
+    statsd_client = getUtility(IStatsdClient)
+    labels = get_statsd_labels(builder, job.specific_build if job else None)
 
+    if job is not None and job_action is not None:
         if cancelling:
             # We've previously been asked to cancel the job, so just set
             # it to cancelled rather than retrying or failing.
             logger.info("Cancelling job %s.", job.build_cookie)
-            statsd_client.incr("builders.job_cancelled", labels=labels)
+            statsd_client.incr("builders.failure.job_cancelled", labels=labels)
             job.markAsCancelled()
         elif job_action == False:
             # Fail and dequeue the job.
@@ -430,12 +440,12 @@ def recover_failure(logger, vitals, builder, retry, exception):
                 job.specific_build.updateStatus(
                     BuildStatus.FAILEDTOBUILD, force_invalid_transition=True
                 )
-            statsd_client.incr("builders.job_failed", labels=labels)
+            statsd_client.incr("builders.failure.job_failed", labels=labels)
             job.destroySelf()
         elif job_action == True:
             # Reset the job so it will be retried elsewhere.
             logger.info("Requeueing job %s.", job.build_cookie)
-            statsd_client.incr("builders.job_reset", labels=labels)
+            statsd_client.incr("builders.failure.job_reset", labels=labels)
             job.reset()
 
         if job_action == False:
@@ -447,12 +457,14 @@ def recover_failure(logger, vitals, builder, retry, exception):
         # We've already tried resetting it enough times, so we have
         # little choice but to give up.
         logger.info("Failing builder %s.", builder.name)
+        statsd_client.incr("builders.failure.builder_failed", labels=labels)
         builder.failBuilder(str(exception))
     elif builder_action == True:
         # Dirty the builder to attempt recovery. In the virtual case,
         # the dirty idleness will cause a reset, giving us a good chance
         # of recovery.
         logger.info("Dirtying builder %s to attempt recovery.", builder.name)
+        statsd_client.incr("builders.failure.builder_reset", labels=labels)
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
 
 
@@ -583,20 +595,13 @@ class WorkerScanner:
         vitals = self.builder_factory.getVitals(self.builder_name)
         builder = self.builder_factory[self.builder_name]
         try:
+            labels = get_statsd_labels(builder, builder.current_build)
+            self.statsd_client.incr("builders.failure", labels=labels)
+
             builder.gotFailure()
-            labels = {}
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
-                labels.update(
-                    {
-                        "build": True,
-                        "arch": builder.current_build.processor.name,
-                        "region": builder.region,
-                    }
-                )
-            else:
-                labels["build"] = False
-            self.statsd_client.incr("builders.judged_failed", labels=labels)
+
             recover_failure(self.logger, vitals, builder, retry, exc)
             transaction.commit()
         except Exception:
