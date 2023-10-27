@@ -97,6 +97,11 @@ options:
     type: int
     description: Base port number for the bzr-sftp service.
     default: 2224
+  port_lb_bzr_sftp:
+    type: int
+    description: |
+      The port on the frontend load balancer to expose the bzr-sftp service on.
+    default: 5022
   port_web_status_base:
     type: int
     description: Base port for the web status service.
