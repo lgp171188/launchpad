@@ -32,12 +32,6 @@ options:
     type: string
     description: Options to add to the HAProxy http(s) "server" lines.
     default: check inter 2000 rise 2 fall 5 maxconn 16
-  haproxy_service_https_cert_type:
-    type: string
-    description: |
-      The type of certificate to use for the https service. Either "DEFAULT"
-      or "EXTERNAL".
-    default: "DEFAULT"
   haproxy_service_options_internal_branch_by_id:
     type: string
     description: |
