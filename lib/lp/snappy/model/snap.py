@@ -128,6 +128,7 @@ from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.openid.adapters.openid import CurrentOpenIDEndPoint
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.services.timeout import default_timeout
 from lp.services.webapp.authorization import precache_permission_for_objects
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
@@ -1662,7 +1663,10 @@ class SnapSet:
             return False
 
         try:
-            snapcraft_data = self.getSnapcraftYaml(context)
+            # Ensure there is a reasonable timeout set. Without this, the
+            # default in snap builds would be 'None', which we don't want.
+            with default_timeout(300.0):
+                snapcraft_data = self.getSnapcraftYaml(context)
         except (
             MissingSnapcraftYaml,
             CannotFetchSnapcraftYaml,
