@@ -54,6 +54,10 @@ from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 BUILDD_MANAGER_LOG_NAME = "worker-scanner"
 
 
+# The number of times the scan of a builder can fail before we start
+# attributing it to the builder and job.
+SCAN_FAILURE_THRESHOLD = 5
+
 # The number of times a builder can consecutively fail before we
 # reset its current job.
 JOB_RESET_THRESHOLD = 3
@@ -515,6 +519,12 @@ class WorkerScanner:
 
         self.can_retry = True
 
+        # The build and job failure counts are persisted, but we only really
+        # care about the consecutive scan failure count over the space of a
+        # couple of minutes, so it's okay if it resets on buildd-manager
+        # restart.
+        self.scan_failure_count = 0
+
         # We cache the build cookie, keyed on the BuildQueue, to avoid
         # hitting the DB on every scan.
         self._cached_build_cookie = None
@@ -553,6 +563,12 @@ class WorkerScanner:
 
         try:
             yield self.scan()
+
+            # We got through a scan without error, so reset the consecutive
+            # failure count. We don't reset the persistent builder or job
+            # failure counts, since the build might consistently break the
+            # builder later in the build.
+            self.scan_failure_count = 0
         except Exception as e:
             self._scanFailed(self.can_retry, e)
 
@@ -591,6 +607,11 @@ class WorkerScanner:
                 "Scanning %s failed" % self.builder_name, exc_info=exc
             )
 
+        # Certain errors can't possibly be a glitch, and they can insta-fail
+        # even if the scan phase would normally allow a retry.
+        if isinstance(exc, (BuildDaemonIsolationError, CannotResumeHost)):
+            retry = False
+
         # Decide if we need to terminate the job or reset/fail the builder.
         vitals = self.builder_factory.getVitals(self.builder_name)
         builder = self.builder_factory[self.builder_name]
@@ -599,6 +620,24 @@ class WorkerScanner:
             self.statsd_client.incr(
                 "builders.failure.scan_failed", labels=labels
             )
+            self.scan_failure_count += 1
+
+            # To avoid counting network glitches or similar against innocent
+            # builds and jobs, we allow a scan to fail a few times in a row
+            # without consequence, and just retry. If we exceed the threshold,
+            # we then persistently record a single failure against the build
+            # and job.
+            if retry and self.scan_failure_count < SCAN_FAILURE_THRESHOLD:
+                self.statsd_client.incr(
+                    "builders.failure.scan_retried",
+                    labels={
+                        "failures": str(self.scan_failure_count),
+                        **labels,
+                    },
+                )
+                return
+
+            self.scan_failure_count = 0
 
             builder.gotFailure()
             if builder.current_build is not None:
@@ -612,6 +651,7 @@ class WorkerScanner:
                 "Miserable failure when trying to handle failure:\n",
                 exc_info=True,
             )
+        finally:
             transaction.abort()
 
     @defer.inlineCallbacks
