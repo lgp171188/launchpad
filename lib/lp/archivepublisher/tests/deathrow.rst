@@ -268,8 +268,10 @@ Run DeathRow against the current 'removable' context.
     DEBUG 4 Sources
     DEBUG 3 Binaries
     ...
-    DEBUG Checking superseded_666.dsc (02129bb861061d1a052c592e2dc6b383)
-    DEBUG Checking obsolete_666.dsc (02129bb861061d1a052c592e2dc6b383)
+    DEBUG Checking superseded_666.dsc
+    (4b68ab3847feda7d6c62c1fbcbeebfa35eab7351ed5e78f4ddadea5df64b8015)
+    DEBUG Checking obsolete_666.dsc
+    (4b68ab3847feda7d6c62c1fbcbeebfa35eab7351ed5e78f4ddadea5df64b8015)
     ...
     INFO Removing 7 files marked for reaping
     DEBUG Removing superseded/superseded_666.dsc from main
@@ -367,9 +369,11 @@ Now DeathRow considers 'stuck-bin' publications.
     >>> death_row.reap()
     DEBUG 0 Sources
     DEBUG 2 Binaries
-    DEBUG Checking stuck-bin_666_i386.deb (21c2e59531c8710156d34a3c30ac81d5)
+    DEBUG Checking stuck-bin_666_i386.deb
+    (bbeebd879e1dff6918546dc0c179fdde505f2a21591c9a9c96e36b054ec5af83)
     DEBUG Cannot remove.
-    DEBUG Checking stuck-bin_666_i386.deb (21c2e59531c8710156d34a3c30ac81d5)
+    DEBUG Checking stuck-bin_666_i386.deb
+    (bbeebd879e1dff6918546dc0c179fdde505f2a21591c9a9c96e36b054ec5af83)
     DEBUG Already verified.
     INFO Removing 0 files marked for reaping
     INFO Total bytes freed: 0
@@ -393,10 +397,13 @@ single pass.
     >>> death_row.reap()
     DEBUG 0 Sources
     DEBUG 3 Binaries
-    DEBUG Checking stuck-bin_666_i386.deb (21c2e59531c8710156d34a3c30ac81d5)
-    DEBUG Checking stuck-bin_666_i386.deb (21c2e59531c8710156d34a3c30ac81d5)
+    DEBUG Checking stuck-bin_666_i386.deb
+    (bbeebd879e1dff6918546dc0c179fdde505f2a21591c9a9c96e36b054ec5af83)
+    DEBUG Checking stuck-bin_666_i386.deb
+    (bbeebd879e1dff6918546dc0c179fdde505f2a21591c9a9c96e36b054ec5af83)
     DEBUG Already verified.
-    DEBUG Checking stuck-bin_666_i386.deb (21c2e59531c8710156d34a3c30ac81d5)
+    DEBUG Checking stuck-bin_666_i386.deb
+    (bbeebd879e1dff6918546dc0c179fdde505f2a21591c9a9c96e36b054ec5af83)
     DEBUG Already verified.
     INFO Removing 1 files marked for reaping
     DEBUG Removing removed-ignored/stuck-bin_666_i386.deb from main
