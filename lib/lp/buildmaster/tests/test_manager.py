@@ -555,13 +555,20 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         transaction.commit()
 
         yield scanner.singleCycle()
-        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.assertEqual(3, self.stats_client.incr.call_count)
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
                     "build.reset,arch=386,env=test,job_type=PACKAGEBUILD"
                 ),
-                mock.call("builders.judged_failed,build=False,env=test"),
+                mock.call(
+                    "builders.failure.scan_failed,builder_name=bob,env=test,"
+                    "region=,virtualized=False"
+                ),
+                mock.call(
+                    "builders.failure.builder_failed,builder_name=bob,"
+                    "env=test,region=,virtualized=False"
+                ),
             ]
         )
 
@@ -1411,9 +1418,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_reset,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region={},"
-                    "virtualized=True".format(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region={},virtualized=True".format(
                         build.processor.name,
                         self.builder.name,
                         self.builder.region,
@@ -1477,7 +1484,7 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_cancelled,arch={},build=True,"
+                    "builders.failure.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
                     "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
@@ -1519,9 +1526,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                     )
                 ),
                 mock.call(
-                    "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
-                    "virtualized=True".format(
+                    "builders.failure.job_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
@@ -1561,9 +1568,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                     )
                 ),
                 mock.call(
-                    "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
-                    "virtualized=True".format(
+                    "builders.failure.job_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
@@ -1588,7 +1595,7 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_cancelled,arch={},build=True,"
+                    "builders.failure.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
                     "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
@@ -1621,6 +1628,36 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.assertIs(None, self.build.builder)
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertTrue(self.builder.builderok)
+        self.assertEqual(3, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.reset,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.failure.builder_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
         # But if the builder continues to cause trouble, it will be
         # disabled.
@@ -1634,16 +1671,59 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertFalse(self.builder.builderok)
         self.assertEqual("failnotes", self.builder.failnotes)
+        self.assertEqual(3, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.reset,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.failure.builder_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
     def test_builder_failing_with_no_attached_job(self):
         self.buildqueue.reset()
         self.builder.failure_count = BUILDER_FAILURE_THRESHOLD
+        self.stats_client.incr.reset_mock()
 
         log = self._recover_failure("failnotes")
         self.assertIn("with no job", log)
         self.assertIn("Failing builder", log)
         self.assertFalse(self.builder.builderok)
         self.assertEqual("failnotes", self.builder.failnotes)
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.builder_failed,builder_name={},"
+                    "env=test,region=builder-name,virtualized=True".format(
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
 
 class TestNewBuilders(TestCase):
