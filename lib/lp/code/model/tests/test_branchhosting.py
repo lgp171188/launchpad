@@ -19,6 +19,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import BranchFileNotFound, BranchHostingFault
 from lp.code.interfaces.branchhosting import IBranchHostingClient
+from lp.code.model.branchhosting import InvalidRevisionException
 from lp.services.job.interfaces.job import IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob, JobRunner
@@ -90,10 +91,14 @@ class TestBranchHostingClient(TestCase):
         self.assertRequest("+branch-id/123/diff/2/1?context_lines=4")
 
     def test_getDiff_bad_old_revision(self):
-        self.assertRaises(ValueError, self.client.getDiff, 123, "x/y", "1")
+        self.assertRaises(
+            InvalidRevisionException, self.client.getDiff, 123, "x/y", "1"
+        )
 
     def test_getDiff_bad_new_revision(self):
-        self.assertRaises(ValueError, self.client.getDiff, 123, "1", "x/y")
+        self.assertRaises(
+            InvalidRevisionException, self.client.getDiff, 123, "1", "x/y"
+        )
 
     def test_getDiff_failure(self):
         with self.mockRequests("GET", status=400):
@@ -144,7 +149,11 @@ class TestBranchHostingClient(TestCase):
 
     def test_getBlob_bad_revision(self):
         self.assertRaises(
-            ValueError, self.client.getBlob, 123, "file-name", rev="x/y"
+            InvalidRevisionException,
+            self.client.getBlob,
+            123,
+            "file-name",
+            rev="x/y",
         )
 
     def test_getBlob_failure(self):

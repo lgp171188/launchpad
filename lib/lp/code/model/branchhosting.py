@@ -31,6 +31,10 @@ class RequestExceptionWrapper(requests.RequestException):
     """A non-requests exception that occurred during a request."""
 
 
+class InvalidRevisionException(Exception):
+    """An exception thrown when a revision ID is not valid"""
+
+
 @implementer(IBranchHostingClient)
 class BranchHostingClient:
     """A client for the Bazaar Loggerhead API."""
@@ -94,7 +98,9 @@ class BranchHostingClient:
         attacks.
         """
         if rev is not None and "/" in rev:
-            raise ValueError("Revision ID '%s' is not well-formed." % rev)
+            raise InvalidRevisionException(
+                "Revision ID '%s' is not well-formed." % rev
+            )
 
     def getDiff(
         self, branch_id, new, old=None, context_lines=None, logger=None
