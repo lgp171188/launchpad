@@ -3696,6 +3696,47 @@ class TestSnapProcessors(TestCaseWithFactory):
         self.assertFalse(inferProEnable(refs[6]))  # Snap w/out snapcraft.yaml
         self.assertFalse(inferProEnable(None))  # Snap w/out ref or branch
 
+    def test_inferProEnable_branches(self):
+        """With a branch as a context, inferProEnable returns the inferred
+        values for pro-enable as expected (see test description above)
+        """
+        branches = [
+            removeSecurityProxy(self.factory.makeBranch()) for _ in range(7)
+        ]
+        blobs = {
+            branch.id: blob
+            for branch, blob in (
+                (branches[0], b"name: test-snap\n"),
+                (branches[1], b"name: test-snap\nbase: core\n"),
+                (branches[2], b"name: test-snap\nbase: core18\n"),
+                (branches[3], b"name: test-snap\nbuild-base: devel\n"),
+                (branches[4], b"name: core\ntype: base\n"),
+                (branches[5], b"name: core18\ntype: base\n"),
+            )
+        }
+        self.useFixture(
+            BranchHostingFixture()
+        ).getBlob = lambda branch_id, *args, **kwargs: blobs.get(branch_id)
+
+        inferProEnable = getUtility(ISnapSet).inferProEnable
+        self.assertTrue(inferProEnable(branches[0]))  # Snap w no base
+        self.assertTrue(inferProEnable(branches[1]))  # Snap w 'core' base
+        self.assertFalse(inferProEnable(branches[2]))  # Snap w 'core18' base
+        self.assertFalse(inferProEnable(branches[3]))  # Snap w only build-base
+        self.assertTrue(inferProEnable(branches[4]))  # 'core' snap itself
+        self.assertFalse(inferProEnable(branches[5]))  # 'core18' snap itself
+        self.assertFalse(inferProEnable(branches[6]))  # w/out snapcraft.yaml
+        self.assertFalse(inferProEnable(None))  # w/out ref or branch
+
+    def test_inferProEnable_bad_revision(self):
+        """A branch with an invalid revision ID (or an invalid last_scanned_id)
+        will have its pro-enable value set to False.
+        """
+        branch = self.factory.makeBranch()
+        branch.last_scanned_id = "bad/revision"
+        inferProEnable = getUtility(ISnapSet).inferProEnable
+        self.assertFalse(inferProEnable(removeSecurityProxy(branch)))
+
 
 class TestSnapWebservice(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer

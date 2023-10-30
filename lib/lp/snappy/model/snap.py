@@ -1671,6 +1671,8 @@ class SnapSet:
             MissingSnapcraftYaml,
             CannotFetchSnapcraftYaml,
             CannotParseSnapcraftYaml,
+            # Catch ValueError: Revision ID is not well-formed.
+            ValueError,
         ):
             pass
         else:
