@@ -78,6 +78,7 @@ from lp.code.interfaces.gitrepository import (
 )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
+from lp.code.model.branchhosting import InvalidRevisionException
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,
@@ -1671,8 +1672,7 @@ class SnapSet:
             MissingSnapcraftYaml,
             CannotFetchSnapcraftYaml,
             CannotParseSnapcraftYaml,
-            # Catch ValueError: Revision ID is not well-formed.
-            ValueError,
+            InvalidRevisionException,
         ):
             pass
         else:
