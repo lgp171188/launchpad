@@ -160,7 +160,7 @@ class DeathRow:
 
         return (sources, binaries)
 
-    def canRemove(self, publication_class, filename, file_md5):
+    def canRemove(self, publication_class, filename, file_sha256):
         """Check if given (filename, MD5) can be removed from the pool.
 
         Check the archive reference-counter implemented in:
@@ -199,7 +199,7 @@ class DeathRow:
             [
                 LibraryFileAlias.content == LibraryFileContent.id,
                 LibraryFileAlias.filename == filename,
-                LibraryFileContent.md5 == file_md5,
+                LibraryFileContent.sha256 == file_sha256,
             ]
         )
 
@@ -247,9 +247,9 @@ class DeathRow:
             files = pub_record.files
             for pub_file in files:
                 filename = pub_file.libraryfile.filename
-                file_md5 = pub_file.libraryfile.content.md5
+                file_sha256 = pub_file.libraryfile.content.sha256
 
-                self.logger.debug("Checking %s (%s)" % (filename, file_md5))
+                self.logger.debug("Checking %s (%s)" % (filename, file_sha256))
 
                 # Calculating the file path in pool.
                 pub_file_details = (
@@ -264,15 +264,17 @@ class DeathRow:
                 # verified. If the verification was already made and the
                 # file is condemned queue the publishing record for removal
                 # otherwise just continue the iteration.
-                if (filename, file_md5) in considered_files:
+                if (filename, file_sha256) in considered_files:
                     self.logger.debug("Already verified.")
                     if file_path in condemned_files:
                         condemned_records.add(pub_record)
                     continue
-                considered_files.add((filename, file_md5))
+                considered_files.add((filename, file_sha256))
 
                 # Check if the removal is allowed, if not continue.
-                if not self.canRemove(publication_class, filename, file_md5):
+                if not self.canRemove(
+                    publication_class, filename, file_sha256
+                ):
                     self.logger.debug("Cannot remove.")
                     continue
 
