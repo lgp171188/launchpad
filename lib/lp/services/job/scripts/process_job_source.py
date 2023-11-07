@@ -85,7 +85,7 @@ class ProcessSingleJobSource(LaunchpadCronScript):
 
     def job_counts(self, jobs):
         """Return a list of tuples containing the job name and counts."""
-        counts = defaultdict(lambda: 0)
+        counts = defaultdict(int)
         for job in jobs:
             counts[job.__class__.__name__] += 1
         return sorted(counts.items())

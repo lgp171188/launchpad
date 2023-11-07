@@ -1321,7 +1321,7 @@ Notification Recipients
 -----------------------
 
 Bug notifications are sent to direct subscribers of a bug as well as to
-structural subscribers. Structural subcribers can select the
+structural subscribers. Structural subscribers can select the
 notification level of the subscription.
 
     >>> flush_notifications()

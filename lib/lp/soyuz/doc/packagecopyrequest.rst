@@ -50,7 +50,7 @@ As well as Mark's identity and the 'ubuntu' distribution..
     ... )
 
 .. and a package location targeting ubuntu/warty and a different copy
-archive (for snaphots).
+archive (for snapshots).
 
     >>> snapshot_target = build_package_location("ubuntu", "warty")
     >>> snapshot_target.archive = snapshot_archive

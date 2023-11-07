@@ -816,7 +816,7 @@ Disabled archives caches
 Once recognized as disabled, archives have their caches purged, so they
 won't be listed in package searches anymore.
 
-First, we rebuild and examinate the caches for Celso's PPA.
+First, we rebuild and examine the caches for Celso's PPA.
 
     # Helper functions for completing rebuilding and dumping cache
     # contents for a given Archive.
