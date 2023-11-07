@@ -18,7 +18,10 @@ from zope.schema import Date
 from lp import _
 from lp.app.errors import UnexpectedFormData
 from lp.app.widgets.date import DateWidget
-from lp.registry.interfaces.teammembership import TeamMembershipStatus
+from lp.registry.interfaces.teammembership import (
+    ACTIVE_STATES,
+    TeamMembershipStatus,
+)
 from lp.services.webapp import LaunchpadView, canonical_url
 from lp.services.webapp.breadcrumb import Breadcrumb
 
@@ -92,10 +95,7 @@ class TeamMembershipEditView(LaunchpadView):
 
     # Boolean helpers
     def isActive(self):
-        return self.context.status in [
-            TeamMembershipStatus.APPROVED,
-            TeamMembershipStatus.ADMIN,
-        ]
+        return self.context.status in ACTIVE_STATES
 
     def isInactive(self):
         return self.context.status in [

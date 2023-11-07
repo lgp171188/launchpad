@@ -115,6 +115,7 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.poll import IPollSet
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.teammembership import (
+    ACTIVE_STATES,
     DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT,
     CyclicalTeamMembershipError,
     ITeamMembership,
@@ -1408,8 +1409,6 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
         """Return text describing why the membership can't be renewed."""
         context = self.context
         ondemand = TeamMembershipRenewalPolicy.ONDEMAND
-        admin = TeamMembershipStatus.ADMIN
-        approved = TeamMembershipStatus.APPROVED
         # We add a grace period of one day to the limit to
         # cover the fencepost error when `date_limit` is
         # earlier than `self.dateexpires`, which happens later
@@ -1417,7 +1416,7 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
         date_limit = datetime.now(timezone.utc) + timedelta(
             days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
-        if context.status not in (admin, approved):
+        if context.status not in ACTIVE_STATES:
             text = "it is not active."
         elif context.team.renewal_policy != ondemand:
             text = (
