@@ -201,10 +201,11 @@ def configure():
         ):
             hookenv.log(
                 "Config files changed; restarting"
-                " the launchpad-bzr-sftp service."
+                " the launchpad-bzr-sftp service and reloading apache2."
             )
             for i in range(config["workers"]):
                 host.service_restart(f"launchpad-bzr-sftp@{i + 1}")
+            host.service_reload("apache2")
         else:
             hookenv.log("Not restarting since no config files were changed.")
         host.service_resume("launchpad-bzr-sftp.service")
