@@ -67,6 +67,7 @@ from lp.code.errors import (
 )
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchcollection import IAllBranches, IBranchCollection
+from lp.code.interfaces.branchhosting import InvalidRevisionException
 from lp.code.interfaces.gitcollection import (
     IAllGitRepositories,
     IGitCollection,
@@ -78,7 +79,6 @@ from lp.code.interfaces.gitrepository import (
 )
 from lp.code.model.branch import Branch
 from lp.code.model.branchcollection import GenericBranchCollection
-from lp.code.model.branchhosting import InvalidRevisionException
 from lp.code.model.branchnamespace import (
     BRANCH_POLICY_ALLOWED_TYPES,
     BRANCH_POLICY_REQUIRED_GRANTS,

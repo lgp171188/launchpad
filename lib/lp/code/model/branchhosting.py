@@ -16,7 +16,10 @@ from lazr.restful.utils import get_current_browser_request
 from zope.interface import implementer
 
 from lp.code.errors import BranchFileNotFound, BranchHostingFault
-from lp.code.interfaces.branchhosting import IBranchHostingClient
+from lp.code.interfaces.branchhosting import (
+    IBranchHostingClient,
+    InvalidRevisionException,
+)
 from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -29,10 +32,6 @@ from lp.services.timeout import (
 
 class RequestExceptionWrapper(requests.RequestException):
     """A non-requests exception that occurred during a request."""
-
-
-class InvalidRevisionException(Exception):
-    """An exception thrown when a revision ID is not valid"""
 
 
 @implementer(IBranchHostingClient)

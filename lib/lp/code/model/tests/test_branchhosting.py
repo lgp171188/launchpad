@@ -18,8 +18,10 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.errors import BranchFileNotFound, BranchHostingFault
-from lp.code.interfaces.branchhosting import IBranchHostingClient
-from lp.code.model.branchhosting import InvalidRevisionException
+from lp.code.interfaces.branchhosting import (
+    IBranchHostingClient,
+    InvalidRevisionException,
+)
 from lp.services.job.interfaces.job import IRunnableJob, JobStatus
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob, JobRunner
