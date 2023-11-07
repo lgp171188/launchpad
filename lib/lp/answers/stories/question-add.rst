@@ -2,7 +2,7 @@ Asking New Questions
 ====================
 
 There are two paths available to a user to ask a new question. The first
-one involes two steps. First, go to the product or distribution for
+one involves two steps. First, go to the product or distribution for
 which support is desired:
 
     >>> browser.open("http://answers.launchpad.test/ubuntu")

@@ -362,7 +362,7 @@ Retrieve the just-inserted SourcePackageRelease correspondent to 'ed'
 
     >>> ed_spr = ed_src.queue_root.sources[0].sourcepackagerelease
 
-Check if we have rebuid the change's author line properly (as
+Check if we have rebuilt the change's author line properly (as
 mentioned in bug # 30621)
 
     >>> print(ed_spr.changelog_entry)  # doctest: -NORMALIZE_WHITESPACE

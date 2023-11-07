@@ -71,7 +71,7 @@ class SettingsAuditor:
             self.config_blocks[block] = data
 
     def _checkForDupes(self, data, label):
-        settings = defaultdict(lambda: 0)
+        settings = defaultdict(int)
         for line in data:
             settings[self._getSetting(line)] += 1
         dupe_settings = [

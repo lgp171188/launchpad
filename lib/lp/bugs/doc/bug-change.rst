@@ -392,7 +392,7 @@ space-separated string for display.
      'oldvalue': 'first-tag second-tag third-tag',
      'whatchanged': 'tags'}
 
-Addtions and removals are expressed separately in the notification.
+Additions and removals are expressed separately in the notification.
 
     >>> print(tags_change.getBugNotification()["text"])
     ** Tags removed: first-tag

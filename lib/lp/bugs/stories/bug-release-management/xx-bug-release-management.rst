@@ -70,7 +70,7 @@ Nominate a bug to a distribution release
 A bug can be nominated for a distribution release.
 
     >>> login("foo.bar@canonical.com")
-    >>> nominater = factory.makePerson(name="denominater")
+    >>> nominater = factory.makePerson()
     >>> poseidon = factory.makeDistribution(
     ...     name="poseidon", bug_supervisor=nominater
     ... )

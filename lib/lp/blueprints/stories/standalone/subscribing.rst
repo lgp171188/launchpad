@@ -324,7 +324,7 @@ to the team's preferred email address.
 Viewing the subscribers
 -----------------------
 
-The subcribers portlet lists each subscriber with the appropriate icon
+The subscribers portlet lists each subscriber with the appropriate icon
 representing whether the person is essential to the specification or
 not.
 
