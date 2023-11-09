@@ -374,7 +374,7 @@ class ValidateGPGKeyView(BaseTokenView, LaunchpadFormView):
                 "global key ring (using <kbd>gpg --send-keys "
                 "KEY</kbd>) and that you entered the fingerprint "
                 "correctly (as produced by <kbd>gpg --fingerprint "
-                'YOU</kdb>). Try later or <a href="${url}/+editpgpkeys"> '
+                'YOU</kbd>). Try later or <a href="${url}/+editpgpkeys">'
                 "cancel your request</a>.",
                 mapping=dict(fingerprint=fingerprint, url=person_url),
             )
