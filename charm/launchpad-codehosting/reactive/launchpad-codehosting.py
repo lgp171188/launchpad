@@ -18,7 +18,6 @@ from charms.reactive import (
     clear_flag,
     endpoint_from_flag,
     helpers,
-    remove_state,
     set_flag,
     set_state,
     when,
@@ -298,7 +297,7 @@ def apache_deconfigured():
 @when("service.configured")
 @when_not("launchpad.db.configured")
 def deconfigure():
-    remove_state("service.configured")
+    clear_flag("service.configured")
 
 
 @when("frontend-loadbalancer.available", "service.configured")
