@@ -109,7 +109,6 @@ def configure():
         config,
         "launchpad-ppa-auth-lazr.conf.j2",
         "launchpad-ppa-auth/launchpad-lazr.conf",
-        secret=True,
     )
     configure_email(config, "launchpad-ppa-publisher")
     configure_logrotate(config)
