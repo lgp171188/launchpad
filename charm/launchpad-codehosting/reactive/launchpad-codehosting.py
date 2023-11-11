@@ -18,7 +18,6 @@ from charms.reactive import (
     clear_flag,
     endpoint_from_flag,
     helpers,
-    remove_state,
     set_flag,
     set_state,
     when,
@@ -270,6 +269,8 @@ def configure_document_root(config):
     "service.configured",
     "config.set.domain_bzr",
     "config.set.domain_bzr_internal",
+    "config.set.internal_branch_by_id_root",
+    "config.set.internal_codebrowse_root",
     "apache-website.available",
 )
 @when_not("service.apache-website.configured")
@@ -288,6 +289,22 @@ def configure_apache_website():
     set_flag("service.apache-website.configured")
 
 
+@when_not_all(
+    "config.set.domain_bzr",
+    "config.set.domain_bzr_internal",
+    "config.set.internal_branch_by_id_root",
+    "config.set.internal_codebrowse_root",
+)
+def blocked_on_missing_required_config():
+    hookenv.status_set(
+        "blocked",
+        "One or more of the required configuration options "
+        "'domain_bzr', 'domain_bzr_internal', 'internal_branch_by_id_root', "
+        "and 'internal_codebrowse_root' are unset.",
+    )
+    clear_flag("service.apache-website.configured")
+
+
 @when("service.apache-website.configured")
 @when_not_all("service.configured", "apache-website.available")
 def apache_deconfigured():
@@ -298,7 +315,7 @@ def apache_deconfigured():
 @when("service.configured")
 @when_not("launchpad.db.configured")
 def deconfigure():
-    remove_state("service.configured")
+    clear_flag("service.configured")
 
 
 @when("frontend-loadbalancer.available", "service.configured")
