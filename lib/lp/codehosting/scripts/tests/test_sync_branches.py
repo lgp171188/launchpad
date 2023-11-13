@@ -43,7 +43,7 @@ class BranchSyncProcessMatches(MatchesListwise):
                             "rsync",
                             "-a",
                             "--delete-after",
-                            "bazaar.launchpad.net::mirrors/%s/" % branch_path,
+                            "bazaar.lp.internal::mirrors/%s/" % branch_path,
                             "%s/"
                             % os.path.join(
                                 config.codehosting.mirrored_branches_root,
@@ -161,7 +161,7 @@ class TestSyncBranches(TestCaseWithFactory):
             LaunchpadScriptFailure,
             "There was an error running: "
             "rsync -a --delete-after "
-            "bazaar.launchpad.net::mirrors/{}/ {}/{}/\n"
+            "bazaar.lp.internal::mirrors/{}/ {}/{}/\n"
             "Status: 1\n"
             "Output: rsync exploded".format(
                 branch_id_to_path(branch.id),
