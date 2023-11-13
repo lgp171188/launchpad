@@ -18,7 +18,6 @@ from lp.services.scripts.base import LaunchpadScript, LaunchpadScriptFailure
 
 # We don't want to spend too long syncing branches.
 BRANCH_LIMIT = 35
-REMOTE_SERVER = "bazaar.launchpad.net"
 
 
 class SyncBranchesScript(LaunchpadScript):
@@ -45,7 +44,7 @@ class SyncBranchesScript(LaunchpadScript):
             "rsync",
             "-a",
             "--delete-after",
-            "%s::mirrors/%s/" % (REMOTE_SERVER, branch_path),
+            "%s/%s/" % (config.codehosting.sync_branches_source, branch_path),
             "%s/" % branch_dir,
         ]
         try:
