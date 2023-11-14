@@ -2504,7 +2504,7 @@ class Person(
     def api_activemembers(self):
         """See `IPerson`."""
         return self._members(
-            direct=True, status=ACTIVE_STATES, preload_for_api=True
+            direct=True, status=tuple(ACTIVE_STATES), preload_for_api=True
         )
 
     @property
