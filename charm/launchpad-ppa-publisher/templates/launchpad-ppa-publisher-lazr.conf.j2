@@ -16,6 +16,9 @@ archives_dir: {{ archives_dir }}
 {{- opt("oval_data_rsync_endpoint", oval_data_rsync_endpoint) }}
 oval_data_root: {{ oval_data_root }}
 
+[artifactory]
+{{- opt("base_url", artifactory_base_url) }}
+
 [personalpackagearchive]
 root: {{ ppa_archive_root }}
 private_root: {{ ppa_archive_private_root }}

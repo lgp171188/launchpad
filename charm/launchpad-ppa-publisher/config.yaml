@@ -3,6 +3,11 @@ options:
     type: boolean
     default: true
     description: If true, enable jobs that may change the database.
+  artifactory_base_url:
+    type: string
+    default:
+    description:
+      Base URL for publishing suitably-configured archives to Artifactory.
   domain_ppa_private:
     type: string
     default: private-ppa.launchpad.test
