@@ -8,6 +8,12 @@ options:
     default:
     description:
       Base URL for publishing suitably-configured archives to Artifactory.
+  artifactory_write_credentials:
+    type: string
+    default:
+    description: >
+      Credentials for writing to Artifactory repositories (formatted as
+      "user:token").
   domain_ppa_private:
     type: string
     default: private-ppa.launchpad.test
