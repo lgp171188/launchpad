@@ -687,6 +687,11 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.tarfile.add_file("1.0/dir/file.efi", b"foo")
         os.umask(0o002)  # cleanup already handled by setUp
         self.assertRaises(CustomUploadBadUmask, self.process)
+        self.assertFalse(
+            os.path.exists(
+                os.path.join(self.getSignedPath("test", "amd64"), "1.0")
+            )
+        )
 
     def test_correct_uefi_signing_command_executed(self):
         # Check that calling signUefi() will generate the expected command
