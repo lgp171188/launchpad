@@ -31,6 +31,16 @@ def base64_decode(value):
     return base64.b64decode(value.encode("ASCII"))
 
 
+def get_data_dir():
+    return os.path.join(base.base_dir(), "data")
+
+
+def get_codehosting_service_config():
+    config = get_service_config()
+    config["bzr_repositories_root"] = f"{get_data_dir()}/mirrors"
+    return config
+
+
 def configure_logrotate(config):
     hookenv.log("Writing logrotate configuration.")
     templating.render(
@@ -65,7 +75,7 @@ def configure_systemd(config):
 def config_files():
     files = []
     files.extend(lazr_config_files())
-    config = get_service_config()
+    config = get_codehosting_service_config()
     files.append(config_file_path("launchpad-codehosting/launchpad-lazr.conf"))
     for i in range(config["workers"]):
         files.append(
@@ -155,11 +165,6 @@ def configure_ssh_keys(config):
 
 def configure_codehosting_lazr_config(config):
     hookenv.log("Writing lazr configuration.")
-    # XXX lgp171188: 2023-10-26: This template recreates the value of
-    # config["bzr_repositories_root"] since it can't use it directly
-    # due to it being in a separate handler that is executed much later.
-    # Fix this to unify the definition and usage of this configuration
-    # value.
     configure_lazr(
         config,
         "launchpad-codehosting-lazr-common.conf.j2",
@@ -177,10 +182,21 @@ def configure_codehosting_lazr_config(config):
         )
 
 
+def configure_rsync(config):
+    rsync_path = "/etc/rsync-juju.d/020-mirrors.conf"
+    if config["bzr_repositories_rsync_hosts_allow"]:
+        hookenv.log("Writing rsync configuration for Bazaar repositories.")
+        templating.render(
+            "mirrors-rsync.conf.j2", rsync_path, config, perms=0o644
+        )
+    elif os.path.exists(rsync_path):
+        os.unlink(rsync_path)
+
+
 @when("launchpad.db.configured")
 @when_not("service.configured")
 def configure():
-    config = get_service_config()
+    config = get_codehosting_service_config()
     configure_codehosting_lazr_config(config)
     configure_email(config, "launchpad-codehosting")
     configure_logrotate(config)
@@ -188,6 +204,7 @@ def configure():
     configure_scripts(config)
     configure_ssh_keys(config)
     configure_systemd(config)
+    configure_rsync(config)
     if config["active"]:
         if helpers.any_file_changed(
             [
@@ -238,10 +255,9 @@ def configure_document_root(config):
         perms=0o755,
         force=True,
     )
-    data_dir = f"{config['base_dir']}/data"
+    data_dir = get_data_dir()
     hookenv.log(f"Creating the data directory {data_dir}")
     host.mkdir(data_dir, owner=user, group=user, perms=0o755, force=True)
-    config["bzr_repositories_root"] = f"{data_dir}/mirrors"
     host.mkdir(
         config["bzr_repositories_root"],
         owner=user,
@@ -276,7 +292,7 @@ def configure_document_root(config):
 @when_not("service.apache-website.configured")
 def configure_apache_website():
     apache_website = endpoint_from_flag("apache-website.available")
-    config = get_service_config()
+    config = get_codehosting_service_config()
     configure_document_root(config)
     apache_website.set_remote(
         domain=config["domain_bzr"],

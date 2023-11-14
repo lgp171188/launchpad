@@ -3,6 +3,12 @@ options:
     type: boolean
     description: If true, enable jobs that may change the database.
     default: true
+  bzr_repositories_rsync_hosts_allow:
+    type: string
+    description: >
+      Space-separated list of hosts that should be allowed to rsync Bazaar
+      repositories (both public and private).
+    default: ""
   codehosting_private_ssh_key:
     type: string
     description: >
