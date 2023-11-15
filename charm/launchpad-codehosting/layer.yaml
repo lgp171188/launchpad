@@ -10,6 +10,7 @@ options:
         roles:
           - branch-rewrite
           - reclaim-branch-space
+          - ro
           - translationstobranch
           - upgrade-branches
 repo: https://git.launchpad.net/launchpad
