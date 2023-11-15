@@ -9,3 +9,12 @@ stop-services:
     will persist across a reboot.  It also doesn't disable cron jobs, since
     those are handled by the cron-control mechanism instead; see
     lp.services.scripts.base.cronscript_enabled.)
+sync-branches:
+  description: |
+    Sync branch data from production to a non-production environment.
+  params:
+    branches:
+      type: string
+      description: A space-separated list of branches to sync.
+  required:
+    - branches
