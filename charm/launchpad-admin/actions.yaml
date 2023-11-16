@@ -1,0 +1,38 @@
+create-bot-account:
+  description: >
+    Create a bot account.  This is intended mainly for use within
+    Canonical's infrastructure, and so makes some assumptions around SSO
+    account creation and team membership that only hold there; people
+    running it elsewhere will need to set the "openid" and "teams"
+    parameters.
+  params:
+    username:
+      type: string
+      description: Username for the bot.
+    openid:
+      type: string
+      description: >
+        OpenID identifier suffix.  When used from Canonical's service
+        manager infrastructure, this is unnecessary because SSO account
+        creation handles it.
+    email:
+      type: string
+      description: Email address.  Defaults to webops+username@canonical.com.
+    sshkey:
+      type: string
+      description: SSH public key.  Defaults to no SSH key.
+    teams:
+      type: string
+      description: >
+        Add the bot to this comma-separated list of teams.  Defaults to
+        canonical-is-devopsolution-bots.
+  required:
+    - username
+suspend-bot-account:
+  description: Suspend a bot account.
+  params:
+    email:
+      type: string
+      description: Email address for the bot.
+  required:
+    - email

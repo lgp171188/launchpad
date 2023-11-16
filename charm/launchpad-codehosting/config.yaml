@@ -3,6 +3,12 @@ options:
     type: boolean
     description: If true, enable jobs that may change the database.
     default: true
+  bzr_repositories_rsync_hosts_allow:
+    type: string
+    description: >
+      Space-separated list of hosts that should be allowed to rsync Bazaar
+      repositories (both public and private).
+    default: ""
   codehosting_private_ssh_key:
     type: string
     description: >
@@ -77,6 +83,12 @@ options:
       - "# Increased to 2 hours as per https://portal.admin.canonical.com/C47161"
       - timeout client 7200000
       - timeout server 7200000
+  internal_branch_by_id_root:
+    type: string
+    description: |
+      The URL prefix for where branches are served by URLs based on the
+      branch ID.
+    default:
   internal_codebrowse_root:
     type: string
     description: |

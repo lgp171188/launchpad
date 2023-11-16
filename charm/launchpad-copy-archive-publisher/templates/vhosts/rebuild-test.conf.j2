@@ -17,5 +17,9 @@
         IndexIgnore favicon.ico
         Require all granted
     </Directory>
+
+    <Directory "{{ archives_dir }}">
+        Require all granted
+    </Directory>
 </VirtualHost>
 

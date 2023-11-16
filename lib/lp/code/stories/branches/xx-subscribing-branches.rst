@@ -223,7 +223,7 @@ The user does not have to be in the team to subscribe them.
     Landscape Developers
     Mark Shuttleworth
 
-Launchpad administrators can edit anyones branch subsription.
+Launchpad administrators can edit anyone's branch subscription.
 
     >>> admin_browser.open(
     ...     "http://code.launchpad.test/~name12/gnome-terminal/main"

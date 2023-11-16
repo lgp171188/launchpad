@@ -11,7 +11,6 @@ __all__ = [
 ]
 
 import datetime
-import functools
 import logging
 import os.path
 import shutil
@@ -54,6 +53,10 @@ from lp.services.statsd.interfaces.statsd_client import IStatsdClient
 
 BUILDD_MANAGER_LOG_NAME = "worker-scanner"
 
+
+# The number of times the scan of a builder can fail before we start
+# attributing it to the builder and job.
+SCAN_FAILURE_THRESHOLD = 5
 
 # The number of times a builder can consecutively fail before we
 # reset its current job.
@@ -313,6 +316,23 @@ class PrefetchedBuilderFactory(BaseBuilderFactory):
         return self.candidates.pop(vitals)
 
 
+def get_statsd_labels(builder, build):
+    labels = {
+        "builder_name": builder.name,
+        "region": builder.region,
+        "virtualized": str(builder.virtualized),
+    }
+    if build is not None:
+        labels.update(
+            {
+                "build": True,
+                "arch": build.processor.name,
+                "job_type": build.job_type.name,
+            }
+        )
+    return labels
+
+
 def judge_failure(builder_count, job_count, exc, retry=True):
     """Judge how to recover from a scan failure.
 
@@ -395,22 +415,15 @@ def recover_failure(logger, vitals, builder, retry, exception):
             job_action,
         )
 
-    if job is not None and job_action is not None:
-        statsd_client = getUtility(IStatsdClient)
-        labels = {
-            "build": True,
-            "arch": job.specific_build.processor.name,
-            "region": builder.region,
-            "builder_name": builder.name,
-            "virtualized": str(builder.virtualized),
-            "job_type": job.specific_build.job_type.name,
-        }
+    statsd_client = getUtility(IStatsdClient)
+    labels = get_statsd_labels(builder, job.specific_build if job else None)
 
+    if job is not None and job_action is not None:
         if cancelling:
             # We've previously been asked to cancel the job, so just set
             # it to cancelled rather than retrying or failing.
             logger.info("Cancelling job %s.", job.build_cookie)
-            statsd_client.incr("builders.job_cancelled", labels=labels)
+            statsd_client.incr("builders.failure.job_cancelled", labels=labels)
             job.markAsCancelled()
         elif job_action == False:
             # Fail and dequeue the job.
@@ -431,12 +444,12 @@ def recover_failure(logger, vitals, builder, retry, exception):
                 job.specific_build.updateStatus(
                     BuildStatus.FAILEDTOBUILD, force_invalid_transition=True
                 )
-            statsd_client.incr("builders.job_failed", labels=labels)
+            statsd_client.incr("builders.failure.job_failed", labels=labels)
             job.destroySelf()
         elif job_action == True:
             # Reset the job so it will be retried elsewhere.
             logger.info("Requeueing job %s.", job.build_cookie)
-            statsd_client.incr("builders.job_reset", labels=labels)
+            statsd_client.incr("builders.failure.job_reset", labels=labels)
             job.reset()
 
         if job_action == False:
@@ -448,12 +461,14 @@ def recover_failure(logger, vitals, builder, retry, exception):
         # We've already tried resetting it enough times, so we have
         # little choice but to give up.
         logger.info("Failing builder %s.", builder.name)
+        statsd_client.incr("builders.failure.builder_failed", labels=labels)
         builder.failBuilder(str(exception))
     elif builder_action == True:
         # Dirty the builder to attempt recovery. In the virtual case,
         # the dirty idleness will cause a reset, giving us a good chance
         # of recovery.
         logger.info("Dirtying builder %s to attempt recovery.", builder.name)
+        statsd_client.incr("builders.failure.builder_reset", labels=labels)
         builder.setCleanStatus(BuilderCleanStatus.DIRTY)
 
 
@@ -502,6 +517,14 @@ class WorkerScanner:
         self.date_cancel = None
         self.date_scanned = None
 
+        self.can_retry = True
+
+        # The build and job failure counts are persisted, but we only really
+        # care about the consecutive scan failure count over the space of a
+        # couple of minutes, so it's okay if it resets on buildd-manager
+        # restart.
+        self.scan_failure_count = 0
+
         # We cache the build cookie, keyed on the BuildQueue, to avoid
         # hitting the DB on every scan.
         self._cached_build_cookie = None
@@ -520,6 +543,7 @@ class WorkerScanner:
         """Terminate the LoopingCall."""
         self.loop.stop()
 
+    @defer.inlineCallbacks
     def singleCycle(self):
         # Inhibit scanning if the BuilderFactory hasn't updated since
         # the last run. This doesn't matter for the base BuilderFactory,
@@ -533,22 +557,25 @@ class WorkerScanner:
             self.logger.debug(
                 "Skipping builder %s (cache out of date)" % self.builder_name
             )
-            return defer.succeed(None)
+            return
 
         self.logger.debug("Scanning builder %s" % self.builder_name)
-        # Errors should normally be able to be retried a few times. Bits
-        # of scan() which don't want retries will call _scanFailed
-        # directly.
-        d = self.scan()
-        d.addErrback(functools.partial(self._scanFailed, True))
-        d.addBoth(self._updateDateScanned)
-        return d
 
-    def _updateDateScanned(self, ignored):
+        try:
+            yield self.scan()
+
+            # We got through a scan without error, so reset the consecutive
+            # failure count. We don't reset the persistent builder or job
+            # failure counts, since the build might consistently break the
+            # builder later in the build.
+            self.scan_failure_count = 0
+        except Exception as e:
+            self._scanFailed(self.can_retry, e)
+
         self.logger.debug("Scan finished for builder %s" % self.builder_name)
         self.date_scanned = datetime.datetime.utcnow()
 
-    def _scanFailed(self, retry, failure):
+    def _scanFailed(self, retry, exc):
         """Deal with failures encountered during the scan cycle.
 
         1. Print the error in the log
@@ -562,47 +589,61 @@ class WorkerScanner:
 
         # If we don't recognise the exception include a stack trace with
         # the error.
-        error_message = failure.getErrorMessage()
-        if failure.check(
-            BuildWorkerFailure,
-            CannotBuild,
-            CannotResumeHost,
-            BuildDaemonError,
-            CannotFetchFile,
+        if isinstance(
+            exc,
+            (
+                BuildWorkerFailure,
+                CannotBuild,
+                CannotResumeHost,
+                BuildDaemonError,
+                CannotFetchFile,
+            ),
         ):
             self.logger.info(
-                "Scanning %s failed with: %s"
-                % (self.builder_name, error_message)
+                "Scanning %s failed with: %r" % (self.builder_name, exc)
             )
         else:
             self.logger.info(
-                "Scanning %s failed with: %s\n%s"
-                % (
-                    self.builder_name,
-                    failure.getErrorMessage(),
-                    failure.getTraceback(),
-                )
+                "Scanning %s failed" % self.builder_name, exc_info=exc
             )
+
+        # Certain errors can't possibly be a glitch, and they can insta-fail
+        # even if the scan phase would normally allow a retry.
+        if isinstance(exc, (BuildDaemonIsolationError, CannotResumeHost)):
+            retry = False
 
         # Decide if we need to terminate the job or reset/fail the builder.
         vitals = self.builder_factory.getVitals(self.builder_name)
         builder = self.builder_factory[self.builder_name]
         try:
+            labels = get_statsd_labels(builder, builder.current_build)
+            self.statsd_client.incr(
+                "builders.failure.scan_failed", labels=labels
+            )
+            self.scan_failure_count += 1
+
+            # To avoid counting network glitches or similar against innocent
+            # builds and jobs, we allow a scan to fail a few times in a row
+            # without consequence, and just retry. If we exceed the threshold,
+            # we then persistently record a single failure against the build
+            # and job.
+            if retry and self.scan_failure_count < SCAN_FAILURE_THRESHOLD:
+                self.statsd_client.incr(
+                    "builders.failure.scan_retried",
+                    labels={
+                        "failures": str(self.scan_failure_count),
+                        **labels,
+                    },
+                )
+                return
+
+            self.scan_failure_count = 0
+
             builder.gotFailure()
-            labels = {}
             if builder.current_build is not None:
                 builder.current_build.gotFailure()
-                labels.update(
-                    {
-                        "build": True,
-                        "arch": builder.current_build.processor.name,
-                        "region": builder.region,
-                    }
-                )
-            else:
-                labels["build"] = False
-            self.statsd_client.incr("builders.judged_failed", labels=labels)
-            recover_failure(self.logger, vitals, builder, retry, failure.value)
+
+            recover_failure(self.logger, vitals, builder, retry, exc)
             transaction.commit()
         except Exception:
             # Catastrophic code failure! Not much we can do.
@@ -610,6 +651,7 @@ class WorkerScanner:
                 "Miserable failure when trying to handle failure:\n",
                 exc_info=True,
             )
+        finally:
             transaction.abort()
 
     @defer.inlineCallbacks
@@ -687,6 +729,7 @@ class WorkerScanner:
         vitals = self.builder_factory.getVitals(self.builder_name)
         interactor = self.interactor_factory()
         worker = self.worker_factory(vitals)
+        self.can_retry = True
 
         if vitals.build_queue is not None:
             if vitals.clean_status != BuilderCleanStatus.DIRTY:
@@ -759,15 +802,14 @@ class WorkerScanner:
                         "%s is in manual mode, not dispatching.", vitals.name
                     )
                     return
-                # Try to find and dispatch a job. If it fails, don't
-                # attempt to just retry the scan; we need to reset
-                # the job so the dispatch will be reattempted.
+                # Try to find and dispatch a job. If it fails, don't attempt to
+                # just retry the scan; we need to reset the job so the dispatch
+                # will be reattempted.
                 builder = self.builder_factory[self.builder_name]
-                d = interactor.findAndStartJob(
+                self.can_retry = False
+                yield interactor.findAndStartJob(
                     vitals, builder, worker, self.builder_factory
                 )
-                d.addErrback(functools.partial(self._scanFailed, False))
-                yield d
                 if builder.currentjob is not None:
                     # After a successful dispatch we can reset the
                     # failure_count.

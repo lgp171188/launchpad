@@ -39,19 +39,21 @@ at the directory configured to store the `bzr` repositories.
 * Create a filesystem on the new volume using `sudo mkfs.ext4 /dev/vdb`. Do
   check and verify that this device node matches the new volume.
 
-* Create the `/srv/launchpad/data/mirror` directory, if it does not
-  exist already. Here, `/srv/launchpad` corresponds to the `base_dir`
-  template context variable.
+* Create the `/srv/launchpad/data` directory, if it does not exist already.
+  Here, `/srv/launchpad` corresponds to the `base_dir` template context
+  variable.
 
-* Add `/dev/vdb /srv/launchpad/data/mirror ext4 defaults 0 2` to
-  `/etc/fstab`.
+* Add `/dev/vdb /srv/launchpad/data ext4 defaults 0 2` to `/etc/fstab`.
 
-* Mount the new volume using `sudo mount /srv/launchpad/data/mirror`.
+* Mount the new volume using `sudo mount /srv/launchpad/data`.
 
 * Set the correct permissions on the new volume using the following commands.
 
-      sudo chown launchpad: /srv/launchpad/data/mirror
-      sudo chmod 755 /srv/launchpad/data/mirror
+      sudo chown launchpad: /srv/launchpad/data
+      sudo chmod 755 /srv/launchpad/data
+
+* Ensure that the `mirrors` directory exists in the new volume using
+  `sudo -u launchpad mkdir -m755 /srv/launchpad/data/mirrors`.
 
 ## Maintenance actions
 

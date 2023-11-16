@@ -841,14 +841,20 @@ class SigningUpload(CustomUpload):
         # Avoid circular import.
         from lp.archivepublisher.publishing import DirectoryHash
 
-        super().installFiles(archive, suite)
-
         versiondir = os.path.join(self.targetdir, self.version)
-        with DirectoryHash(versiondir, self.temproot) as hasher:
-            hasher.add_dir(versiondir)
-        for checksum_path in hasher.checksum_paths:
-            if self.shouldSign(checksum_path):
-                self.sign(archive, suite, checksum_path)
+
+        try:
+            super().installFiles(archive, suite)
+
+            with DirectoryHash(versiondir, self.temproot) as hasher:
+                hasher.add_dir(versiondir)
+            for checksum_path in hasher.checksum_paths:
+                if self.shouldSign(checksum_path):
+                    self.sign(archive, suite, checksum_path)
+        except Exception:
+            if os.path.exists(versiondir):
+                shutil.rmtree(versiondir, ignore_errors=True)
+            raise
 
     def shouldInstall(self, filename):
         return filename.startswith("%s/" % self.version)

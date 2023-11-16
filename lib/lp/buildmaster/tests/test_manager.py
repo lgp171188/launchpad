@@ -40,6 +40,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.manager import (
     BUILDER_FAILURE_THRESHOLD,
     JOB_RESET_THRESHOLD,
+    SCAN_FAILURE_THRESHOLD,
     BuilddManager,
     BuilderFactory,
     PrefetchedBuilderFactory,
@@ -133,7 +134,13 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         self.assertEqual(job.specific_build.status, BuildStatus.BUILDING)
         self.assertEqual(job.logtail, logtail)
 
-    def _getScanner(self, builder_name=None, clock=None, builder_factory=None):
+    def _getScanner(
+        self,
+        builder_name=None,
+        clock=None,
+        builder_factory=None,
+        scan_failure_count=0,
+    ):
         """Instantiate a WorkerScanner object.
 
         Replace its default logging handler by a testing version.
@@ -148,6 +155,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
             builder_name, builder_factory, manager, BufferLogger(), clock=clock
         )
         scanner.logger.name = "worker-scanner"
+        scanner.scan_failure_count = scan_failure_count
 
         return scanner
 
@@ -458,6 +466,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
     @defer.inlineCallbacks
     def _assertFailureCounting(
         self,
+        scan_count,
         builder_count,
         job_count,
         expected_builder_count,
@@ -470,7 +479,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         def failing_scan():
             return defer.fail(Exception("fake exception"))
 
-        scanner = self._getScanner()
+        scanner = self._getScanner(scan_failure_count=scan_count)
         scanner.scan = failing_scan
         from lp.buildmaster import manager as manager_module
 
@@ -497,10 +506,98 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         )
         self.assertEqual(1, manager_module.recover_failure.call_count)
 
+    @defer.inlineCallbacks
+    def test_scan_persistent_failure_counts(self):
+        # The first few scan exceptions just result in retries, not penalties
+        # for the involved parties. A builder or job failure is only recorded
+        # after several scan failures.
+        scanner = self._getScanner()
+        builder = getUtility(IBuilderSet)[scanner.builder_name]
+        transaction.commit()
+
+        self.patch(scanner, "scan", lambda: defer.fail(Exception("fake")))
+
+        # Rack up almost enough failures.
+        for i in range(1, SCAN_FAILURE_THRESHOLD):
+            yield scanner.singleCycle()
+            self.assertEqual(i, scanner.scan_failure_count)
+            self.assertEqual(0, builder.failure_count)
+            self.assertEqual(0, builder.current_build.failure_count)
+
+        # Once we reach the consecutive failure threshold, the builder and
+        # build each get a failure and the count is reset.
+        yield scanner.singleCycle()
+        self.assertEqual(0, scanner.scan_failure_count)
+        self.assertEqual(1, builder.failure_count)
+        self.assertEqual(1, builder.current_build.failure_count)
+
+    @defer.inlineCallbacks
+    def test_scan_intermittent_failure_retries(self):
+        # A successful scan after a few failures resets the failure count.
+        scanner = self._getScanner()
+        builder = getUtility(IBuilderSet)[scanner.builder_name]
+        transaction.commit()
+
+        # Rack up a couple of failures.
+        self.patch(scanner, "scan", lambda: defer.fail(Exception("fake")))
+
+        yield scanner.singleCycle()
+        self.assertEqual(1, scanner.scan_failure_count)
+        self.assertEqual(0, builder.failure_count)
+        self.assertEqual(0, builder.current_build.failure_count)
+        self.assertEqual(
+            [
+                mock.call(
+                    "builders.failure.scan_failed,arch=386,build=True,"
+                    "builder_name=bob,env=test,job_type=PACKAGEBUILD,region=,"
+                    "virtualized=False"
+                ),
+                mock.call(
+                    "builders.failure.scan_retried,arch=386,build=True,"
+                    "builder_name=bob,env=test,failures=1,"
+                    "job_type=PACKAGEBUILD,region=,virtualized=False"
+                ),
+            ],
+            self.stats_client.incr.mock_calls,
+        )
+        self.stats_client.incr.reset_mock()
+
+        yield scanner.singleCycle()
+        self.assertEqual(2, scanner.scan_failure_count)
+        self.assertEqual(0, builder.failure_count)
+        self.assertEqual(0, builder.current_build.failure_count)
+        self.assertEqual(
+            [
+                mock.call(
+                    "builders.failure.scan_failed,arch=386,build=True,"
+                    "builder_name=bob,env=test,job_type=PACKAGEBUILD,"
+                    "region=,virtualized=False"
+                ),
+                mock.call(
+                    "builders.failure.scan_retried,arch=386,build=True,"
+                    "builder_name=bob,env=test,failures=2,"
+                    "job_type=PACKAGEBUILD,region=,virtualized=False"
+                ),
+            ],
+            self.stats_client.incr.mock_calls,
+        )
+        self.stats_client.incr.reset_mock()
+
+        # Since we didn't meet SCAN_FAILURE_THRESHOLD, a success just resets
+        # the count and no harm is done to innocent bystanders.
+        self.patch(scanner, "scan", lambda: defer.succeed(None))
+        yield scanner.singleCycle()
+        self.assertEqual(0, scanner.scan_failure_count)
+        self.assertEqual(0, builder.failure_count)
+        self.assertEqual(0, builder.current_build.failure_count)
+        self.assertEqual([], self.stats_client.incr.mock_calls)
+        self.stats_client.incr.reset_mock()
+
     def test_scan_first_fail(self):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
+            scan_count=SCAN_FAILURE_THRESHOLD - 1,
             builder_count=0,
             job_count=0,
             expected_builder_count=1,
@@ -511,6 +608,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
+            scan_count=SCAN_FAILURE_THRESHOLD - 1,
             builder_count=1,
             job_count=0,
             expected_builder_count=2,
@@ -521,6 +619,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # The first failure of a job should result in the failure_count
         # on the job and the builder both being incremented.
         return self._assertFailureCounting(
+            scan_count=SCAN_FAILURE_THRESHOLD - 1,
             builder_count=0,
             job_count=1,
             expected_builder_count=1,
@@ -532,7 +631,9 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         def failing_scan():
             return defer.fail(Exception("fake exception"))
 
-        scanner = self._getScanner()
+        scanner = self._getScanner(
+            scan_failure_count=SCAN_FAILURE_THRESHOLD - 1
+        )
         scanner.scan = failing_scan
         builder = getUtility(IBuilderSet)[scanner.builder_name]
         builder.failure_count = BUILDER_FAILURE_THRESHOLD
@@ -547,7 +648,10 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         def failing_scan():
             return defer.fail(Exception("fake exception"))
 
-        scanner = self._getScanner()
+        # TODO: Add and test metrics for retried scan failures.
+        scanner = self._getScanner(
+            scan_failure_count=SCAN_FAILURE_THRESHOLD - 1
+        )
         scanner.scan = failing_scan
         builder = getUtility(IBuilderSet)[scanner.builder_name]
         builder.failure_count = BUILDER_FAILURE_THRESHOLD
@@ -555,13 +659,20 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         transaction.commit()
 
         yield scanner.singleCycle()
-        self.assertEqual(2, self.stats_client.incr.call_count)
+        self.assertEqual(3, self.stats_client.incr.call_count)
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
                     "build.reset,arch=386,env=test,job_type=PACKAGEBUILD"
                 ),
-                mock.call("builders.judged_failed,build=False,env=test"),
+                mock.call(
+                    "builders.failure.scan_failed,builder_name=bob,env=test,"
+                    "region=,virtualized=False"
+                ),
+                mock.call(
+                    "builders.failure.builder_failed,builder_name=bob,"
+                    "env=test,region=,virtualized=False"
+                ),
             ]
         )
 
@@ -673,7 +784,9 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # Run 'scan' and check its results.
         switch_dbuser(config.builddmaster.dbuser)
         clock = task.Clock()
-        scanner = self._getScanner(clock=clock)
+        scanner = self._getScanner(
+            clock=clock, scan_failure_count=SCAN_FAILURE_THRESHOLD - 1
+        )
         yield scanner.scan()
 
         # An abort request should be sent.
@@ -682,6 +795,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
 
         # Advance time a little.  Nothing much should happen.
         clock.advance(1)
+        scanner.scan_failure_count = SCAN_FAILURE_THRESHOLD - 1
         yield scanner.scan()
         self.assertEqual(1, worker.call_log.count("abort"))
         self.assertEqual(BuildStatus.CANCELLING, build.status)
@@ -690,6 +804,7 @@ class TestWorkerScannerScan(StatsMixin, TestCaseWithFactory):
         # we should have also called the resume() method on the worker that
         # resets the virtual machine.
         clock.advance(WorkerScanner.CANCEL_TIMEOUT)
+        scanner.scan_failure_count = SCAN_FAILURE_THRESHOLD - 1
         yield scanner.singleCycle()
         self.assertEqual(1, worker.call_log.count("abort"))
         self.assertEqual(BuilderCleanStatus.DIRTY, builder.clean_status)
@@ -909,7 +1024,8 @@ class TestPrefetchedBuilderFactory(TestCaseWithFactory):
         # with the non-prefetching BuilderFactory.
         self.assertEqual(7, len(all_vitals))
         self.assertEqual(
-            4, len([v for v in all_vitals if v.build_queue is not None])
+            SCAN_FAILURE_THRESHOLD - 1,
+            len([v for v in all_vitals if v.build_queue is not None]),
         )
         self.assertContentEqual(BuilderFactory().iterVitals(), all_vitals)
 
@@ -1411,9 +1527,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_reset,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region={},"
-                    "virtualized=True".format(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region={},virtualized=True".format(
                         build.processor.name,
                         self.builder.name,
                         self.builder.region,
@@ -1477,7 +1593,7 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_cancelled,arch={},build=True,"
+                    "builders.failure.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
                     "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
@@ -1519,9 +1635,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                     )
                 ),
                 mock.call(
-                    "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
-                    "virtualized=True".format(
+                    "builders.failure.job_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
@@ -1561,9 +1677,9 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
                     )
                 ),
                 mock.call(
-                    "builders.job_failed,arch={},build=True,builder_name={},"
-                    "env=test,job_type=RECIPEBRANCHBUILD,region=builder-name,"
-                    "virtualized=True".format(
+                    "builders.failure.job_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
                         self.builder.name,
                     )
@@ -1588,7 +1704,7 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.stats_client.incr.assert_has_calls(
             [
                 mock.call(
-                    "builders.job_cancelled,arch={},build=True,"
+                    "builders.failure.job_cancelled,arch={},build=True,"
                     "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
                     "region=builder-name,virtualized=True".format(
                         naked_build.processor.name,
@@ -1621,6 +1737,36 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.assertIs(None, self.build.builder)
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertTrue(self.builder.builderok)
+        self.assertEqual(3, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.reset,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.failure.builder_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
         # But if the builder continues to cause trouble, it will be
         # disabled.
@@ -1634,16 +1780,59 @@ class TestFailureAssessmentsAndStatsdMetrics(StatsMixin, TestCaseWithFactory):
         self.assertEqual(BuilderCleanStatus.DIRTY, self.builder.clean_status)
         self.assertFalse(self.builder.builderok)
         self.assertEqual("failnotes", self.builder.failnotes)
+        self.assertEqual(3, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.job_reset,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "build.reset,arch={},builder_name={},env=test,"
+                    "job_type=RECIPEBRANCHBUILD,region=builder-name,"
+                    "virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+                mock.call(
+                    "builders.failure.builder_failed,arch={},build=True,"
+                    "builder_name={},env=test,job_type=RECIPEBRANCHBUILD,"
+                    "region=builder-name,virtualized=True".format(
+                        self.build.processor.name,
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
     def test_builder_failing_with_no_attached_job(self):
         self.buildqueue.reset()
         self.builder.failure_count = BUILDER_FAILURE_THRESHOLD
+        self.stats_client.incr.reset_mock()
 
         log = self._recover_failure("failnotes")
         self.assertIn("with no job", log)
         self.assertIn("Failing builder", log)
         self.assertFalse(self.builder.builderok)
         self.assertEqual("failnotes", self.builder.failnotes)
+        self.assertEqual(1, self.stats_client.incr.call_count)
+        self.stats_client.incr.assert_has_calls(
+            [
+                mock.call(
+                    "builders.failure.builder_failed,builder_name={},"
+                    "env=test,region=builder-name,virtualized=True".format(
+                        self.builder.name,
+                    )
+                ),
+            ]
+        )
+        self.stats_client.incr.reset_mock()
 
 
 class TestNewBuilders(TestCase):

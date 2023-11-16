@@ -20,6 +20,7 @@ from lp.registry.interfaces.mailinglist import (
 )
 from lp.registry.interfaces.personnotification import IPersonNotificationSet
 from lp.registry.interfaces.teammembership import (
+    ACTIVE_STATES,
     ITeamMembershipSet,
     TeamMembershipStatus,
 )
@@ -620,11 +621,10 @@ def _mergeCodeReviewVote(cur, from_id, to_id):
 
 def _mergeTeamMembership(cur, from_id, to_id):
     # Transfer active team memberships
-    approved = TeamMembershipStatus.APPROVED
     admin = TeamMembershipStatus.ADMIN
     cur.execute(
         "SELECT team, status FROM TeamMembership WHERE person = %s "
-        "AND status IN (%s,%s)" % sqlvalues(from_id, approved, admin)
+        "AND status IN %s" % sqlvalues(from_id, ACTIVE_STATES)
     )
     for team_id, status in cur.fetchall():
         cur.execute(
@@ -650,7 +650,7 @@ def _mergeTeamMembership(cur, from_id, to_id):
             # while from_person is either admin or approved. That means we
             # can safely set from_person's membership status on
             # to_person's membership.
-            assert status in (approved.value, admin.value)
+            assert status in {s.value for s in ACTIVE_STATES}
             cur.execute(
                 "UPDATE TeamMembership SET status = %s WHERE person = %s "
                 "AND team = %s" % sqlvalues(status, to_id, team_id)

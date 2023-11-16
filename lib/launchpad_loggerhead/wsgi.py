@@ -113,6 +113,8 @@ def _on_starting_hook(arbiter):
     )
 
 
+# XXX cjwatson 2023-10-29: Refactor this so that the charm can supply the
+# gunicorn configuration.
 class LoggerheadApplication(Application):
     def __init__(self, **kwargs):
         self.options = kwargs
@@ -140,6 +142,9 @@ class LoggerheadApplication(Application):
             "forwarded_allow_ips": "*",
             "logger_class": "launchpad_loggerhead.wsgi.LoggerheadLogger",
             "loglevel": "debug",
+            # This is set relatively low to work around memory leaks on
+            # Python 3.
+            "max_requests": 2000,
             "on_starting": _on_starting_hook,
             "pidfile": pidfile_path("codebrowse"),
             "preload_app": True,

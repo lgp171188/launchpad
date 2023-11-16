@@ -121,7 +121,7 @@ At this point the changesfile content is already parsed:
     >>> print(ed_binary_changes.suite_name)
     unstable
 
-Push upload targeted suite into policy before the checks, nomally done
+Push upload targeted suite into policy before the checks, normally done
 by NascentUpload object:
 
     >>> modified_insecure_policy.setDistroSeriesAndPocket(

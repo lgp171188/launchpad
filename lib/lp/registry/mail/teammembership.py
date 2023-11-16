@@ -13,6 +13,7 @@ from zope.component import getUtility
 from lp.app.browser.tales import DurationFormatterAPI
 from lp.registry.enums import TeamMembershipPolicy, TeamMembershipRenewalPolicy
 from lp.registry.interfaces.teammembership import (
+    ACTIVE_STATES,
     ITeamMembershipSet,
     TeamMembershipStatus,
 )
@@ -135,10 +136,7 @@ class TeamMembershipMailer(BaseMailer):
         notification_type = "team-membership-new"
         recipients = OrderedDict()
         reviewer = membership.proposed_by
-        if reviewer != member and membership.status in [
-            TeamMembershipStatus.APPROVED,
-            TeamMembershipStatus.ADMIN,
-        ]:
+        if reviewer != member and membership.status in ACTIVE_STATES:
             reviewer = membership.reviewed_by
             # Somebody added this person as a member, we better send a
             # notification to the person too.
@@ -161,10 +159,7 @@ class TeamMembershipMailer(BaseMailer):
         # Open teams do not notify admins about new members.
         if team.membership_policy != TeamMembershipPolicy.OPEN:
             reply_to = None
-            if membership.status in [
-                TeamMembershipStatus.APPROVED,
-                TeamMembershipStatus.ADMIN,
-            ]:
+            if membership.status in ACTIVE_STATES:
                 template_name = "new-member-notification-for-admins.txt"
                 subject = "%s joined %s" % (member.name, team.name)
             elif membership.status == TeamMembershipStatus.PROPOSED:

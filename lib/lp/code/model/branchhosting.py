@@ -16,7 +16,10 @@ from lazr.restful.utils import get_current_browser_request
 from zope.interface import implementer
 
 from lp.code.errors import BranchFileNotFound, BranchHostingFault
-from lp.code.interfaces.branchhosting import IBranchHostingClient
+from lp.code.interfaces.branchhosting import (
+    IBranchHostingClient,
+    InvalidRevisionException,
+)
 from lp.code.interfaces.codehosting import BRANCH_ID_ALIAS_PREFIX
 from lp.services.config import config
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -94,7 +97,9 @@ class BranchHostingClient:
         attacks.
         """
         if rev is not None and "/" in rev:
-            raise ValueError("Revision ID '%s' is not well-formed." % rev)
+            raise InvalidRevisionException(
+                "Revision ID '%s' is not well-formed." % rev
+            )
 
     def getDiff(
         self, branch_id, new, old=None, context_lines=None, logger=None

@@ -169,6 +169,7 @@ from lp.registry.interfaces.ssh import (
     SSHKeyType,
 )
 from lp.registry.interfaces.teammembership import (
+    ACTIVE_STATES,
     IJoinTeamEvent,
     ITeamInvitationEvent,
     TeamMembershipStatus,
@@ -1035,9 +1036,7 @@ class Person(
         clauses = (
             TeamMembership.team_id == team.id,
             TeamMembership.person_id == Person.id,
-            TeamMembership.status.is_in(
-                (TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED)
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
             TeamParticipation.team_id == Person.id,
             TeamParticipation.person_id == self.id,
         )
@@ -2505,9 +2504,7 @@ class Person(
     def api_activemembers(self):
         """See `IPerson`."""
         return self._members(
-            direct=True,
-            status=(TeamMembershipStatus.APPROVED, TeamMembershipStatus.ADMIN),
-            preload_for_api=True,
+            direct=True, status=tuple(ACTIVE_STATES), preload_for_api=True
         )
 
     @property
@@ -2545,12 +2542,7 @@ class Person(
             TeamMembership,
             TeamMembership.person == self,
             TeamMembership.team_id == Team.id,
-            TeamMembership.status.is_in(
-                (
-                    TeamMembershipStatus.APPROVED,
-                    TeamMembershipStatus.ADMIN,
-                )
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
         ).order_by(Upper(Team.display_name), Upper(Team.name))
 
     def anyone_can_join(self):
@@ -2879,9 +2871,7 @@ class Person(
     @property
     def member_memberships(self):
         """See `IPerson`."""
-        return self._getMembershipsByStatuses(
-            [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
-        )
+        return self._getMembershipsByStatuses(ACTIVE_STATES)
 
     def getInactiveMemberships(self):
         """See `IPerson`."""
@@ -2946,12 +2936,7 @@ class Person(
                 [team.id for team in teams] + [self.id]
             ),
             TeamMembership.team != self,
-            TeamMembership.status.is_in(
-                (
-                    TeamMembershipStatus.APPROVED,
-                    TeamMembershipStatus.ADMIN,
-                )
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
         ).order_by(Desc(TeamMembership.datejoined), Desc(TeamMembership.id))
         # Cast the results to list now, because they will be iterated over
         # several times.
@@ -3009,12 +2994,7 @@ class Person(
                 And(
                     TeamMembership.person == self.id,
                     TeamMembership.team_id == TeamParticipation.team_id,
-                    TeamMembership.status.is_in(
-                        [
-                            TeamMembershipStatus.APPROVED,
-                            TeamMembershipStatus.ADMIN,
-                        ]
-                    ),
+                    TeamMembership.status.is_in(ACTIVE_STATES),
                 ),
             ),
         ]
@@ -5597,12 +5577,7 @@ def _get_recipients_for_team(team):
         # account, or are a team, or both.
         intermediate_transitive_results = source.find(
             (TeamMembership.person_id, EmailAddress.person_id),
-            TeamMembership.status.is_in(
-                (
-                    TeamMembershipStatus.ADMIN,
-                    TeamMembershipStatus.APPROVED,
-                )
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
             TeamMembership.team_id.is_in(pending_team_ids),
             Or(
                 And(

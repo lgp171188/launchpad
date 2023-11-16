@@ -288,7 +288,7 @@ generated diffs between revisions that are emailed out.  The
 review_level controls the amount of notification caused by code review
 activities.
 
-Both of these attributes are contolled through the UI through the use of
+Both of these attributes are controlled through the UI through the use of
 the enumerated types: BranchSubscriptionDiffSize, and
 BranchSubscriptionNotificationLevel.
 

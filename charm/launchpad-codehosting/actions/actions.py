@@ -15,6 +15,7 @@ basic.bootstrap_charm_deps()
 basic.init_config_states()
 
 from charmhelpers.core import hookenv  # noqa: E402
+from ols import base  # noqa: E402
 
 
 def start_services():
@@ -31,6 +32,22 @@ def stop_services():
     hookenv.action_set({"result": "Services stopped"})
 
 
+def sync_branches():
+    params = hookenv.action_get()
+    script = Path(base.code_dir(), "scripts", "sync-branches.py")
+    command = [
+        "sudo",
+        "-H",
+        "-u",
+        base.user(),
+        "LPCONFIG=launchpad-codehosting",
+        "--",
+        script,
+    ] + params["branches"].split()
+    subprocess.run(command, check=True)
+    hookenv.action_set({"result": "Branches synced"})
+
+
 def main(argv):
     action = Path(argv[0]).name
     try:
@@ -38,6 +55,8 @@ def main(argv):
             start_services()
         elif action == "stop-services":
             stop_services()
+        elif action == "sync-branches":
+            sync_branches()
         else:
             hookenv.action_fail(f"Action {action} not implemented.")
     except Exception:

@@ -57,6 +57,7 @@ options:
           - statistician
           - targetnamecacheupdater
           - teammembership
+          - translations_distroseries_copy
           - translations_import_queue_gardener
           - update-pkg-cache
           - upload_package_translations_job

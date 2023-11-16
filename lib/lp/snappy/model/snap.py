@@ -67,6 +67,7 @@ from lp.code.errors import (
 )
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchcollection import IAllBranches, IBranchCollection
+from lp.code.interfaces.branchhosting import InvalidRevisionException
 from lp.code.interfaces.gitcollection import (
     IAllGitRepositories,
     IGitCollection,
@@ -1671,6 +1672,7 @@ class SnapSet:
             MissingSnapcraftYaml,
             CannotFetchSnapcraftYaml,
             CannotParseSnapcraftYaml,
+            InvalidRevisionException,
         ):
             pass
         else:

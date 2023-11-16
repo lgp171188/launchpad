@@ -100,7 +100,7 @@ Just like Launchpad administrators can.
     >>> print(admin_browser.url)
     http://launchpad.test/ubuntu
 
-Only administators can configure the publisher for the distribution:
+Only administrators can configure the publisher for the distribution:
 
     >>> admin_browser.getLink("Configure publisher").click()
     >>> print(admin_browser.title)

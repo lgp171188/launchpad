@@ -26,7 +26,7 @@ In this case all bugs are returned.
      Mozilla Firefox Low New
 
 When we uncheck 'Show bugs without linked branches', only bugs with
-linkes branches are returned.
+linked branches are returned.
 
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bugs?advanced=1"

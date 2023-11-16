@@ -113,8 +113,6 @@ class TeamMembership(StormBase):
     def canBeRenewedByMember(self):
         """See `ITeamMembership`."""
         ondemand = TeamMembershipRenewalPolicy.ONDEMAND
-        admin = TeamMembershipStatus.APPROVED
-        approved = TeamMembershipStatus.ADMIN
         # We add a grace period of one day to the limit to
         # cover the fencepost error when `date_limit` is
         # earlier than `self.dateexpires`, which happens later
@@ -123,7 +121,7 @@ class TeamMembership(StormBase):
             days=DAYS_BEFORE_EXPIRATION_WARNING_IS_SENT + 1
         )
         return (
-            self.status in (admin, approved)
+            self.status in ACTIVE_STATES
             and self.team.renewal_policy == ondemand
             and self.dateexpires is not None
             and self.dateexpires < date_limit
@@ -338,7 +336,7 @@ class TeamMembershipSet:
         tm.proposed_by = user
         tm.date_proposed = now
         tm.proponent_comment = comment
-        if status in [approved, admin]:
+        if status in ACTIVE_STATES:
             tm.datejoined = now
             tm.reviewed_by = user
             tm.date_reviewed = now
@@ -372,9 +370,7 @@ class TeamMembershipSet:
             when = datetime.now(timezone.utc)
         conditions = [
             TeamMembership.dateexpires <= when,
-            TeamMembership.status.is_in(
-                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
         ]
         return IStore(TeamMembership).find(TeamMembership, *conditions)
 
@@ -401,9 +397,7 @@ class TeamMembershipSet:
         return IStore(TeamMembership).find(
             TeamMembership,
             Func("date_trunc", "day", TeamMembership.dateexpires).is_in(dates),
-            TeamMembership.status.is_in(
-                [TeamMembershipStatus.ADMIN, TeamMembershipStatus.APPROVED]
-            ),
+            TeamMembership.status.is_in(ACTIVE_STATES),
         )
 
     def deactivateActiveMemberships(self, team, comment, reviewer):

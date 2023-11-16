@@ -2,7 +2,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
     -   id: check-added-large-files
     -   id: check-ast
@@ -26,7 +26,7 @@ repos:
     -   id: no-commit-to-branch
         args: [--branch, master, --branch, db-devel]
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.15.0
     hooks:
     -   id: pyupgrade
         args: [--keep-percent-format]
@@ -36,7 +36,7 @@ repos:
             |utilities/community-contributions\.py
           )$
 -   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.9.1
+    rev: 23.10.1
     hooks:
       - id: black
         exclude: |
@@ -60,8 +60,9 @@ repos:
         additional_dependencies:
           - flake8-absolute-import==1.0.0.1
           - flake8-alfred==1.1.1
+          - flake8-bugbear==23.3.12
 -   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.33.0
+    rev: v8.53.0
     hooks:
     -   id: eslint
         args: [--quiet]
@@ -69,7 +70,7 @@ repos:
         # use the proxy correctly in Launchpad CI builds.
         language_version: "20.6.1"
 -   repo: https://github.com/keewis/blackdoc
-    rev: v0.3.8
+    rev: v0.3.9
     hooks:
     -   id: blackdoc
         args: ["-l", "78"]
@@ -81,11 +82,11 @@ repos:
         args: [--allow-option-flag, IGNORE_EXCEPTION_MODULE_IN_PYTHON2]
         exclude: ^doc/.*
 -   repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.2
+    rev: v0.9.0.6
     hooks:
     -   id: shellcheck
 -   repo: https://github.com/codespell-project/codespell
-    rev: v2.2.5
+    rev: v2.2.6
     hooks:
     -   id: codespell
         args: ["-I", ".codespell-ignore"]

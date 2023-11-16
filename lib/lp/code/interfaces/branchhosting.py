@@ -5,9 +5,14 @@
 
 __all__ = [
     "IBranchHostingClient",
+    "InvalidRevisionException",
 ]
 
 from zope.interface import Interface
+
+
+class InvalidRevisionException(Exception):
+    """An exception thrown when a revision ID is not valid"""
 
 
 class IBranchHostingClient(Interface):

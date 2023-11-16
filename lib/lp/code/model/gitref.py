@@ -968,11 +968,14 @@ def _fetch_blob_from_gitlab(repository_url, ref_path, filename):
 
 
 # Some well-known GitLab instances.  This is certainly not comprehensive.
+# XXX cjwatson 2023-11-02: This should probably use a feature rule so that
+# it can be extended more easily.
 _gitlab_hostnames = {
     "gitlab.com",
     "gitlab.eclipse.org",
     "gitlab.freedesktop.org",
     "gitlab.gnome.org",
+    "invent.kde.org",
     "salsa.debian.org",
 }
 
