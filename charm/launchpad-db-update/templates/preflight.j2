@@ -7,5 +7,7 @@
 set -e
 
 LPCONFIG=launchpad-db-update {{ code_dir }}/database/schema/preflight.py \
-    --skip-connection-check --pgbouncer='{{ pgbouncer_primary }}'
+    --skip-connection-check --pgbouncer='{{ pgbouncer_primary }}' \
+    --dbname='{{ backend_database_name }}' \
+    --dbuser='{{ backend_database_user }}'
 

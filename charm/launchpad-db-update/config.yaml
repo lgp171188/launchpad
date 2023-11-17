@@ -1,0 +1,12 @@
+options:
+  backend_database_name:
+    type: string
+    description: >
+      Name of the database we are updating.  (This must be the name of the
+      database as known to PostgreSQL, which is not necessarily the same as
+      that exposed by pgbouncer.)
+    default: "launchpad_dev"
+  backend_database_user:
+    type: string
+    description: User name to use when connecting to backend databases.
+    default: "postgres"
