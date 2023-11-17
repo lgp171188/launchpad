@@ -11,7 +11,9 @@ export LPCONFIG=launchpad-db-update
 {% if pgbouncer_primary -%}
 # Fastdowntime update, managing connections using pgbouncer.
 {{ code_dir }}/database/schema/full-update.py \
-    --pgbouncer='{{ pgbouncer_primary }}'
+    --pgbouncer='{{ pgbouncer_primary }}' \
+    --dbname='{{ backend_database_name }}' \
+    --dbuser='{{ backend_database_user }}'
 {% else -%}
 # We can't manage connections using pgbouncer in this environment.  Attempt
 # a simple schema upgrade, which may fail if anything has an active database

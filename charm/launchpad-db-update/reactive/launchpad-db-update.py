@@ -21,8 +21,10 @@ from ols import base, postgres
 from psycopg2.extensions import make_dsn, parse_dsn
 
 
-def any_dbname(dsn):
+def any_host_or_port_or_dbname(dsn):
     parsed_dsn = parse_dsn(dsn)
+    parsed_dsn["host"] = "*"
+    parsed_dsn["port"] = "*"
     parsed_dsn["dbname"] = "*"
     return make_dsn(**parsed_dsn)
 
@@ -43,8 +45,11 @@ def configure():
     db_admin = endpoint_from_flag("db-admin.master.available")
     db_admin_primary, _ = postgres.get_db_uris(db_admin)
     # We assume that this admin user works for any database on this host,
-    # which seems to be true in practice.
-    update_pgpass(any_dbname(db_admin_primary))
+    # which seems to be true in practice.  Indeed, since we need to bypass
+    # pgbouncer and contact backend databases directly, assume that it works
+    # for any host or port too so that we don't need to configure
+    # credentials for all the database hosts individually.
+    update_pgpass(any_host_or_port_or_dbname(db_admin_primary))
     config["db_admin_primary"] = strip_dsn_authentication(db_admin_primary)
 
     if is_flag_set("pgbouncer.master.available"):
