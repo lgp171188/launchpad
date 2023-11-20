@@ -30,7 +30,7 @@ NEW_STAGING_CONFIG=staging-setup # For building the db with a different name.
 STAGING_CONFIG=staging-db # For swapping fresh db into place.
 STAGING_DUMP=launchpad.dump # Dumpfile to build new staging from.
 STAGING_TABLESPACE=pg_default # 'pg_default' for default
-STAGING_LOGDIR=/srv/staging.launchpad.net/staging-logs
+STAGING_LOGDIR=/srv/launchpad/logs
 STAGING_POSTGRESQL_VERSION=10
 DOGFOOD_DUMP=launchpad.dump
 
@@ -53,7 +53,7 @@ STAGING_DBNAME_SESSION=session_staging
 DOGFOOD_DBNAME=launchpad_dogfood
 
 # Names in pgbouncer.ini's `[databases]` section.
-STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_slave
+STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_standby1
 STAGING_PGBOUNCER_SESSION=session_staging
 
 STAGING_PGBOUNCER=psql -p 6432 -U pgbouncer -d pgbouncer
@@ -87,7 +87,8 @@ stagingsetup:
 			${STAGING_PGBOUNCER} -c "$$verb $$db"; \
 		done; \
 	done
-	-LP_DESTROY_REMOTE_DATABASE=yes ${PGMASSACRE} ${STAGING_DBNAME_MAIN}
+	-LPCONFIG=${STAGING_CONFIG} LP_DESTROY_REMOTE_DATABASE=yes \
+		${PGMASSACRE} ${STAGING_DBNAME_MAIN}
 
 	# Quickly clear out the session DB. No need to DISABLE here, as
 	# we bring the DB back quickly.
@@ -96,12 +97,14 @@ stagingsetup:
 	${STAGING_PGBOUNCER} -c 'RESUME ${STAGING_PGBOUNCER_SESSION}'
 
 	# Create the DB with the desired default tablespace.
-	${CREATEDB} --tablespace ${STAGING_TABLESPACE} ${STAGING_DBNAME_MAIN}
+	${CREATEDB} ${STAGING_DBOPTS} --tablespace ${STAGING_TABLESPACE} \
+		${STAGING_DBNAME_MAIN}
 	# Restore the database. We need to restore permissions, despite
 	# later running security.py, to pull in permissions granted on
 	# production to users not maintained by security.py.
 	< ${STAGING_DUMP} ${STAGING_WALBLOCK} \
-	    | pg_restore --dbname=${STAGING_DBNAME_MAIN} --no-owner ${EXIT_ON_ERROR} \
+	    | pg_restore ${STAGING_DBOPTS} --dbname=${STAGING_DBNAME_MAIN} \
+		--no-owner ${EXIT_ON_ERROR} \
 		--use-list=${DUMPLIST} -v
 	rm ${DUMPLIST}
 	# Apply database patches.
