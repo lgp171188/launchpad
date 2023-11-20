@@ -53,7 +53,7 @@ STAGING_DBNAME_SESSION=session_staging
 DOGFOOD_DBNAME=launchpad_dogfood
 
 # Names in pgbouncer.ini's `[databases]` section.
-STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_slave
+STAGING_PGBOUNCER_MAIN=launchpad_staging launchpad_staging_standby1
 STAGING_PGBOUNCER_SESSION=session_staging
 
 STAGING_PGBOUNCER=psql -p 6432 -U pgbouncer -d pgbouncer
