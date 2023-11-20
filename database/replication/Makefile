@@ -87,7 +87,8 @@ stagingsetup:
 			${STAGING_PGBOUNCER} -c "$$verb $$db"; \
 		done; \
 	done
-	-LP_DESTROY_REMOTE_DATABASE=yes ${PGMASSACRE} ${STAGING_DBNAME_MAIN}
+	-LPCONFIG=${STAGING_CONFIG} LP_DESTROY_REMOTE_DATABASE=yes \
+		${PGMASSACRE} ${STAGING_DBNAME_MAIN}
 
 	# Quickly clear out the session DB. No need to DISABLE here, as
 	# we bring the DB back quickly.
@@ -96,12 +97,14 @@ stagingsetup:
 	${STAGING_PGBOUNCER} -c 'RESUME ${STAGING_PGBOUNCER_SESSION}'
 
 	# Create the DB with the desired default tablespace.
-	${CREATEDB} --tablespace ${STAGING_TABLESPACE} ${STAGING_DBNAME_MAIN}
+	${CREATEDB} ${STAGING_DBOPTS} --tablespace ${STAGING_TABLESPACE} \
+		${STAGING_DBNAME_MAIN}
 	# Restore the database. We need to restore permissions, despite
 	# later running security.py, to pull in permissions granted on
 	# production to users not maintained by security.py.
 	< ${STAGING_DUMP} ${STAGING_WALBLOCK} \
-	    | pg_restore --dbname=${STAGING_DBNAME_MAIN} --no-owner ${EXIT_ON_ERROR} \
+	    | pg_restore ${STAGING_DBOPTS} --dbname=${STAGING_DBNAME_MAIN} \
+		--no-owner ${EXIT_ON_ERROR} \
 		--use-list=${DUMPLIST} -v
 	rm ${DUMPLIST}
 	# Apply database patches.
