@@ -2,6 +2,9 @@ includes:
   - layer:launchpad-db
 repo: https://git.launchpad.net/launchpad
 options:
+  apt:
+    packages:
+      - postgresql-client
   ols-pg:
     databases:
       db:
