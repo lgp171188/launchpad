@@ -7,6 +7,7 @@ See https://twistedmatrix.com/trac/ticket/8806 (and reference
 implementation at https://github.com/scrapy/scrapy/pull/397/files)."""
 
 __all__ = [
+    "TunnelError",
     "TunnelingAgent",
 ]
 
