@@ -30,7 +30,7 @@ NEW_STAGING_CONFIG=staging-setup # For building the db with a different name.
 STAGING_CONFIG=staging-db # For swapping fresh db into place.
 STAGING_DUMP=launchpad.dump # Dumpfile to build new staging from.
 STAGING_TABLESPACE=pg_default # 'pg_default' for default
-STAGING_LOGDIR=/srv/staging.launchpad.net/staging-logs
+STAGING_LOGDIR=/srv/launchpad/logs
 STAGING_POSTGRESQL_VERSION=10
 DOGFOOD_DUMP=launchpad.dump
 
