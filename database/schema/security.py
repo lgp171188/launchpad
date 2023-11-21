@@ -271,7 +271,7 @@ def main(options, primary_con=None):
     config.read([configfile_name])
 
     if primary_con is None:
-        primary_con = connect()
+        primary_con = connect(dbname=options.dbname)
 
     log.info("Resetting permissions.")
     reset_permissions(primary_con, config, options)
@@ -759,6 +759,16 @@ if __name__ == "__main__":
         dest="owner",
         default="postgres",
         help="Owner of PostgreSQL objects",
+    )
+    parser.add_option(
+        "--dbname",
+        dest="dbname",
+        default=None,
+        metavar="DBNAME",
+        help=(
+            "Connect to DBNAME instead of the database name configured in "
+            "LPCONFIG."
+        ),
     )
     db_options(parser)
     logger_options(parser)
