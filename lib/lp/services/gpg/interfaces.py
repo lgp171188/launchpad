@@ -15,6 +15,7 @@ __all__ = [
     "GPGKeyTemporarilyNotFoundError",
     "GPGUploadFailure",
     "GPGVerificationError",
+    "gpg_algorithm_letter",
     "IGPGHandler",
     "IPymeKey",
     "IPymeSignature",
@@ -119,75 +120,45 @@ def get_gpgme_context():
     return context
 
 
-# XXX: cprov 2004-10-04:
-# (gpg+dbschema) the data structure should be rearranged to support 4 field
-# needed: keynumber(1,16,17,20), keyalias(R,g,D,G), title and description
 class GPGKeyAlgorithm(DBEnumeratedType):
     """
-    GPG Compliant Key Algorithms Types:
+    GPG Public Key Algorithm
 
-    1  : "R", # RSA
-    16 : "g", # ElGamal
-    17 : "D", # DSA
-    20 : "G", # ElGamal, compromised
-    301: "E", # ECDSA
-    302: "e", # ECDH
-
-    See `pubkey_letter` in GnuPG for the single-letter codes used here.
-
-    FIXME
-    Rewrite it according to the experimental API returning also a name
-    attribute tested on 'algorithmname' attribute
-
+    The numbers must match those in `gpgme_pubkey_algo_t`
+    (https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gpgme.git;a=blob;f=src/gpgme.h.in).
     """
 
-    R = DBItem(
-        1,
-        """
-        R
+    R = DBItem(1, "RSA")
+    LITTLE_G = DBItem(16, "ElGamal")
+    D = DBItem(17, "DSA")
+    G = DBItem(20, "ElGamal, compromised")
+    ECDSA = DBItem(301, "ECDSA")
+    ECDH = DBItem(302, "ECDH")
+    EDDSA = DBItem(303, "EDDSA")
 
-        RSA""",
-    )
 
-    LITTLE_G = DBItem(
-        16,
-        """
-         g
+def gpg_algorithm_letter(algorithm):
+    """Return a single letter describing a GPG public key algorithm.
 
-         ElGamal""",
-    )
+    This can be used in display names of keys.
 
-    D = DBItem(
-        17,
-        """
-        D
-
-        DSA""",
-    )
-
-    G = DBItem(
-        20,
-        """
-        G
-
-        ElGamal, compromised""",
-    )
-
-    ECDSA = DBItem(
-        301,
-        """
-        E
-
-        ECDSA""",
-    )
-
-    ECDH = DBItem(
-        302,
-        """
-        e
-
-        ECDH""",
-    )
+    See `pubkey_letter` in GnuPG
+    (https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=blob;f=g10/keyid.c)
+    for the single-letter codes used here.  Note that they are not
+    necessarily unique.
+    """
+    if algorithm == GPGKeyAlgorithm.R:
+        return "R"
+    elif algorithm == GPGKeyAlgorithm.LITTLE_G:
+        return "g"
+    elif algorithm == GPGKeyAlgorithm.D:
+        return "D"
+    elif algorithm == GPGKeyAlgorithm.G:
+        return "G"
+    elif algorithm in (GPGKeyAlgorithm.ECDSA, GPGKeyAlgorithm.EDDSA):
+        return "E"
+    elif algorithm == GPGKeyAlgorithm.ECDH:
+        return "e"
 
 
 class MoreThanOneGPGKeyFound(Exception):

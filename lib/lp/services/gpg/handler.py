@@ -48,6 +48,7 @@ from lp.services.gpg.interfaces import (
     get_gpg_home_directory,
     get_gpg_path,
     get_gpgme_context,
+    gpg_algorithm_letter,
     valid_fingerprint,
 )
 from lp.services.signing.enums import SigningKeyType
@@ -672,7 +673,7 @@ class PymeKey:
     def displayname(self):
         return "%s%s/%s" % (
             self.keysize,
-            self.algorithm.title,
+            gpg_algorithm_letter(self.algorithm),
             self.fingerprint,
         )
 

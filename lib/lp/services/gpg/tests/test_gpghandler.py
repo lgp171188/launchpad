@@ -19,6 +19,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.handler import signing_only_param
 from lp.services.gpg.interfaces import (
     GPG_INJECT,
+    GPGKeyAlgorithm,
     GPGKeyDoesNotExistOnServer,
     GPGKeyMismatchOnServer,
     GPGKeyTemporarilyNotFoundError,
@@ -407,7 +408,7 @@ class TestGPGHandler(TestCase):
             new_key,
             MatchesStructure(
                 secret=Is(True),
-                algorithm=MatchesStructure.byEquality(title="R"),
+                algorithm=Equals(GPGKeyAlgorithm.R),
                 keysize=Equals(1024),
                 can_sign=Is(True),
                 can_encrypt=Is(False),
@@ -433,7 +434,7 @@ class TestGPGHandler(TestCase):
             pub_key,
             MatchesStructure(
                 secret=Is(False),
-                algorithm=MatchesStructure.byEquality(title="R"),
+                algorithm=Equals(GPGKeyAlgorithm.R),
                 keysize=Equals(1024),
                 can_sign=Is(True),
                 can_encrypt=Is(False),
