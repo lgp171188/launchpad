@@ -41,7 +41,7 @@ from lp.registry.interfaces.distributionmirror import (
 )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.config import config
-from lp.services.httpproxy.connect_tunneling import TunnelingAgent
+from lp.services.httpproxy.connect_tunneling import TunnelError, TunnelingAgent
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
@@ -661,6 +661,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         ConnectionSkipped,
         InvalidHTTPSCertificate,
         InvalidHTTPSCertificateSkipped,
+        TunnelError,
     )
 
     def __init__(
@@ -834,6 +835,7 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
         UnknownURLSchemeAfterRedirect,
         InvalidHTTPSCertificate,
         InvalidHTTPSCertificateSkipped,
+        TunnelError,
     )
 
     def __init__(self, mirror, distroseries, flavour, log_file):

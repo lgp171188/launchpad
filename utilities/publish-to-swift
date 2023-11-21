@@ -13,6 +13,8 @@ from argparse import ArgumentParser
 
 import iso8601
 import requests
+import yaml
+from jinja2 import Environment, FunctionLoader
 from swiftclient.service import (
     SwiftService,
     SwiftUploadObject,
@@ -82,19 +84,35 @@ def prune_old_files_from_swift(options, container_name, object_dir, suffix):
     if suffix:
         suffix = "-" + suffix
     if suffix.endswith("-db"):
+        # It's difficult for the Launchpad web application to publish the
+        # currently-deployed revision of its database branch.  The easiest
+        # approach seems to be to pick it out of the Juju bundle we deploy.
         try:
-            response = requests.head("https://staging.launchpad.net/")
+            response = requests.get(
+                "https://git.launchpad.net/launchpad-mojo-specs/plain/"
+                "lp/bundle.yaml"
+            )
             response.raise_for_status()
         except requests.RequestException:
-            # Staging is routinely down in order to restore its database
-            # from a recent production dump, so don't consider this an
-            # error; just skip pruning if we can't determine its revision.
-            print("staging.launchpad.net is down; not pruning.")
+            print("git.launchpad.net is down; not pruning.")
             return
+        template_env = Environment(
+            loader=FunctionLoader(lambda _: response.text)
+        )
+        template = template_env.get_template("bundle.yaml")
+        bundle = yaml.safe_load(
+            template.render(
+                {"charm_dir": "fake-charm-dir", "stage_name": "production"}
+            )
+        )
+        db_update = bundle["applications"]["launchpad-db-update"]
+        deployed_revision = db_update["options"]["build_label"]
+        if deployed_revision.endswith("-db"):
+            deployed_revision = deployed_revision[: -len("-db")]
     else:
         response = requests.head("https://launchpad.net/")
         response.raise_for_status()
-    deployed_revision = response.headers["X-VCS-Revision"]
+        deployed_revision = response.headers["X-VCS-Revision"]
 
     with SwiftService(options=options) as swift:
         objs = {}
