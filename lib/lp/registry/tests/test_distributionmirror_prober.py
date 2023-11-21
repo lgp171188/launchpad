@@ -77,7 +77,7 @@ from lp.registry.tests.distributionmirror_http_server import (
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.database.interfaces import IStore
-from lp.services.httpproxy.connect_tunneling import TunnelingAgent
+from lp.services.httpproxy.connect_tunneling import TunnelError, TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (
     TestCase,
@@ -985,6 +985,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 UnknownURLSchemeAfterRedirect,
                 InvalidHTTPSCertificate,
                 InvalidHTTPSCertificateSkipped,
+                TunnelError,
             },
         )
         exceptions = [
@@ -995,6 +996,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
             UnknownURLSchemeAfterRedirect("https://localhost"),
             InvalidHTTPSCertificate("localhost", 443),
             InvalidHTTPSCertificateSkipped("https://localhost/xx"),
+            TunnelError("Could not open CONNECT tunnel."),
         ]
         for exception in exceptions:
             failure = callbacks.ensureOrDeleteMirrorCDImageSeries(
