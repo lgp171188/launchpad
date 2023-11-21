@@ -429,7 +429,7 @@ class GitRepositoryView(
         """The git+ssh:// URL for this repository, adjusted for this user."""
         base_url = urlsplit(self.context.git_ssh_url)
         url = list(base_url)
-        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[1] = f"{self.user.name}@{base_url.hostname}"
         return urlunsplit(url)
 
     @property
@@ -446,7 +446,7 @@ class GitRepositoryView(
             config.codehosting.git_ssh_root, contributor.shortened_path
         )
         url = list(urlsplit(base_url))
-        url[1] = "{}@{}".format(self.user.name, url[1])
+        url[1] = f"{self.user.name}@{url[1]}"
         return urlunsplit(url)
 
     @property

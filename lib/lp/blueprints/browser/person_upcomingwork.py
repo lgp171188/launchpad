@@ -57,7 +57,7 @@ class PersonUpcomingWorkView(LaunchpadView):
             if total_items > 0:
                 done_or_postponed = total_done + total_postponed
                 percent_done = 100.0 * done_or_postponed / total_items
-            self.progress_per_date[date] = "{:.0f}".format(percent_done)
+            self.progress_per_date[date] = f"{percent_done:.0f}"
 
     @property
     def label(self):
@@ -123,7 +123,7 @@ class WorkItemContainer:
                 self.postponed_items
             )
             percent_done = 100.0 * done_or_postponed / len(self._items)
-        return "{:.0f}".format(percent_done)
+        return f"{percent_done:.0f}"
 
     @property
     def has_incomplete_work(self):

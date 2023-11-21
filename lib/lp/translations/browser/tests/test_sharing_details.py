@@ -647,9 +647,7 @@ class TestSourcePackageTranslationSharingDetailsViewPackagingLinks(
         elif self.user_type == "package_owner":
             self.user = self.sourcepackage.owner
         else:
-            raise AssertionError(
-                "Unknown user type: {}".format(self.user_type)
-            )
+            raise AssertionError(f"Unknown user type: {self.user_type}")
 
     def _getExpectedPackagingLink(self, id, url, icon, text, visible):
         url = "%s/%s" % (canonical_url(self.sourcepackage), url)

@@ -133,7 +133,7 @@ def bug_modified(bug: IBug, event: IObjectCreatedEvent):
     previous_state = event.object_before_modification
 
     for field in changed_fields:
-        action = "{}-changed".format(field)
+        action = f"{field}-changed"
         for bugtask in bug.bugtasks:
             _trigger_bugtask_webhook(action, bugtask, previous_state)
 
@@ -149,7 +149,7 @@ def bugtask_modified(bugtask: IBugTask, event: IObjectModifiedEvent):
     previous_state = event.object_before_modification
 
     for field in changed_fields:
-        action = "{}-changed".format(field)
+        action = f"{field}-changed"
         _trigger_bugtask_webhook(action, bugtask, previous_state)
 
 

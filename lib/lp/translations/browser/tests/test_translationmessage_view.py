@@ -313,7 +313,7 @@ class TestCurrentTranslationMessageView(TestCaseWithFactory):
                 external_pofile,
                 external_potmsgset,
                 translator=self.owner,
-                translations=["rejected message {}".format(i)],
+                translations=[f"rejected message {i}"],
                 date_created=externally_used_message.date_reviewed
                 - timedelta(days=1 + i),
             )

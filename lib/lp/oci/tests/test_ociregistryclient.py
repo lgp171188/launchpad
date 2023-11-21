@@ -737,7 +737,7 @@ class TestOCIRegistryClient(
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
-        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        uploads_url = f"{http_client.api_url}/blobs/uploads/"
         upload_url = "{}/blobs/uploads/{}".format(
             http_client.api_url, uuid.uuid4()
         )
@@ -785,7 +785,7 @@ class TestOCIRegistryClient(
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
-        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        uploads_url = f"{http_client.api_url}/blobs/uploads/"
         upload_url = "{}/blobs/uploads/{}".format(
             http_client.api_url, uuid.uuid4()
         )
@@ -836,9 +836,7 @@ class TestOCIRegistryClient(
         )
 
         push_rule = self.build.recipe.push_rules[0]
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
 
         put_errors = [
             {
@@ -884,9 +882,7 @@ class TestOCIRegistryClient(
         )
 
         push_rule = self.build.recipe.push_rules[0]
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
 
         self.addManifestResponses(push_rule, status_code=200)
 
@@ -917,7 +913,7 @@ class TestOCIRegistryClient(
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
-        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        uploads_url = f"{http_client.api_url}/blobs/uploads/"
         upload_url = "{}/blobs/uploads/{}".format(
             http_client.api_url, uuid.uuid4()
         )
@@ -1055,9 +1051,7 @@ class TestOCIRegistryClient(
         )
         self.addManifestResponses(push_rule, status_code=201)
 
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         # Let's try to generate the manifest for just 2 of the 3 builds:
@@ -1168,9 +1162,7 @@ class TestOCIRegistryClient(
         )
         self.addManifestResponses(push_rule, status_code=201)
 
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         self.client.uploadManifestList(build_request, [build1, build2])
@@ -1256,9 +1248,7 @@ class TestOCIRegistryClient(
         )
         self.addManifestResponses(push_rule, status_code=201)
 
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         self.client.uploadManifestList(build_request, [build1])
@@ -1313,9 +1303,7 @@ class TestOCIRegistryClient(
             status=503,
         )
 
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         self.assertRaises(
@@ -1336,7 +1324,7 @@ class TestOCIRegistryClient(
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
         blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
-        uploads_url = "{}/blobs/uploads/".format(http_client.api_url)
+        uploads_url = f"{http_client.api_url}/blobs/uploads/"
         upload_url = "{}/blobs/uploads/{}".format(
             http_client.api_url, uuid.uuid4()
         )
@@ -1431,9 +1419,7 @@ class TestOCIRegistryClient(
         )
         self.addManifestResponses(push_rule, status_code=201)
 
-        responses.add(
-            "GET", "{}/v2/".format(push_rule.registry_url), status=200
-        )
+        responses.add("GET", f"{push_rule.registry_url}/v2/", status=200)
         self.addManifestResponses(push_rule, status_code=201)
 
         self.client.uploadManifestList(build_request, [build1])

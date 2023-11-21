@@ -236,7 +236,7 @@ class TestBuildersHomepage(TestCaseWithFactory, BuildCreationMixin):
         content = builders_homepage_render()
         # We don't show a duration for a builder that has only been cleaning
         # for a short time.
-        expected_text = ["{}\nCleaning".format(builders[0].name)]
+        expected_text = [f"{builders[0].name}\nCleaning"]
         # We show durations for builders that have been cleaning for more
         # than ten minutes.
         expected_text.extend(

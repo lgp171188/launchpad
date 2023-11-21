@@ -59,7 +59,7 @@ class AutoDecorateMetaClass(type):
 
     def __new__(mcs, class_name, bases, class_dict):
         class_dict = dict(class_dict)
-        decorators = class_dict.pop("_{}__decorators".format(class_name), None)
+        decorators = class_dict.pop(f"_{class_name}__decorators", None)
         if decorators is not None:
             for name, value in class_dict.items():
                 if type(value) == FunctionType:

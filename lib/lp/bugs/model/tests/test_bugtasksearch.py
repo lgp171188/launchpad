@@ -1936,7 +1936,7 @@ class TestBugTaskSetStatusSearchClauses(TestCase):
         # in a "NOT".
         status = BugTaskStatus.INCOMPLETE
         base_query = self.searchClause(status)
-        expected_negative_query = "NOT ({})".format(base_query)
+        expected_negative_query = f"NOT ({base_query})"
         self.assertEqual(
             expected_negative_query, self.searchClause(not_equals(status))
         )

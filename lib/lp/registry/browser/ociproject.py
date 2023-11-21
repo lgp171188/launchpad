@@ -271,7 +271,7 @@ class OCIProjectIndexView(LaunchpadView):
             )
         )
         url = list(base_url)
-        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[1] = f"{self.user.name}@{base_url.hostname}"
         return urlunsplit(url)
 
     @property

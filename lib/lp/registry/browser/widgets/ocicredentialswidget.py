@@ -80,12 +80,12 @@ class OCICredentialsWidget(BrowserWidget, InputWidget):
     def hasInput(self):
         """See `IInputWidget`."""
         field_names = [
-            "{}.url".format(self.name),
-            "{}.region".format(self.name),
-            "{}.username".format(self.name),
-            "{}.password".format(self.name),
-            "{}.confirm_password".format(self.name),
-            "{}.delete".format(self.name),
+            f"{self.name}.url",
+            f"{self.name}.region",
+            f"{self.name}.username",
+            f"{self.name}.password",
+            f"{self.name}.confirm_password",
+            f"{self.name}.delete",
         ]
         return any(self.request.form.get(x) for x in field_names)
 

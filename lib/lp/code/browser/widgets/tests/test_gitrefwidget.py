@@ -262,7 +262,7 @@ class TestGitRefWidget(WithScenarios, TestCaseWithFactory):
             getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
                 owner, target, repo, owner
             )
-        short_url = "~{}/{}".format(owner.name, target.name)
+        short_url = f"~{owner.name}/{target.name}"
         form = {
             "field.git_ref.repository": short_url,
             "field.git_ref.path": ref.path,

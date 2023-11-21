@@ -48,7 +48,7 @@ class SyncBranchesScript(LaunchpadScript):
             "%s/" % branch_dir,
         ]
         try:
-            subprocess.check_output(args, universal_newlines=True)
+            subprocess.check_output(args, text=True)
         except subprocess.CalledProcessError as e:
             if "No such file or directory" in e.output:
                 self.logger.warning(

@@ -1049,7 +1049,7 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
                 Equals(
                     {
                         "description": (
-                            "{} for launchpad.test".format(recipe.store_name)
+                            f"{recipe.store_name} for launchpad.test"
                         ),
                         "packages": [
                             {
@@ -2158,9 +2158,7 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         )
         with person_logged_in(self.person):
             expected_body = {
-                "description": (
-                    "{} for launchpad.test".format(recipe.store_name)
-                ),
+                "description": (f"{recipe.store_name} for launchpad.test"),
                 "packages": [{"type": "charm", "name": recipe.store_name}],
                 "permissions": [
                     "package-manage-releases",

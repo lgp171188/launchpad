@@ -1993,7 +1993,7 @@ class ProductSetBranchView(
             urlutils.join(config.codehosting.git_ssh_root, self.context.name)
         )
         url = list(base_url)
-        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[1] = f"{self.user.name}@{base_url.hostname}"
         return urlunsplit(url)
 
     @property

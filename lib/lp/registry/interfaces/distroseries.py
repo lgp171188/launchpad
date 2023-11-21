@@ -169,28 +169,24 @@ class DistroSeriesVersionField(UniqueField):
             raise LaunchpadValidationError("'%s': %s" % (version, error))
 
 
-DistroSeriesTranslationTemplateStatistics = TypedDict(
-    "DistroSeriesTranslationTemplateStatistics",
-    {
-        # The name of the source package that uses the template.
-        "sourcepackage": str,
-        # The translation domain for the template.
-        "translation_domain": str,
-        # The name of the template.
-        "template_name": str,
-        # The number of translation messages for the template.
-        "total": int,
-        # Whether the template is active.
-        "enabled": bool,
-        # Whether the template is part of a language pack.
-        "languagepack": bool,
-        # A number that describes how important this template is; templates
-        # with higher priorities should be translated first.
-        "priority": int,
-        # When the template was last updated.
-        "date_last_updated": datetime,
-    },
-)
+class DistroSeriesTranslationTemplateStatistics(TypedDict):
+    # The name of the source package that uses the template.
+    sourcepackage: str
+    # The translation domain for the template.
+    translation_domain: str
+    # The name of the template.
+    template_name: str
+    # The number of translation messages for the template.
+    total: int
+    # Whether the template is active.
+    enabled: bool
+    # Whether the template is part of a language pack.
+    languagepack: bool
+    # A number that describes how important this template is; templates
+    # with higher priorities should be translated first.
+    priority: int
+    # When the template was last updated.
+    date_last_updated: datetime
 
 
 class IDistroSeriesPublic(

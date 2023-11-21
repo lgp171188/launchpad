@@ -372,9 +372,7 @@ class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         for key, value in args.items():
-            self.assertFalse(
-                isProxy(value), "{} is a security proxy".format(key)
-            )
+            self.assertFalse(isProxy(value), f"{key} is a security proxy")
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_bzr(self):

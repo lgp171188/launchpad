@@ -31,15 +31,15 @@ def truncate(text, message=None):
 
 
 def problem(message):
-    sys.stderr.write("{}\n".format(message))
+    sys.stderr.write(f"{message}\n")
 
 
 def problem_detail(message):
-    sys.stderr.write("  {}\n".format(message))
+    sys.stderr.write(f"  {message}\n")
 
 
 def problem_resolution(message):
-    sys.stderr.write("  --> {}\n".format(message))
+    sys.stderr.write(f"  --> {message}\n")
 
 
 def problem_resolved():

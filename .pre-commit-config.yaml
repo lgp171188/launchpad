@@ -29,7 +29,7 @@ repos:
     rev: v3.15.0
     hooks:
     -   id: pyupgrade
-        args: [--keep-percent-format]
+        args: [--keep-percent-format, --py38-plus]
         exclude: |
           (?x)^(
             lib/contrib/.*

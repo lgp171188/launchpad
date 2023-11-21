@@ -22,35 +22,32 @@ from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 
-BugTaskFlat = NamedTuple(
-    "BugTaskFlat",
-    (
-        ("bugtask", Any),
-        ("bug", Any),
-        ("datecreated", Any),
-        ("latest_patch_uploaded", Any),
-        ("date_closed", Any),
-        ("date_last_updated", Any),
-        ("duplicateof", Any),
-        ("bug_owner", Any),
-        ("fti", Any),
-        ("information_type", Any),
-        ("heat", Any),
-        ("product", Any),
-        ("productseries", Any),
-        ("distribution", Any),
-        ("distroseries", Any),
-        ("sourcepackagename", Any),
-        ("status", Any),
-        ("importance", Any),
-        ("assignee", Any),
-        ("milestone", Any),
-        ("owner", Any),
-        ("active", Any),
-        ("access_policies", Any),
-        ("access_grants", Any),
-    ),
-)
+
+class BugTaskFlat(NamedTuple):
+    bugtask: Any
+    bug: Any
+    datecreated: Any
+    latest_patch_uploaded: Any
+    date_closed: Any
+    date_last_updated: Any
+    duplicateof: Any
+    bug_owner: Any
+    fti: Any
+    information_type: Any
+    heat: Any
+    product: Any
+    productseries: Any
+    distribution: Any
+    distroseries: Any
+    sourcepackagename: Any
+    status: Any
+    importance: Any
+    assignee: Any
+    milestone: Any
+    owner: Any
+    active: Any
+    access_policies: Any
+    access_grants: Any
 
 
 class BugTaskFlatTestMixin(TestCaseWithFactory):

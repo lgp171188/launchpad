@@ -1097,9 +1097,7 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
                 lambda b: json.loads(b.decode()),
                 Equals(
                     {
-                        "description": (
-                            "{} for launchpad.test".format(store_name)
-                        ),
+                        "description": (f"{store_name} for launchpad.test"),
                         "packages": [
                             {
                                 "type": "charm",

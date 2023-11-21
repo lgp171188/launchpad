@@ -311,7 +311,7 @@ class TestPackageDiffsView(BrowserTestCase):
         """Verify that expected text exists in the packages diffs view"""
         login_person(self.user)
         browser = self.getViewBrowser(self.to_archive, "+packages")
-        expander_id = "pub{spph_id}-expander".format(spph_id=self.spph_id)
+        expander_id = f"pub{self.spph_id}-expander"
         browser.getLink(id=expander_id).click()
         self.assertIn(expected_text, extract_text(browser.contents))
         return browser
@@ -355,7 +355,7 @@ class TestPackageDiffsView(BrowserTestCase):
         )
 
         # There is no link while diff is pending
-        expected_text = "Available diffs\n{} (pending)".format(expected_title)
+        expected_text = f"Available diffs\n{expected_title} (pending)"
         browser = self.assert_text_in_diffs_view(expected_text)
         self.assertRaises(LinkNotFoundError, browser.getLink, expected_title)
 
@@ -363,7 +363,7 @@ class TestPackageDiffsView(BrowserTestCase):
         login_person(self.user)
         self.perform_fake_diff(diff, "biscuit_1.0-3_1.0-4.diff.gz")
         transaction.commit()
-        expected_text = "Available diffs\n{} (3 bytes)".format(expected_title)
+        expected_text = f"Available diffs\n{expected_title} (3 bytes)"
         browser = self.assert_text_in_diffs_view(expected_text)
         url = browser.getLink(expected_title).url
         self.assertIn("/+files/biscuit_1.0-3_1.0-4.diff.gz", url)
