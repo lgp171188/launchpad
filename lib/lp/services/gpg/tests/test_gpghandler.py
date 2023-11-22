@@ -128,6 +128,8 @@ class TestGPGHandler(TestCase):
         self.assertIn("A419AE861E88BC9E04B9C26FBA2B9389DFD20543", fingerprints)
         # foo.bar@canonical.com-nistp256
         self.assertIn("7DF8FEA9E998922E7CCB3EC9BF5D16BC1C0A8AE4", fingerprints)
+        # foo.bar@canonical.com-ed25519
+        self.assertIn("7C2A13013ED91D2E0914F4161B7EEFF5D2FB6FFD", fingerprints)
 
     def testFilteredGetKeys(self):
         """Check the filtered key lookup mechanism.
