@@ -337,16 +337,6 @@ if __name__ == "__main__":
         action="store_true",
         help="Apply each patch in a separate session",
     )
-    parser.add_option(
-        "--dbname",
-        dest="dbname",
-        default=None,
-        metavar="DBNAME",
-        help=(
-            "Connect to DBNAME instead of the database name configured in "
-            "LPCONFIG."
-        ),
-    )
     (options, args) = parser.parse_args()
 
     if args:
