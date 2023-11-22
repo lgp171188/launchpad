@@ -134,7 +134,7 @@ class GPGKeyAlgorithm(DBEnumeratedType):
     G = DBItem(20, "ElGamal, compromised")
     ECDSA = DBItem(301, "ECDSA")
     ECDH = DBItem(302, "ECDH")
-    EDDSA = DBItem(303, "EDDSA")
+    EDDSA = DBItem(303, "EdDSA")
 
 
 def gpg_algorithm_letter(algorithm):
