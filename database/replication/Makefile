@@ -26,7 +26,6 @@
 ## MULTIPROC=-j 4
 MULTIPROC=
 
-NEW_STAGING_CONFIG=staging-setup # For building the db with a different name.
 STAGING_CONFIG=staging-db # For swapping fresh db into place.
 STAGING_DUMP=launchpad.dump # Dumpfile to build new staging from.
 STAGING_TABLESPACE=pg_default # 'pg_default' for default
@@ -71,24 +70,17 @@ SHHH=
 default:
 	echo Need a target
 
-# Destroy the existing staging db and reload it from dump. We no longer
-# have enough disk space to build it in a holding area and swap it into
-# place.
+# Build _new staging databases from a production dump.
 stagingsetup: DUMPLIST:=$(shell tempfile --suffix=.lst --prefix=lpstag)
 stagingsetup:
-	# List the dump first to make sure it is usable before destroying
-	# anything.
+	# List the dump first to make sure it is usable.
 	pg_restore --list ${STAGING_DUMP} | \
 	    grep -v -E 'TRIGGER public [^ ]+ _sl_' > ${DUMPLIST}
 
-	# Deny new connections to the main DBs and kill any leftovers.
-	set -e; for verb in DISABLE KILL RESUME; do \
-		for db in ${STAGING_PGBOUNCER_MAIN}; do \
-			${STAGING_PGBOUNCER} -c "$$verb $$db"; \
-		done; \
-	done
+	# Kill the existing temporary staging database if it exists from an
+	# aborted run.
 	-LPCONFIG=${STAGING_CONFIG} LP_DESTROY_REMOTE_DATABASE=yes \
-		${PGMASSACRE} ${STAGING_DBNAME_MAIN}
+		${PGMASSACRE} ${STAGING_DBNAME_MAIN}_new
 
 	# Quickly clear out the session DB. No need to DISABLE here, as
 	# we bring the DB back quickly.
@@ -98,31 +90,43 @@ stagingsetup:
 
 	# Create the DB with the desired default tablespace.
 	${CREATEDB} ${STAGING_DBOPTS} --tablespace ${STAGING_TABLESPACE} \
-		${STAGING_DBNAME_MAIN}
+		${STAGING_DBNAME_MAIN}_new
 	# Restore the database. We need to restore permissions, despite
 	# later running security.py, to pull in permissions granted on
 	# production to users not maintained by security.py.
 	< ${STAGING_DUMP} ${STAGING_WALBLOCK} \
-	    | pg_restore ${STAGING_DBOPTS} --dbname=${STAGING_DBNAME_MAIN} \
+	    | pg_restore ${STAGING_DBOPTS} --dbname=${STAGING_DBNAME_MAIN}_new \
 		--no-owner ${EXIT_ON_ERROR} \
 		--use-list=${DUMPLIST} -v
 	rm ${DUMPLIST}
 	# Apply database patches.
 	@echo Running upgrade.py `date`.
 	LPCONFIG=${STAGING_CONFIG} ${SHHH} ../schema/upgrade.py \
-	    --log-file=INFO:${STAGING_LOGDIR}/dbupgrade.log
+		--dbname=${STAGING_DBNAME_MAIN}_new \
+		--log-file=INFO:${STAGING_LOGDIR}/dbupgrade.log
 	@echo Running security.py `date`
 	LPCONFIG=${STAGING_CONFIG} ${SHHH} ../schema/security.py \
-	    --log-file=INFO:${STAGING_LOGDIR}/dbupgrade.log
+		--dbname=${STAGING_DBNAME_MAIN}_new \
+		--log-file=INFO:${STAGING_LOGDIR}/dbupgrade.log
 	@echo Setting feature flags
-	psql ${STAGING_DBOPTS} -d ${STAGING_DBNAME_MAIN} -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('profiling.enabled', 'team:launchpad', 0, 'on') ON CONFLICT DO NOTHING"
-	psql ${STAGING_DBOPTS} -d ${STAGING_DBNAME_MAIN} -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('librarian.swift.enabled', 'default', 0, 'on') ON CONFLICT DO NOTHING"
+	psql ${STAGING_DBOPTS} -d ${STAGING_DBNAME_MAIN}_new -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('profiling.enabled', 'team:launchpad', 0, 'on') ON CONFLICT DO NOTHING"
+	psql ${STAGING_DBOPTS} -d ${STAGING_DBNAME_MAIN}_new -c "INSERT INTO featureflag (flag, scope, priority, value) VALUES ('librarian.swift.enabled', 'default', 0, 'on') ON CONFLICT DO NOTHING"
+
+stagingswitch:
+	set -e; for verb in DISABLE KILL RESUME; do \
+		for db in ${STAGING_PGBOUNCER_MAIN}; do \
+			${STAGING_PGBOUNCER} -c "$$verb $$db"; \
+		done; \
+	done
+	# Kill the existing staging database if it exists.
+	-LPCONFIG=${STAGING_CONFIG} LP_DESTROY_REMOTE_DATABASE=yes \
+		${PGMASSACRE} lpmain_staging
+	# Rename the newly-built staging databases.
+	psql ${STAGING_DBOPTS} -d template1 -c \
+	    "ALTER DATABASE ${STAGING_DBNAME_MAIN}_new RENAME TO ${STAGING_DBNAME_MAIN};"
 	set -e; for db in ${STAGING_PGBOUNCER_MAIN}; do \
 		${STAGING_PGBOUNCER} -c "ENABLE $$db"; \
 	done
-
-stagingswitch:
-	echo Nothing to do. Staging already built inplace.
 
 dogfood: DUMPLIST:=$(shell tempfile --suffix=.lst --prefix=lpdogf)
 dogfood:
