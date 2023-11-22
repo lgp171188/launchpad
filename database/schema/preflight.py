@@ -35,6 +35,15 @@ SYSTEM_USERS = {"postgres", "slony", "nagios", "lagmon"}
 # connected, so these systems will need to be shut down manually before
 # a database update.
 FRAGILE_USERS = {
+    # With Juju, we switch to the target role after connecting;
+    # unfortunately pg_stat_activity only shows us the user as which we
+    # originally connected.  Until and unless we can devise a way to find
+    # the actual role, we need these more general entries.
+    "juju_launchpad-copy-archive-publisher",
+    "juju_launchpad-ftpmaster-publisher",
+    "juju_launchpad-ftpmaster-uploader",
+    "juju_launchpad-ppa-publisher",
+    "juju_launchpad-ppa-uploader",
     # process_accepted is fragile, but also fast so we likely shouldn't
     # need to ever manually shut it down.
     "process_accepted",
