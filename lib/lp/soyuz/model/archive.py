@@ -481,11 +481,7 @@ class Archive(StormBase):
                         self.signing_key_fingerprint,
                     )
                 else:
-                    return "%s%s/%s" % (
-                        pyme_key.keysize,
-                        pyme_key.algorithm.title,
-                        pyme_key.fingerprint,
-                    )
+                    return pyme_key.displayname
 
     @property
     def is_ppa(self):

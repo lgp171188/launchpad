@@ -25,7 +25,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.interfaces import IGPGHandler, gpg_algorithm_letter
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.sendmail import format_address, simple_sendmail
 from lp.services.tokens import create_token
@@ -172,7 +172,7 @@ class LoginToken(StormBase):
 
         # Here are the instructions that need to be encrypted.
         template = get_email_template("validate-gpg.txt", app=MAIL_APP)
-        key_type = "%s%s" % (key.keysize, key.algorithm.title)
+        key_type = "%s%s" % (key.keysize, gpg_algorithm_letter(key.algorithm))
         replacements = {
             "requester": self.requester.displayname,
             "requesteremail": self.requesteremail,

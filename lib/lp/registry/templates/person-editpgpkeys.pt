@@ -163,11 +163,7 @@
         fingerprint</a>)
       </p>
 
-      <p>
-        At present, only RSA, DSA, and some ECC keys are supported; see
-        <a href="https://bugs.launchpad.net/launchpad/+bug/1827369">bug
-        1827369</a> for details on the state of support for other key types.
-      </p>
+      <p>At present, RSA, DSA, ECDSA, ECDH, and EdDSA keys are supported.</p>
 
           <table class="form" id="launchpad-form-widgets">
             <tbody>

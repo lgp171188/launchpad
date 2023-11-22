@@ -11,7 +11,11 @@ from lp.registry.interfaces.gpg import IGPGKey, IGPGKeySet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.gpg.interfaces import GPGKeyAlgorithm, IGPGHandler
+from lp.services.gpg.interfaces import (
+    GPGKeyAlgorithm,
+    IGPGHandler,
+    gpg_algorithm_letter,
+)
 from lp.services.verification.model.logintoken import LoginToken
 
 
@@ -67,7 +71,7 @@ class GPGKey(StormBase):
     def displayname(self):
         return "%s%s/%s" % (
             self.keysize,
-            self.algorithm.title,
+            gpg_algorithm_letter(self.algorithm),
             self.fingerprint,
         )
 
