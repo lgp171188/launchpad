@@ -163,6 +163,8 @@
         fingerprint</a>)
       </p>
 
+      <p>At present, RSA, DSA, ECDSA, ECDH, and EdDSA keys are supported.</p>
+
           <table class="form" id="launchpad-form-widgets">
             <tbody>
               <tr>
