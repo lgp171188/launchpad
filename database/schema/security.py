@@ -760,16 +760,6 @@ if __name__ == "__main__":
         default="postgres",
         help="Owner of PostgreSQL objects",
     )
-    parser.add_option(
-        "--dbname",
-        dest="dbname",
-        default=None,
-        metavar="DBNAME",
-        help=(
-            "Connect to DBNAME instead of the database name configured in "
-            "LPCONFIG."
-        ),
-    )
     db_options(parser)
     logger_options(parser)
 
