@@ -252,7 +252,7 @@ by the 'PPA key guard' celebrity and represented by a IGPGKey record.
     >>> print(signing_key.owner.name)
     ppa-key-guard
 
-    >>> print(signing_key.algorithm.description)
+    >>> print(signing_key.algorithm.title)
     RSA
 
     >>> print(signing_key.keysize)
