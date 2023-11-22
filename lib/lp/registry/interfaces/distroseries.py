@@ -591,7 +591,7 @@ class IDistroSeriesPublic(
             required=True,
             description=_(
                 """
-            Publish archive i18n/Index file, which is believed to be used."""
+            Publish archive i18n/Index file, which is believed to be unused."""
             ),
         )
     )
