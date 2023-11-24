@@ -22,15 +22,15 @@ from lp.services.scripts import db_options, logger, logger_options
 SCHEMA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def main(con=None):
+def main(con=None, dbname=None):
     if con is None:
-        con = connect()
+        con = connect(dbname=dbname)
 
     patches = get_patchlist(con)
 
     log.info("Applying patches.")
     if options.separate_sessions:
-        apply_patches_separately()
+        apply_patches_separately(dbname=dbname)
         con.rollback()
     else:
         apply_patches_normal(con)
@@ -173,17 +173,17 @@ def apply_patches_normal(con):
     apply_comments(con)
 
 
-def apply_patches_separately():
+def apply_patches_separately(dbname=None):
     """Update a database, applying each patch in a separate session."""
     # Apply the patches.
-    with connect() as con:
+    with connect(dbname=dbname) as con:
         patches = get_patchlist(con)
     for (major, minor, patch), patch_file in patches:
-        with connect() as con:
+        with connect(dbname=dbname) as con:
             apply_patch(con, major, minor, patch, patch_file)
 
     # Update comments.
-    with connect() as con:
+    with connect(dbname=dbname) as con:
         apply_comments(con)
 
     # Commit changes.  (Not optional, since we don't currently support using
@@ -345,4 +345,4 @@ if __name__ == "__main__":
         parser.error("--dry-run and --separate-sessions are incompatible")
 
     log = logger(options)
-    main()
+    main(dbname=options.dbname)

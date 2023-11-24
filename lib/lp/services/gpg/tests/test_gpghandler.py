@@ -19,6 +19,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.gpg.handler import signing_only_param
 from lp.services.gpg.interfaces import (
     GPG_INJECT,
+    GPGKeyAlgorithm,
     GPGKeyDoesNotExistOnServer,
     GPGKeyMismatchOnServer,
     GPGKeyTemporarilyNotFoundError,
@@ -127,6 +128,8 @@ class TestGPGHandler(TestCase):
         self.assertIn("A419AE861E88BC9E04B9C26FBA2B9389DFD20543", fingerprints)
         # foo.bar@canonical.com-nistp256
         self.assertIn("7DF8FEA9E998922E7CCB3EC9BF5D16BC1C0A8AE4", fingerprints)
+        # foo.bar@canonical.com-ed25519
+        self.assertIn("7C2A13013ED91D2E0914F4161B7EEFF5D2FB6FFD", fingerprints)
 
     def testFilteredGetKeys(self):
         """Check the filtered key lookup mechanism.
@@ -407,7 +410,7 @@ class TestGPGHandler(TestCase):
             new_key,
             MatchesStructure(
                 secret=Is(True),
-                algorithm=MatchesStructure.byEquality(title="R"),
+                algorithm=Equals(GPGKeyAlgorithm.R),
                 keysize=Equals(1024),
                 can_sign=Is(True),
                 can_encrypt=Is(False),
@@ -433,7 +436,7 @@ class TestGPGHandler(TestCase):
             pub_key,
             MatchesStructure(
                 secret=Is(False),
-                algorithm=MatchesStructure.byEquality(title="R"),
+                algorithm=Equals(GPGKeyAlgorithm.R),
                 keysize=Equals(1024),
                 can_sign=Is(True),
                 can_encrypt=Is(False),

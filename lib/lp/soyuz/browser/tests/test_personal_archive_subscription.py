@@ -47,8 +47,8 @@ class TestPersonArchiveSubscriptionView(TestCaseWithFactory):
             view = create_initialized_view(pas, "+index", principal=subscriber)
             signing_key = find_tag_by_id(view(), "signing-key")
             self.assertEqual(
-                "This repository is signed with\n%s%s/%s OpenPGP key."
-                % (key.keysize, key.algorithm.title, key.fingerprint),
+                "This repository is signed with\n%s OpenPGP key."
+                % key.displayname,
                 extract_text(signing_key),
             )
             self.assertEqual(

@@ -271,7 +271,7 @@ def main(options, primary_con=None):
     config.read([configfile_name])
 
     if primary_con is None:
-        primary_con = connect()
+        primary_con = connect(dbname=options.dbname)
 
     log.info("Resetting permissions.")
     reset_permissions(primary_con, config, options)

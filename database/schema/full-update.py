@@ -39,6 +39,7 @@ def run_upgrade(options, log, primary_con):
     options.partial = False
     options.comments = False  # Saves about 1s. Apply comments manually.
     options.separate_sessions = False
+    options.dbname = None
     # Invoke the database schema upgrade process.
     try:
         return upgrade.main(primary_con)
@@ -59,6 +60,7 @@ def run_security(options, log, primary_con):
     options.dryrun = False
     options.revoke = True
     options.owner = "postgres"
+    options.dbname = None
     security.options = options
     security.log = log
     # Invoke the database security reset process.
