@@ -9,6 +9,18 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 
+def is_primary():
+    return (
+        subprocess.run(
+            ["psql", "-At", "-c", "SELECT pg_is_in_recovery();"],
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout.strip()
+        == "f"
+    )
+
+
 def find_latest_dumps(backups_path, database, count):
     yield from sorted(backups_path.glob(f"{glob.escape(database)}.*.dump"))[
         -count:
@@ -48,6 +60,9 @@ def main():
     )
     parser.add_argument("databases", metavar="database", nargs="+")
     args = parser.parse_args()
+
+    if not is_primary():
+        return
 
     command = ["rsync"]
     if args.bwlimit is not None:
