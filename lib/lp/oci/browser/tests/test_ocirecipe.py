@@ -347,7 +347,7 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Create OCI recipe").click()
         content = find_main_content(browser.contents)
         self.assertThat(
-            "Registry image name:\n{}".format(image_name),
+            f"Registry image name:\n{image_name}",
             MatchesTagText(content, "image-name"),
         )
 
@@ -1051,7 +1051,7 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Update OCI recipe").click()
         content = find_main_content(browser.contents)
         self.assertThat(
-            "Registry image name:\n{}".format(image_name),
+            f"Registry image name:\n{image_name}",
             MatchesTagText(content, "image-name"),
         )
 

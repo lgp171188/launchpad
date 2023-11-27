@@ -804,7 +804,7 @@ class BugLocked(BugChangeBase):
         """See `IBugChange`."""
         text = "** Bug metadata locked and limited to project staff"
         if self.reason:
-            text = "{}: {}".format(text, self.reason)
+            text = f"{text}: {self.reason}"
 
         return {"text": text}
 
@@ -850,7 +850,7 @@ class BugLockReasonSet(BugChangeBase):
         if self.new_reason is None:
             text = "Bug lock reason unset"
         else:
-            text = "** Bug lock reason changed: {}".format(self.new_reason)
+            text = f"** Bug lock reason changed: {self.new_reason}"
 
         return {"text": text}
 

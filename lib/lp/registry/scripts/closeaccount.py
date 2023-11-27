@@ -469,7 +469,7 @@ def close_account(username, log):
             count = result.get_one()[0]
             if count:
                 referenced_ppa_ids.add(ppa_id)
-                reference = "{}.{}".format(src_tab, src_col)
+                reference = f"{src_tab}.{src_col}"
                 log.warning(
                     "PPA %d is still referenced by %d %s values"
                     % (ppa_id, count, reference)
@@ -504,7 +504,7 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
-            reference_counts.append(("product.{}".format(col), count))
+            reference_counts.append((f"product.{col}", count))
         skip.add(("product", col))
     for col in "driver", "owner":
         count = store.find(
@@ -514,7 +514,7 @@ def close_account(username, log):
             getattr(ProductSeries, col) == person,
         ).count()
         if count:
-            reference_counts.append(("productseries.{}".format(col), count))
+            reference_counts.append((f"productseries.{col}", count))
         skip.add(("productseries", col))
 
     # Check announcements, skipping the ones
@@ -596,7 +596,7 @@ def close_account(username, log):
             .count()
         )
         if count:
-            reference_counts.append(("branch.{}".format(col_name), count))
+            reference_counts.append((f"branch.{col_name}", count))
         skip.add(("branch", col_name))
 
     # Check Specification, skipping the ones
@@ -636,7 +636,7 @@ def close_account(username, log):
         )
         count = result.get_one()[0]
         if count:
-            reference_counts.append(("{}.{}".format(src_tab, src_col), count))
+            reference_counts.append((f"{src_tab}.{src_col}", count))
 
     if reference_counts:
         for reference, count in reference_counts:

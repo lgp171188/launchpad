@@ -71,7 +71,7 @@ def main():
     command.extend([f"{args.backups_path}/", destination])
 
     if args.dry_run:
-        print("Would run:", " ".join(shlex.quote(arg) for arg in command))
+        print("Would run:", shlex.join(command))
     else:
         subprocess.run(command, check=True)
 

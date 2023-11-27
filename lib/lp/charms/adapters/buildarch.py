@@ -20,7 +20,7 @@ class MissingPropertyError(CharmBasesParserError):
 
     def __init__(self, prop):
         super().__init__(
-            "Base specification is missing the {!r} property".format(prop)
+            f"Base specification is missing the {prop!r} property"
         )
         self.property = prop
 

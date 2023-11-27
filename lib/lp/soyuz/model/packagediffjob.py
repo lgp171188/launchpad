@@ -68,9 +68,7 @@ class PackageDiffJob(PackageDiffJobDerived):
             )
         ]
         if diff.requester is not None:
-            parts.append(
-                " for {requester}".format(requester=diff.requester.name)
-            )
+            parts.append(f" for {diff.requester.name}")
         return "<{repr}>".format(repr="".join(parts))
 
     @property

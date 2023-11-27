@@ -670,7 +670,7 @@ class BranchMergeProposalView(
         adjusted for this user."""
         base_url = urlsplit(self.context.source_git_repository.git_ssh_url)
         url = list(base_url)
-        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[1] = f"{self.user.name}@{base_url.hostname}"
         return urlunsplit(url)
 
     @cachedproperty

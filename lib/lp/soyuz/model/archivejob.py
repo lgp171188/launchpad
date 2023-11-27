@@ -797,28 +797,28 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 continue
             artifact = scanned_artifact.artifact
             library_file = artifact.library_file
-            # XXX cjwatson 2023-08-09: Comparing distroseries names here is
-            # a pretty unpleasant hack, but it's necessary because in
-            # practice what we're doing is taking the output of build jobs
-            # that were run on (e.g.) Ubuntu focal and uploading them to
-            # (e.g.) <private distribution> focal.  Unfortunately the
-            # private series doesn't have its parent series set to the
-            # corresponding Ubuntu series, so we have no way to make the
-            # connection other than comparing names.  We need to figure out
-            # something better here, but at least this hack isn't too deep
-            # in the core of the system.
-            if (
-                artifact.report.distro_arch_series is not None
-                and artifact.report.distro_arch_series.distroseries.name
-                != self.target_distroseries.name
-            ):
-                logger.info(
-                    "Skipping %s (built for %s, not %s)",
-                    library_file.filename,
-                    artifact.report.distro_arch_series.distroseries.name,
-                    self.target_distroseries.name,
+            if artifact.report.distro_arch_series is not None:
+                build_distroseries = (
+                    artifact.report.distro_arch_series.distroseries
                 )
-                continue
+                # It might seem that we ought to check that the build job's
+                # series is equal to the target series, but in practice what
+                # we're doing is taking the output of build jobs that were
+                # run on (e.g.) Ubuntu focal and uploading them to (e.g.)
+                # <private distribution> focal, so we need to check parent
+                # series links as well.
+                if (
+                    build_distroseries != self.target_distroseries
+                    and build_distroseries
+                    not in self.target_distroseries.getParentSeries()
+                ):
+                    logger.info(
+                        "Skipping %s (built for %s, not %s)",
+                        library_file.filename,
+                        build_distroseries.name,
+                        self.target_distroseries.name,
+                    )
+                    continue
             logger.info(
                 "Uploading %s to %s %s (%s)",
                 library_file.filename,

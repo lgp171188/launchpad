@@ -336,6 +336,6 @@ def _relFileLocation(file_id):
     file_id = int(file_id)
     assert (
         file_id <= 4294967295
-    ), "file id {!r} has exceeded filesystem db maximum".format(file_id)
+    ), f"file id {file_id!r} has exceeded filesystem db maximum"
     h = "%08x" % file_id
     return "%s/%s/%s/%s" % (h[:2], h[2:4], h[4:6], h[6:])

@@ -1867,7 +1867,7 @@ class LaunchpadObjectFactory(ObjectFactory):
 
     def makeDiff(self, size="small"):
         diff_path = os.path.join(
-            os.path.dirname(__file__), "data/{}.diff".format(size)
+            os.path.dirname(__file__), f"data/{size}.diff"
         )
         with open(os.path.join(diff_path), "rb") as diff:
             diff_text = diff.read()
@@ -6555,7 +6555,7 @@ class LaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject()
         if git_ref is None:
             component = self.getUniqueUnicode()
-            paths = ["refs/heads/{}-20.04".format(component)]
+            paths = [f"refs/heads/{component}-20.04"]
             [git_ref] = self.makeGitRefs(paths=paths)
         if build_file is None:
             build_file = self.getUniqueUnicode("build_file_for")

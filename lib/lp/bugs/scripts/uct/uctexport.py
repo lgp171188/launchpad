@@ -38,13 +38,9 @@ class UCTExporter:
     UCT CVE files.
     """
 
-    ParsedDescription = NamedTuple(
-        "ParsedDescription",
-        (
-            ("description", str),
-            ("references", List[str]),
-        ),
-    )
+    class ParsedDescription(NamedTuple):
+        description: str
+        references: List[str]
 
     # Example:
     # linux/upstream
@@ -93,7 +89,7 @@ class UCTExporter:
         vulnerabilities = list(bug.vulnerabilities)
         if not vulnerabilities:
             raise ValueError(
-                "Bug with ID: {} does not have vulnerabilities".format(bug.id)
+                f"Bug with ID: {bug.id} does not have vulnerabilities"
             )
         vulnerability = vulnerabilities[0]  # type: Vulnerability
         if not vulnerability.cve:
@@ -227,7 +223,7 @@ class UCTExporter:
             )
 
         return CVE(
-            sequence="CVE-{}".format(lp_cve.sequence),
+            sequence=f"CVE-{lp_cve.sequence}",
             date_made_public=vulnerability.date_made_public,
             date_notice_issued=vulnerability.date_notice_issued,
             date_coordinated_release=vulnerability.date_coordinated_release,

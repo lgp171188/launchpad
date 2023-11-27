@@ -115,7 +115,7 @@ class DistributionSourcePackage(
         self.sourcepackagename = sourcepackagename
 
     def __repr__(self):
-        return "<{} '{}'>".format(self.__class__.__name__, self.display_name)
+        return f"<{self.__class__.__name__} '{self.display_name}'>"
 
     @property
     def name(self):

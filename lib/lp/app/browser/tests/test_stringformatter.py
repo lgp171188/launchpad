@@ -829,7 +829,7 @@ class MarksDownAs(Matcher):
         self.expected_html = expected_html
 
     def __str__(self):
-        return "MarksDownAs({!r})".format(self.expected_html)
+        return f"MarksDownAs({self.expected_html!r})"
 
     def match(self, input_string):
         return Equals(self.expected_html).match(

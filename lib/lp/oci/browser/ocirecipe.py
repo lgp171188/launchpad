@@ -334,7 +334,7 @@ class OCIRecipeView(LaunchpadView):
         status["date_estimated"] = build_job.estimate
         return {
             "builds": [build_job],
-            "job_id": "build{}".format(build_job.id),
+            "job_id": f"build{build_job.id}",
             "date_created": build_job.date_created,
             "date_finished": build_job.date_finished,
             "build_status": status,

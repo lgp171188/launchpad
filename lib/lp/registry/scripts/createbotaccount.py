@@ -77,15 +77,15 @@ class CreateBotAccountScript(LaunchpadScript):
         openid_suffix = six.ensure_text(self.options.openid)
         if "/" in openid_suffix:
             raise LaunchpadScriptFailure(
-                "Invalid OpenID suffix {}".format(openid_suffix)
+                f"Invalid OpenID suffix {openid_suffix}"
             )
 
-        displayname = "\U0001f916 {}".format(username)  # U+1f916==ROBOT FACE
+        displayname = f"\U0001f916 {username}"  # U+1f916==ROBOT FACE
 
         if self.options.email:
             emailaddress = six.ensure_text(self.options.email)
         else:
-            emailaddress = "webops+{}@canonical.com".format(username)
+            emailaddress = f"webops+{username}@canonical.com"
 
         if self.options.teams:
             teamnames = [
@@ -107,16 +107,12 @@ class CreateBotAccountScript(LaunchpadScript):
 
         person = person_set.getByName(username)
         if person is None:
-            raise LaunchpadScriptFailure(
-                "Account {} does not exist".format(username)
-            )
+            raise LaunchpadScriptFailure(f"Account {username} does not exist")
         if person.account is None:
-            raise LaunchpadScriptFailure(
-                "Person {} has no Account".format(username)
-            )
+            raise LaunchpadScriptFailure(f"Person {username} has no Account")
         if person.account.openid_identifiers.count() != 1:
             raise LaunchpadScriptFailure(
-                "Account {} has invalid OpenID identifiers".format(username)
+                f"Account {username} has invalid OpenID identifiers"
             )
         openid_identifier = person.account.openid_identifiers.one()
 
@@ -142,9 +138,7 @@ class CreateBotAccountScript(LaunchpadScript):
         for teamname in teamnames:
             team = person_set.getByName(teamname)
             if team is None or not team.is_team:
-                raise LaunchpadScriptFailure(
-                    "{} is not a team".format(teamname)
-                )
+                raise LaunchpadScriptFailure(f"{teamname} is not a team")
             team.addMember(person, person)
 
         # Add ssh key
@@ -154,5 +148,5 @@ class CreateBotAccountScript(LaunchpadScript):
         ):
             sshkey_set.new(person, sshkey_text, send_notification=False)
 
-        self.logger.info("Created or updated {}".format(canonical_url(person)))
+        self.logger.info(f"Created or updated {canonical_url(person)}")
         self.txn.commit()

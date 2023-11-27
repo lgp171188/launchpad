@@ -83,7 +83,7 @@ class AccessToken(StormBase):
         elif IProduct.providedBy(target):
             self.project = target
         else:
-            raise TypeError("Unsupported target: {!r}".format(target))
+            raise TypeError(f"Unsupported target: {target!r}")
         self.scopes = scopes
         self.date_created = UTC_NOW
         self.date_expires = date_expires
@@ -194,7 +194,7 @@ class AccessTokenSet:
         elif IProduct.providedBy(target):
             clauses.append(AccessToken.project == target)
         else:
-            raise TypeError("Unsupported target: {!r}".format(target))
+            raise TypeError(f"Unsupported target: {target!r}")
 
         if visible_by_user is not None:
             # Evaluate if user owns the target (directly or indirectly).

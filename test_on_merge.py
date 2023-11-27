@@ -146,7 +146,7 @@ def run_test_process():
         "--server-args=-screen 0 1024x768x24",
         os.path.join(HERE, "bin", "test"),
     ] + sys.argv[1:]
-    print("Running command:", " ".join(shlex.quote(arg) for arg in cmd))
+    print("Running command:", shlex.join(cmd))
 
     # Run the test suite.  Make the suite the leader of a new process group
     # so that we can signal the group without signaling ourselves.

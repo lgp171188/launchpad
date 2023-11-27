@@ -45,7 +45,7 @@ class OCIRecipeUpload:
                 continue
             # Open the digest file
             digest_path = os.path.join(dirpath, "digests.json")
-            self.logger.debug("Digest path: {}".format(digest_path))
+            self.logger.debug(f"Digest path: {digest_path}")
             with open(digest_path) as digest_fp:
                 digests = json.load(digest_fp)
 
@@ -54,10 +54,8 @@ class OCIRecipeUpload:
                 for data in single_digest.values():
                     digest = data["digest"]
                     layer_id = data["layer_id"]
-                    layer_path = os.path.join(
-                        dirpath, "{}.tar.gz".format(layer_id)
-                    )
-                    self.logger.debug("Layer path: {}".format(layer_path))
+                    layer_path = os.path.join(dirpath, f"{layer_id}.tar.gz")
+                    self.logger.debug(f"Layer path: {layer_path}")
                     # If the file is already in the librarian,
                     # we can just reuse it.
                     existing_file = getUtility(IOCIFileSet).getByLayerDigest(
@@ -72,9 +70,7 @@ class OCIRecipeUpload:
                         )
                         continue
                     if not os.path.exists(layer_path):
-                        raise UploadError(
-                            "Missing layer file: {}.".format(layer_id)
-                        )
+                        raise UploadError(f"Missing layer file: {layer_id}.")
                     # Upload layer
                     libraryfile = self.librarian.create(
                         os.path.basename(layer_path),
@@ -88,7 +84,7 @@ class OCIRecipeUpload:
             for filename in filenames:
                 if filename.endswith(".json"):
                     file_path = os.path.join(dirpath, filename)
-                    self.logger.debug("JSON file: {}".format(file_path))
+                    self.logger.debug(f"JSON file: {file_path}")
                     libraryfile = self.librarian.create(
                         os.path.basename(file_path),
                         os.stat(file_path).st_size,

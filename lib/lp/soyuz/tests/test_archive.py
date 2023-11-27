@@ -3875,7 +3875,7 @@ class TestGetPublishedSourcesWebService(TestCaseWithFactory):
         # via a wrapper to improving performance (by reducing the
         # number of queries issued)
         ppa = self.createTestingPPA()
-        ppa_url = "/~{}/+archive/ubuntu/ppa".format(ppa.owner.name)
+        ppa_url = f"/~{ppa.owner.name}/+archive/ubuntu/ppa"
         webservice = webservice_for_person(
             ppa.owner, permission=OAuthPermission.READ_PRIVATE
         )

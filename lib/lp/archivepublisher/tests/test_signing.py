@@ -67,7 +67,7 @@ class SignedMatches(Matcher):
         self.expected = expected
 
     def __str__(self):
-        return "SignedMatches({})".format(self.expected)
+        return f"SignedMatches({self.expected})"
 
     def match(self, base):
         content = []

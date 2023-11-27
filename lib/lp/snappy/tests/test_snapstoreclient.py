@@ -62,7 +62,7 @@ class MacaroonsVerify(Matcher):
         self.key = key
 
     def __str__(self):
-        return "MacaroonsVerify({!r})".format(self.key)
+        return f"MacaroonsVerify({self.key!r})"
 
     def match(self, macaroons):
         mismatch = Contains("root").match(macaroons)

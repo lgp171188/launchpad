@@ -314,7 +314,7 @@ class TestBugLockFeatures(BrowserTestCase):
                         text="Change lock status",
                         attrs={
                             "class": "edit",
-                            "href": "{}/+lock-status".format(bugtask_url),
+                            "href": f"{bugtask_url}/+lock-status",
                         },
                     )
                 )
@@ -338,7 +338,7 @@ class TestBugLockFeatures(BrowserTestCase):
                     text="Change lock status",
                     attrs={
                         "class": "edit",
-                        "href": "{}/+lock-status".format(bugtask_url),
+                        "href": f"{bugtask_url}/+lock-status",
                     },
                 )
             ),

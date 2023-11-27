@@ -1030,10 +1030,7 @@ class SnapBuildChannelsField(Dict):
             else:
                 description = description_prefix + "\n"
             description += "Supported snap names: {}".format(
-                ", ".join(
-                    "'{}'".format(snap_name)
-                    for snap_name in sorted(snap_names)
-                )
+                ", ".join(f"'{snap_name}'" for snap_name in sorted(snap_names))
             )
         # TODO: custom validation that validates `_byarch` values
         # as dictionaries mapping architecture names to the current

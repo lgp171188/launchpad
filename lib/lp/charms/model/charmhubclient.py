@@ -43,15 +43,13 @@ def _get_macaroon(recipe):
     macaroon_raw = store_secrets.get("exchanged_encrypted")
     if macaroon_raw is None:
         raise UnauthorizedUploadResponse(
-            "{} is not authorized for upload to Charmhub".format(recipe)
+            f"{recipe} is not authorized for upload to Charmhub"
         )
     container = getUtility(IEncryptedContainer, "charmhub-secrets")
     try:
         return container.decrypt(macaroon_raw).decode()
     except CryptoError as e:
-        raise UnauthorizedUploadResponse(
-            "Failed to decrypt macaroon: {}".format(e)
-        )
+        raise UnauthorizedUploadResponse(f"Failed to decrypt macaroon: {e}")
 
 
 @implementer(ICharmhubClient)
@@ -213,7 +211,7 @@ class CharmhubClient:
         assert recipe.can_upload_to_store
         push_url = urlappend(
             config.charms.charmhub_url,
-            "v1/charm/{}/revisions".format(quote(recipe.store_name)),
+            f"v1/charm/{quote(recipe.store_name)}/revisions",
         )
         macaroon_raw = _get_macaroon(recipe)
         data = {"upload-id": upload_id}
@@ -225,7 +223,7 @@ class CharmhubClient:
             response = urlfetch(
                 push_url,
                 method="POST",
-                headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
+                headers={"Authorization": f"Macaroon {macaroon_raw}"},
                 json=data,
             )
             response_data = response.json()
@@ -252,7 +250,7 @@ class CharmhubClient:
         try:
             response = urlfetch(
                 status_url,
-                headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
+                headers={"Authorization": f"Macaroon {macaroon_raw}"},
             )
             response_data = response.json()
             # We're asking for a single upload ID, so the response should
@@ -288,7 +286,7 @@ class CharmhubClient:
         assert recipe.store_channels
         release_url = urlappend(
             config.charms.charmhub_url,
-            "v1/charm/{}/releases".format(quote(recipe.store_name)),
+            f"v1/charm/{quote(recipe.store_name)}/releases",
         )
         macaroon_raw = _get_macaroon(recipe)
         data = [
@@ -303,7 +301,7 @@ class CharmhubClient:
             urlfetch(
                 release_url,
                 method="POST",
-                headers={"Authorization": "Macaroon {}".format(macaroon_raw)},
+                headers={"Authorization": f"Macaroon {macaroon_raw}"},
                 json=data,
             )
         except requests.HTTPError as e:

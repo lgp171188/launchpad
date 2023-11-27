@@ -433,14 +433,14 @@ class PreviewDiff(StormBase):
                 revision_id=self.source_revision_id
             )
             if source_revision and source_revision.sequence:
-                source_rev = "r{}".format(source_revision.sequence)
+                source_rev = f"r{source_revision.sequence}"
             else:
                 source_rev = self.source_revision_id
             target_revision = bmp.target_branch.getBranchRevision(
                 revision_id=self.target_revision_id
             )
             if target_revision and target_revision.sequence:
-                target_rev = "r{}".format(target_revision.sequence)
+                target_rev = f"r{target_revision.sequence}"
             else:
                 target_rev = self.target_revision_id
         else:
@@ -451,7 +451,7 @@ class PreviewDiff(StormBase):
             source_rev = self.source_revision_id[:7]
             target_rev = self.target_revision_id[:7]
 
-        return "{} into {}".format(source_rev, target_rev)
+        return f"{source_rev} into {target_rev}"
 
     @property
     def has_conflicts(self):

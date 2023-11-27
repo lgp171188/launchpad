@@ -59,7 +59,7 @@ class MacaroonVerifies(Matcher):
         self.key = key
 
     def __str__(self):
-        return "MacaroonVerifies({!r})".format(self.key)
+        return f"MacaroonVerifies({self.key!r})"
 
     def match(self, macaroon_raw):
         macaroon = Macaroon.deserialize(macaroon_raw)
@@ -210,7 +210,7 @@ class TestCharmhubClient(TestCaseWithFactory):
     def _addCharmReleaseResponse(self, name):
         responses.add(
             "POST",
-            "http://charmhub.example/v1/charm/{}/releases".format(quote(name)),
+            f"http://charmhub.example/v1/charm/{quote(name)}/releases",
             json={},
         )
 
