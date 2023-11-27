@@ -9,6 +9,7 @@ options:
         name: launchpad_dev
         roles:
           - branch-rewrite
+          - modified-branches
           - reclaim-branch-space
           - ro
           - translationstobranch
