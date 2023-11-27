@@ -1450,7 +1450,7 @@ class TestOCIRecipeProcessors(TestCaseWithFactory):
     def test_valid_branch_format_invalid_uses_risk(self):
         for risk in ["stable", "candidate", "beta", "edge"]:
             recipe = self.factory.makeOCIRecipe()
-            path = "refs/heads/{}-20.04".format(risk)
+            path = f"refs/heads/{risk}-20.04"
             [git_ref] = self.factory.makeGitRefs(paths=[path])
             recipe.git_ref = git_ref
             self.assertFalse(recipe.is_valid_branch_format)
@@ -1611,7 +1611,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
                 [ref] = self.factory.makeGitRefs(
                     repository=repository,
                     # Needs a unique path, otherwise we can't search for it.
-                    paths=["refs/heads/v1.{}-20.04".format(str(i))],
+                    paths=[f"refs/heads/v1.{str(i)}-20.04"],
                 )
                 oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
         oci_recipe_set = getUtility(IOCIRecipeSet)

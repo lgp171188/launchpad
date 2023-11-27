@@ -9,15 +9,12 @@ __all__ = [
     "ICurrentTranslations",
 ]
 
-CurrentTranslationKey = NamedTuple(
-    "CurrentTranslationKey",
-    (
-        ("potmsgset_id", int),
-        ("potemplate_id", Optional[int]),
-        ("language_id", int),
-        ("side", int),
-    ),
-)
+
+class CurrentTranslationKey(NamedTuple):
+    potmsgset_id: int
+    potemplate_id: Optional[int]
+    language_id: int
+    side: int
 
 
 class ICurrentTranslations(Interface):

@@ -112,7 +112,7 @@ def to_swift(
             # an aborted job.
             dirnames.sort()
 
-        log.debug("Scanning {} for matching files".format(dirpath))
+        log.debug(f"Scanning {dirpath} for matching files")
 
         _filename_re = re.compile("^[0-9a-f]{2}$")
 
@@ -135,14 +135,12 @@ def to_swift(
             rel_fs_path = fs_path[len(fs_root) + 1 :]
             hex_lfc = "".join(rel_fs_path.split("/"))
             if len(hex_lfc) != 8:
-                log.warning(
-                    "Filename length fail, skipping {}".format(fs_path)
-                )
+                log.warning(f"Filename length fail, skipping {fs_path}")
                 continue
             try:
                 lfc = int(hex_lfc, 16)
             except ValueError:
-                log.warning("Invalid hex fail, skipping {}".format(fs_path))
+                log.warning(f"Invalid hex fail, skipping {fs_path}")
                 continue
             if instance_id is not None and num_instances is not None:
                 if (lfc % num_instances) != instance_id:
@@ -154,13 +152,13 @@ def to_swift(
                 log.debug("Skipping recent upload %s" % fs_path)
                 continue
 
-            log.debug("Found {} ({})".format(lfc, filename))
+            log.debug(f"Found {lfc} ({filename})")
 
             if (
                 IStandbyStore(LibraryFileContent).get(LibraryFileContent, lfc)
                 is None
             ):
-                log.info("{} exists on disk but not in the db".format(lfc))
+                log.info(f"{lfc} exists on disk but not in the db")
                 continue
 
             _to_swift_file(log, swift_connection, lfc, fs_path)
@@ -182,11 +180,11 @@ def _to_swift_file(log, swift_connection, lfc_id, fs_path):
 
     try:
         quiet_swiftclient(swift_connection.head_container, container)
-        log.debug2("{} container already exists".format(container))
+        log.debug2(f"{container} container already exists")
     except swiftclient.ClientException as x:
         if x.http_status != 404:
             raise
-        log.info("Creating {} container".format(container))
+        log.info(f"Creating {container} container")
         swift_connection.put_container(container)
 
     try:
@@ -289,7 +287,7 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
             )
             raise AssertionError("md5 mismatch")
 
-        manifest = "{}/{}/".format(quote(container), quote(obj_name))
+        manifest = f"{quote(container)}/{quote(obj_name)}/"
         manifest_headers = {"X-Object-Manifest": manifest}
         swift_connection.put_object(
             container, obj_name, b"", 0, headers=manifest_headers

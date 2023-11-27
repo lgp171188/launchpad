@@ -716,13 +716,11 @@ class TestBranchDeletionView(BrowserTestCase):
     def test_owner_can_delete(self):
         browser = self.getUserBrowser(self.branch_url, user=self.branch.owner)
         browser.open(self.branch_url)
-        self.assertIn(
-            "Delete branch {}".format(self.branch_name), browser.contents
-        )
+        self.assertIn(f"Delete branch {self.branch_name}", browser.contents)
 
         browser.getControl("Delete").click()
         self.assertIn(
-            "Branch {} deleted.".format(self.branch_unique_name),
+            f"Branch {self.branch_unique_name} deleted.",
             browser.contents,
         )
 
@@ -730,12 +728,10 @@ class TestBranchDeletionView(BrowserTestCase):
         expert = self.factory.makeRegistryExpert()
         browser = self.getUserBrowser(self.branch_url, user=expert)
         browser.open(self.branch_url)
-        self.assertIn(
-            "Delete branch {}".format(self.branch_name), browser.contents
-        )
+        self.assertIn(f"Delete branch {self.branch_name}", browser.contents)
         browser.getControl("Delete").click()
         self.assertIn(
-            "Branch {} deleted.".format(self.branch_unique_name),
+            f"Branch {self.branch_unique_name} deleted.",
             browser.contents,
         )
 
@@ -743,12 +739,10 @@ class TestBranchDeletionView(BrowserTestCase):
         commercial_admin = self.factory.makeCommercialAdmin()
         browser = self.getUserBrowser(self.branch_url, user=commercial_admin)
         browser.open(self.branch_url)
-        self.assertIn(
-            "Delete branch {}".format(self.branch_name), browser.contents
-        )
+        self.assertIn(f"Delete branch {self.branch_name}", browser.contents)
         browser.getControl("Delete").click()
         self.assertIn(
-            "Branch {} deleted.".format(self.branch_unique_name),
+            f"Branch {self.branch_unique_name} deleted.",
             browser.contents,
         )
 

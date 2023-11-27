@@ -39,13 +39,9 @@ class BugTaskCve:
         return self.bugtasks[0].bug
 
 
-BugTaskCves = NamedTuple(
-    "BugTaskCves",
-    (
-        ("open", List[BugTaskCve]),
-        ("resolved", List[BugTaskCve]),
-    ),
-)
+class BugTaskCves(NamedTuple):
+    open: List[BugTaskCve]
+    resolved: List[BugTaskCve]
 
 
 def get_cve_display_data(cve):

@@ -291,12 +291,12 @@ def get_vcs_details():
             branch_nick = subprocess.check_output(
                 ["git", "rev-parse", "--abbrev-ref", "HEAD"],
                 cwd=SCHEMA_DIR,
-                universal_newlines=True,
+                text=True,
             ).rstrip("\n")
             revision_id = subprocess.check_output(
                 ["git", "rev-parse", "HEAD"],
                 cwd=SCHEMA_DIR,
-                universal_newlines=True,
+                text=True,
             ).rstrip("\n")
         else:
             branch_nick, revision_id = None, None

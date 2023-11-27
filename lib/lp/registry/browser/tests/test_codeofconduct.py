@@ -182,7 +182,7 @@ class TestAffirmCodeOfConductView(BrowserTestCase):
         browser.getControl("I agree to this Code of Conduct").click()
         browser.getControl("Affirm").click()
         self.assertEqual(
-            "http://launchpad.test/~{}/+codesofconduct".format(name),
+            f"http://launchpad.test/~{name}/+codesofconduct",
             browser.url,
         )
-        self.assertIn("affirmed by {}".format(displayname), browser.contents)
+        self.assertIn(f"affirmed by {displayname}", browser.contents)

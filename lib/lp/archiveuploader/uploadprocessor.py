@@ -730,9 +730,7 @@ class BuildUploadHandler(UploadHandler):
         if logger is None:
             logger = self.processor.log
         try:
-            logger.info(
-                "Processing OCI Image upload {}".format(self.upload_path)
-            )
+            logger.info(f"Processing OCI Image upload {self.upload_path}")
             OCIRecipeUpload(self.upload_path, logger).process(self.build)
 
             if self.processor.dry_run:

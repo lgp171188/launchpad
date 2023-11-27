@@ -111,10 +111,10 @@ class OCIRegistryClient:
         # Check if it already exists
         try:
             head_response = http_client.requestPath(
-                "/blobs/{}".format(digest), method="HEAD"
+                f"/blobs/{digest}", method="HEAD"
             )
             if head_response.status_code == 200:
-                log.info("{} already found".format(digest))
+                log.info(f"{digest} already found")
                 return
         except HTTPError as http_error:
             # A 404 is fine, we're about to upload the layer anyway
@@ -222,7 +222,7 @@ class OCIRegistryClient:
             "config": {
                 "mediaType": "application/vnd.docker.container.image.v1+json",
                 "size": len(config_json),
-                "digest": "sha256:{}".format(config_sha),
+                "digest": f"sha256:{config_sha}",
             },
             "layers": [],
         }
@@ -305,7 +305,7 @@ class OCIRegistryClient:
         """Get the current manifest for the given push rule. If manifest
         doesn't exist, raises HTTPError.
         """
-        url = "/manifests/{}".format(tag)
+        url = f"/manifests/{tag}"
         accept = "application/vnd.docker.distribution.manifest.list.v2+json"
         response = http_client.requestPath(
             url, method="GET", headers={"Accept": accept}
@@ -330,14 +330,14 @@ class OCIRegistryClient:
         digest = None
         data = json.dumps(registry_manifest).encode("UTF-8")
         if tag is None:
-            tag = "sha256:{}".format(hashlib.sha256(data).hexdigest())
+            tag = f"sha256:{hashlib.sha256(data).hexdigest()}"
         size = len(data)
         content_type = registry_manifest.get(
             "mediaType", "application/vnd.docker.distribution.manifest.v2+json"
         )
         try:
             manifest_response = http_client.requestPath(
-                "/manifests/{}".format(tag),
+                f"/manifests/{tag}",
                 data=data,
                 headers={"Content-Type": content_type},
                 method="PUT",
@@ -430,7 +430,7 @@ class OCIRegistryClient:
             config_json = json.dumps(config).encode("UTF-8")
             config_sha = hashlib.sha256(config_json).hexdigest()
             cls._upload(
-                "sha256:{}".format(config_sha),
+                f"sha256:{config_sha}",
                 push_rule,
                 BytesIO(config_json),
                 len(config_json),
@@ -578,11 +578,9 @@ class OCIRegistryClient:
         for build in uploaded_builds:
             build_manifest = build_request.uploaded_manifests.get(build.id)
             if not build_manifest:
-                log.info(
-                    "No build manifest found for build {}".format(build.id)
-                )
+                log.info(f"No build manifest found for build {build.id}")
                 continue
-            log.info("Build manifest found for build {}".format(build.id))
+            log.info(f"Build manifest found for build {build.id}")
             digest = build_manifest["digest"]
             size = build_manifest["size"]
             arch = build.distro_arch_series.architecturetag
@@ -697,7 +695,7 @@ class RegistryHTTPClient:
     def api_url(self):
         """Returns the base API URL for this registry."""
         push_rule = self.push_rule
-        return "{}/v2/{}".format(push_rule.registry_url, push_rule.image_name)
+        return f"{push_rule.registry_url}/v2/{push_rule.image_name}"
 
     def request(self, url, *args, **request_kwargs):
         username, password = self.credentials
@@ -707,7 +705,7 @@ class RegistryHTTPClient:
 
     def requestPath(self, path, *args, **request_kwargs):
         """Shortcut to do a request to {self.api_url}/{path}."""
-        url = "{}{}".format(self.api_url, path)
+        url = f"{self.api_url}{path}"
         return self.request(url, *args, **request_kwargs)
 
     @classmethod
@@ -720,7 +718,7 @@ class RegistryHTTPClient:
         if domain.endswith(".amazonaws.com"):
             return AWSRegistryHTTPClient(push_rule)
         try:
-            proxy_urlfetch("{}/v2/".format(push_rule.registry_url))
+            proxy_urlfetch(f"{push_rule.registry_url}/v2/")
             # No authorization error? Just return the basic RegistryHTTPClient.
             return RegistryHTTPClient(push_rule)
         except HTTPError as e:

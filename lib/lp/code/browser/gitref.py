@@ -120,7 +120,7 @@ class GitRefView(
         """The git+ssh:// URL for this branch, adjusted for this user."""
         base_url = urlsplit(self.context.repository.git_ssh_url)
         url = list(base_url)
-        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        url[1] = f"{self.user.name}@{base_url.hostname}"
         return urlunsplit(url)
 
     @property
@@ -138,7 +138,7 @@ class GitRefView(
             config.codehosting.git_ssh_root, contributor.shortened_path
         )
         url = list(urlsplit(base_url))
-        url[1] = "{}@{}".format(self.user.name, url[1])
+        url[1] = f"{self.user.name}@{url[1]}"
         return urlunsplit(url)
 
     @property
@@ -461,7 +461,7 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             self.addError(str(error))
 
     def _validateRef(self, data, name):
-        ref = data["{}_git_ref".format(name)]
+        ref = data[f"{name}_git_ref"]
         if ref == self.context:
             self.setFieldError(
                 "%s_git_ref" % name,

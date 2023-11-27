@@ -550,10 +550,10 @@ class FTPArchiveHandler:
             self._config.overrideroot,
             "override.%s.extra.%s" % (suite, component),
         )
-        ef_override_new = "{}.new".format(ef_override)
+        ef_override_new = f"{ef_override}.new"
         # Create the files as .new and then move into place to prevent
         # race conditions with other processes handling these files
-        main_override_new = "{}.new".format(main_override)
+        main_override_new = f"{main_override}.new"
         source_override = os.path.join(
             self._config.overrideroot,
             "override.%s.%s.src" % (suite, component),
@@ -632,7 +632,7 @@ class FTPArchiveHandler:
 
         def _outputSimpleOverrides(filename, overrides):
             # Write to a different file, then move into place
-            filename_new = "{}.new".format(filename)
+            filename_new = f"{filename}.new"
             sf = open(filename_new, "w")
             for tup in overrides:
                 sf.write("\t".join(tup))
@@ -850,7 +850,7 @@ class FTPArchiveHandler:
             # Prevent race conditions with other processes handling these
             # files, create as .new and then move into place
             new_path = os.path.join(
-                self._config.overrideroot, "{}.new".format(filename)
+                self._config.overrideroot, f"{filename}.new"
             )
             final_path = os.path.join(self._config.overrideroot, filename)
             with open(new_path, "w") as f:

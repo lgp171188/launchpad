@@ -1288,13 +1288,13 @@ class BugTextView(LaunchpadView):
         """Return a text representation of a bug attachment."""
         if attachment.url:
             if attachment.title != attachment.url:
-                return "{}: {}".format(attachment.title, attachment.url)
+                return f"{attachment.title}: {attachment.url}"
             return attachment.url
         elif attachment.libraryfile:
             mime_type = normalize_mime_type.sub(
                 " ", attachment.libraryfile.mimetype
             )
-            return "{} {}".format(attachment.displayed_url, mime_type)
+            return f"{attachment.displayed_url} {mime_type}"
         raise AssertionError()
 
     def comment_text(self):

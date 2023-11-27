@@ -345,10 +345,10 @@ class TestCandidCallbackView(TestCaseWithFactory):
         browser = self.getUserBrowser(user=person)
         browser.addHeader(
             "Cookie",
-            "{}={}".format(config.launchpad_session.cookie, session.client_id),
+            f"{config.launchpad_session.cookie}={session.client_id}",
         )
         browser.open(
-            "http://launchpad.test/+candid-callback?{}".format(urlencode(form))
+            f"http://launchpad.test/+candid-callback?{urlencode(form)}"
         )
         return request, browser
 

@@ -98,7 +98,7 @@ class ProxyURLMatcher(MatchesStructure):
     def __init__(self, job, now):
         super().__init__(
             scheme=Equals("http"),
-            username=Equals("{}-{}".format(job.build.build_cookie, int(now))),
+            username=Equals(f"{job.build.build_cookie}-{int(now)}"),
             password=HasLength(32),
             hostname=Equals(config.builddmaster.builder_proxy_host),
             port=Equals(config.builddmaster.builder_proxy_port),

@@ -119,12 +119,12 @@ def prune_old_files_from_swift(options, container_name, object_dir, suffix):
         deployed_mtime = None
         for stats in swift.list(
             container=container_name,
-            options={"prefix": "{}/".format(object_dir)},
+            options={"prefix": f"{object_dir}/"},
         ):
             if not stats["success"]:
                 raise stats["error"]
             for item in stats["listing"]:
-                if not item["name"].startswith("{}/".format(object_dir)):
+                if not item["name"].startswith(f"{object_dir}/"):
                     continue
                 # Only consider pruning builds that have the given suffix.
                 # (For example, if we're publishing a build with the suffix
@@ -202,7 +202,7 @@ def main():
             if key.startswith("OS_"):
                 if key not in safe_keys:
                     value = "<redacted>"
-                print("{}: {}".format(key, value))
+                print(f"{key}: {value}")
 
     options = vars(args)
     process_options(options)

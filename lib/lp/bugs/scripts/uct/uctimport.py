@@ -190,7 +190,7 @@ class UCTImporter:
             datechanged=UTC_NOW,
             person=self.bug_importer,
             whatchanged="bug",
-            message="UCT CVE entry {}".format(cve.sequence),
+            message=f"UCT CVE entry {cve.sequence}",
         )
 
         # Create the Vulnerabilities
@@ -435,9 +435,9 @@ class UCTImporter:
     def _update_patches(self, bug: BugModel, patch_urls: List[CVE.PatchURL]):
         attachments_by_url = {a.url: a for a in bug.attachments if a.url}
         for patch_url in patch_urls:
-            title = "{}/{}".format(patch_url.package_name.name, patch_url.type)
+            title = f"{patch_url.package_name.name}/{patch_url.type}"
             if patch_url.notes:
-                title = "{}/{}".format(title, patch_url.notes)
+                title = f"{title}/{patch_url.notes}"
             if patch_url in attachments_by_url:
                 attachment = removeSecurityProxy(
                     attachments_by_url[patch_url.url]

@@ -13,7 +13,7 @@ from sys import stderr, stdout
 def get_main_worktree(branch_dir):
     """Return the main worktree directory, otherwise `None`."""
     worktree_list = subprocess.check_output(
-        ["git", "worktree", "list", "--porcelain"], universal_newlines=True
+        ["git", "worktree", "list", "--porcelain"], text=True
     )
     main_worktree = worktree_list.splitlines()[0].split(" ", 1)[1]
     if realpath(main_worktree) != realpath(branch_dir):

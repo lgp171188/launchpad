@@ -29,7 +29,7 @@ def main(path, minimumID=0):
                 continue
             filename = os.path.join(dirpath, filename)
             md5sum = subprocess.check_output(
-                ["md5sum", filename], universal_newlines=True
+                ["md5sum", filename], text=True
             ).split(" ", 1)[0]
             yield databaseID, md5sum
 

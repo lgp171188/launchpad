@@ -13,6 +13,7 @@ from typing import Any, Dict, Generator, List, Sequence, Union
 from typing_extensions import TypedDict
 from zope.interface import Attribute, Interface
 
+
 # XXX cjwatson 2023-01-04: This should ultimately end up as a protocol
 # specification maintained in launchpad-buildd as (probably) pydantic
 # models, but this is difficult while Launchpad runs on Python < 3.7.
@@ -23,129 +24,124 @@ from zope.interface import Attribute, Interface
 # on Python 3.5.  In the meantime, job type constraints are noted in the
 # comments with the type name (i.e. `IBuildFarmJobBehaviour.builder_type`)
 # in brackets.
-BuildArgs = TypedDict(
-    "BuildArgs",
-    {
-        # True if this build should build architecture-independent packages
-        # as well as architecture-dependent packages [binarypackage].
-        "arch_indep": bool,
-        # The architecture tag to build for.
-        "arch_tag": str,
-        # Whether this is a build in a private archive.  (This causes URLs
-        # in the build log to be sanitized.)
-        "archive_private": bool,
-        # The name of the target archive's purpose, e.g. PRIMARY or PPA
-        # [binarypackage; required for sourcepackagerecipe].
-        "archive_purpose": str,
-        # A list of sources.list lines to use for this build.
-        "archives": List[str],
-        # The email address of the person who requested the recipe build
-        # [required for sourcepackagerecipe].
-        "author_email": str,
-        # The name of the person who requested the recipe build [required
-        # for sourcepackagerecipe].
-        "author_name": str,
-        # The URL of the Bazaar branch to build from [charm, ci, oci, snap,
-        # translation-templates].
-        "branch": str,
-        # The URL of the Bazaar branch to build from
-        # [translation-templates].  Deprecated alias for branch.
-        "branch_url": str,
-        # ARG variables to pass when building this OCI recipe [oci].
-        "build_args": Dict[str, str],
-        # If True, this build should also build debug symbol packages
-        # [binarypackage].
-        "build_debug_symbols": bool,
-        # The relative path to the build file within this recipe's branch
-        # [oci].
-        "build_file": str,
-        # The subdirectory within this recipe's branch containing the build
-        # file [charm, oci].
-        "build_path": str,
-        # The ID of the build request that prompted this build [snap].
-        "build_request_id": int,
-        # The RFC3339-formatted time when the build request that prompted
-        # this build was made [snap].
-        "build_request_timestamp": str,
-        # If True, also build a tarball containing all source code [snap].
-        "build_source_tarball": bool,
-        # The URL of this build.
-        "build_url": str,
-        # Builder resource tags required by this build farm job.
-        "builder_constraints": Sequence[str],
-        # Source snap channels to use for this build [charm, ci, snap].
-        "channels": Dict[str, str],
-        # The date stamp to set in the built image [livefs].
-        "datestamp": str,
-        # A dictionary of additional environment variables to pass to the CI
-        # build runner [ci].
-        "environment_variables": Dict[str, str],
-        # If True, this build is running in an ephemeral environment; skip
-        # final cleanup steps.
-        "fast_cleanup": bool,
-        # True if this build is for a Git-based source package recipe,
-        # otherwise False [sourcepackagerecipe].
-        "git": bool,
-        # The Git branch path to build from [charm, ci, oci, snap,
-        # translation-templates].
-        "git_path": str,
-        # The URL of the Git repository to build from [charm, ci, oci, snap,
-        # translation-templates].
-        "git_repository": str,
-        # A list of stages in this build's configured pipeline [required for
-        # ci].
-        "jobs": List[str],
-        # Dictionary of additional metadata to pass to the build [oci].
-        # XXX cjwatson 2023-01-04: This doesn't appear to be used by
-        # launchpad-buildd at the moment.
-        "metadata": Dict[str, Any],
-        # The name of the recipe [required for charm, oci, snap].
-        "name": str,
-        # The name of the component to build for [required for
-        # binarypackage, sourcepackagerecipe].  This argument has a strange
-        # name due to a historical in-joke: because components form a sort
-        # of layered structure where "outer" components like universe
-        # include "inner" components like main, the component structure was
-        # at one point referred to as the "ogre model" (from the movie
-        # "Shrek": "Ogres have layers.  Onions have layers.  You get it?  We
-        # both have layers.").
-        "ogrecomponent": str,
-        # A list of sources.list lines for the CI build runner to use [ci].
-        "package_repositories": List[str],
-        # A dictionary of plugin settings to pass to the CI build runner
-        # [ci].
-        "plugin_settings": Dict[str, str],
-        # The lower-cased name of the pocket to build from [required for
-        # livefs].
-        "pocket": str,
-        # If True, the source of this build is private [snap; also passed
-        # for charm and ci but currently unused there].
-        "private": bool,
-        # The URL of the proxy for internet access [charm, ci, oci, snap].
-        "proxy_url": str,
-        # The text of the recipe to build [required for
-        # sourcepackagerecipe].
-        "recipe_text": str,
-        # The URL for revoking proxy authorization tokens [charm, ci, oci,
-        # snap].
-        "revocation_endpoint": str,
-        # If True, scan job output for malware [ci].
-        "scan_malware": bool,
-        # A dictionary of secrets to pass to the CI build runner [ci].
-        "secrets": Dict[str, str],
-        # The name of the series to build for [required for all types].
-        "series": str,
-        # The name of the suite to build for [required for binarypackage,
-        # sourcepackagerecipe].
-        "suite": str,
-        # A list of target architecture tags to build for [snap].
-        "target_architectures": List[str],
-        # A list of base64-encoded public keys for apt archives used by this
-        # build.
-        "trusted_keys": List[str],
-    },
-    total=False,
-)
+class BuildArgs(TypedDict, total=False):
+    # True if this build should build architecture-independent packages
+    # as well as architecture-dependent packages [binarypackage].
+    arch_indep: bool
+    # The architecture tag to build for.
+    arch_tag: str
+    # Whether this is a build in a private archive.  (This causes URLs
+    # in the build log to be sanitized.)
+    archive_private: bool
+    # The name of the target archive's purpose, e.g. PRIMARY or PPA
+    # [binarypackage; required for sourcepackagerecipe].
+    archive_purpose: str
+    # A list of sources.list lines to use for this build.
+    archives: List[str]
+    # The email address of the person who requested the recipe build
+    # [required for sourcepackagerecipe].
+    author_email: str
+    # The name of the person who requested the recipe build [required
+    # for sourcepackagerecipe].
+    author_name: str
+    # The URL of the Bazaar branch to build from [charm, ci, oci, snap,
+    # translation-templates].
+    branch: str
+    # The URL of the Bazaar branch to build from
+    # [translation-templates].  Deprecated alias for branch.
+    branch_url: str
+    # ARG variables to pass when building this OCI recipe [oci].
+    build_args: Dict[str, str]
+    # If True, this build should also build debug symbol packages
+    # [binarypackage].
+    build_debug_symbols: bool
+    # The relative path to the build file within this recipe's branch
+    # [oci].
+    build_file: str
+    # The subdirectory within this recipe's branch containing the build
+    # file [charm, oci].
+    build_path: str
+    # The ID of the build request that prompted this build [snap].
+    build_request_id: int
+    # The RFC3339-formatted time when the build request that prompted
+    # this build was made [snap].
+    build_request_timestamp: str
+    # If True, also build a tarball containing all source code [snap].
+    build_source_tarball: bool
+    # The URL of this build.
+    build_url: str
+    # Builder resource tags required by this build farm job.
+    builder_constraints: Sequence[str]
+    # Source snap channels to use for this build [charm, ci, snap].
+    channels: Dict[str, str]
+    # The date stamp to set in the built image [livefs].
+    datestamp: str
+    # A dictionary of additional environment variables to pass to the CI
+    # build runner [ci].
+    environment_variables: Dict[str, str]
+    # If True, this build is running in an ephemeral environment; skip
+    # final cleanup steps.
+    fast_cleanup: bool
+    # True if this build is for a Git-based source package recipe,
+    # otherwise False [sourcepackagerecipe].
+    git: bool
+    # The Git branch path to build from [charm, ci, oci, snap,
+    # translation-templates].
+    git_path: str
+    # The URL of the Git repository to build from [charm, ci, oci, snap,
+    # translation-templates].
+    git_repository: str
+    # A list of stages in this build's configured pipeline [required for
+    # ci].
+    jobs: List[str]
+    # Dictionary of additional metadata to pass to the build [oci].
+    # XXX cjwatson 2023-01-04: This doesn't appear to be used by
+    # launchpad-buildd at the moment.
+    metadata: Dict[str, Any]
+    # The name of the recipe [required for charm, oci, snap].
+    name: str
+    # The name of the component to build for [required for
+    # binarypackage, sourcepackagerecipe].  This argument has a strange
+    # name due to a historical in-joke: because components form a sort
+    # of layered structure where "outer" components like universe
+    # include "inner" components like main, the component structure was
+    # at one point referred to as the "ogre model" (from the movie
+    # "Shrek": "Ogres have layers.  Onions have layers.  You get it?  We
+    # both have layers.").
+    ogrecomponent: str
+    # A list of sources.list lines for the CI build runner to use [ci].
+    package_repositories: List[str]
+    # A dictionary of plugin settings to pass to the CI build runner
+    # [ci].
+    plugin_settings: Dict[str, str]
+    # The lower-cased name of the pocket to build from [required for
+    # livefs].
+    pocket: str
+    # If True, the source of this build is private [snap; also passed
+    # for charm and ci but currently unused there].
+    private: bool
+    # The URL of the proxy for internet access [charm, ci, oci, snap].
+    proxy_url: str
+    # The text of the recipe to build [required for
+    # sourcepackagerecipe].
+    recipe_text: str
+    # The URL for revoking proxy authorization tokens [charm, ci, oci,
+    # snap].
+    revocation_endpoint: str
+    # If True, scan job output for malware [ci].
+    scan_malware: bool
+    # A dictionary of secrets to pass to the CI build runner [ci].
+    secrets: Dict[str, str]
+    # The name of the series to build for [required for all types].
+    series: str
+    # The name of the suite to build for [required for binarypackage,
+    # sourcepackagerecipe].
+    suite: str
+    # A list of target architecture tags to build for [snap].
+    target_architectures: List[str]
+    # A list of base64-encoded public keys for apt archives used by this
+    # build.
+    trusted_keys: List[str]
 
 
 class IBuildFarmJobBehaviour(Interface):

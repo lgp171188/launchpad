@@ -55,7 +55,7 @@ def load_configuration(configuration_file):
     for required_key in "pipeline", "jobs":
         if required_key not in content:
             raise LPCIConfigurationError(
-                "Configuration file does not declare '{}'".format(required_key)
+                f"Configuration file does not declare '{required_key}'"
             )
     # normalize each element of `pipeline` into a list
     expanded_values = content.copy()

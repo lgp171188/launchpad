@@ -425,7 +425,7 @@ class TestTimeout(TestCase):
         url = "ftp://localhost/"
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for {!r}".format(url), str(e)
+            f"No connection adapters were found for {url!r}", str(e)
         )
 
     def test_urlfetch_supports_ftp_urls_if_allow_ftp(self):
@@ -471,7 +471,7 @@ class TestTimeout(TestCase):
         url = "file://" + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
-            "No connection adapters were found for {!r}".format(url), str(e)
+            f"No connection adapters were found for {url!r}", str(e)
         )
 
     def test_urlfetch_supports_file_urls_if_allow_file(self):

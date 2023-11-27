@@ -109,7 +109,7 @@ class TestDatabaseErrorViews(TestCase):
         else:
             self.add_retry_failure_details(bouncer)
             raise TimeoutException(
-                "Launchpad did not come up after {} attempts.".format(retries)
+                f"Launchpad did not come up after {retries} attempts."
             )
 
     def test_disconnectionerror_view_integration(self):

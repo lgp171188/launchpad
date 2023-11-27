@@ -599,9 +599,7 @@ class UnreferencedContentPruner:
                         swift.quiet_swiftclient(
                             swift_connection.delete_object, container, name
                         )
-                        removed.append(
-                            "Swift {}".format(connection_pool.os_auth_url)
-                        )
+                        removed.append(f"Swift {connection_pool.os_auth_url}")
                     except swiftclient.ClientException as x:
                         if x.http_status != 404:
                             log.exception(

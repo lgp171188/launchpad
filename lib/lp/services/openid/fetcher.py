@@ -38,7 +38,7 @@ def set_default_openid_fetcher():
             instance_name = "development"
         else:
             instance_name = config.instance_name
-        cert_path = "configs/{}/launchpad.crt".format(instance_name)
+        cert_path = f"configs/{instance_name}/launchpad.crt"
         cafile = os.path.join(config.root, cert_path)
         fetcher.urlopen = partial(urlopen, cafile=cafile)
     setDefaultFetcher(fetcher)

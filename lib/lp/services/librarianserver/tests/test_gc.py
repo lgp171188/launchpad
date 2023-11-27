@@ -79,7 +79,7 @@ class TestLibrarianGarbageCollectionBase:
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                content_bytes = "{} content".format(content.id).encode("UTF-8")
+                content_bytes = f"{content.id} content".encode()
                 with open(path, "wb") as f:
                     f.write(content_bytes)
                 os.utime(path, (0, 0))  # Ancient past, never considered new.

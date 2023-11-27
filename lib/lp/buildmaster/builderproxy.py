@@ -76,7 +76,7 @@ class BuilderProxyMixin:
         proxy_username = "{build_id}-{timestamp}".format(
             build_id=self.build.build_cookie, timestamp=timestamp
         )
-        auth_string = "{}:{}".format(admin_username, secret).strip()
+        auth_string = f"{admin_username}:{secret}".strip()
         auth_header = b"Basic " + base64.b64encode(auth_string.encode("ASCII"))
 
         token = yield self._worker.process_pool.doWork(

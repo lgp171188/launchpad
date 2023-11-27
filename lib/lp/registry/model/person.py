@@ -4890,7 +4890,7 @@ class PersonSet:
 
         # We should only have one result
         if email_results.count() > 1:
-            raise ValueError("Multiple records for {}".format(email))
+            raise ValueError(f"Multiple records for {email}")
 
         # If we don't have any results at all, we have no data!
         if email_results.is_empty():
@@ -5055,7 +5055,7 @@ class PersonSet:
             query_arguments = {
                 "fingerprint": "on",
                 "op": "index",
-                "search": "0x{}".format(key.fingerprint),
+                "search": f"0x{key.fingerprint}",
             }
             req.prepare_url(keyserver_url, query_arguments)
             urls.append(req.url)

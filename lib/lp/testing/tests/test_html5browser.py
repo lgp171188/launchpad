@@ -51,7 +51,7 @@ class TestBrowser(TestCase):
         """
         )
         self.file.flush()
-        self.file_uri = "file://{}".format(self.file.name)
+        self.file_uri = f"file://{self.file.name}"
         self.addCleanup(self.file.close)
 
     def test_load_test_results(self):

@@ -2807,7 +2807,7 @@ class BugActivityItem:
                     "Metadata changes locked{}and " "limited to project staff"
                 )
                 if self.message:
-                    reason = " ({}) ".format(html_escape(self.message))
+                    reason = f" ({html_escape(self.message)}) "
                 return detail.format(reason)
             else:
                 return "Metadata changes unlocked"
@@ -2819,7 +2819,7 @@ class BugActivityItem:
                 )
                 pass
             elif self.newvalue != "unset":
-                return "{}".format(self.newvalue)
+                return f"{self.newvalue}"
             else:
                 return "Unset"
         elif attribute == "milestone":

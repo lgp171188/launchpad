@@ -47,5 +47,5 @@ class SuspendBotAccountScript(LaunchpadScript):
             "Suspended by suspend-bot-account.py",
         )
 
-        self.logger.info("Suspended {}".format(canonical_url(person)))
+        self.logger.info(f"Suspended {canonical_url(person)}")
         self.txn.commit()

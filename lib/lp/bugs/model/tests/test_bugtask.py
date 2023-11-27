@@ -580,7 +580,7 @@ class TestEditingBugTask(TestCaseWithFactory):
         user = self.factory.makePerson()
         bug = self.factory.makeBug(owner=user)
         task = bug.default_bugtask
-        whatchanged = "{}: importance explanation".format(task.bugtargetname)
+        whatchanged = f"{task.bugtargetname}: importance explanation"
 
         self.assertEqual(1, bug.activity.count())
 
@@ -632,7 +632,7 @@ class TestEditingBugTask(TestCaseWithFactory):
         user = self.factory.makePerson()
         bug = self.factory.makeBug(owner=user)
         task = bug.default_bugtask
-        whatchanged = "{}: status explanation".format(task.bugtargetname)
+        whatchanged = f"{task.bugtargetname}: status explanation"
 
         self.assertEqual(1, bug.activity.count())
 

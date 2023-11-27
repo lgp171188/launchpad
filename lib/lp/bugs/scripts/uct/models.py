@@ -54,13 +54,9 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-CVSS = NamedTuple(
-    "CVSS",
-    (
-        ("authority", str),
-        ("vector_string", str),
-    ),
-)
+class CVSS(NamedTuple):
+    authority: str
+    vector_string: str
 
 
 class UCTRecord:
@@ -88,34 +84,22 @@ class UCTRecord:
         NEEDED = "needed"
         PENDING = "pending"
 
-    SeriesPackageStatus = NamedTuple(
-        "SeriesPackageStatus",
-        (
-            ("series", str),
-            ("status", PackageStatus),
-            ("reason", str),
-            ("priority", Optional[Priority]),
-        ),
-    )
+    class SeriesPackageStatus(NamedTuple):
+        series: str
+        status: "UCTRecord.PackageStatus"
+        reason: str
+        priority: Optional["UCTRecord.Priority"]
 
-    Patch = NamedTuple(
-        "Patch",
-        (
-            ("patch_type", str),
-            ("entry", str),
-        ),
-    )
+    class Patch(NamedTuple):
+        patch_type: str
+        entry: str
 
-    Package = NamedTuple(
-        "Package",
-        (
-            ("name", str),
-            ("statuses", List[SeriesPackageStatus]),
-            ("priority", Optional[Priority]),
-            ("tags", Set[str]),
-            ("patches", List[Patch]),
-        ),
-    )
+    class Package(NamedTuple):
+        name: str
+        statuses: List["UCTRecord.SeriesPackageStatus"]
+        priority: Optional["UCTRecord.Priority"]
+        tags: Set[str]
+        patches: List["UCTRecord.Patch"]
 
     def __init__(
         self,
@@ -205,7 +189,7 @@ class UCTRecord:
                 )
             package_priority = cls._pop_cve_property(
                 cve_data,
-                "Priority_{package}".format(package=package),
+                f"Priority_{package}",
                 required=False,
             )
             packages.append(
@@ -285,9 +269,7 @@ class UCTRecord:
 
         # make sure all fields are consumed
         if cve_data:
-            raise AssertionError(
-                "not all fields are consumed: {}".format(cve_data)
-            )
+            raise AssertionError(f"not all fields are consumed: {cve_data}")
 
         return entry
 
@@ -341,17 +323,15 @@ class UCTRecord:
         for package in self.packages:
             output.write("\n")
             patches = [
-                "{}: {}".format(patch.patch_type, patch.entry)
+                f"{patch.patch_type}: {patch.entry}"
                 for patch in package.patches
             ]
-            self._write_field(
-                "Patches_{}".format(package.name), patches, output
-            )
+            self._write_field(f"Patches_{package.name}", patches, output)
             for status in package.statuses:
                 self._write_field(
-                    "{}_{}".format(status.series, package.name),
+                    f"{status.series}_{package.name}",
                     (
-                        "{} ({})".format(status.status.value, status.reason)
+                        f"{status.status.value} ({status.reason})"
                         if status.reason
                         else status.status.value
                     ),
@@ -359,21 +339,21 @@ class UCTRecord:
                 )
             if package.priority:
                 self._write_field(
-                    "Priority_{}".format(package.name),
+                    f"Priority_{package.name}",
                     package.priority.value,
                     output,
                 )
             for status in package.statuses:
                 if status.priority:
                     self._write_field(
-                        "Priority_{}_{}".format(package.name, status.series),
+                        f"Priority_{package.name}_{status.series}",
                         status.priority.value,
                         output,
                     )
 
             if package.tags:
                 self._write_field(
-                    "Tags_{}".format(package.name),
+                    f"Tags_{package.name}",
                     " ".join(package.tags),
                     output,
                 )
@@ -399,13 +379,13 @@ class UCTRecord:
     ) -> None:
         if isinstance(value, str):
             if value:
-                output.write("{}: {}\n".format(name, value))
+                output.write(f"{name}: {value}\n")
             else:
-                output.write("{}:\n".format(name))
+                output.write(f"{name}:\n")
         elif isinstance(value, list):
-            output.write("{}:\n".format(name))
+            output.write(f"{name}:\n")
             for line in value:
-                output.write(" {}\n".format(line))
+                output.write(f" {line}\n")
         else:
             raise AssertionError()
 
@@ -418,7 +398,7 @@ class UCTRecord:
         lines = []
         for author, text in notes:
             note_lines = text.split("\n")
-            lines.append("{}> {}".format(author, note_lines[0]))
+            lines.append(f"{author}> {note_lines[0]}")
             for line in note_lines[1:]:
                 lines.append("  " + line)
         return "\n".join(lines)
@@ -431,46 +411,30 @@ class CVE:
     Do not confuse this with `Cve` database model.
     """
 
-    DistroPackage = NamedTuple(
-        "DistroPackage",
-        (
-            ("target", DistributionSourcePackage),
-            ("package_name", SourcePackageName),
-            ("importance", Optional[BugTaskImportance]),
-        ),
-    )
+    class DistroPackage(NamedTuple):
+        target: DistributionSourcePackage
+        package_name: SourcePackageName
+        importance: Optional[BugTaskImportance]
 
-    SeriesPackage = NamedTuple(
-        "SeriesPackage",
-        (
-            ("target", SourcePackage),
-            ("package_name", SourcePackageName),
-            ("importance", Optional[BugTaskImportance]),
-            ("status", BugTaskStatus),
-            ("status_explanation", str),
-        ),
-    )
+    class SeriesPackage(NamedTuple):
+        target: SourcePackage
+        package_name: SourcePackageName
+        importance: Optional[BugTaskImportance]
+        status: BugTaskStatus
+        status_explanation: str
 
-    UpstreamPackage = NamedTuple(
-        "UpstreamPackage",
-        (
-            ("target", Product),
-            ("package_name", SourcePackageName),
-            ("importance", Optional[BugTaskImportance]),
-            ("status", BugTaskStatus),
-            ("status_explanation", str),
-        ),
-    )
+    class UpstreamPackage(NamedTuple):
+        target: Product
+        package_name: SourcePackageName
+        importance: Optional[BugTaskImportance]
+        status: BugTaskStatus
+        status_explanation: str
 
-    PatchURL = NamedTuple(
-        "PatchURL",
-        (
-            ("package_name", SourcePackageName),
-            ("type", str),
-            ("url", str),
-            ("notes", Optional[str]),
-        ),
-    )
+    class PatchURL(NamedTuple):
+        package_name: SourcePackageName
+        type: str
+        url: str
+        notes: Optional[str]
 
     # Example:
     # https://github.com/389ds/389-ds-base/commit/123 (1.4.4)
@@ -731,7 +695,7 @@ class CVE:
                 if distro_name != "ubuntu":
                     if distro_name == "ubuntu-esm":
                         distro_name = "esm"
-                    series_name = "{}/{}".format(series_name, distro_name)
+                    series_name = f"{series_name}/{distro_name}"
                 statuses.append(
                     UCTRecord.SeriesPackageStatus(
                         series=series_name,
@@ -789,7 +753,7 @@ class CVE:
         for patch_url in self.patch_urls:
             entry = patch_url.url
             if patch_url.notes:
-                entry = "{} ({})".format(entry, patch_url.notes)
+                entry = f"{entry} ({patch_url.notes})"
             packages_by_name[patch_url.package_name.name].patches.append(
                 UCTRecord.Patch(
                     patch_type=patch_url.type,
