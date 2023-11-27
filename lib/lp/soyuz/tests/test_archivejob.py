@@ -1660,8 +1660,7 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
         # series are selected.
         #
         # The build distribution is always Ubuntu for now, but the target
-        # distribution may differ.  Unfortunately, this currently requires
-        # matching on series names.
+        # distribution may differ.
         logger = self.useFixture(FakeLogger())
         target_distribution = self.factory.makeDistribution()
         archive = self.factory.makeArchive(
@@ -1672,13 +1671,16 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             self.factory.makeUbuntuDistroSeries() for _ in range(2)
         ]
         target_distroserieses = [
-            self.factory.makeDistroSeries(
-                distribution=target_distribution,
-                name=ubuntu_distroseries.name,
-                version=ubuntu_distroseries.version,
-            )
+            self.factory.makeDistroSeries(distribution=target_distribution)
             for ubuntu_distroseries in ubuntu_distroserieses
         ]
+        for ubuntu_distroseries, target_distroseries in zip(
+            ubuntu_distroserieses, target_distroserieses
+        ):
+            self.factory.makeDistroSeriesParent(
+                parent_series=ubuntu_distroseries,
+                derived_series=target_distroseries,
+            )
         processor = self.factory.makeProcessor()
         ubuntu_dases = [
             self.factory.makeDistroArchSeries(
