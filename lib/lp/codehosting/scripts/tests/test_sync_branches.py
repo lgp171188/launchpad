@@ -52,7 +52,7 @@ class BranchSyncProcessMatches(MatchesListwise):
                         ],
                     )
                 ),
-                Equals({"universal_newlines": True}),
+                Equals({"text": True}),
             ]
         )
 
