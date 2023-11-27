@@ -637,7 +637,7 @@ class TestOCIRegistryClient(
     def test_upload_handles_existing(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         responses.add("HEAD", blobs_url, status=200)
         push_rule = self.build.recipe.push_rules[0]
         push_rule.registry_credentials.setCredentials({})
@@ -652,7 +652,7 @@ class TestOCIRegistryClient(
     def test_upload_check_existing_raises_non_404(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         responses.add("HEAD", blobs_url, status=500)
         push_rule = self.build.recipe.push_rules[0]
         self.assertEqual(len(responses.calls), self.proxy_call_count)
@@ -670,7 +670,7 @@ class TestOCIRegistryClient(
     def test_upload_passes_basic_auth(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         responses.add("HEAD", blobs_url, status=200)
         push_rule.registry_credentials.setCredentials(
             {"username": "user", "password": "password"}
@@ -736,11 +736,9 @@ class TestOCIRegistryClient(
     def test_upload_put_blob_raises_error(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         uploads_url = f"{http_client.api_url}/blobs/uploads/"
-        upload_url = "{}/blobs/uploads/{}".format(
-            http_client.api_url, uuid.uuid4()
-        )
+        upload_url = f"{http_client.api_url}/blobs/uploads/{uuid.uuid4()}"
         put_errors = [
             {
                 "code": "BLOB_UPLOAD_INVALID",
@@ -784,11 +782,9 @@ class TestOCIRegistryClient(
     def test_upload_put_blob_raises_non_201_success(self):
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         uploads_url = f"{http_client.api_url}/blobs/uploads/"
-        upload_url = "{}/blobs/uploads/{}".format(
-            http_client.api_url, uuid.uuid4()
-        )
+        upload_url = f"{http_client.api_url}/blobs/uploads/{uuid.uuid4()}"
         responses.add("HEAD", blobs_url, status=404)
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=200)
@@ -912,11 +908,9 @@ class TestOCIRegistryClient(
         transaction.commit()
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         uploads_url = f"{http_client.api_url}/blobs/uploads/"
-        upload_url = "{}/blobs/uploads/{}".format(
-            http_client.api_url, uuid.uuid4()
-        )
+        upload_url = f"{http_client.api_url}/blobs/uploads/{uuid.uuid4()}"
         responses.add("HEAD", blobs_url, status=404)
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=201)
@@ -1323,11 +1317,9 @@ class TestOCIRegistryClient(
         transaction.commit()
         push_rule = self.build.recipe.push_rules[0]
         http_client = RegistryHTTPClient(push_rule)
-        blobs_url = "{}/blobs/{}".format(http_client.api_url, "test-digest")
+        blobs_url = f"{http_client.api_url}/blobs/test-digest"
         uploads_url = f"{http_client.api_url}/blobs/uploads/"
-        upload_url = "{}/blobs/uploads/{}".format(
-            http_client.api_url, uuid.uuid4()
-        )
+        upload_url = f"{http_client.api_url}/blobs/uploads/{uuid.uuid4()}"
         responses.add("HEAD", blobs_url, status=404)
         responses.add("POST", uploads_url, headers={"Location": upload_url})
         responses.add("PUT", upload_url, status=201)
