@@ -346,7 +346,7 @@ class URLFetcher:
         allow_file=False,
         output_file=None,
         check_status=True,
-        **request_kwargs
+        **request_kwargs,
     ):
         """Fetch the URL using a custom HTTP handler supporting timeout.
 

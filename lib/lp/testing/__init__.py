@@ -898,7 +898,7 @@ class TestCaseWithFactory(TestCase):
         product=None,
         db_branch=None,
         format=None,
-        **kwargs
+        **kwargs,
     ):
         """Create a database branch, bzr branch and bzr checkout.
 

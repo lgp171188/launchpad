@@ -977,7 +977,7 @@ class LaunchpadTestRequest(
         outstream=None,
         method="GET",
         force_fresh_login_for_testing=False,
-        **kw
+        **kw,
     ):
         # PEP 3333 requires environment variables to be native strings that
         # contain only code points representable in ISO-8859-1.  To support

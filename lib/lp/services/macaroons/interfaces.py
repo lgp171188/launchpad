@@ -57,7 +57,7 @@ class IMacaroonIssuerPublic(Interface):
         require_context=True,
         errors=None,
         user=None,
-        **kwargs
+        **kwargs,
     ):
         """Verify that `macaroon` is valid for `context`.
 

@@ -621,7 +621,7 @@ class URIField(TextLine):
         allow_query=True,
         allow_fragment=True,
         trailing_slash=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.allowed_schemes = set(allowed_schemes)
@@ -1019,7 +1019,7 @@ class SnapBuildChannelsField(Dict):
         description_prefix=None,
         description=None,
         extra_snap_names=None,
-        **kwargs
+        **kwargs,
     ):
         snap_names = list(self._core_snap_names)
         if extra_snap_names is not None:

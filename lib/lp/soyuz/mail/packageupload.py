@@ -482,7 +482,7 @@ class PackageUploadMailer(BaseMailer):
         announce_from_person=None,
         previous_version=None,
         logger=None,
-        **kwargs
+        **kwargs,
     ):
         info = fetch_information(
             spr, bprs, changes, previous_version=previous_version

@@ -176,7 +176,7 @@ class TestSourcesList(TestCaseWithFactory):
         self,
         signing_key_name="ppa-sample@canonical.com",
         publish_binary=False,
-        **kwargs
+        **kwargs,
     ):
         try:
             getattr(config, "in-process-key-server-fixture")
