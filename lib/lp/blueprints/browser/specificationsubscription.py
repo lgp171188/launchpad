@@ -79,7 +79,7 @@ class SpecificationSubscriptionDeleteView(LaunchpadFormView):
     """Used to unsubscribe someone from a blueprint."""
 
     schema = ISpecificationSubscription
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     @property
     def label(self):

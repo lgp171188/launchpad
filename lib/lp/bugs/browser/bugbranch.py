@@ -67,7 +67,7 @@ class BugBranchDeleteView(LaunchpadEditFormView):
 
     schema = IBugBranch
 
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     def initialize(self):
         LaunchpadEditFormView.initialize(self)

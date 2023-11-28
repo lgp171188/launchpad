@@ -82,7 +82,7 @@ class MockBug:
 
     duplicateof = None
     information_type = InformationType.PUBLIC
-    messages = []  # type: List[Message]
+    messages: List[Message] = []
 
     def __init__(self, id, owner):
         self.id = id
@@ -721,12 +721,12 @@ class EmailNotificationTestBase(TestCaseWithFactory):
 
 
 class EmailNotificationsBugMixin:
-    change_class = None  # type: Optional[Type[Any]]
-    change_name = None  # type: Optional[str]
-    old = None  # type: Any
-    new = None  # type: Any
-    alt = None  # type: Any
-    unexpected_bytes = None  # type: Optional[bytes]
+    change_class: Optional[Type[Any]] = None
+    change_name: Optional[str] = None
+    old: Any = None
+    new: Any = None
+    alt: Any = None
+    unexpected_bytes: Optional[bytes] = None
 
     def change(self, old, new):
         self.bug.addChange(

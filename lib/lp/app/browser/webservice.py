@@ -16,7 +16,7 @@ from zope.schema.interfaces import IText
 from lp.app.browser.stringformatter import FormattersAPI
 from lp.app.browser.tales import format_link
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 @component.adapter(Interface, IReference, IWebServiceClientRequest)

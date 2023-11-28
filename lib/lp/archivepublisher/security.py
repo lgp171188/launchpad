@@ -7,7 +7,7 @@ from typing import List
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfig
 from lp.security import AdminByAdminsTeam
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 # If edit access to this is ever opened up beyond admins, then we need to

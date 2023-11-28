@@ -136,8 +136,8 @@ class LaunchpadScript:
 
     lock = None
     txn = None
-    usage = None  # type: Optional[str]
-    description = None  # type: Optional[str]
+    usage: Optional[str] = None
+    description: Optional[str] = None
     lockfilepath = None
     loglevel = logging.INFO
 

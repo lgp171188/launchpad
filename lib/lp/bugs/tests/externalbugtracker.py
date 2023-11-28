@@ -543,11 +543,11 @@ class TestBugzillaXMLRPCTransport(RequestsTransport):
     }
 
     # Methods that require authentication.
-    auth_required_methods = (
+    auth_required_methods: Tuple[str, ...] = (
         "add_comment",
         "login_required",
         "set_link",
-    )  # type: Tuple[str, ...]
+    )
 
     expired_cookie = None
 
@@ -1363,8 +1363,8 @@ def strip_trac_comment(comment):
 class TestTracXMLRPCTransport(RequestsTransport):
     """An XML-RPC transport to be used when testing Trac."""
 
-    remote_bugs = {}  # type: Dict[str, Dict[str, Any]]
-    launchpad_bugs = {}  # type: Dict[str, int]
+    remote_bugs: Dict[str, Dict[str, Any]] = {}
+    launchpad_bugs: Dict[str, int] = {}
     seconds_since_epoch = None
     local_timezone = "UTC"
     utc_offset = 0

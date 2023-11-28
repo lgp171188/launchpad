@@ -1730,7 +1730,7 @@ class BugTaskDeletionView(ReturnToReferrerMixin, LaunchpadFormView):
     """Used to delete a bugtask."""
 
     schema = IBugTask
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     label = "Remove bug task"
     page_title = label

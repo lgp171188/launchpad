@@ -78,7 +78,7 @@ class CharmRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
+        args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args)
         args["name"] = build.recipe.store_name or build.recipe.name
         channels = build.channels or {}

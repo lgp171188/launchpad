@@ -403,7 +403,7 @@ class SprintDeleteView(LaunchpadFormView):
     """Form for deleting sprints."""
 
     schema = ISprint
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
     next_url = None
 
     @property

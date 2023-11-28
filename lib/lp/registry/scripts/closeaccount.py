@@ -479,7 +479,7 @@ def close_account(username, log):
     if non_referenced_ppa_ids:
         store.find(Archive, Archive.id.is_in(non_referenced_ppa_ids)).remove()
 
-    reference_counts = []  # type: List[Tuple[str, int]]
+    reference_counts: List[Tuple[str, int]] = []
 
     # Check for non-deleted PPAs
     count = store.find(

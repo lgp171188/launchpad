@@ -104,9 +104,9 @@ class UCTImporter:
                 cve.series_packages,
             )
             return
-        lp_cve = removeSecurityProxy(
+        lp_cve: CveModel = removeSecurityProxy(
             getUtility(ICveSet)[cve.sequence]
-        )  # type: CveModel
+        )
         if lp_cve is None:
             logger.warning(
                 "%s: could not find the CVE in LP. Aborting.", cve.sequence
@@ -154,7 +154,7 @@ class UCTImporter:
         distro_package = cve.distro_packages[0]
 
         # Create the bug
-        bug = getUtility(IBugSet).createBug(
+        bug: BugModel = getUtility(IBugSet).createBug(
             CreateBugParams(
                 comment=self._make_bug_description(cve),
                 title=cve.sequence,
@@ -164,7 +164,7 @@ class UCTImporter:
                 importance=distro_package.importance,
                 cve=lp_cve,
             )
-        )  # type: BugModel
+        )
 
         self._update_external_bug_urls(bug, cve.bug_urls)
         self._update_patches(bug, cve.patch_urls)
@@ -274,7 +274,7 @@ class UCTImporter:
         :param distro_packages: list of `DistroPackage`s from a `CVE`
         :param series_packages: list of `SeriesPackage`s from a `CVE`
         """
-        bug_tasks = bug.bugtasks  # type: List[BugTask]
+        bug_tasks: List[BugTask] = bug.bugtasks
         bug_task_by_target = {t.target: t for t in bug_tasks}
         bug_task_set = getUtility(IBugTaskSet)
         for package in chain(
@@ -301,14 +301,14 @@ class UCTImporter:
         :param distribution: a `Distribution` affected by the vulnerability
         :return: a Vulnerability
         """
-        vulnerability = getUtility(IVulnerabilitySet).new(
+        vulnerability: Vulnerability = getUtility(IVulnerabilitySet).new(
             distribution=distribution,
             status=cve.status,
             importance=cve.importance,
             creator=bug.owner,
             information_type=InformationType.PUBLICSECURITY,
             cve=lp_cve,
-        )  # type: Vulnerability
+        )
         self._update_vulnerability(vulnerability, cve)
 
         vulnerability.linkBug(bug, bug.owner)
@@ -393,10 +393,10 @@ class UCTImporter:
         :param distro_packages: list of `DistroPackage`s from a `CVE`
         :param series_packages: list of `SeriesPackage`s from a `CVE`
         """
-        bug_tasks = bug.bugtasks  # type: List[BugTask]
+        bug_tasks: List[BugTask] = bug.bugtasks
         bug_task_by_target = {t.target: t for t in bug_tasks}
 
-        package_importances = {}  # type: Dict[str, BugTaskImportance]
+        package_importances: Dict[str, BugTaskImportance] = {}
 
         for dp in distro_packages:
             task = bug_task_by_target[dp.target]

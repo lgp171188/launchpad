@@ -61,9 +61,9 @@ class LaunchpadFormView(LaunchpadView):
     prefix = "field"
 
     # The form schema
-    schema = None  # type: Type[Interface]
+    schema: Optional[Type[Interface]] = None
     # Subset of fields to use
-    field_names = None  # type: Optional[List[str]]
+    field_names: Optional[List[str]] = None
 
     # The next URL to redirect to on successful form submission
     @property
@@ -93,7 +93,7 @@ class LaunchpadFormView(LaunchpadView):
     # The for_input is passed through to create the fields.  If this value
     # is set to true in derived classes, then fields that are marked
     # read only will have editable widgets created for them.
-    for_input = None  # type: Optional[bool]
+    for_input: Optional[bool] = None
 
     def __init__(self, context, request):
         LaunchpadView.__init__(self, context, request)

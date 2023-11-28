@@ -501,7 +501,7 @@ class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
 
 @implementer(IHugeVocabulary)
 class TestPersonVocabulary:
-    test_persons = []  # type: List[Person]
+    test_persons: List[Person] = []
 
     @classmethod
     def setTestData(cls, person_list: List[Person]):

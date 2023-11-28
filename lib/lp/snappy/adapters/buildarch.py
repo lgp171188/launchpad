@@ -99,13 +99,13 @@ class SnapArchitecture:
         :param build_error: string; build-error property from
             snapcraft.yaml.
         """
-        self.build_on = (
+        self.build_on: List[str] = (
             [build_on] if isinstance(build_on, str) else build_on
-        )  # type: List[str]
+        )
         if build_for:
-            self.build_for = (
+            self.build_for: List[str] = (
                 [build_for] if isinstance(build_for, str) else build_for
-            )  # type: List[str]
+            )
         else:
             self.build_for = self.build_on
         self.build_error = build_error
@@ -185,9 +185,7 @@ def determine_architectures_to_build(
         we can create builds for.
     :return: a list of `SnapBuildInstance`s.
     """
-    architectures_list = snapcraft_data.get(
-        "architectures"
-    )  # type: Optional[List]
+    architectures_list: Optional[List] = snapcraft_data.get("architectures")
 
     if architectures_list:
         # First, determine what style we're parsing.  Is it a list of

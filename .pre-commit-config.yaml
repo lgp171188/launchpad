@@ -51,8 +51,6 @@ repos:
         name: isort
         args: [--profile, black]
 -   repo: https://github.com/PyCQA/flake8
-    # 6.0.0 drops support for `# type:` comments, which we need until we
-    # upgrade to Python >= 3.6.
     rev: 5.0.4
     hooks:
     -   id: flake8

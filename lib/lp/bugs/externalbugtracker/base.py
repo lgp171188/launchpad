@@ -157,7 +157,7 @@ def repost_on_redirect_hook(response, *args, **kwargs):
 class ExternalBugTracker:
     """Base class for an external bug tracker."""
 
-    batch_size = None  # type: Optional[int]
+    batch_size: Optional[int] = None
     batch_query_threshold = config.checkwatches.batch_query_threshold
     timeout = config.checkwatches.default_socket_timeout
     comment_template = "default_remotecomment_template.txt"

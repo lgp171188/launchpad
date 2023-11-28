@@ -1043,7 +1043,7 @@ class SpecificationGoalDecideView(LaunchpadFormView):
     """
 
     schema = Interface
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     @property
     def label(self):

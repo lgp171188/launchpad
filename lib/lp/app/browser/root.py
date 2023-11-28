@@ -56,7 +56,7 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
     """An view for the default view of the LaunchpadRoot."""
 
     page_title = "Launchpad"
-    featured_projects = []  # type: List[Any]
+    featured_projects: List[Any] = []
     featured_projects_top = None
 
     # Used by the footer to display the lp-arcana section.
