@@ -175,7 +175,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 % (build.git_repository.unique_name, build.commit_sha1)
             )
 
-        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
+        args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args)
         (
             args["archives"],

@@ -3,6 +3,8 @@
 
 """Tests for webservice features across Launchpad."""
 
+from typing import Optional
+
 from lazr.restful.interfaces import IFieldHTMLRenderer
 from lazr.restful.utils import get_current_web_service_request
 from zope.component import getMultiAdapter
@@ -54,7 +56,7 @@ class BaseMissingObjectWebService:
 
     layer = DatabaseFunctionalLayer
 
-    object_type = None  # type: str
+    object_type: Optional[str] = None
 
     def test_object_not_found(self):
         """Missing top-level objects generate 404s but not OOPS."""

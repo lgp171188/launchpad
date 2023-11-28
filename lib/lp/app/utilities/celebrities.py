@@ -105,7 +105,7 @@ class PersonCelebrityDescriptor(CelebrityDescriptor):
     """
 
     # Populated by the constructor.
-    names = set()  # type: Set[str]
+    names: Set[str] = set()
 
     def __init__(self, name):
         PersonCelebrityDescriptor.names.add(name)

@@ -18,6 +18,7 @@ __all__ = [
 ]
 
 from datetime import datetime, timezone, tzinfo
+from typing import Optional
 
 from dateutil import tz
 from zope.browserpage import ViewPageTemplateFile
@@ -114,7 +115,7 @@ class DateTimeWidget(TextWidget):
     """
 
     timeformat = "%Y-%m-%d %H:%M:%S"
-    required_time_zone_name = None  # type: str
+    required_time_zone_name: Optional[str] = None
     display_zone = True
     from_date = None
     to_date = None

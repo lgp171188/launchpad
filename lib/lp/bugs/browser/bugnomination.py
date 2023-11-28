@@ -172,7 +172,7 @@ class BugNominationEditView(LaunchpadFormView):
     """Browser view class for approving and declining nominations."""
 
     schema = Interface
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     @property
     def label(self):

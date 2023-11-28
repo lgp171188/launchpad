@@ -4,8 +4,6 @@
 """These are yui appserver fixtures for the yui appserver test code's tests.
 """
 
-__all__ = []  # type: List[str]
-
 from typing import Any, Dict, List, Tuple
 
 from zope.security.proxy import removeSecurityProxy
@@ -14,10 +12,12 @@ from lp.testing import login_person
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.yuixhr import login_as_person, make_suite, setup
 
+__all__: List[str] = []
+
 # The following are the fixtures needed by the tests.
 
 # We use this variable for test results.
-_received = []  # type: List[Tuple[str, Any, Dict[str, str]]]
+_received: List[Tuple[str, Any, Dict[str, str]]] = []
 
 
 @setup

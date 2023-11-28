@@ -215,7 +215,7 @@ class BugTaskCreationStep(AlsoAffectsStep):
 
     initial_focus_widget = "bug_url"
     step_name = "specify_remote_bug_url"
-    target_field_names = ()  # type: Tuple[str, ...]
+    target_field_names: Tuple[str, ...] = ()
 
     # This is necessary so that other views which dispatch work to this one
     # have access to the newly created task.
@@ -759,7 +759,7 @@ class BugTrackerCreationStep(AlsoAffectsStep):
     )
     step_name = "bugtracker_creation"
     main_action_label = "Register Bug Tracker and Add to Bug Report"
-    _next_step = None  # type: Type[StepView]
+    _next_step: Type[StepView] = None
 
     def main_action(self, data):
         assert (

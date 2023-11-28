@@ -293,7 +293,7 @@ class ViewArchive(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         """Verify that the user can view the archive."""
-        archive_set = getUtility(IArchiveSet)  # type: IArchiveSet
+        archive_set: IArchiveSet = getUtility(IArchiveSet)
         return archive_set.checkViewPermission([self.obj], user.person)[
             self.obj
         ]

@@ -92,7 +92,7 @@ class CursorWrapper:
     """
 
     real_cursor = None
-    last_executed_sql = []  # type: List[str]
+    last_executed_sql: List[str] = []
     record_sql = False
 
     def __init__(self, real_cursor):
@@ -167,16 +167,16 @@ def uninstallFakeConnect():
 
 class PgTestSetup:
     # Shared:
-    connections = []  # type: List[ConnectionWrapper]
+    connections: List[ConnectionWrapper] = []
     # Use a dynamically generated dbname:
     dynamic = object()
 
     template = "template1"
     # Needs to match configs/testrunner*/*:
     dbname = "launchpad_ftest"
-    dbuser = None  # type: Optional[str]
-    host = None  # type: Optional[str]
-    port = None  # type: Optional[int]
+    dbuser: Optional[str] = None
+    host: Optional[str] = None
+    port: Optional[int] = None
 
     # Class attributes. With PostgreSQL 8.4, pg_shdepend bloats
     # hugely when we drop and create databases, because this

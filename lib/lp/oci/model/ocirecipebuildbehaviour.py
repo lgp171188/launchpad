@@ -135,7 +135,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        args = yield super().extraBuildArgs(logger=logger)  # type: BuildArgs
+        args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         yield self.addProxyArgs(args, build.recipe.allow_internet)
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.

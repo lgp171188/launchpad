@@ -20,7 +20,7 @@ from lp.testing import TestCaseWithFactory, login
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.sampledata import ADMIN_EMAIL
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 def read_test_file(name):

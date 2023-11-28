@@ -101,9 +101,7 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         Return the extra arguments required by the worker for the given build.
         """
         build = self.build
-        base_args = yield super().extraBuildArgs(
-            logger=logger
-        )  # type: BuildArgs
+        base_args: BuildArgs = yield super().extraBuildArgs(logger=logger)
         # Non-trivial metadata values may have been security-wrapped, which
         # is pointless here and just gets in the way of xmlrpc.client
         # serialisation.

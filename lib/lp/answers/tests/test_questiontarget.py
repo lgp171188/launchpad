@@ -17,7 +17,7 @@ from lp.testing import (
 )
 from lp.testing.layers import DatabaseFunctionalLayer
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class QuestionTargetAnswerContactTestCase(TestCaseWithFactory):

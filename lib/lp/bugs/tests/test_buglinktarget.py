@@ -20,7 +20,7 @@ from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 def questionSetUp(test):

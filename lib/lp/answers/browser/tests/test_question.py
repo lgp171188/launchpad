@@ -14,7 +14,7 @@ from lp.testing import TestCaseWithFactory, login_person, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.views import create_initialized_view
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class TestQuestionAddView(TestCaseWithFactory):

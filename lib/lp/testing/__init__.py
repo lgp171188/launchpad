@@ -1071,13 +1071,13 @@ class WebServiceTestCase(TestCaseWithFactory):
 
 
 class AbstractYUITestCase(TestCase):
-    layer = None  # type: Type[BaseLayer]
+    layer: Optional[Type[BaseLayer]] = None
     suite_name = ""
     # 30 seconds for the suite.
     suite_timeout = 30000
     # By default we do not restrict per-test or times.  yuixhr tests do.
-    incremental_timeout = None  # type: Optional[int]
-    initial_timeout = None  # type: Optional[int]
+    incremental_timeout: Optional[int] = None
+    initial_timeout: Optional[int] = None
     html_uri = None
     test_path = None
 

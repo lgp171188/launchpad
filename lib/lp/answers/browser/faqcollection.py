@@ -31,7 +31,7 @@ from lp.services.webapp.menu import enabled_with_permission
 class FAQCollectionMenu(NavigationMenu):
     """Base menu definition for `IFAQCollection`."""
 
-    usedfor = IFAQCollection  # type: Type[Interface]
+    usedfor: Type[Interface] = IFAQCollection
     facet = "answers"
     links = ["list_all", "create_faq"]
 

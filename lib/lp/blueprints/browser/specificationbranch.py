@@ -47,7 +47,7 @@ class SpecificationBranchStatusView(LaunchpadEditFormView):
     """Edit the summary of the SpecificationBranch link."""
 
     schema = ISpecificationBranch
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
     label = _("Delete link between specification and branch")
 
     def initialize(self):

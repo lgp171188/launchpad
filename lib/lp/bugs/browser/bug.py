@@ -188,7 +188,7 @@ class BugSetNavigation(Navigation):
 class BugContextMenu(ContextMenu):
     """Context menu of actions that can be performed upon a Bug."""
 
-    usedfor = IBug  # type: Type[Interface]
+    usedfor: Type[Interface] = IBug
     links = [
         "editdescription",
         "markduplicate",

@@ -3,13 +3,13 @@
 
 """Tests for test layers."""
 
-__all__ = []  # type: List[str]
-
 import threading
 from typing import List
 
 from lp.testing import TestCase
 from lp.testing.layers import BaseLayer
+
+__all__: List[str] = []
 
 
 class TestThreadWaiting(TestCase):
