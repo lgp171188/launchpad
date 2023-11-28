@@ -273,7 +273,7 @@ class TestCharmRecipe(TestCaseWithFactory):
         processor=None,
         supports_virtualized=True,
         supports_nonvirtualized=True,
-        **kwargs
+        **kwargs,
     ):
         if architecturetag is None:
             architecturetag = self.factory.getUniqueUnicode("arch")
@@ -1860,7 +1860,7 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         git_ref=None,
         private=False,
         webservice=None,
-        **kwargs
+        **kwargs,
     ):
         if owner is None:
             owner = self.person
@@ -2365,7 +2365,7 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
         processor=None,
         supports_virtualized=True,
         supports_nonvirtualized=True,
-        **kwargs
+        **kwargs,
     ):
         if architecturetag is None:
             architecturetag = self.factory.getUniqueUnicode("arch")

@@ -3120,7 +3120,7 @@ class TestUpdateByHash(TestPublisherBase):
     def assertHasSuiteFiles(
         self,
         patterns: Sequence[str],
-        *properties: Tuple[str, Optional[int], Optional[int], Optional[int]]
+        *properties: Tuple[str, Optional[int], Optional[int], Optional[int]],
     ) -> None:
         """Assert that the database records certain archive files.
 

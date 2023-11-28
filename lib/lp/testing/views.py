@@ -37,7 +37,7 @@ def create_view(
     path_info="/",
     current_request=False,
     rootsite=None,
-    **kwargs
+    **kwargs,
 ):
     """Return a view based on the given arguments.
 
@@ -106,7 +106,7 @@ def create_initialized_view(
     path_info="/",
     rootsite=None,
     current_request=False,
-    **kwargs
+    **kwargs,
 ):
     """Return a view that has already been initialized."""
     if method is None:

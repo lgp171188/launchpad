@@ -78,7 +78,7 @@ class RequestMatches(MatchesAll):
         auth=None,
         json_data=None,
         file_data=None,
-        **kwargs
+        **kwargs,
     ):
         matchers = []
         kwargs = dict(kwargs)

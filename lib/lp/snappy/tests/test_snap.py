@@ -3771,7 +3771,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         private=False,
         auto_build_archive=None,
         auto_build_pocket=None,
-        **kwargs
+        **kwargs,
     ):
         if owner is None:
             owner = self.person

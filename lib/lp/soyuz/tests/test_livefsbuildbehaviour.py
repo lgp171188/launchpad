@@ -59,7 +59,7 @@ class TestLiveFSBuildBehaviourBase(TestCaseWithFactory):
         archive=None,
         pocket=PackagePublishingPocket.RELEASE,
         with_builder=False,
-        **kwargs
+        **kwargs,
     ):
         """Create a sample `ILiveFSBuildBehaviour`."""
         if archive is None:

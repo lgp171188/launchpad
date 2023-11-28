@@ -119,7 +119,7 @@ class PrefixedTask(Task):
         link=None,
         link_error=None,
         shadow=None,
-        **options
+        **options,
     ):
         """Create a task_id if none is specified.
 
