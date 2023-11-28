@@ -372,7 +372,7 @@ class FeedsMixin:
     feed_links: Returns a list of objects subclassed from FeedLinkBase.
     """
 
-    feed_types: Tuple[Type[FeedLinkBase, ...]] = (
+    feed_types: Tuple[Type[FeedLinkBase], ...] = (
         AnnouncementsFeedLink,
         BranchFeedLink,
         BugFeedLink,

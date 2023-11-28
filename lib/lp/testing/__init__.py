@@ -1071,7 +1071,7 @@ class WebServiceTestCase(TestCaseWithFactory):
 
 
 class AbstractYUITestCase(TestCase):
-    layer: Optional[Type[BaseLayer]] = None
+    layer: Optional[Type["BaseLayer"]] = None
     suite_name = ""
     # 30 seconds for the suite.
     suite_timeout = 30000
