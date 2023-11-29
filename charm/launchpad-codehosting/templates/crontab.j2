@@ -5,7 +5,7 @@ LPCONFIG=launchpad-codehosting
 
 {%- if active %}
 
-* * * * * {% if http_proxy %}http_proxy={{ http_proxy }} https_proxy={{ http_proxy }}{% endif %}{{ code_dir }}/cronscripts/supermirror-pull.py -q --log-file=INFO:{{ logs_dir }}/puller.log
+* * * * * {% if http_proxy %}http_proxy={{ http_proxy }} https_proxy={{ http_proxy }} {% endif %}{{ code_dir }}/cronscripts/supermirror-pull.py -q --log-file=INFO:{{ logs_dir }}/puller.log
 
 # remove from disk, deleted branches
 10 0 * * * {{ code_dir }}/cronscripts/process-job-source.py IReclaimBranchSpaceJobSource -q --log-file=DEBUG:{{ logs_dir }}/process-job-source.IReclaimBranchSpaceJobSource.log
