@@ -12,6 +12,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import ProxyFactory, removeSecurityProxy
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bug import CreateBugParams
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
@@ -228,12 +229,30 @@ class TestStructuralSubscriptionForDistro(
             StructuralSubscription,
         )
 
-    def test_distribution_subscription_by_bug_supervisor_team(self):
-        # team admins can subscribe team if team is bug supervisor
+    def test_distribution_bug_supervisor_admin_can_subscribe_owned_teams(self):
+        # bug supervisor team admin can subscribe any owned team including
+        # the bug supervisor team itself.
         removeSecurityProxy(self.target).bug_supervisor = self.team
+        another_team = self.factory.makeTeam(owner=self.team_owner)
         login_person(self.team_owner)
         self.assertIsInstance(
             self.target.addBugSubscription(self.team, self.team_owner),
+            StructuralSubscription,
+        )
+        self.assertIsInstance(
+            self.target.addBugSubscription(another_team, self.team_owner),
+            StructuralSubscription,
+        )
+
+    def test_admin_can_subscribe_anyone_to_the_distribution(self):
+        admin = getUtility(ILaunchpadCelebrities).admin.teamowner
+        login_person(admin)
+        self.assertIsInstance(
+            self.target.addBugSubscription(self.team_owner, admin),
+            StructuralSubscription,
+        )
+        self.assertIsInstance(
+            self.target.addBugSubscription(self.team, admin),
             StructuralSubscription,
         )
 

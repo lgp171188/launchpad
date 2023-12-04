@@ -430,8 +430,8 @@ class StructuralSubscriptionTargetMixin:
             if subscriber is None or subscribed_by is None:
                 return False
             elif (
-                subscriber != self.bug_supervisor
-                and not subscriber.inTeam(self.bug_supervisor)
+                subscribed_by != self.bug_supervisor
+                and not subscribed_by.inTeam(self.bug_supervisor)
                 and not subscribed_by.inTeam(admins)
             ):
                 return False
