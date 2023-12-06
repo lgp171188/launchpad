@@ -2847,6 +2847,29 @@ class TestPublisher(TestPublisherBase):
 
         self.assertFalse(os.path.exists(os.path.join(i18n_root, "Index")))
 
+    def testWriteSuiteI18nPublishI18nFalse(self):
+        """i18n/Index is not generated when publish_i18n_index is False."""
+        publisher = Publisher(
+            self.logger,
+            self.config,
+            self.disk_pool,
+            self.ubuntutest.main_archive,
+        )
+        i18n_root = os.path.join(
+            self.config.distsroot, "breezy-autotest", "main", "i18n"
+        )
+
+        self.ubuntu["breezy-autotest"].publish_i18n_index = False
+
+        publisher._writeSuiteI18n(
+            self.ubuntutest["breezy-autotest"],
+            PackagePublishingPocket.RELEASE,
+            "main",
+            set(),
+        )
+
+        self.assertFalse(os.path.exists(os.path.join(i18n_root, "Index")))
+
     def testReadIndexFileHashesCompression(self):
         """Test compressed file handling in _readIndexFileHashes."""
         publisher = Publisher(

@@ -285,6 +285,7 @@ class DistroSeries(
             "publish_by_hash": False,
             "advertise_by_hash": False,
             "strict_supported_component_dependencies": True,
+            "publish_i18n_index": True,
         }
 
     @property
@@ -968,6 +969,15 @@ class DistroSeries(
         self.publishing_options[
             "strict_supported_component_dependencies"
         ] = value
+
+    @property
+    def publish_i18n_index(self):
+        return self.publishing_options.get("publish_i18n_index", True)
+
+    @publish_i18n_index.setter
+    def publish_i18n_index(self, value):
+        assert isinstance(value, bool)
+        self.publishing_options["publish_i18n_index"] = value
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this distribution series."""
