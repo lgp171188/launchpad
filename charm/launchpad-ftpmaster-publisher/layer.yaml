@@ -12,6 +12,7 @@ options:
       db:
         name: launchpad_dev
         roles:
+          - archivepublisher
           - generate_contents_files
           - process_death_row
           - publish_ftpmaster
