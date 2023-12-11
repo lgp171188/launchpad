@@ -14,4 +14,6 @@ COMMENT ON COLUMN SocialAccounts.person IS 'Person the social media account belo
 COMMENT ON COLUMN SocialAccounts.platform IS 'Social media platform.';
 COMMENT ON COLUMN SocialAccounts.identifier IS 'Identifier for the social media account (JSON format specific per social media platform).';
 
+CREATE INDEX socialaccounts__person__idx ON SocialAccounts (person);
+
 INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 25, 0);
