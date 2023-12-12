@@ -665,6 +665,12 @@
         rootsite="api"
         />
     <lp:url
+        for="lp.registry.interfaces.socialaccount.ISocialAccount"
+        path_expression="string:+socialaccount/${id}"
+        attribute_to_parent="person"
+        rootsite="api"
+        />
+    <lp:url
         for="lp.registry.interfaces.pillar.IPillarNameSet"
         path_expression="string:pillars"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"

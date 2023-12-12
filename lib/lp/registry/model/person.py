@@ -19,6 +19,8 @@ __all__ = [
     "PersonLanguage",
     "PersonSet",
     "PersonSettings",
+    "SocialAccount",
+    "SocialAccountSet",
     "SSHKey",
     "SSHKeySet",
     "TeamInvitationEvent",
@@ -40,6 +42,7 @@ import transaction
 from lazr.delegates import delegate_to
 from lazr.restful.utils import get_current_browser_request, smartquote
 from requests import PreparedRequest
+from storm.databases.postgres import JSON
 from storm.expr import (
     SQL,
     Alias,
@@ -161,6 +164,13 @@ from lp.registry.interfaces.persontransferjob import IPersonMergeJobSource
 from lp.registry.interfaces.product import IProduct, IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.interfaces.socialaccount import (
+    ISocialAccount,
+    ISocialAccountSet,
+    MatrixPlatform,
+    SocialPlatformType,
+    validate_social_account_identity,
+)
 from lp.registry.interfaces.ssh import (
     SSH_TEXT_TO_KEY_TYPE,
     ISSHKey,
@@ -646,6 +656,7 @@ class Person(
     signedcocs = ReferenceSet("id", "SignedCodeOfConduct.owner_id")
     _ircnicknames = ReferenceSet("id", "IrcID.person_id")
     jabberids = ReferenceSet("id", "JabberID.person_id")
+    _social_accounts = ReferenceSet("id", "SocialAccount.person_id")
 
     visibility = DBEnum(
         enum=PersonVisibility,
@@ -686,6 +697,19 @@ class Person(
     @cachedproperty
     def ircnicknames(self):
         return list(self._ircnicknames)
+
+    @cachedproperty
+    def social_accounts(self):
+        return list(self._social_accounts)
+
+    # TODO: write test for this function once we have more
+    # than one Social Platform Type.
+    def getSocialAccountsByPlatform(self, platform):
+        return list(
+            getUtility(ISocialAccountSet).getByPersonAndSocialPlatform(
+                self, platform
+            )
+        )
 
     @cachedproperty
     def languages(self):
@@ -2779,6 +2803,7 @@ class Person(
             ("sharingjob", "grantee"),
             ("signedcodeofconduct", "owner"),
             ("snapbuild", "requester"),
+            ("socialaccount", "person"),
             ("specificationsubscription", "person"),
             ("sshkey", "person"),
             ("structuralsubscription", "subscriber"),
@@ -5319,6 +5344,67 @@ class WikiNameSet:
         wiki_name = WikiName(person=person, wiki=wiki, wikiname=wikiname)
         IStore(wiki_name).flush()
         return wiki_name
+
+
+@implementer(ISocialAccount)
+class SocialAccount(StormBase, HasOwnerMixin):
+    __storm_table__ = "SocialAccount"
+
+    id = Int(primary=True)
+    person_id = Int(name="person", allow_none=False)
+    person = Reference(person_id, "Person.id")
+    platform = DBEnum(
+        name="platform",
+        allow_none=False,
+        enum=SocialPlatformType,
+    )
+    identity = JSON(
+        name="identity",
+        allow_none=False,
+        validator=validate_social_account_identity,
+    )
+
+    def __init__(self, person, platform, identity):
+        super().__init__()
+        self.person = person
+        self.platform = platform
+        self.identity = identity
+
+    def getSocialPlatform(self):
+        if self.platform == SocialPlatformType.MATRIX:
+            return MatrixPlatform
+
+    def destroySelf(self):
+        IStore(self).remove(self)
+
+
+@implementer(ISocialAccountSet)
+class SocialAccountSet:
+    def get(self, id):
+        """See `ISocialAccountSet`."""
+        return IStore(SocialAccount).get(SocialAccount, int(id))
+
+    def getByPerson(self, person):
+        """See `ISocialAccountSet`."""
+        return (
+            IStore(SocialAccount)
+            .find(SocialAccount, person=person)
+            .group_by(SocialAccount.platform)
+        )
+
+    def getByPersonAndSocialPlatform(self, person, social_platform):
+        """See `ISocialAccountSet`."""
+        return IStore(SocialAccount).find(
+            SocialAccount, person=person, platform=social_platform
+        )
+
+    def new(self, person, platform, identity):
+        """See `ISocialAccountSet`."""
+        social_account = SocialAccount(
+            person=person, platform=platform, identity=identity
+        )
+        IStore(social_account).flush()
+        return social_account
 
 
 @implementer(IJabberID)

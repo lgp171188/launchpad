@@ -425,6 +425,12 @@
                 <xsl:text>/+jabberid/</xsl:text>
                 <var>&lt;id&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'socialaccount_id'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <xsl:text>/+socialaccount/</xsl:text>
+                <var>&lt;id&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'irc_id'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;person.name&gt;</var>
