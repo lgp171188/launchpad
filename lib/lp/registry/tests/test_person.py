@@ -38,6 +38,11 @@ from lp.registry.interfaces.karma import IKarmaCacheManager
 from lp.registry.interfaces.person import ImmutableVisibilityError, IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.product import IProductSet
+from lp.registry.interfaces.socialaccount import (
+    ISocialAccountSet,
+    SocialAccountIdentityError,
+    SocialPlatformType,
+)
 from lp.registry.interfaces.teammembership import ITeamMembershipSet
 from lp.registry.model.karma import KarmaCategory, KarmaTotalCache
 from lp.registry.model.person import Person, get_recipients
@@ -437,6 +442,128 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual("What's this fish doing?", person.description)
         self.assertEqual(None, person.homepage_content)
         self.assertEqual(None, person.teamdescription)
+
+    def test_social_account(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = "abc"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user, SocialPlatformType.MATRIX, attributes
+        )
+
+        self.assertEqual(len(user.social_accounts), 1)
+        social_account = user.social_accounts[0]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "abc")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+    def test_malformed_matrix_account(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = "abc"
+        attributes["name"] = "test-nickname"
+        utility = getUtility(ISocialAccountSet)
+
+        self.assertRaises(
+            SocialAccountIdentityError,
+            utility.new,
+            user,
+            SocialPlatformType.MATRIX,
+            attributes,
+        )
+
+    def test_empty_fields_matrix_account(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = ""
+        attributes["nickname"] = "test-nickname"
+        utility = getUtility(ISocialAccountSet)
+
+        self.assertRaises(
+            SocialAccountIdentityError,
+            utility.new,
+            user,
+            SocialPlatformType.MATRIX,
+            attributes,
+        )
+
+    def test_multiple_social_accounts(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = "abc"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user, SocialPlatformType.MATRIX, attributes
+        )
+        attributes = {}
+        attributes["network"] = "def"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user, SocialPlatformType.MATRIX, attributes
+        )
+
+        self.assertEqual(len(user.social_accounts), 2)
+        social_account = user.social_accounts[0]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "abc")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+        social_account = user.social_accounts[1]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "def")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+    def test_multiple_social_accounts_on_multiple_users(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = "abc"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user, SocialPlatformType.MATRIX, attributes
+        )
+        attributes = {}
+        attributes["network"] = "def"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user, SocialPlatformType.MATRIX, attributes
+        )
+
+        user_two = self.factory.makePerson()
+        attributes = {}
+        attributes["network"] = "ghi"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user_two, SocialPlatformType.MATRIX, attributes
+        )
+        attributes = {}
+        attributes["network"] = "lmn"
+        attributes["nickname"] = "test-nickname"
+        getUtility(ISocialAccountSet).new(
+            user_two, SocialPlatformType.MATRIX, attributes
+        )
+
+        self.assertEqual(len(user.social_accounts), 2)
+        social_account = user.social_accounts[0]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "abc")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+        social_account = user.social_accounts[1]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "def")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+        self.assertEqual(len(user_two.social_accounts), 2)
+        social_account = user_two.social_accounts[0]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "ghi")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
+
+        social_account = user_two.social_accounts[1]
+        self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
+        self.assertEqual(social_account.identity["network"], "lmn")
+        self.assertEqual(social_account.identity["nickname"], "test-nickname")
 
     def test_getAffiliatedPillars_kinds(self):
         # Distributions, project groups, and projects are returned in this
