@@ -4,13 +4,13 @@
 """{Describe your test suite here}.
 """
 
-__all__ = []  # type: List[str]
-
 from typing import List
 
 from lp.testing import person_logged_in
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.yuixhr import login_as_person, make_suite, setup
+
+__all__: List[str] = []
 
 # This is one half of a YUI app test.  The other half is a .js test of
 # exactly the same name as your Python file, just with different file

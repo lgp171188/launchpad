@@ -277,7 +277,7 @@ class StormVocabularyBase(FilteredVocabularyBase):
     should derive from StormVocabularyBase.
     """
 
-    _order_by = None  # type: Optional[str]
+    _order_by: Optional[str] = None
     _clauses = []
 
     def __init__(self, context=None):

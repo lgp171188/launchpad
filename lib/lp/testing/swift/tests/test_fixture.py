@@ -3,8 +3,6 @@
 
 """Testing the mock Swift test fixture."""
 
-__all__ = []  # type: List[str]
-
 from datetime import datetime
 from hashlib import md5
 from typing import List
@@ -20,6 +18,8 @@ from lp.testing.factory import ObjectFactory
 from lp.testing.layers import BaseLayer
 from lp.testing.swift import fakeswift
 from lp.testing.swift.fixture import SwiftFixture
+
+__all__: List[str] = []
 
 
 class TestSwiftFixture(TestCase):

@@ -31,7 +31,7 @@ from lp.testing.layers import (
 
 
 class TestBuildFarmJobBase:
-    layer = DatabaseFunctionalLayer  # type: Type[BaseLayer]
+    layer: Type[BaseLayer] = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):
         """Create a build farm job with which to test."""

@@ -220,7 +220,7 @@ class BranchMailer(BaseMailer):
         revno=None,
         revision_id=None,
         notification_type=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             subject,

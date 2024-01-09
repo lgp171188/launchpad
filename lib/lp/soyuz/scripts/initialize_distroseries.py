@@ -454,6 +454,9 @@ class InitializeDistroSeries:
             parent.strict_supported_component_dependencies
             for parent in self.derivation_parents
         )
+        self.distroseries.publish_i18n_index = any(
+            parent.publish_i18n_index for parent in self.derivation_parents
+        )
 
     def _copy_architectures(self):
         log.info("Copying distroarchseries from parents.")

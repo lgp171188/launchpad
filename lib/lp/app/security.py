@@ -21,8 +21,8 @@ from lp.app.interfaces.security import IAuthorization
 
 @implementer(IAuthorization)
 class AuthorizationBase:
-    permission = None  # type: Optional[str]
-    usedfor = None  # type: Optional[Type[Interface]]
+    permission: Optional[str] = None
+    usedfor: Optional[Type[Interface]] = None
 
     def __init__(self, obj):
         self.obj = obj

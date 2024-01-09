@@ -8,3 +8,4 @@ options:
     packages:
       - launchpad-database-dependencies
       - pgbouncer
+      - run-one

@@ -581,6 +581,17 @@ class IDistroSeriesPublic(
         as_of="devel",
     )
 
+    publish_i18n_index = exported(
+        Bool(
+            title=_("Publish I18n index"),
+            required=True,
+            description=_(
+                """
+            Publish archive i18n/Index file, which is believed to be unused."""
+            ),
+        )
+    )
+
     inherit_overrides_from_parents = Bool(
         title=_("Inherit overrides from parents"),
         readonly=False,

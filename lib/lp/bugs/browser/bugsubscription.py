@@ -712,7 +712,7 @@ class BugMuteSelfView(LaunchpadFormView):
     """A view to mute a user's bug mail for a given bug."""
 
     schema = IBugSubscription
-    field_names = []  # type: List[str]
+    field_names: List[str] = []
 
     @property
     def label(self):

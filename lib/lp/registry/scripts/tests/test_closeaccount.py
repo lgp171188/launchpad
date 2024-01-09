@@ -1259,9 +1259,9 @@ class TestCloseAccount(TestCaseWithFactory):
             account_id = person.account.id
 
             milestone = self.factory.makeMilestone(**milestone_target)
-            product_release = milestone.createProductRelease(
+            product_release: ProductRelease = milestone.createProductRelease(
                 milestone.product.owner, datetime.now(timezone.utc)
-            )  # type: ProductRelease
+            )
             product_release.addReleaseFile(
                 "test.txt", b"test", "text/plain", person
             )

@@ -91,13 +91,13 @@ class UCTExporter:
             raise ValueError(
                 f"Bug with ID: {bug.id} does not have vulnerabilities"
             )
-        vulnerability = vulnerabilities[0]  # type: Vulnerability
+        vulnerability: Vulnerability = vulnerabilities[0]
         if not vulnerability.cve:
             raise ValueError(
                 "Bug with ID: {} - vulnerability "
                 "is not linked to a CVE".format(bug.id)
             )
-        lp_cve = vulnerability.cve  # type: CveModel
+        lp_cve: CveModel = vulnerability.cve
 
         parsed_description = self._parse_bug_description(bug.description)
 
@@ -105,7 +105,7 @@ class UCTExporter:
         for bug_watch in bug.watches:
             bug_urls.append(bug_watch.url)
 
-        bug_tasks = list(bug.bugtasks)  # type: List[BugTask]
+        bug_tasks: List[BugTask] = list(bug.bugtasks)
 
         cve_importance = vulnerability.importance
 
@@ -118,7 +118,7 @@ class UCTExporter:
         #  DistroPackage importance
         package_importances = {}
 
-        package_name_by_product = {}  # type: Dict[Product, SourcePackageName]
+        package_name_by_product: Dict[Product, SourcePackageName] = {}
         # We need to process all distribution package tasks before processing
         # the distro-series tasks to collect importance value for each package.
         distro_packages = []

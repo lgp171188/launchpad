@@ -1437,7 +1437,7 @@ class ProductBrandingView(BrandingChangeView):
 
 @implementer(IProductEditMenu)
 class ProductConfigureBase(ReturnToReferrerMixin, LaunchpadEditFormView):
-    schema = IProduct  # type: Type[Interface]
+    schema: Type[Interface] = IProduct
     usage_fieldname = None
 
     def setUpFields(self):

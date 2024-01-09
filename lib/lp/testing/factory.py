@@ -1265,7 +1265,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         sourcepackage=None,
         reviewer=None,
         target=None,
-        **optional_branch_args
+        **optional_branch_args,
     ):
         """Create and return a new, arbitrary Branch of the given type.
 
@@ -1399,7 +1399,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         distroseries=None,
         sourcepackagename=None,
         owner=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a package branch on an arbitrary package.
 
@@ -2059,7 +2059,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         registrant=None,
         name=None,
         information_type=None,
-        **optional_repository_args
+        **optional_repository_args,
     ):
         """Create and return a new, arbitrary GitRepository.
 
@@ -2151,7 +2151,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         ref_pattern="refs/heads/*",
         creator=None,
         position=None,
-        **repository_kwargs
+        **repository_kwargs,
     ):
         """Create a Git repository access rule."""
         if repository is None:
@@ -2171,7 +2171,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         can_create=False,
         can_push=False,
         can_force_push=False,
-        **rule_kwargs
+        **rule_kwargs,
     ):
         """Create a Git repository access grant."""
         if rule is None:
@@ -3630,7 +3630,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         processor=None,
         supports_virtualized=True,
         supports_nonvirtualized=True,
-        **kwargs
+        **kwargs,
     ):
         if architecturetag is None:
             architecturetag = self.getUniqueUnicode("arch")
@@ -5012,7 +5012,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         packageupload=None,
         spr_creator=None,
         channel=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a `SourcePackagePublishingHistory`.
 
@@ -6091,7 +6091,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         status=BuildStatus.NEEDSBUILD,
         builder=None,
         duration=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a new LiveFSBuild."""
         if requester is None:
@@ -6331,7 +6331,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         builder=None,
         duration=None,
         target_architectures=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a new SnapBuild."""
         if requester is None:
@@ -6512,7 +6512,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         summary=None,
         registrant=None,
         oci_project=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a new OCIProjectSeries attached to an OCIProject."""
         if name is None:
@@ -6589,7 +6589,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         builder=None,
         duration=None,
         build_request=None,
-        **kwargs
+        **kwargs,
     ):
         """Make a new OCIRecipeBuild."""
         if requester is None:
@@ -6810,7 +6810,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         status=BuildStatus.NEEDSBUILD,
         builder=None,
         duration=None,
-        **kwargs
+        **kwargs,
     ):
         if recipe is None:
             if registrant is None:

@@ -939,7 +939,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
         branch_id,
         stacked_on_url,
         last_revision,
-        *format_strings
+        *format_strings,
     ):
         self._branch_changed_log.append(
             dict(
@@ -1130,7 +1130,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
         branch_id,
         stacked_on_url,
         last_revision,
-        *format_strings
+        *format_strings,
     ):
         """Log an oops and raise an xmlrpc fault."""
 

@@ -16,7 +16,7 @@ from zope.formlib import itemswidgets
 # for first page load.
 import lp.app.versioninfo  # noqa: F401
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 # Zope recently changed the behaviour of items widgets with regards to missing

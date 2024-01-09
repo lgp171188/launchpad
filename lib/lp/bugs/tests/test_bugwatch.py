@@ -228,16 +228,16 @@ class ExtractBugTrackerAndBugTest(WithScenarios, TestCase):
     layer = LaunchpadFunctionalLayer
 
     # A URL to an unregistered bug tracker.
-    base_url = None  # type: str
+    base_url: str = None
 
     # The bug tracker type to be tested.
     bugtracker_type = None
 
     # A sample URL to a bug in the bug tracker.
-    bug_url = None  # type: str
+    bug_url: str = None
 
     # The bug id in the sample bug_url.
-    bug_id = None  # type: Optional[str]
+    bug_id: Optional[str] = None
 
     # True if the bug tracker is already registered in sampledata.
     already_registered = False
@@ -383,7 +383,7 @@ class EmailAddressExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
     Ensure BugWatchSet.extractBugTrackerAndBug works with email addresses.
     """
 
-    scenarios = []  # type: List
+    scenarios: List = []
     bugtracker_type = BugTrackerType.EMAILADDRESS
     bug_url = "mailto:foo.bar@example.com"
     base_url = "mailto:foo.bar@example.com"

@@ -149,7 +149,7 @@ class StepView(LaunchpadFormView):
         TextWidget, visible=False
     )
 
-    _field_names = []  # type: List[str]
+    _field_names: List[str] = []
     step_name = ""
     main_action_label = "Continue"
     next_step = None

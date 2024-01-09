@@ -17,7 +17,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 )
 from lp.registry.security import EditByOwnersOrAdmins
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class AdminQuestion(AuthorizationBase):

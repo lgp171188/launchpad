@@ -199,7 +199,7 @@ MENU_ANNOTATION_KEY = "lp.services.webapp.menu.links"
 class MenuBase(UserAttributeCache):
     """Base class for facets and menus."""
 
-    links = None  # type: Sequence[str]
+    links: Sequence[str] = None
     extra_attributes = None
     enable_only = ALL_LINKS
     _baseclassname = "MenuBase"
@@ -401,7 +401,7 @@ class NavigationMenu(MenuBase):
 
     _baseclassname = "NavigationMenu"
 
-    title = None  # type: str
+    title: str = None
     disabled = False
 
     def initLink(self, linkname, request_url):

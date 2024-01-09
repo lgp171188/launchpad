@@ -9,7 +9,7 @@ import transaction
 from lp.testing import TestCaseWithFactory, login_person, ws_object
 from lp.testing.layers import AppServerLayer, DatabaseFunctionalLayer
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class BugTrackerComponentTestCase(TestCaseWithFactory):

@@ -1838,7 +1838,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         keep_binary_files_days=_default,
         base_image=False,
         expected_count=0,
-        **livefsbuild_kwargs
+        **livefsbuild_kwargs,
     ):
         # Garbo should (or should not, if `expected_count=1`) remove LiveFS
         # files of MIME type `content_type` that finished more than

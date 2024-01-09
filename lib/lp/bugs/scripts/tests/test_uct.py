@@ -713,7 +713,7 @@ class TestUCTImporterExporter(TestCaseWithFactory):
         self.checkBugAttachments(bug, cve)
 
     def checkBugTasks(self, bug: Bug, cve: CVE):
-        bug_tasks = bug.bugtasks  # type: List[BugTask]
+        bug_tasks: List[BugTask] = bug.bugtasks
 
         self.assertEqual(
             len(cve.distro_packages)

@@ -4,11 +4,11 @@
 """Test the ability to specify a facet for the yuixhr tests.
 """
 
-__all__ = []  # type: List[str]
-
 from typing import List
 
 from lp.testing.yuixhr import make_suite
+
+__all__: List[str] = []
 
 
 def test_suite():

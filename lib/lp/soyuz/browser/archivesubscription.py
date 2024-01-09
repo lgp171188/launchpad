@@ -355,7 +355,7 @@ class PersonArchiveSubscriptionsView(LaunchpadView):
         # check results
         viewable_archives = []
         non_viewable_archives = []
-        archive_set = getUtility(IArchiveSet)  # type: IArchiveSet
+        archive_set: IArchiveSet = getUtility(IArchiveSet)
         for archive, has_view_permission in archive_set.checkViewPermission(
             archives, self.user
         ).items():

@@ -10,7 +10,7 @@ from lp.testing import BrowserTestCase
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class TestEmailObfuscated(BrowserTestCase):

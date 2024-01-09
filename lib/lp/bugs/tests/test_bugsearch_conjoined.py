@@ -20,7 +20,7 @@ from lp.testing import (
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 class TestSearchBase(TestCaseWithFactory):

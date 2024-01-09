@@ -17,6 +17,7 @@ import os
 import shutil
 import tarfile
 import tempfile
+from typing import Optional
 
 from zope.interface import implementer
 
@@ -113,7 +114,7 @@ class CustomUpload:
     """Base class for custom upload handlers"""
 
     # This should be set as a class property on each subclass.
-    custom_type = None  # type: str
+    custom_type: Optional[str] = None
 
     @classmethod
     def publish(cls, packageupload, libraryfilealias, logger=None):

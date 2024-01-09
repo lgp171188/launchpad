@@ -332,6 +332,7 @@
                 include_long_descriptions
                 index_compressors
                 publish_by_hash
+                publish_i18n_index
                 advertise_by_hash
                 strict_supported_component_dependencies
                 inherit_overrides_from_parents"/>

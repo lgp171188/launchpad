@@ -153,15 +153,13 @@ class UCTRecord:
         applying some data transformations along the way.
         """
 
-        cve_data = load_cve(str(cve_path))  # type: Dict[str, Any]
+        cve_data: Dict[str, Any] = load_cve(str(cve_path))
 
         packages = []
-        tags = cls._pop_cve_property(
-            cve_data, "tags"
-        )  # type: Dict[str, Set[str]]
-        patches = cls._pop_cve_property(
+        tags: Dict[str, Set[str]] = cls._pop_cve_property(cve_data, "tags")
+        patches: Dict[str, List[Tuple[str, str]]] = cls._pop_cve_property(
             cve_data, "patches"
-        )  # type: Dict[str, List[Tuple[str, str]]]
+        )
         for package, statuses_dict in cls._pop_cve_property(
             cve_data, "pkgs"
         ).items():
@@ -515,7 +513,7 @@ class CVE:
         self.notes = notes
         self.mitigation = mitigation
         self.cvss = cvss
-        self.patch_urls = patch_urls or []  # type: List[CVE.PatchURL]
+        self.patch_urls: List[CVE.PatchURL] = patch_urls or []
 
     @classmethod
     def make_from_uct_record(cls, uct_record: UCTRecord) -> "CVE":
@@ -531,9 +529,9 @@ class CVE:
 
         spn_set = getUtility(ISourcePackageNameSet)
 
-        upstream_statuses = (
-            OrderedDict()
-        )  # type: Dict[SourcePackageName, UCTRecord.SeriesPackageStatus]
+        upstream_statuses: Dict[
+            SourcePackageName, UCTRecord.SeriesPackageStatus
+        ] = OrderedDict()
 
         for uct_package in uct_record.packages:
             source_package_name = spn_set.getOrCreateByName(uct_package.name)
@@ -669,22 +667,22 @@ class CVE:
 
         This maps Launchpad data structures to the format that UCT understands.
         """
-        series_packages_by_name = defaultdict(
-            list
-        )  # type: Dict[SourcePackageName, List[CVE.SeriesPackage]]
+        series_packages_by_name: Dict[
+            SourcePackageName, List[CVE.SeriesPackage]
+        ] = defaultdict(list)
         for series_package in self.series_packages:
             series_packages_by_name[series_package.package_name].append(
                 series_package
             )
 
-        packages_by_name = OrderedDict()  # type: Dict[str, UCTRecord.Package]
-        processed_packages = set()  # type: Set[SourcePackageName]
+        packages_by_name: Dict[str, UCTRecord.Package] = OrderedDict()
+        processed_packages: Set[SourcePackageName] = set()
         for distro_package in self.distro_packages:
             spn = distro_package.package_name
             if spn in processed_packages:
                 continue
             processed_packages.add(spn)
-            statuses = []  # type: List[UCTRecord.SeriesPackageStatus]
+            statuses: List[UCTRecord.SeriesPackageStatus] = []
             for series_package in series_packages_by_name[spn]:
                 series = series_package.target.distroseries
                 if series.status == SeriesStatus.DEVELOPMENT:

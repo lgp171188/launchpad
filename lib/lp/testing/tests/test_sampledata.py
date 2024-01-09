@@ -8,14 +8,14 @@ silently switching off some of our constraints. We can detect this by
 doing a dump and restore - this will fail if the data is corrupt.
 """
 
-__all__ = []  # type: List[str]
-
 import subprocess
 from typing import List
 
 from lp.testing import TestCase
 from lp.testing.layers import DatabaseLayer
 from lp.testing.pgsql import PgTestSetup
+
+__all__: List[str] = []
 
 
 class SampleDataTestCase(TestCase):

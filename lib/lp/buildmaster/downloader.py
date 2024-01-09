@@ -30,7 +30,7 @@ class DownloadCommand(amp.Command):
         (b"path_to_write", amp.Unicode()),
         (b"timeout", amp.Integer()),
     ]
-    response = []  # type: List[Tuple[bytes, amp.Argument]]
+    response: List[Tuple[bytes, amp.Argument]] = []
     errors = {
         RequestException: b"REQUEST_ERROR",
         StreamingError: b"STREAMING_ERROR",

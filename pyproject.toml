@@ -1,9 +1,9 @@
 [tool.black]
 line-length = 79
-target-version = ['py35']
+target-version = ['py38']
 
 [tool.mypy]
-python_version = "3.5"
+python_version = "3.8"
 exclude = [
     '/interfaces/',
     'interfaces\.py$',

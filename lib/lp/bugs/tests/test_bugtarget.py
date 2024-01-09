@@ -23,7 +23,7 @@ from lp.testing import TestCaseWithFactory, person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 def bugtarget_filebug(bugtarget, summary, status=None):

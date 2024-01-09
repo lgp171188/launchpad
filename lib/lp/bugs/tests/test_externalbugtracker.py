@@ -9,7 +9,7 @@ from typing import List
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.systemdocs import LayeredDocFileSuite, setUp, tearDown
 
-__all__ = []  # type: List[str]
+__all__: List[str] = []
 
 
 def test_suite():

@@ -4,6 +4,7 @@
 """Test buildd uploads use-cases."""
 
 import os
+from typing import Optional
 
 from zope.component import getUtility
 
@@ -26,9 +27,9 @@ from lp.testing.gpgkeys import import_public_test_keys
 class TestStagedBinaryUploadBase(TestUploadProcessorBase):
     name = "baz"
     version = "1.0-1"
-    distribution_name = None  # type: str
-    distroseries_name = None  # type: str
-    pocket = None  # type: PackagePublishingPocket
+    distribution_name: Optional[str] = None
+    distroseries_name: Optional[str] = None
+    pocket: Optional[PackagePublishingPocket] = None
     policy = "buildd"
     no_mails = True
 

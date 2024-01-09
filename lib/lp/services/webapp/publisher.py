@@ -518,7 +518,7 @@ class LaunchpadView(UserAttributeCache):
         return None
 
     # Names of feature flags which affect a view.
-    related_features = {}  # type: Dict[str, bool]
+    related_features: Dict[str, bool] = {}
 
     @property
     def related_feature_info(self):
@@ -893,7 +893,7 @@ class Navigation:
         self.request = request
 
     # Set this if you want to set a new layer before doing any traversal.
-    newlayer = None  # type: Optional[Type[Any]]
+    newlayer: Optional[Type[Any]] = None
 
     def traverse(self, name):
         """Override this method to handle traversal.

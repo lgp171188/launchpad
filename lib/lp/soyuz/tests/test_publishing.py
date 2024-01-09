@@ -2207,7 +2207,7 @@ class TestChangeOverride(TestNativePublishingBase):
         binary=False,
         format=None,
         ddeb=False,
-        **kwargs
+        **kwargs,
     ):
         self.distroseries.status = status
         get_pub_kwargs = {"pocket": pocket, "channel": channel}
@@ -2230,7 +2230,7 @@ class TestChangeOverride(TestNativePublishingBase):
         status=SeriesStatus.DEVELOPMENT,
         pocket=PackagePublishingPocket.RELEASE,
         channel=None,
-        **kwargs
+        **kwargs,
     ):
         new_pub = self.setUpOverride(
             status=status, pocket=pocket, channel=channel, **kwargs

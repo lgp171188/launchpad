@@ -1133,7 +1133,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
         target_pocket=PackagePublishingPocket.RELEASE,
         include_binaries=False,
         requester=None,
-        **kwargs
+        **kwargs,
     ):
         # Helper method to create a package copy job from an SPPH.
         source = getUtility(IPlainPackageCopyJobSource)

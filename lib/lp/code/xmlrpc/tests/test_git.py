@@ -198,7 +198,7 @@ class TestGitAPIMixin:
         path,
         permission="read",
         can_authenticate=False,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         """Assert that the given path cannot be translated."""
         auth_params = _make_auth_params(
@@ -221,7 +221,7 @@ class TestGitAPIMixin:
         message="Permission denied.",
         permission="read",
         can_authenticate=False,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         """Assert that looking at the given path returns PermissionDenied."""
         auth_params = _make_auth_params(
@@ -244,7 +244,7 @@ class TestGitAPIMixin:
         message="Authorisation required.",
         permission="read",
         can_authenticate=False,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         """Assert that looking at the given path returns Unauthorized."""
         auth_params = _make_auth_params(
@@ -356,7 +356,7 @@ class TestGitAPIMixin:
         writable=False,
         trailing="",
         private=False,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate, **auth_kwargs
@@ -444,7 +444,7 @@ class TestGitAPIMixin:
         requester,
         git_repository,
         can_authenticate=True,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
@@ -499,7 +499,7 @@ class TestGitAPIMixin:
         requester,
         git_repository,
         can_authenticate=True,
-        **auth_kwargs
+        **auth_kwargs,
     ):
         translated_path = git_repository.getInternalPath()
         auth_params = _make_auth_params(
