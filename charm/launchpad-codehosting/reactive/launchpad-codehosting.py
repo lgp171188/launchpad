@@ -429,6 +429,21 @@ def configure_frontend_loadbalancer():
     set_state("launchpad-codehosting.frontend-loadbalancer.configured")
 
 
+@when(
+    "config.changed.haproxy_service_options_http",
+    "config.changed.haproxy_service_options_https",
+    "config.changed.haproxy_service_options_ssh",
+    "config.changed.haproxy_fe_server_options",
+    "config.changed.haproxy_fe_server_options_ssh",
+    "config.changed.port_lb_bzr_sftp",
+    "config.changed.port_bzr_sftp_base",
+    "config.changed.port_web_status_base",
+    "config.changed.workers",
+)
+def deconfigure_frontend_loadbalancer():
+    clear_flag("launchpad-codehosting.frontend-loadbalancer.configured")
+
+
 @when("loadbalancer.available", "service.configured")
 @when_not("launchpad-codehosting.loadbalancer.configured")
 def configure_loadbalancer():
@@ -471,3 +486,12 @@ def configure_loadbalancer():
         hookenv.relation_set(rel["__relid__"], services=services_yaml)
 
     set_state("launchpad-codehosting.loadbalancer.configured")
+
+
+@when(
+    "config.changed.haproxy_service_options_internal_branch_by_id",
+    "config.changed.haproxy_server_options",
+    "config.changed.port_bzr_internal",
+)
+def deconfigure_loadbalancer():
+    clear_flag("launchpad-codehosting.loadbalancer.configured")
