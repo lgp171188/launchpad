@@ -2368,6 +2368,10 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
     def cancel_url(self):
         return canonical_url(self.context)
 
+    @property
+    def next_url(self):
+        return canonical_url(self.context)
+
     @action(_("Save Changes"), name="save")
     def save(self, action, data):
         """Process the IRC nicknames form."""
