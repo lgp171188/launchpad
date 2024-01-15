@@ -59,22 +59,6 @@
       </dd>
     </dl>
 
-
-    <dl tal:condition="view/should_show_jabberids_section" id="jabber-ids">
-      <dt>Jabber:
-        <a tal:replace="structure overview_menu/editjabberids/fmt:icon" />
-      </dt>
-      <dd>
-        <tal:block repeat="jabberid context/jabberids">
-          <span tal:replace="jabberid/jabberid/fmt:obfuscate-email"
-            /><span tal:condition="not: repeat/jabberid/end">,</span>
-        </tal:block>
-        <div tal:condition="context/jabberids/is_empty">
-          No Jabber IDs registered.
-        </div>
-      </dd>
-    </dl>
-
     <dl tal:condition="view/viewing_own_page" id="openid-info">
       <dt>OpenID login:</dt>
       <dd>
@@ -122,15 +106,14 @@
   </div>
 
   <div class="yui-u two-column-list">
-    <dl tal:condition="view/should_show_ircnicknames_section">
-      <dt>IRC:
-        <a tal:replace="structure overview_menu/editircnicknames/fmt:icon" />
+    <dl id="languages">
+      <dt>Languages:
+        <a tal:replace="structure overview_menu/editlanguages/fmt:icon" />
       </dt>
-      <dd tal:repeat="ircnick context/ircnicknames">
-        <span tal:replace="structure ircnick/fmt:formatted_displayname"/>
-      </dd>
-      <dd tal:condition="not: context/ircnicknames">
-        No IRC nicknames registered.
+      <dd>
+        <tal:languages content="view/languages">
+          English
+        </tal:languages>
       </dd>
     </dl>
 
@@ -169,17 +152,6 @@
       </dd>
     </dl>
 
-    <dl id="languages">
-      <dt>Languages:
-        <a tal:replace="structure overview_menu/editlanguages/fmt:icon" />
-      </dt>
-      <dd>
-        <tal:languages content="view/languages">
-          English
-        </tal:languages>
-      </dd>
-    </dl>
-
     <dl id="timezone">
       <dt>Time zone:
         <a tal:replace="structure overview_menu/editlocation/fmt:icon" />
@@ -196,6 +168,36 @@
              tal:content="context/karma">342</a>
           <a target="help" href="/+help-registry/karma.html"
              class="sprite maybe action-icon">Karma help</a>
+      </dd>
+    </dl>
+  </div>
+
+  <div class="yui-u two-column-list">
+    <dt>Social Accounts:</dt>
+    <dl tal:condition="view/should_show_ircnicknames_section">
+      <dt>IRC:
+        <a tal:replace="structure overview_menu/editircnicknames/fmt:icon" />
+      </dt>
+      <dd tal:repeat="ircnick context/ircnicknames">
+        <span tal:replace="structure ircnick/fmt:formatted_displayname"/>
+      </dd>
+      <dd tal:condition="not: context/ircnicknames">
+        No IRC nicknames registered.
+      </dd>
+    </dl>
+
+    <dl tal:condition="view/should_show_jabberids_section" id="jabber-ids">
+      <dt>Jabber:
+        <a tal:replace="structure overview_menu/editjabberids/fmt:icon" />
+      </dt>
+      <dd>
+        <tal:block repeat="jabberid context/jabberids">
+          <span tal:replace="jabberid/jabberid/fmt:obfuscate-email"
+            /><span tal:condition="not: repeat/jabberid/end">,</span>
+        </tal:block>
+        <div tal:condition="context/jabberids/is_empty">
+          No Jabber IDs registered.
+        </div>
       </dd>
     </dl>
   </div>
