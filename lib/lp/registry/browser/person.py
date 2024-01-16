@@ -877,13 +877,13 @@ class PersonOverviewMenu(
     def editircnicknames(self):
         target = "+editircnicknames"
         text = "Update IRC nicknames"
-        return Link(target, text, icon="edit")
+        return Link(target, text, icon="edit", summary=text)
 
     @enabled_with_permission("launchpad.Edit")
     def editjabberids(self):
         target = "+editjabberids"
         text = "Update Jabber IDs"
-        return Link(target, text, icon="edit")
+        return Link(target, text, icon="edit", summary=text)
 
     @enabled_with_permission("launchpad.Edit")
     def editlocation(self):
@@ -2366,6 +2366,10 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
 
     @property
     def cancel_url(self):
+        return canonical_url(self.context)
+
+    @property
+    def next_url(self):
         return canonical_url(self.context)
 
     @action(_("Save Changes"), name="save")

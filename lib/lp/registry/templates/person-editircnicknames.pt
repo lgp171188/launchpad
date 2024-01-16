@@ -46,21 +46,17 @@
             </label>
           </td>
         </tr>
-
       </div>
-
-    <tr>
-      <td><label>Network:</label></td>
-      <td><label>Nickname:</label></td>
-    </tr>
 
     <tr>
       <td>
         <input name="newnetwork" type="text"
+               placeholder="Enter new network"
                tal:attributes="value view/newnetwork|nothing" />
       </td>
       <td>
         <input name="newnick" type="text"
+               placeholder="Enter new nickname"
                tal:attributes="value view/newnick|nothing" />
       </td>
     </tr>
