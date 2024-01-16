@@ -1219,6 +1219,13 @@
         template="../templates/person-editircnicknames.pt"
         />
     <browser:page
+        name="+editsocialaccounts-matrix"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonEditMatrixAccountsView"
+        permission="launchpad.Edit"
+        template="../templates/person-editmatrixaccounts.pt"
+        />
+    <browser:page
         name="+editjabberids"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonEditJabberIDsView"

@@ -1,0 +1,73 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad"
+>
+<body>
+
+<div metal:fill-slot="main">
+<div metal:use-macro="context/@@launchpad_form/form">
+  <div metal:fill-slot="widgets">
+
+    <p tal:condition="view/error_message"
+       tal:content="structure view/error_message/escapedtext" class="error message" />
+
+    <table>
+
+      <div tal:condition="view/matrix_accounts">
+        <tr>
+          <td><label>Homeserver</label></td>
+          <td><label>Username</label></td>
+        </tr>
+        <tr tal:repeat="matrix_account view/matrix_accounts">
+          <td>
+            <input tal:attributes="name string:homeserver_${matrix_account/id};
+                                   value matrix_account/identity/homeserver"
+                   type="text" style="margin-bottom: 0.5em;"/>
+          </td>
+          <td>
+            <input type="text"
+                   tal:attributes="name string:username_${matrix_account/id};
+                                   value matrix_account/identity/username" />
+          </td>
+
+          <td>
+            <label>
+              <input type="checkbox"
+                     value="Remove"
+                     tal:attributes="name string:remove_${matrix_account/id}" />
+              Remove
+            </label>
+          </td>
+        </tr>
+      </div>
+
+      <tr>
+        <td>
+          <input name="new_homeserver"
+                 type="text"
+                 placeholder="Enter new homeserver"
+                 tal:attributes="value view/new_homeserver|nothing" />
+        </td>
+        <td>
+          <input name="new_username"
+                 type="text"
+                 placeholder="Enter new username"
+                 tal:attributes="value view/new_username|nothing" />
+        </td>
+      </tr>
+
+      <tr>
+        <td class="formHelp">Example: ubuntu.com</td>
+        <td class="formHelp">Example: mark</td>
+      </tr>
+    </table>
+  </div>
+</div>
+</div>
+
+</body>
+</html>
