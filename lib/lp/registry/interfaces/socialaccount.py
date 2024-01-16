@@ -106,6 +106,8 @@ class SocialPlatform:
     title = ""
     identity_fields = []
     platform_type = None
+    url = None
+    icon_file = "social-generic"
 
     @classmethod
     def validate_identity(cls, identity):
