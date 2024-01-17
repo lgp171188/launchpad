@@ -446,7 +446,7 @@ class TestPerson(TestCaseWithFactory):
     def test_social_account(self):
         user = self.factory.makePerson()
         attributes = {}
-        attributes["homeserver"] = "abc"
+        attributes["homeserver"] = "abc.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user, SocialPlatformType.MATRIX, attributes
@@ -455,14 +455,44 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual(len(user.social_accounts), 1)
         social_account = user.social_accounts[0]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "abc")
+        self.assertEqual(social_account.identity["homeserver"], "abc.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
     def test_malformed_matrix_account(self):
         user = self.factory.makePerson()
         attributes = {}
-        attributes["homeserver"] = "abc"
+        attributes["homeserver"] = "abc.org"
         attributes["name"] = "test-nickname"
+        utility = getUtility(ISocialAccountSet)
+
+        self.assertRaises(
+            SocialAccountIdentityError,
+            utility.new,
+            user,
+            SocialPlatformType.MATRIX,
+            attributes,
+        )
+
+    def test_malformed_matrix_account_username(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["homeserver"] = "abc.org"
+        attributes["username"] = 123123
+        utility = getUtility(ISocialAccountSet)
+
+        self.assertRaises(
+            SocialAccountIdentityError,
+            utility.new,
+            user,
+            SocialPlatformType.MATRIX,
+            attributes,
+        )
+
+    def test_malformed_matrix_account_homeserver(self):
+        user = self.factory.makePerson()
+        attributes = {}
+        attributes["homeserver"] = "abc"
+        attributes["username"] = "test-nickname"
         utility = getUtility(ISocialAccountSet)
 
         self.assertRaises(
@@ -491,13 +521,13 @@ class TestPerson(TestCaseWithFactory):
     def test_multiple_social_accounts(self):
         user = self.factory.makePerson()
         attributes = {}
-        attributes["homeserver"] = "abc"
+        attributes["homeserver"] = "abc.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user, SocialPlatformType.MATRIX, attributes
         )
         attributes = {}
-        attributes["homeserver"] = "def"
+        attributes["homeserver"] = "def.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user, SocialPlatformType.MATRIX, attributes
@@ -506,24 +536,24 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual(len(user.social_accounts), 2)
         social_account = user.social_accounts[0]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "abc")
+        self.assertEqual(social_account.identity["homeserver"], "abc.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
         social_account = user.social_accounts[1]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "def")
+        self.assertEqual(social_account.identity["homeserver"], "def.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
     def test_multiple_social_accounts_on_multiple_users(self):
         user = self.factory.makePerson()
         attributes = {}
-        attributes["homeserver"] = "abc"
+        attributes["homeserver"] = "abc.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user, SocialPlatformType.MATRIX, attributes
         )
         attributes = {}
-        attributes["homeserver"] = "def"
+        attributes["homeserver"] = "def.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user, SocialPlatformType.MATRIX, attributes
@@ -531,13 +561,13 @@ class TestPerson(TestCaseWithFactory):
 
         user_two = self.factory.makePerson()
         attributes = {}
-        attributes["homeserver"] = "ghi"
+        attributes["homeserver"] = "ghi.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user_two, SocialPlatformType.MATRIX, attributes
         )
         attributes = {}
-        attributes["homeserver"] = "lmn"
+        attributes["homeserver"] = "lmn.org"
         attributes["username"] = "test-nickname"
         getUtility(ISocialAccountSet).new(
             user_two, SocialPlatformType.MATRIX, attributes
@@ -546,23 +576,23 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual(len(user.social_accounts), 2)
         social_account = user.social_accounts[0]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "abc")
+        self.assertEqual(social_account.identity["homeserver"], "abc.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
         social_account = user.social_accounts[1]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "def")
+        self.assertEqual(social_account.identity["homeserver"], "def.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
         self.assertEqual(len(user_two.social_accounts), 2)
         social_account = user_two.social_accounts[0]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "ghi")
+        self.assertEqual(social_account.identity["homeserver"], "ghi.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
         social_account = user_two.social_accounts[1]
         self.assertEqual(social_account.platform, SocialPlatformType.MATRIX)
-        self.assertEqual(social_account.identity["homeserver"], "lmn")
+        self.assertEqual(social_account.identity["homeserver"], "lmn.org")
         self.assertEqual(social_account.identity["username"], "test-nickname")
 
     def test_getAffiliatedPillars_kinds(self):

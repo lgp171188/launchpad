@@ -145,6 +145,24 @@ class MatrixPlatform(SocialPlatform):
                 "Homeserver must be a valid domain."
             )
 
+    @classmethod
+    def validate_identity(cls, identity):
+        if not all(
+            identity.get(required_field)
+            for required_field in cls.identity_fields
+        ):
+            raise SocialAccountIdentityError(
+                f"You must provide the following fields: "
+                f"{', '.join(cls.identity_fields)}."
+            )
+        if not type(identity["username"]) is str:
+            raise SocialAccountIdentityError("Username must be a string.")
+        hs_pattern = "^[0-9A-z]+\\.[0-9A-z]+$"
+        if not type(identity["homeserver"]) is str:
+            raise SocialAccountIdentityError("Homeserver must be a string.")
+        if not re.match(hs_pattern, identity["homeserver"]):
+            raise SocialAccountIdentityError("Homeserver must be valid.")
+
 
 @error_status(http.client.BAD_REQUEST)
 class SocialAccountIdentityError(Exception):

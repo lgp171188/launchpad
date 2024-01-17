@@ -17,8 +17,8 @@ with the Social Account, a platform type and an identity dictionary.
 
     >>> salgado = getUtility(IPersonSet).getByName("salgado")
     >>> identity = {}
-    >>> identity["network"] = "abc.org"
-    >>> identity["nickname"] = "salgado"
+    >>> identity["homeserver"] = "abc.org"
+    >>> identity["username"] = "salgado"
     >>> social_account = getUtility(ISocialAccountSet).new(
     ...     salgado, SocialPlatformType.MATRIX, identity
     ... )
