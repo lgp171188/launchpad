@@ -895,7 +895,7 @@ class PersonOverviewMenu(
 
     @enabled_with_permission("launchpad.Edit")
     def editmatrixaccounts(self):
-        target = "+editsocialaccounts-matrix"
+        target = "+editmatrixaccounts"
         text = "Update Matrix accounts"
         return Link(target, text, icon="edit", summary=text)
 

@@ -1219,7 +1219,7 @@
         template="../templates/person-editircnicknames.pt"
         />
     <browser:page
-        name="+editsocialaccounts-matrix"
+        name="+editmatrixaccounts"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonEditMatrixAccountsView"
         permission="launchpad.Edit"
