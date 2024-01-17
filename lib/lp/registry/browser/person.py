@@ -156,6 +156,7 @@ from lp.registry.interfaces.product import InvalidProductName, IProduct
 from lp.registry.interfaces.socialaccount import (
     ISocialAccountSet,
     MatrixPlatform,
+    SocialAccountIdentityError,
 )
 from lp.registry.interfaces.ssh import ISSHKeySet, SSHKeyAdditionError
 from lp.registry.interfaces.teammembership import (
@@ -2453,7 +2454,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
 
     @property
     def existing_accounts(self):
-        return self.context.getSocialAccounts(
+        return self.context.getSocialAccountsByPlatform(
             platform=self.platform.platform_type
         )
 
@@ -2472,10 +2473,10 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
                     field: form.get(f"{field}_{social_account.id}")
                     for field in self.platform.identity_fields
                 }
-                if not all(updated_identity.values()):
-                    self.request.response.addErrorNotification(
-                        "Fields cannot be left empty."
-                    )
+                try:
+                    self.platform.validate_identity(updated_identity)
+                except SocialAccountIdentityError as e:
+                    self.request.response.addErrorNotification(e)
                     return
 
                 social_account.identity = updated_identity
@@ -2486,23 +2487,26 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
             for field_name in self.platform.identity_fields
         }
 
-        if all(new_account_identity.values()):
+        if any(new_account_identity.values()):
+            try:
+                self.platform.validate_identity(new_account_identity)
+            except SocialAccountIdentityError as e:
+                for field_key, field_value in new_account_identity.items():
+                    self.__setattr__(f"new_{field_key}", field_value)
+                self.request.response.addErrorNotification(e)
+                return
+
             getUtility(ISocialAccountSet).new(
                 person=self.context,
                 platform=self.platform.platform_type,
                 identity=new_account_identity,
             )
 
-        elif any(new_account_identity.values()):
-            for field_key, field_value in new_account_identity.items():
-                self.__setattr__(f"new_{field_key}", field_value)
-            self.request.response.addErrorNotification(
-                "All fields are required to add a new account."
-            )
-            return
-
         # If we there were no errors, return user to profile page
         self.next_url = canonical_url(self.context)
+        self.request.response.addNotification(
+            f"{self.platform.title}'s accounts saved successfully."
+        )
 
 
 class PersonEditJabberIDsView(LaunchpadFormView):
