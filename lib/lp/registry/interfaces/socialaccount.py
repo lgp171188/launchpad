@@ -132,33 +132,8 @@ class MatrixPlatform(SocialPlatform):
             )
         if not isinstance(identity["username"], str):
             raise SocialAccountIdentityError("Username must be a string.")
-        # Matrix username can contain a-z, 0-9, ., _, =, -, and /
-        # ref: https://spec.matrix.org/v1.1/appendices/#user-identifiers
-        username_patter = r"^[A-z0-9-=_./]+"
-        if not re.match(username_patter, identity["username"]):
-            raise SocialAccountIdentityError("Username must be valid.")
-        hs_pattern = r"^[A-z0-9][A-z0-9-]*(\.[A-z0-9]([A-z0-9-][A-z0-9])*)+$"
-        if not isinstance(identity["homeserver"], str):
-            raise SocialAccountIdentityError("Homeserver must be a string.")
-        if not re.match(hs_pattern, identity["homeserver"]):
-            raise SocialAccountIdentityError(
-                "Homeserver must be a valid domain."
-            )
-
-    @classmethod
-    def validate_identity(cls, identity):
-        if not all(
-            identity.get(required_field)
-            for required_field in cls.identity_fields
-        ):
-            raise SocialAccountIdentityError(
-                f"You must provide the following fields: "
-                f"{', '.join(cls.identity_fields)}."
-            )
-        if not type(identity["username"]) is str:
-            raise SocialAccountIdentityError("Username must be a string.")
         hs_pattern = "^[0-9A-z]+\\.[0-9A-z]+$"
-        if not type(identity["homeserver"]) is str:
+        if not isinstance(identity["homeserver"], str):
             raise SocialAccountIdentityError("Homeserver must be a string.")
         if not re.match(hs_pattern, identity["homeserver"]):
             raise SocialAccountIdentityError("Homeserver must be valid.")
