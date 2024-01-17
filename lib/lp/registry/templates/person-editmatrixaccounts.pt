@@ -17,33 +17,32 @@
 
     <table>
 
-      <div tal:condition="view/matrix_accounts">
-        <tr>
-          <td><label>Homeserver</label></td>
-          <td><label>Username</label></td>
-        </tr>
-        <tr tal:repeat="matrix_account view/matrix_accounts">
-          <td>
-            <input tal:attributes="name string:homeserver_${matrix_account/id};
-                                   value matrix_account/identity/homeserver"
-                   type="text" style="margin-bottom: 0.5em;"/>
-          </td>
-          <td>
-            <input type="text"
-                   tal:attributes="name string:username_${matrix_account/id};
-                                   value matrix_account/identity/username" />
-          </td>
+      <tr>
+        <td><label>Homeserver</label></td>
+        <td><label>Username</label></td>
+      </tr>
 
-          <td>
-            <label>
-              <input type="checkbox"
-                     value="Remove"
-                     tal:attributes="name string:remove_${matrix_account/id}" />
-              Remove
-            </label>
-          </td>
-        </tr>
-      </div>
+      <tr tal:repeat="social_account view/existing_accounts">
+        <td>
+          <input tal:attributes="name string:homeserver_${social_account/id};
+                                  value social_account/identity/homeserver"
+                  type="text" style="margin-bottom: 0.5em;"/>
+        </td>
+        <td>
+          <input type="text"
+                  tal:attributes="name string:username_${social_account/id};
+                                  value social_account/identity/username" />
+        </td>
+
+        <td>
+          <label>
+            <input type="checkbox"
+                    value="Remove"
+                    tal:attributes="name string:remove_${social_account/id}" />
+            Remove
+          </label>
+        </td>
+      </tr>
 
       <tr>
         <td>

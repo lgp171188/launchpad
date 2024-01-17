@@ -2383,13 +2383,10 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
         return smartquote("%s's IRC nicknames" % self.context.displayname)
 
     label = page_title
+    next_url = None
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context)
-
-    @property
-    def next_url(self):
         return canonical_url(self.context)
 
     @action(_("Save Changes"), name="save")
@@ -2428,10 +2425,18 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
                 self.request.response.addErrorNotification(
                     "Neither Nickname nor Network can be empty."
                 )
+                return
+
+        # If we there were no errors, return user to profile page
+        self.next_url = canonical_url(self.context)
 
 
 class PersonEditMatrixAccountsView(LaunchpadFormView):
+    # TODO: have a look into generalising this view and the relevant template
+    # (`person-editmatrixaccounts.pt`) for any social platform
+
     schema = Interface
+    platform = MatrixPlatform
 
     @property
     def page_title(self):
@@ -2440,19 +2445,14 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
         )
 
     label = page_title
-    platform = MatrixPlatform
+    next_url = None
 
     @property
     def cancel_url(self):
         return canonical_url(self.context)
 
-    # TODO before merge: test this next URL properly when fields are empty
     @property
-    def next_url(self):
-        return canonical_url(self.context)
-
-    @property
-    def matrix_accounts(self):
+    def existing_accounts(self):
         return self.context.getSocialAccounts(
             platform=self.platform.platform_type
         )
@@ -2463,7 +2463,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
         form = self.request.form
 
         # Update or remove existing accounts
-        for social_account in self.matrix_accounts:
+        for social_account in self.existing_accounts:
             if form.get(f"remove_{social_account.id}"):
                 social_account.destroySelf()
 
@@ -2474,7 +2474,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
                 }
                 if not all(updated_identity.values()):
                     self.request.response.addErrorNotification(
-                        "Fields cannot be empty."
+                        "Fields cannot be left empty."
                     )
                     return
 
@@ -2497,8 +2497,12 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
             for field_key, field_value in new_account_identity.items():
                 self.__setattr__(f"new_{field_key}", field_value)
             self.request.response.addErrorNotification(
-                "All fields must be filled."
+                "All fields are required to add a new account."
             )
+            return
+
+        # If we there were no errors, return user to profile page
+        self.next_url = canonical_url(self.context)
 
 
 class PersonEditJabberIDsView(LaunchpadFormView):
