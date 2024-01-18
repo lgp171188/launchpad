@@ -1,0 +1,12 @@
+.social_accounts {
+    &__icon {
+        margin-right: 0.5em;
+        height: 1.4em;
+        width: 1.4em;
+        margin-bottom: -0.3em;
+    }
+
+    & a.action-icon {
+        padding-bottom: 0;
+    }
+}

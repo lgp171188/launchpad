@@ -106,6 +106,9 @@ class SocialPlatform:
     title = ""
     identity_fields = []
     platform_type = None
+    icon = ""
+    display_format = ""
+    url = None
 
     @classmethod
     def validate_identity(cls, identity):
@@ -117,6 +120,9 @@ class MatrixPlatform(SocialPlatform):
     title = "Matrix"
     identity_fields = ["username", "homeserver"]
     platform_type = SocialPlatformType.MATRIX
+    icon = "social-matrix"
+    display_format = "<strong>@{username}:{homeserver}</strong>"
+    url = "https://matrix.to//#/@{username}:{homeserver}"
 
     @classmethod
     def validate_identity(cls, identity):
@@ -142,6 +148,11 @@ class MatrixPlatform(SocialPlatform):
             raise SocialAccountIdentityError(
                 "Homeserver must be a valid domain."
             )
+
+
+SOCIAL_PLATFORM_TYPES_MAP = {
+    SocialPlatformType.MATRIX: MatrixPlatform,
+}
 
 
 @error_status(http.client.BAD_REQUEST)

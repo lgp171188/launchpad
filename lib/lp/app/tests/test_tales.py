@@ -17,6 +17,10 @@ from lp.app.browser.tales import (
 )
 from lp.registry.interfaces.irc import IIrcIDSet
 from lp.registry.interfaces.person import PersonVisibility
+from lp.registry.interfaces.socialaccount import (
+    ISocialAccountSet,
+    SocialPlatformType,
+)
 from lp.services.webapp.authorization import (
     check_permission,
     clear_cache,
@@ -382,6 +386,61 @@ class TestIRCNicknameFormatterAPI(TestCaseWithFactory):
             '<span class="lesser"> on </span>\n'
             "<strong>&lt;b&gt;irc.canonical.com&lt;/b&gt;</strong>\n",
             expected_html,
+        )
+
+
+class TestSocialAccountFormatterAPI(TestCaseWithFactory):
+    """Tests for SocialAccountFormatterAPI"""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_formatted_display(self):
+        """Social account is displayed as expected."""
+        person = self.factory.makePerson()
+        social_account_set = getUtility(ISocialAccountSet)
+        identity = {
+            "username": "fred",
+            "homeserver": "ubuntu.com",
+        }
+        social_account = social_account_set.new(
+            person, SocialPlatformType.MATRIX, identity
+        )
+        expected_html = (
+            '<img class="social_accounts__icon" alt="Matrix" title="Matrix" '
+            'src="/@@/social-matrix" /> <a href=https://matrix.to//#/@fred'
+            ':ubuntu.com target="_blank"><strong>@fred:ubuntu.com</strong></a>'
+        )
+
+        self.assertEqual(
+            expected_html,
+            test_tales(
+                "account/fmt:formatted_display", account=social_account
+            ),
+        )
+
+    def test_formatted_display_escaping(self):
+        """Social account is displayed as expected even when there is markup"""
+        person = self.factory.makePerson()
+        social_account_set = getUtility(ISocialAccountSet)
+        # Include some bogus markup to check escaping works.
+        identity = {
+            "username": "<b>fred</b>",
+            "homeserver": "ubuntu.com",
+        }
+        social_account = social_account_set.new(
+            person, SocialPlatformType.MATRIX, identity
+        )
+        expected_html = (
+            '<img class="social_accounts__icon" alt="Matrix" title="Matrix" '
+            'src="/@@/social-matrix" /> <a href=https://matrix.to//#/@%3Cb%3E'
+            'fred%3C/b%3E:ubuntu.com target="_blank">'
+            "<strong>@%3Cb%3Efred%3C/b%3E:ubuntu.com</strong></a>"
+        )
+        self.assertEqual(
+            expected_html,
+            test_tales(
+                "account/fmt:formatted_display", account=social_account
+            ),
         )
 
 
