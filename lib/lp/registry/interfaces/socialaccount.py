@@ -132,11 +132,13 @@ class MatrixPlatform(SocialPlatform):
             )
         if not isinstance(identity["username"], str):
             raise SocialAccountIdentityError("Username must be a string.")
-        hs_pattern = "^[0-9A-z]+\\.[0-9A-z]+$"
+        hs_pattern = r"^[A-z0-9][A-z0-9-]*(\.[A-z0-9]([A-z0-9-][A-z0-9])*)+$"
         if not isinstance(identity["homeserver"], str):
             raise SocialAccountIdentityError("Homeserver must be a string.")
         if not re.match(hs_pattern, identity["homeserver"]):
-            raise SocialAccountIdentityError("Homeserver must be valid.")
+            raise SocialAccountIdentityError(
+                "Homeserver must be a valid domain."
+            )
 
 
 @error_status(http.client.BAD_REQUEST)

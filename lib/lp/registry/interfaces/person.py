@@ -1052,7 +1052,7 @@ class IPersonViewRestricted(
     )
     @export_read_operation()
     @operation_for_version("beta")
-    def getSocialAccountsByPlatform(platform):
+    def getSocialAccountsForPlatform(platform):
         """Return Social Accounts associated to the user."""
 
     team_memberships = exported(
