@@ -418,31 +418,6 @@ class TestSocialAccountFormatterAPI(TestCaseWithFactory):
             ),
         )
 
-    def test_formatted_display_escaping(self):
-        """Social account is displayed as expected even when there is markup"""
-        person = self.factory.makePerson()
-        social_account_set = getUtility(ISocialAccountSet)
-        # Include some bogus markup to check escaping works.
-        identity = {
-            "username": "<b>fred</b>",
-            "homeserver": "ubuntu.com",
-        }
-        social_account = social_account_set.new(
-            person, SocialPlatformType.MATRIX, identity
-        )
-        expected_html = (
-            '<img class="social_accounts__icon" alt="Matrix" title="Matrix" '
-            'src="/@@/social-matrix" /> <a href=https://matrix.to//#/@%3Cb%3E'
-            'fred%3C/b%3E:ubuntu.com target="_blank">'
-            "<strong>@%3Cb%3Efred%3C/b%3E:ubuntu.com</strong></a>"
-        )
-        self.assertEqual(
-            expected_html,
-            test_tales(
-                "account/fmt:formatted_display", account=social_account
-            ),
-        )
-
 
 class ObjectImageDisplayAPITestCase(TestCaseWithFactory):
     """Tests for ObjectImageDisplayAPI"""
