@@ -157,6 +157,7 @@ from lp.registry.interfaces.socialaccount import (
     ISocialAccountSet,
     MatrixPlatform,
     SocialAccountIdentityError,
+    SocialPlatformType,
 )
 from lp.registry.interfaces.ssh import ISSHKeySet, SSHKeyAdditionError
 from lp.registry.interfaces.teammembership import (
@@ -1681,6 +1682,25 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         )
 
     @property
+    def should_show_matrix_accounts_section(self):
+        """Should the matrix accounts section be shown?
+
+        It's shown when the person has social accounts for the Matrix platform
+        registered or has rights to register new ones.
+        """
+        return bool(self.matrix_accounts) or (
+            check_permission("launchpad.Edit", self.context)
+        )
+
+    @property
+    def should_show_socialaccounts_section(self):
+        return (
+            self.should_show_ircnicknames_section
+            or self.should_show_jabberids_section
+            or self.should_show_matrix_accounts_section
+        )
+
+    @property
     def should_show_sshkeys_section(self):
         """Should the 'SSH keys' section be shown?
 
@@ -1706,6 +1726,12 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
     def gpg_keys(self):
         """A cached version of the users OpenPGP keys."""
         return self.context.gpg_keys
+
+    @cachedproperty
+    def matrix_accounts(self):
+        return self.context.getSocialAccountsByPlatform(
+            SocialPlatformType.MATRIX
+        )
 
     @cachedproperty
     def is_probationary_or_invalid_user(self):
