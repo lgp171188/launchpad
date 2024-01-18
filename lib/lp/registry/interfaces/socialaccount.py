@@ -106,12 +106,6 @@ class SocialPlatform:
     title = ""
     identity_fields = []
     platform_type = None
-    url = None
-    icon_file = "social-generic"
-
-    @classmethod
-    def validate_identity(cls, identity):
-        pass
 
     @classmethod
     def validate_identity(cls, identity):
@@ -136,6 +130,8 @@ class MatrixPlatform(SocialPlatform):
             )
         if not isinstance(identity["username"], str):
             raise SocialAccountIdentityError("Username must be a string.")
+        # Matrix username can contain a-z, 0-9, ., _, =, -, and /
+        # ref: https://spec.matrix.org/v1.1/appendices/#user-identifiers
         username_patter = r"^[A-z0-9-=_./]+"
         if not re.match(username_patter, identity["username"]):
             raise SocialAccountIdentityError("Username must be valid.")
