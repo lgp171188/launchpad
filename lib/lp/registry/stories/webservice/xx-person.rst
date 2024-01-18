@@ -53,6 +53,7 @@ for teams (as they're defined in the ITeam interface).
     recipes_collection_link: 'http://.../~salgado/recipes'
     resource_type_link: 'http://.../#person'
     self_link: 'http://.../~salgado'
+    social_accounts_collection_link: 'http://.../~salgado/social_accounts'
     sshkeys_collection_link: 'http://.../~salgado/sshkeys'
     sub_teams_collection_link: 'http://.../~salgado/sub_teams'
     super_teams_collection_link: 'http://.../~salgado/super_teams'
@@ -116,6 +117,7 @@ for teams (as they're defined in the ITeam interface).
     renewal_policy: 'invite them to apply for renewal'
     resource_type_link: 'http://.../#team'
     self_link: 'http://.../~ubuntu-team'
+    social_accounts_collection_link: 'http://.../~ubuntu-team/social_accounts'
     sshkeys_collection_link: 'http://.../~ubuntu-team/sshkeys'
     sub_teams_collection_link: 'http://.../~ubuntu-team/sub_teams'
     subscription_policy: 'Moderated Team'
@@ -635,6 +637,18 @@ to, obviously.
     HTTP/1.1 404 Not Found
     ...
 
+Social Accounts
+..........
+
+Social Accounts of a person are also linked.
+
+    >>> mark = webservice.get("/~mark").jsonBody()
+    >>> social_accounts_link = mark["social_accounts_collection_link"]
+    >>> print(social_accounts_link)
+    http://.../~mark/social_accounts
+    >>> print_self_link_of_entries(
+    ...     webservice.get(social_accounts_link).jsonBody()
+    ... )
 
 IRC nicknames
 .............

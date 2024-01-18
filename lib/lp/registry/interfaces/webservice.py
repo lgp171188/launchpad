@@ -35,6 +35,7 @@ __all__ = [
     "IServiceFactory",
     "ISharingService",
     "ISSHKey",
+    "ISocialAccount",
     "ISourcePackage",
     "ISourcePackageName",
     "ITeam",
@@ -94,6 +95,7 @@ from lp.registry.interfaces.productseries import (
 )
 from lp.registry.interfaces.projectgroup import IProjectGroup, IProjectGroupSet
 from lp.registry.interfaces.sharingservice import ISharingService
+from lp.registry.interfaces.socialaccount import ISocialAccount
 from lp.registry.interfaces.sourcepackage import (
     ISourcePackage,
     ISourcePackageEdit,

@@ -152,6 +152,7 @@ from lp.registry.interfaces.persontransferjob import (
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.poll import IPollSubset
 from lp.registry.interfaces.product import InvalidProductName, IProduct
+from lp.registry.interfaces.socialaccount import ISocialAccountSet
 from lp.registry.interfaces.ssh import ISSHKeySet, SSHKeyAdditionError
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
@@ -554,6 +555,14 @@ class PersonNavigation(BranchTraversalMixin, Navigation):
         if irc_nick is None or irc_nick.person != self.context:
             return None
         return irc_nick
+
+    @stepthrough("+socialaccount")
+    def traverse_socialaccount(self, id):
+        """Traverse to this person's SocialAccount on the webservice layer."""
+        social_account = getUtility(ISocialAccountSet).get(id)
+        if social_account is None or social_account.person != self.context:
+            return None
+        return social_account
 
     @stepthrough("+oci-registry-credential")
     def traverse_oci_registry_credential(self, id):
