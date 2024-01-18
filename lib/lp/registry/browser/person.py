@@ -19,6 +19,7 @@ __all__ = [
     "PersonEditEmailsView",
     "PersonEditIRCNicknamesView",
     "PersonEditJabberIDsView",
+    "PersonEditMatrixAccountsView",
     "PersonEditTimeZoneView",
     "PersonEditSSHKeysView",
     "PersonEditView",
@@ -152,7 +153,11 @@ from lp.registry.interfaces.persontransferjob import (
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.poll import IPollSubset
 from lp.registry.interfaces.product import InvalidProductName, IProduct
-from lp.registry.interfaces.socialaccount import ISocialAccountSet
+from lp.registry.interfaces.socialaccount import (
+    ISocialAccountSet,
+    MatrixPlatform,
+    SocialAccountIdentityError,
+)
 from lp.registry.interfaces.ssh import ISSHKeySet, SSHKeyAdditionError
 from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
@@ -824,6 +829,7 @@ class PersonOverviewMenu(
         "editmailinglists",
         "editircnicknames",
         "editjabberids",
+        "editmatrixaccounts",
         "editsshkeys",
         "editpgpkeys",
         "editlocation",
@@ -886,6 +892,12 @@ class PersonOverviewMenu(
     def editircnicknames(self):
         target = "+editircnicknames"
         text = "Update IRC nicknames"
+        return Link(target, text, icon="edit", summary=text)
+
+    @enabled_with_permission("launchpad.Edit")
+    def editmatrixaccounts(self):
+        target = "+editmatrixaccounts"
+        text = "Edit Matrix accounts"
         return Link(target, text, icon="edit", summary=text)
 
     @enabled_with_permission("launchpad.Edit")
@@ -2372,13 +2384,10 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
         return smartquote("%s's IRC nicknames" % self.context.displayname)
 
     label = page_title
+    next_url = None
 
     @property
     def cancel_url(self):
-        return canonical_url(self.context)
-
-    @property
-    def next_url(self):
         return canonical_url(self.context)
 
     @action(_("Save Changes"), name="save")
@@ -2417,6 +2426,87 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
                 self.request.response.addErrorNotification(
                     "Neither Nickname nor Network can be empty."
                 )
+                return
+
+        # If we there were no errors, return user to profile page
+        self.next_url = canonical_url(self.context)
+
+
+class PersonEditMatrixAccountsView(LaunchpadFormView):
+    # TODO: have a look into generalising this view and the relevant template
+    # (`person-editmatrixaccounts.pt`) for any social platform
+
+    schema = Interface
+    platform = MatrixPlatform
+
+    @property
+    def page_title(self):
+        return smartquote(
+            f"{self.context.displayname}'s {self.platform.title} accounts"
+        )
+
+    label = page_title
+    next_url = None
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    @property
+    def existing_accounts(self):
+        return self.context.getSocialAccountsByPlatform(
+            platform=self.platform.platform_type
+        )
+
+    @action(_("Save Changes"), name="save")
+    def save(self, action, data):
+        """Process the social accounts form."""
+        form = self.request.form
+
+        # Update or remove existing accounts
+        for social_account in self.existing_accounts:
+            if form.get(f"remove_{social_account.id}"):
+                social_account.destroySelf()
+
+            else:
+                updated_identity = {
+                    field: form.get(f"{field}_{social_account.id}")
+                    for field in self.platform.identity_fields
+                }
+                try:
+                    self.platform.validate_identity(updated_identity)
+                except SocialAccountIdentityError as e:
+                    self.request.response.addErrorNotification(e)
+                    return
+
+                social_account.identity = updated_identity
+
+        # Add new account
+        new_account_identity = {
+            field_name: form.get(f"new_{field_name}")
+            for field_name in self.platform.identity_fields
+        }
+
+        if any(new_account_identity.values()):
+            try:
+                self.platform.validate_identity(new_account_identity)
+            except SocialAccountIdentityError as e:
+                for field_key, field_value in new_account_identity.items():
+                    self.__setattr__(f"new_{field_key}", field_value)
+                self.request.response.addErrorNotification(e)
+                return
+
+            getUtility(ISocialAccountSet).new(
+                person=self.context,
+                platform=self.platform.platform_type,
+                identity=new_account_identity,
+            )
+
+        # If we there were no errors, return user to profile page
+        self.next_url = canonical_url(self.context)
+        self.request.response.addNotification(
+            f"{self.platform.title} accounts saved successfully."
+        )
 
 
 class PersonEditJabberIDsView(LaunchpadFormView):
