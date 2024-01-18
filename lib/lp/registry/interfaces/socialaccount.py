@@ -136,7 +136,7 @@ class MatrixPlatform(SocialPlatform):
             )
         if not isinstance(identity["username"], str):
             raise SocialAccountIdentityError("Username must be a string.")
-        username_patter = r"^[A-z0-9-=_.]+"
+        username_patter = r"^[A-z0-9-=_./]+"
         if not re.match(username_patter, identity["username"]):
             raise SocialAccountIdentityError("Username must be valid.")
         hs_pattern = r"^[A-z0-9][A-z0-9-]*(\.[A-z0-9]([A-z0-9-][A-z0-9])*)+$"
