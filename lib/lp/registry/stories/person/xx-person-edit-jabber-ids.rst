@@ -47,7 +47,7 @@ it will be associated with their account.
     >>> show_errors(user_browser)
 
     >>> def show_jabberids(browser):
-    ...     tags = find_tags_by_class(browser.contents, "jabber_accounts")
+    ...     tags = find_tags_by_class(browser.contents, "jabber_account")
     ...     for item in tags:
     ...         print(extract_text(item.find("span")))
     ...
@@ -68,5 +68,4 @@ checkbox besides the ID:
     >>> for item in tags.find_all("span"):
     ...     print(extract_text(item))
     ...
-
     No Jabber IDs registered.
