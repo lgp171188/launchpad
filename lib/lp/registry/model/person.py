@@ -704,7 +704,7 @@ class Person(
 
     # TODO: write test for this function once we have more
     # than one Social Platform Type.
-    def getSocialAccountsForPlatform(self, platform):
+    def getSocialAccountsByPlatform(self, platform):
         return list(
             getUtility(ISocialAccountSet).getByPersonAndSocialPlatform(
                 self, platform

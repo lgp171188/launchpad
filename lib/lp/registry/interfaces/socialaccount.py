@@ -113,6 +113,10 @@ class SocialPlatform:
     def validate_identity(cls, identity):
         pass
 
+    @classmethod
+    def validate_identity(cls, identity):
+        pass
+
 
 # XXX pelpsi: replace this with a pydantic validator
 class MatrixPlatform(SocialPlatform):
@@ -132,6 +136,9 @@ class MatrixPlatform(SocialPlatform):
             )
         if not isinstance(identity["username"], str):
             raise SocialAccountIdentityError("Username must be a string.")
+        username_patter = r"^[A-z0-9-=_.]+"
+        if not re.match(username_patter, identity["username"]):
+            raise SocialAccountIdentityError("Username must be valid.")
         hs_pattern = r"^[A-z0-9][A-z0-9-]*(\.[A-z0-9]([A-z0-9-][A-z0-9])*)+$"
         if not isinstance(identity["homeserver"], str):
             raise SocialAccountIdentityError("Homeserver must be a string.")
