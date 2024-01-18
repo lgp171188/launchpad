@@ -897,7 +897,7 @@ class PersonOverviewMenu(
     @enabled_with_permission("launchpad.Edit")
     def editmatrixaccounts(self):
         target = "+editmatrixaccounts"
-        text = "Update Matrix accounts"
+        text = "Edit Matrix accounts"
         return Link(target, text, icon="edit", summary=text)
 
     @enabled_with_permission("launchpad.Edit")
@@ -2505,7 +2505,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
         # If we there were no errors, return user to profile page
         self.next_url = canonical_url(self.context)
         self.request.response.addNotification(
-            f"{self.platform.title}'s accounts saved successfully."
+            f"{self.platform.title} accounts saved successfully."
         )
 
 
