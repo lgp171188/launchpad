@@ -165,9 +165,9 @@ from lp.registry.interfaces.product import IProduct, IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.socialaccount import (
+    SOCIAL_PLATFORM_TYPES_MAP,
     ISocialAccount,
     ISocialAccountSet,
-    MatrixPlatform,
     SocialPlatformType,
     validate_social_account_identity,
 )
@@ -5371,8 +5371,7 @@ class SocialAccount(StormBase, HasOwnerMixin):
         self.identity = identity
 
     def getSocialPlatform(self):
-        if self.platform == SocialPlatformType.MATRIX:
-            return MatrixPlatform
+        return SOCIAL_PLATFORM_TYPES_MAP.get(self.platform)
 
     def destroySelf(self):
         IStore(self).remove(self)
