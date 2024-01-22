@@ -2458,12 +2458,9 @@ class PersonEditIRCNicknamesView(LaunchpadFormView):
         self.next_url = canonical_url(self.context)
 
 
-class PersonEditMatrixAccountsView(LaunchpadFormView):
-    # TODO: have a look into generalising this view and the relevant template
-    # (`person-editmatrixaccounts.pt`) for any social platform
-
+class PersonEditSocialAccountsView(LaunchpadFormView):
     schema = Interface
-    platform = MatrixPlatform
+    platform = None
 
     @property
     def page_title(self):
@@ -2473,6 +2470,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
 
     label = page_title
     next_url = None
+    new_identity = dict()
 
     @property
     def cancel_url(self):
@@ -2483,6 +2481,17 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
         return self.context.getSocialAccountsByPlatform(
             platform=self.platform.platform_type
         )
+
+    @property
+    def identity_headers(self):
+        return [item.capitalize() for item in self.platform.identity_fields]
+
+    @property
+    def identity_examples(self):
+        return [
+            self.platform.identity_fields_example[field]
+            for field in self.platform.identity_fields
+        ]
 
     @action(_("Save Changes"), name="save")
     def save(self, action, data):
@@ -2517,8 +2526,7 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
             try:
                 self.platform.validate_identity(new_account_identity)
             except SocialAccountIdentityError as e:
-                for field_key, field_value in new_account_identity.items():
-                    self.__setattr__(f"new_{field_key}", field_value)
+                self.__setattr__("new_identity", new_account_identity)
                 self.request.response.addErrorNotification(e)
                 return
 
@@ -2533,6 +2541,10 @@ class PersonEditMatrixAccountsView(LaunchpadFormView):
         self.request.response.addNotification(
             f"{self.platform.title} accounts saved successfully."
         )
+
+
+class PersonEditMatrixAccountsView(PersonEditSocialAccountsView):
+    platform = MatrixPlatform
 
 
 class PersonEditJabberIDsView(LaunchpadFormView):

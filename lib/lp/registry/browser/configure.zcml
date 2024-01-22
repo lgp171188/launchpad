@@ -1223,7 +1223,7 @@
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonEditMatrixAccountsView"
         permission="launchpad.Edit"
-        template="../templates/person-editmatrixaccounts.pt"
+        template="../templates/person-editsocialaccounts.pt"
         />
     <browser:page
         name="+editjabberids"
