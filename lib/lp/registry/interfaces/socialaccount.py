@@ -8,6 +8,7 @@ __all__ = [
     "ISocialAccountSet",
     "MatrixPlatform",
     "SocialPlatformType",
+    "SOCIAL_PLATFORM_TYPES_MAP",
     "SocialAccountIdentityError",
     "validate_social_account_identity",
 ]
