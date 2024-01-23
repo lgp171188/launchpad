@@ -51,7 +51,7 @@ and clicks on the 'Save Changes' button.
 
     >>> def show_matrix_accounts(browser):
     ...     for item in find_tags_by_class(
-    ...         browser.contents, "matrix_account"
+    ...         browser.contents, "matrix-account"
     ...     ):
     ...         print(extract_text(item.find("span")))
     ...

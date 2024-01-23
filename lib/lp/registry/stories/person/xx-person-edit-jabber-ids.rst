@@ -47,7 +47,7 @@ it will be associated with their account.
     >>> show_errors(user_browser)
 
     >>> def show_jabberids(browser):
-    ...     tags = find_tags_by_class(browser.contents, "jabber_account")
+    ...     tags = find_tags_by_class(browser.contents, "jabber-account")
     ...     for item in tags:
     ...         print(extract_text(item.find("span")))
     ...

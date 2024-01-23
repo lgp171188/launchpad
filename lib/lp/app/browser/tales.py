@@ -3065,7 +3065,7 @@ class SocialAccountFormatterAPI(ObjectFormatterAPI):
 
     def icon(self, platform):
         return (
-            f'<img class="user_social_accounts__icon" alt="{platform.title}" '
+            f'<img class="user-social-accounts__icon" alt="{platform.title}" '
             f'title="{platform.title}" src="/@@/{platform.icon}" />'
         )
 
