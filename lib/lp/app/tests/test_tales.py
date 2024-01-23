@@ -406,9 +406,10 @@ class TestSocialAccountFormatterAPI(TestCaseWithFactory):
             person, SocialPlatformType.MATRIX, identity
         )
         expected_html = (
-            '<img class="social_accounts__icon" alt="Matrix" title="Matrix" '
-            'src="/@@/social-matrix" /> <a href=https://matrix.to//#/@fred'
-            ':ubuntu.com target="_blank"><strong>@fred:ubuntu.com</strong></a>'
+            '<img class="user_social_accounts__icon" alt="Matrix" '
+            'title="Matrix" src="/@@/social-matrix" /> '
+            "<a href=https://matrix.to//#/@fred:ubuntu.com "
+            'target="_blank"><strong>@fred:ubuntu.com</strong></a>'
         )
 
         self.assertEqual(
