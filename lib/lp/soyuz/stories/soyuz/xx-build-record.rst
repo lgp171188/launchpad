@@ -310,6 +310,7 @@ appropriate 'Build status' section the user will see 2 new sections,
     >>> build.buildqueue_record.destroySelf()
     >>> build.updateStatus(BuildStatus.FULLYBUILT, builder=bob_builder)
     >>> build.setLog(stp.addMockFile("fake-buildlog"))
+    >>> build.addBuildInfo(stp.addMockFile("testing_1.0_all.buildinfo"))
     >>> binaries = stp.uploadBinaryForBuild(build, "testing-bin")
     >>> upload = stp.distroseries.createQueueEntry(
     ...     PackagePublishingPocket.RELEASE,
@@ -329,9 +330,13 @@ appropriate 'Build status' section the user will see 2 new sections,
     Finished on 2008-01-01 (took 5 minutes, 0.0 seconds)
     buildlog (7 bytes)
     testing_1.0_all.changes (15 bytes)
+    testing_1.0_all.buildinfo (7 bytes)
 
     >>> print(anon_browser.getLink("testing_1.0_all.changes").url)
     http://.../+build/.../+files/testing_1.0_all.changes
+
+    >>> print(anon_browser.getLink("testing_1.0_all.buildinfo").url)
+    http://.../+build/.../+files/testing_1.0_all.buildinfo
 
     >>> print(extract_text(find_tag_by_id(anon_browser.contents, "binaries")))
     Binary packages

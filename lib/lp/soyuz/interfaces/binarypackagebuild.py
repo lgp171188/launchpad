@@ -139,8 +139,9 @@ class IBinaryPackageBuildView(IPackageBuildView):
 
     changesfile_url = exported(
         TextLine(
-            title=_("Changes File URL"),
+            title=_("Changes file URL"),
             required=False,
+            readonly=True,
             description=_(
                 "The URL for the changes file for this build. "
                 "Will be None if the build was imported by Gina."
@@ -151,6 +152,15 @@ class IBinaryPackageBuildView(IPackageBuildView):
     buildinfo = Attribute(
         "The `LibraryFileAlias` object containing build information for "
         "this build, if any."
+    )
+
+    buildinfo_url = exported(
+        TextLine(
+            title=_("buildinfo file URL"),
+            required=False,
+            readonly=True,
+            description=_("The URL for the .buildinfo file for this build."),
+        )
     )
 
     package_upload = Attribute(

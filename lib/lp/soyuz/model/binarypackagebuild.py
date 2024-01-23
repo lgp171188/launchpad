@@ -408,6 +408,14 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
         return ProxiedLibraryFileAlias(self.upload_log, self).http_url
 
     @property
+    def buildinfo_url(self):
+        """See `IBinaryPackageBuild`."""
+        buildinfo = self.buildinfo
+        if buildinfo is None:
+            return None
+        return ProxiedLibraryFileAlias(buildinfo, self).http_url
+
+    @property
     def distributionsourcepackagerelease(self):
         """See `IBuild`."""
         from lp.soyuz.model.distributionsourcepackagerelease import (
@@ -832,6 +840,8 @@ class BinaryPackageBuild(PackageBuildMixin, StormBase):
         """See `IBuild`."""
         if filename.endswith(".changes"):
             file_object = self.upload_changesfile
+        elif filename.endswith(".buildinfo"):
+            file_object = self.buildinfo
         elif filename.endswith(".txt.gz"):
             file_object = self.log
         elif is_upload_log(filename):

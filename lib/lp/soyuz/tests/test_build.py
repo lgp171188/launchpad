@@ -277,6 +277,35 @@ class TestBuild(TestCaseWithFactory):
         expected_url = "%s/%s" % (url_start, expected_filename)
         self.assertEqual(expected_url, build.upload_log_url)
 
+    def test_buildinfo(self):
+        # The .buildinfo file can be attached to a build
+        spph = self.publisher.getPubSource(
+            sourcename=self.factory.getUniqueString(),
+            version="%s.1" % self.factory.getUniqueInteger(),
+            distroseries=self.distroseries,
+        )
+        [build] = spph.createMissingBuilds()
+
+        self.assertIsNone(build.buildinfo)
+        self.assertIsNone(build.buildinfo_url)
+
+        buildinfo = self.factory.makeLibraryFileAlias()
+        with person_logged_in(self.admin):
+            build.addBuildInfo(buildinfo)
+        self.assertEqual(buildinfo, build.buildinfo)
+
+        url_start = (
+            "http://launchpad.test/%s/+source/%s/%s/+build/%s/+files"
+            % (
+                self.distroseries.distribution.name,
+                spph.source_package_name,
+                spph.source_package_version,
+                build.id,
+            )
+        )
+        expected_url = "%s/%s" % (url_start, buildinfo.filename)
+        self.assertEqual(expected_url, build.buildinfo_url)
+
     def test_retry_resets_state(self):
         # Retrying a build resets most of the state attributes, but does
         # not modify the first dispatch time.
