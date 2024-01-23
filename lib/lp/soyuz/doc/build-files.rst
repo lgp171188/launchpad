@@ -28,6 +28,7 @@ following file type in its context.
  * Binary changesfile: '.changes';
  * Build logs: '.txt.gz';
  * Build upload logs: '_log.txt';
+ * .buildinfo file: '.buildinfo';
  * Built files: '*deb';
 
     >>> print(build.title)
@@ -68,6 +69,14 @@ Adding and retrieving a upload_log.
     >>> upload_log_name = "upload_%d_log.txt" % build.id
     >>> build.storeUploadLog("i am an upload log")
     >>> build.upload_log == build.getFileByName(upload_log_name)
+    True
+
+Adding and retrieving a .buildinfo.
+
+    >>> build.addBuildInfo(
+    ...     factory.makeLibraryFileAlias(filename="foo.buildinfo")
+    ... )
+    >>> build.buildinfo == build.getFileByName("foo.buildinfo")
     True
 
 Retrieve a built file:

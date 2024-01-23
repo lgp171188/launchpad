@@ -197,6 +197,13 @@
            tal:content="changesfile/filename">CHANGESFILE</a>
         (<span tal:replace="changesfile/content/filesize/fmt:bytes" />)
       </li>
+      <li tal:define="buildinfo context/buildinfo;"
+          tal:condition="buildinfo">
+        <a class="sprite download"
+           tal:attributes="href context/buildinfo_url"
+           tal:content="buildinfo/filename">BUILDINFO</a>
+        (<span tal:replace="buildinfo/content/filesize/fmt:bytes" />)
+      </li>
     </ul>
   </metal:macro>
 
