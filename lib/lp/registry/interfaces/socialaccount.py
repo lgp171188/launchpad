@@ -8,6 +8,7 @@ __all__ = [
     "ISocialAccountSet",
     "MatrixPlatform",
     "SocialPlatformType",
+    "SOCIAL_PLATFORM_TYPES_MAP",
     "SocialAccountIdentityError",
     "validate_social_account_identity",
 ]
@@ -138,13 +139,16 @@ class MatrixPlatform(SocialPlatform):
             raise SocialAccountIdentityError("Username must be a string.")
         # Matrix username can contain a-z, 0-9, ., _, =, -, and /
         # ref: https://spec.matrix.org/v1.1/appendices/#user-identifiers
-        username_patter = r"^[A-z0-9-=_./]+"
-        if not re.match(username_patter, identity["username"]):
+        username_regex = r"^[A-z0-9-=_./]+"
+        if not re.match(username_regex, identity["username"]):
             raise SocialAccountIdentityError("Username must be valid.")
-        hs_pattern = r"^[A-z0-9][A-z0-9-]*(\.[A-z0-9]([A-z0-9-][A-z0-9])*)+$"
+        homeserver_regex = (
+            r"^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
+            "[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$"
+        )
         if not isinstance(identity["homeserver"], str):
             raise SocialAccountIdentityError("Homeserver must be a string.")
-        if not re.match(hs_pattern, identity["homeserver"]):
+        if not re.match(homeserver_regex, identity["homeserver"]):
             raise SocialAccountIdentityError(
                 "Homeserver must be a valid domain."
             )
