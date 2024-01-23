@@ -1,3 +1,4 @@
+from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
 
@@ -70,6 +71,31 @@ class TestSocialAccount(TestCaseWithFactory):
         self.assertEqual(
             social_account.identity["username"], "test-n/ic.kn=am_e"
         )
+
+    def test_different_length_tlds_homeserver_domain(self):
+        user = self.factory.makePerson()
+        tlds = ("sh", "com", "wiki", "online", "co.uk")
+
+        for tld in tlds:
+            homeserver_domain = f"example.{tld}"
+            attributes = {
+                "homeserver": homeserver_domain,
+                "username": "user",
+            }
+            social_account = getUtility(ISocialAccountSet).new(
+                user, SocialPlatformType.MATRIX, attributes
+            )
+            self.assertEqual(len(user.social_accounts), 1)
+            self.assertThat(
+                social_account,
+                MatchesStructure.byEquality(
+                    platform=SocialPlatformType.MATRIX,
+                    identity={
+                        "homeserver": homeserver_domain,
+                        "username": "user",
+                    },
+                ),
+            )
 
     def test_malformed_identity_matrix_account(self):
         # Matrix Identity must contain homeserver and username
