@@ -2859,7 +2859,25 @@ class TestPublisher(TestPublisherBase):
             self.config.distsroot, "breezy-autotest", "main", "i18n"
         )
 
-        self.ubuntu["breezy-autotest"].publish_i18n_index = False
+        # Write compressed versions of a zero-length Translation-en file.
+        translation_en_index = RepositoryIndexFile(
+            os.path.join(i18n_root, "Translation-en"),
+            self.config.temproot,
+            self.ubuntutest["breezy-autotest"].index_compressors,
+        )
+        translation_en_index.close()
+
+        # First publish i18n/Index (status quo)
+        publisher._writeSuiteI18n(
+            self.ubuntutest["breezy-autotest"],
+            PackagePublishingPocket.RELEASE,
+            "main",
+            set(),
+        )
+
+        self.assertTrue(os.path.exists(os.path.join(i18n_root, "Index")))
+
+        self.ubuntutest["breezy-autotest"].publish_i18n_index = False
 
         publisher._writeSuiteI18n(
             self.ubuntutest["breezy-autotest"],
@@ -2868,6 +2886,7 @@ class TestPublisher(TestPublisherBase):
             set(),
         )
 
+        # Ensure it is removed, if previously existed
         self.assertFalse(os.path.exists(os.path.join(i18n_root, "Index")))
 
     def testReadIndexFileHashesCompression(self):
