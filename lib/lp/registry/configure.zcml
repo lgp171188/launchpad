@@ -650,6 +650,33 @@
             interface="lp.registry.interfaces.jabber.IJabberIDSet"/>
     </lp:securedutility>
     <class
+        class="lp.registry.model.person.SocialAccount">
+        <allow
+            interface="lp.registry.interfaces.role.IHasOwner"/>
+        <allow
+            attributes="
+                id
+                person
+                platform
+                identity"/>
+        <require
+            permission="launchpad.Edit"
+            set_schema="lp.registry.interfaces.socialaccount.ISocialAccount"
+            attributes="
+                destroySelf"/>
+    </class>
+    <class
+        class="lp.registry.model.person.SocialAccountSet">
+        <allow
+            interface="lp.registry.interfaces.socialaccount.ISocialAccountSet"/>
+    </class>
+    <lp:securedutility
+        class="lp.registry.model.person.SocialAccountSet"
+        provides="lp.registry.interfaces.socialaccount.ISocialAccountSet">
+        <allow
+            interface="lp.registry.interfaces.socialaccount.ISocialAccountSet"/>
+    </lp:securedutility>
+    <class
         class="lp.registry.model.pillar.PillarName">
         <allow
             interface="lp.registry.interfaces.pillar.IPillarName"/>

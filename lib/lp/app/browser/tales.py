@@ -55,6 +55,7 @@ from lp.registry.interfaces.distributionsourcepackage import (
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
+from lp.registry.interfaces.socialaccount import SOCIAL_PLATFORM_TYPES_MAP
 from lp.services.compat import tzname
 from lp.services.utils import round_half_up
 from lp.services.webapp.authorization import check_permission
@@ -3049,3 +3050,37 @@ class IRCNicknameFormatterAPI(ObjectFormatterAPI):
             self._context.nickname,
             self._context.network,
         ).escapedtext
+
+
+@implementer(ITraversable)
+class SocialAccountFormatterAPI(ObjectFormatterAPI):
+    """Adapter from social account objects to a formatted string."""
+
+    traversable_names = {
+        "formatted_display": "formatted_display",
+    }
+
+    def getPlatformClass(self):
+        return SOCIAL_PLATFORM_TYPES_MAP.get(self._context.platform)
+
+    def icon(self, platform):
+        return (
+            f'<img class="user_social_accounts__icon" alt="{platform.title}" '
+            f'title="{platform.title}" src="/@@/{platform.icon}" />'
+        )
+
+    def formatted_display(self, view_name=None):
+        platform = self.getPlatformClass()
+        icon = self.icon(platform)
+
+        parsed_identity = {}
+        for key, value in self._context.identity.items():
+            parsed_identity[key] = quote(value)
+
+        text_display = platform.display_format.format(**parsed_identity)
+
+        if platform.url:
+            url = platform.url.format(**parsed_identity)
+            text_display = f'<a href={url} target="_blank">{text_display}</a>'
+
+        return structured(f"{icon} {text_display}").escapedtext

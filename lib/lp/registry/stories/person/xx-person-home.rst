@@ -104,16 +104,18 @@ Jabber IDs
 A person's jabber IDs are only show to authenticated users.
 
     >>> user_browser.open("http://launchpad.test/~mark")
-    >>> print(
-    ...     extract_text(find_tag_by_id(user_browser.contents, "jabber-ids"))
-    ... )
-    Jabber: markshuttleworth@jabber.org
+    >>> for item in find_tags_by_class(
+    ...     user_browser.contents, "jabber_account"
+    ... ):
+    ...     print(extract_text(item.find("span")))
+    markshuttleworth@jabber.org
 
     >>> anon_browser.open("http://launchpad.test/~mark")
-    >>> print(
-    ...     extract_text(find_tag_by_id(anon_browser.contents, "jabber-ids"))
-    ... )
-    Jabber: &lt;email address hidden&gt;
+    >>> for item in find_tags_by_class(
+    ...     anon_browser.contents, "jabber_account"
+    ... ):
+    ...     print(extract_text(item.find("span")))
+    &lt;email address hidden&gt;
 
 
 OpenPGP keys

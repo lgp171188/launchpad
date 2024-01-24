@@ -1682,12 +1682,16 @@ class Publisher:
             # Schedule i18n files for inclusion in the Release file.
             all_series_files.add(os.path.join(i18n_subpath, i18n_file))
 
+        i18n_file_name = os.path.join(i18n_dir, "Index")
         if distroseries.publish_i18n_index:
-            with open(os.path.join(i18n_dir, "Index"), "wb") as f:
+            with open(i18n_file_name, "wb") as f:
                 i18n_index.dump(f, "utf-8")
 
             # Schedule this for inclusion in the Release file.
             all_series_files.add(os.path.join(component, "i18n", "Index"))
+        else:
+            if os.path.exists(i18n_file_name):
+                os.unlink(i18n_file_name)
 
     def _readIndexFileHashes(
         self, suite, file_name, subpath=None, real_file_name=None

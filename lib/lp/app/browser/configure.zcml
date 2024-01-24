@@ -669,6 +669,13 @@
       />
 
   <adapter
+      for="lp.registry.interfaces.socialaccount.ISocialAccount"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.SocialAccountFormatterAPI"
+      name="fmt"
+      />
+
+  <adapter
       for="datetime.timedelta"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.DurationFormatterAPI"

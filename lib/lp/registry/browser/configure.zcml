@@ -665,6 +665,12 @@
         rootsite="api"
         />
     <lp:url
+        for="lp.registry.interfaces.socialaccount.ISocialAccount"
+        path_expression="string:+socialaccount/${id}"
+        attribute_to_parent="person"
+        rootsite="api"
+        />
+    <lp:url
         for="lp.registry.interfaces.pillar.IPillarNameSet"
         path_expression="string:pillars"
         parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"
@@ -1211,6 +1217,13 @@
         class="lp.registry.browser.person.PersonEditIRCNicknamesView"
         permission="launchpad.Edit"
         template="../templates/person-editircnicknames.pt"
+        />
+    <browser:page
+        name="+editmatrixaccounts"
+        for="lp.registry.interfaces.person.IPerson"
+        class="lp.registry.browser.person.PersonEditMatrixAccountsView"
+        permission="launchpad.Edit"
+        template="../templates/person-editmatrixaccounts.pt"
         />
     <browser:page
         name="+editjabberids"

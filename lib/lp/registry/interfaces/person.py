@@ -121,6 +121,10 @@ from lp.registry.interfaces.location import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
 )
+from lp.registry.interfaces.socialaccount import (
+    ISocialAccount,
+    SocialPlatformType,
+)
 from lp.registry.interfaces.ssh import ISSHKey
 from lp.registry.interfaces.teammembership import (
     ITeamMembership,
@@ -1030,6 +1034,27 @@ class IPersonViewRestricted(
         ),
         exported_as="jabber_ids",
     )
+    social_accounts = exported(
+        CollectionField(
+            title=_("List of Social Accounts of this Person."),
+            readonly=True,
+            required=False,
+            value_type=Reference(schema=ISocialAccount),
+        )
+    )
+
+    @operation_parameters(
+        platform=Choice(
+            title=_("Social Platform Type"),
+            required=True,
+            vocabulary=SocialPlatformType,
+        )
+    )
+    @export_read_operation()
+    @operation_for_version("beta")
+    def getSocialAccountsByPlatform(platform):
+        """Return Social Accounts associated to the user."""
+
     team_memberships = exported(
         CollectionField(
             title=_(
@@ -3241,3 +3266,4 @@ patch_reference_property(IIrcID, "person", IPerson)
 patch_reference_property(IJabberID, "person", IPerson)
 patch_reference_property(IWikiName, "person", IPerson)
 patch_reference_property(IEmailAddress, "person", IPerson)
+patch_reference_property(ISocialAccount, "person", IPerson)

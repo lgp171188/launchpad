@@ -59,22 +59,6 @@
       </dd>
     </dl>
 
-
-    <dl tal:condition="view/should_show_jabberids_section" id="jabber-ids">
-      <dt>Jabber:
-        <a tal:replace="structure overview_menu/editjabberids/fmt:icon" />
-      </dt>
-      <dd>
-        <tal:block repeat="jabberid context/jabberids">
-          <span tal:replace="jabberid/jabberid/fmt:obfuscate-email"
-            /><span tal:condition="not: repeat/jabberid/end">,</span>
-        </tal:block>
-        <div tal:condition="context/jabberids/is_empty">
-          No Jabber IDs registered.
-        </div>
-      </dd>
-    </dl>
-
     <dl tal:condition="view/viewing_own_page" id="openid-info">
       <dt>OpenID login:</dt>
       <dd>
@@ -122,15 +106,14 @@
   </div>
 
   <div class="yui-u two-column-list">
-    <dl tal:condition="view/should_show_ircnicknames_section">
-      <dt>IRC:
-        <a tal:replace="structure overview_menu/editircnicknames/fmt:icon" />
+    <dl id="languages">
+      <dt>Languages:
+        <a tal:replace="structure overview_menu/editlanguages/fmt:icon" />
       </dt>
-      <dd tal:repeat="ircnick context/ircnicknames">
-        <span tal:replace="structure ircnick/fmt:formatted_displayname"/>
-      </dd>
-      <dd tal:condition="not: context/ircnicknames">
-        No IRC nicknames registered.
+      <dd>
+        <tal:languages content="view/languages">
+          English
+        </tal:languages>
       </dd>
     </dl>
 
@@ -169,17 +152,6 @@
       </dd>
     </dl>
 
-    <dl id="languages">
-      <dt>Languages:
-        <a tal:replace="structure overview_menu/editlanguages/fmt:icon" />
-      </dt>
-      <dd>
-        <tal:languages content="view/languages">
-          English
-        </tal:languages>
-      </dd>
-    </dl>
-
     <dl id="timezone">
       <dt>Time zone:
         <a tal:replace="structure overview_menu/editlocation/fmt:icon" />
@@ -198,8 +170,55 @@
              class="sprite maybe action-icon">Karma help</a>
       </dd>
     </dl>
-  </div>
+</div>
 
+    <div class="yui-u user_social_accounts" tal:condition="view/should_show_socialaccounts_section">
+      <dl id="social-accounts">
+        <dt>Social accounts:</dt>
+
+        <dd class="user_social_accounts__item irc_account" tal:repeat="ircnick context/ircnicknames">
+          <img class="user_social_accounts__icon" alt="IRC" title="IRC" src="/@@/social-irc"/>
+          <span><span tal:replace="structure ircnick/fmt:formatted_displayname" /></span>
+          <a tal:replace="structure overview_menu/editircnicknames/fmt:icon"/>
+        </dd>
+
+        <dd class="user_social_accounts__item jabber_account" tal:repeat="jabberid context/jabberids">
+          <img class="user_social_accounts__icon" alt="Jabber" title="Jabber" src="/@@/social-jabber" />
+          <span><span tal:replace="jabberid/jabberid/fmt:obfuscate-email" /></span>
+          <a tal:replace="structure overview_menu/editjabberids/fmt:icon"/>
+        </dd>
+
+        <dd class="user_social_accounts__item matrix_account" tal:repeat="social_account view/matrix_accounts">
+          <span><span tal:replace="structure social_account/fmt:formatted_display" /></span>
+          <a tal:replace="structure overview_menu/editmatrixaccounts/fmt:icon" />
+        </dd>
+
+        <tal:irc condition="view/should_show_ircnicknames_section">
+          <dd class="user_social_accounts__item" tal:condition="not: context/ircnicknames" id="empty-irc">
+            <img class="user_social_accounts__icon" alt="IRC" title="IRC" src="/@@/social-irc"/>
+            <span>No IRC nicknames registered.</span>
+            <a tal:replace="structure overview_menu/editircnicknames/fmt:icon"/>
+          </dd>
+        </tal:irc>
+
+        <tal:jabber condition="view/should_show_jabberids_section">
+          <dd class="user_social_accounts__item" tal:condition="context/jabberids/is_empty"  id="empty-jabber">
+            <img class="user_social_accounts__icon" alt="Jabber" title="Jabber" src="/@@/social-jabber" />
+            <span>No Jabber IDs registered.</span>
+            <a tal:replace="structure overview_menu/editjabberids/fmt:icon" />
+          </dd>
+        </tal:jabber>
+
+        <tal:matrix condition="view/should_show_matrix_accounts_section">
+          <dd class="user_social_accounts__item" tal:condition="not: view/matrix_accounts"  id="empty-matrix">
+            <img class="user_social_accounts__icon" alt="Matrix" title="Matrix" src="/@@/social-matrix" />
+            <span>No matrix accounts registered.</span>
+            <a tal:replace="structure overview_menu/editmatrixaccounts/fmt:icon" />
+          </dd>
+        </tal:matrix>
+
+      </dl>
+    </div>
 </div>
 
 </tal:root>

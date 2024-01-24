@@ -53,6 +53,7 @@ of properties:
     arch_tag: 'i386'
     archive_link: 'http://.../beta/~cprov/+archive/ubuntu/ppa'
     builder_link: 'http://.../beta/builders/bob'
+    buildinfo_url: None
     can_be_cancelled: False
     can_be_rescored: False
     can_be_retried: True
@@ -89,6 +90,7 @@ Whereas the 1.0 webservice for builds maintains the old property names
     build_log_url:
     'http://.../~cprov/+archive/ubuntu/ppa/+build/26/+files/netapplet-1.0.0.tar.gz'
     builder_link: 'http://.../builders/bob'
+    buildinfo_url: None
     buildstate: 'Failed to build'
     can_be_cancelled: False
     can_be_rescored: False
@@ -122,6 +124,7 @@ devel webservice also contains build date_started and duration.
     build_log_url:
     'http://.../~cprov/+archive/ubuntu/ppa/+build/26/+files/netapplet-1.0.0.tar.gz'
     builder_link: 'http://.../builders/bob'
+    buildinfo_url: None
     buildstate: 'Failed to build'
     can_be_cancelled: False
     can_be_rescored: False
