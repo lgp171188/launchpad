@@ -105,14 +105,14 @@ A person's jabber IDs are only show to authenticated users.
 
     >>> user_browser.open("http://launchpad.test/~mark")
     >>> for item in find_tags_by_class(
-    ...     user_browser.contents, "jabber_account"
+    ...     user_browser.contents, "jabber-account"
     ... ):
     ...     print(extract_text(item.find("span")))
     markshuttleworth@jabber.org
 
     >>> anon_browser.open("http://launchpad.test/~mark")
     >>> for item in find_tags_by_class(
-    ...     anon_browser.contents, "jabber_account"
+    ...     anon_browser.contents, "jabber-account"
     ... ):
     ...     print(extract_text(item.find("span")))
     &lt;email address hidden&gt;
