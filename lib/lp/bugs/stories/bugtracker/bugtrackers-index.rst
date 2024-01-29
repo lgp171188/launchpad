@@ -62,9 +62,9 @@ auto-created ones - so the title is also obfuscated.
     >>> admin_browser.open(
     ...     "http://launchpad.test/bugs/bugtrackers/email/+edit"
     ... )
-    >>> admin_browser.getControl(
-    ...     "Title"
-    ... ).value = "an@email.address bug tracker"
+    >>> admin_browser.getControl("Title").value = (
+    ...     "an@email.address bug tracker"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> anon_browser.open("http://launchpad.test/bugs/bugtrackers")

@@ -12,9 +12,9 @@ The example here are a little short - in reality we have a comprehensive
 database to find candidates from, our sample data has no real near-fits,
 see bug 612384 for the overall effort to provide a sensible search facility.
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Thunderbird crashes opening"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Thunderbird crashes opening"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 ...yields one similar bug.
@@ -43,9 +43,9 @@ back...
     # We should use goBack() here but can't because of bug #98372:
     # zope.testbrowser truncates document content after goBack().
     >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Thunderbird crashes when opening large emails"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Thunderbird crashes when opening large emails"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 ...and continue filing our bug.
@@ -89,9 +89,9 @@ different in the user agent.
 
 Submitting a distinctive bug title...
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Frobnobulator emits weird noises."
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Frobnobulator emits weird noises."
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 ...yields no similar bugs. In fact, the similar bugs table is not even
@@ -107,9 +107,9 @@ But the bug can be filed as before.
 
     >>> user_browser.getControl(name="packagename_option").value = ["choose"]
     >>> user_browser.getControl("In what package").value = "mozilla-firefox"
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "Frobnobulator is a Firefox add-on, ..."
+    >>> user_browser.getControl("Further information").value = (
+    ...     "Frobnobulator is a Firefox add-on, ..."
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> print(user_browser.url)

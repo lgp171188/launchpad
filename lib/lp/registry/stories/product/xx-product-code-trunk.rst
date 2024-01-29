@@ -100,9 +100,9 @@ The owner can specify the development focus branch from the overview page.
 
     >>> owner_browser.getLink(url="+configure-code").click()
     >>> owner_browser.getControl("Bazaar", index=0).click()
-    >>> owner_browser.getControl(
-    ...     name="field.branch_location"
-    ... ).value = "~eric/fooix/trunk"
+    >>> owner_browser.getControl(name="field.branch_location").value = (
+    ...     "~eric/fooix/trunk"
+    ... )
     >>> owner_browser.getControl("Update").click()
     >>> print_feedback_messages(owner_browser.contents)
     Project settings updated.

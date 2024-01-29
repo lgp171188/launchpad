@@ -548,9 +548,9 @@ class ProductContextMixin:
 
     def setUp(self):
         super().setUp()
-        self.git_target = (
-            self.bzr_target
-        ) = self.context = self.factory.makeProduct()
+        self.git_target = self.bzr_target = self.context = (
+            self.factory.makeProduct()
+        )
         self.user = self.git_target.owner
         self.owner = None
 
@@ -575,9 +575,9 @@ class DistributionSourcePackageContextMixin:
 
     def setUp(self):
         super().setUp()
-        self.git_target = (
-            self.context
-        ) = self.factory.makeDistributionSourcePackage()
+        self.git_target = self.context = (
+            self.factory.makeDistributionSourcePackage()
+        )
         with admin_logged_in():
             getUtility(IService, "sharing").sharePillarInformation(
                 self.context.distribution,

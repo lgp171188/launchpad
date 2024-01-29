@@ -275,9 +275,11 @@ class GitHostingClient:
                         path,
                         sources,
                         target,
-                        ""
-                        if previous_target is None
-                        else " (stopping at %s)" % previous_target,
+                        (
+                            ""
+                            if previous_target is None
+                            else " (stopping at %s)" % previous_target
+                        ),
                     )
                 )
             return self._post(

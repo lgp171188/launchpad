@@ -45,7 +45,6 @@ class TestBugIndexedMessages(TestCaseWithFactory):
 
 
 class TestUserCanSetCommentVisibility(TestCaseWithFactory):
-
     """Test whether expected users can toggle bug comment visibility."""
 
     layer = DatabaseFunctionalLayer
@@ -84,7 +83,6 @@ class TestUserCanSetCommentVisibility(TestCaseWithFactory):
 
 
 class TestBugLinkMessageSetsIncompleteStatus(TestCaseWithFactory):
-
     """Test that Bug.linkMessage updates "Incomplete (without response)" bugs.
 
     They should transition from "Incomplete (without response)" to

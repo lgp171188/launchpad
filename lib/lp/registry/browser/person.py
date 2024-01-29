@@ -3872,9 +3872,9 @@ class PersonRelatedSoftwareView(LaunchpadView):
                 BuildStatus.MANUALDEPWAIT,
                 BuildStatus.CHROOTWAIT,
             ]
-            needs_build_by_package[
-                build.source_package_release.id
-            ] = needs_build
+            needs_build_by_package[build.source_package_release.id] = (
+                needs_build
+            )
 
         return (builds_by_package, needs_build_by_package)
 

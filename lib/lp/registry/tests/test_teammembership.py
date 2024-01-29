@@ -643,6 +643,7 @@ class TestTeamParticipationMesh(TeamParticipationTestCase):
                  team5
                     no-priv
     """
+
     layer = DatabaseFunctionalLayer
 
     def setUp(self):

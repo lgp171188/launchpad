@@ -202,9 +202,11 @@ class PersonArchiveSubscriptions(TestCaseWithFactory):
             # some archives are owned by a user, others are owned by a team
             archive = self.factory.makeArchive(
                 private=True,
-                owner=archive_owner
-                if x < 5
-                else self.factory.makeTeam(members=[archive_owner]),
+                owner=(
+                    archive_owner
+                    if x < 5
+                    else self.factory.makeTeam(members=[archive_owner])
+                ),
             )
             with person_logged_in(archive.owner):
                 if x >= 5:

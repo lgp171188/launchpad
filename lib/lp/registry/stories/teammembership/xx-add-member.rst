@@ -122,9 +122,9 @@ the Launchpad Developers.
     >>> browser.url
     'http://launchpad.test/~launchpad/+invitation/landscape-developers'
 
-    >>> browser.getControl(
-    ...     name="field.acknowledger_comment"
-    ... ).value = "This is just a test"
+    >>> browser.getControl(name="field.acknowledger_comment").value = (
+    ...     "This is just a test"
+    ... )
     >>> browser.getControl("Accept").click()
 
     >>> browser.url

@@ -966,9 +966,9 @@ class DistroSeries(
     @strict_supported_component_dependencies.setter
     def strict_supported_component_dependencies(self, value):
         assert isinstance(value, bool)
-        self.publishing_options[
-            "strict_supported_component_dependencies"
-        ] = value
+        self.publishing_options["strict_supported_component_dependencies"] = (
+            value
+        )
 
     @property
     def publish_i18n_index(self):
@@ -1872,9 +1872,9 @@ class DistroSeriesSet:
         result = {}
         for spr, series_id in releases:
             series = getUtility(IDistroSeriesSet).get(series_id)
-            result[
-                series.getSourcePackage(spr.sourcepackagename)
-            ] = DistributionSourcePackageRelease(series.distribution, spr)
+            result[series.getSourcePackage(spr.sourcepackagename)] = (
+                DistributionSourcePackageRelease(series.distribution, spr)
+            )
         return result
 
     def search(self, distribution=None, isreleased=None, orderBy=None):

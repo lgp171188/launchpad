@@ -518,9 +518,9 @@ class Dominator:
         # the items so that we can be sure that we're not altering the
         # iteration order while iteration is underway.
         for (name, location), pubs in list(pubs_by_name_and_location.items()):
-            pubs_by_name_and_location[
-                (name, location)
-            ] = generalization.sortPublications(pubs)
+            pubs_by_name_and_location[(name, location)] = (
+                generalization.sortPublications(pubs)
+            )
 
         return pubs_by_name_and_location
 
@@ -589,9 +589,11 @@ class Dominator:
                 Not(
                     IsDistinctFrom(
                         BinaryPackagePublishingHistory._channel,
-                        Cast(json.dumps(pub_record._channel), "jsonb")
-                        if pub_record._channel is not None
-                        else None,
+                        (
+                            Cast(json.dumps(pub_record._channel), "jsonb")
+                            if pub_record._channel is not None
+                            else None
+                        ),
                     )
                 ),
             )

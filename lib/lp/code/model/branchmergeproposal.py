@@ -1602,9 +1602,9 @@ class BranchMergeProposal(StormBase, BugLinkTargetMixin):
         diffs = load_related(Diff, preview_diffs, ["diff_id"])
         preview_diff_map = {}
         for previewdiff in preview_diffs:
-            preview_diff_map[
-                previewdiff.branch_merge_proposal_id
-            ] = previewdiff
+            preview_diff_map[previewdiff.branch_merge_proposal_id] = (
+                previewdiff
+            )
         for mp in branch_merge_proposals:
             get_property_cache(mp).preview_diff = preview_diff_map.get(mp.id)
 

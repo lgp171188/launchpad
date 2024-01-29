@@ -77,13 +77,13 @@ provided link.
     >>> print(jblack_browser.title)
     Activate PPA : James Blackwell
 
-    >>> jblack_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "PPA for James Blackwell"
+    >>> jblack_browser.getControl(name="field.displayname").value = (
+    ...     "PPA for James Blackwell"
+    ... )
     >>> jblack_browser.getControl(name="field.accepted").value = True
-    >>> jblack_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "There we go ..."
+    >>> jblack_browser.getControl(name="field.description").value = (
+    ...     "There we go ..."
+    ... )
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -599,9 +599,9 @@ James uses the 'delete-packages' interface in his PPA to delete the
     >>> jblack_browser.getControl(name="field.selected_sources").value = [
     ...     pmount_pub_id
     ... ]
-    >>> jblack_browser.getControl(
-    ...     "Deletion comment"
-    ... ).value = "Deleted packages can be copied."
+    >>> jblack_browser.getControl("Deletion comment").value = (
+    ...     "Deleted packages can be copied."
+    ... )
     >>> jblack_browser.getControl("Request Deletion").click()
 
 James return to his PPA packages page and checks that the package is
@@ -709,20 +709,20 @@ together.
 
     >>> jblack_browser.getControl(name="field.name").value = "jblack-friends"
 
-    >>> jblack_browser.getControl(
-    ...     "Display Name"
-    ... ).value = "James Blackwell Friends"
+    >>> jblack_browser.getControl("Display Name").value = (
+    ...     "James Blackwell Friends"
+    ... )
 
     >>> jblack_browser.getControl("Create").click()
 
     >>> jblack_browser.getLink("Create a new PPA").click()
-    >>> jblack_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "PPA for James Blackwell Friends"
+    >>> jblack_browser.getControl(name="field.displayname").value = (
+    ...     "PPA for James Blackwell Friends"
+    ... )
     >>> jblack_browser.getControl(name="field.accepted").value = True
-    >>> jblack_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Come friends ..."
+    >>> jblack_browser.getControl(name="field.description").value = (
+    ...     "Come friends ..."
+    ... )
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -864,20 +864,20 @@ tests.
 
     >>> jblack_browser.getControl(name="field.name").value = "jblack-sandbox"
 
-    >>> jblack_browser.getControl(
-    ...     "Display Name"
-    ... ).value = "James Blackwell Sandbox"
+    >>> jblack_browser.getControl("Display Name").value = (
+    ...     "James Blackwell Sandbox"
+    ... )
 
     >>> jblack_browser.getControl("Create").click()
 
     >>> jblack_browser.getLink("Create a new PPA").click()
-    >>> jblack_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "PPA for James Blackwell Sandbox"
+    >>> jblack_browser.getControl(name="field.displayname").value = (
+    ...     "PPA for James Blackwell Sandbox"
+    ... )
     >>> jblack_browser.getControl(name="field.accepted").value = True
-    >>> jblack_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Come friends ..."
+    >>> jblack_browser.getControl(name="field.description").value = (
+    ...     "Come friends ..."
+    ... )
     >>> jblack_browser.getControl("Activate").click()
 
     >>> print(jblack_browser.title)
@@ -903,9 +903,9 @@ insane because PPA-copy-ui is so cool.
 
     >>> jblack_pub_ids = getPPAPubIDsFor("jblack")
 
-    >>> jblack_browser.getControl(
-    ...     name="field.selected_sources"
-    ... ).value = jblack_pub_ids
+    >>> jblack_browser.getControl(name="field.selected_sources").value = (
+    ...     jblack_pub_ids
+    ... )
 
     >>> jblack_browser.getControl("Destination PPA").value = [
     ...     "~jblack-sandbox/ubuntu/ppa"

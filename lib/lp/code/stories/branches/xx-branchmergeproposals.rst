@@ -69,9 +69,9 @@ Logged in users can register a merge proposal.
     >>> nopriv_browser.getControl(
     ...     name="field.target_branch.target_branch"
     ... ).value = "~name12/gnome-terminal/main"
-    >>> nopriv_browser.getControl(
-    ...     name="field.prerequisite_branch"
-    ... ).value = "~name12/gnome-terminal/pushed"
+    >>> nopriv_browser.getControl(name="field.prerequisite_branch").value = (
+    ...     "~name12/gnome-terminal/pushed"
+    ... )
     >>> print_tag_with_id(nopriv_browser.contents, "field.reviewer")
     <BLANKLINE>
 
@@ -117,9 +117,9 @@ Since the plan is to merge a branch into another branch, it makes sense that a
 commit message can be set.
 
     >>> nopriv_browser.getLink(url="edit-commit-message").click()
-    >>> nopriv_browser.getControl(
-    ...     name="field.commit_message"
-    ... ).value = "Add more <b>mojo</b>"
+    >>> nopriv_browser.getControl(name="field.commit_message").value = (
+    ...     "Add more <b>mojo</b>"
+    ... )
     >>> nopriv_browser.getControl("Update").click()
 
     >>> print_tag_with_id(nopriv_browser.contents, "edit-commit_message")
@@ -219,9 +219,9 @@ People who are logged in can perform reviews.
 
     >>> nopriv_browser.open(klingon_proposal)
     >>> nopriv_browser.getLink("Add a review or comment").click()
-    >>> nopriv_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Don't like it"
+    >>> nopriv_browser.getControl(name="field.comment").value = (
+    ...     "Don't like it"
+    ... )
     >>> nopriv_browser.getControl(name="field.vote").getControl(
     ...     "Disapprove"
     ... ).click()
@@ -438,9 +438,9 @@ is shown.
 
     >>> admin_browser.open("http://launchpad.test/firefox/trunk")
     >>> admin_browser.getLink("Link to branch").click()
-    >>> admin_browser.getControl(
-    ...     name="field.branch_location"
-    ... ).value = "~name12/firefox/main"
+    >>> admin_browser.getControl(name="field.branch_location").value = (
+    ...     "~name12/firefox/main"
+    ... )
     >>> admin_browser.getControl("Update").click()
 
     # Just show the radio buttons for the branch widgets.

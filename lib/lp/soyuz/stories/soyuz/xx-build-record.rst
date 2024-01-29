@@ -533,10 +533,8 @@ If the source package was created from a recipe build, link to it.
     >>> distroseries = factory.makeDistroSeries(
     ...     distribution=cprov.archive.distribution, name="shiny"
     ... )
-    >>> removeSecurityProxy(
-    ...     distroseries
-    ... ).nominatedarchindep = factory.makeDistroArchSeries(
-    ...     distroseries=distroseries
+    >>> removeSecurityProxy(distroseries).nominatedarchindep = (
+    ...     factory.makeDistroArchSeries(distroseries=distroseries)
     ... )
     >>> ppa_source.sourcepackagerelease.source_package_recipe_build = (
     ...     factory.makeSourcePackageRecipeBuild(

@@ -90,9 +90,9 @@ remote server.
     >>> def get_trackers_and_watches(bugtracker, watches):
     ...     transaction.commit()
     ...     try:
-    ...         BUG_TRACKER_CLASSES[
-    ...             BugTrackerType.BUGZILLA
-    ...         ] = NonConnectingBugzilla
+    ...         BUG_TRACKER_CLASSES[BugTrackerType.BUGZILLA] = (
+    ...             NonConnectingBugzilla
+    ...         )
     ...         trackers_and_watches = (
     ...             bug_watch_updater._getExternalBugTrackersAndWatches(
     ...                 bugtracker, watches

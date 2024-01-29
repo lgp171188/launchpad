@@ -33,9 +33,9 @@ Current value is empty.
 
 And the admin is able to set it.
 
-    >>> browser.getControl(
-    ...     "Language Pack Administrator"
-    ... ).value = "martin.pitt@canonical.com"
+    >>> browser.getControl("Language Pack Administrator").value = (
+    ...     "martin.pitt@canonical.com"
+    ... )
     >>> browser.getControl("Change").click()
     >>> print(browser.url)
     http://translations.launchpad.test/ubuntu/+select-language-pack-admin

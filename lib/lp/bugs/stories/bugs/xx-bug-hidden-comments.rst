@@ -6,9 +6,9 @@ will not show up when browsing the comment list for a bug.
 All comments are set visible by default.
 
     >>> user_browser.open("http://bugs.launchpad.test" "/jokosher/+bug/11")
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "This comment will not be visible when the test completes."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "This comment will not be visible when the test completes."
+    ... )
     >>> user_browser.getControl("Post Comment", index=-1).click()
     >>> main_content = find_main_content(user_browser.contents)
     >>> new_comment = main_content("div", "boardCommentBody")[-1]

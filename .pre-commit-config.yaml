@@ -36,9 +36,7 @@ repos:
             |utilities/community-contributions\.py
           )$
 -   repo: https://github.com/psf/black-pre-commit-mirror
-    # Update the pinned version of black below used by
-    # blackdoc when updating this version.
-    rev: 23.10.1
+    rev: 24.1.1
     hooks:
       - id: black
         exclude: |
@@ -75,10 +73,6 @@ repos:
     -   id: blackdoc
         args: ["-l", "78"]
         exclude: ^doc/.*
-        additional_dependencies:
-          # Update this pinned version too when updating the black pre-commit
-          # hook's version above.
-          - black==23.10.1
 -   repo: https://git.launchpad.net/lp-lint-doctest
     rev: '0.5'
     hooks:

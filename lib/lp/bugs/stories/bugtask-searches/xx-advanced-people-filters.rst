@@ -58,9 +58,9 @@ If we enter an invalid assignee, we'll get a nice error message.
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/ubuntu/+bugs?advanced=1"
     ... )
-    >>> anon_browser.getControl(
-    ...     name="field.assignee"
-    ... ).value = "invalid-assignee"
+    >>> anon_browser.getControl(name="field.assignee").value = (
+    ...     "invalid-assignee"
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
     >>> print_feedback_messages(anon_browser.contents)
     There's no person with the name or email address 'invalid-assignee'.
@@ -68,9 +68,9 @@ If we enter an invalid assignee, we'll get a nice error message.
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/~name12/+reportedbugs?advanced=1"
     ... )
-    >>> anon_browser.getControl(
-    ...     name="field.assignee"
-    ... ).value = "invalid-assignee"
+    >>> anon_browser.getControl(name="field.assignee").value = (
+    ...     "invalid-assignee"
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
     >>> print_feedback_messages(anon_browser.contents)
     There's no person with the name or email address 'invalid-assignee'.
@@ -102,17 +102,17 @@ and invalid searches don't OOPS:
     >>> anon_browser.open(
     ...     "http://bugs.launchpad.test/debian/+bugs?advanced=1"
     ... )
-    >>> anon_browser.getControl(
-    ...     name="field.bug_reporter"
-    ... ).value = "invalid-reporter"
+    >>> anon_browser.getControl(name="field.bug_reporter").value = (
+    ...     "invalid-reporter"
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
     >>> print_feedback_messages(anon_browser.contents)
     There's no person with the name or email address 'invalid-reporter'.
 
     >>> anon_browser.open("http://bugs.launchpad.test/~name12/+assignedbugs")
-    >>> anon_browser.getControl(
-    ...     name="field.bug_reporter"
-    ... ).value = "invalid-reporter"
+    >>> anon_browser.getControl(name="field.bug_reporter").value = (
+    ...     "invalid-reporter"
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
     >>> print_feedback_messages(anon_browser.contents)
     There's no person with the name or email address 'invalid-reporter'.
@@ -173,9 +173,9 @@ context, only bugs for Ubuntu packages will be returned. In Ubuntu, Foo
 Bar is a package subscriber for mozilla-firefox and pmount, but there
 aren't any bugs open for pmount.
 
-    >>> anon_browser.getControl(
-    ...     "Package or series subscriber"
-    ... ).value = "foo.bar@canonical.com"
+    >>> anon_browser.getControl("Package or series subscriber").value = (
+    ...     "foo.bar@canonical.com"
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
 
     >>> from lp.bugs.tests.bug import print_bugtasks

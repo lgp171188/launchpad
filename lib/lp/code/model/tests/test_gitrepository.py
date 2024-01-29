@@ -2340,9 +2340,9 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         self.assertEqual(ref.repository, ref_HEAD.repository)
         self.assertEqual("HEAD", ref_HEAD.path)
         self.assertRaises(NotFoundError, getattr, ref_HEAD, "commit_sha1")
-        removeSecurityProxy(
-            ref.repository
-        )._default_branch = "refs/heads/missing"
+        removeSecurityProxy(ref.repository)._default_branch = (
+            "refs/heads/missing"
+        )
         self.assertRaises(NotFoundError, getattr, ref_HEAD, "commit_sha1")
         removeSecurityProxy(ref.repository)._default_branch = ref.path
         self.assertEqual(ref.commit_sha1, ref_HEAD.commit_sha1)

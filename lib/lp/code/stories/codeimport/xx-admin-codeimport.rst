@@ -167,9 +167,9 @@ url.
 This is true for Subversion imports,
 
     >>> import_browser.open(svn_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "URL"
-    ... ).value = "svn://user:password@svn-new.example.com/fooix/trunk"
+    >>> import_browser.getControl("URL").value = (
+    ...     "svn://user:password@svn-new.example.com/fooix/trunk"
+    ... )
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
@@ -177,9 +177,9 @@ This is true for Subversion imports,
 bzr-svn imports,
 
     >>> import_browser.open(bzr_svn_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "URL"
-    ... ).value = "svn://user:password@svn-new.example.com/bzr-svn/trunk"
+    >>> import_browser.getControl("URL").value = (
+    ...     "svn://user:password@svn-new.example.com/bzr-svn/trunk"
+    ... )
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
@@ -187,9 +187,9 @@ bzr-svn imports,
 CVS imports,
 
     >>> import_browser.open(cvs_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "Repository"
-    ... ).value = ":pserver:anonymous@cvs-new.example.com:/fooix"
+    >>> import_browser.getControl("Repository").value = (
+    ...     ":pserver:anonymous@cvs-new.example.com:/fooix"
+    ... )
     >>> import_browser.getControl("Module").value = "fooix2"
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
@@ -198,9 +198,9 @@ CVS imports,
 Git-to-Bazaar imports,
 
     >>> import_browser.open(git_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "URL"
-    ... ).value = "git://user:password@git-new.example.org/fooix"
+    >>> import_browser.getControl("URL").value = (
+    ...     "git://user:password@git-new.example.org/fooix"
+    ... )
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
@@ -208,9 +208,9 @@ Git-to-Bazaar imports,
 Git-to-Git imports,
 
     >>> import_browser.open(git_to_git_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "URL"
-    ... ).value = "git://user:password@git-new.example.org/fooix2"
+    >>> import_browser.getControl("URL").value = (
+    ...     "git://user:password@git-new.example.org/fooix2"
+    ... )
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
@@ -218,9 +218,9 @@ Git-to-Git imports,
 and imports targeting source packages.
 
     >>> import_browser.open(package_import_location + "/+edit-import")
-    >>> import_browser.getControl(
-    ...     "URL"
-    ... ).value = "http://metal.example.org/zap"
+    >>> import_browser.getControl("URL").value = (
+    ...     "http://metal.example.org/zap"
+    ... )
     >>> import_browser.getControl("Update").click()
     >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.

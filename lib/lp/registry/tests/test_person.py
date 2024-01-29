@@ -2007,9 +2007,9 @@ class Test_getAssignedBugTasksDueBefore(TestCaseWithFactory):
 
     def test_skips_productseries_task_that_is_a_conjoined_primary(self):
         milestone = self.factory.makeMilestone(dateexpected=self.today)
-        removeSecurityProxy(
-            milestone.product
-        ).development_focus = milestone.productseries
+        removeSecurityProxy(milestone.product).development_focus = (
+            milestone.productseries
+        )
         bug = self.factory.makeBug(
             series=milestone.productseries, milestone=milestone
         )
@@ -2141,9 +2141,9 @@ class TestSpecifications(TestCaseWithFactory):
             information_type=information_type,
             owner=owner,
         )
-        removeSecurityProxy(
-            blueprint
-        ).datecreated = self.date_created + timedelta(date_created)
+        removeSecurityProxy(blueprint).datecreated = (
+            self.date_created + timedelta(date_created)
+        )
         return blueprint
 
     def test_specifications_quantity(self):

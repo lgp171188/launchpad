@@ -404,9 +404,9 @@ development focus branch.
 
     >>> admin_browser.open("http://launchpad.test/gnome-terminal/trunk")
     >>> admin_browser.getLink("Link to branch").click()
-    >>> admin_browser.getControl(
-    ...     name="field.branch_location"
-    ... ).value = "~name12/gnome-terminal/main"
+    >>> admin_browser.getControl(name="field.branch_location").value = (
+    ...     "~name12/gnome-terminal/main"
+    ... )
     >>> admin_browser.getControl("Update").click()
 
 Now when we look at the branches for gnome-terminal, the main branch
@@ -430,18 +430,18 @@ are comma separated and in alphabetical order.
     >>> admin_browser.getLink("Register a series").click()
     >>> admin_browser.getControl("Name").value = "pre-1.0"
     >>> admin_browser.getControl("Summary").value = "summary"
-    >>> admin_browser.getControl(
-    ...     "Branch"
-    ... ).value = "~name12/gnome-terminal/main"
+    >>> admin_browser.getControl("Branch").value = (
+    ...     "~name12/gnome-terminal/main"
+    ... )
     >>> admin_browser.getControl("Register Series").click()
 
     >>> admin_browser.open("http://launchpad.test/gnome-terminal")
     >>> admin_browser.getLink("Register a series").click()
     >>> admin_browser.getControl("Name").value = "alpha"
     >>> admin_browser.getControl("Summary").value = "summary"
-    >>> admin_browser.getControl(
-    ...     "Branch"
-    ... ).value = "~name12/gnome-terminal/main"
+    >>> admin_browser.getControl("Branch").value = (
+    ...     "~name12/gnome-terminal/main"
+    ... )
     >>> admin_browser.getControl("Register Series").click()
 
 The current development focus is shown first though.

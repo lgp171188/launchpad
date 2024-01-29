@@ -6,9 +6,9 @@ Thunderbird bug.
     >>> user_browser.open(
     ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/" "+filebug"
     ... )
-    >>> user_browser.getControl(
-    ...     name="field.title", index=0
-    ... ).value = "Thunderbird crashes when opening large emails"
+    >>> user_browser.getControl(name="field.title", index=0).value = (
+    ...     "Thunderbird crashes when opening large emails"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 In this case, since we search only Ubuntu Firefox bugs, there are no

@@ -35,9 +35,9 @@ Attempts to claim a revoked OpenPGP key fail:
     >>> logout()
     >>> browser = setupBrowserFreshLogin(name12)
     >>> browser.open("http://launchpad.test/~name12/+editpgpkeys")
-    >>> browser.getControl(
-    ...     name="fingerprint"
-    ... ).value = "84D205F03E1E67096CB54E262BE83793AACCD97C"
+    >>> browser.getControl(name="fingerprint").value = (
+    ...     "84D205F03E1E67096CB54E262BE83793AACCD97C"
+    ... )
     >>> browser.getControl("Import Key").click()
     >>> for tag in find_tags_by_class(browser.contents, "error message"):
     ...     print(tag.decode_contents())
@@ -52,9 +52,9 @@ Attempts to claim a revoked OpenPGP key fail:
 
 Attempts to claim an expired OpenPGP key also fail:
 
-    >>> browser.getControl(
-    ...     name="fingerprint"
-    ... ).value = "0DD64D28E5F41138533495200E3DB4D402F53CC6"
+    >>> browser.getControl(name="fingerprint").value = (
+    ...     "0DD64D28E5F41138533495200E3DB4D402F53CC6"
+    ... )
     >>> browser.getControl("Import Key").click()
     >>> for tag in find_tags_by_class(browser.contents, "error message"):
     ...     print(tag.decode_contents())

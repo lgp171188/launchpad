@@ -159,9 +159,9 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
     def test_get_register_upstream_url_homepage(self):
         source_package = self._makePublishedSourcePackage()
         # SourcePackageReleases cannot be modified by users.
-        removeSecurityProxy(
-            source_package.currentrelease
-        ).homepage = "http://eg.dom/bonkers"
+        removeSecurityProxy(source_package.currentrelease).homepage = (
+            "http://eg.dom/bonkers"
+        )
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
             url, "field.homepageurl", "http://eg.dom/bonkers"

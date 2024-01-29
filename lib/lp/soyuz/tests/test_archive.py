@@ -4421,9 +4421,9 @@ class TestCopyPackage(TestCaseWithFactory):
         )
         with person_logged_in(target_archive.owner):
             target_archive.newComponentUploader(source_archive.owner, "main")
-        removeSecurityProxy(
-            source.distroseries
-        ).status = SeriesStatus.SUPPORTED
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED
+        )
         with person_logged_in(source_archive.owner):
             expected_error = "Cannot delete publications from suite '%s'" % (
                 source.distroseries.getSuite(source.pocket)
@@ -4932,9 +4932,9 @@ class TestCopyPackage(TestCaseWithFactory):
         )
         with person_logged_in(target_archive.owner):
             target_archive.newComponentUploader(source_archive.owner, "main")
-        removeSecurityProxy(
-            source.distroseries
-        ).status = SeriesStatus.SUPPORTED
+        removeSecurityProxy(source.distroseries).status = (
+            SeriesStatus.SUPPORTED
+        )
         with person_logged_in(source_archive.owner):
             expected_error = "Cannot delete publications from suite '%s'" % (
                 source.distroseries.getSuite(source.pocket)
@@ -6020,9 +6020,9 @@ class TestSigningKeyPropagation(TestCaseWithFactory):
         self.factory.makeGPGKey(person)
         key = person.gpg_keys[0]
         removeSecurityProxy(person.archive).signing_key_owner = key.owner
-        removeSecurityProxy(
-            person.archive
-        ).signing_key_fingerprint = key.fingerprint
+        removeSecurityProxy(person.archive).signing_key_fingerprint = (
+            key.fingerprint
+        )
         del get_property_cache(person.archive).signing_key
         ppa_with_key = self.factory.makeArchive(
             owner=person, purpose=ArchivePurpose.PPA
@@ -6055,9 +6055,9 @@ class TestGetSigningKeyData(TestCaseWithFactory):
             secret_key = gpghandler.importSecretKey(key_file.read())
         public_key = gpghandler.retrieveKey(secret_key.fingerprint)
         public_key_data = public_key.export()
-        removeSecurityProxy(
-            ppa
-        ).signing_key_fingerprint = public_key.fingerprint
+        removeSecurityProxy(ppa).signing_key_fingerprint = (
+            public_key.fingerprint
+        )
         key_url = gpghandler.getURLForKeyInServer(
             public_key.fingerprint, action="get"
         )
@@ -6216,10 +6216,10 @@ class TestArchiveGetOverridePolicy(TestCaseWithFactory):
         super().setUp()
         self.series = self.factory.makeDistroSeries()
         with admin_logged_in():
-            self.series.nominatedarchindep = (
-                self.amd64
-            ) = self.factory.makeDistroArchSeries(
-                distroseries=self.series, architecturetag="amd64"
+            self.series.nominatedarchindep = self.amd64 = (
+                self.factory.makeDistroArchSeries(
+                    distroseries=self.series, architecturetag="amd64"
+                )
             )
             self.armhf = self.factory.makeDistroArchSeries(
                 distroseries=self.series, architecturetag="armhf"

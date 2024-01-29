@@ -17,9 +17,9 @@ us on the same page.
 
     >>> browser.getControl(name="field.display_name").value = "Eye of GNOME"
     >>> browser.getControl(name="field.name", index=0).value = "eog"
-    >>> browser.getControl(
-    ...     name="field.summary"
-    ... ).value = "An image viewer for GNOME"
+    >>> browser.getControl(name="field.summary").value = (
+    ...     "An image viewer for GNOME"
+    ... )
     >>> browser.getControl("Continue").click()
     >>> print(browser.url)
     http://launchpad.test/gnome/+newproduct

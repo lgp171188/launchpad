@@ -67,9 +67,9 @@ page.
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/redfish/+bug/15/+addcomment"
     ... )
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Here's a comment for testing, like."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Here's a comment for testing, like."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> print_comments(user_browser.contents, slice(None))
     Revision history for this message
@@ -112,9 +112,9 @@ Changes to the bug's description will simply be displayed as 'description:
 updated', since such changes can be quite long.
 
     >>> admin_browser.open("http://bugs.launchpad.test/redfish/+bug/15/+edit")
-    >>> admin_browser.getControl(
-    ...     "Description"
-    ... ).value = "I've changed the description, isn't that excellent?"
+    >>> admin_browser.getControl("Description").value = (
+    ...     "I've changed the description, isn't that excellent?"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> admin_browser.open("http://launchpad.test/bugs/15")

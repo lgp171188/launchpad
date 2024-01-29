@@ -111,9 +111,9 @@ submits the form.
     >>> print(user_browser.getControl("Project").displayValue)
     ['Mozilla Thunderbird']
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Problem displaying complex SVG"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Problem displaying complex SVG"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 The user is again shown similar questions, this time for the product
@@ -272,9 +272,9 @@ because Japanese is not listed as supported. They submits the form with
 the 'Continue' button without setting the product. In this case, they are
 asking a question for Firefox in English regarding SVG.
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Problem displaying complex SVG"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Problem displaying complex SVG"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 They're shown a list of similar questions related to the product Firefox.
@@ -323,9 +323,9 @@ Language, and 'Continues' to the next page.
     >>> print(user_browser.getControl("Language").displayOptions)
     ['English (en) *', 'Japanese (ja)']
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Problem displaying complex SVG"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Problem displaying complex SVG"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 The product Thunderbird that they selected on the previous screen is still
@@ -346,12 +346,12 @@ Question' button.
     ['Mozilla Thunderbird']
 
     >>> user_browser.getControl("Japanese (ja) *").selected = True
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Pretend this is written in Japanese"
-    >>> user_browser.getControl(
-    ...     "Description"
-    ... ).value = "Something in kanji and hiragana."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Pretend this is written in Japanese"
+    ... )
+    >>> user_browser.getControl("Description").value = (
+    ...     "Something in kanji and hiragana."
+    ... )
     >>> user_browser.getControl("Post Question").click()
 
 The user is taken to page displaying their question. Changing the language

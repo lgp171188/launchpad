@@ -456,9 +456,9 @@ class PackageUploadMailer(BaseMailer):
             and not is_auto_sync_upload(spr, bprs, pocket, announce_from_addr)
         ):
             recipient = AnnouncementStubPerson(distroseries.changeslist)
-            recipients[
-                recipient
-            ] = PackageUploadRecipientReason.forAnnouncement(recipient)
+            recipients[recipient] = (
+                PackageUploadRecipientReason.forAnnouncement(recipient)
+            )
 
         if announce_from_addr is not None:
             announce_from_address = format_address(*announce_from_addr)

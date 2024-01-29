@@ -41,9 +41,9 @@ hidden.
 Now we enter the doc team's email address to continue the process of
 turning that profile into a team.
 
-    >>> user_browser.getControl(
-    ...     "Email address"
-    ... ).value = "doc@lists.ubuntu.com"
+    >>> user_browser.getControl("Email address").value = (
+    ...     "doc@lists.ubuntu.com"
+    ... )
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.title
     'Ubuntu Doc Team does not use Launchpad'

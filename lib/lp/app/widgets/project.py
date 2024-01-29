@@ -68,9 +68,9 @@ class ProjectScopeWidget(BrowserWidget, InputWidget):
             ):
                 attributes["checked"] = "checked"
             if option == "project":
-                attributes[
-                    "onclick"
-                ] = "document.getElementById('field.scope.target').focus();"
+                attributes["onclick"] = (
+                    "document.getElementById('field.scope.target').focus();"
+                )
             self.options[option] = renderElement("input", **attributes)
         self.target_widget.onKeyPress = (
             "selectWidget('%s.option.project', event)" % self.name

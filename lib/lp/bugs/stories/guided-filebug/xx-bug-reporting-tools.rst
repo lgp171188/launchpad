@@ -134,9 +134,9 @@ Even if the form has errors the token will be present in the URL.
 If we go ahead submitting the bug, the bug will have all the extra
 information specified in the extra filebug data.
 
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "A bug description."
+    >>> user_browser.getControl("Further information").value = (
+    ...     "A bug description."
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'
@@ -233,9 +233,9 @@ The user can of course change the tags if they want.
 
     >>> user_browser.getControl("Tags").value = "bar baz"
     >>> user_browser.getControl("Summary", index=0).value = "Bug Summary"
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "Bug description."
+    >>> user_browser.getControl("Further information").value = (
+    ...     "Bug description."
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'
@@ -254,9 +254,9 @@ that will get their tags set as well.
     >>> user_browser.getControl("Summary", index=0).value = "Bug Summary"
     >>> user_browser.getControl("Continue").click()
 
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "Bug description."
+    >>> user_browser.getControl("Further information").value = (
+    ...     "Bug description."
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'

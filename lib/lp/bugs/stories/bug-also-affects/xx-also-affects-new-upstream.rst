@@ -12,9 +12,9 @@ The test browser does not support javascript
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+affects-new-product"
     ... )
-    >>> user_browser.getControl(
-    ...     "Bug URL"
-    ... ).value = "http://bugs.foo.org/bugs/show_bug.cgi?id=42"
+    >>> user_browser.getControl("Bug URL").value = (
+    ...     "http://bugs.foo.org/bugs/show_bug.cgi?id=42"
+    ... )
     >>> user_browser.getControl("Project name").value = "The Foo Project"
     >>> user_browser.getControl("Project ID").value = "foo"
     >>> user_browser.getControl("Project summary").value = "The Foo Project"
@@ -37,9 +37,9 @@ for the user to use as the affected upstream.
     ... )
     >>> print(user_browser.title)
     Register project affected by...
-    >>> user_browser.getControl(
-    ...     "Bug URL"
-    ... ).value = "http://bugs.foo.org/bugs/show_bug.cgi?id=421"
+    >>> user_browser.getControl("Bug URL").value = (
+    ...     "http://bugs.foo.org/bugs/show_bug.cgi?id=421"
+    ... )
     >>> user_browser.getControl("Project name").value = "The Bar Project"
     >>> user_browser.getControl("Project ID").value = "bar"
     >>> user_browser.getControl("Project summary").value = "The Bar Project"
@@ -90,9 +90,9 @@ Now we'll tell Launchpad to not use the existing upstream as we want to report
 the bug as affecting another (unregistered) upstream.
 
     >>> user_browser.goBack()
-    >>> user_browser.getControl(
-    ...     "Bug URL"
-    ... ).value = "http://bugs.foo.org/bugs/show_bug.cgi?id=123"
+    >>> user_browser.getControl("Bug URL").value = (
+    ...     "http://bugs.foo.org/bugs/show_bug.cgi?id=123"
+    ... )
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.title
     'Bug #2 (blackhole) ... : Bugs : The Bar Project'
@@ -109,9 +109,9 @@ user and ask them to check if it's correct.
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+affects-new-product"
     ... )
-    >>> user_browser.getControl(
-    ...     "Bug URL"
-    ... ).value = "http://foo.org/notabug.cgi?id=42"
+    >>> user_browser.getControl("Bug URL").value = (
+    ...     "http://foo.org/notabug.cgi?id=42"
+    ... )
     >>> user_browser.getControl("Project name").value = "Foo Project"
     >>> user_browser.getControl("Project ID").value = "bazfoo"
     >>> user_browser.getControl("Project summary").value = "The Foo Project"

@@ -71,9 +71,9 @@ private.
     >>> admin_browser.open("http://launchpad.test/~landscape-developers")
 
     >>> admin_browser.getLink("Create a new PPA").click()
-    >>> admin_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "PPA for Landscape Developers"
+    >>> admin_browser.getControl(name="field.displayname").value = (
+    ...     "PPA for Landscape Developers"
+    ... )
     >>> admin_browser.getControl(name="field.accepted").value = True
     >>> admin_browser.getControl("Activate").click()
 

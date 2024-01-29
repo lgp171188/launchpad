@@ -694,9 +694,9 @@ class LaunchpadObjectFactory(ObjectFactory):
         )
         if account_status:
             if account_status in once_active:
-                removeSecurityProxy(
-                    person.account
-                ).status = AccountStatus.ACTIVE
+                removeSecurityProxy(person.account).status = (
+                    AccountStatus.ACTIVE
+                )
             removeSecurityProxy(person.account).status = account_status
         self.makeOpenIdIdentifier(person.account)
 
@@ -3816,9 +3816,9 @@ class LaunchpadObjectFactory(ObjectFactory):
         if date_superseded is not None:
             removeSecurityProxy(archive_file).date_superseded = date_superseded
         if scheduled_deletion_date is not None:
-            removeSecurityProxy(
-                archive_file
-            ).scheduled_deletion_date = scheduled_deletion_date
+            removeSecurityProxy(archive_file).scheduled_deletion_date = (
+                scheduled_deletion_date
+            )
         if date_removed is not None:
             removeSecurityProxy(archive_file).date_removed = date_removed
         return archive_file
@@ -5243,9 +5243,9 @@ class LaunchpadObjectFactory(ObjectFactory):
                 with_file=with_file,
                 creator=creator,
             )
-            removeSecurityProxy(
-                bpph.binarypackagerelease
-            ).debug_package = debug_bpph.binarypackagerelease
+            removeSecurityProxy(bpph.binarypackagerelease).debug_package = (
+                debug_bpph.binarypackagerelease
+            )
             return bpphs[0], debug_bpph
         return bpphs[0]
 

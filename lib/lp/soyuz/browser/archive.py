@@ -2304,9 +2304,11 @@ class EnableProcessorsMixin:
                 title=old_field.title,
                 value_type=Choice(vocabulary=SimpleVocabulary(terms)),
                 required=False,
-                description=old_field.description
-                if description is None
-                else description,
+                description=(
+                    old_field.description
+                    if description is None
+                    else description
+                ),
             ),
             render_context=self.render_context,
             custom_widget=widget,

@@ -73,9 +73,9 @@ XXX: Original search, disabled due to performance issues RBC 20100725. This
 will be reinstated when cheap relevance filtering is available / when search
 is overhauled.
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Visiting a web page requiring java crashes firefox"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Visiting a web page requiring java crashes firefox"
+    ... )
 
 For now, use a closer search:
 
@@ -156,13 +156,13 @@ first step:
 Entering a valid title and description will create the new question and
 redirect the user to the question page.
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Visiting a web page requiring java crashes firefox"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Visiting a web page requiring java crashes firefox"
+    ... )
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl(
-    ...     "Description"
-    ... ).value = "I use Ubuntu on AMD64 and firefox is slow."
+    >>> user_browser.getControl("Description").value = (
+    ...     "I use Ubuntu on AMD64 and firefox is slow."
+    ... )
     >>> user_browser.getControl("Post Question").click()
     >>> user_browser.url
     '.../ubuntu/+source/mozilla-firefox/+question/...'

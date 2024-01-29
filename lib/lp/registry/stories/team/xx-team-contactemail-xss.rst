@@ -6,9 +6,9 @@ escaped in order to prevent XSS.
 
     >>> admin_browser.open("http://launchpad.test/~guadamen/+contactaddress")
     >>> admin_browser.getControl("Another email address").selected = True
-    >>> admin_browser.getControl(
-    ...     name="field.contact_address"
-    ... ).value = '<script>alert("cheezburger");</script>'
+    >>> admin_browser.getControl(name="field.contact_address").value = (
+    ...     '<script>alert("cheezburger");</script>'
+    ... )
     >>> admin_browser.getControl("Change").click()
 
 The value can be obtained correctly, which indicates that the markup

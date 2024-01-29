@@ -74,9 +74,7 @@ on the 'Add Information Request' button.
     Link to a FAQ
     Create a new FAQ
 
-    >>> support_browser.getControl(
-    ...     "Message"
-    ... ).value = (
+    >>> support_browser.getControl("Message").value = (
     ...     "Can you provide an example of an URL displaying the problem?"
     ... )
     >>> support_browser.getControl("Add Information Request").click()
@@ -106,9 +104,7 @@ A comment can be added at any point without altering the status. The
 user simply enters the comment in the 'Message' box and clicks the 'Just
 Add a Comment' button.
 
-    >>> support_browser.getControl(
-    ...     "Message"
-    ... ).value = (
+    >>> support_browser.getControl("Message").value = (
     ...     "I forgot to mention, in the meantime here is a workaround..."
     ... )
     >>> support_browser.getControl("Just Add a Comment").click()
@@ -260,9 +256,9 @@ When the question is Solved, it is still possible to add comments to it.
 The user simply enters the comment in the 'Message' box and clicks the
 'Just Add a Comment' button.
 
-    >>> owner_browser.getControl(
-    ...     "Message"
-    ... ).value = "The example now displays correctly. Thanks."
+    >>> owner_browser.getControl("Message").value = (
+    ...     "The example now displays correctly. Thanks."
+    ... )
     >>> owner_browser.getControl("Just Add a Comment").click()
 
 This appends the comment to the question and it doesn't change its
@@ -457,9 +453,7 @@ choosing an answer that helped him solve his problem.
     >>> answer_button_paragraph is None
     True
 
-    >>> carlos_browser.getControl(
-    ...     "Message"
-    ... ).value = (
+    >>> carlos_browser.getControl("Message").value = (
     ...     "There is a bug in that version. SMP is fine after upgrading."
     ... )
     >>> carlos_browser.getControl("Problem Solved").click()

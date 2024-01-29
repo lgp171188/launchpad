@@ -416,9 +416,9 @@ They need to login to access that page:
 Their problem was about integrating their email client in firefox, so they
 enter 'email client in firefox'
 
-    >>> sample_person_browser.getControl(
-    ...     name="field.search_text"
-    ... ).value = "email client in firefox"
+    >>> sample_person_browser.getControl(name="field.search_text").value = (
+    ...     "email client in firefox"
+    ... )
 
 They also remember that their question was answered, so they unselect the
 other statuses and hit the search button.
@@ -496,9 +496,9 @@ They need to login to access that page:
 
 Like all other report, this one is searchable:
 
-    >>> sample_person_browser.getControl(
-    ...     name="field.search_text"
-    ... ).value = "evolution"
+    >>> sample_person_browser.getControl(name="field.search_text").value = (
+    ...     "evolution"
+    ... )
     >>> sample_person_browser.getControl("Search", index=0).click()
     >>> print(sample_person_browser.title)
     Questions matching "evolution" needing your attention for Ubuntu :

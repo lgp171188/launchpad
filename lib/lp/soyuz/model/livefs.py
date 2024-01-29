@@ -203,10 +203,14 @@ class LiveFS(StormBase, WebhookTargetMixin):
                 IsDistinctFrom(
                     Cast(LiveFSBuild.metadata_override, "jsonb"),
                     Cast(
-                        None
-                        if metadata_override is None
-                        else six.ensure_text(
-                            json.dumps(metadata_override, ensure_ascii=False)
+                        (
+                            None
+                            if metadata_override is None
+                            else six.ensure_text(
+                                json.dumps(
+                                    metadata_override, ensure_ascii=False
+                                )
+                            )
                         ),
                         "jsonb",
                     ),

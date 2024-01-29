@@ -45,9 +45,9 @@ A comment and attachment can be submitted in one request.
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form"
     ... )
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "this is a comment"
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "this is a comment"
+    ... )
     >>> user_browser.getControl("Attachment").add_file(
     ...     BytesIO(b"some file"), "text/plain", "bar.txt"
     ... )

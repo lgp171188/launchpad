@@ -315,13 +315,13 @@ def get_branch_info(branch):
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.
-    info[
-        "control_string"
-    ] = branch.controldir._format.get_format_string().decode()
+    info["control_string"] = (
+        branch.controldir._format.get_format_string().decode()
+    )
     info["branch_string"] = branch._format.get_format_string().decode()
-    info[
-        "repository_string"
-    ] = branch.repository._format.get_format_string().decode()
+    info["repository_string"] = (
+        branch.repository._format.get_format_string().decode()
+    )
     return info
 
 

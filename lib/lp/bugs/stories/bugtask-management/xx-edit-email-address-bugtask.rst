@@ -52,9 +52,9 @@ elsewhere:
     >>> user_browser.getControl("Project").value = "gnome-terminal"
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "http://mantis.bugtracker/view.php?id=1234"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "http://mantis.bugtracker/view.php?id=1234"
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
     >>> user_browser.getControl(
     ...     "Register Bug Tracker and Add to Bug Report"

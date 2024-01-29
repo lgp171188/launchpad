@@ -45,9 +45,9 @@ link to a external bug for it.
     >>> user_browser.getLink("Also affects distribution/package").click()
     >>> user_browser.getControl("Distribution").value = ["gentoo"]
     >>> user_browser.getControl("Source Package").value = ""
-    >>> user_browser.getControl(
-    ...     "URL"
-    ... ).value = "http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1234"
+    >>> user_browser.getControl("URL").value = (
+    ...     "http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1234"
+    ... )
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/gentoo/+bug/7'

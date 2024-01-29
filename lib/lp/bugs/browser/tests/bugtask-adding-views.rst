@@ -345,9 +345,9 @@ If the URL is valid but there's no bugtracker registered with that URL,
 we ask the user if they want to register the bugtracker as well.
 
     >>> form["field.product"] = "aptoncd"
-    >>> form[
-    ...     "field.bug_url"
-    ... ] = "http://bugzilla.somewhere.org/bugs/show_bug.cgi?id=84"
+    >>> form["field.bug_url"] = (
+    ...     "http://bugzilla.somewhere.org/bugs/show_bug.cgi?id=84"
+    ... )
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, "+choose-affected-product", form
     ... )
@@ -380,12 +380,12 @@ If we specify a URL of an already registered bug tracker, both the task
 and the bug watch will be added without any confirmation needed:
 
     >>> form["field.product"] = "alsa-utils"
-    >>> form[
-    ...     "field.bug_url"
-    ... ] = "http://bugzilla.gnome.org/bugs/show_bug.cgi?id=84"
-    >>> form[
-    ...     "field.__visited_steps__"
-    ... ] = "choose_product|specify_remote_bug_url"
+    >>> form["field.bug_url"] = (
+    ...     "http://bugzilla.gnome.org/bugs/show_bug.cgi?id=84"
+    ... )
+    >>> form["field.__visited_steps__"] = (
+    ...     "choose_product|specify_remote_bug_url"
+    ... )
     >>> add_task_view = get_and_setup_view(
     ...     firefox_task, "+choose-affected-product", form
     ... )

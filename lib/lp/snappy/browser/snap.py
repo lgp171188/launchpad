@@ -1024,9 +1024,9 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         else:
             initial_values["vcs"] = VCSType.BZR
         if self.context.auto_build_pocket is None:
-            initial_values[
-                "auto_build_pocket"
-            ] = PackagePublishingPocket.UPDATES
+            initial_values["auto_build_pocket"] = (
+                PackagePublishingPocket.UPDATES
+            )
         # XXX pappacena 2021-02-12: Until we back fill information_type
         # database column, it will be NULL, but snap.information_type
         # property has a fallback to check "private" property. This should

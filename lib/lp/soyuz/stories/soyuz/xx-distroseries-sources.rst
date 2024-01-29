@@ -251,9 +251,9 @@ Any user can see the copyright for the most recent source package release.
     ...     "mozilla-firefox"
     ... )
     >>> source_package_release = warty_firefox.distinctreleases[0]
-    >>> removeSecurityProxy(
-    ...     source_package_release
-    ... ).copyright = "Copyright 2010 Ford Prefect."
+    >>> removeSecurityProxy(source_package_release).copyright = (
+    ...     "Copyright 2010 Ford Prefect."
+    ... )
     >>> transaction.commit()
     >>> logout()
 

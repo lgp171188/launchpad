@@ -164,15 +164,15 @@ class TestFeatureControlPage(BrowserTestCase):
         """Submitting shows a diff of the changes."""
         browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
-        browser.getControl(
-            name="field.feature_rules"
-        ).value = "beta_user some_key 10 some value with spaces"
+        browser.getControl(name="field.feature_rules").value = (
+            "beta_user some_key 10 some value with spaces"
+        )
         browser.getControl(name="field.comment").value = "comment"
         browser.getControl(name="field.actions.change").click()
         browser.getControl(name="field.comment").value = "comment"
-        browser.getControl(
-            name="field.feature_rules"
-        ).value = "beta_user some_key 10 another value with spaces"
+        browser.getControl(name="field.feature_rules").value = (
+            "beta_user some_key 10 another value with spaces"
+        )
         browser.getControl(name="field.actions.change").click()
         # The diff is formatted nicely using CSS.
         self.assertThat(
@@ -193,9 +193,9 @@ class TestFeatureControlPage(BrowserTestCase):
         """When submitting changes the name of the logger is shown."""
         browser = self.admin_browser
         browser.open(self.getFeatureRulesEditURL())
-        browser.getControl(
-            name="field.feature_rules"
-        ).value = "beta_user some_key 10 some value with spaces"
+        browser.getControl(name="field.feature_rules").value = (
+            "beta_user some_key 10 some value with spaces"
+        )
         browser.getControl(name="field.comment").value = "comment"
         browser.getControl(name="field.actions.change").click()
         self.assertThat(

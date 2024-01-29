@@ -212,9 +212,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create OCI recipe").click()
 
@@ -291,9 +291,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create OCI recipe").click()
         self.assertIn("Branch does not match format", browser.contents)
@@ -308,13 +308,13 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
-        browser.getControl(
-            "Build-time ARG variables"
-        ).value = "VAR1=10\nVAR2=20"
+        browser.getControl("Build-time ARG variables").value = (
+            "VAR1=10\nVAR2=20"
+        )
         browser.getControl("Create OCI recipe").click()
 
         content = find_main_content(browser.contents)
@@ -337,9 +337,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
 
         image_name = self.factory.getUniqueUnicode()
@@ -413,9 +413,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         processors = browser.getControl(name="field.processors")
         processors.value = ["386", "amd64"]
         browser.getControl(name="field.name").value = "recipe-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create OCI recipe").click()
         login_person(self.person)
@@ -513,9 +513,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         official_control = browser.getControl("Official recipe")
         official_control.selected = True
@@ -547,9 +547,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         official_control = browser.getControl("Official recipe")
         official_control.selected = True
@@ -565,9 +565,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser2.getControl(name="field.name").value = "recipe-name"
         browser2.getControl("Description").value = "Recipe description"
-        browser2.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref2_identity
+        browser2.getControl(name="field.git_ref.repository").value = (
+            git_ref2_identity
+        )
         browser2.getControl(name="field.git_ref.path").value = git_ref2_path
         official_control = browser2.getControl("Official recipe")
         official_control.selected = True
@@ -598,9 +598,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         official_control = browser.getControl("Official recipe")
         official_control.selected = True
@@ -621,9 +621,9 @@ class TestOCIRecipeAddView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         )
         browser.getControl(name="field.name").value = "recipe-name"
         browser.getControl("Description").value = "Recipe description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = "non-exist"
         browser.getControl("Create OCI recipe").click()
 
@@ -786,9 +786,9 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Description").value = "New description"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = new_git_ref_path
         browser.getControl("Build file path").value = "Dockerfile-2"
         browser.getControl("Build directory context").value = "apath"
@@ -840,9 +840,9 @@ class TestOCIRecipeEditView(OCIConfigHelperMixin, BaseTestOCIRecipeView):
 
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit OCI recipe").click()
-        browser.getControl(
-            name="field.git_ref.path"
-        ).value = "refs/heads/invalid"
+        browser.getControl(name="field.git_ref.path").value = (
+            "refs/heads/invalid"
+        )
         browser.getControl("Update OCI recipe").click()
         self.assertIn("Branch does not match format", browser.contents)
 
@@ -2572,9 +2572,9 @@ class TestOCIRecipeEditPushRulesView(
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
         with person_logged_in(self.person):
-            browser.getControl(
-                name="field.delete.%d" % push_rule_id
-            ).value = True
+            browser.getControl(name="field.delete.%d" % push_rule_id).value = (
+                True
+            )
         browser.getControl("Save").click()
 
         with person_logged_in(self.person):
@@ -2653,9 +2653,9 @@ class TestOCIRecipeEditPushRulesView(
         browser.getControl(name="field.add_region").value = "somewhere-02"
         browser.getControl(name="field.add_username").value = "username"
         browser.getControl(name="field.add_password").value = "password"
-        browser.getControl(
-            name="field.add_confirm_password"
-        ).value = "password"
+        browser.getControl(name="field.add_confirm_password").value = (
+            "password"
+        )
         browser.getControl("Save").click()
         with person_logged_in(self.person):
             rules = list(
@@ -2700,14 +2700,15 @@ class TestOCIRecipeEditPushRulesView(
         browser = self.getViewBrowser(self.recipe, user=self.person)
         browser.getLink("Edit push rules").click()
         browser.getControl(name="field.add_credentials").value = "existing"
-        browser.getControl(
-            name="field.add_image_name"
-        ).value = existing_image_name
-        browser.getControl(
-            name="field.existing_credentials"
-        ).value = "%s %s" % (
-            quote(existing_registry_url),
-            quote(existing_username),
+        browser.getControl(name="field.add_image_name").value = (
+            existing_image_name
+        )
+        browser.getControl(name="field.existing_credentials").value = (
+            "%s %s"
+            % (
+                quote(existing_registry_url),
+                quote(existing_username),
+            )
         )
         browser.getControl("Save").click()
         self.assertIn(
@@ -2826,9 +2827,9 @@ class TestOCIRecipeEditPushRulesView(
 
         # set image name to valid string
         with person_logged_in(self.person):
-            browser.getControl(
-                name="field.image_name.%d" % rule.id
-            ).value = "image1"
+            browser.getControl(name="field.image_name.%d" % rule.id).value = (
+                "image1"
+            )
         browser.getControl("Save").click()
 
         # and assert model changed
@@ -2867,9 +2868,9 @@ class TestOCIRecipeEditPushRulesView(
         browser.getControl(name="field.add_region").value = "new_region1"
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
-        browser.getControl(
-            name="field.add_confirm_password"
-        ).value = "password"
+        browser.getControl(name="field.add_confirm_password").value = (
+            "password"
+        )
 
         browser.getControl("Save").click()
         with person_logged_in(self.person):

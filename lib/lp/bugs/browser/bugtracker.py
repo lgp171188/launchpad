@@ -320,9 +320,11 @@ class BugTrackerEditView(LaunchpadEditFormView):
             # let's just escape them anyway.
             aliases_errors = self.widgets["aliases"]._error.errors.args[0]
             maybe_structured_errors = [
-                structured(error)
-                if isinstance(error, LaunchpadValidationError)
-                else error
+                (
+                    structured(error)
+                    if isinstance(error, LaunchpadValidationError)
+                    else error
+                )
                 for error in aliases_errors
             ]
             self.setFieldError(

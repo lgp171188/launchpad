@@ -184,9 +184,11 @@ class LibraryFileAliasResource(resource.Resource):
             # cached forever, while private ones mustn't be at all.
             request.setHeader(
                 "Cache-Control",
-                "max-age=31536000, public"
-                if not restricted
-                else "max-age=0, private",
+                (
+                    "max-age=31536000, public"
+                    if not restricted
+                    else "max-age=0, private"
+                ),
             )
             return file
         elif self.upstreamHost is not None:

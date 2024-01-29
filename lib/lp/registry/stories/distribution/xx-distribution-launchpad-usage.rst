@@ -85,9 +85,9 @@ Just like Launchpad administrators can.
     >>> print(admin_browser.getControl(name="field.answers_usage").value[0])
     LAUNCHPAD
 
-    >>> admin_browser.getControl(
-    ...     name="field.enable_bug_expiration"
-    ... ).value = False
+    >>> admin_browser.getControl(name="field.enable_bug_expiration").value = (
+    ...     False
+    ... )
     >>> admin_browser.getControl(name="field.official_malone").value = False
     >>> admin_browser.getControl(name="field.blueprints_usage").value = [
     ...     "UNKNOWN"
@@ -106,15 +106,15 @@ Only administrators can configure the publisher for the distribution:
     >>> print(admin_browser.title)
     Publisher configuration for...
 
-    >>> admin_browser.getControl(
-    ...     name="field.root_dir"
-    ... ).value = "/tmp/root_dir"
-    >>> admin_browser.getControl(
-    ...     name="field.base_url"
-    ... ).value = "http://base.url/"
-    >>> admin_browser.getControl(
-    ...     name="field.copy_base_url"
-    ... ).value = "http://copy.base.url/"
+    >>> admin_browser.getControl(name="field.root_dir").value = (
+    ...     "/tmp/root_dir"
+    ... )
+    >>> admin_browser.getControl(name="field.base_url").value = (
+    ...     "http://base.url/"
+    ... )
+    >>> admin_browser.getControl(name="field.copy_base_url").value = (
+    ...     "http://copy.base.url/"
+    ... )
     >>> admin_browser.getControl("Save").click()
 
     >>> print(admin_browser.url)
@@ -134,9 +134,9 @@ Foo Bar updates Ubuntu to use Launchpad to track bugs, and enables
 bug expiration.
 
     >>> admin_browser.getLink("Change details").click()
-    >>> admin_browser.getControl(
-    ...     name="field.enable_bug_expiration"
-    ... ).value = True
+    >>> admin_browser.getControl(name="field.enable_bug_expiration").value = (
+    ...     True
+    ... )
     >>> admin_browser.getControl(name="field.official_malone").value = True
     >>> admin_browser.getControl("Change", index=3).click()
 

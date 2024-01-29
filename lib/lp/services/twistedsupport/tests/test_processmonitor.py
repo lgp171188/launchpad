@@ -127,7 +127,6 @@ class TestProcessWithTimeout(ProcessTestsMixin, TestCase):
 
 
 class TestProcessProtocolWithTwoStageKill(ProcessTestsMixin, TestCase):
-
     """Tests for `ProcessProtocolWithTwoStageKill`."""
 
     run_tests_with = AsynchronousDeferredRunTest

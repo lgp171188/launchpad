@@ -67,9 +67,9 @@ The PPA breadcrumb follows the PPA displayname.
     ... )
     >>> cprov_browser.open("http://launchpad.test/~cprov/+archive/ubuntu/ppa")
     >>> cprov_browser.getLink("Change details").click()
-    >>> cprov_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "Default PPA"
+    >>> cprov_browser.getControl(name="field.displayname").value = (
+    ...     "Default PPA"
+    ... )
     >>> cprov_browser.getControl("Save").click()
 
     >>> print_location(cprov_browser.contents)

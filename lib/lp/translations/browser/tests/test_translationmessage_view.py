@@ -495,9 +495,9 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
         # Users who have declined the relicensing agreement can't post
         # translations.
         decliner = self.factory.makePerson()
-        ITranslationsPerson(
-            decliner
-        ).translations_relicensing_agreement = False
+        ITranslationsPerson(decliner).translations_relicensing_agreement = (
+            False
+        )
         with person_logged_in(decliner):
             view = self._makeView()
             self.assertRaises(UnexpectedFormData, view._checkSubmitConditions)

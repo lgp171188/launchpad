@@ -177,9 +177,9 @@ question's title are displayed:
 
 They change the message and click 'Link to FAQ'.
 
-    >>> user_browser.getControl(
-    ...     "Message"
-    ... ).value = "Sorry, this document doesn't really answer your question."
+    >>> user_browser.getControl("Message").value = (
+    ...     "Sorry, this document doesn't really answer your question."
+    ... )
     >>> user_browser.getControl("Link to FAQ").click()
 
 But since they forgot to change the link, the form is displayed again
@@ -274,9 +274,9 @@ edit them to be more appropriate:
     Hi! I'm trying to learn about SVG but I can't get it to work at all in
     firefox. Maybe there is a plugin? Help! Thanks.
 
-    >>> owner_browser.getControl(
-    ...     "Content"
-    ... ).value = "Upgrade your browser to Firefox 2.0."
+    >>> owner_browser.getControl("Content").value = (
+    ...     "Upgrade your browser to Firefox 2.0."
+    ... )
 
 They can also enter keywords describing the FAQ:
 

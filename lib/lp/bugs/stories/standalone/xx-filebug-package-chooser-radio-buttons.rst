@@ -20,9 +20,9 @@ will use the advanced filebug form to skip searching for dupes.
 If you enter a package name that doesn't exist in the distribution,
 you're returned to the page, with the "choose" radio button selected.
 
-    >>> user_browser.getControl(
-    ...     name="field.packagename"
-    ... ).value = "nosuchpackage"
+    >>> user_browser.getControl(name="field.packagename").value = (
+    ...     "nosuchpackage"
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> user_browser.url

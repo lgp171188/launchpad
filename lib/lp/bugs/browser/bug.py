@@ -1050,12 +1050,12 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
 
             if changed:
                 result_data = self._getSubscriptionDetails()
-                result_data[
-                    "can_add_project_task"
-                ] = can_add_project_task_to_bug(bug)
-                result_data[
-                    "can_add_package_task"
-                ] = can_add_package_task_to_bug(bug)
+                result_data["can_add_project_task"] = (
+                    can_add_project_task_to_bug(bug)
+                )
+                result_data["can_add_package_task"] = (
+                    can_add_package_task_to_bug(bug)
+                )
                 self.request.response.setHeader(
                     "content-type", "application/json"
                 )

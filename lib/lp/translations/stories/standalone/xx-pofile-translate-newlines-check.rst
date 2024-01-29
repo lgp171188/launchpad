@@ -45,9 +45,9 @@ answer should have exactly those strings.
     >>> browser.getControl(
     ...     name="msgset_149_es_translation_0_radiobutton"
     ... ).value = ["msgset_149_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_149_es_translation_0_new"
-    ... ).value = "\r\nfoo\r\n\r\n"
+    >>> browser.getControl(name="msgset_149_es_translation_0_new").value = (
+    ...     "\r\nfoo\r\n\r\n"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
     >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
@@ -69,9 +69,9 @@ change the test, to be 100% sure that the textarea content is the right one.
     >>> browser.getControl(
     ...     name="msgset_149_es_translation_0_radiobutton"
     ... ).value = ["msgset_149_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_149_es_translation_0_new"
-    ... ).value = "foo"
+    >>> browser.getControl(name="msgset_149_es_translation_0_new").value = (
+    ...     "foo"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
     >>> print(browser.url)  # noqa
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate?start=19&batch=1
@@ -94,9 +94,9 @@ Launchpad adds it automatically.
     >>> browser.getControl(
     ...     name="msgset_165_es_translation_0_radiobutton"
     ... ).value = ["msgset_165_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_165_es_translation_0_new"
-    ... ).value = b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua"
+    >>> browser.getControl(name="msgset_165_es_translation_0_new").value = (
+    ...     b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
 
 We were redirected to the next form, the translation was accepted.
@@ -132,9 +132,9 @@ Now, we do the right submit, with one trailing new line...
     >>> browser.getControl(
     ...     name="msgset_165_es_translation_0_radiobutton"
     ... ).value = ["msgset_165_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_165_es_translation_0_new"
-    ... ).value = b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua\r\n"
+    >>> browser.getControl(name="msgset_165_es_translation_0_new").value = (
+    ...     b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua\r\n"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
 
 We were redirected to the next form, the translation was accepted.
@@ -170,9 +170,9 @@ Last check, the user sends two new line chars instead of just one...
     >>> browser.getControl(
     ...     name="msgset_165_es_translation_0_radiobutton"
     ... ).value = ["msgset_165_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_165_es_translation_0_new"
-    ... ).value = b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua\r\n\r\n"
+    >>> browser.getControl(name="msgset_165_es_translation_0_new").value = (
+    ...     b"%s: la opcion \xc2\xab%s\xc2\xbb es ambigua\r\n\r\n"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
 
 We were redirected to the next form, the translation was accepted.

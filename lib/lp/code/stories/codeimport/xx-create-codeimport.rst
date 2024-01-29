@@ -44,9 +44,9 @@ importing will be available to any user.
     >>> owner_browser.getLink("Configure Code").click()
     >>> owner_browser.getControl("Bazaar", index=0).click()
     >>> owner_browser.getControl("Import a branch").click()
-    >>> owner_browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "git://example.com/firefox"
+    >>> owner_browser.getControl("Branch URL").value = (
+    ...     "git://example.com/firefox"
+    ... )
     >>> owner_browser.getControl("Git", index=1).click()
     >>> owner_browser.getControl("Branch name").value = "trunk"
     >>> owner_browser.getControl("Update").click()
@@ -71,9 +71,9 @@ The user is required to enter a project that the import is for, a name
 for the import branch, and a Bazaar branch location.
 
     >>> browser.getControl("Name").value = "mirrored"
-    >>> browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://bzr.example.com/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=0).value = (
+    ...     "http://bzr.example.com/firefox/trunk"
+    ... )
     >>> browser.getControl("Request Import").click()
 
 When the user clicks continue, the import branch is created
@@ -96,9 +96,9 @@ URL.
 
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl("Name").value = "with-password"
-    >>> browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://user:password@bzr.example.com/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=0).value = (
+    ...     "http://user:password@bzr.example.com/firefox/trunk"
+    ... )
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Request Import").click()
     >>> print(
@@ -115,9 +115,9 @@ Specifying a Launchpad URL results in an error.
 
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl("Name").value = "invalid"
-    >>> browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://bazaar.launchpad.net/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=0).value = (
+    ...     "http://bazaar.launchpad.net/firefox/trunk"
+    ... )
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Request Import").click()
     >>> print_feedback_messages(browser.contents)
@@ -131,9 +131,9 @@ But a Launchpad Git URL is OK.
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "lp-git-import"
     >>> browser.getControl("Git", index=0).click()
-    >>> browser.getControl(
-    ...     "Repo URL", index=0
-    ... ).value = "git://git.launchpad.net/firefox.git"
+    >>> browser.getControl("Repo URL", index=0).value = (
+    ...     "git://git.launchpad.net/firefox.git"
+    ... )
     >>> browser.getControl("Request Import").click()
     >>> print(
     ...     extract_text(find_tag_by_id(browser.contents, "import-details"))
@@ -154,9 +154,9 @@ a name for the import branch, and a subversion branch location.
     >>> browser.getControl("Subversion").click()
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "imported"
-    >>> browser.getControl(
-    ...     "Branch URL", index=1
-    ... ).value = "http://svn.example.com/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=1).value = (
+    ...     "http://svn.example.com/firefox/trunk"
+    ... )
     >>> browser.getControl("Request Import").click()
 
 When the user clicks continue, the import branch is created
@@ -189,9 +189,9 @@ URL.
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl("Subversion").click()
     >>> browser.getControl("Name").value = "svn-with-password"
-    >>> browser.getControl(
-    ...     "Branch URL", index=1
-    ... ).value = "http://user:password@svn.example.com/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=1).value = (
+    ...     "http://user:password@svn.example.com/firefox/trunk"
+    ... )
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Request Import").click()
     >>> print(
@@ -215,9 +215,9 @@ a name for the import branch, and a Git repository location.
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "git-import"
     >>> browser.getControl("Git", index=0).click()
-    >>> browser.getControl(
-    ...     "Repo URL", index=0
-    ... ).value = "git://example.com/firefox.git"
+    >>> browser.getControl("Repo URL", index=0).value = (
+    ...     "git://example.com/firefox.git"
+    ... )
     >>> browser.getControl("Request Import").click()
 
 When the user clicks continue, the approved import branch is created.
@@ -246,9 +246,9 @@ allowed to match that of an existing Bazaar-targeted import.
     >>> browser.getControl("Name").value = "upstream"
     >>> browser.getControl("Git", index=0).click()
     >>> browser.getControl("Git", index=1).click()
-    >>> browser.getControl(
-    ...     "Repo URL", index=0
-    ... ).value = "git://example.com/firefox.git"
+    >>> browser.getControl("Repo URL", index=0).value = (
+    ...     "git://example.com/firefox.git"
+    ... )
     >>> with GitHostingFixture():
     ...     browser.getControl("Request Import").click()
     ...
@@ -275,9 +275,9 @@ to identify the CVS branch.  A project and branch name are also required.
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "import2"
     >>> browser.getControl("CVS").click()
-    >>> browser.getControl(
-    ...     "Repository"
-    ... ).value = ":pserver:anonymous@cvs.example.com:/mozilla/cvs"
+    >>> browser.getControl("Repository").value = (
+    ...     ":pserver:anonymous@cvs.example.com:/mozilla/cvs"
+    ... )
     >>> browser.getControl("Module").value = "firefox"
     >>> browser.getControl("Request Import").click()
 
@@ -301,9 +301,9 @@ purposes.
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "import2"
     >>> browser.getControl("CVS").click()
-    >>> browser.getControl(
-    ...     "Repository"
-    ... ).value = ":anonymous@cvs.example.com:/mozilla/cvs"
+    >>> browser.getControl("Repository").value = (
+    ...     ":anonymous@cvs.example.com:/mozilla/cvs"
+    ... )
     >>> browser.getControl("Module").value = "firefox"
     >>> browser.getControl("Request Import").click()
 
@@ -325,9 +325,9 @@ The error is shown even if the project is different.
     >>> browser.getControl("Project").value = "thunderbird"
     >>> browser.getControl("Name").value = "imported"
     >>> browser.getControl("CVS").click()
-    >>> browser.getControl(
-    ...     "Repository"
-    ... ).value = ":pserver:anonymous@cvs.example.com:/mozilla/cvs"
+    >>> browser.getControl("Repository").value = (
+    ...     ":pserver:anonymous@cvs.example.com:/mozilla/cvs"
+    ... )
     >>> browser.getControl("Module").value = "firefox"
     >>> browser.getControl("Request Import").click()
 
@@ -337,9 +337,9 @@ The error is shown even if the project is different.
     the imported branch ~no-priv/firefox/import2.
 
     >>> browser.getControl("Subversion").click()
-    >>> browser.getControl(
-    ...     "Branch URL", index=1
-    ... ).value = "http://svn.example.com/firefox/trunk"
+    >>> browser.getControl("Branch URL", index=1).value = (
+    ...     "http://svn.example.com/firefox/trunk"
+    ... )
     >>> browser.getControl("Request Import").click()
 
     >>> print_feedback_messages(browser.contents)
@@ -360,9 +360,9 @@ one.
     >>> browser.getControl("Subversion").click()
     >>> browser.getControl("Project").value = "firefox"
     >>> browser.getControl("Name").value = "imported"
-    >>> browser.getControl(
-    ...     "Branch URL", index=1
-    ... ).value = "http://svn.example.com/firefox/other"
+    >>> browser.getControl("Branch URL", index=1).value = (
+    ...     "http://svn.example.com/firefox/other"
+    ... )
     >>> browser.getControl("Request Import").click()
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -378,9 +378,9 @@ then an error is shown to the user.
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl("Project").value = "launchpad"
     >>> browser.getControl("Name").value = "imported"
-    >>> browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://svn.example.com/launchpage/fake"
+    >>> browser.getControl("Branch URL", index=0).value = (
+    ...     "http://svn.example.com/launchpage/fake"
+    ... )
     >>> browser.getControl("Request Import").click()
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -396,9 +396,9 @@ existing product, an error is shown to the user.
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl("Project").value = "no-such-product"
     >>> browser.getControl("Name").value = "imported"
-    >>> browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://svn.example.com/launchpage/fake"
+    >>> browser.getControl("Branch URL", index=0).value = (
+    ...     "http://svn.example.com/launchpage/fake"
+    ... )
     >>> browser.getControl("Request Import").click()
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -423,9 +423,9 @@ Change the owner to be a team that sample person is a member of.
     >>> sample_browser.getControl("Owner").value = ["landscape-developers"]
     >>> sample_browser.getControl("Owner").displayValue
     ['Landscape Developers (landscape-developers)']
-    >>> sample_browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://svn.example.com/firefox-beta/trunk"
+    >>> sample_browser.getControl("Branch URL", index=0).value = (
+    ...     "http://svn.example.com/firefox-beta/trunk"
+    ... )
     >>> sample_browser.getControl("Request Import").click()
 
     >>> print_tag_with_id(sample_browser.contents, "registration")
@@ -438,9 +438,9 @@ Admins can specify any owner for a new code import.
     >>> admin_browser = setupBrowser(auth="Basic admin@canonical.com:test")
     >>> admin_browser.open("http://code.launchpad.test/firefox/+new-import")
     >>> admin_browser.getControl("Owner").value = "mark"
-    >>> admin_browser.getControl(
-    ...     "Branch URL", index=0
-    ... ).value = "http://svn.example.com/firefox-theta/trunk"
+    >>> admin_browser.getControl("Branch URL", index=0).value = (
+    ...     "http://svn.example.com/firefox-theta/trunk"
+    ... )
     >>> admin_browser.getControl("Request Import").click()
 
     >>> print_tag_with_id(admin_browser.contents, "registration")

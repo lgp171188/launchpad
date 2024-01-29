@@ -49,9 +49,9 @@ What if Mailman failed to apply the change?
     >>> from lp.registry.interfaces.mailinglist import MailingListStatus
     >>> from zope.security.proxy import removeSecurityProxy
     >>> naked_list = removeSecurityProxy(mailing_list)
-    >>> removeSecurityProxy(
-    ...     mailing_list
-    ... ).status = MailingListStatus.MOD_FAILED
+    >>> removeSecurityProxy(mailing_list).status = (
+    ...     MailingListStatus.MOD_FAILED
+    ... )
     >>> transaction.commit()
     >>> logout()
 

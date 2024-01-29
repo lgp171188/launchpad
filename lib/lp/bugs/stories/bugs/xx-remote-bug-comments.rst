@@ -47,9 +47,9 @@ individual comment page, where the inline form is displayed.
 
 We enter a comment, and submit the form.
 
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "A reply comment."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "A reply comment."
+    ... )
     >>> user_browser.getControl(name="field.actions.save").click()
 
 The new comment appears, formatted as a remote bug comment.
@@ -92,9 +92,9 @@ the 'awaiting synchronization' mark goes away.
     >>> bug_message = getUtility(IBugMessageSet).getByBugAndMessage(
     ...     bug_15, message
     ... )
-    >>> removeSecurityProxy(
-    ...     bug_message
-    ... ).remote_comment_id = "test-remote-comment-id"
+    >>> removeSecurityProxy(bug_message).remote_comment_id = (
+    ...     "test-remote-comment-id"
+    ... )
     >>> flush_database_updates()
     >>> logout()
 

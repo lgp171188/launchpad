@@ -46,9 +46,9 @@ Changing the contact address to an external address will require the
 user to go through the email address confirmation process.
 
     >>> browser.getControl("Another email address").selected = True
-    >>> browser.getControl(
-    ...     name="field.contact_address"
-    ... ).value = "foo@example.com"
+    >>> browser.getControl(name="field.contact_address").value = (
+    ...     "foo@example.com"
+    ... )
     >>> browser.getControl("Change").click()
     >>> browser.title
     'Landscape Developers in Launchpad'

@@ -736,10 +736,8 @@ class TestCharmRecipe(TestCaseWithFactory):
                 }
             )
         )
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob.failure = GitRepositoryBlobNotFound(
-            "placeholder", "charmcraft.yaml"
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryBlobNotFound("placeholder", "charmcraft.yaml")
         )
         old_distro_series = self.factory.makeDistroSeries(
             distribution=getUtility(ILaunchpadCelebrities).ubuntu,

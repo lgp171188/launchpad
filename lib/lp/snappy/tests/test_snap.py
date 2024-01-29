@@ -294,9 +294,9 @@ class TestSnap(TestCaseWithFactory):
                 (refs[2], b"name: test-snap\nbase: core18\n"),
             )
         }
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+        self.useFixture(GitHostingFixture()).getBlob = (
+            lambda path, *args, **kwargs: blobs.get(path)
+        )
         snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
         for snap in snaps:
             removeSecurityProxy(snap)._pro_enable = None
@@ -2390,9 +2390,9 @@ class TestSnapSet(TestCaseWithFactory):
         components = self.makeSnapComponents(git_ref=ref)
         with admin_logged_in():
             components["information_type"] = InformationType.PROPRIETARY
-            components[
-                "owner"
-            ].membership_policy = TeamMembershipPolicy.MODERATED
+            components["owner"].membership_policy = (
+                TeamMembershipPolicy.MODERATED
+            )
         components["project"] = self.factory.makeProduct(
             information_type=InformationType.PROPRIETARY,
             branch_sharing_policy=BranchSharingPolicy.PROPRIETARY,
@@ -3646,9 +3646,9 @@ class TestSnapProcessors(TestCaseWithFactory):
 
         git_ref = self.factory.makeGitRefs()[0]
         blob = b"name: test-snap\nbase: core18\n"
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob = lambda path, *args, **kwargs: blob
+        self.useFixture(GitHostingFixture()).getBlob = (
+            lambda path, *args, **kwargs: blob
+        )
 
         registrant = self.factory.makePerson()
         components = dict(
@@ -3682,9 +3682,9 @@ class TestSnapProcessors(TestCaseWithFactory):
                 (refs[5], b"name: core18\ntype: base\n"),
             )
         }
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+        self.useFixture(GitHostingFixture()).getBlob = (
+            lambda path, *args, **kwargs: blobs.get(path)
+        )
 
         inferProEnable = getUtility(ISnapSet).inferProEnable
         self.assertTrue(inferProEnable(refs[0]))  # Snap with no base
@@ -3714,9 +3714,9 @@ class TestSnapProcessors(TestCaseWithFactory):
                 (branches[5], b"name: core18\ntype: base\n"),
             )
         }
-        self.useFixture(
-            BranchHostingFixture()
-        ).getBlob = lambda branch_id, *args, **kwargs: blobs.get(branch_id)
+        self.useFixture(BranchHostingFixture()).getBlob = (
+            lambda branch_id, *args, **kwargs: blobs.get(branch_id)
+        )
 
         inferProEnable = getUtility(ISnapSet).inferProEnable
         self.assertTrue(inferProEnable(branches[0]))  # Snap w no base

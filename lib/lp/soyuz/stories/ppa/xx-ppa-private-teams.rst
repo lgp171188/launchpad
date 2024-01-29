@@ -62,9 +62,9 @@ The URL template also shows the private URL.
     ...
 
 
-    >>> browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "Private Team PPA"
+    >>> browser.getControl(name="field.displayname").value = (
+    ...     "Private Team PPA"
+    ... )
     >>> browser.getControl(name="field.accepted").value = True
     >>> browser.getControl("Activate").click()
     >>> print(browser.title)

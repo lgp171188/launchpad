@@ -1649,7 +1649,6 @@ class DistroSeriesFormatterAPI(CustomizableFormatter):
 
 
 class SourcePackageReleaseFormatterAPI(CustomizableFormatter):
-
     """Adapter for ISourcePackageRelease objects to a formatted string."""
 
     _link_summary_template = "%(sourcepackage)s %(version)s"

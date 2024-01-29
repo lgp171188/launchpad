@@ -513,9 +513,9 @@ class TestSnapListing(BrowserTestCase):
     def makeSnapsAndMatchers(self, create_snap, count, start_time):
         snaps = [create_snap() for i in range(count)]
         for i, snap in enumerate(snaps):
-            removeSecurityProxy(
-                snap
-            ).date_last_modified = start_time - timedelta(seconds=i)
+            removeSecurityProxy(snap).date_last_modified = (
+                start_time - timedelta(seconds=i)
+            )
         return [
             soupmatchers.Tag(
                 "snap link",

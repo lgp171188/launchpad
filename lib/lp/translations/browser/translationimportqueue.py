@@ -128,9 +128,9 @@ class TranslationImportQueueEntryView(LaunchpadFormView):
                 # languagepacks.
                 field_values["languagepack"] = True
             else:
-                field_values[
-                    "languagepack"
-                ] = self.context.potemplate.languagepack
+                field_values["languagepack"] = (
+                    self.context.potemplate.languagepack
+                )
         if file_type in (TranslationFileType.POT, TranslationFileType.UNSPEC):
             potemplate = self.context.potemplate
             if potemplate is None:
@@ -139,9 +139,9 @@ class TranslationImportQueueEntryView(LaunchpadFormView):
                 field_values["translation_domain"] = domain
             else:
                 field_values["name"] = potemplate.name
-                field_values[
-                    "translation_domain"
-                ] = potemplate.translation_domain
+                field_values["translation_domain"] = (
+                    potemplate.translation_domain
+                )
         if file_type in (TranslationFileType.PO, TranslationFileType.UNSPEC):
             field_values["potemplate"] = self.context.potemplate
             if self.context.pofile is not None:
