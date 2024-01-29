@@ -1019,9 +1019,9 @@ class TestBugPrivacy(TestCaseWithFactory):
         bug = self.factory.makeBug(
             target=product, information_type=InformationType.PUBLICSECURITY
         )
-        removeSecurityProxy(
-            product
-        ).bug_sharing_policy = BugSharingPolicy.FORBIDDEN
+        removeSecurityProxy(product).bug_sharing_policy = (
+            BugSharingPolicy.FORBIDDEN
+        )
         self.assertContentEqual(
             [InformationType.PUBLICSECURITY],
             bug.getAllowedInformationTypes(None),

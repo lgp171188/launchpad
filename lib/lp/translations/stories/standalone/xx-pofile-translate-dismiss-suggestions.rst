@@ -50,9 +50,9 @@ Now somebody else comes and makes a really bad suggestion.
     >>> user_browser.getControl(
     ...     name="msgset_198_de_translation_0_radiobutton"
     ... ).value = ["msgset_198_de_translation_0_new"]
-    >>> user_browser.getControl(
-    ...     name="msgset_198_de_needsreview"
-    ... ).value = "force_suggestion"
+    >>> user_browser.getControl(name="msgset_198_de_needsreview").value = (
+    ...     "force_suggestion"
+    ... )
     >>> user_browser.getControl("Save & Continue").click()
     >>> print(user_browser.url)
     http://translations.../alsa-utils/trunk/+pots/alsa-utils/de/+translate
@@ -85,9 +85,9 @@ translation and to dismiss all suggestions.
     ...     "http://translations.launchpad.test/alsa-utils"
     ...     "/trunk/+pots/alsa-utils/de/+translate"
     ... )
-    >>> admin_browser.getControl(
-    ...     name="msgset_198_dismiss"
-    ... ).value = "dismiss_suggestions"
+    >>> admin_browser.getControl(name="msgset_198_dismiss").value = (
+    ...     "dismiss_suggestions"
+    ... )
     >>> admin_browser.getControl("Save & Continue").click()
     >>> print(admin_browser.url)
     http://translations.../alsa-utils/trunk/+pots/alsa-utils/de/+translate
@@ -122,9 +122,9 @@ such a case.
     ...     "http://translations.launchpad.test/evolution/"
     ...     "trunk/+pots/evolution-2.2/es/5/+translate"
     ... )
-    >>> admin_browser.getControl(
-    ...     name="msgset_5_dismiss"
-    ... ).value = "dismiss_suggestions"
+    >>> admin_browser.getControl(name="msgset_5_dismiss").value = (
+    ...     "dismiss_suggestions"
+    ... )
     >>> admin_browser.getControl("Save & Continue").click()
     >>> print(admin_browser.url)
     http://translations.../evolution/trunk/+pots/evolution-2.2/es/6/+translate

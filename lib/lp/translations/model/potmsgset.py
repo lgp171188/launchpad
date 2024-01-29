@@ -584,9 +584,9 @@ class POTMsgSet(StormBase):
             translation = translations.get(pluralform)
             if translation is not None:
                 # Find or create a POTranslation for the specified text
-                potranslations[
-                    pluralform
-                ] = POTranslation.getOrCreateTranslation(translation)
+                potranslations[pluralform] = (
+                    POTranslation.getOrCreateTranslation(translation)
+                )
             else:
                 potranslations[pluralform] = None
         return potranslations

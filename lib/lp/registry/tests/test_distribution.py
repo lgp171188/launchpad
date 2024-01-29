@@ -831,9 +831,9 @@ class TestDistribution(TestCaseWithFactory):
         self.assertContentEqual(
             [InformationType.PROPRIETARY], [ap.type for ap in aps]
         )
-        removeSecurityProxy(
-            distribution
-        ).information_type = InformationType.PUBLIC
+        removeSecurityProxy(distribution).information_type = (
+            InformationType.PUBLIC
+        )
         aps = getUtility(IAccessPolicySource).findByPillar([distribution])
         self.assertContentEqual(
             [InformationType.PROPRIETARY], [ap.type for ap in aps]

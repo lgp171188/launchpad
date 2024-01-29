@@ -36,12 +36,12 @@ bug.
 Clicking the 'Create' button creates the bug with the user-specified title
 and description and redirects the user to the bug page.
 
-    >>> browser.getControl(
-    ...     "Summary"
-    ... ).value = "W3C SVG demo doesn't work in Firefox"
-    >>> browser.getControl(
-    ...     "Description"
-    ... ).value = "Browsing to the W3C SVG demo results in a blank page."
+    >>> browser.getControl("Summary").value = (
+    ...     "W3C SVG demo doesn't work in Firefox"
+    ... )
+    >>> browser.getControl("Description").value = (
+    ...     "Browsing to the W3C SVG demo results in a blank page."
+    ... )
     >>> browser.getControl("Create").click()
     >>> browser.url
     '.../firefox/+bug/...'
@@ -80,9 +80,9 @@ to it.
 It works with distribution questions as well.
 
     >>> browser.open("http://launchpad.test/ubuntu/+question/5/+makebug")
-    >>> browser.getControl(
-    ...     "Summary"
-    ... ).value = "Ubuntu Installer can't find CDROM"
+    >>> browser.getControl("Summary").value = (
+    ...     "Ubuntu Installer can't find CDROM"
+    ... )
     >>> browser.getControl("Create Bug Report").click()
     >>> browser.url
     '.../ubuntu/+bug/...'

@@ -147,14 +147,14 @@ class TeamMembershipMailer(BaseMailer):
                 template_name = "new-member-notification.txt"
                 subject = "You have been added to %s" % team.name
             for recipient in get_recipients(member):
-                recipients[
-                    recipient
-                ] = TeamMembershipRecipientReason.forNewMember(
-                    member,
-                    team,
-                    recipient,
-                    subject=subject,
-                    template_name=template_name,
+                recipients[recipient] = (
+                    TeamMembershipRecipientReason.forNewMember(
+                        member,
+                        team,
+                        recipient,
+                        subject=subject,
+                        template_name=template_name,
+                    )
                 )
         # Open teams do not notify admins about new members.
         if team.membership_policy != TeamMembershipPolicy.OPEN:
@@ -286,10 +286,13 @@ class TeamMembershipMailer(BaseMailer):
                     recipient_class = "bulk"
                 else:
                     recipient_class = "personal"
-                recipients[
-                    recipient
-                ] = TeamMembershipRecipientReason.forMember(
-                    member, team, recipient, recipient_class=recipient_class
+                recipients[recipient] = (
+                    TeamMembershipRecipientReason.forMember(
+                        member,
+                        team,
+                        recipient,
+                        recipient_class=recipient_class,
+                    )
                 )
         # Don't send admin notifications for open teams: they're
         # unrestricted, so notifications on join/leave do not help the
@@ -300,10 +303,10 @@ class TeamMembershipMailer(BaseMailer):
                     # The new member may also be a team admin; don't send
                     # two notifications in that case.
                     if recipient not in recipients:
-                        recipients[
-                            recipient
-                        ] = TeamMembershipRecipientReason.forAdmin(
-                            admin, team, recipient, recipient_class="bulk"
+                        recipients[recipient] = (
+                            TeamMembershipRecipientReason.forAdmin(
+                                admin, team, recipient, recipient_class="bulk"
+                            )
                         )
 
         extra_params = {

@@ -328,9 +328,9 @@ class MailingList(StormBase):
                 # We also need to remove the email's security proxy because
                 # this method will be called via the internal XMLRPC rather
                 # than as a response to a user action.
-                removeSecurityProxy(
-                    email
-                ).status = EmailAddressStatus.VALIDATED
+                removeSecurityProxy(email).status = (
+                    EmailAddressStatus.VALIDATED
+                )
             assert (
                 email.person == self.team
             ), "Email already associated with another team."

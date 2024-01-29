@@ -32,9 +32,9 @@ Create a Test distribution:
     >>> admin_browser.getControl(name="field.name").value = "test"
     >>> admin_browser.getControl("Display Name").value = "Test Distro"
     >>> admin_browser.getControl("Summary").value = "Test Distro Summary"
-    >>> admin_browser.getControl(
-    ...     "Description"
-    ... ).value = "Test Distro Description"
+    >>> admin_browser.getControl("Description").value = (
+    ...     "Test Distro Description"
+    ... )
     >>> admin_browser.getControl("Web site URL").value = "foo.com"
     >>> admin_browser.getControl("Members").value = "mark"
 

@@ -197,9 +197,9 @@ state of the code import.
 Then changes can be applied.
 
     >>> from lp.code.enums import CodeImportReviewStatus
-    >>> removeSecurityProxy(
-    ...     svn_import
-    ... ).review_status = CodeImportReviewStatus.SUSPENDED
+    >>> removeSecurityProxy(svn_import).review_status = (
+    ...     CodeImportReviewStatus.SUSPENDED
+    ... )
 
 After applying changes, the newModify method can create an event that
 details the changes that have been applied.

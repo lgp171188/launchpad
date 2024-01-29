@@ -47,9 +47,9 @@ cancel link to take them back to the question:
 Entering an explanation message and clicking the 'Reject' button,
 will reject the question.
 
-    >>> admin_browser.getControl(
-    ...     "Message"
-    ... ).value = """Rejecting because it's a duplicate of bug #1."""
+    >>> admin_browser.getControl("Message").value = (
+    ...     """Rejecting because it's a duplicate of bug #1."""
+    ... )
     >>> admin_browser.getControl("Reject").click()
 
 Once the question is rejected, a confirmation message is shown;

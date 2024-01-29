@@ -78,9 +78,9 @@ description. They can then see the email address in the tooltip in the
 
     >>> user_browser.getControl("Summary").value = "email address test"
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl(
-    ...     "Description"
-    ... ).value = "The clicking mailto:user@domain.com crashes the browser."
+    >>> user_browser.getControl("Description").value = (
+    ...     "The clicking mailto:user@domain.com crashes the browser."
+    ... )
     >>> user_browser.getControl("Post Question").click()
     >>> print(user_browser.title)
     Question #... : ...

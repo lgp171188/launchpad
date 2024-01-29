@@ -14,9 +14,9 @@ File size and mime type are displayed for each attachment
     ...     foo_file, "text/plain", "foo.txt"
     ... )
     >>> user_browser.getControl("Description").value = "description text"
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "comment comment"
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "comment comment"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -50,9 +50,9 @@ A filesize of 2700 byte is displayed in 'KiB'
     ...     foo_file, "text/plain", "foo.txt"
     ... )
     >>> user_browser.getControl("Description").value = "description text"
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "comment comment"
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "comment comment"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'

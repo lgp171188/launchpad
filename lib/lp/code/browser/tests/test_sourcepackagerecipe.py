@@ -1964,11 +1964,11 @@ class TestSourcePackageRecipeBuildViewMixin:
         distro_series = self.factory.makeDistroSeries(
             name="squirrel", distribution=archive.distribution
         )
-        removeSecurityProxy(
-            distro_series
-        ).nominatedarchindep = self.factory.makeDistroArchSeries(
-            distroseries=distro_series,
-            processor=getUtility(IProcessorSet).getByName("386"),
+        removeSecurityProxy(distro_series).nominatedarchindep = (
+            self.factory.makeDistroArchSeries(
+                distroseries=distro_series,
+                processor=getUtility(IProcessorSet).getByName("386"),
+            )
         )
         build = self.factory.makeSourcePackageRecipeBuild(
             requester=self.user,

@@ -668,12 +668,12 @@ class TestRemoveTranslations(TestCase):
         (new_nl_message, new_de_message) = self._makeMessages(
             "new", "nieuw", "neu", is_current_upstream=True
         )
-        removeSecurityProxy(
-            new_nl_message
-        ).origin = RosettaTranslationOrigin.SCM
-        removeSecurityProxy(
-            new_de_message
-        ).origin = RosettaTranslationOrigin.SCM
+        removeSecurityProxy(new_nl_message).origin = (
+            RosettaTranslationOrigin.SCM
+        )
+        removeSecurityProxy(new_de_message).origin = (
+            RosettaTranslationOrigin.SCM
+        )
 
         self._removeMessages(
             potemplate=self.potemplate.id, origin=RosettaTranslationOrigin.SCM

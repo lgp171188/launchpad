@@ -66,9 +66,9 @@ def bugLinkedToQuestionSetUp(test):
 
     setUp(test)
     bugtask_id = _createUbuntuBugTaskLinkedToQuestion()
-    test.globs[
-        "get_bugtask_linked_to_question"
-    ] = get_bugtask_linked_to_question
+    test.globs["get_bugtask_linked_to_question"] = (
+        get_bugtask_linked_to_question
+    )
     # Log in here, since we don't want to set up an non-anonymous
     # interaction in the test.
     login("no-priv@canonical.com")

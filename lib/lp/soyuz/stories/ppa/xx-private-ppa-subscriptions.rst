@@ -88,17 +88,17 @@ People and teams can be subscribed by entering their details into the
 displayed form:
 
     >>> cprov_browser.getControl(name="field.subscriber").value = "teamjoe"
-    >>> cprov_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Joes friends are my friends"
+    >>> cprov_browser.getControl(name="field.description").value = (
+    ...     "Joes friends are my friends"
+    ... )
     >>> cprov_browser.getControl(name="field.actions.add").click()
     >>> cprov_browser.getControl(name="field.subscriber").value = "bradsmith"
-    >>> cprov_browser.getControl(
-    ...     name="field.date_expires"
-    ... ).value = "2200-08-01"
-    >>> cprov_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Brad can access for a while."
+    >>> cprov_browser.getControl(name="field.date_expires").value = (
+    ...     "2200-08-01"
+    ... )
+    >>> cprov_browser.getControl(name="field.description").value = (
+    ...     "Brad can access for a while."
+    ... )
     >>> cprov_browser.getControl(name="field.actions.add").click()
 
 Once the subscription has been added, it will display in the table:
@@ -138,9 +138,9 @@ so that Joe has multiple subscriptions:
     ...     "http://launchpad.test/~mark/+archive/p3a/+subscriptions"
     ... )
     >>> mark_browser.getControl(name="field.subscriber").value = "joesmith"
-    >>> mark_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Joe is also my friend"
+    >>> mark_browser.getControl(name="field.description").value = (
+    ...     "Joe is also my friend"
+    ... )
     >>> mark_browser.getControl(name="field.actions.add").click()
 
 A person who is subscribed to multiple archives will see all the archives
@@ -201,9 +201,9 @@ has a signing key:
     >>> a_key = getUtility(IGPGKeySet).getByFingerprint(
     ...     "ABCDEF0123456789ABCDDCBA0000111112345678"
     ... )
-    >>> removeSecurityProxy(
-    ...     mark_private_ppa
-    ... ).signing_key_fingerprint = a_key.fingerprint
+    >>> removeSecurityProxy(mark_private_ppa).signing_key_fingerprint = (
+    ...     a_key.fingerprint
+    ... )
     >>> removeSecurityProxy(mark_private_ppa).signing_key_owner = a_key.owner
     >>> logout()
 
@@ -227,9 +227,9 @@ subscriptions page.
     >>> mark_browser.open("http://launchpad.test/~mark/+archive/p3a")
     >>> mark_browser.getLink("Manage access").click()
     >>> mark_browser.getControl(name="field.subscriber").value = "teamjoe"
-    >>> mark_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Joe's friends are my friends."
+    >>> mark_browser.getControl(name="field.description").value = (
+    ...     "Joe's friends are my friends."
+    ... )
     >>> mark_browser.getControl(name="field.actions.add").click()
     >>> joe_browser.open(
     ...     "http://launchpad.test/~joesmith/+archivesubscriptions"

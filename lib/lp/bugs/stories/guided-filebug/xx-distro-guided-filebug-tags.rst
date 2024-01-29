@@ -12,9 +12,9 @@ that deal with new package request with a certain tag.
     ...     "http://bugs.launchpad.test/ubuntu/+filebug"
     ...     "?field.tags=new-package"
     ... )
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Please package CoolApp"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Please package CoolApp"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 On the next page, possible duplicates are displayed as usual. No

@@ -159,9 +159,9 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
                 DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES
             )
         )
-        removeSecurityProxy(
-            ds_diff
-        ).parent_source_pub.status = PackagePublishingStatus.DELETED
+        removeSecurityProxy(ds_diff).parent_source_pub.status = (
+            PackagePublishingStatus.DELETED
+        )
         ds_diff.update()
 
         view = create_initialized_view(ds_diff, "+listing-distroseries-extra")

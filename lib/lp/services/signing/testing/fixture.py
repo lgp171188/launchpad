@@ -92,10 +92,8 @@ class SigningServiceFixture(TacTestFixture):
         self.client_private_key = PrivateKey.generate()
 
         os.environ["FAKE_SIGNING_PORT"] = str(self.daemon_port)
-        os.environ[
-            "FAKE_SIGNING_CLIENT_PUBLIC_KEY"
-        ] = self.client_private_key.public_key.encode(
-            encoder=Base64Encoder
-        ).decode(
-            "ASCII"
+        os.environ["FAKE_SIGNING_CLIENT_PUBLIC_KEY"] = (
+            self.client_private_key.public_key.encode(
+                encoder=Base64Encoder
+            ).decode("ASCII")
         )

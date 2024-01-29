@@ -427,20 +427,26 @@ class GitRefMixin:
                     {
                         "sha1": self.commit_sha1,
                         "message": self.commit_message,
-                        "author": None
-                        if self.author is None
-                        else {
-                            "name": self.author.name_without_email,
-                            "email": self.author.email,
-                            "time": seconds_since_epoch(self.author_date),
-                        },
-                        "committer": None
-                        if self.committer is None
-                        else {
-                            "name": self.committer.name_without_email,
-                            "email": self.committer.email,
-                            "time": seconds_since_epoch(self.committer_date),
-                        },
+                        "author": (
+                            None
+                            if self.author is None
+                            else {
+                                "name": self.author.name_without_email,
+                                "email": self.author.email,
+                                "time": seconds_since_epoch(self.author_date),
+                            }
+                        ),
+                        "committer": (
+                            None
+                            if self.committer is None
+                            else {
+                                "name": self.committer.name_without_email,
+                                "email": self.committer.email,
+                                "time": seconds_since_epoch(
+                                    self.committer_date
+                                ),
+                            }
+                        ),
                     }
                 ]
         return log

@@ -504,12 +504,12 @@ class TestCIBuild(TestCaseWithFactory):
 
     def test_getConfiguration_not_found(self):
         build = self.factory.makeCIBuild()
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob.failure = GitRepositoryBlobNotFound(
-            build.git_repository.getInternalPath(),
-            ".launchpad.yaml",
-            rev=build.commit_sha1,
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryBlobNotFound(
+                build.git_repository.getInternalPath(),
+                ".launchpad.yaml",
+                rev=build.commit_sha1,
+            )
         )
         self.assertRaisesWithContent(
             MissingConfiguration,
@@ -520,9 +520,9 @@ class TestCIBuild(TestCaseWithFactory):
 
     def test_getConfiguration_fetch_error(self):
         build = self.factory.makeCIBuild()
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob.failure = GitRepositoryScanFault("Boom")
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            GitRepositoryScanFault("Boom")
+        )
         self.assertRaisesWithContent(
             CannotFetchConfiguration,
             "Failed to get .launchpad.yaml from %s: Boom"

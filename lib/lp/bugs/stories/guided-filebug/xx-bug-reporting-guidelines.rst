@@ -92,13 +92,13 @@ description.
     ...         context_path,
     ...     )
     ...     user_browser.open(filebug_url)
-    ...     user_browser.getControl(
-    ...         "Summary", index=0
-    ...     ).value = "It doesn't work"
+    ...     user_browser.getControl("Summary", index=0).value = (
+    ...         "It doesn't work"
+    ...     )
     ...     user_browser.getControl("Continue").click()
-    ...     user_browser.getControl(
-    ...         "Further information"
-    ...     ).value = "please help!"
+    ...     user_browser.getControl("Further information").value = (
+    ...         "please help!"
+    ...     )
     ...     print_guidelines(context_name, user_browser)
     ...     user_browser.getControl("Submit Bug Report").click()
     ...     print_acknowledgement_message(user_browser)

@@ -233,9 +233,9 @@ Now, we will make one of them accepted, the other declined, and both of
 them informational.
 
     >>> from lp.blueprints.enums import SpecificationImplementationStatus
-    >>> a.definition_status = (
-    ...     b.definition_status
-    ... ) = SpecificationDefinitionStatus.APPROVED
+    >>> a.definition_status = b.definition_status = (
+    ...     SpecificationDefinitionStatus.APPROVED
+    ... )
     >>> a.implementation_status = (
     ...     SpecificationImplementationStatus.INFORMATIONAL
     ... )

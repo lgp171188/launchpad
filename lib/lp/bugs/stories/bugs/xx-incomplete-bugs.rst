@@ -63,9 +63,9 @@ No Privileges Person can supply new information by posting a new
 comment for the bug.
 
     >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "More information here."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "More information here."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
     >>> import transaction

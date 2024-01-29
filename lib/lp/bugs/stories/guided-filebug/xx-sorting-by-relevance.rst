@@ -14,9 +14,9 @@ that point.
 
     >>> user_browser.open("http://launchpad.test/products/firefox/+filebug")
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Firefox does not support complex SVG images"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Firefox does not support complex SVG images"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
     >>> from lp.bugs.tests.bug import print_bugs_list
@@ -30,9 +30,9 @@ be reversed.
 
     >>> user_browser.open("http://launchpad.test/products/firefox/+filebug")
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Reflow problems with SVG"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Reflow problems with SVG"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
     >>> print_bugs_list(user_browser.contents, "similar-bugs")

@@ -205,9 +205,9 @@ class TestLiveFSAddView(BrowserTestCase):
             self.person, view_name="+new-livefs", user=self.person
         )
         browser.getControl("Name").value = "ubuntu-core"
-        browser.getControl(
-            "Live filesystem build metadata"
-        ).value = '{"product": "ubuntu-core", "image_format": "plain"}'
+        browser.getControl("Live filesystem build metadata").value = (
+            '{"product": "ubuntu-core", "image_format": "plain"}'
+        )
         browser.getControl("Create live filesystem").click()
 
         content = find_main_content(browser.contents)
@@ -349,9 +349,9 @@ class TestLiveFSEditView(BrowserTestCase):
         browser.getControl(name="field.distro_series").value = [
             str(new_series.id)
         ]
-        browser.getControl(
-            "Live filesystem build metadata"
-        ).value = '{"product": "new-name"}'
+        browser.getControl("Live filesystem build metadata").value = (
+            '{"product": "new-name"}'
+        )
         browser.getControl("Update live filesystem").click()
 
         content = find_main_content(browser.contents)

@@ -17,9 +17,9 @@ guided filebug form.
     ...     "A totally new " "bug with attachments"
     ... )
     >>> user_browser.getControl("Continue").click()
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "We can now add attachments!"
+    >>> user_browser.getControl("Further information").value = (
+    ...     "We can now add attachments!"
+    ... )
 
 No Privileges Person chooses to add an attachment to the bug. We create
 a file-like object to demonstrate this.

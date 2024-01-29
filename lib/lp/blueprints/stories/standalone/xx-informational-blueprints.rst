@@ -21,9 +21,9 @@ We register a new blueprint.
     ... )
     >>> user_browser.getControl("Name").value = "informational-blueprint"
     >>> user_browser.getControl("Title").value = "Informational blueprint"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "A blueprint requiring no implementation."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "A blueprint requiring no implementation."
+    ... )
     >>> user_browser.getControl("Register Blueprint").click()
     >>> user_browser.url
     'http://blueprints.launchpad.test/jokosher/+spec/informational-blueprint'

@@ -788,10 +788,10 @@ class Snap(StormBase, WebhookTargetMixin):
                 raise BadMacaroon("discharge_macaroon is invalid.")
             container = getUtility(IEncryptedContainer, "snap-store-secrets")
             if container.can_encrypt:
-                self.store_secrets[
-                    "discharge_encrypted"
-                ] = removeSecurityProxy(
-                    container.encrypt(discharge_macaroon.encode("UTF-8"))
+                self.store_secrets["discharge_encrypted"] = (
+                    removeSecurityProxy(
+                        container.encrypt(discharge_macaroon.encode("UTF-8"))
+                    )
                 )
                 self.store_secrets.pop("discharge", None)
             else:

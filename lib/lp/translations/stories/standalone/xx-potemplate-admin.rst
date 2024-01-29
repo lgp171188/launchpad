@@ -159,9 +159,9 @@ above.
 
 And now let's get back to renaming.
 
-    >>> admin_browser.getControl(
-    ...     name="field.name"
-    ... ).value = "evolution-renamed"
+    >>> admin_browser.getControl(name="field.name").value = (
+    ...     "evolution-renamed"
+    ... )
     >>> admin_browser.getControl("Change").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/evolution/trunk/+pots/evolution-renamed

@@ -81,26 +81,26 @@ def generate_bug_add_email(
 
                 if modified_bugtask.assignee.is_team:
                     contents += 'your team "%(team_name)s" '
-                    content_substitutions[
-                        "team_name"
-                    ] = modified_bugtask.assignee.display_name
+                    content_substitutions["team_name"] = (
+                        modified_bugtask.assignee.display_name
+                    )
                 else:
                     contents += "you "
 
             contents += "for %(target)s"
-            content_substitutions[
-                "assigner"
-            ] = event_creator.unique_displayname
-            content_substitutions[
-                "target"
-            ] = modified_bugtask.target.displayname
+            content_substitutions["assigner"] = (
+                event_creator.unique_displayname
+            )
+            content_substitutions["target"] = (
+                modified_bugtask.target.displayname
+            )
         else:
             contents += "You have been subscribed to a %(visibility)s bug"
         if subscribed_by is not None:
             contents += " by %(subscribed_by)s"
-            content_substitutions[
-                "subscribed_by"
-            ] = subscribed_by.unique_displayname
+            content_substitutions["subscribed_by"] = (
+                subscribed_by.unique_displayname
+            )
         contents += ":\n\n" "%(description)s\n\n%(bug_info)s"
         # The visibility appears mid-phrase so.. hack hack.
         content_substitutions["visibility"] = visibility.lower()

@@ -57,9 +57,9 @@ class TestBuildStartEstimation(TestCaseWithFactory):
         [build1] = pkg1.createMissingBuilds()
         build1.buildqueue_record.lastscore = 1000
         # No user-serviceable parts inside
-        removeSecurityProxy(
-            build1.buildqueue_record
-        ).estimated_duration = timedelta(minutes=10)
+        removeSecurityProxy(build1.buildqueue_record).estimated_duration = (
+            timedelta(minutes=10)
+        )
         pkg2 = self.publisher.getPubSource(
             sourcename=self.factory.getUniqueString(),
             distroseries=self.distroseries,

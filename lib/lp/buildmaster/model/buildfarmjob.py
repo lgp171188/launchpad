@@ -264,9 +264,9 @@ class BuildFarmJobMixin:
             # XXX cprov 20060615 bug=120584: Currently buildduration includes
             # the scanner latency, it should really be asking the worker for
             # the duration spent building locally.
-            self.build_farm_job.date_finished = (
-                self.date_finished
-            ) = date_finished or datetime.now(timezone.utc)
+            self.build_farm_job.date_finished = self.date_finished = (
+                date_finished or datetime.now(timezone.utc)
+            )
             self.emitMetric("finished", status=status.name)
 
     def gotFailure(self):

@@ -1570,9 +1570,9 @@ class TestMostRecentPublications(TestCaseWithFactory):
         derived_series = dsp.derived_series
         dsd = self.create_difference(derived_series)
         # Change the derived source publication to DELETED.
-        removeSecurityProxy(
-            dsd.source_pub
-        ).status = PackagePublishingStatus.DELETED
+        removeSecurityProxy(dsd.source_pub).status = (
+            PackagePublishingStatus.DELETED
+        )
         # Searching for DELETED will find the source publication.
         self.assertContentEqual(
             [(dsd.source_package_name.id, dsd.source_pub)],

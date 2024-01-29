@@ -605,7 +605,6 @@ class UserUploadHandler(UploadHandler):
 
 
 class CannotGetBuild(Exception):
-
     """Attempting to retrieve the build for this upload failed."""
 
 

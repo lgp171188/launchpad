@@ -64,9 +64,9 @@ minds.
 Now, lets POST the form, saying we want extension-manager-upgrades as the
 dependency.
 
-    >>> owner_browser.getControl(
-    ...     "Depends On"
-    ... ).value = "extension-manager-upgrades"
+    >>> owner_browser.getControl("Depends On").value = (
+    ...     "extension-manager-upgrades"
+    ... )
     >>> owner_browser.getControl("Continue").click()
     >>> owner_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/canvas'
@@ -142,9 +142,9 @@ show this, we register a blueprint for a different project.
     ... )
     >>> owner_browser.getControl("Name").value = "test-blueprint"
     >>> owner_browser.getControl("Title").value = "Test Blueprint"
-    >>> owner_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Another blueprint in a different project"
+    >>> owner_browser.getControl("Summary").value = (
+    ...     "Another blueprint in a different project"
+    ... )
     >>> owner_browser.getControl("Register Blueprint").click()
     >>> owner_browser.url
     'http://blueprints.launchpad.test/jokosher/+spec/test-blueprint'
@@ -289,21 +289,21 @@ We create two blueprints in `ubuntu`.
     >>> owner_browser.open("http://blueprints.launchpad.test/ubuntu/+addspec")
     >>> owner_browser.getControl("Name").value = "distro-blueprint-a"
     >>> owner_browser.getControl("Title").value = "A blueprint for a distro"
-    >>> owner_browser.getControl(
-    ...     "Summary"
-    ... ).value = "This is a blueprint for the Ubuntu distribution"
+    >>> owner_browser.getControl("Summary").value = (
+    ...     "This is a blueprint for the Ubuntu distribution"
+    ... )
     >>> owner_browser.getControl("Register Blueprint").click()
     >>> print(owner_browser.url)
     http://blueprints.launchpad.test/ubuntu/+spec/distro-blueprint-a
 
     >>> owner_browser.open("http://blueprints.launchpad.test/ubuntu/+addspec")
     >>> owner_browser.getControl("Name").value = "distro-blueprint-b"
-    >>> owner_browser.getControl(
-    ...     "Title"
-    ... ).value = "Another blueprint for a distro"
-    >>> owner_browser.getControl(
-    ...     "Summary"
-    ... ).value = "This is a blueprint for the Ubuntu distribution"
+    >>> owner_browser.getControl("Title").value = (
+    ...     "Another blueprint for a distro"
+    ... )
+    >>> owner_browser.getControl("Summary").value = (
+    ...     "This is a blueprint for the Ubuntu distribution"
+    ... )
     >>> owner_browser.getControl("Register Blueprint").click()
     >>> print(owner_browser.url)
     http://blueprints.launchpad.test/ubuntu/+spec/distro-blueprint-b

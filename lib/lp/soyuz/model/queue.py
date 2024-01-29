@@ -1392,9 +1392,11 @@ class PackageUploadBuild(StormBase):
                 % (
                     binary.binarypackagename.name,
                     binary.version,
-                    "Specific"
-                    if binary.architecturespecific
-                    else "Independent",
+                    (
+                        "Specific"
+                        if binary.architecturespecific
+                        else "Independent"
+                    ),
                 ),
             )
             bins[binary] = (

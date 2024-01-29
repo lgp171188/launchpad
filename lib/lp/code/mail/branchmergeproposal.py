@@ -216,9 +216,9 @@ class BMPMailer(BranchMailer):
                 params["gap"] = "\n\n"
 
         if self.preview_diff is not None and self.preview_diff.oversized:
-            params[
-                "diff_cutoff_warning"
-            ] = "The attached diff has been truncated due to its size.\n"
+            params["diff_cutoff_warning"] = (
+                "The attached diff has been truncated due to its size.\n"
+            )
 
         params["reviews"] = self._getRequestedReviews()
         params["commit_message"] = self._getCommitMessage()

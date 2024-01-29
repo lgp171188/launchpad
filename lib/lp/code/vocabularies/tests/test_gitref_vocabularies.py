@@ -67,9 +67,9 @@ class TestGitRefVocabulary(TestCaseWithFactory):
                 "refs/tags/next-1.0",
             ]
         )
-        removeSecurityProxy(
-            ref_master.repository
-        )._default_branch = ref_master.path
+        removeSecurityProxy(ref_master.repository)._default_branch = (
+            ref_master.path
+        )
         vocab = self.vocabulary_class(ref_master.repository)
         self.assertContentEqual(
             [term.value.path for term in vocab.searchForTerms("master")],
@@ -117,9 +117,9 @@ class TestGitRefVocabulary(TestCaseWithFactory):
                 "refs/heads/master-older",
             ]
         )
-        removeSecurityProxy(
-            ref_master.repository
-        )._default_branch = ref_master.path
+        removeSecurityProxy(ref_master.repository)._default_branch = (
+            ref_master.path
+        )
         now = datetime.now(timezone.utc)
         removeSecurityProxy(ref_master_old).committer_date = now - timedelta(
             days=1
@@ -197,9 +197,9 @@ class TestGitBranchVocabulary(TestCaseWithFactory):
                 "refs/tags/next-1.0",
             ]
         )
-        removeSecurityProxy(
-            ref_master.repository
-        )._default_branch = ref_master.path
+        removeSecurityProxy(ref_master.repository)._default_branch = (
+            ref_master.path
+        )
         vocab = self.vocabulary_class(ref_master.repository)
         self.assertContentEqual(
             [term.title for term in vocab.searchForTerms("master")], ["master"]
@@ -234,9 +234,9 @@ class TestGitBranchVocabulary(TestCaseWithFactory):
                 "refs/heads/master-older",
             ]
         )
-        removeSecurityProxy(
-            ref_master.repository
-        )._default_branch = ref_master.path
+        removeSecurityProxy(ref_master.repository)._default_branch = (
+            ref_master.path
+        )
         now = datetime.now(timezone.utc)
         removeSecurityProxy(ref_master_old).committer_date = now - timedelta(
             days=1

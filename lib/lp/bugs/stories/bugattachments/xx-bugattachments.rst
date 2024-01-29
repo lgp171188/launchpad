@@ -25,12 +25,12 @@ attachment.
     >>> user_browser.getControl("Attachment").add_file(
     ...     foo_file, "text/plain", "foo.txt"
     ... )
-    >>> user_browser.getControl(
-    ...     "Description"
-    ... ).value = "   Some information   "
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Added some information"
+    >>> user_browser.getControl("Description").value = (
+    ...     "   Some information   "
+    ... )
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Added some information"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
 After we added the attachment, we get redirected to the bug page.
@@ -101,9 +101,9 @@ attachment.
     ...     "This attachment contains a solution (patch) for this bug"
     ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Added some information"
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Added some information"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -123,9 +123,9 @@ the flag "this attachment is a patch"...
     ...     "This attachment contains a solution (patch) for this bug"
     ... )
     >>> patch_control.selected = False
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Added even more information"
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Added even more information"
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
 ...we are redirected to a page...
@@ -256,9 +256,9 @@ when we tell it that plain text files whose names end in ".diff",
     ...     "This attachment contains a solution (patch) for this bug"
     ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Add foo3.diff as a patch."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Add foo3.diff as a patch."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -275,9 +275,9 @@ when we tell it that plain text files whose names end in ".diff",
     ...     "This attachment contains a solution (patch) for this bug"
     ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Add foo4.debdiff as a patch."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Add foo4.debdiff as a patch."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -294,9 +294,9 @@ when we tell it that plain text files whose names end in ".diff",
     ...     "This attachment contains a solution (patch) for this bug"
     ... )
     >>> patch_control.selected = True
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Add foo5.patch as a patch."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Add foo5.patch as a patch."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -422,9 +422,9 @@ Let's add a normal text file...
     ...     BytesIO(b"Traceback..."), "text/plain", "foo.txt"
     ... )
     >>> user_browser.getControl("Description").value = "Some information."
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "Added some information."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "Added some information."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
 And a patch...
@@ -439,9 +439,9 @@ And a patch...
     ... )
     >>> user_browser.getControl("patch").selected = True
     >>> user_browser.getControl("Description").value = "A patch."
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "This patch fixes the bug."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "This patch fixes the bug."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
 And another patch...
@@ -455,9 +455,9 @@ And another patch...
     ... )
     >>> user_browser.getControl("patch").selected = True
     >>> user_browser.getControl("Description").value = "A patch."
-    >>> user_browser.getControl(
-    ...     name="field.comment"
-    ... ).value = "This patch fixes the bug."
+    >>> user_browser.getControl(name="field.comment").value = (
+    ...     "This patch fixes the bug."
+    ... )
     >>> user_browser.getControl("Post Comment").click()
 
 And now we'll search for patches for firefox bugs.

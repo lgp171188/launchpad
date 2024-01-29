@@ -30,9 +30,9 @@ If no title is entered, the user is asked to supply one.
 The user fills in some keywords, and clicks a button to search existing
 bugs.
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "SVG images are broken"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "SVG images are broken"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 The form is self-posting, so the user is still at +filebug. This makes
@@ -91,9 +91,9 @@ subscribe to it instead of filing a new bug. This also loosely implies a
 "me too" vote.
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "SVG images are broken"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "SVG images are broken"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 As before, we get a list of similar bugs to choose from.
@@ -120,9 +120,9 @@ handled by a JavaScript FormOverlay, but for the sake of integration
 testing we'll test it here, too.
 
     >>> user_browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "SVG images are broken"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "SVG images are broken"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 There's a hidden field on the "yes, this is my bug" form, which we can
@@ -150,9 +150,9 @@ different in the user agent.
 
 Submitting some distinctive details...
 
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Frankenzombulon reanimated neighbour's dead pet"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Frankenzombulon reanimated neighbour's dead pet"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 ...yields no similar bugs. In fact, the similar bugs table is not even
@@ -167,9 +167,9 @@ shown.
 But, as before, entering a description and submitting the bug takes the
 user to the bug page.
 
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "Frankenzombulon is only meant to check my mail."
+    >>> user_browser.getControl("Further information").value = (
+    ...     "Frankenzombulon is only meant to check my mail."
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/...'

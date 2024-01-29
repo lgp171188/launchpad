@@ -152,9 +152,9 @@ as well.
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
-    >>> removeSecurityProxy(
-    ...     original_build_upload
-    ... ).status = PassthroughStatusValue(PackageUploadStatus.NEW)
+    >>> removeSecurityProxy(original_build_upload).status = (
+    ...     PassthroughStatusValue(PackageUploadStatus.NEW)
+    ... )
     >>> transaction.commit()
     >>> login(ANONYMOUS)
 

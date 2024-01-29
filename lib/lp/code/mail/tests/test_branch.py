@@ -259,9 +259,9 @@ class TestBranchMailerHeadersMixin:
         # Test the email headers for a branch modified email.
         bob = self.factory.makePerson(email="bob@example.com")
         branch = self.makeBranch(owner=bob)
-        branch.getSubscription(
-            bob
-        ).notification_level = BranchSubscriptionNotificationLevel.FULL
+        branch.getSubscription(bob).notification_level = (
+            BranchSubscriptionNotificationLevel.FULL
+        )
         switch_dbuser(config.IBranchModifiedMailJobSource.dbuser)
         mailer = BranchMailer.forBranchModified(branch, branch.owner, None)
         mailer.message_id = "<foobar-example-com>"
@@ -282,9 +282,9 @@ class TestBranchMailerHeadersMixin:
         # Test the email headers for new revision email.
         bob = self.factory.makePerson(email="bob@example.com")
         branch = self.makeBranch(owner=bob)
-        branch.getSubscription(
-            bob
-        ).notification_level = BranchSubscriptionNotificationLevel.FULL
+        branch.getSubscription(bob).notification_level = (
+            BranchSubscriptionNotificationLevel.FULL
+        )
         switch_dbuser(config.IRevisionsAddedJobSource.dbuser)
         mailer = BranchMailer.forRevision(
             branch,
@@ -426,9 +426,9 @@ class TestBranchMailerSubjectMixin:
         # No string interpolation should occur on the subject.
         branch = self.makeBranch()
         # Subscribe the owner to get revision email.
-        branch.getSubscription(
-            branch.owner
-        ).notification_level = BranchSubscriptionNotificationLevel.FULL
+        branch.getSubscription(branch.owner).notification_level = (
+            BranchSubscriptionNotificationLevel.FULL
+        )
         switch_dbuser(config.IRevisionsAddedJobSource.dbuser)
         mailer = BranchMailer.forRevision(
             branch,

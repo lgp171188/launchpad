@@ -438,9 +438,9 @@ class TestBugPermissions(TestCaseWithFactory, KarmaTestMixin):
 
     def test_target_bug_supervisor_can_edit(self):
         person = self.factory.makePerson()
-        removeSecurityProxy(
-            self.bug.default_bugtask.target
-        ).bug_supervisor = person
+        removeSecurityProxy(self.bug.default_bugtask.target).bug_supervisor = (
+            person
+        )
         with person_logged_in(person):
             self.assertTrue(checkPermission("launchpad.Edit", self.bug))
 
@@ -656,9 +656,9 @@ class TestBugLocking(TestCaseWithFactory):
             self.assertTrue(checkPermission("launchpad.Moderate", bug))
 
         yet_another_person = self.factory.makePerson()
-        removeSecurityProxy(
-            bug.default_bugtask.target
-        ).bug_supervisor = yet_another_person
+        removeSecurityProxy(bug.default_bugtask.target).bug_supervisor = (
+            yet_another_person
+        )
         with person_logged_in(yet_another_person):
             self.assertTrue(checkPermission("launchpad.Moderate", bug))
 

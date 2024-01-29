@@ -676,12 +676,12 @@ produces the same error:
     >>> user_browser.open(url)
     >>> user_browser.getControl("For").value = "ubuntu"
     >>> user_browser.getControl("Name").value = "media-integrity-check"
-    >>> user_browser.getControl(
-    ...     "Title"
-    ... ).value = "A blueprint with a name that already exists"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "There is already a blueprint with this name"
+    >>> user_browser.getControl("Title").value = (
+    ...     "A blueprint with a name that already exists"
+    ... )
+    >>> user_browser.getControl("Summary").value = (
+    ...     "There is already a blueprint with this name"
+    ... )
     >>> user_browser.getControl("Register Blueprint").click()
     >>> print(user_browser.url)
     http://blueprints.launchpad.test/sprints/rome/+addspec

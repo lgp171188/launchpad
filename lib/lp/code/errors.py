@@ -214,14 +214,12 @@ class AlreadyLatestFormat(CannotUpgradeBranch):
 
 
 class CannotUpgradeNonHosted(CannotUpgradeBranch):
-
     """Raised on attempt to upgrade a non-Hosted branch."""
 
     _msg_template = "Cannot upgrade non-hosted branch %s"
 
 
 class UpgradePending(CannotUpgradeBranch):
-
     """Raised on attempt to upgrade a branch already in the latest format."""
 
     _msg_template = "An upgrade is already in progress for branch %s."

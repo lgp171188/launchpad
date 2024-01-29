@@ -70,9 +70,9 @@ subscription expiry, a description of "Joe is my friend" and clicks on the
 "Add subscriber" button,
 
     >>> cprov_browser.getControl(name="field.subscriber").value = "joesmith"
-    >>> cprov_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Joe is my friend"
+    >>> cprov_browser.getControl(name="field.description").value = (
+    ...     "Joe is my friend"
+    ... )
     >>> cprov_browser.getControl(name="field.actions.add").click()
 
 then he is redirected to the subscribers page and the new subscription
@@ -110,12 +110,12 @@ a description of "Launchpad developer access." and clicks on the
     ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+subscriptions"
     ... )
     >>> cprov_browser.getControl(name="field.subscriber").value = "launchpad"
-    >>> cprov_browser.getControl(
-    ...     name="field.date_expires"
-    ... ).value = "2200-08-01"
-    >>> cprov_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Launchpad developer access."
+    >>> cprov_browser.getControl(name="field.date_expires").value = (
+    ...     "2200-08-01"
+    ... )
+    >>> cprov_browser.getControl(name="field.description").value = (
+    ...     "Launchpad developer access."
+    ... )
     >>> cprov_browser.getControl(name="field.actions.add").click()
 
 then Celso is redirected to the subscribers page, the new subscription
@@ -157,9 +157,9 @@ modifies the description field and clicks Update,
     >>> cprov_browser.getLink(
     ...     url="/~cprov/+archive/ubuntu/p3a/+subscriptions/launchpad/+edit",
     ... ).click()
-    >>> cprov_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "a different description"
+    >>> cprov_browser.getControl(name="field.description").value = (
+    ...     "a different description"
+    ... )
     >>> cprov_browser.getControl(name="field.actions.update").click()
 
 then the browser is redirected back to the subscriptions page, the updated

@@ -387,9 +387,9 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         with person_logged_in(person):
             # The description lets us show that we still have the right
             # subscription later.
-            target.addBugSubscriptionFilter(
-                person, person
-            ).description = "a marker"
+            target.addBugSubscriptionFilter(person, person).description = (
+                "a marker"
+            )
         self._do_premerge(duplicate, person)
         login_person(person)
         duplicate, person = self._do_merge(duplicate, person)

@@ -596,9 +596,9 @@ class TestTranslationFoci(TestCaseWithFactory):
     @staticmethod
     def makePackageFocus(template):
         distribution = template.distroseries.distribution
-        removeSecurityProxy(
-            distribution
-        ).translation_focus = template.distroseries
+        removeSecurityProxy(distribution).translation_focus = (
+            template.distroseries
+        )
 
     def makeProductPOTemplate(self):
         """Create a product that is not the translation focus."""

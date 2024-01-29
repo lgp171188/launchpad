@@ -36,9 +36,9 @@ After checking that the page +addseries is there, we try to add a new series.
     >>> browser.getControl("Name").value = "stable"
     >>> browser.getControl("Summary").value = "Product series add testing"
     >>> browser.getControl("Branch").value = "~mark/firefox/release-0.9.2"
-    >>> browser.getControl(
-    ...     "Release URL pattern"
-    ... ).value = "ftp://ftp.mozilla.org/pub/mozilla/firefox-*.tar.gz"
+    >>> browser.getControl("Release URL pattern").value = (
+    ...     "ftp://ftp.mozilla.org/pub/mozilla/firefox-*.tar.gz"
+    ... )
     >>> browser.getControl("Register Series").click()
 
 Now we are redirected to the Overview page of the product series we just added
@@ -71,9 +71,9 @@ Then we edit the information about the series. First we try to use a
 name already in use and an invalid release URL pattern:
 
     >>> browser.getControl("Name").value = "1.0"
-    >>> browser.getControl(
-    ...     "Summary"
-    ... ).value = "Testing the edit of productseries"
+    >>> browser.getControl("Summary").value = (
+    ...     "Testing the edit of productseries"
+    ... )
     >>> browser.getControl("Release URL pattern").value = "file:///etc"
     >>> browser.getControl("Change").click()
 
@@ -92,9 +92,9 @@ of firefox:
     >>> browser.getControl("Name").value = "unstable"
     >>> browser.getControl("Status").displayValue = ["Experimental"]
     >>> browser.getControl("Branch").value = "main"
-    >>> browser.getControl(
-    ...     "Release URL pattern"
-    ... ).value = "http://ftp.mozilla.org/pub/mozilla.org/firefox-*.tar.gz"
+    >>> browser.getControl("Release URL pattern").value = (
+    ...     "http://ftp.mozilla.org/pub/mozilla.org/firefox-*.tar.gz"
+    ... )
     >>> browser.getControl("Change").click()
 
     >>> browser.url

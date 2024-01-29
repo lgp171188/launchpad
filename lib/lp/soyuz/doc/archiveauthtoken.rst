@@ -172,9 +172,9 @@ Tokens are only returned if they match a current subscription:
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.enums import ArchiveSubscriberStatus
-    >>> removeSecurityProxy(
-    ...     subscription_to_joe_private_ppa
-    ... ).status = ArchiveSubscriberStatus.EXPIRED
+    >>> removeSecurityProxy(subscription_to_joe_private_ppa).status = (
+    ...     ArchiveSubscriberStatus.EXPIRED
+    ... )
 
     >>> print(
     ...     token_set.getActiveTokenForArchiveAndPerson(
@@ -189,9 +189,9 @@ Tokens are only returned if they match a current subscription:
     ... )
     None
 
-    >>> removeSecurityProxy(
-    ...     subscription_to_joe_private_ppa
-    ... ).status = ArchiveSubscriberStatus.CURRENT
+    >>> removeSecurityProxy(subscription_to_joe_private_ppa).status = (
+    ...     ArchiveSubscriberStatus.CURRENT
+    ... )
 
 Retrieving tokens works even if the user is subscribed to the archive via
 multiple paths:

@@ -919,9 +919,9 @@ class QuestionTargetPortletAnswerContacts(LaunchpadView):
             "web_link": canonical_url(self.context, rootsite="mainsite"),
             "self_link": absoluteURL(self.context, self.api_request),
         }
-        cache[
-            self.context.name + "_answer_portlet_url_data"
-        ] = context_url_data
+        cache[self.context.name + "_answer_portlet_url_data"] = (
+            context_url_data
+        )
 
 
 class QuestionTargetPortletAnswerContactsWithDetails(LaunchpadView):

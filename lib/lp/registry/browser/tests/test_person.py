@@ -1874,9 +1874,9 @@ class TestPersonOCIRegistryCredentialsView(
         browser.getControl(name="field.add_owner").value = [new_owner_name]
         browser.getControl(name="field.add_username").value = "new_username"
         browser.getControl(name="field.add_password").value = "password"
-        browser.getControl(
-            name="field.add_confirm_password"
-        ).value = "password"
+        browser.getControl(name="field.add_confirm_password").value = (
+            "password"
+        )
         browser.getControl("Save").click()
 
         with person_logged_in(self.user):

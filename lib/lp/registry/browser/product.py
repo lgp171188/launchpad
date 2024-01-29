@@ -2228,9 +2228,9 @@ class ProductSetBranchView(
             rcs_type = data.get("rcs_type")
 
             # Set the valid schemes based on rcs_type.
-            self.widgets[
-                "repo_url"
-            ].field.allowed_schemes = self._validSchemes(rcs_type)
+            self.widgets["repo_url"].field.allowed_schemes = (
+                self._validSchemes(rcs_type)
+            )
             # The branch location is not required for validation.
             self._setRequired(["branch_location"], False)
             # The cvs_module is required if it is a CVS import.
@@ -2759,9 +2759,9 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         self.widgets["name"].read_only = True
         # The "hint" is really more of an explanation at this point, but the
         # phrasing is different.
-        self.widgets[
-            "name"
-        ].hint = "When published, this will be the project's URL."
+        self.widgets["name"].hint = (
+            "When published, this will be the project's URL."
+        )
         self.widgets["display_name"].visible = False
         self.widgets["source_package_name"].visible = False
         self.widgets["distroseries"].visible = False

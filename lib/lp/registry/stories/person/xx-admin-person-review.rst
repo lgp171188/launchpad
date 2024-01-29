@@ -28,9 +28,9 @@ Registry admins can review users and update some of their information.
 Registry experts can't change the displayname.
 
     >>> expert_browser.getLink("Administer").click()
-    >>> expert_browser.getControl(
-    ...     "Display Name", index=0
-    ... ).value = "The one and only Salgado"
+    >>> expert_browser.getControl("Display Name", index=0).value = (
+    ...     "The one and only Salgado"
+    ... )
     >>> expert_browser.getControl("Change").click()
     Traceback (most recent call last):
     ...
@@ -39,9 +39,9 @@ Registry experts can't change the displayname.
 But Launchpad admins can.
     >>> admin_browser.open("http://launchpad.test/~no-way/+review")
     >>> admin_browser.getControl("Name", index=0).value = "salgado"
-    >>> admin_browser.getControl(
-    ...     "Display Name", index=0
-    ... ).value = "The one and only Salgado"
+    >>> admin_browser.getControl("Display Name", index=0).value = (
+    ...     "The one and only Salgado"
+    ... )
     >>> admin_browser.getControl("Change").click()
     >>> print(admin_browser.title)
     The one and only Salgado in Launchpad

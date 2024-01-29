@@ -141,12 +141,12 @@ pending mirrors have never been probed.
 Register an unreviewed archive mirror.
 
     >>> browser.open("http://launchpad.test/ubuntu/+newmirror")
-    >>> browser.getControl(
-    ...     name="field.display_name"
-    ... ).value = "Kabul LUG mirror"
-    >>> browser.getControl(
-    ...     name="field.ftp_base_url"
-    ... ).value = "ftp://kabullug.org/ubuntu"
+    >>> browser.getControl(name="field.display_name").value = (
+    ...     "Kabul LUG mirror"
+    ... )
+    >>> browser.getControl(name="field.ftp_base_url").value = (
+    ...     "ftp://kabullug.org/ubuntu"
+    ... )
     >>> browser.getControl(name="field.country").value = ["1"]  # Afghanistan
     >>> browser.getControl(name="field.speed").value = ["S10G"]
     >>> browser.getControl(name="field.content").value = ["ARCHIVE"]

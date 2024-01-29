@@ -64,7 +64,6 @@ class BranchPortletSubscribersContent(LaunchpadView):
 
 
 class _BranchSubscriptionView(LaunchpadFormView):
-
     """Contains the common functionality of the Add and Edit views."""
 
     schema = IBranchSubscription

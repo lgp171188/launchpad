@@ -82,9 +82,9 @@ duplicates.
     >>> user_browser.open("http://launchpad.test/bugs/5")
     >>> user_browser.getLink(url="+distrotask").click()
     >>> user_browser.getControl("Distribution").value = ["debian"]
-    >>> user_browser.getControl(
-    ...     "Source Package Name"
-    ... ).value = "mozilla-firefox"
+    >>> user_browser.getControl("Source Package Name").value = (
+    ...     "mozilla-firefox"
+    ... )
     >>> user_browser.getControl("URL").value = debian_bug
     >>> user_browser.getControl("Continue").click()
     >>> print_feedback_messages(user_browser.contents)

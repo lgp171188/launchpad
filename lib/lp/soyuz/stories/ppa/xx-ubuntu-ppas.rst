@@ -612,9 +612,9 @@ for more information).
     >>> a_key = getUtility(IGPGKeySet).getByFingerprint(
     ...     "ABCDEF0123456789ABCDDCBA0000111112345678"
     ... )
-    >>> removeSecurityProxy(
-    ...     no_priv.archive
-    ... ).signing_key_fingerprint = a_key.fingerprint
+    >>> removeSecurityProxy(no_priv.archive).signing_key_fingerprint = (
+    ...     a_key.fingerprint
+    ... )
     >>> removeSecurityProxy(no_priv.archive).signing_key_owner = a_key.owner
     >>> logout()
 
@@ -672,9 +672,9 @@ Try the same again, but this time using the signing service.
     >>> removeSecurityProxy(no_priv.archive).signing_key_owner = getUtility(
     ...     ILaunchpadCelebrities
     ... ).ppa_key_guard
-    >>> removeSecurityProxy(
-    ...     no_priv.archive
-    ... ).signing_key_fingerprint = signing_key.fingerprint
+    >>> removeSecurityProxy(no_priv.archive).signing_key_fingerprint = (
+    ...     signing_key.fingerprint
+    ... )
     >>> del get_property_cache(no_priv.archive).signing_key
     >>> del get_property_cache(no_priv.archive).signing_key_display_name
     >>> logout()

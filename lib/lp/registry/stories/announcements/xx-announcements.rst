@@ -205,15 +205,15 @@ announcement:
 
     >>> priv_browser.open("http://launchpad.test/apache")
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "Apache announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Apache announcement summary"
-    >>> priv_browser.getControl(
-    ...     "URL"
-    ... ).value = "http://apache.org/announcement/rocking/"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "Apache announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "Apache announcement summary"
+    ... )
+    >>> priv_browser.getControl("URL").value = (
+    ...     "http://apache.org/announcement/rocking/"
+    ... )
     >>> priv_browser.getControl("Make announcement").click()
 
 Making the announcement takes the user back to the main page for the
@@ -245,12 +245,12 @@ Add another one, this time specifying a date in the past, which should
 work too:
 
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "Tomcat announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Tomcat announcement summary"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "Tomcat announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "Tomcat announcement summary"
+    ... )
     >>> priv_browser.getControl("specific date and time").click()
     >>> priv_browser.getControl(
     ...     name="field.publication_date.announcement_date"
@@ -281,12 +281,12 @@ announcement immediately:
     >>> "Derby announcement" in latest_news(priv_browser.contents)
     False
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "Derby announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Derby announcement summary"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "Derby announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "Derby announcement summary"
+    ... )
     >>> priv_browser.getControl("Make announcement").click()
     >>> print(priv_browser.title)
     Derby in Launchpad
@@ -299,12 +299,12 @@ date in the future when the announcement will be made:
 
     >>> priv_browser.open("http://launchpad.test/jokosher")
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "Jokosher announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Jokosher announcement summary"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "Jokosher announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "Jokosher announcement summary"
+    ... )
     >>> priv_browser.getControl("specific date and time").click()
     >>> priv_browser.getControl(
     ...     name="field.publication_date.announcement_date"
@@ -320,12 +320,12 @@ a date for the announcement at all:
 
     >>> priv_browser.open("http://launchpad.test/kubuntu")
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "Kubuntu announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Kubuntu announcement summary"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "Kubuntu announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "Kubuntu announcement summary"
+    ... )
     >>> priv_browser.getControl("some time in the future").click()
     >>> priv_browser.getControl("Make announcement").click()
     >>> print(priv_browser.title)
@@ -337,12 +337,12 @@ And finally for RedHat, an IDistribution, with immediate announcement:
 
     >>> priv_browser.open("http://launchpad.test/redhat")
     >>> priv_browser.getLink("Make announcement").click()
-    >>> priv_browser.getControl(
-    ...     "Headline"
-    ... ).value = "RedHat announcement headline"
-    >>> priv_browser.getControl(
-    ...     "Summary"
-    ... ).value = "RedHat announcement summary"
+    >>> priv_browser.getControl("Headline").value = (
+    ...     "RedHat announcement headline"
+    ... )
+    >>> priv_browser.getControl("Summary").value = (
+    ...     "RedHat announcement summary"
+    ... )
     >>> priv_browser.getControl("Make announcement").click()
     >>> print(priv_browser.title)
     Red Hat in Launchpad

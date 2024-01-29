@@ -4,9 +4,9 @@ Non-ascii characters in specification titles are allowed.
     ...     "http://blueprints.launchpad.test/firefox/+spec/e4x/+edit"
     ... )
 
-    >>> admin_browser.getControl(
-    ...     "Title"
-    ... ).value = "A title with non-ascii characters \xe1\xe3"
+    >>> admin_browser.getControl("Title").value = (
+    ...     "A title with non-ascii characters \xe1\xe3"
+    ... )
     >>> admin_browser.getControl("Change").click()
     >>> admin_browser.url
     'http://blueprints.launchpad.test/firefox/+spec/e4x'

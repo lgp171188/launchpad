@@ -280,9 +280,9 @@ class TestBugTaskView(TestCaseWithFactory):
         milestone = self.factory.makeMilestone(product=product)
         with person_logged_in(subscriber):
             structsub = milestone.addBugSubscription(subscriber, subscriber)
-            structsub.bug_filters[
-                0
-            ].bug_notification_level = BugNotificationLevel.LIFECYCLE
+            structsub.bug_filters[0].bug_notification_level = (
+                BugNotificationLevel.LIFECYCLE
+            )
         bug = self.factory.makeBug(target=product)
         with person_logged_in(product.owner):
             form_data = {
@@ -1449,9 +1449,9 @@ class TestBugTaskEditViewStatusField(TestCaseWithFactory):
     def test_status_field_bug_task_in_status_expired(self):
         # If a bugtask has the status Expired, this status is included
         # in the options.
-        removeSecurityProxy(
-            self.bug.default_bugtask
-        )._status = BugTaskStatus.EXPIRED
+        removeSecurityProxy(self.bug.default_bugtask)._status = (
+            BugTaskStatus.EXPIRED
+        )
         no_priv = getUtility(IPersonSet).getByName("no-priv")
         self.assertStatuses(
             [
@@ -1742,12 +1742,12 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         url = canonical_url(bug_task, view_name="+editstatus")
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name="ubuntu.target").value = "package"
-        browser.getControl(
-            name="ubuntu.target.distribution"
-        ).value = oci_distro_name
-        browser.getControl(
-            name="ubuntu.target.package"
-        ).value = oci_project_name
+        browser.getControl(name="ubuntu.target.distribution").value = (
+            oci_distro_name
+        )
+        browser.getControl(name="ubuntu.target.package").value = (
+            oci_project_name
+        )
         browser.getControl("Save Changes").click()
 
         with admin_logged_in():
@@ -1771,9 +1771,9 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         url = canonical_url(bug_task, view_name="+editstatus")
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name="oci-distro.target").value = "package"
-        browser.getControl(
-            name="oci-distro.target.distribution"
-        ).value = "ubuntu"
+        browser.getControl(name="oci-distro.target.distribution").value = (
+            "ubuntu"
+        )
         browser.getControl(name="oci-distro.target.package").value = ""
         browser.getControl("Save Changes").click()
 
@@ -1800,9 +1800,9 @@ class TestBugTaskEditView(WithScenarios, TestCaseWithFactory):
         url = canonical_url(bug_task, view_name="+editstatus")
         browser = self.getUserBrowser(url, user=bug_task.owner)
         browser.getControl(name="oci-distro.target").value = "package"
-        browser.getControl(
-            name="oci-distro.target.distribution"
-        ).value = "ubuntu"
+        browser.getControl(name="oci-distro.target.distribution").value = (
+            "ubuntu"
+        )
         browser.getControl(name="oci-distro.target.package").value = sp.name
         browser.getControl("Save Changes").click()
 

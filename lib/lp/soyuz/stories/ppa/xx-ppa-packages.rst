@@ -355,9 +355,9 @@ something to it.
 
     >>> foo_browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     >>> foo_browser.open("http://launchpad.test/~ubuntu-team/+activate-ppa")
-    >>> foo_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "PPA for Ubuntu team"
+    >>> foo_browser.getControl(name="field.displayname").value = (
+    ...     "PPA for Ubuntu team"
+    ... )
     >>> foo_browser.getControl(name="field.accepted").value = True
     >>> foo_browser.getControl("Activate").click()
     >>> ubuntu_ppa_url = foo_browser.url

@@ -1004,9 +1004,9 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             current_other=False,
         )
 
-        removeSecurityProxy(
-            self.devel_potemplate
-        ).messagecount = self.devel_potemplate.getPOTMsgSetsCount()
+        removeSecurityProxy(self.devel_potemplate).messagecount = (
+            self.devel_potemplate.getPOTMsgSetsCount()
+        )
 
         # Returns current, updates, rosetta, unreviewed counts.
         stats = self.devel_pofile.updateStatistics()
@@ -1840,14 +1840,14 @@ class TestPOFileSet(TestCaseWithFactory):
             distroseries=distroseries,
             sourcepackagename=target_package.sourcepackagename,
         )
-        removeSecurityProxy(
-            template
-        ).from_sourcepackagename = upload_package.sourcepackagename
+        removeSecurityProxy(template).from_sourcepackagename = (
+            upload_package.sourcepackagename
+        )
         pofile = template.newPOFile("ka")
         removeSecurityProxy(pofile).path = "ka.po"
-        removeSecurityProxy(
-            pofile
-        ).from_sourcepackagename = upload_package.sourcepackagename
+        removeSecurityProxy(pofile).from_sourcepackagename = (
+            upload_package.sourcepackagename
+        )
 
         found = self.pofileset.getPOFilesByPathAndOrigin(
             "ka.po",

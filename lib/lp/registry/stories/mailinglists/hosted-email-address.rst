@@ -37,9 +37,9 @@ Launchpad sends that address a confirmation message.
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
     >>> user_browser.getControl("Another email address").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.contact_address"
-    ... ).value = "bar@example.com"
+    >>> user_browser.getControl(name="field.contact_address").value = (
+    ...     "bar@example.com"
+    ... )
     >>> user_browser.getControl("Change").click()
     >>> print(user_browser.title)
     Aardvarks in Launchpad

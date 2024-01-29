@@ -19,9 +19,9 @@ profile page and uses the 'Update Jabber IDs' link.
 The user enters the Jabber ID in the text field and clicks on the
 'Save Changes' button.
 
-    >>> user_browser.getControl(
-    ...     name="field.jabberid"
-    ... ).value = "jeff@jabber.org"
+    >>> user_browser.getControl(name="field.jabberid").value = (
+    ...     "jeff@jabber.org"
+    ... )
     >>> user_browser.getControl("Save Changes").click()
 
 In this case, the user tried registering a jabber ID that was already
@@ -40,9 +40,9 @@ an error is displayed and the user can enter another one:
 However, if the user enters a Jabber ID which isn't already registered,
 it will be associated with their account.
 
-    >>> user_browser.getControl(
-    ...     name="field.jabberid"
-    ... ).value = "no-priv@jabber.org"
+    >>> user_browser.getControl(name="field.jabberid").value = (
+    ...     "no-priv@jabber.org"
+    ... )
     >>> user_browser.getControl("Save Changes").click()
     >>> show_errors(user_browser)
 

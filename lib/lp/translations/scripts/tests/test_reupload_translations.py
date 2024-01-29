@@ -41,9 +41,9 @@ class UploadInjector:
 
     def __call__(self, name):
         package = self.original_findPackage(name)
-        removeSecurityProxy(
-            package
-        ).getLatestTranslationsUploads = self._fakeTranslationsUpload
+        removeSecurityProxy(package).getLatestTranslationsUploads = (
+            self._fakeTranslationsUpload
+        )
         return package
 
     def _fakeTranslationsUpload(self):

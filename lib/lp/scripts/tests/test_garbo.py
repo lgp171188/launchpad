@@ -1732,12 +1732,12 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         )
 
         # Some of the creators and maintainers have inactive accounts.
-        removeSecurityProxy(
-            creators[2].account
-        ).status = AccountStatus.DEACTIVATED
-        removeSecurityProxy(
-            maintainers[2].account
-        ).status = AccountStatus.CLOSED
+        removeSecurityProxy(creators[2].account).status = (
+            AccountStatus.DEACTIVATED
+        )
+        removeSecurityProxy(maintainers[2].account).status = (
+            AccountStatus.CLOSED
+        )
 
         transaction.commit()
         self.runFrequently()
@@ -1853,9 +1853,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
 
         livefsbuild_kwargs = dict(livefsbuild_kwargs)
         if keep_binary_files_days is not _default:
-            livefsbuild_kwargs[
-                "keep_binary_files_days"
-            ] = keep_binary_files_days
+            livefsbuild_kwargs["keep_binary_files_days"] = (
+                keep_binary_files_days
+            )
         db_build = self.factory.makeLiveFSBuild(
             date_created=now - timedelta(days=interval, minutes=15),
             status=BuildStatus.FULLYBUILT,
@@ -2537,9 +2537,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         switch_dbuser("testadmin")
         now = datetime.now(timezone.utc)
         archive_files = [self.factory.makeArchiveFile() for _ in range(2)]
-        removeSecurityProxy(
-            archive_files[1]
-        ).scheduled_deletion_date = now + timedelta(hours=6)
+        removeSecurityProxy(archive_files[1]).scheduled_deletion_date = (
+            now + timedelta(hours=6)
+        )
 
         self.runDaily()
 
@@ -2569,10 +2569,8 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         )
         self.assertIsNotNone(archive_files[0].date_superseded)
 
-        removeSecurityProxy(
-            archive_files[1]
-        ).scheduled_deletion_date = datetime.now(timezone.utc) + timedelta(
-            days=1
+        removeSecurityProxy(archive_files[1]).scheduled_deletion_date = (
+            datetime.now(timezone.utc) + timedelta(days=1)
         )
         self.assertIsNone(archive_files[1].date_superseded)
 
@@ -2598,9 +2596,9 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
                 (refs[2], b"name: test-snap\nbase: core18\n"),
             )
         }
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob = lambda path, *args, **kwargs: blobs.get(path)
+        self.useFixture(GitHostingFixture()).getBlob = (
+            lambda path, *args, **kwargs: blobs.get(path)
+        )
         old_snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
         for snap in old_snaps:
             removeSecurityProxy(snap)._pro_enable = None

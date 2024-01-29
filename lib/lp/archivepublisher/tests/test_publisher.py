@@ -1492,13 +1492,13 @@ class TestPublisher(TestPublisherBase):
         archive_file = self.factory.makeArchiveFile(archive=archive)
         self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
         now = datetime.now(timezone.utc)
-        removeSecurityProxy(
-            archive_file
-        ).scheduled_deletion_date = now + timedelta(hours=12)
+        removeSecurityProxy(archive_file).scheduled_deletion_date = (
+            now + timedelta(hours=12)
+        )
         self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
-        removeSecurityProxy(
-            archive_file
-        ).scheduled_deletion_date = now - timedelta(hours=12)
+        removeSecurityProxy(archive_file).scheduled_deletion_date = (
+            now - timedelta(hours=12)
+        )
         self.assertIn(archive, ubuntu.getPendingPublicationPPAs())
         getUtility(IArchiveFileSet).markDeleted([archive_file])
         self.assertNotIn(archive, ubuntu.getPendingPublicationPPAs())
@@ -3003,9 +3003,9 @@ class TestArchiveIndices(TestPublisherBase):
 
         # Override the series status to FROZEN, which allows publication
         # of all pockets.
-        self.ubuntutest.getSeries(
-            "breezy-autotest"
-        ).status = SeriesStatus.FROZEN
+        self.ubuntutest.getSeries("breezy-autotest").status = (
+            SeriesStatus.FROZEN
+        )
 
         self.config = getPubConfig(self.ubuntutest.main_archive)
         publisher = Publisher(

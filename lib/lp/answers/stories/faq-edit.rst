@@ -61,9 +61,9 @@ click 'Save' to save their changes.
     Windows
     On Windows, ...
 
-    >>> browser.getControl(
-    ...     "Keywords"
-    ... ).value = "windows ubuntu plugins extensions"
+    >>> browser.getControl("Keywords").value = (
+    ...     "windows ubuntu plugins extensions"
+    ... )
     >>> browser.getControl(
     ...     "Content"
     ... ).value += "\nUbuntu:\nSee https://help.ubuntu.com/community/Java\n"

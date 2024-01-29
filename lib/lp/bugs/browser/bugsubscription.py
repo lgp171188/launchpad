@@ -152,9 +152,9 @@ class AdvancedSubscriptionMixin:
         self.form_fields += formlib.form.Fields(
             self._bug_notification_level_field
         )
-        self.form_fields[
-            "bug_notification_level"
-        ].custom_widget = CustomWidgetFactory(RadioWidget)
+        self.form_fields["bug_notification_level"].custom_widget = (
+            CustomWidgetFactory(RadioWidget)
+        )
 
 
 class BugSubscriptionSubscribeSelfView(
@@ -341,9 +341,9 @@ class BugSubscriptionSubscribeSelfView(
         """See `LaunchpadFormView`."""
         super().setUpWidgets()
         self.widgets["subscription"].widget_class = "bug-subscription-basic"
-        self.widgets[
-            "bug_notification_level"
-        ].widget_class = "bug-notification-level-field"
+        self.widgets["bug_notification_level"].widget_class = (
+            "bug-notification-level-field"
+        )
         if len(self.form_fields["subscription"].field.vocabulary) == 1:
             # We hide the subscription widget if the user isn't
             # subscribed, since we know who the subscriber is and we

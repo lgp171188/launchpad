@@ -553,9 +553,9 @@ Such feature is visible when anonymous user access the
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
-    >>> removeSecurityProxy(
-    ...     build_i386.package_upload
-    ... ).status = PassthroughStatusValue(PackageUploadStatus.UNAPPROVED)
+    >>> removeSecurityProxy(build_i386.package_upload).status = (
+    ...     PassthroughStatusValue(PackageUploadStatus.UNAPPROVED)
+    ... )
     >>> transaction.commit()
     >>> logout()
 

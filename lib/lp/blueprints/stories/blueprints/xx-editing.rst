@@ -49,9 +49,9 @@ Now, let's POST the resulting changes. We should be redirected to the
 specification home page.
 
     >>> browser.getControl("Name").value = "extension-manager-upgrades"
-    >>> browser.getControl(
-    ...     "Title"
-    ... ).value = "Extension Manager System Upgrades"
+    >>> browser.getControl("Title").value = (
+    ...     "Extension Manager System Upgrades"
+    ... )
     >>> browser.getControl("Specification URL").value = url
     >>> summary = (
     ...     "Simplify the way extensions are installed and registered "

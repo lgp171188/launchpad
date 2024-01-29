@@ -118,9 +118,9 @@ class QueueItemsView(LaunchpadView):
         package_upload_builds = upload_set.getBuildByBuildIDs(build_ids)
         package_upload_builds_dict = {}
         for package_upload_build in package_upload_builds:
-            package_upload_builds_dict[
-                package_upload_build.build.id
-            ] = package_upload_build
+            package_upload_builds_dict[package_upload_build.build.id] = (
+                package_upload_build
+            )
         return package_upload_builds_dict
 
     def binary_files_dict(self, package_upload_builds_dict, binary_files):
@@ -447,9 +447,9 @@ class QueueItemsView(LaunchpadView):
             if new_section:
                 feedback_interpolations["section"] = new_section.name
             if new_priority:
-                feedback_interpolations[
-                    "priority"
-                ] = new_priority.title.lower()
+                feedback_interpolations["priority"] = (
+                    new_priority.title.lower()
+                )
 
             try:
                 if action == "accept":

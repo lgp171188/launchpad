@@ -165,9 +165,9 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         branch = self._makeTranslationBranch(fake_pottery_compatible=True)
 
         trunk = branch.product.getSeries("trunk")
-        removeSecurityProxy(
-            trunk
-        ).translations_autoimport_mode = TranslationsBranchImportMode.NO_IMPORT
+        removeSecurityProxy(trunk).translations_autoimport_mode = (
+            TranslationsBranchImportMode.NO_IMPORT
+        )
 
         self.assertFalse(self.jobsource.generatesTemplates(branch))
 

@@ -52,9 +52,9 @@ aren't allowed.
     ...     "Mantis"
     ... ).click()
     >>> user_browser.getControl("Title").value = "Test Mantis Tracker"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "This is a test MANTIS tracker."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "This is a test MANTIS tracker."
+    ... )
     >>> url = "http://mantis.testing.org/"
     >>> user_browser.getControl("Location").value = url
     >>> user_browser.getControl("Contact details").value = "blah blah"
@@ -73,9 +73,9 @@ If a bug tracker is already registered with the same location, the user
 is informed about it.
 
     >>> user_browser.getControl("Name").value = "testmantis"
-    >>> user_browser.getControl(
-    ...     "Location"
-    ... ).value = "http://bugzilla.mozilla.org/"
+    >>> user_browser.getControl("Location").value = (
+    ...     "http://bugzilla.mozilla.org/"
+    ... )
     >>> user_browser.getControl("Add").click()
 
     >>> user_browser.url
@@ -105,9 +105,9 @@ we'll dig directly to the database.
     >>> gnome_bugzilla.aliases = ["http://alias.example.com/"]
     >>> logout()
 
-    >>> user_browser.getControl(
-    ...     "Location"
-    ... ).value = "http://alias.example.com/"
+    >>> user_browser.getControl("Location").value = (
+    ...     "http://alias.example.com/"
+    ... )
     >>> user_browser.getControl("Add").click()
 
     >>> user_browser.url
@@ -165,9 +165,9 @@ bugtracker without them is acceptable.
     >>> user_browser.getControl("Name").value = "test-bugzilla"
     >>> user_browser.getControl("Title").value = "Test Bugzilla"
     >>> user_browser.getControl("Bug Tracker Type").value = ["Bugzilla"]
-    >>> user_browser.getControl(
-    ...     "Location"
-    ... ).value = "http://bugzilla.example.org/"
+    >>> user_browser.getControl("Location").value = (
+    ...     "http://bugzilla.example.org/"
+    ... )
     >>> user_browser.getControl("Add").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/bugs/bugtrackers/test-bugzilla'
@@ -192,9 +192,9 @@ we'll get a nice error message.
     ...     "Mantis"
     ... ).click()
     >>> user_browser.getControl("Title").value = "Test Mantis Tracker"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "This is a test TRAC tracker."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "This is a test TRAC tracker."
+    ... )
     >>> url = "http://trac.example.org/tickets"
     >>> user_browser.getControl("Location").value = url
     >>> user_browser.getControl("Contact details").value = "blah blah"
@@ -222,9 +222,9 @@ We can edit the details of the newly added bugtracker.
     >>> user_browser.getControl("Bug Tracker Type").getControl(
     ...     "Bugzilla"
     ... ).click()
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "This is used to be a test TRAC bug tracker."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "This is used to be a test TRAC bug tracker."
+    ... )
 
 There is a cancel link if we change our mind:
 
@@ -234,9 +234,9 @@ There is a cancel link if we change our mind:
 It's not possible to change the base URL to something that another bug
 tracker uses.
 
-    >>> user_browser.getControl(
-    ...     "Location", index=0
-    ... ).value = "http://bugzilla.mozilla.org/"
+    >>> user_browser.getControl("Location", index=0).value = (
+    ...     "http://bugzilla.mozilla.org/"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> user_browser.url
@@ -250,18 +250,18 @@ tracker uses.
 If the user inadvertently enters an invalid URL, they are shown an
 informative error message explaining why it is invalid.
 
-    >>> user_browser.getControl(
-    ...     "Location", index=0
-    ... ).value = "what? my wife does this stuff"
+    >>> user_browser.getControl("Location", index=0).value = (
+    ...     "what? my wife does this stuff"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> print_feedback_messages(user_browser.contents)
     There is 1 error.
     "what? my wife does this stuff" is not a valid URI
 
-    >>> user_browser.getControl(
-    ...     "Location", index=0
-    ... ).value = "http://ξνεr.been.fishing?"
+    >>> user_browser.getControl("Location", index=0).value = (
+    ...     "http://ξνεr.been.fishing?"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -308,9 +308,9 @@ to change.
     http://mantis.testing.org/ (Alias)
 
     >>> user_browser.getLink("Change details").click()
-    >>> user_browser.getControl(
-    ...     "Location", index=0
-    ... ).value = "https://trac.example.org/tickets"
+    >>> user_browser.getControl("Location", index=0).value = (
+    ...     "https://trac.example.org/tickets"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> print(
@@ -337,9 +337,9 @@ They're added on the normal Change Details page.
     ... )
     >>> user_browser.getLink("Change details").click()
 
-    >>> user_browser.getControl(
-    ...     "Location aliases"
-    ... ).value = "http://pseudonym.example.com/"
+    >>> user_browser.getControl("Location aliases").value = (
+    ...     "http://pseudonym.example.com/"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> bugtracker_url_list = find_tag_by_id(
@@ -355,9 +355,9 @@ bugtracker.
     >>> user_browser.open(
     ...     "http://launchpad.test/bugs/bugtrackers/testbugzilla/+edit"
     ... )
-    >>> user_browser.getControl(
-    ...     "Location aliases"
-    ... ).value = "http://bugzilla.mozilla.org/"
+    >>> user_browser.getControl("Location aliases").value = (
+    ...     "http://bugzilla.mozilla.org/"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -391,9 +391,9 @@ shown informative error messages.
     >>> user_browser.open(
     ...     "http://launchpad.test/bugs/bugtrackers/testbugzilla/+edit"
     ... )
-    >>> user_browser.getControl(
-    ...     "Location aliases"
-    ... ).value = "ξνεr been http://fishing?"
+    >>> user_browser.getControl("Location aliases").value = (
+    ...     "ξνεr been http://fishing?"
+    ... )
     >>> user_browser.getControl("Change").click()
 
     >>> print_feedback_messages(user_browser.contents)
@@ -413,9 +413,9 @@ example bug tracker:
     ... )
     >>> user_browser.getControl("Name").value = "freddy"
     >>> user_browser.getControl("Title").value = "Freddy's Bugs"
-    >>> user_browser.getControl(
-    ...     "Location"
-    ... ).value = "http://freddy.example.com/"
+    >>> user_browser.getControl("Location").value = (
+    ...     "http://freddy.example.com/"
+    ... )
     >>> user_browser.getControl("Add").click()
 
 Being brand-new and pristine, there will be nothing to prevent its

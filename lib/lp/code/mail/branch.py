@@ -195,9 +195,9 @@ class RecipientReason(basemailer.RecipientReason):
         if self.merge_proposal is not None:
             source = self._getBranchIdentity(self.merge_proposal.merge_source)
             target = self._getBranchIdentity(self.merge_proposal.merge_target)
-            template_values[
-                "merge_proposal"
-            ] = "the proposed merge of %s into %s" % (source, target)
+            template_values["merge_proposal"] = (
+                "the proposed merge of %s into %s" % (source, target)
+            )
         return template_values
 
 
@@ -278,10 +278,10 @@ class BranchMailer(BaseMailer):
                     branch, recipient
                 )
             else:
-                actual_recipients[
-                    recipient
-                ] = RecipientReason.forBranchSubscriber(
-                    subscription, branch, recipient, rationale
+                actual_recipients[recipient] = (
+                    RecipientReason.forBranchSubscriber(
+                        subscription, branch, recipient, rationale
+                    )
                 )
         if user is not None:
             from_address = format_address_for_person(user)

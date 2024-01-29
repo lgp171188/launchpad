@@ -46,12 +46,12 @@ message.
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll"
     ... ).value = "dpl-2080"
-    >>> team_admin_browser.getControl(
-    ...     name="field.dateopens"
-    ... ).value = "3000-11-01 00:00:00+00:00"
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = "3000-01-01 00:00:00+00:00"
+    >>> team_admin_browser.getControl(name="field.dateopens").value = (
+    ...     "3000-11-01 00:00:00+00:00"
+    ... )
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     "3000-01-01 00:00:00+00:00"
+    ... )
     >>> team_admin_browser.getControl("Save").click()
 
     >>> print_feedback_messages(team_admin_browser.contents)
@@ -63,12 +63,12 @@ We successfully change the polls name
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll"
     ... ).value = "election-3000"
-    >>> team_admin_browser.getControl(
-    ...     name="field.dateopens"
-    ... ).value = "3000-01-01 00:00:00+00:00"
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = "3000-11-01 00:00:00+00:00"
+    >>> team_admin_browser.getControl(name="field.dateopens").value = (
+    ...     "3000-01-01 00:00:00+00:00"
+    ... )
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     "3000-11-01 00:00:00+00:00"
+    ... )
     >>> team_admin_browser.getControl("Save").click()
 
     >>> team_admin_browser.url

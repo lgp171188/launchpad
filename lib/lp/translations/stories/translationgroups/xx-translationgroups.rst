@@ -44,9 +44,9 @@ Translation group names must meet certain conditions.  For example, they
 may not contain any upper-case letters.
 
     >>> admin_browser.getControl("Name").value = "PolYglot"
-    >>> admin_browser.getControl(
-    ...     "Title"
-    ... ).value = "The PolyGlot Translation Group"
+    >>> admin_browser.getControl("Title").value = (
+    ...     "The PolyGlot Translation Group"
+    ... )
     >>> admin_browser.getControl("Summary").value = (
     ...     "The PolyGlots are a well organised translation group that "
     ...     "handles the work of translating a number of Ubuntu and upstream "
@@ -85,9 +85,9 @@ The same request will be accepted if the group is given a saner name,
 such as just "polyglot" (no upper-case letters).
 
     >>> admin_browser.getControl("Name").value = "polyglot"
-    >>> admin_browser.getControl(
-    ...     "Translation instructions"
-    ... ).value = "https://help.launchpad.net/Translations/PolyglotPolicies"
+    >>> admin_browser.getControl("Translation instructions").value = (
+    ...     "https://help.launchpad.net/Translations/PolyglotPolicies"
+    ... )
     >>> admin_browser.getControl("Create").click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/+groups/polyglot
@@ -240,9 +240,9 @@ Choosing another name should work though.
 You can also edit the generic translation instructions for the team
 
     >>> admin_browser.getLink("Change details").click()
-    >>> admin_browser.getControl(
-    ...     "Translation instructions"
-    ... ).value = "https://help.launchpad.net/Translations/RenamedGroup"
+    >>> admin_browser.getControl("Translation instructions").value = (
+    ...     "https://help.launchpad.net/Translations/RenamedGroup"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
 Now, let's go have a look at where we can use these translation groups.
@@ -851,9 +851,9 @@ After No posts a translation, however, it is.
     >>> browser.getControl(
     ...     name="msgset_148_cy_translation_0_radiobutton"
     ... ).value = ["msgset_148_cy_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_148_cy_translation_0_new"
-    ... ).value = "foo\n%i%i%i\n"
+    >>> browser.getControl(name="msgset_148_cy_translation_0_new").value = (
+    ...     "foo\n%i%i%i\n"
+    ... )
     >>> browser.getControl("Save & Continue").click()
     >>> print(browser.url)
     http://.../ubuntu/.../evolution/+pots/evolution-2.2/cy/20/+translate
@@ -1301,9 +1301,9 @@ Let's add a new suggestion as a person without privileges.
     >>> browser.getControl(
     ...     name="msgset_134_es_translation_0_new_checkbox"
     ... ).value = True
-    >>> browser.getControl(
-    ...     name="msgset_134_es_translation_0_new"
-    ... ).value = "new suggestion"
+    >>> browser.getControl(name="msgset_134_es_translation_0_new").value = (
+    ...     "new suggestion"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
     >>> print(browser.url)
     http://.../ubuntu/.../evolution/+pots/evolution-2.2/es/+translate?...

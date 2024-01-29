@@ -599,18 +599,18 @@ correct date.
 If we add a Received header that isn't related to the domain of the
 current instance, the Date header will still have precedence.
 
-    >>> test_message[
-    ...     "received"
-    ... ] = "by thiswontwork.com; Tue, 15 Jul 2008 09:12:11 +0100"
+    >>> test_message["received"] = (
+    ...     "by thiswontwork.com; Tue, 15 Jul 2008 09:12:11 +0100"
+    ... )
     >>> external_debbugs._getDateForComment(test_message)
     datetime.datetime(2008, 7, 14, 20, 10, 10, tzinfo=datetime.timezone.utc)
 
 If there's a Received header that references the correct domain, the
 date in that header will take precedence.
 
-    >>> test_message[
-    ...     "received"
-    ... ] = "by example.com; Tue, 15 Jul 2008 10:20:11 +0100"
+    >>> test_message["received"] = (
+    ...     "by example.com; Tue, 15 Jul 2008 10:20:11 +0100"
+    ... )
     >>> external_debbugs._getDateForComment(test_message)
     datetime.datetime(2008, 7, 15, 9, 20, 11, tzinfo=datetime.timezone.utc)
 

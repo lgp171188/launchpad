@@ -254,9 +254,9 @@ class TestSigningKey(TestCaseWithFactory):
             secret_key = gpghandler.importSecretKey(key_file.read())
         public_key = gpghandler.retrieveKey(secret_key.fingerprint)
         public_key_data = public_key.export()
-        removeSecurityProxy(
-            archive
-        ).signing_key_fingerprint = public_key.fingerprint
+        removeSecurityProxy(archive).signing_key_fingerprint = (
+            public_key.fingerprint
+        )
         key_url = gpghandler.getURLForKeyInServer(
             public_key.fingerprint, action="get"
         )
