@@ -4,7 +4,7 @@ MAILTO={{ cron_mailto }}
 LPCONFIG=launchpad-copy-archive-publisher
 
 {% if active -%}
-*/5 * * * * {{ code_dir }}/cronscripts/publish-ftpmaster.py --all-derived -vv >> {{ logs_dir }}/derived-publish-ftpmaster.log 2>&1
+*/5 * * * * umask 022; {{ code_dir }}/cronscripts/publish-ftpmaster.py --all-derived -vv >> {{ logs_dir }}/derived-publish-ftpmaster.log 2>&1
 
 10 */6 * * * {{ code_dir }}/scripts/process-death-row.py --all-derived -q --log-file=DEBUG:{{ logs_dir }}/derived-process-death-row.log
 
