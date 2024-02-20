@@ -128,11 +128,6 @@
                   our short survey.
                 </tal:description>
                 </li>
-                <li class="news">
-                  <a href="http://blog.launchpad.net/general/launchpad-is-now-open-source">
-                    Launchpad now open source</a><span class="registered"> &ndash; 21 Jul 2009</span><br />
-                    Get the code to Launchpad and join our development community.
-                </li>
               </ul>
               <ul class="horizontal">
                 <li>
