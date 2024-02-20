@@ -215,21 +215,6 @@
 
             <div id="homepage-featured" class="homepage-portlet">
               <h2>Featured projects</h2>
-
-              <div class="featured-project-top"
-                   tal:define="topproject view/featured_projects_top"
-                   tal:condition="topproject">
-                <h3>
-                  <a tal:attributes="href topproject/fmt:url"
-                    tal:content="structure topproject/image:logo"><img /></a>
-                  <a tal:attributes="href topproject/fmt:url"
-                    tal:content="topproject/displayname">Foo project</a>
-                </h3>
-                <p tal:content="structure view/featured_projects_top/summary/fmt:shorten/200">
-                   Foo project is great...
-                </p>
-              </div>
-
               <div class="two-column-list">
                 <ul class="featured-projects-list">
                   <li tal:repeat="project view/featured_projects">
