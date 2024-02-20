@@ -117,10 +117,10 @@
         </section>
 
         <section class="p-strip is-shallow">
-          <div id="homepage-getstarted" class="homepage-portlet">
+          <div id="homepage-getstarted">
             <div class="u-fixed-width u-clearfix">
               <h2 class="u-float-left">Get started</h2>
-              <a href="/+tour" class="p-button u-float-right u-hide--small p-featured-lp__see-more">Take the tour</a>
+              <a href="/+tour" class="p-button u-float-right u-hide--small">Take the tour</a>
             </div>
             <div class="u-fixed-width u-clearfix">
               <tal:logged_out condition="not:view/user" omit-tag="">
@@ -180,7 +180,7 @@
         </section>
 
         <section class="p-strip is-shallow">
-          <div id="homepage-featured" class="homepage-portlet">
+          <div id="homepage-featured">
             <div class="u-fixed-width u-clearfix">
               <h2 class="u-float-left">Featured projects</h2>
             </div>
@@ -214,10 +214,10 @@
         </section>
 
         <section class="p-strip is-shallow" tal:condition="features/app.root_blog.enabled">
-          <div id="homepage-blogposts" class="homepage-portlet">
+          <div id="homepage-blogposts">
             <div class="u-fixed-width u-clearfix">
               <h2 class="u-float-left">Recent Launchpad blog posts</h2>
-              <a href="http://blog.launchpad.net" class="p-button u-float-right u-hide--small p-featured-lp__see-more">Read the blog</a>
+              <a href="http://blog.launchpad.net" class="p-button u-float-right u-hide--small">Read the blog</a>
             </div>
             <div class="u-fixed-width u-clearfix">
               <ul tal:define="posts view/getRecentBlogPosts">
