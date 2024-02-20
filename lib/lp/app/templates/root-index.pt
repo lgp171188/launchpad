@@ -6,6 +6,7 @@
   metal:use-macro="view/macro:page/main_only"
   i18n:domain="launchpad">
   <metal:head fill-slot="head_epilogue">
+    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-4.7.0.min.css" />
     <style>
       .homepage {
           margin: auto;
@@ -67,90 +68,26 @@
                style="margin: 0 9em 1em 0"/>
         </div>
 
-        <div class="yui-g">
-          <div class="yui-u first" style="margin-top: 1.5em;">
-            <div class="homepage-whatslaunchpad"
-                 tal:condition="view/show_whatslaunchpad">
-              <h2><span class="launchpad-gold">Launchpad</span> is a software collaboration platform that provides:</h2>
-              <ul tal:define="apphomes view/apphomes">
-              <li>
-                <a class="sprite bug"
-                  tal:attributes="href apphomes/bugs">Bug tracking</a>
-              </li>
-              <li>
-                <a class="sprite branch"
-                  tal:attributes="href apphomes/code">Code hosting</a>
-                using <a href="http://bazaar.canonical.com/">Bazaar</a>
-                and <a href="https://git-scm.com/">Git</a>
-              </li>
-              <li>
-                <a class="sprite yes"
-                  href="https://help.launchpad.net/Code/Review">Code reviews</a>
-              </li>
-              <li>
-                <a class="sprite ubuntu-logo"
-                  tal:attributes="href apphomes/ubuntu">Ubuntu package building and hosting</a>
-              </li>
-              <li>
-                <a class="sprite translate-icon"
-                  tal:attributes="href apphomes/translations">Translations</a>
-              </li>
-              <li>
-                <a class="sprite mail"
-                  href="https://help.launchpad.net/Teams/MailingLists">Mailing lists</a>
-              </li>
-              <li>
-                <a class="sprite question"
-                  tal:attributes="href apphomes/answers">Answer tracking and FAQs</a>
-              </li>
-              <li>
-                <a class="sprite blueprint"
-                  tal:attributes="href apphomes/blueprints">Specification tracking</a>
-              </li>
-              </ul>
-              <div id="homepage-whatslaunchpad-tour">
-                 <a class="sprite tour" href="/+tour">Take the tour!</a>
-               </div>
-            </div>
-
-            <div id="homepage-blogposts" class="homepage-portlet"
-                 tal:condition="features/app.root_blog.enabled">
-              <h2>Recent Launchpad blog posts</h2>
-              <ul tal:define="posts view/getRecentBlogPosts">
-                <li class="news"
-                    tal:repeat="post posts">
-                    <a href="" tal:attributes="href post/link"
-                      tal:content="post/title">
-                      Take the Launchpad survey</a><span class="registered">
-                      &ndash; <tal:date content="post/date">01 July 2010</tal:date></span><br />
-                <tal:description content="structure post/description">
-                  Tell us a little about how you use Launchpad by answering
-                  our short survey.
-                </tal:description>
-                </li>
-              </ul>
-              <ul class="horizontal">
-                <li>
-                  <strong><a href="http://blog.launchpad.net">Read the blog</a></strong>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="yui-u">
-            <form id="homepage-searchform"
+        <section class="p-strip is-shallow">
+          <div class="u-fixed-width">
+            <form id="homepage-searchform" class="p-form p-form--inline"
               xml:lang="en" lang="en" dir="ltr"
               tal:attributes="action string:${rooturl}+search"
               method="get" accept-charset="UTF-8">
-              <input id="text" type="text" name="field.text" size="25" />
-              <input id="search" type="submit" value="Search Launchpad" />
+              <div class="p-form__group p-form--search">
+                <label for="search-input" class="u-off-screen">Search</label>
+                <div class="p-form__control u-clearfix">
+                  <input id="search-input" type="search" name="field.text" value="" autofocus="">
+                </div>
+              </div>
+              <button id="search" class="p-button--positive" type="submit" value="Search">Search</button>
             </form>
             <script type="text/javascript">
                 LPJS.use('lp', function () {
                     setFocusByName('field.text');
                 });
             </script>
-            <div id="homepage-stats">
+            <div id="homepage-stats" class="u-text--muted">
               <strong
                 tal:content="view/project_count/fmt:intcomma">123</strong>&nbsp;projects,
               <strong
@@ -167,61 +104,140 @@
                 tal:content="view/blueprint_count/fmt:intcomma">123</strong>&nbsp;blueprints,
               and&nbsp;counting...
             </div>
-            <div id="homepage-getstarted" class="homepage-portlet">
-              <h2>Get started</h2>
+          </div>
+        </section>
+
+        <section class="p-strip is-shallow" tal:condition="view/show_whatslaunchpad">
+            <div class="homepage-whatslaunchpad">
+              <div class="u-fixed-width u-clearfix">
+                <h2>Launchpad</h2>
+                <h4>A software collaboration platform that provides</h4>
+              </div>
+              <div class="u-fixed-width u-clearfix">
+                <ul class="p-list--divided is-split" tal:define="apphomes view/apphomes">
+                  <li class="p-list__item">
+                    <a class="sprite bug"
+                      tal:attributes="href apphomes/bugs">Bug tracking</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite branch"
+                      tal:attributes="href apphomes/code">Code hosting</a>
+                    using <a href="http://bazaar.canonical.com/">Bazaar</a>
+                    and <a href="https://git-scm.com/">Git</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite yes"
+                      href="https://help.launchpad.net/Code/Review">Code reviews</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite ubuntu-logo"
+                      tal:attributes="href apphomes/ubuntu">Ubuntu package building and hosting</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite translate-icon"
+                      tal:attributes="href apphomes/translations">Translations</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite mail"
+                      href="https://help.launchpad.net/Teams/MailingLists">Mailing lists</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite question"
+                      tal:attributes="href apphomes/answers">Answer tracking and FAQs</a>
+                  </li>
+                  <li class="p-list__item">
+                    <a class="sprite blueprint"
+                      tal:attributes="href apphomes/blueprints">Specification tracking</a>
+                  </li>
+                </ul>
+
+                <div id="homepage-whatslaunchpad-tour">
+                  <a class="sprite tour" href="/+tour">Take the tour!</a>
+                </div>
+              </div>
+            </div>
+        </section>
+
+        <section class="p-strip is-shallow">
+          <div id="homepage-getstarted" class="homepage-portlet">
+            <div class="u-fixed-width u-clearfix">
+              <h2 class="u-float-left">Get started</h2>
+              <a href="/+tour" class="p-button u-float-right u-hide--small p-featured-lp__see-more">Take the tour</a>
+            </div>
+            <div class="u-fixed-width u-clearfix">
               <tal:logged_out condition="not:view/user" omit-tag="">
                 <a href="/+login">Creating an account</a> allows you to start
                 working within Launchpad.<br />
               </tal:logged_out>
-              <p>
+              <span>
                 Learn more about Launchpad in the
                 <a href="https://help.launchpad.net/">user guide</a>
                 or try it for yourself in our
                 <a href="https://qastaging.launchpad.net/">sandbox environment</a>.
-              </p>
+              </span>
               <tal:logged_in condition="view/user" omit-tag="">
                 If you're ready, you can:
-                <ul tal:define="apphomes view/apphomes">
-                  <li>
-                    <a class="sprite add"
-                      href="/projects/+new">Register a project</a>
+
+                <ul class="p-matrix" tal:define="apphomes view/apphomes">
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/add-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/projects/+new">Register a project</a></h4>
+                    </div>
                   </li>
-                  <li>
-                    <a class="sprite add"
-                      href="/people/+newteam">Register a team</a>
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/add-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/people/+newteam">Register a team</a></h4>
+                    </div>
                   </li>
-                  <li tal:condition="not:view/show_whatslaunchpad">
-                    <a class="sprite bug"
-                      tal:attributes="href apphomes/bugs">Browse bugs</a>
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/bug-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/bugs">Browse bugs</a></h4>
+                    </div>
                   </li>
-                  <li tal:condition="not:view/show_whatslaunchpad">
-                    <a class="sprite translate-icon"
-                      tal:attributes="href apphomes/translations">Help translate</a>
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/translation-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/translations">Help translate</a></h4>
+                    </div>
                   </li>
-                  <li tal:condition="not:view/show_whatslaunchpad">
-                    <a class="sprite question"
-                      tal:attributes="href apphomes/answers">Find answers</a>
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/question-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/answers">Find answers</a></h4>
+                    </div>
                   </li>
-                  <li>
-                    <a class="sprite ppa-icon"
-                      href="/ubuntu/+ppas">Browse Ubuntu PPAs</a>
+                  <li class="p-matrix__item">
+                    <img class="p-matrix__img" src="/@@/ppa-icon-homepage.png">
+                    <div class="p-matrix__content">
+                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/ubuntu/+ppas">Browse Ubuntu PPAs</a></h4>
+                    </div>
                   </li>
-                  <li tal:condition="not:view/show_whatslaunchpad">
-                     <a class="sprite tour" href="/+tour">Take the tour</a>
-                   </li>
                 </ul>
               </tal:logged_in>
             </div>
+          </div>
+        </section>
 
-            <div id="homepage-featured" class="homepage-portlet">
-              <h2>Featured projects</h2>
-              <div class="two-column-list">
-                <ul class="featured-projects-list">
-                  <li tal:repeat="project view/featured_projects">
-                    <a tal:replace="structure project/fmt:link" />
-                  </li>
-                </ul>
-              </div>
+        <section class="p-strip is-shallow">
+          <div id="homepage-featured" class="homepage-portlet">
+            <div class="u-fixed-width u-clearfix">
+              <h2 class="u-float-left">Featured projects</h2>
+            </div>
+            <div class="u-fixed-width u-clearfix">
+              <ul class="p-matrix featured-projects-list">
+                <li class="p-matrix__item" tal:repeat="project view/featured_projects">
+                  <img class="p-matrix__img" tal:attributes="src project/image:logo_src; alt project/displayname">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="#" tal:content="structure project/displayname" tal:attributes="href project/fmt:url"></a></h4>
+                    <div class="p-matrix__desc">
+                        <p tal:content="structure project/summary/fmt:shorten/100"></p>
+                    </div>
+                  </div>
+                </li>
+              </ul>
 
               <ul class="horizontal">
                 <li>
@@ -230,14 +246,37 @@
                     projects</a>!</strong>
                 </li>
                 <li tal:condition="context/required:launchpad.Edit">
-                  <a class="sprite edit" href="+featuredprojects">Manage
-                  featured project list</a>
+                  <a class="sprite edit" href="+featuredprojects">
+                    Manage featured project list
+                  </a>
                 </li>
               </ul>
             </div>
-          </div><!-- yui-u -->
+          </div>
+        </section>
 
-        </div><!-- yui-gc -->
+        <section class="p-strip is-shallow" tal:condition="features/app.root_blog.enabled">
+          <div id="homepage-blogposts" class="homepage-portlet">
+            <div class="u-fixed-width u-clearfix">
+              <h2 class="u-float-left">Recent Launchpad blog posts</h2>
+              <a href="http://blog.launchpad.net" class="p-button u-float-right u-hide--small p-featured-lp__see-more">Read the blog</a>
+            </div>
+            <div class="u-fixed-width u-clearfix">
+              <ul tal:define="posts view/getRecentBlogPosts">
+                <li class="news" tal:repeat="post posts">
+                  <a tal:attributes="href post/link" tal:content="post/title">
+                  </a>
+                  <span class="registered">&ndash; <tal:date content="post/date"></tal:date></span><br />
+                <tal:description content="structure post/description">
+                  Tell us a little about how you use Launchpad by answering
+                  our short survey.
+                </tal:description>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
       </div><!-- homepage -->
     </div><!--main-->
   </body>
