@@ -7,48 +7,6 @@
   i18n:domain="launchpad">
   <metal:head fill-slot="head_epilogue">
     <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-4.7.0.min.css" />
-    <style>
-      .homepage {
-          margin: auto;
-          width: 90%;
-          max-width: 80em;
-      }
-      #homepage-whatslaunchpad ul {
-          margin-left: 1em;
-          margin-bottom: 0.5em;
-      }
-      #homepage-whatslaunchpad ul,
-      #homepage-whatslaunchpad-tour {
-          font-weight: bold;
-      }
-      #homepage-stats {
-          max-width: 50em;
-          margin: auto;
-          padding-top: 0.5em;
-          color: gray;
-      }
-      #homepage-blogposts {
-          padding-right: 4em;
-      }
-      #homepage-getstarted ul {
-          padding-top: 0.5em;
-          }
-      .featured-project-top h3 {
-          font-weight: bold;
-          }
-      .featured-project-top h3 img {
-          vertical-align: middle;
-          }
-      .featured-project-top p {
-          margin-top: 0.5em;
-          margin-bottom: 1em;
-          padding-bottom: .5em;
-          border-bottom: 1px dotted #999;
-          }
-      #launchpad-logo-and-name {
-          width: 250px;
-          }
-    </style>
   </metal:head>
   <body>
     <div metal:fill-slot="main">

@@ -1,0 +1,18 @@
+.homepage {
+    margin: auto;
+    width: 90%;
+    max-width: 80em;
+}
+
+// Make search box wide
+#homepage-searchform {
+    width: 100%;
+
+    .p-form__group {
+        flex-grow: 1;
+    }
+
+    .p-form__control {
+        width: 100%;
+    }
+}
