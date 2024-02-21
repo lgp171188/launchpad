@@ -9,11 +9,11 @@ The tour pages.
     ...         find_tag_by_id(browser.contents, "footer-navigation")
     ...     )
     ... )
-    Next...© 2004-2023 Canonical Ltd...
+    Next...© 2004 Canonical Ltd...
 
 The main template.
 
     >>> browser.open("http://launchpad.test")
     >>> print(extract_text(find_tag_by_id(browser.contents, "footer")))
-    © 2004-2023 Canonical Ltd.
+    © 2004 Canonical Ltd.
     ...
