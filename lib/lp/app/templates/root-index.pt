@@ -6,7 +6,7 @@
   metal:use-macro="view/macro:page/main_only"
   i18n:domain="launchpad">
   <metal:head fill-slot="head_epilogue">
-    <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-4.7.0.min.css" />
+    <link rel="stylesheet" href="/+icing/vanilla-framework-version-4.7.0.min.css" />
   </metal:head>
   <body>
     <div metal:fill-slot="main">
