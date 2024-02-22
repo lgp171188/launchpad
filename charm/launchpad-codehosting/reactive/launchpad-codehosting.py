@@ -21,6 +21,7 @@ from charms.reactive import (
     set_flag,
     set_state,
     when,
+    when_any,
     when_not,
     when_not_all,
 )
@@ -429,7 +430,7 @@ def configure_frontend_loadbalancer():
     set_state("launchpad-codehosting.frontend-loadbalancer.configured")
 
 
-@when(
+@when_any(
     "config.changed.haproxy_service_options_http",
     "config.changed.haproxy_service_options_https",
     "config.changed.haproxy_service_options_ssh",
@@ -488,7 +489,7 @@ def configure_loadbalancer():
     set_state("launchpad-codehosting.loadbalancer.configured")
 
 
-@when(
+@when_any(
     "config.changed.haproxy_service_options_internal_branch_by_id",
     "config.changed.haproxy_server_options",
     "config.changed.port_bzr_internal",
