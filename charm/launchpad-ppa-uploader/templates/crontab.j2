@@ -16,8 +16,8 @@ LPCONFIG=launchpad-ppa-uploader
 00 00 * * * find {{ ppa_queue_dir }}/accepted -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
 00 00 * * * find {{ ppa_queue_dir }}/failed -maxdepth 1 -type f -mtime +7 -delete > /dev/null 2>&1
 00 00 * * * find {{ ppa_queue_dir }}/failed -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
-00 00 * * * find {{ ppa_queue_dir }}/rejected -maxdepth 1 -type f -mtime +7 -delete > /dev/null 2>&1
-00 00 * * * find {{ ppa_queue_dir }}/rejected -mindepth 1 -type d -mtime +7 -execdir rm -rf '{}' + > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/rejected -maxdepth 1 -type f -mtime +3 -delete > /dev/null 2>&1
+00 00 * * * find {{ ppa_queue_dir }}/rejected -mindepth 1 -type d -mtime +3 -execdir rm -rf '{}' + > /dev/null 2>&1
 {% endif %}
 
 # OOPS amqp
