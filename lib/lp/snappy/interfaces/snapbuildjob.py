@@ -13,7 +13,7 @@ __all__ = [
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
 from zope.interface.interfaces import IObjectEvent
-from zope.schema import Int, TextLine
+from zope.schema import Dict, Int, TextLine
 
 from lp import _
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
@@ -64,6 +64,17 @@ class ISnapStoreUploadJob(IRunnableJob):
             "The ID returned by the store when uploading this build's snap "
             "file."
         ),
+        required=False,
+        readonly=True,
+    )
+
+    components_ids = Dict(
+        title=_(
+            "The IDs returned by the store when uploading snap components."
+            "The key is the component name and the value is the related id."
+        ),
+        key_type=TextLine(),
+        value_type=TextLine(),
         required=False,
         readonly=True,
     )
