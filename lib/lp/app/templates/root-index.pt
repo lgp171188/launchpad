@@ -116,61 +116,66 @@
           <div id="homepage-getstarted">
             <div class="u-fixed-width u-clearfix">
               <h2 class="u-float-left">Get started</h2>
-              <a href="/+tour" class="p-button u-float-right u-hide--small">Take the tour</a>
             </div>
             <div class="u-fixed-width u-clearfix">
-              <tal:logged_out condition="not:view/user" omit-tag="">
-                <a href="/+login">Creating an account</a> allows you to start
-                working within Launchpad.<br />
-              </tal:logged_out>
               <span>
                 Learn more about Launchpad in the
                 <a href="https://help.launchpad.net/">user guide</a>
                 or try it for yourself in our
                 <a href="https://qastaging.launchpad.net/">sandbox environment</a>.
               </span>
-              <tal:logged_in condition="view/user" omit-tag="">
                 If you're ready, you can:
 
-                <ul class="p-matrix" tal:define="apphomes view/apphomes">
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/projects/+new">Register a project</a></h4>
-                    </div>
-                  </li>
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/people/+newteam">Register a team</a></h4>
-                    </div>
-                  </li>
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/bug-homepage.png" alt="bug">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/bugs">Browse bugs</a></h4>
-                    </div>
-                  </li>
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/translation-homepage.png" alt="translation">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/translations">Help translate</a></h4>
-                    </div>
-                  </li>
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/question-homepage.png" alt="question">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/answers">Find answers</a></h4>
-                    </div>
-                  </li>
-                  <li class="p-matrix__item">
-                    <img class="p-matrix__img" src="/@@/ppa-icon-homepage.png" alt="ppa-icon">
-                    <div class="p-matrix__content">
-                      <h4 class="p-matrix__title"><a class="p-matrix__link" href="/ubuntu/+ppas">Browse Ubuntu PPAs</a></h4>
-                    </div>
-                  </li>
-                </ul>
-              </tal:logged_in>
+              <ul class="p-matrix" tal:define="apphomes view/apphomes">
+                <li class="p-matrix__item" tal:condition="not:view/user">
+                  <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/projects/+new">Create an account</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="not:view/user">
+                  <img class="p-matrix__img" src="/@@/tour-homepage.png" alt="tour">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/+tour">Take the tour</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="view/user">
+                  <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/projects/+new">Register a project</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="view/user">
+                  <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/people/+newteam">Register a team</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="view/user">
+                  <img class="p-matrix__img" src="/@@/bug-homepage.png" alt="bug">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/bugs">Browse bugs</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="view/user">
+                  <img class="p-matrix__img" src="/@@/translation-homepage.png" alt="translation">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" tal:attributes="href apphomes/translations">Help translate</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item">
+                  <img class="p-matrix__img" src="/@@/question-homepage.png" alt="question">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" tal:attributes="href apphomes/answers">Find answers</a></h4>
+                  </div>
+                </li>
+                <li class="p-matrix__item" tal:condition="view/user">
+                  <img class="p-matrix__img" src="/@@/ppa-icon-homepage.png" alt="ppa-icon">
+                  <div class="p-matrix__content">
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/ubuntu/+ppas">Browse Ubuntu PPAs</a></h4>
+                  </div>
+                </li>
+              </ul>
             </div>
           </div>
         </section>
