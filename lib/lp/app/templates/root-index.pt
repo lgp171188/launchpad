@@ -66,54 +66,50 @@
         </section>
 
         <section class="p-strip is-shallow" tal:condition="view/show_whatslaunchpad">
-            <div class="homepage-whatslaunchpad">
-              <div class="u-fixed-width u-clearfix">
-                <h2>Launchpad</h2>
-                <h4>A software collaboration platform that provides</h4>
+          <div class="homepage-whatslaunchpad">
+            <div class="u-fixed-width u-clearfix">
+              <h2>Launchpad</h2>
+              <h4>A software collaboration platform that provides</h4>
+            </div>
+            <div class="u-fixed-width u-clearfix" tal:define="apphomes view/apphomes">
+              <div class="row p-divider">
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/bugs">Bug tracking</a></h4>
+                  <p>One place to track bugs across project boundaries and tools</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/code">Code hosting</a> using <a href="https://git-scm.com/">Git</a> and <a href="http://bazaar.canonical.com/">Bazaar</a></h4>
+                  <p>Easy for anyone to get your project's code using Git or Bazaar</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a  href="https://help.launchpad.net/Code/Review">Code reviews</a></h4>
+                  <p>Full control of who can land code in your project remains with you</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/ubuntu">Ubuntu package building and hosting</a></h4>
+                  <p>Publishing your software is simple with Personal Package Archives</p>
+                </div>
               </div>
-              <div class="u-fixed-width u-clearfix">
-                <ul class="p-list--divided is-split" tal:define="apphomes view/apphomes">
-                  <li class="p-list__item">
-                    <a class="sprite bug"
-                      tal:attributes="href apphomes/bugs">Bug tracking</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite branch"
-                      tal:attributes="href apphomes/code">Code hosting</a>
-                    using <a href="http://bazaar.canonical.com/">Bazaar</a>
-                    and <a href="https://git-scm.com/">Git</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite yes"
-                      href="https://help.launchpad.net/Code/Review">Code reviews</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite ubuntu-logo"
-                      tal:attributes="href apphomes/ubuntu">Ubuntu package building and hosting</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite translate-icon"
-                      tal:attributes="href apphomes/translations">Translations</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite mail"
-                      href="https://help.launchpad.net/Teams/MailingLists">Mailing lists</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite question"
-                      tal:attributes="href apphomes/answers">Answer tracking and FAQs</a>
-                  </li>
-                  <li class="p-list__item">
-                    <a class="sprite blueprint"
-                      tal:attributes="href apphomes/blueprints">Specification tracking</a>
-                  </li>
-                </ul>
-
-                <div id="homepage-whatslaunchpad-tour">
-                  <a class="sprite tour" href="/+tour">Take the tour!</a>
+              <div class="row p-divider">
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/translations">Crowd source translations</a></h4>
+                  <p>Build an open community to translate your software into almost any language</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a href="https://help.launchpad.net/Teams/MailingLists">Mailing lists</a></h4>
+                  <p>Find and work with the right people by building a social network of individuals and teams around projects</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/answers">Answer tracking and FAQs</a></h4>
+                  <p>Free software thrives on people helping each other when the unexpected happens</p>
+                </div>
+                <div class="col-3 p-divider__block">
+                  <h4><a tal:attributes="href apphomes/blueprints">Specification tracking</a></h4>
+                  <p>Track ideas and chunks of work as “blueprints”</p>
                 </div>
               </div>
             </div>
+          </div>
         </section>
 
         <section class="p-strip is-shallow">
