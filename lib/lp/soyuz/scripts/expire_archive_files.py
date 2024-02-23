@@ -50,6 +50,7 @@ ubuntu-esm/esm-apps-updates
 ubuntu-esm/esm-infra-security
 ubuntu-esm/esm-infra-updates
 ubuntu-mobile
+ubuntu-security/ubuntu-security-staging
 ubuntu-security-proposed/ppa
 wheelbarrow
 """.split()
