@@ -53,6 +53,7 @@ blog:
     ...     )
     ... )
     Recent Launchpad blog posts
+    Read the blog
     Launchpad EPIC 2010 photo
     &ndash; 16 Jul 2010
     The Launchpad and Bazaar teams have been in Prague this week...

@@ -38,7 +38,7 @@
                   <input id="search-input" type="search" name="field.text" value="" autofocus="">
                 </div>
               </div>
-              <button id="search" class="p-button--positive" type="submit" value="Search">Search</button>
+              <button id="search" class="p-button--positive" type="submit" value="Search Launchpad">Search</button>
             </form>
             <script type="text/javascript">
                 LPJS.use('lp', function () {
@@ -130,7 +130,7 @@
                 <li class="p-matrix__item" tal:condition="not:view/user">
                   <img class="p-matrix__img" src="/@@/add-homepage.png" alt="add">
                   <div class="p-matrix__content">
-                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/projects/+new">Create an account</a></h4>
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="/+login">Create an account</a></h4>
                   </div>
                 </li>
                 <li class="p-matrix__item" tal:condition="not:view/user">
@@ -154,7 +154,7 @@
                 <li class="p-matrix__item" tal:condition="view/user">
                   <img class="p-matrix__img" src="/@@/bug-homepage.png" alt="bug">
                   <div class="p-matrix__content">
-                    <h4 class="p-matrix__title"><a class="p-matrix__link" href="apphomes/bugs">Browse bugs</a></h4>
+                    <h4 class="p-matrix__title"><a class="p-matrix__link" tal:attributes="href apphomes/bugs">Browse bugs</a></h4>
                   </div>
                 </li>
                 <li class="p-matrix__item" tal:condition="view/user">
