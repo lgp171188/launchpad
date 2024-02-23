@@ -74,7 +74,7 @@
                   tal:attributes="name language/code;" />
             <span tal:replace="language/englishname">Spanish</span>
           </label>
-          <hr tal:condition="repeat/language/end" style="margin:0px; height:2px;" />
+          <hr tal:condition="repeat/language/end" style="display:none; margin:0px; height:2px;" />
         </div>
         <div style="width: 32%; float: left;"
              tal:repeat="language view/visible_unchecked_languages">
