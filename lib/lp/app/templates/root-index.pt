@@ -20,11 +20,11 @@
 
       <div id="homepage" class="homepage">
 
-        <div class="top-portlet" style="border-bottom: 1px dotted #999;">
-          <img src="/@@/launchpad-logo-and-name.png"
-               id="launchpad-logo-and-name" alt="Launchpad logo and name"
-               style="margin: 0 9em 1em 0"/>
+        <div class="top-portlet">
+          <img src="/@@/launchpad-logo-and-name.svg" class="homepage__logo"
+               id="launchpad-logo-and-name" alt="Launchpad logo and name"/>
         </div>
+        <hr>
 
         <section class="p-strip is-shallow">
           <div class="u-fixed-width">

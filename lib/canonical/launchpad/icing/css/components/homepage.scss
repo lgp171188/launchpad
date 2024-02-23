@@ -2,6 +2,10 @@
     margin: auto;
     width: 90%;
     max-width: 80em;
+
+    &__logo {
+        height: 4rem;
+    }
 }
 
 // Make search box wide
