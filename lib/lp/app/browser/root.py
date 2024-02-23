@@ -57,20 +57,10 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
 
     page_title = "Launchpad"
     featured_projects: List[Any] = []
-    featured_projects_top = None
 
     # Used by the footer to display the lp-arcana section.
     is_root_page = True
     has_watermark = False
-
-    @staticmethod
-    def _get_day_of_year():
-        """Calculate the number of the current day.
-
-        This method gets overridden in tests to make the selection of the
-        top featured project deterministic.
-        """
-        return time.gmtime()[7]
 
     def initialize(self):
         """Set up featured projects list and the top featured project."""
@@ -80,16 +70,6 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
         self.featured_projects = list(
             getUtility(IPillarNameSet).featured_projects
         )
-        self._setFeaturedProjectsTop()
-
-    def _setFeaturedProjectsTop(self):
-        """Set the top featured project and remove it from the list."""
-        project_count = len(self.featured_projects)
-        if project_count > 0:
-            top_project = self._get_day_of_year() % project_count
-            self.featured_projects_top = self.featured_projects.pop(
-                top_project
-            )
 
     @cachedproperty
     def apphomes(self):
