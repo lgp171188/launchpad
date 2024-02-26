@@ -147,7 +147,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
         self.assertIs(None, markup.find(True, id="watermark"))
         logo = markup.find(True, id="launchpad-logo-and-name")
         self.assertIsNot(None, logo)
-        self.assertEqual("/@@/launchpad-logo-and-name.png", logo["src"])
+        self.assertEqual("/@@/launchpad-logo-and-name.svg", logo["src"])
 
     @staticmethod
     def _make_blog_post(linkid, title, body, date):
