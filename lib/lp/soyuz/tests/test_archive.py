@@ -6,6 +6,7 @@
 import doctest
 import http.client
 import os.path
+import random
 from datetime import date, datetime, timedelta, timezone
 from pathlib import PurePath
 from urllib.parse import urlsplit
@@ -63,6 +64,7 @@ from lp.services.gpg.interfaces import (
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.propertycache import clear_property_cache, get_property_cache
+from lp.services.signing.enums import SigningKeyType
 from lp.services.timeout import default_timeout
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
@@ -5720,6 +5722,120 @@ class TestArchiveSetGetByReference(TestCaseWithFactory):
         self.assertLookupFails("~enoent/twonoent")
         self.assertLookupFails("~enoent/twonoent/threenoent")
         self.assertLookupFails("~enoent/twonoent/threenoent/fournoent")
+
+
+class TestArchiveSetGetBy1024BitRSASigningKey(TestCaseWithFactory):
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super().setUp()
+        self.set = getUtility(IArchiveSet)
+
+    def makeArchivesWithRSAKey(self, key_size, archives_number=1):
+        archives = []
+
+        def fingerprintGenerator(prefix="4096"):
+            letters = ["A", "B", "C", "D", "E", "F"]
+            return prefix + "".join(
+                random.choice(letters) for _ in range(40 - len(prefix))
+            )
+
+        key_fingerprint = fingerprintGenerator(str(key_size))
+        owner = self.factory.makePerson()
+        self.factory.makeGPGKey(
+            owner=owner,
+            keyid=key_fingerprint[-8:],
+            fingerprint=key_fingerprint,
+            keysize=key_size,
+        )
+        signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=key_fingerprint
+        )
+        for _ in range(archives_number):
+            ppa = self.factory.makeArchive(
+                owner=owner,
+                distribution=getUtility(IDistributionSet).getByName(
+                    "ubuntutest"
+                ),
+                purpose=ArchivePurpose.PPA,
+            )
+            ppa.signing_key_fingerprint = key_fingerprint
+            self.factory.makeArchiveSigningKey(ppa, None, signing_key)
+            archives.append(ppa)
+        return archives
+
+    def test_no_PPAs_with_1024_bit_key(self):
+        archives = list(
+            self.set.getArchivesWith1024BitRSASigningKey(limit=None)
+        )
+        self.assertEqual(0, len(archives))
+
+    def test_PPAs_with_1024_bit_key(self):
+        archives_number = 10
+        # Create archives with 1024-bit RSA key.
+        archives = self.makeArchivesWithRSAKey(
+            key_size=1024, archives_number=archives_number
+        )
+
+        actual_archives = list(
+            getUtility(IArchiveSet).getArchivesWith1024BitRSASigningKey(
+                limit=None
+            )
+        )
+        self.assertEqual(archives_number, len(actual_archives))
+        self.assertEqual(archives, actual_archives)
+
+    def test_PPAs_with_1024_bit_key_PPAs_have_4096_bit_key(self):
+        archives_number = 10
+        # Create archives with 1024-bit RSA key.
+        archives = self.makeArchivesWithRSAKey(
+            key_size=1024, archives_number=archives_number
+        )
+
+        # Create archives with 4096-bit RSA key.
+        noise_archives = self.makeArchivesWithRSAKey(
+            key_size=4096, archives_number=5
+        )
+
+        actual_archives = list(
+            getUtility(IArchiveSet).getArchivesWith1024BitRSASigningKey(
+                limit=None
+            )
+        )
+        self.assertEqual(archives_number, len(actual_archives))
+        self.assertEqual(archives, actual_archives)
+        self.assertNotIn(noise_archives, actual_archives)
+
+    def test_PPAs_with_1024_bit_key_mixed(self):
+        archives_number = 10
+
+        owner = self.factory.makePerson()
+
+        # Create archives with 1024-bit RSA key.
+        archives = self.makeArchivesWithRSAKey(
+            key_size=1024, archives_number=archives_number
+        )
+
+        # Add a 4096-bit RSA key to the archives.
+        gpg_key = self.factory.makeGPGKey(
+            owner=owner,
+            keysize=4096,
+        )
+        signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=gpg_key.fingerprint
+        )
+        for archive in archives:
+            self.factory.makeArchiveSigningKey(archive, None, signing_key)
+
+        # Create archives with 4096-bit RSA key.
+        self.makeArchivesWithRSAKey(key_size=4096, archives_number=5)
+
+        actual_archives = list(
+            getUtility(IArchiveSet).getArchivesWith1024BitRSASigningKey(
+                limit=None
+            )
+        )
+        self.assertEqual(0, len(actual_archives))
 
 
 class TestArchiveSetCheckViewPermission(TestCaseWithFactory):

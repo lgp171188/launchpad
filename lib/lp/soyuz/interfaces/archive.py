@@ -2878,6 +2878,14 @@ class IArchiveSet(Interface):
         :param purpose: Only return archives with this `ArchivePurpose`.
         """
 
+    def getArchivesWith1024BitRSASigningKey(limit):
+        """Return all archives with only a 1024-bit RSA signing key.
+
+        The result is ordered by archive id.
+
+        :param limit: Limit the size of archive result set to this integer.
+        """
+
     def getLatestPPASourcePublicationsForDistribution(distribution):
         """The latest 5 PPA source publications for a given distribution.
 
