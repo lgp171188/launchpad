@@ -80,6 +80,7 @@ from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import (
+    SNAP_USE_FETCH_SERVICE_FEATURE_FLAG,
     BadSnapSearchContext,
     CannotFetchSnapcraftYaml,
     CannotModifySnapProcessor,
@@ -2318,6 +2319,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
         self.assertFalse(snap.pro_enable)
+        self.assertFalse(snap.use_fetch_service)
 
     def test_creation_git(self):
         # The metadata entries supplied when a Snap is created for a Git
@@ -2342,6 +2344,7 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.build_source_tarball)
         self.assertFalse(snap.pro_enable)
+        self.assertFalse(snap.use_fetch_service)
 
     def test_creation_git_url(self):
         # A Snap can be backed directly by a URL for an external Git
@@ -2354,6 +2357,41 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.repository_url, snap.git_repository_url)
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
+
+    def test_edit_admin_only_fields(self):
+        # The admin fields can only be updated by an admin
+        [ref] = self.factory.makeGitRefs()
+        components = self.makeSnapComponents(git_ref=ref)
+        snap = getUtility(ISnapSet).new(**components)
+
+        admin_fields = [
+            "allow_internet",
+            "pro_enable",
+            "require_virtualized",
+            "use_fetch_service",
+        ]
+
+        for field_name in admin_fields:
+            login(ANONYMOUS)
+            self.assertRaises(Unauthorized, setattr, snap, field_name, True)
+            login_admin()
+            setattr(snap, field_name, True)
+
+    def test_snap_use_fetch_service_feature_flag(self):
+        # The snap.use_fetch_service API only works when feature flag is set
+        [ref] = self.factory.makeGitRefs()
+        components = self.makeSnapComponents(git_ref=ref)
+        snap = getUtility(ISnapSet).new(**components)
+
+        login_admin()
+        self.assertEqual(None, snap.use_fetch_service)
+        snap.use_fetch_service = True
+        self.assertEqual(None, snap.use_fetch_service)
+
+        with MemoryFeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"}):
+            self.assertFalse(snap.use_fetch_service)
+            snap.use_fetch_service = True
+            self.assertTrue(snap.use_fetch_service)
 
     def test_create_private_snap_with_open_team_as_owner_fails(self):
         components = self.makeSnapComponents()

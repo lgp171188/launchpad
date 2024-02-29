@@ -304,6 +304,16 @@ flag_info = sorted(
             "",
             "",
         ),
+        (
+            "snap.fetch_service.enable",
+            "boolean",
+            "If set, allow admins to set snap.use_fetch_service field, which "
+            "sets a snap build to use the fetch-service instead of the "
+            "builder-proxy",
+            "",
+            "",
+            "",
+        ),
     ]
 )
 
