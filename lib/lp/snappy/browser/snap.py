@@ -77,6 +77,7 @@ from lp.snappy.browser.widgets.snaparchive import SnapArchiveWidget
 from lp.snappy.browser.widgets.storechannels import StoreChannelsWidget
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
+    SNAP_USE_FETCH_SERVICE_FEATURE_FLAG,
     CannotAuthorizeStoreUploads,
     CannotFetchSnapcraftYaml,
     CannotParseSnapcraftYaml,
@@ -525,6 +526,7 @@ class ISnapEditSchema(Interface):
             "auto_build_channels",
             "store_upload",
             "pro_enable",
+            "use_fetch_service",
         ],
     )
 
@@ -929,13 +931,20 @@ class SnapAdminView(BaseSnapEditView):
     # XXX pappacena 2021-02-19: Once we have the whole privacy work in
     # place, we should move "project" and "information_type" from +admin
     # page to +edit, to allow common users to edit this.
-    field_names = [
-        "project",
-        "information_type",
-        "require_virtualized",
-        "allow_internet",
-        "pro_enable",
-    ]
+    @property
+    def field_names(self):
+        fields = [
+            "project",
+            "information_type",
+            "require_virtualized",
+            "allow_internet",
+            "pro_enable",
+        ]
+
+        if getFeatureFlag(SNAP_USE_FETCH_SERVICE_FEATURE_FLAG):
+            fields.append("use_fetch_service")
+
+        return fields
 
     @property
     def initial_values(self):
