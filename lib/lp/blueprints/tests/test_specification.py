@@ -799,9 +799,9 @@ class TestSpecifications(TestCaseWithFactory):
         )
         if priority is not None:
             removeSecurityProxy(blueprint).priority = priority
-        removeSecurityProxy(
-            blueprint
-        ).datecreated = self.date_created + timedelta(date_created)
+        removeSecurityProxy(blueprint).datecreated = (
+            self.date_created + timedelta(date_created)
+        )
         return blueprint
 
     def test_specifications_quantity(self):

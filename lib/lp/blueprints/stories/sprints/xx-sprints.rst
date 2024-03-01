@@ -63,12 +63,12 @@ First we'll test the name field validator.
     >>> user_browser.getControl("Driver").value = "kamion"
     >>> user_browser.getControl("Home Page").value = "http://www.willy.net"
     >>> user_browser.getControl("Timezone").value = ["UTC"]
-    >>> user_browser.getControl(
-    ...     "Starting Date and Time"
-    ... ).value = "10 Oct 2006 09:15"
-    >>> user_browser.getControl(
-    ...     "Finishing Date and Time"
-    ... ).value = "13 Oct 2006 16:00"
+    >>> user_browser.getControl("Starting Date and Time").value = (
+    ...     "10 Oct 2006 09:15"
+    ... )
+    >>> user_browser.getControl("Finishing Date and Time").value = (
+    ...     "13 Oct 2006 16:00"
+    ... )
     >>> user_browser.getControl("Add Sprint").click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, "message"):
@@ -95,12 +95,12 @@ Create a new sprint with a finish date before the starting date returns
 a error message.
 
     >>> user_browser.getControl("Name").value = "ltsponsteroids"
-    >>> user_browser.getControl(
-    ...     "Starting Date and Time"
-    ... ).value = "13 Oct 2006 09:15 "
-    >>> user_browser.getControl(
-    ...     "Finishing Date and Time"
-    ... ).value = "10 Oct 2006 16:00"
+    >>> user_browser.getControl("Starting Date and Time").value = (
+    ...     "13 Oct 2006 09:15 "
+    ... )
+    >>> user_browser.getControl("Finishing Date and Time").value = (
+    ...     "10 Oct 2006 16:00"
+    ... )
     >>> user_browser.getControl("Add Sprint").click()
 
     >>> for tag in find_tags_by_class(user_browser.contents, "message"):
@@ -122,12 +122,12 @@ minutes rather than second-level accuracy:
 Fix the date and try again. We're redirected to the sprint home page for
 the new sprint.
 
-    >>> user_browser.getControl(
-    ...     "Starting Date and Time"
-    ... ).value = "10 Oct 2006 09:15 "
-    >>> user_browser.getControl(
-    ...     "Finishing Date and Time"
-    ... ).value = "13 Oct 2006 16:00"
+    >>> user_browser.getControl("Starting Date and Time").value = (
+    ...     "10 Oct 2006 09:15 "
+    ... )
+    >>> user_browser.getControl("Finishing Date and Time").value = (
+    ...     "13 Oct 2006 16:00"
+    ... )
     >>> user_browser.getControl(
     ...     "Is the sprint being held in a physical " "location?"
     ... ).selected = False
@@ -161,12 +161,12 @@ Add a new sprint with a different time zone is also handled correctly.
     >>> user_browser.getControl("Summary").value = summary
     >>> user_browser.getControl("Home Page").value = "http://www.ubuntu.com"
     >>> user_browser.getControl("Timezone").value = ["Africa/Johannesburg"]
-    >>> user_browser.getControl(
-    ...     "Starting Date and Time"
-    ... ).value = "10 Jul 2006 09:15"
-    >>> user_browser.getControl(
-    ...     "Finishing Date and Time"
-    ... ).value = "13 Jul 2006 16:00"
+    >>> user_browser.getControl("Starting Date and Time").value = (
+    ...     "10 Jul 2006 09:15"
+    ... )
+    >>> user_browser.getControl("Finishing Date and Time").value = (
+    ...     "13 Jul 2006 16:00"
+    ... )
     >>> user_browser.getControl("Add Sprint").click()
 
     >>> user_browser.url
@@ -236,12 +236,12 @@ We fix the dates and change the address, we expect to be redirected to the
 sprint home page.
 
     >>> browser.getControl("Timezone").value = ["America/Toronto"]
-    >>> browser.getControl(
-    ...     "Starting Date and Time"
-    ... ).value = "2006-01-10 08:30"
-    >>> browser.getControl(
-    ...     "Finishing Date and Time"
-    ... ).value = "2006-02-12 17:00"
+    >>> browser.getControl("Starting Date and Time").value = (
+    ...     "2006-01-10 08:30"
+    ... )
+    >>> browser.getControl("Finishing Date and Time").value = (
+    ...     "2006-02-12 17:00"
+    ... )
     >>> browser.getControl("Meeting Address").value = address
     >>> browser.getControl("Change").click()
 
@@ -457,9 +457,9 @@ Sample Person registers Salgado as well.
     >>> browser.url
     'http://launchpad.test/sprints/ubz/+register'
 
-    >>> browser.getControl(
-    ...     "Attendee"
-    ... ).value = "guilherme.salgado@canonical.com"
+    >>> browser.getControl("Attendee").value = (
+    ...     "guilherme.salgado@canonical.com"
+    ... )
     >>> browser.getControl(name="field.is_physical").value = ["no"]
     >>> browser.getControl("Register").click()
 

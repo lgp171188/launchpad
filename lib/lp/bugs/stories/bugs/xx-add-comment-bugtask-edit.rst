@@ -11,9 +11,9 @@ the comment to another comment field.
     >>> user_browser.open(
     ...     "http://bugs.launchpad.test/firefox/+bug/1/+editstatus"
     ... )
-    >>> user_browser.getControl(
-    ...     "Comment"
-    ... ).value = "A comment with no change to the bug task."
+    >>> user_browser.getControl("Comment").value = (
+    ...     "A comment with no change to the bug task."
+    ... )
     >>> user_browser.getControl("Save Changes").click()
 
 The user was returned to the bug page, and the comment was added.

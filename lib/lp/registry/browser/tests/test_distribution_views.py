@@ -604,9 +604,9 @@ class TestDistroEditView(OCIConfigHelperMixin, TestCaseWithFactory):
         transaction.commit()
         password = self.factory.getUniqueUnicode()
         edit_form["field.oci_registry_credentials.url"] = url
-        edit_form[
-            "field.oci_registry_credentials.username"
-        ] = credentials.username
+        edit_form["field.oci_registry_credentials.username"] = (
+            credentials.username
+        )
         edit_form["field.oci_registry_credentials.region"] = ""
         edit_form["field.oci_registry_credentials.password"] = password
         edit_form["field.oci_registry_credentials.confirm_password"] = password

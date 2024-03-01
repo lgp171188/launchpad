@@ -481,9 +481,9 @@ class TestBugSummary(TestCaseWithFactory):
             sourcepackagename=sourcepackage_b.sourcepackagename,
         )
 
-        removeSecurityProxy(
-            bug_task
-        ).sourcepackagename = sourcepackage_b.sourcepackagename
+        removeSecurityProxy(bug_task).sourcepackagename = (
+            sourcepackage_b.sourcepackagename
+        )
 
         self.assertCount(1, distribution=distribution, sourcepackagename=None)
         self.assertCount(

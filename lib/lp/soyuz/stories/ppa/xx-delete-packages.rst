@@ -81,9 +81,9 @@ page via a link:
 The user can update the form to only list published sources with name
 matching the given text.
 
-    >>> admin_browser.getControl(
-    ...     name="field.name_filter"
-    ... ).value = "nonexistentpackage"
+    >>> admin_browser.getControl(name="field.name_filter").value = (
+    ...     "nonexistentpackage"
+    ... )
     >>> admin_browser.getControl("Filter").click()
     >>> print_ppa_packages(admin_browser.contents)
     No matching package for 'nonexistentpackage'.
@@ -153,9 +153,9 @@ entirely readable content.
 
     >>> admin_browser.getControl("Filter").click()
     >>> admin_browser.getControl(name="field.selected_sources").value = ["27"]
-    >>> admin_browser.getControl(
-    ...     "Deletion comment"
-    ... ).value = "DO <where is my XSS ?> IT"
+    >>> admin_browser.getControl("Deletion comment").value = (
+    ...     "DO <where is my XSS ?> IT"
+    ... )
     >>> admin_browser.getControl("Request Deletion").click()
 
     >>> print_feedback_messages(admin_browser.contents)

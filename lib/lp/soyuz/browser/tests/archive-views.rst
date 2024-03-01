@@ -391,9 +391,9 @@ others will not.
     >>> login("foo.bar@canonical.com")
     >>> removeSecurityProxy(view.filtered_sources[0]).datecreated = UTC_NOW
     >>> removeSecurityProxy(view.filtered_sources[1]).datecreated = UTC_NOW
-    >>> removeSecurityProxy(
-    ...     view.filtered_sources[2]
-    ... ).datecreated = thirtyone_days_ago
+    >>> removeSecurityProxy(view.filtered_sources[2]).datecreated = (
+    ...     thirtyone_days_ago
+    ... )
     >>> login(ANONYMOUS)
 
     >>> view.num_updates_over_last_days()

@@ -44,9 +44,9 @@ The tags field and its related messages are properly escaped in order
 to prevent XSS.
 
     >>> anon_browser.open("http://launchpad.test/ubuntu/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     "Tags"
-    ... ).value = '<script>alert("cheezburger");</script>'
+    >>> anon_browser.getControl("Tags").value = (
+    ...     '<script>alert("cheezburger");</script>'
+    ... )
     >>> anon_browser.getControl("Search", index=0).click()
 
 The value can be obtained correctly, which indicates that the markup

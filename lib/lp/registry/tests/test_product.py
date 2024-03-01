@@ -2349,9 +2349,9 @@ class TestSpecifications(TestCaseWithFactory):
             information_type=information_type,
             product=product,
         )
-        removeSecurityProxy(
-            blueprint
-        ).datecreated = self.date_created + timedelta(date_created)
+        removeSecurityProxy(blueprint).datecreated = (
+            self.date_created + timedelta(date_created)
+        )
         return blueprint
 
     def test_specifications_quantity(self):

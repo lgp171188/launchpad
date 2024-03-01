@@ -696,9 +696,9 @@ deactivated, so it should not be flagged as expired.
     True
     >>> sp_on_ubuntu_translators.status.title
     'Deactivated'
-    >>> removeSecurityProxy(
-    ...     sp_on_ubuntu_translators
-    ... ).dateexpires = one_day_ago
+    >>> removeSecurityProxy(sp_on_ubuntu_translators).dateexpires = (
+    ...     one_day_ago
+    ... )
     >>> flush_database_updates()
 
     >>> for membership in membershipset.getMembershipsToExpire():

@@ -54,9 +54,9 @@ Then, post the changes to the summary. Also add a trailing slash to the
 URL.
 
     >>> browser.getControl("Branch URL").value += "/"
-    >>> browser.getControl(
-    ...     "Description"
-    ... ).value = "Klingon support for Gnome Terminal"
+    >>> browser.getControl("Description").value = (
+    ...     "Klingon support for Gnome Terminal"
+    ... )
     >>> browser.getControl("Change Branch").click()
 
 We should be redirected to the branch page, check that our changes were
@@ -212,9 +212,9 @@ Edit forms do the same URL validation checks as the add forms.
 
     >>> browser.open("http://code.launchpad.test/~name12/gnome-terminal/main")
     >>> browser.getLink("Change branch details").click()
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "http://bazaar.launchpad.test/~foo/bar/baz"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "http://bazaar.launchpad.test/~foo/bar/baz"
+    ... )
     >>> browser.getControl("Change Branch").click()
 
     >>> print_feedback_messages(browser.contents)
@@ -228,9 +228,9 @@ Check that when editing a hosted branch the URL field is not shown.
     ...     "http://code.launchpad.test/~name12/gnome-terminal/scanned"
     ... )
     >>> browser.getLink("Change branch details").click()
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "http://acme.example.com/~foo/bar/baz"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "http://acme.example.com/~foo/bar/baz"
+    ... )
     Traceback (most recent call last):
     ...
     LookupError: label ...'Branch URL'

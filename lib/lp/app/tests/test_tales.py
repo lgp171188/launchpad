@@ -406,7 +406,7 @@ class TestSocialAccountFormatterAPI(TestCaseWithFactory):
             person, SocialPlatformType.MATRIX, identity
         )
         expected_html = (
-            '<img class="user_social_accounts__icon" alt="Matrix" '
+            '<img class="user-social-accounts__icon" alt="Matrix" '
             'title="Matrix" src="/@@/social-matrix" /> '
             "<a href=https://matrix.to//#/@fred:ubuntu.com "
             'target="_blank"><strong>@fred:ubuntu.com</strong></a>'

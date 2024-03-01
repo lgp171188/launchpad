@@ -24,9 +24,9 @@ translators.
 
 This way he can also set the documentation URL.
 
-    >>> carlos_browser.getControl(
-    ...     "Translation guidelines"
-    ... ).value = "http://www.ubuntu.com/"
+    >>> carlos_browser.getControl("Translation guidelines").value = (
+    ...     "http://www.ubuntu.com/"
+    ... )
     >>> carlos_browser.getControl("Change").click()
     >>> print(carlos_browser.url)
     http://translations.launchpad.test/+groups/testing-translation-team
@@ -88,9 +88,9 @@ the documentation url through the edit view.
     >>> print(test_browser.title)
     Set Esperanto guidelines...
 
-    >>> test_browser.getControl(
-    ...     "Translation guidelines"
-    ... ).value = "http://www.launchpad.net/"
+    >>> test_browser.getControl("Translation guidelines").value = (
+    ...     "http://www.launchpad.net/"
+    ... )
     >>> test_browser.getControl("Set guidelines").click()
     >>> print(test_browser.url)
     http://translations.launchpad.test/~name12

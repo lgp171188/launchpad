@@ -239,9 +239,9 @@ class TestCharmRecipeRequestBuildsJob(TestCaseWithFactory):
         job = CharmRecipeRequestBuildsJob.create(
             recipe, recipe.registrant, channels={"core": "stable"}
         )
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob.failure = CannotParseCharmcraftYaml("Nonsense on stilts")
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            CannotParseCharmcraftYaml("Nonsense on stilts")
+        )
         with dbuser(config.ICharmRecipeRequestBuildsJobSource.dbuser):
             JobRunner([job]).runAll()
         now = get_transaction_timestamp(IStore(recipe))

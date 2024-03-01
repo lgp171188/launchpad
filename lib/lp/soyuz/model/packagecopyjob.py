@@ -297,9 +297,9 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             "unembargo": unembargo,
             "auto_approve": auto_approve,
             "silent": silent,
-            "source_distroseries": source_distroseries.name
-            if source_distroseries
-            else None,
+            "source_distroseries": (
+                source_distroseries.name if source_distroseries else None
+            ),
             "source_pocket": source_pocket.value if source_pocket else None,
             "phased_update_percentage": phased_update_percentage,
             "move": move,

@@ -2441,9 +2441,9 @@ class DistributionSet:
         result = {}
         for spr, distro_id in releases:
             distro = getUtility(IDistributionSet).get(distro_id)
-            result[
-                distro.getSourcePackage(spr.sourcepackagename)
-            ] = DistributionSourcePackageRelease(distro, spr)
+            result[distro.getSourcePackage(spr.sourcepackagename)] = (
+                DistributionSourcePackageRelease(distro, spr)
+            )
         return result
 
     def getDerivedDistributions(self):

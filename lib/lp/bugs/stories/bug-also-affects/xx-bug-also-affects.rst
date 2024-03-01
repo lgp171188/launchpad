@@ -56,9 +56,9 @@ Let's assign the existing Ubuntu task to mozilla-firefox, then add
 another task on Ubuntu evolution.
 
     >>> browser.open("http://localhost/ubuntu/+bug/6/+editstatus")
-    >>> browser.getControl(
-    ...     name="ubuntu.target.package"
-    ... ).value = "mozilla-firefox"
+    >>> browser.getControl(name="ubuntu.target.package").value = (
+    ...     "mozilla-firefox"
+    ... )
     >>> browser.getControl("Save Changes").click()
 
     >>> browser.open(
@@ -94,9 +94,9 @@ Launchpad, we add a bug watch as well.
 
     >>> browser.getControl(name="field.distribution").value = ["debian"]
     >>> browser.getControl("Source Package Name").value = "alsa-utils"
-    >>> browser.getControl(
-    ...     "URL"
-    ... ).value = "http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=123"
+    >>> browser.getControl("URL").value = (
+    ...     "http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=123"
+    ... )
     >>> browser.getControl("Continue").click()
     >>> print(browser.url)
     http://bugs.launchpad.test/debian/+source/alsa-utils/+bug/1
@@ -107,9 +107,9 @@ error, because Ubuntu uses Launchpad as its bug tracker
     >>> browser.getLink(url="+distrotask").click()
     >>> browser.getControl("Distribution").value = ["ubuntu"]
     >>> browser.getControl("Source Package Name").value = "alsa-utils"
-    >>> browser.getControl(
-    ...     "URL"
-    ... ).value = "https://bugzilla.mozilla.org/show_bug.cgi?id=84"
+    >>> browser.getControl("URL").value = (
+    ...     "https://bugzilla.mozilla.org/show_bug.cgi?id=84"
+    ... )
     >>> browser.getControl("Continue").click()
     >>> print(browser.url)
     http://bugs.launchpad.test/debian/+source/alsa-utils/+bug/1/+distrotask
@@ -393,9 +393,9 @@ need to make sure that everything is quoted before displaying the input.
     ...     "/+choose-affected-product"
     ... )
 
-    >>> user_browser.getControl(
-    ...     "Project"
-    ... ).value = b"N\xc3\xb6 Such Product&<>"
+    >>> user_browser.getControl("Project").value = (
+    ...     b"N\xc3\xb6 Such Product&<>"
+    ... )
     >>> user_browser.getControl("Continue").click()
     >>> print(user_browser.url)
     http://.../debian/+source/mozilla-firefox/+bug/3/+choose-affected-product
@@ -420,9 +420,9 @@ white space in the bug URL it will be stripped.
     >>> user_browser.getControl("Continue").click()
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "   https://bugzilla.mozilla.org/show_bug.cgi?id=1234   "
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "   https://bugzilla.mozilla.org/show_bug.cgi?id=1234   "
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
 
 Launchpad redirects to the newly created bugtask page, with a row for
@@ -479,9 +479,9 @@ bugtask, our validator springs into action.
     >>> print(user_browser.url)
     http://bugs.launchpad.test/evolution/+bug/3/+editstatus
 
-    >>> user_browser.getControl(
-    ...     name="evolution.target.product"
-    ... ).value = "alsa-utils"
+    >>> user_browser.getControl(name="evolution.target.product").value = (
+    ...     "alsa-utils"
+    ... )
     >>> user_browser.getControl("Save Changes").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/evolution/+bug/3/+editstatus
@@ -511,9 +511,9 @@ the URL of the remote bug.
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "http://bugzilla.gnome.org/bugs/show_bug.cgi?id=42"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "http://bugzilla.gnome.org/bugs/show_bug.cgi?id=42"
+    ... )
 
 At this point, just in case we change our mind, there is a cancel link
 that points back to the bug page:
@@ -549,9 +549,9 @@ URL is HTTP.
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "https://bugzilla.gnome.org/bugs/show_bug.cgi?id=84"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "https://bugzilla.gnome.org/bugs/show_bug.cgi?id=84"
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/netapplet/+bug/4
@@ -580,9 +580,9 @@ tracker type it is), an error message is displayed.
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "http://bugs.unknown/42"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "http://bugs.unknown/42"
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
@@ -597,9 +597,9 @@ If the URL can be recognised as a valid bug URL, but no such tracker is
 registered in Launchpad, the user will be prompted to register it first.
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "http://new.trac/ticket/42"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "http://new.trac/ticket/42"
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
@@ -651,9 +651,9 @@ it to HTTP on their behalf:
     http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl("I have the URL").selected = True
-    >>> user_browser.getControl(
-    ...     name="field.bug_url"
-    ... ).value = "bugzilla.gnome.org/bugs/show_bug.cgi?id=168"
+    >>> user_browser.getControl(name="field.bug_url").value = (
+    ...     "bugzilla.gnome.org/bugs/show_bug.cgi?id=168"
+    ... )
     >>> user_browser.getControl("Add to Bug Report").click()
     >>> print(user_browser.url)
     http://bugs.launchpad.test/thunderbird/+bug/4

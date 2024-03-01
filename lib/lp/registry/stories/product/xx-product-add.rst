@@ -65,9 +65,9 @@ Realizing their mistake, Sample Person fills out the project's basic
 information correctly this time.
 
     >>> user_browser.getControl("URL").value = "aardvark"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "A project designed to placate ornery aardvarks"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "A project designed to placate ornery aardvarks"
+    ... )
 
     >>> user_browser.getControl("Continue").click()
 
@@ -92,12 +92,12 @@ modify the project's URL.
 Sample Person is given the opportunity though to change the summary.
 They can also add a longer description.
 
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Control pesky aardvarkian fnords"
-    >>> user_browser.getControl(
-    ...     "Description"
-    ... ).value = "The desktop aardvark is an ornery thing."
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Control pesky aardvarkian fnords"
+    ... )
+    >>> user_browser.getControl("Description").value = (
+    ...     "The desktop aardvark is an ornery thing."
+    ... )
     >>> user_browser.getControl("Python Licence").click()
     >>> user_browser.getControl("Complete Registration").click()
     >>> print(user_browser.title)
@@ -140,9 +140,9 @@ interested in being the project maintainer for the long run.
 
     >>> user_browser.getControl("Name").value = "kittyhawk"
     >>> user_browser.getControl("URL").value = "kittyhawk"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Kitty Hawk Air Traffic Simulator"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Kitty Hawk Air Traffic Simulator"
+    ... )
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.getControl("Python Licence").click()
     >>> disclaim = user_browser.getControl(name="field.disclaim_maintainer")
@@ -174,9 +174,9 @@ Firefox.
 
     >>> user_browser.getControl("Name").value = "Snowdog"
     >>> user_browser.getControl("URL").value = "snowdog"
-    >>> user_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Snowdog is a browser similar to Firefox"
+    >>> user_browser.getControl("Summary").value = (
+    ...     "Snowdog is a browser similar to Firefox"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
 A search is performed using the terms in the URL, title, and summary.  The

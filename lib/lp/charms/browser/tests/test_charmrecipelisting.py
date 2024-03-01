@@ -215,9 +215,9 @@ class TestCharmRecipeListing(BrowserTestCase):
         with MemoryFeatureFixture({CHARM_RECIPE_ALLOW_CREATE: "on"}):
             recipes = [create_recipe() for i in range(count)]
         for i, recipe in enumerate(recipes):
-            removeSecurityProxy(
-                recipe
-            ).date_last_modified = start_time - timedelta(seconds=i)
+            removeSecurityProxy(recipe).date_last_modified = (
+                start_time - timedelta(seconds=i)
+            )
         return [
             soupmatchers.Tag(
                 "charm recipe link",

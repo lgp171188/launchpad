@@ -494,9 +494,9 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
             distribution, self.factory.makeSourcePackageName()
         )
         bogus_dsp_cache_key = distribution.id, sourcepackagename.id
-        DistributionSourcePackageInDatabase._cache[
-            bogus_dsp_cache_key
-        ] = bogus_dsp.id
+        DistributionSourcePackageInDatabase._cache[bogus_dsp_cache_key] = (
+            bogus_dsp.id
+        )
         # Invalidate the bogus DSP from Storm's cache.
         Store.of(bogus_dsp).invalidate(bogus_dsp)
         flush_database_updates()
@@ -521,9 +521,9 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
             distribution, self.factory.makeSourcePackageName()
         )
         bogus_dsp_cache_key = distribution.id, sourcepackagename.id
-        DistributionSourcePackageInDatabase._cache[
-            bogus_dsp_cache_key
-        ] = bogus_dsp.id
+        DistributionSourcePackageInDatabase._cache[bogus_dsp_cache_key] = (
+            bogus_dsp.id
+        )
         flush_database_updates()
         with StormStatementRecorder() as recorder:
             dsp = DistributionSourcePackageInDatabase.get(

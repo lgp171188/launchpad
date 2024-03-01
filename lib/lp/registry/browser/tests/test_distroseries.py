@@ -1401,12 +1401,12 @@ class TestDistroSeriesLocalDifferences(
         )
 
         # Delete the publications.
-        removeSecurityProxy(
-            difference.source_pub
-        ).status = PackagePublishingStatus.DELETED
-        removeSecurityProxy(
-            difference.parent_source_pub
-        ).status = PackagePublishingStatus.DELETED
+        removeSecurityProxy(difference.source_pub).status = (
+            PackagePublishingStatus.DELETED
+        )
+        removeSecurityProxy(difference.parent_source_pub).status = (
+            PackagePublishingStatus.DELETED
+        )
         # Flush out the changes and invalidate caches (esp. property caches).
         flush_database_caches()
 

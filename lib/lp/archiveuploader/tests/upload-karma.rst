@@ -55,9 +55,9 @@ Poke the queue entry so it looks like Foo Bar (name16) uploaded it:
     >>> name16 = getUtility(IPersonSet).getByName("name16")
     >>> key = getUtility(IGPGKeySet).getGPGKeysForPerson(name16)[0]
     >>> removeSecurityProxy(foo_src.queue_root).signing_key_owner = key.owner
-    >>> removeSecurityProxy(
-    ...     foo_src.queue_root
-    ... ).signing_key_fingerprint = key.fingerprint
+    >>> removeSecurityProxy(foo_src.queue_root).signing_key_fingerprint = (
+    ...     key.fingerprint
+    ... )
     >>> transaction.commit()
     >>> foo_src.queue_root.acceptFromQueue()
     Karma added: action=distributionuploadaccepted, distribution=ubuntu

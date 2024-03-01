@@ -66,7 +66,6 @@ class StructuralSubscriptionNavigation(Navigation):
 
 
 class StructuralSubscriptionView(LaunchpadFormView):
-
     """View class for structural subscriptions."""
 
     schema = IStructuralSubscriptionForm

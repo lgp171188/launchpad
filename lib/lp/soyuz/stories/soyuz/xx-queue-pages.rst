@@ -328,9 +328,9 @@ Upload a new "bar" source so we can accept it later.
 
     >>> from lp.soyuz.enums import PackageUploadStatus
     >>> from lp.soyuz.model.queue import PassthroughStatusValue
-    >>> removeSecurityProxy(
-    ...     bar_src.package_upload
-    ... ).status = PassthroughStatusValue(PackageUploadStatus.NEW)
+    >>> removeSecurityProxy(bar_src.package_upload).status = (
+    ...     PassthroughStatusValue(PackageUploadStatus.NEW)
+    ... )
     >>> bar_queue_id = bar_src.package_upload.id
 
 Swallow any email generated at the upload:
@@ -588,9 +588,9 @@ Rejecting 'alsa-utils' source:
     >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ["4"]
     >>> upload_manager_browser.getControl(name="Reject").disabled
     False
-    >>> upload_manager_browser.getControl(
-    ...     name="rejection_comment"
-    ... ).value = "Foo"
+    >>> upload_manager_browser.getControl(name="rejection_comment").value = (
+    ...     "Foo"
+    ... )
     >>> upload_manager_browser.getControl(name="Reject").click()
     >>> print_feedback_messages(upload_manager_browser.contents)
     OK: alsa-utils

@@ -951,9 +951,9 @@ class TestRegisterBranchMergeProposalViewGit(
     def test_default_branch(self):
         with admin_logged_in():
             target_branch = self._makeTargetBranch(target_default=True)
-        removeSecurityProxy(
-            target_branch.repository
-        )._default_branch = target_branch.path
+        removeSecurityProxy(target_branch.repository)._default_branch = (
+            target_branch.path
+        )
         view = self._createView()
         self.assertEqual(
             target_branch.repository.default_branch.split("/")[-1],

@@ -1,0 +1,61 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad"
+>
+<body>
+
+<div metal:fill-slot="main">
+<div metal:use-macro="context/@@launchpad_form/form">
+  <div metal:fill-slot="widgets">
+
+    <p tal:condition="view/error_message"
+       tal:content="structure view/error_message/escapedtext" class="error message" />
+
+    <table>
+
+      <tr>
+        <td tal:repeat="header view/identity_headers">
+          <label tal:content="header"></label>
+        </td>
+      </tr>
+
+      <tr tal:repeat="social_account view/existing_accounts">
+        <td tal:repeat="field view/platform/identity_fields">
+          <input type="text"
+                 tal:attributes="name string:${field}_${social_account/id};
+                                 value python:social_account.identity[field];
+                                 class string:field_${field}" />
+        </td>
+        <td>
+          <label>
+            <input type="checkbox"
+                    value="Remove"
+                    tal:attributes="name string:remove_${social_account/id}" />
+            Remove
+          </label>
+        </td>
+      </tr>
+
+      <tr>
+        <td tal:repeat="field view/platform/identity_fields">
+          <input type="text"
+                 tal:attributes="value python:view.new_identity.get(field);
+                                 name string:new_${field};
+                                 placeholder string:Enter new ${field}" />
+        </td>
+      </tr>
+
+      <tr>
+        <td tal:repeat="example view/identity_examples" tal:content="string:Example: ${example}"></td>
+      </tr>
+    </table>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

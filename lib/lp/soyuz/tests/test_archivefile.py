@@ -318,18 +318,18 @@ class TestArchiveFile(TestCaseWithFactory):
             )
         )
         now = get_transaction_timestamp(Store.of(archive_files[0]))
-        removeSecurityProxy(
-            archive_files[0]
-        ).scheduled_deletion_date = now - timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[1]
-        ).scheduled_deletion_date = now - timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[2]
-        ).scheduled_deletion_date = now + timedelta(days=1)
-        removeSecurityProxy(
-            archive_files[6]
-        ).scheduled_deletion_date = now - timedelta(days=1)
+        removeSecurityProxy(archive_files[0]).scheduled_deletion_date = (
+            now - timedelta(days=1)
+        )
+        removeSecurityProxy(archive_files[1]).scheduled_deletion_date = (
+            now - timedelta(days=1)
+        )
+        removeSecurityProxy(archive_files[2]).scheduled_deletion_date = (
+            now + timedelta(days=1)
+        )
+        removeSecurityProxy(archive_files[6]).scheduled_deletion_date = (
+            now - timedelta(days=1)
+        )
         archive_file_set = getUtility(IArchiveFileSet)
         self.assertContentEqual(
             ["release:foo"], archive_file_set.getContainersToReap(archive)
@@ -337,9 +337,9 @@ class TestArchiveFile(TestCaseWithFactory):
         self.assertContentEqual(
             ["baz"], archive_file_set.getContainersToReap(other_archive)
         )
-        removeSecurityProxy(
-            archive_files[3]
-        ).scheduled_deletion_date = now - timedelta(days=1)
+        removeSecurityProxy(archive_files[3]).scheduled_deletion_date = (
+            now - timedelta(days=1)
+        )
         self.assertContentEqual(
             ["release:foo", "other:bar"],
             archive_file_set.getContainersToReap(archive),

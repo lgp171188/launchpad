@@ -78,9 +78,9 @@ First a user adds a product named newproductname.
     >>> user_browser.getControl("Summary").value = "summary"
     >>> user_browser.getControl("Continue").click()
 
-    >>> user_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "description"
+    >>> user_browser.getControl(name="field.description").value = (
+    ...     "description"
+    ... )
     >>> user_browser.getControl(name="field.licenses").value = ["GNU_GPL_V2"]
     >>> user_browser.getControl(name="field.license_info").value = "foo"
     >>> user_browser.getControl("Complete Registration").click()
@@ -95,9 +95,9 @@ Then a product named newproductname2.
     >>> user_browser.getControl("Summary").value = "summary2"
     >>> user_browser.getControl("Continue").click()
 
-    >>> user_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "description2"
+    >>> user_browser.getControl(name="field.description").value = (
+    ...     "description2"
+    ... )
     >>> user_browser.getControl(name="field.licenses").value = ["GNU_GPL_V2"]
     >>> user_browser.getControl(name="field.license_info").value = "foo"
     >>> user_browser.getControl("Complete Registration").click()

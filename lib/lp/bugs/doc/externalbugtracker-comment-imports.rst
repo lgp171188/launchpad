@@ -192,9 +192,9 @@ is associated with the existing person.
     ...     "No Priv",
     ...     "no-priv@canonical.com",
     ... )
-    >>> external_bugtracker.remote_comments[
-    ...     "no-priv-comment"
-    ... ] = "The fifth comment."
+    >>> external_bugtracker.remote_comments["no-priv-comment"] = (
+    ...     "The fifth comment."
+    ... )
 
     >>> transaction.commit()
 
@@ -211,9 +211,9 @@ method will return a tuple of (displayname, None), which can then be
 used to create a Person based on the displayname alone.
 
     >>> external_bugtracker.poster_tuple = ("noemail", None)
-    >>> external_bugtracker.remote_comments[
-    ...     "no-email-comment"
-    ... ] = "Yet another comment."
+    >>> external_bugtracker.remote_comments["no-email-comment"] = (
+    ...     "Yet another comment."
+    ... )
 
     >>> transaction.commit()
 
@@ -237,9 +237,9 @@ created for them) an error will be logged and the comment will not be
 imported.
 
     >>> external_bugtracker.poster_tuple = (None, None)
-    >>> external_bugtracker.remote_comments[
-    ...     "invalid-person-comment"
-    ... ] = "This will not be imported."
+    >>> external_bugtracker.remote_comments["invalid-person-comment"] = (
+    ...     "This will not be imported."
+    ... )
 
     >>> transaction.commit()
 
@@ -464,9 +464,9 @@ includes a CVE reference appear to come from a valid Launchpad user.
     ...     foo_bar.displayname,
     ...     foo_bar.preferredemail.email,
     ... )
-    >>> external_bugtracker.remote_comments[
-    ...     "6"
-    ... ] = "Another comment, another CVE: CVE-1999-0593."
+    >>> external_bugtracker.remote_comments["6"] = (
+    ...     "Another comment, another CVE: CVE-1999-0593."
+    ... )
 
 Once again, CVE links are created but no karma is assigned.
 

@@ -22,9 +22,9 @@ We can set the summary while creating a milestone for a Distribution.
 
     >>> test_browser.open("http://launchpad.test/ubuntu/hoary/+addmilestone")
     >>> test_browser.getControl("Name").value = "milestone1"
-    >>> test_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Summary of first Ubuntu milestone."
+    >>> test_browser.getControl("Summary").value = (
+    ...     "Summary of first Ubuntu milestone."
+    ... )
     >>> test_browser.getControl("Register Milestone").click()
 
 The summary appears on the milestone index page.
@@ -41,9 +41,9 @@ We can edit the summary after creating the milestone.
     >>> test_browser.open(
     ...     "http://launchpad.test/ubuntu/+milestone/milestone1/+edit"
     ... )
-    >>> test_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Modified summary of first Ubuntu milestone."
+    >>> test_browser.getControl("Summary").value = (
+    ...     "Modified summary of first Ubuntu milestone."
+    ... )
     >>> test_browser.getControl("Update").click()
 
 And see that it is indeed modified on the milestone page.
@@ -65,9 +65,9 @@ We can set the summary while creating a milestone for a Product.
     ...     "http://launchpad.test/alsa-utils/trunk/+addmilestone"
     ... )
     >>> test_browser.getControl("Name").value = "milestone1"
-    >>> test_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Summary of first alsa-utils milestone."
+    >>> test_browser.getControl("Summary").value = (
+    ...     "Summary of first alsa-utils milestone."
+    ... )
     >>> test_browser.getControl("Register Milestone").click()
 
 The summary appears on the milestone index page.
@@ -84,9 +84,9 @@ We can edit the summary after creating the milestone.
     >>> test_browser.open(
     ...     "http://launchpad.test/alsa-utils/+milestone/milestone1/+edit"
     ... )
-    >>> test_browser.getControl(
-    ...     "Summary"
-    ... ).value = "Modified summary of first alsa-utils milestone."
+    >>> test_browser.getControl("Summary").value = (
+    ...     "Modified summary of first alsa-utils milestone."
+    ... )
     >>> test_browser.getControl("Update").click()
 
 And see that it is indeed modified on the milestone page.

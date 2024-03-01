@@ -62,17 +62,17 @@ class CommercialHelpers:
         expired_date = (
             product.commercial_subscription.date_expires - timedelta(days=365)
         )
-        removeSecurityProxy(
-            product.commercial_subscription
-        ).date_expires = expired_date
+        removeSecurityProxy(product.commercial_subscription).date_expires = (
+            expired_date
+        )
 
     def make_expiring_product(self, date_expires, job_class=None):
         product = self.factory.makeProduct(
             licenses=[License.OTHER_PROPRIETARY]
         )
-        removeSecurityProxy(
-            product.commercial_subscription
-        ).date_expires = date_expires
+        removeSecurityProxy(product.commercial_subscription).date_expires = (
+            date_expires
+        )
         if job_class:
             reviewer = getUtility(ILaunchpadCelebrities).janitor
             job_class.create(product, reviewer)

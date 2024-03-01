@@ -58,9 +58,9 @@ the branch name to use in Launchpad, and the branch owner.
     >>> browser.getControl("Import a branch hosted somewhere else").click()
     >>> browser.getControl("Branch name").value = "bzr-firefox-branch"
     >>> browser.getControl(name="field.rcs_type").value = ["BZR"]
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "https://bzr.example.com/branch"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "https://bzr.example.com/branch"
+    ... )
     >>> browser.getControl("Update").click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
@@ -74,9 +74,9 @@ The process is the same for a Git external branch, though the novel
     >>> browser.getControl("Import a branch hosted somewhere else").click()
     >>> browser.getControl("Branch name").value = "git-firefox-branch"
     >>> browser.getControl(name="field.rcs_type").value = ["GIT"]
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "git://git.example.com/branch"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "git://git.example.com/branch"
+    ... )
     >>> browser.getControl("Update").click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
@@ -89,9 +89,9 @@ Likewise Subversion can use the "svn://" scheme.
     >>> browser.getControl("Import a branch hosted somewhere else").click()
     >>> browser.getControl("Branch name").value = "svn-firefox-branch"
     >>> browser.getControl(name="field.rcs_type").value = ["BZR_SVN"]
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "svn://svn.example.com/branch"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "svn://svn.example.com/branch"
+    ... )
     >>> browser.getControl("Update").click()
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
@@ -104,9 +104,9 @@ The branch owner can be the logged in user or one of their teams.
     >>> browser.getControl("Import a branch hosted somewhere else").click()
     >>> browser.getControl("Branch name").value = "git-firefox-branch"
     >>> browser.getControl(name="field.rcs_type").value = ["GIT"]
-    >>> browser.getControl(
-    ...     "Branch URL"
-    ... ).value = "http://git.example.com/branch"
+    >>> browser.getControl("Branch URL").value = (
+    ...     "http://git.example.com/branch"
+    ... )
     >>> browser.getControl("Branch owner").value = ["hwdb-team"]
     >>> browser.getControl("Update").click()
     >>> print_feedback_messages(browser.contents)

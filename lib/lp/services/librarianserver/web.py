@@ -31,7 +31,7 @@ defaultResource = static.Data(
         file repository used by
         <a href="https://launchpad.net/">Launchpad</a>.
         </p>
-        <p><small>Copyright 2004-2023 Canonical Ltd.</small></p>
+        <p><small>Copyright 2004 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
         """,
@@ -184,9 +184,11 @@ class LibraryFileAliasResource(resource.Resource):
             # cached forever, while private ones mustn't be at all.
             request.setHeader(
                 "Cache-Control",
-                "max-age=31536000, public"
-                if not restricted
-                else "max-age=0, private",
+                (
+                    "max-age=31536000, public"
+                    if not restricted
+                    else "max-age=0, private"
+                ),
             )
             return file
         elif self.upstreamHost is not None:

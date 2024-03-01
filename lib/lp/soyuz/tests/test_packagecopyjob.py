@@ -1987,9 +1987,9 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
 
         # If the dsd differs only in parent series, that's enough to
         # make it a non-match.
-        removeSecurityProxy(
-            dsd
-        ).parent_series = self.factory.makeDistroSeries()
+        removeSecurityProxy(dsd).parent_series = (
+            self.factory.makeDistroSeries()
+        )
 
         self.assertContentEqual([], naked_job.findMatchingDSDs())
 

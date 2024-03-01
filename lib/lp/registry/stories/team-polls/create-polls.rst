@@ -44,9 +44,9 @@ test the name field validator.
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll"
     ... ).value = "election_2100"
-    >>> team_admin_browser.getControl(
-    ...     "The title of this poll"
-    ... ).value = "Presidential Election 2100"
+    >>> team_admin_browser.getControl("The title of this poll").value = (
+    ...     "Presidential Election 2100"
+    ... )
     >>> proposition = "Who is going to be the next president?"
     >>> team_admin_browser.getControl(
     ...     "The proposition that is going to be voted"
@@ -54,12 +54,12 @@ test the name field validator.
     >>> team_admin_browser.getControl(
     ...     "Users can spoil their votes?"
     ... ).selected = True
-    >>> team_admin_browser.getControl(
-    ...     name="field.dateopens"
-    ... ).value = "2100-06-04 02:00:00+00:00"
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = "2100-07-04 02:00:00+00:00"
+    >>> team_admin_browser.getControl(name="field.dateopens").value = (
+    ...     "2100-06-04 02:00:00+00:00"
+    ... )
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     "2100-07-04 02:00:00+00:00"
+    ... )
     >>> team_admin_browser.getControl("Continue").click()
 
     >>> print_feedback_messages(team_admin_browser.contents)
@@ -71,12 +71,12 @@ We fix the name, but swap the dates. Again a nice error message.
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll"
     ... ).value = "election-2100"
-    >>> team_admin_browser.getControl(
-    ...     name="field.dateopens"
-    ... ).value = "2100-07-04 02:00:00+00:00"
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = "2100-06-04 02:00:00+00:00"
+    >>> team_admin_browser.getControl(name="field.dateopens").value = (
+    ...     "2100-07-04 02:00:00+00:00"
+    ... )
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     "2100-06-04 02:00:00+00:00"
+    ... )
     >>> team_admin_browser.getControl("Continue").click()
 
     >>> print_feedback_messages(team_admin_browser.contents)
@@ -85,12 +85,12 @@ We fix the name, but swap the dates. Again a nice error message.
 
 Now we get it right.
 
-    >>> team_admin_browser.getControl(
-    ...     name="field.dateopens"
-    ... ).value = "2100-06-04 02:00:00+00:00"
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = "2100-07-04 02:00:00+00:00"
+    >>> team_admin_browser.getControl(name="field.dateopens").value = (
+    ...     "2100-06-04 02:00:00+00:00"
+    ... )
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     "2100-07-04 02:00:00+00:00"
+    ... )
     >>> team_admin_browser.getControl("Continue").click()
 
 We're redirected to the newly created poll page.
@@ -124,9 +124,9 @@ Create a new poll that starts tomorrow and will last for ten years.
     ...     "Users can spoil their votes?"
     ... ).selected = True
     >>> team_admin_browser.getControl(name="field.dateopens").value = tomorrow
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = ten_years_from_now
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     ten_years_from_now
+    ... )
     >>> team_admin_browser.getControl("Continue").click()
 
 We're redirected to the newly created poll
@@ -171,9 +171,9 @@ Now lets try to insert a poll with the name of a existing one.
     ...     "Users can spoil their votes?"
     ... ).selected = True
     >>> team_admin_browser.getControl(name="field.dateopens").value = tomorrow
-    >>> team_admin_browser.getControl(
-    ...     name="field.datecloses"
-    ... ).value = ten_years_from_now
+    >>> team_admin_browser.getControl(name="field.datecloses").value = (
+    ...     ten_years_from_now
+    ... )
     >>> team_admin_browser.getControl("Continue").click()
 
     >>> print_feedback_messages(team_admin_browser.contents)

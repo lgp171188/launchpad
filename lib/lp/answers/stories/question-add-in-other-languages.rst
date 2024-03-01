@@ -33,9 +33,9 @@ a language that is not spoken/understood by any of the context's answer
 contacts.
 
     >>> browser.getControl("Language").value = ["pt_BR"]
-    >>> browser.getControl(
-    ...     "Summary"
-    ... ).value = "Abrir uma pagina que requer java quebra o firefox"
+    >>> browser.getControl("Summary").value = (
+    ...     "Abrir uma pagina que requer java quebra o firefox"
+    ... )
     >>> browser.getControl("Continue").click()
 
 At this point we'll present any similar questions (in any language)
@@ -145,12 +145,12 @@ If they change the language to another unsupported language, we will
 display the warning again.
 
     >>> browser.getControl("Language").value = ["ja"]
-    >>> browser.getControl(
-    ...     "Summary"
-    ... ).value = "\u52a9\u3051\u306e\u8981\u6c42".encode("utf-8")
-    >>> browser.getControl(
-    ...     "Description"
-    ... ).value = "\u3042\u308b\u4efb\u610f\u5358\u8a9e\u3002".encode("utf-8")
+    >>> browser.getControl("Summary").value = (
+    ...     "\u52a9\u3051\u306e\u8981\u6c42".encode("utf-8")
+    ... )
+    >>> browser.getControl("Description").value = (
+    ...     "\u3042\u308b\u4efb\u610f\u5358\u8a9e\u3002".encode("utf-8")
+    ... )
     >>> browser.getControl("Post Question").click()
 
     >>> for tag in find_tags_by_class(browser.contents, "warning message"):

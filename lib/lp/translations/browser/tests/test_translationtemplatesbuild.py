@@ -50,9 +50,7 @@ class TestTranslationTemplatesBuild(TestCaseWithFactory):
         """Create a `ProductSeries` that imports templates from `branch`."""
         productseries = self.factory.makeProductSeries()
         removeSecurityProxy(productseries).branch = branch
-        removeSecurityProxy(
-            productseries
-        ).translations_autoimport_mode = (
+        removeSecurityProxy(productseries).translations_autoimport_mode = (
             TranslationsBranchImportMode.IMPORT_TEMPLATES
         )
         return productseries

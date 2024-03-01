@@ -40,13 +40,13 @@ class BuilderProxyMixin:
     ) -> Generator[None, Dict[str, str], None]:
         if _get_proxy_config("builder_proxy_host") and allow_internet:
             token = yield self._requestProxyToken()
-            args[
-                "proxy_url"
-            ] = "http://{username}:{password}@{host}:{port}".format(
-                username=token["username"],
-                password=token["secret"],
-                host=_get_proxy_config("builder_proxy_host"),
-                port=_get_proxy_config("builder_proxy_port"),
+            args["proxy_url"] = (
+                "http://{username}:{password}@{host}:{port}".format(
+                    username=token["username"],
+                    password=token["secret"],
+                    host=_get_proxy_config("builder_proxy_host"),
+                    port=_get_proxy_config("builder_proxy_port"),
+                )
             )
             args["revocation_endpoint"] = "{endpoint}/{token}".format(
                 endpoint=_get_proxy_config("builder_proxy_auth_api_endpoint"),

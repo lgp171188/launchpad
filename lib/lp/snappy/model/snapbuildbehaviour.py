@@ -170,9 +170,9 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
                 args["git_repository"] = url
             else:
-                args[
-                    "git_repository"
-                ] = build.snap.git_repository.git_https_url
+                args["git_repository"] = (
+                    build.snap.git_repository.git_https_url
+                )
             # "git clone -b" doesn't accept full ref names.  If this becomes
             # a problem then we could change launchpad-buildd to do "git
             # clone" followed by "git checkout" instead.

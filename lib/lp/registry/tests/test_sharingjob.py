@@ -721,41 +721,41 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
 
     def test_change_information_type_branch(self):
         def change_information_type(branch):
-            removeSecurityProxy(
-                branch
-            ).information_type = InformationType.PRIVATESECURITY
+            removeSecurityProxy(branch).information_type = (
+                InformationType.PRIVATESECURITY
+            )
 
         self._assert_branch_change_unsubscribes(change_information_type)
 
     def test_change_information_type_gitrepository(self):
         def change_information_type(gitrepository):
-            removeSecurityProxy(
-                gitrepository
-            ).information_type = InformationType.PRIVATESECURITY
+            removeSecurityProxy(gitrepository).information_type = (
+                InformationType.PRIVATESECURITY
+            )
 
         self._assert_gitrepository_change_unsubscribes(change_information_type)
 
     def test_change_information_type_snap(self):
         def change_information_type(snap):
-            removeSecurityProxy(
-                snap
-            ).information_type = InformationType.PRIVATESECURITY
+            removeSecurityProxy(snap).information_type = (
+                InformationType.PRIVATESECURITY
+            )
 
         self._assert_snap_change_unsubscribes(change_information_type)
 
     def test_change_information_type_specification(self):
         def change_information_type(specification):
-            removeSecurityProxy(
-                specification
-            ).information_type = InformationType.EMBARGOED
+            removeSecurityProxy(specification).information_type = (
+                InformationType.EMBARGOED
+            )
 
         self._assert_specification_change_unsubscribes(change_information_type)
 
     def test_change_information_type_ocirecipe(self):
         def change_information_type(ocirecipe):
-            removeSecurityProxy(
-                ocirecipe
-            ).information_type = InformationType.PRIVATESECURITY
+            removeSecurityProxy(ocirecipe).information_type = (
+                InformationType.PRIVATESECURITY
+            )
 
         self._assert_ocirecipe_change_unsubscribes(change_information_type)
 
@@ -765,9 +765,9 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         def change_information_type(bug):
             # Set the info_type attribute directly since
             # transitionToInformationType queues a job.
-            removeSecurityProxy(
-                bug
-            ).information_type = InformationType.PRIVATESECURITY
+            removeSecurityProxy(bug).information_type = (
+                InformationType.PRIVATESECURITY
+            )
 
         self._assert_bug_change_unsubscribes(change_information_type)
 

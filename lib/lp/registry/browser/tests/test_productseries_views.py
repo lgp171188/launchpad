@@ -195,9 +195,9 @@ class TestWithBrowser(BrowserTestCase):
             distroseries=ubuntu_series, publish=True
         )
         browser = self.getBrowser(productseries, "+ubuntupkg")
-        browser.getControl(
-            "Source Package Name"
-        ).value = sp.sourcepackagename.name
+        browser.getControl("Source Package Name").value = (
+            sp.sourcepackagename.name
+        )
         browser.getControl(ubuntu_series.displayname).selected = True
         browser.getControl("Update").click()
         tag = soupmatchers.Tag(

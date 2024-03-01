@@ -11,30 +11,13 @@ page and managed via a special admin-only page.
 The home page listing
 ---------------------
 
-Featured projects are visible to everyone on the home page. One project is
-featured as "project of the day" depending on the current day. As we do not
-know the current day, we replace that selection method in the view with a
-constant value.
-
-    >>> def fake_get_day_of_year():
-    ...     return 4
-    ...
-    >>> from lp.app.browser.root import LaunchpadRootIndexView
-    >>> LaunchpadRootIndexView._get_day_of_year = staticmethod(
-    ...     fake_get_day_of_year
-    ... )
-
 Anonymous users will see the list of featured projects with links to the
-projects' pages in Launchpad. The "project of the day" is listed separately.
+projects' pages in Launchpad.
 
     >>> anon_browser.open("http://launchpad.test/")
     >>> featured = find_tag_by_id(anon_browser.contents, "homepage-featured")
     >>> print(extract_text(featured.h2))
     Featured projects
-
-    >>> top_project = featured.find("", "featured-project-top")
-    >>> print(extract_text(top_project.h3))
-    GNOME
 
     >>> featured_list = featured.find("", "featured-projects-list")
     >>> for link in featured_list.find_all("a"):
@@ -44,6 +27,7 @@ projects' pages in Launchpad. The "project of the day" is listed separately.
     Bazaar
     Mozilla Firefox
     Gentoo
+    GNOME
     GNOME Terminal
     The Mozilla Project
     Mozilla Thunderbird
@@ -98,10 +82,6 @@ is now at index '4' and is therefore displayed as the top project:
 
     >>> anon_browser.open("http://launchpad.test/")
     >>> featured = find_tag_by_id(anon_browser.contents, "homepage-featured")
-    >>> top_project = featured.find("", "featured-project-top")
-    >>> print(extract_text(top_project.h3))
-    Gentoo
-
     >>> featured_list = featured.find("", "featured-projects-list")
     >>> for link in featured_list.find_all("a"):
     ...     print(extract_text(link))
@@ -110,6 +90,7 @@ is now at index '4' and is therefore displayed as the top project:
     Gnome Applets
     Bazaar
     Mozilla Firefox
+    Gentoo
     GNOME
     GNOME Terminal
     The Mozilla Project
@@ -136,11 +117,11 @@ that Apache has been removed:
     >>> for link in featured.find_all("a"):
     ...     print(extract_text(link))
     ...
-    GNOME
     Gnome Applets
     Bazaar
     Mozilla Firefox
     Gentoo
+    GNOME
     GNOME Terminal
     The Mozilla Project
     Mozilla Thunderbird

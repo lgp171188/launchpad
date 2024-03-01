@@ -1092,9 +1092,9 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         # If the target is private, the landing targets should not include it.
         bmp = self.factory.makeBranchMergeProposal()
         branch = bmp.source_branch
-        removeSecurityProxy(
-            bmp.target_branch
-        ).information_type = InformationType.USERDATA
+        removeSecurityProxy(bmp.target_branch).information_type = (
+            InformationType.USERDATA
+        )
         view = create_view(branch, "+index")
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.landing_targets)
@@ -1115,9 +1115,9 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         # it.
         bmp = self.factory.makeBranchMergeProposal()
         branch = bmp.target_branch
-        removeSecurityProxy(
-            bmp.source_branch
-        ).information_type = InformationType.USERDATA
+        removeSecurityProxy(bmp.source_branch).information_type = (
+            InformationType.USERDATA
+        )
         view = create_view(branch, "+index")
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.landing_candidates)
@@ -1137,9 +1137,9 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         # the target is private, then the dependent_branches are not shown.
         branch = self.factory.makeProductBranch()
         bmp = self.factory.makeBranchMergeProposal(prerequisite_branch=branch)
-        removeSecurityProxy(
-            bmp.source_branch
-        ).information_type = InformationType.USERDATA
+        removeSecurityProxy(bmp.source_branch).information_type = (
+            InformationType.USERDATA
+        )
         view = create_view(branch, "+index")
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.dependent_branches)

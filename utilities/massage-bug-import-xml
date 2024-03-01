@@ -173,24 +173,23 @@ def massage(root, project_name, fix_nickname, tag_nickname):
                 attachment = etree.SubElement(
                     first_comment, "{%s}attachment" % NS
                 )
-                etree.SubElement(
-                    attachment, "{%s}filename" % NS
-                ).text = "%s-bug-%s-full-description.txt" % (
-                    project_name,
-                    bug.get("id"),
+                etree.SubElement(attachment, "{%s}filename" % NS).text = (
+                    "%s-bug-%s-full-description.txt"
+                    % (
+                        project_name,
+                        bug.get("id"),
+                    )
                 )
-                etree.SubElement(
-                    attachment, "{%s}title" % NS
-                ).text = "Full description (text/plain, utf-8)"
-                etree.SubElement(
-                    attachment, "{%s}mimetype" % NS
-                ).text = "text/plain"
-                etree.SubElement(
-                    attachment, "{%s}contents" % NS
-                ).text = standard_b64encode(
-                    first_comment_text.text.encode("utf-8")
-                ).decode(
-                    "ascii"
+                etree.SubElement(attachment, "{%s}title" % NS).text = (
+                    "Full description (text/plain, utf-8)"
+                )
+                etree.SubElement(attachment, "{%s}mimetype" % NS).text = (
+                    "text/plain"
+                )
+                etree.SubElement(attachment, "{%s}contents" % NS).text = (
+                    standard_b64encode(
+                        first_comment_text.text.encode("utf-8")
+                    ).decode("ascii")
                 )
                 # Trim the comment text.
                 problem_resolution("Trimming comment text.")

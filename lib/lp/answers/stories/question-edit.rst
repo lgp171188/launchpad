@@ -75,18 +75,18 @@ Any logged in user can change the question source package on the
 
     >>> user_browser.open("http://launchpad.test/ubuntu/+question/5")
     >>> user_browser.getLink("Edit question").click()
-    >>> user_browser.getControl(
-    ...     name="field.target.package"
-    ... ).value = "linux-source-2.6.15"
+    >>> user_browser.getControl(name="field.target.package").value = (
+    ...     "linux-source-2.6.15"
+    ... )
     >>> user_browser.getControl("Save Changes").click()
 
 Product questions ignore sourcepackage information if it is submitted:
 
     >>> user_browser.open("http://launchpad.test/firefox/+question/2")
     >>> user_browser.getLink("Edit question").click()
-    >>> user_browser.getControl(
-    ...     name="field.target.package"
-    ... ).value = "linux-source-2.6.15"
+    >>> user_browser.getControl(name="field.target.package").value = (
+    ...     "linux-source-2.6.15"
+    ... )
     >>> user_browser.getControl("Save Changes").click()
 
 

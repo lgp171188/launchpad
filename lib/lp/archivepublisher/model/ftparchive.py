@@ -982,9 +982,9 @@ class FTPArchiveHandler:
                 "DISTS": os.path.basename(self._config.distsroot),
                 "HIDEEXTRA": "",
                 # Must match DdtpTarballUpload.shouldInstall.
-                "LONGDESCRIPTION": "true"
-                if include_long_descriptions
-                else "false",
+                "LONGDESCRIPTION": (
+                    "true" if include_long_descriptions else "false"
+                ),
             }
         )
 

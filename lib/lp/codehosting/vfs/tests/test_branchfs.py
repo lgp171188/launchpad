@@ -168,10 +168,10 @@ class TestTransportDispatch(TestCase):
     def test_makeTransport_control(self):
         # makeTransport returns a control transport for the tuple.
         log = []
-        self.factory._transport_factories[
-            CONTROL_TRANSPORT
-        ] = lambda default_stack_on, trailing_path: log.append(
-            default_stack_on
+        self.factory._transport_factories[CONTROL_TRANSPORT] = (
+            lambda default_stack_on, trailing_path: log.append(
+                default_stack_on
+            )
         )
         transport, path = self.factory.makeTransport(
             (CONTROL_TRANSPORT, {"default_stack_on": "foo"}, "bar/baz")
@@ -182,9 +182,9 @@ class TestTransportDispatch(TestCase):
     def test_makeTransport_branch(self):
         # makeTransport returns a control transport for the tuple.
         log = []
-        self.factory._transport_factories[
-            BRANCH_TRANSPORT
-        ] = lambda id, writable, trailing_path: log.append((id, writable))
+        self.factory._transport_factories[BRANCH_TRANSPORT] = (
+            lambda id, writable, trailing_path: log.append((id, writable))
+        )
         transport, path = self.factory.makeTransport(
             (BRANCH_TRANSPORT, {"id": 1, "writable": True}, "bar/baz")
         )

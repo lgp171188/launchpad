@@ -708,7 +708,6 @@ class TestBugTaskTags(TestCase):
 
 
 class TestBugTaskBadges(TestCaseWithFactory):
-
     """Verify getBugTaskBadgeProperties"""
 
     layer = DatabaseFunctionalLayer

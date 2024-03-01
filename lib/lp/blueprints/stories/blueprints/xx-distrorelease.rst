@@ -19,9 +19,9 @@ Then we try to add a specification to that distro
 
     >>> user_browser.getControl("Name").value = "testspec"
     >>> user_browser.getControl("Title").value = "Test Specification"
-    >>> user_browser.getControl(
-    ...     "Specification URL"
-    ... ).value = "http://wiki.test.com"
+    >>> user_browser.getControl("Specification URL").value = (
+    ...     "http://wiki.test.com"
+    ... )
     >>> user_browser.getControl("Summary").value = "TEst spec add"
     >>> user_browser.getControl("Definition Status").value = ["NEW"]
     >>> user_browser.getControl("Assignee").value = "test@canonical.com"

@@ -64,9 +64,9 @@ Bug Supervisor
 Ubuntu needs a Bug Supervisor first of all:
 
     >>> admin_browser.open("http://bugs.launchpad.test/ubuntu/+bugsupervisor")
-    >>> admin_browser.getControl(
-    ...     "Bug Supervisor"
-    ... ).value = "test@canonical.com"
+    >>> admin_browser.getControl("Bug Supervisor").value = (
+    ...     "test@canonical.com"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> print(

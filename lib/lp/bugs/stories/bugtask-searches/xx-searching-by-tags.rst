@@ -40,9 +40,9 @@ We go to the global bug search page and search for bugs with all the tags.
 Only 'test bug a' is returned.
 
     >>> anon_browser.open("http://bugs.launchpad.test/bugs/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     name="field.tag"
-    ... ).value = "test-tag-1 test-tag-2"
+    >>> anon_browser.getControl(name="field.tag").value = (
+    ...     "test-tag-1 test-tag-2"
+    ... )
     >>> anon_browser.getControl(name="field.tags_combinator").value = ["ALL"]
     >>> anon_browser.getControl("Search", index=1).click()
     >>> "test bug a" in anon_browser.contents
@@ -54,9 +54,9 @@ We go to the bug search page and search for bugs with any of the tags.
 Both bugs are returned.
 
     >>> anon_browser.open("http://launchpad.test/firefox/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     name="field.tag"
-    ... ).value = "test-tag-1 test-tag-2"
+    >>> anon_browser.getControl(name="field.tag").value = (
+    ...     "test-tag-1 test-tag-2"
+    ... )
     >>> anon_browser.getControl(name="field.tags_combinator").value = ["ANY"]
     >>> anon_browser.getControl("Search", index=1).click()
     >>> "test bug a" in anon_browser.contents
@@ -67,9 +67,9 @@ Both bugs are returned.
 Same works for user related bugs:
 
     >>> anon_browser.open("http://launchpad.test/~name16/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     name="field.tag"
-    ... ).value = "test-tag-1 test-tag-2"
+    >>> anon_browser.getControl(name="field.tag").value = (
+    ...     "test-tag-1 test-tag-2"
+    ... )
     >>> anon_browser.getControl(name="field.tags_combinator").value = ["ANY"]
     >>> anon_browser.getControl("Search", index=1).click()
     >>> "test bug a" in anon_browser.contents
@@ -81,9 +81,9 @@ When we search for bugs with all the tags, though, only the first bug is
 returned, since it's the only bug with both tags.
 
     >>> anon_browser.open("http://launchpad.test/firefox/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     name="field.tag"
-    ... ).value = "test-tag-1 test-tag-2"
+    >>> anon_browser.getControl(name="field.tag").value = (
+    ...     "test-tag-1 test-tag-2"
+    ... )
     >>> anon_browser.getControl(name="field.tags_combinator").value = ["ALL"]
     >>> anon_browser.getControl("Search", index=1).click()
     >>> "test bug a" in anon_browser.contents
@@ -94,9 +94,9 @@ returned, since it's the only bug with both tags.
 And also for user related bugs:
 
     >>> anon_browser.open("http://launchpad.test/~name16/+bugs?advanced=1")
-    >>> anon_browser.getControl(
-    ...     name="field.tag"
-    ... ).value = "test-tag-1 test-tag-2"
+    >>> anon_browser.getControl(name="field.tag").value = (
+    ...     "test-tag-1 test-tag-2"
+    ... )
     >>> anon_browser.getControl(name="field.tags_combinator").value = ["ALL"]
     >>> anon_browser.getControl("Search", index=1).click()
     >>> "test bug a" in anon_browser.contents

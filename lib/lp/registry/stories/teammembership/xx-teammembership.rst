@@ -341,9 +341,9 @@ in the past, so we'll approve his membership.
     >>> browser.url
     'http://launchpad.test/~myemail/+member/jblack'
 
-    >>> browser.getControl(
-    ...     name="membership.expirationdate"
-    ... ).value = "2048-04-14"
+    >>> browser.getControl(name="membership.expirationdate").value = (
+    ...     "2048-04-14"
+    ... )
     >>> browser.getControl(name="approve").click()
 
     >>> browser.url
@@ -423,9 +423,9 @@ possible.
 
     >>> browser.open("http://launchpad.test/~myemail/+member/karl")
     >>> browser.getControl(name="expires").value = ["date"]
-    >>> browser.getControl(
-    ...     name="membership.expirationdate"
-    ... ).value = "2049-04-16"
+    >>> browser.getControl(name="membership.expirationdate").value = (
+    ...     "2049-04-16"
+    ... )
     >>> browser.getControl("Reactivate").click()
 
     >>> browser.url
@@ -442,9 +442,9 @@ A second submission for reactivation should not crash but will print an
 error message:
 
     >>> browser2.getControl(name="expires").value = ["date"]
-    >>> browser2.getControl(
-    ...     name="membership.expirationdate"
-    ... ).value = "2049-04-16"
+    >>> browser2.getControl(name="membership.expirationdate").value = (
+    ...     "2049-04-16"
+    ... )
     >>> browser2.getControl("Reactivate").click()
     >>> browser2.url
     'http://launchpad.test/~myemail/+member/karl/+index'

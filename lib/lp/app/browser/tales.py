@@ -826,11 +826,10 @@ class ObjectImageDisplayAPI:
         # XXX: this should go away as soon as all image:icon where replaced
         return None
 
-    def logo(self):
-        """Return the appropriate <img> tag for this object's logo.
+    def logo_src(self):
+        """Return the appropriate src attribute for this object's logo.
 
-        :return: A string, or None if the context object doesn't have
-            a logo.
+        :return: A string, or None if the context object doesn't have a logo.
         """
         context = self._context
         if not IHasLogo.providedBy(context):
@@ -843,10 +842,18 @@ class ObjectImageDisplayAPI:
             url = context.logo.getURL()
         else:
             url = self.default_logo_resource(context)
-            if url is None:
-                # We want to indicate that there is no logo for this
-                # object.
-                return None
+        return url
+
+    def logo(self):
+        """Return the appropriate <img> tag for this object's logo.
+
+        :return: A string, or None if the context object doesn't have a logo.
+        """
+        url = self.logo_src()
+        if url is None:
+            # We want to indicate that there is no logo for this
+            # object.
+            return None
         logo = '<img alt="" width="64" height="64" src="%s" />'
         return logo % url
 
@@ -1649,7 +1656,6 @@ class DistroSeriesFormatterAPI(CustomizableFormatter):
 
 
 class SourcePackageReleaseFormatterAPI(CustomizableFormatter):
-
     """Adapter for ISourcePackageRelease objects to a formatted string."""
 
     _link_summary_template = "%(sourcepackage)s %(version)s"
@@ -3065,7 +3071,7 @@ class SocialAccountFormatterAPI(ObjectFormatterAPI):
 
     def icon(self, platform):
         return (
-            f'<img class="user_social_accounts__icon" alt="{platform.title}" '
+            f'<img class="user-social-accounts__icon" alt="{platform.title}" '
             f'title="{platform.title}" src="/@@/{platform.icon}" />'
         )
 

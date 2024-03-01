@@ -49,7 +49,7 @@
       use-macro="context/@@+base-layout-macros/launchpad-stylesheet-3-0" />
 
     <style tal:condition="is_demo" type="text/css">
-      html, body {background-image: url(/@@/demo) !important;}
+      html, body {background-image: url(/@@/demo) !important; background-repeat: repeat !important}
     </style>
 
     <tal:view condition="not: view/macro:is-page-contentless">

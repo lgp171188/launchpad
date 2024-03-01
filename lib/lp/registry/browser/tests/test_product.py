@@ -1442,9 +1442,9 @@ class TestBrowserProductSetBranchView(BrowserTestCase):
         self.assertEqual(
             project_name, browser.getControl("Git repository name").value
         )
-        browser.getControl(
-            "Git repository URL"
-        ).value = "https://git.example.org/imported"
+        browser.getControl("Git repository URL").value = (
+            "https://git.example.org/imported"
+        )
         browser.getControl("Update").click()
 
         tag = Tag(
@@ -1471,9 +1471,9 @@ class TestBrowserProductSetBranchView(BrowserTestCase):
         browser.getControl(
             "Import a Git repository hosted somewhere else"
         ).click()
-        browser.getControl(
-            "Git repository URL"
-        ).value = "svn://svn.example.org/imported"
+        browser.getControl("Git repository URL").value = (
+            "svn://svn.example.org/imported"
+        )
         browser.getControl("Update").click()
 
         tag = Tag(

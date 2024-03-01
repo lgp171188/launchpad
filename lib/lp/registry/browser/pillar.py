@@ -295,9 +295,9 @@ class PillarViewMixin:
             SimpleVocabulary.fromItems(policy_items),
             value_fn=lambda item: item.name,
         )
-        cache.objects[
-            "team_membership_policy_data"
-        ] = team_membership_policy_data
+        cache.objects["team_membership_policy_data"] = (
+            team_membership_policy_data
+        )
 
 
 class PillarSharingView(LaunchpadView):
@@ -385,9 +385,9 @@ class PillarSharingView(LaunchpadView):
         cache.objects["sharing_permissions"] = self.sharing_permissions
         cache.objects["bug_sharing_policies"] = self.bug_sharing_policies
         cache.objects["branch_sharing_policies"] = self.branch_sharing_policies
-        cache.objects[
-            "specification_sharing_policies"
-        ] = self.specification_sharing_policies
+        cache.objects["specification_sharing_policies"] = (
+            self.specification_sharing_policies
+        )
         cache.objects["has_edit_permission"] = check_permission(
             "launchpad.Edit", self.context
         )
@@ -402,9 +402,9 @@ class PillarSharingView(LaunchpadView):
             "launchpad.LimitedView",
             [grantee for grantee, _, _ in batch_navigator.batch],
         )
-        cache.objects[
-            "grantee_data"
-        ] = self._getSharingService().jsonGranteeData(batch_navigator.batch)
+        cache.objects["grantee_data"] = (
+            self._getSharingService().jsonGranteeData(batch_navigator.batch)
+        )
         cache.objects.update(
             get_batch_properties_for_json_cache(self, batch_navigator)
         )

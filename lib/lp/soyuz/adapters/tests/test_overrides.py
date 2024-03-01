@@ -697,13 +697,13 @@ class TestFallbackOverridePolicy(TestCaseWithFactory):
                 pocket=pocket,
             )
             spns.append(spph.sourcepackagerelease.sourcepackagename)
-            expected[
-                spph.sourcepackagerelease.sourcepackagename
-            ] = SourceOverride(
-                component=spph.component,
-                section=spph.section,
-                version=spph.sourcepackagerelease.version,
-                new=False,
+            expected[spph.sourcepackagerelease.sourcepackagename] = (
+                SourceOverride(
+                    component=spph.component,
+                    section=spph.section,
+                    version=spph.sourcepackagerelease.version,
+                    new=False,
+                )
             )
         spns.append(self.factory.makeSourcePackageName())
         expected[spns[-1]] = SourceOverride(component=universe, new=True)

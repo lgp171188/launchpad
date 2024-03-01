@@ -18,7 +18,7 @@ branches.
     >>> browser = setupBrowser(auth="Basic eric@example.com:test")
     >>> browser.open(b1_url)
     >>> browser.getLink("Propose for merging").click()
-    >>> browser.getControl(
-    ...     name="field.target_branch.target_branch"
-    ... ).value = b2_name
+    >>> browser.getControl(name="field.target_branch.target_branch").value = (
+    ...     b2_name
+    ... )
     >>> browser.getControl("Propose Merge").click()

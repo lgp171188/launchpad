@@ -117,9 +117,9 @@ to the changer.
     ...     "ABCDEF0123456789ABCDDCBA0000111112345678"
     ... )
     >>> removeSecurityProxy(netapplet_upload).signing_key_owner = gpgkey.owner
-    >>> removeSecurityProxy(
-    ...     netapplet_upload
-    ... ).signing_key_fingerprint = gpgkey.fingerprint
+    >>> removeSecurityProxy(netapplet_upload).signing_key_fingerprint = (
+    ...     gpgkey.fingerprint
+    ... )
 
 Now request the email:
 

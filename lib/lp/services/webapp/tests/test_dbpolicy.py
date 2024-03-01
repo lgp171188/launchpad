@@ -365,9 +365,9 @@ class TestFastDowntimeRollout(TestCase):
         self.standby_dbname = self.primary_dbname + "_standby"
 
         self.pgbouncer_fixture = PGBouncerFixture()
-        self.pgbouncer_fixture.databases[
-            self.standby_dbname
-        ] = self.pgbouncer_fixture.databases[self.primary_dbname]
+        self.pgbouncer_fixture.databases[self.standby_dbname] = (
+            self.pgbouncer_fixture.databases[self.primary_dbname]
+        )
 
         # Configure primary and standby connections to go via different
         # pgbouncer aliases.

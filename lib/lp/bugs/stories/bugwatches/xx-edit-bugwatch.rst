@@ -5,9 +5,9 @@ Edi a bug watch
 After a bug watch is recorded, it is possible to go back and change it.
 
     >>> admin_browser.open("http://bugs.launchpad.test/bugs/1/+watch/2")
-    >>> admin_browser.getControl(
-    ...     "URL"
-    ... ).value = "https://bugzilla.mozilla.org/show_bug.cgi?id=1000"
+    >>> admin_browser.getControl("URL").value = (
+    ...     "https://bugzilla.mozilla.org/show_bug.cgi?id=1000"
+    ... )
     >>> admin_browser.getControl("Change").click()
     >>> admin_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1'
@@ -20,9 +20,9 @@ The URL supplied must be a valid bug tracker URL and must point to a
 bug tracker already registered with Launchpad.
 
     >>> admin_browser.open("http://bugs.launchpad.test/bugs/1/+watch/2")
-    >>> admin_browser.getControl(
-    ...     "URL"
-    ... ).value = "https://bugzilla.mozilla.org/foo_bug.cgi?id=1000"
+    >>> admin_browser.getControl("URL").value = (
+    ...     "https://bugzilla.mozilla.org/foo_bug.cgi?id=1000"
+    ... )
     >>> admin_browser.getControl("Change").click()
     >>> admin_browser.url
     'http://bugs.launchpad.test/bugs/1/+watch/2/+edit'

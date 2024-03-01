@@ -117,9 +117,9 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         }
         if build_request:
             info["build_request_id"] = build_request.id
-            info[
-                "build_request_timestamp"
-            ] = build_request.date_requested.isoformat()
+            info["build_request_timestamp"] = (
+                build_request.date_requested.isoformat()
+            )
         info["architectures"] = [
             i.distro_arch_series.architecturetag for i in builds
         ]
@@ -175,9 +175,9 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
                 )
                 args["git_repository"] = url
             else:
-                args[
-                    "git_repository"
-                ] = build.recipe.git_repository.git_https_url
+                args["git_repository"] = (
+                    build.recipe.git_repository.git_https_url
+                )
         else:
             raise CannotBuild(
                 "Source repository for ~%s/%s has been deleted."

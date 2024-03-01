@@ -234,9 +234,9 @@ Let's submit an invalid value for this message #13.
     >>> browser.getControl(
     ...     name="msgset_142_es_translation_0_radiobutton"
     ... ).value = ["msgset_142_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_142_es_translation_0_new"
-    ... ).value = "foo %i"
+    >>> browser.getControl(name="msgset_142_es_translation_0_new").value = (
+    ...     "foo %i"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
     >>> print(browser.url)
     http://.../hoary/+source/evolution/+pots/evolution-2.2/es/13/+translate
@@ -286,9 +286,9 @@ And now a good submit.
     >>> browser.getControl(
     ...     name="msgset_142_es_translation_0_radiobutton"
     ... ).value = ["msgset_142_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_142_es_translation_0_new"
-    ... ).value = "foo %s"
+    >>> browser.getControl(name="msgset_142_es_translation_0_new").value = (
+    ...     "foo %s"
+    ... )
     >>> browser.getControl(name="submit_translations").click()
 
 We moved to the next message, that means this submission worked.
@@ -570,9 +570,9 @@ We can change a translation for messages with context.
     >>> browser.getControl(
     ...     name="msgset_198_sr_translation_0_radiobutton"
     ... ).value = ["msgset_198_sr_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_198_sr_translation_0_new"
-    ... ).value = "blah"
+    >>> browser.getControl(name="msgset_198_sr_translation_0_new").value = (
+    ...     "blah"
+    ... )
 
 And submit it.
 

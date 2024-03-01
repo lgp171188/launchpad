@@ -11,6 +11,7 @@ __all__ = [
     "SOCIAL_PLATFORM_TYPES_MAP",
     "SocialAccountIdentityError",
     "validate_social_account_identity",
+    "SOCIAL_PLATFORM_TYPES_MAP",
 ]
 
 import http.client
@@ -106,6 +107,7 @@ class ISocialAccountSet(Interface):
 class SocialPlatform:
     title = ""
     identity_fields = []
+    identity_fields_example = {}
     platform_type = None
     icon = ""
     display_format = ""
@@ -120,6 +122,10 @@ class SocialPlatform:
 class MatrixPlatform(SocialPlatform):
     title = "Matrix"
     identity_fields = ["username", "homeserver"]
+    identity_fields_example = {
+        "username": "mark",
+        "homeserver": "ubuntu.com",
+    }
     platform_type = SocialPlatformType.MATRIX
     icon = "social-matrix"
     display_format = "<strong>@{username}:{homeserver}</strong>"

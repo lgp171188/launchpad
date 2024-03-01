@@ -68,12 +68,12 @@ class TestPollAddView(BrowserTestCase):
         )
         browser.getControl("The unique name of this poll").value = "colour"
         browser.getControl("The title of this poll").value = "Favourite Colour"
-        browser.getControl(
-            "The date and time when this poll opens"
-        ).value = str(now + timedelta(days=1))
-        browser.getControl(
-            "The date and time when this poll closes"
-        ).value = str(now + timedelta(days=2))
+        browser.getControl("The date and time when this poll opens").value = (
+            str(now + timedelta(days=1))
+        )
+        browser.getControl("The date and time when this poll closes").value = (
+            str(now + timedelta(days=2))
+        )
         browser.getControl(
             "The proposition that is going to be voted"
         ).value = "What is your favourite colour?"
@@ -89,12 +89,12 @@ class TestPollAddView(BrowserTestCase):
         browser = self.getViewBrowser(team, view_name="+newpoll", user=person)
         browser.getControl("The unique name of this poll").value = "colour"
         browser.getControl("The title of this poll").value = "Favourite Colour"
-        browser.getControl(
-            "The date and time when this poll opens"
-        ).value = str(now + timedelta(days=1))
-        browser.getControl(
-            "The date and time when this poll closes"
-        ).value = str(now + timedelta(days=2))
+        browser.getControl("The date and time when this poll opens").value = (
+            str(now + timedelta(days=1))
+        )
+        browser.getControl("The date and time when this poll closes").value = (
+            str(now + timedelta(days=2))
+        )
         browser.getControl(
             "The proposition that is going to be voted"
         ).value = "What is your favourite colour?"

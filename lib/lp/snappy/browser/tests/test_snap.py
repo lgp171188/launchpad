@@ -336,9 +336,9 @@ class TestSnapAddView(BaseTestSnapView):
         )
         browser.getControl(name="field.name").value = "snap-name"
         browser.getControl(name="field.vcs").value = "GIT"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_shortened_path
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_shortened_path
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create snap package").click()
 
@@ -548,19 +548,19 @@ class TestSnapAddView(BaseTestSnapView):
             "Automatically build when branch changes"
         ).selected = True
         browser.getControl("PPA").click()
-        browser.getControl(
-            name="field.auto_build_archive.ppa"
-        ).value = archive.reference
+        browser.getControl(name="field.auto_build_archive.ppa").value = (
+            archive.reference
+        )
         browser.getControl("Pocket for automatic builds").value = ["SECURITY"]
-        browser.getControl(
-            name="field.auto_build_channels.core"
-        ).value = "stable"
-        browser.getControl(
-            name="field.auto_build_channels.core18"
-        ).value = "beta"
-        browser.getControl(
-            name="field.auto_build_channels.core20"
-        ).value = "edge/feature"
+        browser.getControl(name="field.auto_build_channels.core").value = (
+            "stable"
+        )
+        browser.getControl(name="field.auto_build_channels.core18").value = (
+            "beta"
+        )
+        browser.getControl(name="field.auto_build_channels.core20").value = (
+            "edge/feature"
+        )
         browser.getControl(
             name="field.auto_build_channels.snapcraft"
         ).value = "edge"
@@ -598,13 +598,13 @@ class TestSnapAddView(BaseTestSnapView):
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
         browser.getControl(name="field.name").value = "snap-name"
         browser.getControl("Automatically upload to store").selected = True
-        browser.getControl(
-            "Registered store package name"
-        ).value = "store-name"
+        browser.getControl("Registered store package name").value = (
+            "store-name"
+        )
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "track"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "track"
+        )
         browser.getControl(name="field.store_channels.add_risk").value = [
             "edge"
         ]
@@ -967,18 +967,18 @@ class TestSnapEditView(BaseTestSnapView):
             "ubuntu/%s/%s" % (new_series.name, new_snappy_series.name)
         ]
         browser.getControl("Git", index=0).click()
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = new_git_ref_path
         browser.getControl("Build source tarball").selected = True
         browser.getControl(
             "Automatically build when branch changes"
         ).selected = True
         browser.getControl("PPA").click()
-        browser.getControl(
-            name="field.auto_build_archive.ppa"
-        ).value = archive.reference
+        browser.getControl(name="field.auto_build_archive.ppa").value = (
+            archive.reference
+        )
         browser.getControl("Pocket for automatic builds").value = ["SECURITY"]
         browser.getControl(
             name="field.auto_build_channels.snapcraft"
@@ -1040,9 +1040,9 @@ class TestSnapEditView(BaseTestSnapView):
             branch=self.factory.makeAnyBranch(),
         )
         browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
-        browser.getControl(
-            name="field.store_distro_series"
-        ).value = "ubuntu/%s/%s" % (distro_series.name, snappy_series.name)
+        browser.getControl(name="field.store_distro_series").value = (
+            "ubuntu/%s/%s" % (distro_series.name, snappy_series.name)
+        )
         browser.getControl("Update snap package").click()
 
         self.assertEqual([], find_tags_by_class(browser.contents, "message"))
@@ -1387,9 +1387,9 @@ class TestSnapEditView(BaseTestSnapView):
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = private_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            private_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update snap package").click()
         self.assertEqual(
@@ -1416,9 +1416,9 @@ class TestSnapEditView(BaseTestSnapView):
         )
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_repository_url
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_repository_url
+        )
         browser.getControl(name="field.git_ref.path").value = new_path
         browser.getControl("Update snap package").click()
         login_person(self.person)

@@ -33,9 +33,9 @@ to reflect this.
     ...     "http://launchpad.test/thunderbird/+configure-bugtracker"
     ... )
     >>> admin_browser.getControl(name="field.bugtracker").value = ["external"]
-    >>> admin_browser.getControl(
-    ...     name="field.bugtracker.bugtracker"
-    ... ).value = "mozilla.org"
+    >>> admin_browser.getControl(name="field.bugtracker.bugtracker").value = (
+    ...     "mozilla.org"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> user_browser.open("http://launchpad.test/bugs/13/")
@@ -97,12 +97,12 @@ filing link, such as Debbugs, only a search link will be displayed.
     >>> admin_browser.open(
     ...     "http://launchpad.test/gnome-terminal/+configure-bugtracker"
     ... )
-    >>> admin_browser.getControl(
-    ...     "In a registered bug tracker:"
-    ... ).selected = True
-    >>> admin_browser.getControl(
-    ...     name="field.bugtracker.bugtracker"
-    ... ).value = "debbugs"
+    >>> admin_browser.getControl("In a registered bug tracker:").selected = (
+    ...     True
+    ... )
+    >>> admin_browser.getControl(name="field.bugtracker.bugtracker").value = (
+    ...     "debbugs"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> user_browser.open("http://launchpad.test/bugs/13/")
@@ -129,9 +129,9 @@ tracker, can be set from the +configure-bugtracker page, too.
     >>> admin_browser.open(
     ...     "http://launchpad.test/thunderbird/+configure-bugtracker"
     ... )
-    >>> admin_browser.getControl(
-    ...     name="field.remote_product"
-    ... ).value = "Thunderbird"
+    >>> admin_browser.getControl(name="field.remote_product").value = (
+    ...     "Thunderbird"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
     >>> admin_browser.open(

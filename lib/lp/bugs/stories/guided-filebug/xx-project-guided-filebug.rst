@@ -20,9 +20,9 @@ After we selected a product and entered a summary, we're sent to the
 product's +filebug page to search for duplicates.
 
     >>> user_browser.getControl("Project", index=0).value = ["evolution"]
-    >>> user_browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Evolution crashes"
+    >>> user_browser.getControl("Summary", index=0).value = (
+    ...     "Evolution crashes"
+    ... )
     >>> user_browser.getControl("Continue").click()
 
     >>> user_browser.url

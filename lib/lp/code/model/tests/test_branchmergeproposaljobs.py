@@ -354,9 +354,9 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         self.factory.makeRevisionsForBranch(bmp.target_branch, count=1)
         # Kludge a branch being a bit out of date in a way that will make
         # pending_writes true, without anything else failing.
-        removeSecurityProxy(
-            bmp.source_branch
-        ).last_mirrored_id = self.factory.getUniqueString()
+        removeSecurityProxy(bmp.source_branch).last_mirrored_id = (
+            self.factory.getUniqueString()
+        )
         job = UpdatePreviewDiffJob.create(bmp)
         # pop_notifications()
         JobRunner([job]).runAll()

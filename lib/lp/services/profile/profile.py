@@ -463,9 +463,7 @@ def end_request(event):
             step["sql_class"] = (
                 "sql_danger"
                 if key > 500
-                else "sql_warning"
-                if key > 100
-                else None
+                else "sql_warning" if key > 100 else None
             )
             top_sql_ids.append(
                 dict(
@@ -481,9 +479,7 @@ def end_request(event):
             step["python_class"] = (
                 "python_danger"
                 if key > 500
-                else "python_warning"
-                if key > 100
-                else None
+                else "python_warning" if key > 100 else None
             )
             top_python_ids.append(
                 dict(

@@ -266,9 +266,9 @@ class FileBugViewBase(LaunchpadFormView):
             excluded_items=[BugTaskImportance.UNKNOWN],
         )
         cache.objects["bugtask_importance_data"] = bugtask_importance_data
-        cache.objects[
-            "enable_bugfiling_duplicate_search"
-        ] = self.context.enable_bugfiling_duplicate_search
+        cache.objects["enable_bugfiling_duplicate_search"] = (
+            self.context.enable_bugfiling_duplicate_search
+        )
 
         super().initialize()
 
@@ -483,9 +483,9 @@ class FileBugViewBase(LaunchpadFormView):
         super().setUpWidgets()
 
         if "packagename" in self.field_names:
-            self.widgets[
-                "packagename"
-            ].onKeyPress = "selectWidget('choose', event)"
+            self.widgets["packagename"].onKeyPress = (
+                "selectWidget('choose', event)"
+            )
 
     def setUpFields(self):
         """Set up the form fields. See `LaunchpadFormView`."""

@@ -147,7 +147,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
         self.assertIs(None, markup.find(True, id="watermark"))
         logo = markup.find(True, id="launchpad-logo-and-name")
         self.assertIsNot(None, logo)
-        self.assertEqual("/@@/launchpad-logo-and-name.png", logo["src"])
+        self.assertEqual("/@@/launchpad-logo-and-name.svg", logo["src"])
 
     @staticmethod
     def _make_blog_post(linkid, title, body, date):
@@ -182,13 +182,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
         self.assertEqual(["called"], calls)
         items = markup.find_all("li", "news")
         # Notice about launchpad being opened is always added at the end
-        self.assertEqual(3, len(items))
-        a = items[-1].find("a")
-        self.assertEqual("Launchpad now open source", a.string.strip())
-        for post, item in zip(posts, items):
-            a = item.find("a")
-            self.assertEqual(post["link"], a["href"])
-            self.assertEqual(post["title"], a.string)
+        self.assertEqual(2, len(items))
 
     def test_blog_disabled(self):
         """Launchpad blog not queried for display without feature"""
@@ -228,7 +222,7 @@ class LaunchpadRootIndexViewTestCase(TestCaseWithFactory):
             result, parse_only=SoupStrainer(id="homepage-blogposts")
         )
         items = markup.find_all("li", "news")
-        self.assertEqual(3, len(items))
+        self.assertEqual(2, len(items))
 
     def test_featured_projects_query_count(self):
         def add_featured_projects():

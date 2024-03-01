@@ -235,9 +235,9 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             project, view_name="+new-charm-recipe", user=self.person
         )
         browser.getControl(name="field.name").value = "charm-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = git_ref_shortened_path
+        browser.getControl(name="field.git_ref.repository").value = (
+            git_ref_shortened_path
+        )
         browser.getControl(name="field.git_ref.path").value = git_ref_path
         browser.getControl("Create charm recipe").click()
 
@@ -321,15 +321,15 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl(
             name="field.auto_build_channels.charmcraft"
         ).value = "edge"
-        browser.getControl(
-            name="field.auto_build_channels.core"
-        ).value = "stable"
-        browser.getControl(
-            name="field.auto_build_channels.core18"
-        ).value = "beta"
-        browser.getControl(
-            name="field.auto_build_channels.core20"
-        ).value = "edge/feature"
+        browser.getControl(name="field.auto_build_channels.core").value = (
+            "stable"
+        )
+        browser.getControl(name="field.auto_build_channels.core18").value = (
+            "beta"
+        )
+        browser.getControl(name="field.auto_build_channels.core20").value = (
+            "edge/feature"
+        )
         browser.getControl("Create charm recipe").click()
 
         content = find_main_content(browser.contents)
@@ -366,9 +366,9 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl("Registered store name").value = "charmhub-name"
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "track"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "track"
+        )
         browser.getControl(name="field.store_channels.add_risk").value = [
             "edge"
         ]
@@ -525,13 +525,13 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl("Registered store name").value = "charmhub-name"
         self.assertFalse(browser.getControl("Stable").selected)
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "track"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "track"
+        )
         browser.getControl("Edge").selected = True
-        browser.getControl(
-            name="field.store_channels.add_branch"
-        ).value = "branch"
+        browser.getControl(name="field.store_channels.add_branch").value = (
+            "branch"
+        )
 
         browser.getControl("Create charm recipe").click()
 
@@ -560,9 +560,9 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl(name="field.name").value = "test-recipe-name"
         browser.getControl("Registered store name").value = "charmhub-name"
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "new-track"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "new-track"
+        )
 
         browser.getControl("Create charm recipe").click()
 
@@ -574,12 +574,12 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
         browser.getControl("Automatically upload to store").selected = True
         browser.getControl(name="field.name").value = "test-recipe-name"
         browser.getControl("Registered store name").value = "charmhub-name"
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "new-track"
-        browser.getControl(
-            name="field.store_channels.add_branch"
-        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "new-track"
+        )
+        browser.getControl(name="field.store_channels.add_branch").value = (
+            "new-branch"
+        )
 
         browser.getControl("Create charm recipe").click()
 
@@ -662,9 +662,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         browser.getLink("Edit charm recipe").click()
         browser.getControl("Owner").value = ["new-team"]
         browser.getControl(name="field.name").value = "new-name"
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = new_git_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            new_git_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = new_git_ref_path
         browser.getControl("Build path").value = "some-path"
         browser.getControl(
@@ -723,12 +723,12 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         )
         view_url = canonical_url(recipe, view_name="+edit")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "new-track"
-        browser.getControl(
-            name="field.store_channels.add_branch"
-        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "new-track"
+        )
+        browser.getControl(name="field.store_channels.add_branch").value = (
+            "new-branch"
+        )
         browser.getControl(name="field.store_channels.add_risk").value = [
             "edge"
         ]
@@ -799,12 +799,12 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         )
         view_url = canonical_url(recipe, view_name="+edit")
         browser = self.getNonRedirectingBrowser(url=view_url, user=self.person)
-        browser.getControl(
-            name="field.store_channels.track_0"
-        ).value = "new-track"
-        browser.getControl(
-            name="field.store_channels.branch_0"
-        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.track_0").value = (
+            "new-track"
+        )
+        browser.getControl(name="field.store_channels.branch_0").value = (
+            "new-branch"
+        )
         browser.getControl(name="field.store_channels.risk_0").value = [
             "candidate"
         ]
@@ -901,9 +901,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
 
         # If the user entered only Track for the new channel entry,
         # ensure we error with missing Risk message.
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "new-track"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "new-track"
+        )
 
         browser.getControl("Update charm recipe").click()
 
@@ -913,9 +913,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         # ensure we error with missing Risk message.
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
-        browser.getControl(
-            name="field.store_channels.add_branch"
-        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.add_branch").value = (
+            "new-branch"
+        )
 
         browser.getControl("Update charm recipe").click()
 
@@ -925,12 +925,12 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         # ensure we error with missing Risk message.
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
-        browser.getControl(
-            name="field.store_channels.add_track"
-        ).value = "new-track"
-        browser.getControl(
-            name="field.store_channels.add_branch"
-        ).value = "new-branch"
+        browser.getControl(name="field.store_channels.add_track").value = (
+            "new-track"
+        )
+        browser.getControl(name="field.store_channels.add_branch").value = (
+            "new-branch"
+        )
 
         browser.getControl("Update charm recipe").click()
 
@@ -1012,9 +1012,9 @@ class TestCharmRecipeEditView(BaseTestCharmRecipeView):
         private_ref_path = private_ref.path
         browser = self.getViewBrowser(recipe, user=self.person)
         browser.getLink("Edit charm recipe").click()
-        browser.getControl(
-            name="field.git_ref.repository"
-        ).value = private_ref_identity
+        browser.getControl(name="field.git_ref.repository").value = (
+            private_ref_identity
+        )
         browser.getControl(name="field.git_ref.path").value = private_ref_path
         browser.getControl("Update charm recipe").click()
         self.assertEqual(

@@ -31,9 +31,9 @@ bug page.
 
 The Ubuntu maintainer, Ubuntu Team, will be subscribed.
 
-    >>> browser.getControl(
-    ...     name="field.title", index=0
-    ... ).value = "a private bug"
+    >>> browser.getControl(name="field.title", index=0).value = (
+    ...     "a private bug"
+    ... )
     >>> browser.getControl("Continue").click()
 
     >>> browser.getControl(name="packagename_option").value = ["choose"]

@@ -249,9 +249,9 @@ There are no branches linked to this bug.
 Now link to a private branch.
 
     >>> landscape_dev_browser.getLink("Link a related branch").click()
-    >>> landscape_dev_browser.getControl(
-    ...     "Branch"
-    ... ).value = "~landscape-developers/landscape/trunk"
+    >>> landscape_dev_browser.getControl("Branch").value = (
+    ...     "~landscape-developers/landscape/trunk"
+    ... )
     >>> landscape_dev_browser.getControl("Continue").click()
     >>> printBugBranchLinks(landscape_dev_browser)
     lp://dev/~landscape-developers/landscape/trunk
@@ -273,9 +273,9 @@ those who shouldn't be able to see it.
 
     >>> admin_browser.open("http://launchpad.test/landscape/trunk")
     >>> admin_browser.getLink("Change details").click()
-    >>> admin_browser.getControl(
-    ...     "Branch"
-    ... ).value = "~landscape-developers/landscape/trunk"
+    >>> admin_browser.getControl("Branch").value = (
+    ...     "~landscape-developers/landscape/trunk"
+    ... )
     >>> admin_browser.getControl("Change").click()
 
 Since the admin user is able to see all private branches the branch details

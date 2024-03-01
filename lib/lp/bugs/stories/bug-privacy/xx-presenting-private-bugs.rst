@@ -31,9 +31,9 @@ bugs or where the product requests that bugs are private by default)
 have the full message:
 
     >>> browser.open("http://bugs.launchpad.test/firefox/+filebug")
-    >>> browser.getControl(
-    ...     "Summary", index=0
-    ... ).value = "Firefox crashes when I change the default route"
+    >>> browser.getControl("Summary", index=0).value = (
+    ...     "Firefox crashes when I change the default route"
+    ... )
     >>> browser.getControl("Continue").click()
 
     >>> browser.getControl("Further information").value = "foo"

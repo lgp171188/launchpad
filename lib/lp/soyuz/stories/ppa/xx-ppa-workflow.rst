@@ -76,9 +76,9 @@ By submitting the form without acknowledging the PPA-ToS results in a
 error with a specific message.
 
     >>> sample_browser.getControl(name="field.name").value = "sampleppa"
-    >>> sample_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "Sample PPA"
+    >>> sample_browser.getControl(name="field.displayname").value = (
+    ...     "Sample PPA"
+    ... )
     >>> sample_browser.getControl("Activate").click()
 
     >>> print_feedback_messages(sample_browser.contents)
@@ -88,9 +88,9 @@ error with a specific message.
 In order to 'activate' a PPA the user must acknowledge the PPA-ToS.
 
     >>> sample_browser.getControl(name="field.accepted").value = True
-    >>> sample_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Hoohay for PPA."
+    >>> sample_browser.getControl(name="field.description").value = (
+    ...     "Hoohay for PPA."
+    ... )
     >>> sample_browser.getControl("Activate").click()
 
 A successful activation redirects to the PPA page
@@ -112,12 +112,12 @@ The PPA owner is able to edit PPA 'displayname' and 'description'.
 
     >>> sample_browser.getLink("Change details").click()
 
-    >>> sample_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "Sample testing PPA"
-    >>> sample_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Howdy, cowboys !"
+    >>> sample_browser.getControl(name="field.displayname").value = (
+    ...     "Sample testing PPA"
+    ... )
+    >>> sample_browser.getControl(name="field.description").value = (
+    ...     "Howdy, cowboys !"
+    ... )
 
     >>> sample_browser.getControl("Save").click()
 
@@ -199,13 +199,13 @@ Let's proceed with the required permissions:
     Activate PPA : ...
 
     >>> sample_browser.getControl(name="field.name").value = "develppa"
-    >>> sample_browser.getControl(
-    ...     name="field.displayname"
-    ... ).value = "Devel PPA"
+    >>> sample_browser.getControl(name="field.displayname").value = (
+    ...     "Devel PPA"
+    ... )
     >>> sample_browser.getControl(name="field.accepted").value = True
-    >>> sample_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Hoohay for Team PPA."
+    >>> sample_browser.getControl(name="field.description").value = (
+    ...     "Hoohay for Team PPA."
+    ... )
 
 The user is, again, warned about the fact that activating this PPA
 will block renaming of the context team.
@@ -243,9 +243,9 @@ exactly the same as for a user-PPA, see above:
     >>> sample_browser.title
     'Change details : Devel PPA...
 
-    >>> sample_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Yay, I can change it."
+    >>> sample_browser.getControl(name="field.description").value = (
+    ...     "Yay, I can change it."
+    ... )
     >>> sample_browser.getControl("Save").click()
 
     >>> print(sample_browser.title)
@@ -263,9 +263,9 @@ Cancelling the 'Edit' form will redirect the user to the PPA overview
 page and discard the changes.
 
     >>> sample_browser.getLink("Change details").click()
-    >>> sample_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Discarded ..."
+    >>> sample_browser.getControl(name="field.description").value = (
+    ...     "Discarded ..."
+    ... )
     >>> sample_browser.getLink("Cancel").click()
 
     >>> print(sample_browser.title)
@@ -326,9 +326,9 @@ name of other users or teams:
     >>> admin_browser.getControl(name="field.name").value = "ppa"
     >>> admin_browser.getControl(name="field.displayname").value = "Hack PPA"
     >>> admin_browser.getControl(name="field.accepted").value = True
-    >>> admin_browser.getControl(
-    ...     name="field.description"
-    ... ).value = "Go for it, you lazy !"
+    >>> admin_browser.getControl(name="field.description").value = (
+    ...     "Go for it, you lazy !"
+    ... )
     >>> admin_browser.getControl("Activate").click()
 
     >>> print(admin_browser.title)
@@ -431,16 +431,16 @@ build on a virtualized builder.
     >>> admin_browser.getControl(
     ...     name="field.suppress_subscription_notifications"
     ... ).value = True
-    >>> admin_browser.getControl(
-    ...     name="field.require_virtualized"
-    ... ).value = True
+    >>> admin_browser.getControl(name="field.require_virtualized").value = (
+    ...     True
+    ... )
     >>> admin_browser.getControl(name="field.authorized_size").value = "1"
-    >>> admin_browser.getControl(
-    ...     name="field.relative_build_score"
-    ... ).value = "199"
-    >>> admin_browser.getControl(
-    ...     name="field.external_dependencies"
-    ... ).value = "deb http://my.spethial.repo.com/ %(series)s main"
+    >>> admin_browser.getControl(name="field.relative_build_score").value = (
+    ...     "199"
+    ... )
+    >>> admin_browser.getControl(name="field.external_dependencies").value = (
+    ...     "deb http://my.spethial.repo.com/ %(series)s main"
+    ... )
     >>> admin_browser.getControl("Save").click()
 
 Once confirmed the administrator is sent to the PPA page where they can
@@ -464,9 +464,9 @@ external dependencies changes that were made:
 The external dependencies field is validated to make sure it looks like
 a sources.list entry.  If the field fails validation an error is displayed.
 
-    >>> admin_browser.getControl(
-    ...     name="field.external_dependencies"
-    ... ).value = "deb not_a_url"
+    >>> admin_browser.getControl(name="field.external_dependencies").value = (
+    ...     "deb not_a_url"
+    ... )
     >>> admin_browser.getControl("Save").click()
     >>> print_feedback_messages(admin_browser.contents)
     There is 1 error.
@@ -544,9 +544,9 @@ user 'Foo Bar'.
     >>> browser2.getControl(name="field.name").value = "boomppa"
     >>> browser2.getControl(name="field.displayname").value = "Boom PPA"
     >>> browser2.getControl(name="field.accepted").value = True
-    >>> browser2.getControl(
-    ...     name="field.description"
-    ... ).value = "PPA does not explode!"
+    >>> browser2.getControl(name="field.description").value = (
+    ...     "PPA does not explode!"
+    ... )
 
 Activate the PPA in the first browser:
 

@@ -637,11 +637,12 @@ class BranchMergeProposalView(
             "code.bzr.diff.disable_proxy"
         ):
             # This fallback works for public branches, but not private ones.
-            cache.objects[
-                "branch_diff_link"
-            ] = "https://%s/+loggerhead/%s/diff/" % (
-                config.launchpad.code_domain,
-                self.context.source_branch.unique_name,
+            cache.objects["branch_diff_link"] = (
+                "https://%s/+loggerhead/%s/diff/"
+                % (
+                    config.launchpad.code_domain,
+                    self.context.source_branch.unique_name,
+                )
             )
         else:
             cache.objects["branch_diff_link"] = (

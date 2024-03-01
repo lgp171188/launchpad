@@ -15,9 +15,9 @@ integer.
     >>> browser.getControl(
     ...     name="msgset_142_es_translation_0_radiobutton"
     ... ).value = ["msgset_142_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_142_es_translation_0_new"
-    ... ).value = b"Migrando \xc2\xab%i\xc2\xbb"
+    >>> browser.getControl(name="msgset_142_es_translation_0_new").value = (
+    ...     b"Migrando \xc2\xab%i\xc2\xbb"
+    ... )
 
 We are going to add a valid translation too so we are sure that it's stored
 even when there is an error in another message of the same form.
@@ -25,9 +25,9 @@ even when there is an error in another message of the same form.
     >>> browser.getControl(
     ...     name="msgset_140_es_translation_0_radiobutton"
     ... ).value = ["msgset_140_es_translation_0_new"]
-    >>> browser.getControl(
-    ...     name="msgset_140_es_translation_0_new"
-    ... ).value = "Foo"
+    >>> browser.getControl(name="msgset_140_es_translation_0_new").value = (
+    ...     "Foo"
+    ... )
 
 And submit the form.
 

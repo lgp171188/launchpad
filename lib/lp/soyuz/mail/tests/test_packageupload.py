@@ -237,9 +237,9 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
         # notification is sent.
         bpr = self.factory.makeBinaryPackageRelease()
         changelog = self.factory.makeChangelog(spn="foo", versions=["1.1"])
-        removeSecurityProxy(
-            bpr.build.source_package_release
-        ).changelog = changelog
+        removeSecurityProxy(bpr.build.source_package_release).changelog = (
+            changelog
+        )
         self.layer.txn.commit()
         person = self.factory.makePerson(name="archiver")
         archive = self.factory.makeArchive(owner=person, name="ppa")

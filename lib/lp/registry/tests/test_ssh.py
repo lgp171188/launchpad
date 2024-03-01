@@ -136,7 +136,6 @@ class TestSSHKey(TestCaseWithFactory):
 
 
 class TestSSHKeySet(TestCaseWithFactory):
-
     """Test `ISSHKeySet`."""
 
     layer = DatabaseFunctionalLayer

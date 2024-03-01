@@ -238,9 +238,9 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
             PackagePublishingPocket.RELEASE,
             {"core": "stable"},
         )
-        self.useFixture(
-            GitHostingFixture()
-        ).getBlob.failure = CannotParseSnapcraftYaml("Nonsense on stilts")
+        self.useFixture(GitHostingFixture()).getBlob.failure = (
+            CannotParseSnapcraftYaml("Nonsense on stilts")
+        )
         with dbuser(config.ISnapRequestBuildsJobSource.dbuser):
             JobRunner([job]).runAll()
         now = get_transaction_timestamp(IStore(snap))

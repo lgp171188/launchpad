@@ -25,9 +25,9 @@ Logging in as an admin helps with setting things up.
     >>> eric_browser = setupBrowser(auth="Basic eric@example.com:test")
     >>> eric_browser.open(branch_url)
     >>> eric_browser.getLink("Propose for merging").click()
-    >>> eric_browser.getControl(
-    ...     "Description of the change"
-    ... ).value = "This fix is awesome!"
+    >>> eric_browser.getControl("Description of the change").value = (
+    ...     "This fix is awesome!"
+    ... )
     >>> eric_browser.getControl("Propose Merge").click()
 
 The reviewer table shows both the Vikings team and Eric himself.

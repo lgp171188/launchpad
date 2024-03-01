@@ -85,14 +85,15 @@ class QuestionNotification:
         else:
             assignee = "None"
 
-        headers[
-            "X-Launchpad-Question"
-        ] = "%s status=%s; assignee=%s; priority=%s; language=%s" % (
-            target,
-            question.status.title,
-            assignee,
-            question.priority.title,
-            question.language.code,
+        headers["X-Launchpad-Question"] = (
+            "%s status=%s; assignee=%s; priority=%s; language=%s"
+            % (
+                target,
+                question.status.title,
+                assignee,
+                question.priority.title,
+                question.language.code,
+            )
         )
         headers["Reply-To"] = "question%s@%s" % (
             self.question.id,

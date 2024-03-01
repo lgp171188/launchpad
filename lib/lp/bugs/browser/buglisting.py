@@ -1116,12 +1116,12 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             cache.objects.update(
                 get_batch_properties_for_json_cache(self, batch_navigator)
             )
-            cache.objects[
-                "field_visibility"
-            ] = batch_navigator.field_visibility
-            cache.objects[
-                "field_visibility_defaults"
-            ] = batch_navigator.field_visibility_defaults
+            cache.objects["field_visibility"] = (
+                batch_navigator.field_visibility
+            )
+            cache.objects["field_visibility_defaults"] = (
+                batch_navigator.field_visibility_defaults
+            )
             cache.objects["cbl_cookie_name"] = batch_navigator.getCookieName()
 
             cache.objects["order_by"] = ",".join(
@@ -1240,9 +1240,9 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
         """Customize the onKeyPress event of the assignee chooser."""
         LaunchpadFormView.setUpWidgets(self)
 
-        self.widgets[
-            "assignee"
-        ].onKeyPress = "selectWidget('assignee_option', event)"
+        self.widgets["assignee"].onKeyPress = (
+            "selectWidget('assignee_option', event)"
+        )
 
     def validate(self, data):
         """Validates the form."""
@@ -1323,13 +1323,13 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
             has_blueprints = data.get("has_blueprints", True)
             has_no_blueprints = data.get("has_no_blueprints", True)
             if has_blueprints and not has_no_blueprints:
-                data[
-                    "linked_blueprints"
-                ] = BugBlueprintSearch.BUGS_WITH_BLUEPRINTS
+                data["linked_blueprints"] = (
+                    BugBlueprintSearch.BUGS_WITH_BLUEPRINTS
+                )
             elif not has_blueprints and has_no_blueprints:
-                data[
-                    "linked_blueprints"
-                ] = BugBlueprintSearch.BUGS_WITHOUT_BLUEPRINTS
+                data["linked_blueprints"] = (
+                    BugBlueprintSearch.BUGS_WITHOUT_BLUEPRINTS
+                )
             else:
                 data["linked_blueprints"] = BugBlueprintSearch.ALL
 

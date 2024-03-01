@@ -323,9 +323,9 @@ class TestWebhookDelivery(TestCaseWithFactory):
     def test_retry(self):
         with person_logged_in(self.owner):
             self.delivery.start()
-            removeSecurityProxy(self.delivery).json_data[
-                "date_first_sent"
-            ] = datetime.now(timezone.utc).isoformat()
+            removeSecurityProxy(self.delivery).json_data["date_first_sent"] = (
+                datetime.now(timezone.utc).isoformat()
+            )
             self.delivery.fail()
         representation = self.webservice.get(
             self.delivery_url, api_version="devel"

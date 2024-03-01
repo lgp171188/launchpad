@@ -123,9 +123,9 @@ class GitMixin:
 
     @staticmethod
     def setInformationType(branch, information_type):
-        removeSecurityProxy(
-            branch
-        ).repository.information_type = information_type
+        removeSecurityProxy(branch).repository.information_type = (
+            information_type
+        )
 
     def makeRecipeText(self):
         branch = self.makeBranch()

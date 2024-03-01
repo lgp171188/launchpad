@@ -14,9 +14,9 @@ is being filed.
     >>> user_browser.getControl("Summary", index=0).value = "Bug with tags"
     >>> user_browser.getControl("Continue").click()
     >>> user_browser.getControl("Tags").value = "foo bar"
-    >>> user_browser.getControl(
-    ...     "Further information"
-    ... ).value = "This bug has tags"
+    >>> user_browser.getControl("Further information").value = (
+    ...     "This bug has tags"
+    ... )
     >>> user_browser.getControl("Submit Bug Report").click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/...'

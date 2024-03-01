@@ -791,9 +791,9 @@ ubuntutest series in this test.
 
     >>> from zope.security.proxy import removeSecurityProxy
     >>> breezy_autotest = ppa_source.distroseries
-    >>> removeSecurityProxy(
-    ...     cprov.archive
-    ... ).distribution = breezy_autotest.distribution
+    >>> removeSecurityProxy(cprov.archive).distribution = (
+    ...     breezy_autotest.distribution
+    ... )
     >>> hoary_test = breezy_autotest.distribution.getSeries("hoary-test")
     >>> hoary_test.nominatedarchindep = hoary_test["i386"]
     >>> fake_chroot = test_publisher.addMockFile("fake_chroot.tar.gz")
