@@ -2360,7 +2360,8 @@ class TestSnapSet(TestCaseWithFactory):
 
     def test_edit_admin_only_fields(self):
         # The admin fields can only be updated by an admin
-        [ref] = self.factory.makeGitRefs()
+        non_admin = self.factory.makePerson()
+        [ref] = self.factory.makeGitRefs(owner=non_admin)
         components = self.makeSnapComponents(git_ref=ref)
         snap = getUtility(ISnapSet).new(**components)
 
@@ -2372,10 +2373,14 @@ class TestSnapSet(TestCaseWithFactory):
         ]
 
         for field_name in admin_fields:
-            login(ANONYMOUS)
-            self.assertRaises(Unauthorized, setattr, snap, field_name, True)
-            login_admin()
-            setattr(snap, field_name, True)
+            # exception is raised when user tried to update admin-only fields
+            with person_logged_in(non_admin):
+                self.assertRaises(
+                    Unauthorized, setattr, snap, field_name, True
+                )
+            # exception isn't raised when an admin does the same
+            with admin_logged_in():
+                setattr(snap, field_name, True)
 
     def test_snap_use_fetch_service_feature_flag(self):
         # The snap.use_fetch_service API only works when feature flag is set
@@ -2383,11 +2388,15 @@ class TestSnapSet(TestCaseWithFactory):
         components = self.makeSnapComponents(git_ref=ref)
         snap = getUtility(ISnapSet).new(**components)
 
+        # admin cannot get the actual value or set a new value to the
+        # use_fetch_service field when the feature flag is OFF
         login_admin()
         self.assertEqual(None, snap.use_fetch_service)
         snap.use_fetch_service = True
         self.assertEqual(None, snap.use_fetch_service)
 
+        # when feature flag is ON, admin can see the real value of
+        # `use_fetch_service` and opt in and out of it
         with MemoryFeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"}):
             self.assertFalse(snap.use_fetch_service)
             snap.use_fetch_service = True
