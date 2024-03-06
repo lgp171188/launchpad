@@ -6,6 +6,7 @@
   metal:use-macro="view/macro:page/main_only"
   i18n:domain="launchpad">
   <metal:head fill-slot="head_epilogue">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/+icing/vanilla-framework-version-4.7.0.min.css" />
   </metal:head>
   <body>
