@@ -69,7 +69,7 @@ from lp.services.database.sqlbase import (
     flush_database_caches,
     get_transaction_timestamp,
 )
-from lp.services.features.testing import MemoryFeatureFixture
+from lp.services.features.testing import FeatureFixture, MemoryFeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.log.logger import BufferLogger
@@ -2358,8 +2358,12 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
-    def test_edit_admin_only_fields(self):
+    def test_auth_to_edit_admin_only_fields(self):
         # The admin fields can only be updated by an admin
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+
         non_admin = self.factory.makePerson()
         [ref] = self.factory.makeGitRefs(owner=non_admin)
         components = self.makeSnapComponents(git_ref=ref)
@@ -2373,7 +2377,7 @@ class TestSnapSet(TestCaseWithFactory):
         ]
 
         for field_name in admin_fields:
-            # exception is raised when user tried to update admin-only fields
+            # exception is raised when user tries updating admin-only fields
             with person_logged_in(non_admin):
                 self.assertRaises(
                     Unauthorized, setattr, snap, field_name, True
@@ -2381,6 +2385,7 @@ class TestSnapSet(TestCaseWithFactory):
             # exception isn't raised when an admin does the same
             with admin_logged_in():
                 setattr(snap, field_name, True)
+                self.assertTrue(getattr(snap, field_name))
 
     def test_snap_use_fetch_service_feature_flag(self):
         # The snap.use_fetch_service API only works when feature flag is set
