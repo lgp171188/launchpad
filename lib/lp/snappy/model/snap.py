@@ -124,6 +124,7 @@ from lp.services.database.stormexpr import (
     IsDistinctFrom,
     NullsLast,
 )
+from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
@@ -137,6 +138,7 @@ from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.snappy.adapters.buildarch import determine_architectures_to_build
 from lp.snappy.interfaces.snap import (
+    SNAP_USE_FETCH_SERVICE_FEATURE_FLAG,
     BadMacaroon,
     BadSnapSearchContext,
     BadSnapSource,
@@ -394,6 +396,8 @@ class Snap(StormBase, WebhookTargetMixin):
 
     _pro_enable = Bool(name="pro_enable", allow_none=True)
 
+    _use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
+
     def __init__(
         self,
         registrant,
@@ -419,6 +423,7 @@ class Snap(StormBase, WebhookTargetMixin):
         store_channels=None,
         project=None,
         pro_enable=False,
+        use_fetch_service=False,
     ):
         """Construct a `Snap`."""
         super().__init__()
@@ -454,6 +459,7 @@ class Snap(StormBase, WebhookTargetMixin):
         self.store_secrets = store_secrets
         self.store_channels = store_channels
         self._pro_enable = pro_enable
+        self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
         return "<Snap ~%s/+snap/%s>" % (self.owner.name, self.name)
@@ -692,6 +698,17 @@ class Snap(StormBase, WebhookTargetMixin):
     @pro_enable.setter
     def pro_enable(self, value):
         self._pro_enable = value
+
+    @property
+    def use_fetch_service(self):
+        if getFeatureFlag(SNAP_USE_FETCH_SERVICE_FEATURE_FLAG):
+            return self._use_fetch_service
+        return None
+
+    @use_fetch_service.setter
+    def use_fetch_service(self, value):
+        if getFeatureFlag(SNAP_USE_FETCH_SERVICE_FEATURE_FLAG):
+            self._use_fetch_service = value
 
     def getAllowedInformationTypes(self, user):
         """See `ISnap`."""
@@ -1534,6 +1551,7 @@ class SnapSet:
         store_channels=None,
         project=None,
         pro_enable=None,
+        use_fetch_service=False,
     ):
         """See `ISnapSet`."""
         if not registrant.inTeam(owner):
@@ -1618,6 +1636,7 @@ class SnapSet:
             store_channels=store_channels,
             project=project,
             pro_enable=pro_enable,
+            use_fetch_service=use_fetch_service,
         )
         store.add(snap)
         snap._reconcileAccess()
