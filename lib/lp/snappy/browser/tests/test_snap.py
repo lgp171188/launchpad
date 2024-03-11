@@ -857,6 +857,12 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl("Use fetch service").selected = True
         browser.getControl("Update snap package").click()
 
+        # XXX ines-almeida 2024-03-11: Browser tests work oddly with fixtures.
+        # This ensures that the feature flag is ON during the rest of the test.
+        # Further investigation on this issue is required.
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: True})
+        )
         login_admin()
         self.assertEqual(project, snap.project)
         self.assertFalse(snap.require_virtualized)
