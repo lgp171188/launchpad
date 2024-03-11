@@ -61,6 +61,7 @@ from lp.snappy.browser.snap import (
 )
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
+    SNAP_USE_FETCH_SERVICE_FEATURE_FLAG,
     CannotModifySnapProcessor,
     ISnapSet,
     SnapBuildRequestStatus,
@@ -821,6 +822,11 @@ class TestSnapAdminView(BaseTestSnapView):
 
     def test_admin_snap(self):
         # Admins can change require_virtualized, privacy, and allow_internet.
+
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: True})
+        )
+
         login("admin@canonical.com")
         admin = self.factory.makePerson(
             member_of=[getUtility(ILaunchpadCelebrities).admin]
@@ -835,6 +841,7 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertFalse(snap.private)
         self.assertTrue(snap.allow_internet)
         self.assertFalse(snap.pro_enable)
+        self.assertFalse(snap.use_fetch_service)
 
         self.factory.makeAccessPolicy(
             pillar=project, type=InformationType.PRIVATESECURITY
@@ -847,6 +854,7 @@ class TestSnapAdminView(BaseTestSnapView):
         browser.getControl(name="field.information_type").value = private
         browser.getControl("Allow external network access").selected = False
         browser.getControl("Enable Ubuntu Pro").selected = True
+        browser.getControl("Use fetch service").selected = True
         browser.getControl("Update snap package").click()
 
         login_admin()
@@ -855,6 +863,24 @@ class TestSnapAdminView(BaseTestSnapView):
         self.assertTrue(snap.private)
         self.assertFalse(snap.allow_internet)
         self.assertTrue(snap.pro_enable)
+        self.assertTrue(snap.use_fetch_service)
+
+    def test_admin_use_fetch_service_feature_flag(self):
+        admin = self.factory.makePerson(
+            member_of=[getUtility(ILaunchpadCelebrities).admin]
+        )
+        snap = self.factory.makeSnap(registrant=admin)
+        browser = self.getViewBrowser(snap, user=admin)
+
+        browser.getLink("Administer snap package").click()
+        self.assertFalse("Use fetch service" in browser.contents)
+
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: True})
+        )
+
+        browser.reload()
+        self.assertTrue("Use fetch service" in browser.contents)
 
     def test_admin_snap_private_without_project(self):
         # Cannot make snap private if it doesn't have a project associated.
