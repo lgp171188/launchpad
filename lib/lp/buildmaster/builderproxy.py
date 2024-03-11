@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2024 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Builder proxy support.
@@ -84,23 +84,11 @@ class BuilderProxyMixin:
 
     @defer.inlineCallbacks
     def _requestProxyToken(self):
-        admin_username = _get_proxy_config(
+        admin_username = _get_value_from_config(
             "builder_proxy_auth_api_admin_username"
         )
-        if not admin_username:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_username is not configured."
-            )
-        secret = _get_proxy_config("builder_proxy_auth_api_admin_secret")
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_secret is not configured."
-            )
-        url = _get_proxy_config("builder_proxy_auth_api_endpoint")
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_endpoint is not configured."
-            )
+        secret = _get_value_from_config("builder_proxy_auth_api_admin_secret")
+        url = _get_value_from_config("builder_proxy_auth_api_endpoint")
         timestamp = int(time.time())
         proxy_username = "{build_id}-{timestamp}".format(
             build_id=self.build.build_cookie, timestamp=timestamp
