@@ -9,6 +9,7 @@ anything from the rest of Launchpad.
 
 __all__ = [
     "DownloadCommand",
+    "RequestFetchServiceSessionCommand",
     "RequestProcess",
     "RequestProxyTokenCommand",
 ]
@@ -34,6 +35,28 @@ class DownloadCommand(amp.Command):
     errors = {
         RequestException: b"REQUEST_ERROR",
         StreamingError: b"STREAMING_ERROR",
+    }
+
+
+class RequestFetchServiceSessionCommand(amp.Command):
+    """Fetch service API Command subclass
+
+    It defines arguments, response values, and error conditions.
+    For reference:
+    https://docs.twisted.org/en/twisted-18.7.0/core/howto/amp.html
+    """
+
+    arguments = [
+        (b"url", amp.Unicode()),
+        (b"auth_header", amp.String()),
+        (b"proxy_username", amp.Unicode()),
+    ]
+    response = [
+        (b"id", amp.Unicode()),
+        (b"token", amp.Unicode()),
+    ]
+    errors = {
+        RequestException: b"REQUEST_ERROR",
     }
 
 
@@ -91,6 +114,27 @@ class RequestProcess(AMPChild):
                 url,
                 headers={"Authorization": auth_header},
                 json={"username": proxy_username},
+            )
+            response.raise_for_status()
+            return response.json()
+
+    @RequestFetchServiceSessionCommand.responder
+    def requestFetchServiceSessionCommand(
+        self, url, auth_header, proxy_username
+    ):
+        with Session() as session:
+            session.trust_env = False
+            # XXX pelpsi: from ST108 and from what Claudio
+            # said `timeout` and `policy` are not mandatory now:
+            # `timeout` will never be mandatory and we don't pass
+            # it as parameter to the call.
+            # `policy` could be mandatory or optional in future
+            # (assuming `strict` as default), so for now it's better
+            # to pass it explicitly and set it as `permissive`.
+            response = session.post(
+                url,
+                headers={"Authorization": auth_header},
+                json={"username": proxy_username, "policy": "permissive"},
             )
             response.raise_for_status()
             return response.json()
