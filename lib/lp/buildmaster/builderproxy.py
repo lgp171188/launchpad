@@ -77,9 +77,9 @@ class BuilderProxyMixin:
                     port=_get_proxy_config("fetch_service_port"),
                 )
             )
-            args["revocation_endpoint"] = "{endpoint}/session/{id}".format(
+            args["revocation_endpoint"] = "{endpoint}/{session_id}".format(
                 endpoint=_get_proxy_config("fetch_service_control_endpoint"),
-                id=session["id"],
+                session_id=session["id"],
             )
 
     @defer.inlineCallbacks
