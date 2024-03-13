@@ -52,6 +52,28 @@ options:
       YAML-encoded dictionary mapping pillars to dictionaries of
       configuration items to set for CI builds of those pillars.
     default: ""
+  fetch_service_control_admin_secret:
+    type: string
+    description: >
+      Admin secret for requesting sessions from the fetch service.
+    default: ""
+  fetch_service_control_admin_username:
+    type: string
+    description: Admin username for fetch service.
+    default: ""
+  fetch_service_control_endpoint:
+    type: string
+    description: Endpoint for fetch service control service.
+    default: ""
+  fetch_service_host:
+    type: string
+    description: >
+      Fetch service host, it could be either a single instance 
+      or a load balancer in front.
+    default: ""
+  fetch_service_port:
+    type: int
+    description: Fetch service port.
   socket_timeout:
     type: int
     description: >
