@@ -117,7 +117,7 @@ class RevocationEndpointMatcher(Equals):
 
     def __init__(self, session_id):
         super().__init__(
-            "{endpoint}/session/{session_id}".format(
+            "{endpoint}/{session_id}".format(
                 endpoint=config.builddmaster.fetch_service_control_endpoint,
                 session_id=session_id,
             )
