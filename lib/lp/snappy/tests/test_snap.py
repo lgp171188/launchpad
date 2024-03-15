@@ -2358,11 +2358,8 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(ref.path, snap.git_path)
         self.assertEqual(ref, snap.git_ref)
 
-    def test_auth_to_edit_admin_only_fields(self):
-        # The admin fields can only be updated by an admin
-        self.useFixture(
-            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
-        )
+    def test_non_admins_cannot_update_admin_only_fields(self):
+        # The admin fields cannot be updated by a non-admin user
 
         non_admin = self.factory.makePerson()
         [ref] = self.factory.makeGitRefs(owner=non_admin)
@@ -2382,6 +2379,25 @@ class TestSnapSet(TestCaseWithFactory):
                 self.assertRaises(
                     Unauthorized, setattr, snap, field_name, True
                 )
+
+    def test_admins_can_update_admin_only_fields(self):
+        # The admin fields can be updated by an admin
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+
+        [ref] = self.factory.makeGitRefs()
+        components = self.makeSnapComponents(git_ref=ref)
+        snap = getUtility(ISnapSet).new(**components)
+
+        admin_fields = [
+            "allow_internet",
+            "pro_enable",
+            "require_virtualized",
+            "use_fetch_service",
+        ]
+
+        for field_name in admin_fields:
             # exception isn't raised when an admin does the same
             with admin_logged_in():
                 setattr(snap, field_name, True)
