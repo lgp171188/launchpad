@@ -33,7 +33,6 @@ from zope.formlib.textwidgets import TextWidget
 from zope.formlib.widget import DisplayWidget
 
 from lp.app.validators import LaunchpadValidationError
-from lp.services.compat import tzname
 from lp.services.utils import round_half_up
 from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
@@ -638,6 +637,4 @@ class DatetimeDisplayWidget(DisplayWidget):
         if value == self.context.missing_value:
             return ""
         value = value.astimezone(time_zone)
-        return html_escape(
-            "%s %s" % (value.strftime("%Y-%m-%d %H:%M:%S", tzname(value)))
-        )
+        return html_escape(value.strftime("%Y-%m-%d %H:%M:%S %Z"))

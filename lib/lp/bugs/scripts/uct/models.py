@@ -42,7 +42,6 @@ from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackage import SourcePackage
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.compat import tzname
 from lp.services.propertycache import cachedproperty
 
 __all__ = [
@@ -389,7 +388,7 @@ class UCTRecord:
 
     @classmethod
     def _format_datetime(cls, dt: datetime) -> str:
-        return "%s %s" % (dt.strftime("%Y-%m-%d %H:%M:%S"), tzname(dt))
+        return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
 
     @classmethod
     def _format_notes(cls, notes: List[Tuple[str, str]]) -> str:
