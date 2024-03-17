@@ -1043,7 +1043,7 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
             url=Equals("http://charmhub.example/v1/tokens"),
             method=Equals("POST"),
             body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()),
+                json.loads,
                 Equals(
                     {
                         "description": (
@@ -1158,9 +1158,7 @@ class TestCharmRecipeAuthorization(TestCaseWithFactory):
                     ),
                 }
             ),
-            body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()), Equals({})
-            ),
+            body=AfterPreprocessing(json.loads, Equals({})),
         )
         self.assertThat(
             responses.calls,
@@ -2164,9 +2162,7 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
                     "package-view-revisions",
                 ],
             }
-            self.assertEqual(
-                expected_body, json.loads(call.request.body.decode("UTF-8"))
-            )
+            self.assertEqual(expected_body, json.loads(call.request.body))
             self.assertEqual({"root": root_macaroon_raw}, recipe.store_secrets)
         return response, root_macaroon_raw
 
@@ -2276,9 +2272,7 @@ class TestCharmRecipeWebservice(TestCaseWithFactory):
                     ),
                 }
             ),
-            body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()), Equals({})
-            ),
+            body=AfterPreprocessing(json.loads, Equals({})),
         )
         self.assertThat(
             responses.calls,

@@ -90,7 +90,7 @@ def urlparse(url, scheme="", allow_fragments=True):
 
     The url parameter should contain ASCII characters only. This
     function ensures that the original urlparse is called always with a
-    str object, and never unicode (Python 2) or bytes (Python 3).
+    str object, and never bytes.
 
         >>> tuple(urlparse("http://foo.com/bar"))
         ('http', 'foo.com', '/bar', '', '', '')
@@ -120,7 +120,7 @@ def urlsplit(url, scheme="", allow_fragments=True):
 
     The url parameter should contain ASCII characters only. This
     function ensures that the original urlsplit is called always with a
-    str object, and never unicode (Python 2) or bytes (Python 3).
+    str object, and never bytes.
 
         >>> tuple(urlsplit("http://foo.com/baz"))
         ('http', 'foo.com', '/baz', '', '')

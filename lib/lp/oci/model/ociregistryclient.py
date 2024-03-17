@@ -69,7 +69,7 @@ class OCIRegistryClient:
         """Read JSON out of a `LibraryFileAlias`."""
         try:
             reference.open()
-            return json.loads(reference.read().decode("UTF-8"))
+            return json.loads(reference.read())
         finally:
             reference.close()
 

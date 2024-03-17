@@ -89,7 +89,7 @@ class GenerateResource(BoxedAuthenticationResource):
         self.requests = []
 
     def render_POST(self, request):
-        payload = json.loads(self._decrypt(request).decode("UTF-8"))
+        payload = json.loads(self._decrypt(request))
         self.requests.append(payload)
         # We don't need to bother with generating a real key here.  Just
         # make up some random data.
@@ -117,7 +117,7 @@ class SignResource(BoxedAuthenticationResource):
         self.requests = []
 
     def render_POST(self, request):
-        payload = json.loads(self._decrypt(request).decode("UTF-8"))
+        payload = json.loads(self._decrypt(request))
         self.requests.append(payload)
         _, public_key = self.keys[payload["fingerprint"]]
         # We don't need to bother with generating a real signature here.
@@ -143,7 +143,7 @@ class InjectResource(BoxedAuthenticationResource):
         self.requests = []
 
     def render_POST(self, request):
-        payload = json.loads(self._decrypt(request).decode("UTF-8"))
+        payload = json.loads(self._decrypt(request))
         self.requests.append(payload)
         private_key = base64.b64decode(payload["private-key"].encode("UTF-8"))
         public_key = base64.b64decode(payload["public-key"].encode("UTF-8"))

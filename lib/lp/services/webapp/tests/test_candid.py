@@ -499,8 +499,7 @@ class TestCandidCallbackView(TestCaseWithFactory):
                 }
             ),
             body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()),
-                MatchesDict({"code": Equals("test code")}),
+                json.loads, MatchesDict({"code": Equals("test code")})
             ),
         )
         discharge_matcher = MatchesStructure(

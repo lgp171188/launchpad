@@ -106,9 +106,7 @@ class TestGitHostingClient(TestCase):
             ),
         )
         if json_data is not None:
-            self.assertEqual(
-                json_data, json.loads(request.body.decode("UTF-8"))
-            )
+            self.assertEqual(json_data, json.loads(request.body))
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.actions[-1]
         self.assertEqual("git-hosting-%s" % method.lower(), action.category)

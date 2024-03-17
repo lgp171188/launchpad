@@ -227,9 +227,7 @@ class RequestMatches(Matcher):
             if mismatch is not None:
                 return mismatch
         if self.json_data is not None:
-            mismatch = Equals(self.json_data).match(
-                json.loads(request.body.decode("UTF-8"))
-            )
+            mismatch = Equals(self.json_data).match(json.loads(request.body))
             if mismatch is not None:
                 return mismatch
         if self.form_data is not None:
