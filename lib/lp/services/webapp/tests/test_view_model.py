@@ -123,7 +123,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = json.loads(browser.contents.decode())
+        cache = json.loads(browser.contents)
         self.assertThat(cache, KeysEqual("related_features", "context"))
 
     def test_JsonModel_custom_cache(self):
@@ -140,7 +140,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = json.loads(browser.contents.decode())
+        cache = json.loads(browser.contents)
         self.assertThat(
             cache, KeysEqual("related_features", "context", "target_info")
         )
@@ -165,7 +165,7 @@ class TestJsonModelView(BrowserTestCase):
         lp.services.webapp.tests.ProductModelTestView = ProductModelTestView
         self.configZCML()
         browser = self.getUserBrowser(self.url)
-        cache = json.loads(browser.contents.decode())
+        cache = json.loads(browser.contents)
         self.assertThat(
             cache, KeysEqual("related_features", "context", "target_info")
         )

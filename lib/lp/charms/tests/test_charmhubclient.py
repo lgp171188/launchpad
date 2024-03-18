@@ -119,9 +119,7 @@ class RequestMatches(MatchesAll):
         if json_data is not None:
             matchers.append(
                 MatchesStructure(
-                    body=AfterPreprocessing(
-                        lambda b: json.loads(b.decode()), Equals(json_data)
-                    )
+                    body=AfterPreprocessing(json.loads, Equals(json_data))
                 )
             )
         elif file_data is not None:

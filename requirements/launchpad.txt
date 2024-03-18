@@ -121,9 +121,6 @@ patiencediff==0.2.2
 pexpect==4.8.0
 pgbouncer==0.0.9
 pickleshare==0.7.5
-# pkginfo 1.7.0 dropped Python 3.5 support, but we need the features of the
-# newer version, and both our and the package's test suite show no
-# incompatibilities
 pkginfo==1.8.2
 prettytable==0.7.2
 prompt-toolkit==2.0.10

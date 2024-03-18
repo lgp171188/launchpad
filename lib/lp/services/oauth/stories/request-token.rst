@@ -30,7 +30,7 @@ levels.
     >>> json_browser.open(
     ...     "http://launchpad.test/+request-token", data=urlencode(data)
     ... )
-    >>> token = json.loads(json_browser.contents.decode())
+    >>> token = json.loads(json_browser.contents)
     >>> sorted(token.keys())
     ['access_levels', 'oauth_token', 'oauth_token_consumer',
      'oauth_token_secret']

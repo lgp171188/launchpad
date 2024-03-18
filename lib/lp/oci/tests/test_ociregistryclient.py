@@ -220,7 +220,7 @@ class TestOCIRegistryClient(
         # We should have uploaded to the digest, not the tag
         self.assertIn("sha256:", responses.calls[1].request.url)
         self.assertNotIn("edge", responses.calls[1].request.url)
-        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
+        request = json.loads(responses.calls[1].request.body)
 
         layer_matchers = [
             MatchesDict(
@@ -327,7 +327,7 @@ class TestOCIRegistryClient(
 
         self.client.upload(self.build)
 
-        request = json.loads(responses.calls[1].request.body.decode("UTF-8"))
+        request = json.loads(responses.calls[1].request.body)
 
         layer_matchers = [
             MatchesDict(
@@ -1078,7 +1078,7 @@ class TestOCIRegistryClient(
                     },
                 ],
             },
-            json.loads(send_manifest_call.request.body.decode("UTF-8")),
+            json.loads(send_manifest_call.request.body),
         )
 
     @responses.activate
@@ -1195,7 +1195,7 @@ class TestOCIRegistryClient(
                     },
                 ],
             },
-            json.loads(send_manifest_call.request.body.decode("UTF-8")),
+            json.loads(send_manifest_call.request.body),
         )
 
     @responses.activate
@@ -1267,7 +1267,7 @@ class TestOCIRegistryClient(
                     }
                 ],
             },
-            json.loads(send_manifest_call.request.body.decode("UTF-8")),
+            json.loads(send_manifest_call.request.body),
         )
 
     @responses.activate
@@ -1441,7 +1441,7 @@ class TestOCIRegistryClient(
                     },
                 ],
             },
-            json.loads(responses.calls[2].request.body.decode("UTF-8")),
+            json.loads(responses.calls[2].request.body),
         )
 
 

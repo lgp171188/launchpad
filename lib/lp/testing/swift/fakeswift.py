@@ -107,9 +107,7 @@ class FakeKeystone(resource.Resource):
         if "application/json" not in request.getHeader("content-type"):
             request.setResponseCode(http.BAD_REQUEST)
             return b""
-        # XXX cjwatson 2020-06-15: Python 3.5 doesn't allow this to be a
-        # binary file; 3.6 does.
-        credentials = json.loads(request.content.read().decode("UTF-8"))
+        credentials = json.loads(request.content.read())
         if "auth" not in credentials:
             request.setResponseCode(http.FORBIDDEN)
             return b""

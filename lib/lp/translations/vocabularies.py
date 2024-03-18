@@ -18,7 +18,6 @@ from storm.locals import Desc, Not, Or
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.services.compat import tzname
 from lp.services.webapp.vocabulary import (
     NamedStormVocabulary,
     StormVocabularyBase,
@@ -102,10 +101,7 @@ class FilteredLanguagePackVocabularyBase(StormVocabularyBase):
 
     def toTerm(self, obj):
         return SimpleTerm(
-            obj,
-            obj.id,
-            "%s %s"
-            % (obj.date_exported.strftime("%F %T"), tzname(obj.date_exported)),
+            obj, obj.id, "%s" % obj.date_exported.strftime("%F %T %Z")
         )
 
     @property
@@ -143,12 +139,8 @@ class FilteredLanguagePackVocabulary(FilteredLanguagePackVocabularyBase):
         return SimpleTerm(
             obj,
             obj.id,
-            "%s %s (%s)"
-            % (
-                obj.date_exported.strftime("%F %T"),
-                tzname(obj.date_exported),
-                obj.type.title,
-            ),
+            "%s (%s)"
+            % (obj.date_exported.strftime("%F %T %Z"), obj.type.title),
         )
 
     @property

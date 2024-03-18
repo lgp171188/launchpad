@@ -28,7 +28,7 @@ class ProxyAuthAPITokensResource(resource.Resource):
         self.requests = []
 
     def render_POST(self, request):
-        content = json.loads(request.content.read().decode("UTF-8"))
+        content = json.loads(request.content.read())
         self.requests.append(
             {
                 "method": request.method,

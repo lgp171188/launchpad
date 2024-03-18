@@ -176,15 +176,5 @@ class SSHKeyAdditionError(Exception):
             )
         if "exception" in kwargs:
             exception = kwargs.pop("exception")
-            try:
-                exception_text = str(exception)
-            except UnicodeDecodeError:
-                # On Python 2, Key.fromString can raise exceptions with
-                # non-UTF-8 messages.
-                exception_text = (
-                    bytes(exception)
-                    .decode("unicode_escape")
-                    .encode("unicode_escape")
-                )
-            msg = "%s (%s)" % (msg, exception_text)
+            msg = "%s (%s)" % (msg, exception)
         super().__init__(msg, *args, **kwargs)

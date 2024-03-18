@@ -154,10 +154,7 @@ class LibrarianFileWrapperTestCase(TestCase):
     def test_unbounded_read_incorrect_length(self):
         file = self.makeFile(extra_content_length=1)
         with ExpectedException(http.client.IncompleteRead):
-            # Python 3 notices the short response on the first read.
             self.assertEqual(b"abcdef", file.read())
-            # Python 2 only notices the short response on the next read.
-            file.read()
 
     def test_bounded_read_correct_length(self):
         file = self.makeFile()

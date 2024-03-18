@@ -40,7 +40,7 @@ def print_also_notified(bug_page):
 
 def print_subscribers(bug_page, subscription_level=None, reverse=False):
     """Print the subscribers listed in the subscribers JSON portlet."""
-    details = json.loads(bug_page.decode())
+    details = json.loads(bug_page)
 
     if details is None:
         # No subscribers at all.
