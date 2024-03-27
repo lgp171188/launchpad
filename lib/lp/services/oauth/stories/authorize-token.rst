@@ -169,7 +169,7 @@ the list of authentication levels.
     >>> json_browser.open(
     ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params)
     ... )
-    >>> json_token = json.loads(json_browser.contents.decode())
+    >>> json_token = json.loads(json_browser.contents)
     >>> sorted(json_token.keys())
     ['access_levels', 'oauth_token', 'oauth_token_consumer']
 
@@ -190,7 +190,7 @@ the list of authentication levels.
     ...     )
     ...     % urlencode(params)
     ... )
-    >>> json_token = json.loads(json_browser.contents.decode())
+    >>> json_token = json.loads(json_browser.contents)
     >>> sorted(
     ...     (level["value"], level["title"])
     ...     for level in json_token["access_levels"]

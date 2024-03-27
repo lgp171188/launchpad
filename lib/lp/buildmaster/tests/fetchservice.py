@@ -1,11 +1,10 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2024 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Fixtures for dealing with the build time HTTP proxy."""
+"""Fixtures for dealing with the build time Fetch Service http proxy."""
 
 import json
 import uuid
-from datetime import datetime
 from textwrap import dedent
 from urllib.parse import urlsplit
 
@@ -18,8 +17,8 @@ from twisted.web import resource, server
 from lp.services.config import config
 
 
-class ProxyAuthAPITokensResource(resource.Resource):
-    """A test tokens resource for the proxy authentication API."""
+class FetchServiceAuthAPITokensResource(resource.Resource):
+    """A test session resource for the fetch service authentication API."""
 
     isLeaf = True
 
@@ -37,18 +36,16 @@ class ProxyAuthAPITokensResource(resource.Resource):
                 "json": content,
             }
         )
-        username = content["username"]
         return json.dumps(
             {
-                "username": username,
-                "secret": uuid.uuid4().hex,
-                "timestamp": datetime.utcnow().isoformat(),
+                "id": "1",
+                "token": uuid.uuid4().hex,
             }
         ).encode("UTF-8")
 
 
-class InProcessProxyAuthAPIFixture(fixtures.Fixture):
-    """A fixture that pretends to be the proxy authentication API.
+class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
+    """A fixture that mocks the Fetch Service authentication API.
 
     Users of this fixture must call the `start` method, which returns a
     `Deferred`, and arrange for that to get back to the reactor.  This is
@@ -63,45 +60,49 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
             @defer.inlineCallbacks
             def setUp(self):
                 super().setUp()
-                yield self.useFixture(InProcessProxyAuthAPIFixture()).start()
+                yield self.useFixture(
+                    InProcessFetchServiceAuthAPIFixture()
+                ).start()
     """
 
     @defer.inlineCallbacks
     def start(self):
         root = resource.Resource()
-        self.tokens = ProxyAuthAPITokensResource()
-        root.putChild(b"tokens", self.tokens)
+        self.sessions = FetchServiceAuthAPITokensResource()
+        root.putChild(b"sessions", self.sessions)
         endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
-        site = server.Site(self.tokens)
+        site = server.Site(self.sessions)
         self.addCleanup(site.stopFactory)
         port = yield endpoint.listen(site)
         self.addCleanup(port.stopListening)
         config.push(
-            "in-process-proxy-auth-api-fixture",
+            "in-process-fetch-service-api-fixture",
             dedent(
                 """
                 [builddmaster]
-                builder_proxy_auth_api_admin_secret: admin-secret
-                builder_proxy_auth_api_admin_username: admin-launchpad.test
-                builder_proxy_auth_api_endpoint: http://{host}:{port}/tokens
-                builder_proxy_host: {host}
-                builder_proxy_port: {port}
+                fetch_service_control_admin_secret: admin-secret
+                fetch_service_control_admin_username: admin-launchpad.test
+                fetch_service_control_endpoint: http://{host}:{port}/session
+                fetch_service_host: {host}
+                fetch_service_port: {port}
                 """
             ).format(host=port.getHost().host, port=port.getHost().port),
         )
-        self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
+        self.addCleanup(config.pop, "in-process-fetch-service-api-fixture")
 
 
-class ProxyURLMatcher(MatchesStructure):
-    """Check that a string is a valid url for a builder proxy."""
+# This class is not used yet but it could be
+# useful for future tests
+class FetchServiceURLMatcher(MatchesStructure):
+    """Check that a string is a valid url for fetch service."""
 
-    def __init__(self, job, now):
+    def __init__(self):
         super().__init__(
             scheme=Equals("http"),
-            username=Equals(f"{job.build.build_cookie}-{int(now)}"),
-            password=HasLength(32),
-            hostname=Equals(config.builddmaster.builder_proxy_host),
-            port=Equals(config.builddmaster.builder_proxy_port),
+            id=Equals(1),
+            token=HasLength(32),
+            hostname=Equals(config.builddmaster.fetch_service_host),
+            port=Equals(config.builddmaster.fetch_service_port),
             path=Equals(""),
         )
 
@@ -110,13 +111,14 @@ class ProxyURLMatcher(MatchesStructure):
 
 
 class RevocationEndpointMatcher(Equals):
-    """Check that a string is a valid endpoint for proxy token revocation."""
+    """Check that a string is a valid endpoint for fetch
+    service session revocation.
+    """
 
-    def __init__(self, job, now):
+    def __init__(self, session_id):
         super().__init__(
-            "{}/{}-{}".format(
-                config.builddmaster.builder_proxy_auth_api_endpoint,
-                job.build.build_cookie,
-                int(now),
+            "{endpoint}/{session_id}".format(
+                endpoint=config.builddmaster.fetch_service_control_endpoint,
+                session_id=session_id,
             )
         )

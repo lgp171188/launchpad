@@ -61,7 +61,6 @@ from lp.registry.browser.menu import (
     RegistryCollectionActionMenuBase,
 )
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.compat import tzname
 from lp.services.database.bulk import load_referencing
 from lp.services.helpers import shortlist
 from lp.services.propertycache import cachedproperty
@@ -225,35 +224,28 @@ class SprintView(HasSpecificationsView):
     def formatDateTime(self, dt):
         """Format a datetime value according to the sprint's time zone"""
         dt = dt.astimezone(self.tzinfo)
-        return "%s %s" % (dt.strftime("%Y-%m-%d %H:%M"), tzname(dt))
+        return dt.strftime("%Y-%m-%d %H:%M %Z")
 
     def formatDate(self, dt):
         """Format a date value according to the sprint's time zone"""
         dt = dt.astimezone(self.tzinfo)
         return dt.strftime("%Y-%m-%d")
 
-    def _formatLocal(self, dt):
-        return "%s %s on %s" % (
-            dt.strftime("%H:%M"),
-            tzname(dt),
-            dt.strftime("%A, %Y-%m-%d"),
-        )
+    _local_timeformat = "%H:%M %Z on %A, %Y-%m-%d"
 
     @property
     def local_start(self):
         """The sprint start time, in the local time zone, as text."""
-        return self._formatLocal(
-            self.context.time_starts.astimezone(
-                tz.gettz(self.context.time_zone)
-            )
-        )
+        return self.context.time_starts.astimezone(
+            tz.gettz(self.context.time_zone)
+        ).strftime(self._local_timeformat)
 
     @property
     def local_end(self):
         """The sprint end time, in the local time zone, as text."""
-        return self._formatLocal(
-            self.context.time_ends.astimezone(tz.gettz(self.context.time_zone))
-        )
+        return self.context.time_ends.astimezone(
+            tz.gettz(self.context.time_zone)
+        ).strftime(self._local_timeformat)
 
 
 class SprintAddView(LaunchpadFormView):

@@ -23,6 +23,7 @@ __all__ = [
     "NoSourceForSnap",
     "NoSuchSnap",
     "SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG",
+    "SNAP_USE_FETCH_SERVICE_FEATURE_FLAG",
     "SnapAuthorizationBadGeneratedMacaroon",
     "SnapBuildAlreadyPending",
     "SnapBuildArchiveOwnerMismatch",
@@ -101,6 +102,7 @@ from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = "snap.channels.snapcraft"
+SNAP_USE_FETCH_SERVICE_FEATURE_FLAG = "snap.fetch_service.enable"
 
 
 @error_status(http.client.BAD_REQUEST)
@@ -1189,6 +1191,18 @@ class ISnapAdminAttributes(Interface):
         )
     )
 
+    use_fetch_service = exported(
+        Bool(
+            title=_("Use fetch service"),
+            required=True,
+            readonly=False,
+            description=_(
+                "If set, Snap builds will use the fetch-service instead "
+                "of the builder-proxy to access external resources."
+            ),
+        )
+    )
+
     def subscribe(person, subscribed_by):
         """Subscribe a person to this snap recipe."""
 
@@ -1267,6 +1281,7 @@ class ISnapSet(Interface):
         store_channels=None,
         project=None,
         pro_enable=None,
+        use_fetch_service=False,
     ):
         """Create an `ISnap`."""
 

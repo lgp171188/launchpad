@@ -7,12 +7,9 @@ __all__ = [
     "create_access_token_secret",
 ]
 
-import binascii
-import os
+import secrets
 
 
-# XXX cjwatson 2021-09-30: Replace this with secrets.token_hex(32) once we
-# can rely on Python 3.6 everywhere.
 def create_access_token_secret():
     """Create a secret suitable for use in a personal access token."""
-    return binascii.hexlify(os.urandom(32)).decode("ASCII")
+    return secrets.token_hex(32)

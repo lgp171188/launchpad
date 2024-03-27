@@ -93,7 +93,7 @@ class SigningServiceResponseFactory:
         """
         box = Box(self.service_private_key, self.client_public_key)
         decrypted = box.decrypt(value, self.nonce, encoder=Base64Encoder)
-        return json.loads(decrypted.decode("UTF-8"))
+        return json.loads(decrypted)
 
     def getAPISignedContent(self, call_index=0):
         """Returns the signed message returned by the API.

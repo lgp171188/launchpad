@@ -11,10 +11,8 @@ __all__ = [
 ]
 
 import crypt
-import string
 import sys
 import time
-from random import SystemRandom
 from xmlrpc.client import Fault, ServerProxy
 
 import six
@@ -49,16 +47,6 @@ def _get_archive_reference(environ):
         _log(environ, "No archive reference found in URL '%s'.", path)
 
 
-_sr = SystemRandom()
-
-
-def _crypt_sha256(word):
-    """crypt.crypt(word, crypt.METHOD_SHA256), backported from Python 3.5."""
-    saltchars = string.ascii_letters + string.digits + "./"
-    salt = "$5$" + "".join(_sr.choice(saltchars) for _ in range(16))
-    return crypt.crypt(word, salt)
-
-
 _memcache_client = memcache_client_factory(timeline=False)
 
 
@@ -91,7 +79,9 @@ def check_password(environ, user, password):
         proxy.checkArchiveAuthToken(archive_reference, user, password)
         # Cache positive responses for a minute to reduce database load.
         _memcache_client.set(
-            memcache_key, _crypt_sha256(password), int(time.time()) + 60
+            memcache_key,
+            crypt.crypt(password, crypt.METHOD_SHA256),
+            int(time.time()) + 60,
         )
         _log(environ, "%s@%s: Authorized.", user, archive_reference)
         return True

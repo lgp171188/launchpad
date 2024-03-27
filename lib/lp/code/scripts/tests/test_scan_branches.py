@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 #
-# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the scan_branches script."""

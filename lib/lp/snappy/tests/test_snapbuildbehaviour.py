@@ -51,6 +51,9 @@ from lp.buildmaster.tests.builderproxy import (
     ProxyURLMatcher,
     RevocationEndpointMatcher,
 )
+from lp.buildmaster.tests.fetchservice import (
+    InProcessFetchServiceAuthAPIFixture,
+)
 from lp.buildmaster.tests.mock_workers import (
     MockBuilder,
     OkWorker,
@@ -72,6 +75,7 @@ from lp.services.statsd.tests import StatsMixin
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snap import (
     SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG,
+    SNAP_USE_FETCH_SERVICE_FEATURE_FLAG,
     SnapBuildArchiveOwnerMismatch,
 )
 from lp.snappy.model.snapbuildbehaviour import (
@@ -235,7 +239,163 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.assertIn("Missing chroot", str(e))
 
 
-class TestAsyncSnapBuildBehaviour(StatsMixin, TestSnapBuildBehaviourBase):
+class TestAsyncSnapBuildBehaviourFetchService(
+    StatsMixin, TestSnapBuildBehaviourBase
+):
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30
+    )
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        super().setUp()
+        self.session = {
+            "id": "1",
+            "token": uuid.uuid4().hex,
+        }
+        self.fetch_service_url = (
+            "http://{session_id}:{token}@{host}:{port}".format(
+                session_id=self.session["id"],
+                token=self.session["token"],
+                host=config.builddmaster.fetch_service_host,
+                port=config.builddmaster.fetch_service_port,
+            )
+        )
+        self.fetch_service_api = self.useFixture(
+            InProcessFetchServiceAuthAPIFixture()
+        )
+        yield self.fetch_service_api.start()
+        self.now = time.time()
+        self.useFixture(fixtures.MockPatch("time.time", return_value=self.now))
+        self.addCleanup(shut_down_default_process_pool)
+        self.setUpStats()
+
+    def makeJob(self, **kwargs):
+        # We need a builder worker in these tests, in order that requesting
+        # a proxy token can piggyback on its reactor and pool.
+        job = super().makeJob(**kwargs)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        worker = self.useFixture(WorkerTestHelpers()).getClientWorker()
+        job.setBuilder(builder, worker)
+        self.addCleanup(worker.pool.closeCachedConnections)
+        return job
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_unconfigured(self):
+        """Create a snap build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_host` is not provided the function will return
+        without populating `proxy_url` and `revocation_endpoint`.
+        """
+        self.pushConfig("builddmaster", fetch_service_host=None)
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual([], self.fetch_service_api.sessions.requests)
+        self.assertNotIn("proxy_url", args)
+        self.assertNotIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_no_secret(self):
+        """Create a snap build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_control_admin_secret` is not provided
+        the function raises a `CannotBuild` error.
+        """
+        self.pushConfig(
+            "builddmaster", fetch_service_control_admin_secret=None
+        )
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        expected_exception_msg = (
+            "fetch_service_control_admin_secret is not configured."
+        )
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession(self):
+        """Create a snap build request with a successful fetch service
+        configuration.
+
+        `proxy_url` and `revocation_endpoint` are correctly populated.
+        """
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        args = yield job.extraBuildArgs()
+        expected_uri = urlsplit(
+            config.builddmaster.fetch_service_control_endpoint
+        ).path.encode("UTF-8")
+        request_matcher = MatchesDict(
+            {
+                "method": Equals(b"POST"),
+                "uri": Equals(expected_uri),
+                "headers": ContainsDict(
+                    {
+                        b"Authorization": MatchesListwise(
+                            [
+                                Equals(
+                                    b"Basic "
+                                    + base64.b64encode(
+                                        b"admin-launchpad.test:admin-secret"
+                                    )
+                                )
+                            ]
+                        ),
+                        b"Content-Type": MatchesListwise(
+                            [
+                                Equals(b"application/json"),
+                            ]
+                        ),
+                    }
+                ),
+                "json": MatchesDict(
+                    {
+                        "username": StartsWith(job.build.build_cookie + "-"),
+                        "policy": Equals("permissive"),
+                    }
+                ),
+            }
+        )
+        self.assertThat(
+            self.fetch_service_api.sessions.requests,
+            MatchesListwise([request_matcher]),
+        )
+        self.assertIn("proxy_url", args)
+        self.assertIn("revocation_endpoint", args)
+
+    @defer.inlineCallbacks
+    def test_requestFetchServiceSession_flag_off(self):
+        """Create a snap build request turning off the feature flag."""
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: None})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        yield job.extraBuildArgs()
+        self.assertEqual([], self.fetch_service_api.sessions.requests)
+
+
+class TestAsyncSnapBuildBehaviourBuilderProxy(
+    StatsMixin, TestSnapBuildBehaviourBase
+):
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=30
     )

@@ -423,7 +423,7 @@ class TestCharmRecipeAddView(BaseTestCharmRecipeView):
             url=Equals("http://charmhub.example/v1/tokens"),
             method=Equals("POST"),
             body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()),
+                json.loads,
                 Equals(
                     {
                         "description": ("charmhub-name for launchpad.test"),
@@ -1094,7 +1094,7 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
             url=Equals("http://charmhub.example/v1/tokens"),
             method=Equals("POST"),
             body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()),
+                json.loads,
                 Equals(
                     {
                         "description": (f"{store_name} for launchpad.test"),
@@ -1303,9 +1303,7 @@ class TestCharmRecipeAuthorizeView(BaseTestCharmRecipeView):
                     ),
                 }
             ),
-            body=AfterPreprocessing(
-                lambda b: json.loads(b.decode()), Equals({})
-            ),
+            body=AfterPreprocessing(json.loads, Equals({})),
         )
         self.assertThat(
             responses.calls,

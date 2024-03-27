@@ -106,12 +106,6 @@ class TestWSGIArchiveAuth(TestCaseWithFactory):
         self.assertEqual({}, self.memcache_fixture._cache)
         self.assertLogs("No archive found for '~nonexistent/unknown/bad'.")
 
-    def test_crypt_sha256(self):
-        crypted_password = archiveauth._crypt_sha256("secret")
-        self.assertEqual(
-            crypted_password, crypt.crypt("secret", crypted_password)
-        )
-
     def makeArchiveAndToken(self):
         archive = self.factory.makeArchive(private=True)
         archive_path = "/%s/%s/ubuntu" % (archive.owner.name, archive.name)

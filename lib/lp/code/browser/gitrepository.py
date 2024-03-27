@@ -1,4 +1,4 @@
-# Copyright 2015-2021 Canonical Ltd.  This software is licensed under the
+# Copyright 2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository views."""
@@ -1101,9 +1101,7 @@ class GitRepositoryPermissionsView(LaunchpadFormView):
         field_type = field_bits[0]
         try:
             ref_pattern = decode_form_field_id(field_bits[1])
-        # base64.b32decode raises TypeError for decoding errors on Python 2,
-        # but binascii.Error on Python 3.
-        except (TypeError, binascii.Error):
+        except binascii.Error:
             raise UnexpectedFormData(
                 "Cannot parse field name: %s" % field_name
             )

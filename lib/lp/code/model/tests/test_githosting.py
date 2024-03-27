@@ -1,4 +1,4 @@
-# Copyright 2016-2022 Canonical Ltd.  This software is licensed under the
+# Copyright 2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -106,9 +106,7 @@ class TestGitHostingClient(TestCase):
             ),
         )
         if json_data is not None:
-            self.assertEqual(
-                json_data, json.loads(request.body.decode("UTF-8"))
-            )
+            self.assertEqual(json_data, json.loads(request.body))
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.actions[-1]
         self.assertEqual("git-hosting-%s" % method.lower(), action.category)

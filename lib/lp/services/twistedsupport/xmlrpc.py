@@ -56,9 +56,7 @@ def trap_fault(failure, *fault_classes):
     :param failure: A Twisted L{Failure}.
     :param *fault_codes: `LaunchpadFault` subclasses.
     :raise Exception: if 'failure' is not a Fault failure, or if the fault
-        code does not match the given codes.  In line with L{Failure.trap},
-        the exception is the L{Failure} itself on Python 2 and the
-        underlying exception on Python 3.
+        code does not match the given codes.
     :return: The Fault if it matches one of the codes.
     """
     failure.trap(xmlrpc.Fault)
