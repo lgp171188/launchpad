@@ -586,16 +586,20 @@ class LaunchpadObjectFactory(ObjectFactory):
             "SELECT add_test_openid_identifier(%s)", (account.id,)
         )
 
-    def makeGPGKey(self, owner):
+    def makeGPGKey(self, owner, fingerprint=None, keyid=None, keysize=None):
         """Give 'owner' a crappy GPG key for the purposes of testing."""
-        key_id = self.getUniqueHexString(digits=8).upper()
-        fingerprint = key_id + "A" * 32
+        if not keyid:
+            keyid = self.getUniqueHexString(digits=8).upper()
+        if not fingerprint:
+            fingerprint = keyid + "A" * 32
+        if not keysize:
+            keysize = self.getUniqueInteger()
         keyset = getUtility(IGPGKeySet)
         key = keyset.new(
             owner,
-            keyid=key_id,
+            keyid=keyid,
             fingerprint=fingerprint,
-            keysize=self.getUniqueInteger(),
+            keysize=keysize,
             algorithm=GPGKeyAlgorithm.R,
             active=True,
             can_encrypt=False,

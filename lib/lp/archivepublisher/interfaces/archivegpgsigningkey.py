@@ -120,6 +120,19 @@ class IArchiveGPGSigningKey(ISignableArchive):
             upload to the keyserver.
         """
 
+    def generate4096BitRSASigningKey(log=None):
+        """Generate a 4096-bit RSA signing key for the context archive.
+
+        :param log: an optional logger.
+        :raises AssertionError: if the context archive doesn't have a
+            signing key.
+        :raises AssertionError: if the context archive already has a
+            4096-bit RSA signing key.
+        :raises AssertionError: if the signing service is disabled.
+        :raises GPGUploadFailure: if the just-generated key could not be
+            uploaded to the keyserver.
+        """
+
     def setSigningKey(key_path, async_keyserver=False):
         """Set a given secret key export as the context archive signing key.
 

@@ -162,6 +162,21 @@ class IArchiveSigningKeySet(Interface):
         :return: The most suitable key, or None.
         """
 
+    def getByArchiveAndFingerprint(archive, fingerprint):
+        """Get ArchiveSigningKey by archive and fingerprint.
+
+        :param archive: The archive associated with the ArchiveSigningKey.
+        :param fingerprint: The signing key's fingerprint.
+        :return: The matching ArchiveSigningKey or None.
+        """
+
+    def get4096BitRSASigningKey(archive):
+        """Get the 4096-bit RSA SigningKey for the given archive.
+
+        :param archive: The Archive to search.
+        :return: The matching SigningKey or None.
+        """
+
     def getSigningKey(key_type, archive, distro_series, exact_match=False):
         """Get the most suitable SigningKey for a given context.
 
