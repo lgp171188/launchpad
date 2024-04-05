@@ -72,16 +72,17 @@ class SignableArchive:
         )
 
     @cachedproperty
-    def _signing_key(self):
-        """This archive's signing key on the signing service, if any."""
+    def _signing_keys(self):
+        """This archive's signing keys on the signing service, if any."""
         if not getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
-            return None
-        elif self.archive.signing_key_fingerprint is not None:
-            return getUtility(ISigningKeySet).get(
+            return []
+
+        if self.archive.signing_key_fingerprint is not None:
+            signing_key = getUtility(ISigningKeySet).get(
                 SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint
             )
-        else:
-            return None
+            return [signing_key] if signing_key else []
+        return []
 
     @cachedproperty
     def _secret_key(self):
@@ -121,12 +122,13 @@ class SignableArchive:
                 raise ValueError("Invalid signature mode for GPG: %s" % mode)
             signed = False
 
-            if self._signing_key is not None or self._secret_key is not None:
+            if self._signing_keys or self._secret_key is not None:
                 with open(input_path, "rb") as input_file:
                     input_content = input_file.read()
-                if self._signing_key is not None:
+                if self._signing_keys:
                     try:
-                        signature = self._signing_key.sign(
+                        signature = getUtility(ISigningKeySet).sign(
+                            self._signing_keys,
                             input_content,
                             os.path.basename(input_path),
                             mode=mode,
@@ -138,7 +140,7 @@ class SignableArchive:
                                 "Failed to sign archive using signing "
                                 "service; falling back to local key"
                             )
-                        get_property_cache(self)._signing_key = None
+                        get_property_cache(self)._signing_keys = None
                 if not signed and self._secret_key is not None:
                     signature = getUtility(IGPGHandler).signContent(
                         input_content,

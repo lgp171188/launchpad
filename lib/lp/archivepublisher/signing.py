@@ -32,7 +32,10 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
+    ISigningKeySet,
+)
 from lp.soyuz.interfaces.queue import CustomUploadError
 
 PUBLISHER_USES_SIGNING_SERVICE = "archivepublisher.signing_service.enabled"
@@ -398,10 +401,9 @@ class SigningUpload(CustomUpload):
 
         with open(filename, "rb") as fd:
             content = fd.read()
-
         try:
-            signed_content = signing_key.sign(
-                content, message_name=os.path.basename(filename)
+            signed_content = getUtility(ISigningKeySet).sign(
+                [signing_key], content, message_name=os.path.basename(filename)
             )
         except Exception as e:
             if self.logger:

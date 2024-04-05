@@ -44,16 +44,6 @@ class ISigningKey(Interface):
         title=_("When this key was created"), required=True, readonly=True
     )
 
-    def sign(message, message_name, mode=None):
-        """Sign the given message using this key
-
-        :param message: The message to be signed.
-        :param message_name: A name for the message being signed.
-        :param mode: A `SigningMode` specifying how the message is to be
-            signed.  Defaults to `SigningMode.ATTACHED` for UEFI and FIT
-            keys, and `SigningMode.DETACHED` for other key types.
-        """
-
     def addAuthorization(client_name):
         """Authorize another client to use this key.
 
@@ -99,6 +89,19 @@ class ISigningKeySet(Interface):
         :param created_at: The datetime when the key was originally created.
         :return: The SigningKey object associated with the newly created
                  key at lp-signing
+        """
+
+    def sign(signing_keys, message, message_name, mode=None):
+        """Sign the given message using the given keys
+
+        :param signing_keys: A list of one or more signing keys to sign
+            the given message with. If more than one signing key is provided,
+            all signing keys must be of the same type.
+        :param message: The message to be signed.
+        :param message_name: A name for the message being signed.
+        :param mode: A `SigningMode` specifying how the message is to be
+            signed.  Defaults to `SigningMode.ATTACHED` for UEFI and FIT
+            keys, and `SigningMode.DETACHED` for other key types.
         """
 
 

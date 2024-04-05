@@ -133,15 +133,24 @@ class SigningKey(StormBase):
             store.add(db_key)
         return db_key
 
-    def sign(self, message, message_name, mode=None):
+    @classmethod
+    def sign(cls, signing_keys, message, message_name, mode=None):
+        fingerprints = [key.fingerprint for key in signing_keys]
+        key_type = signing_keys[0].key_type
+        if len(signing_keys) > 1 and not all(
+            key.key_type == key_type for key in signing_keys[1:]
+        ):
+            raise ValueError(
+                "Cannot sign as all the keys are not of the same type."
+            )
         if mode is None:
-            if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+            if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
                 mode = SigningMode.ATTACHED
             else:
                 mode = SigningMode.DETACHED
         signing_service = getUtility(ISigningServiceClient)
         signed = signing_service.sign(
-            self.key_type, self.fingerprint, message_name, message, mode
+            key_type, fingerprints, message_name, message, mode
         )
         return signed["signed-message"]
 

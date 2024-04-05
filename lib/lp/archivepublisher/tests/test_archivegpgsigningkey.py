@@ -146,14 +146,14 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
             [
                 mock.call(
                     SigningKeyType.OPENPGP,
-                    self.archive.signing_key_fingerprint,
+                    [self.archive.signing_key_fingerprint],
                     "Release",
                     b"Release contents",
                     SigningMode.DETACHED,
                 ),
                 mock.call(
                     SigningKeyType.OPENPGP,
-                    self.archive.signing_key_fingerprint,
+                    [self.archive.signing_key_fingerprint],
                     "Release",
                     b"Release contents",
                     SigningMode.CLEAR,
@@ -202,7 +202,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         )
         signing_service_client.sign.assert_called_once_with(
             SigningKeyType.OPENPGP,
-            self.archive.signing_key_fingerprint,
+            [self.archive.signing_key_fingerprint],
             "Release",
             b"Release contents",
             SigningMode.DETACHED,
