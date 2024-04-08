@@ -18,6 +18,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
+from lp.code.tests.helpers import BranchHostingFixture
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.job.interfaces.job import JobStatus
@@ -61,10 +62,30 @@ def run_isolated_jobs(jobs):
         transaction.abort()
 
 
+class FakeMethodWithMaxCalls(FakeMethod):
+    """Method that throws error after a given number of calls"""
+
+    def __init__(self, max_calls=-1):
+        self.max_calls = max_calls
+        super().__init__(result=1, failure=None)
+
+    def __call__(self, *args, **kwargs):
+        if self.call_count == self.max_calls:
+            self.failure = UploadFailedResponse("Proxy error", can_retry=True)
+            self.result = None
+        else:
+            self.result = 1
+            self.failure = None
+        return super().__call__(*args, **kwargs)
+
+
 @implementer(ISnapStoreClient)
 class FakeSnapStoreClient:
-    def __init__(self):
-        self.uploadFile = FakeMethod()
+    def __init__(self, max_calls=-1):
+        if max_calls >= 0:
+            self.uploadFile = FakeMethodWithMaxCalls(max_calls)
+        else:
+            self.uploadFile = FakeMethod()
         self.push = FakeMethod()
         self.checkStatus = FakeMethod()
 
@@ -144,6 +165,49 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         )
         return snapbuild
 
+    def makeSnapBuildWithComponents(self, num_components):
+        # Make a build with a builder, components, and a webhook.
+        snapcraft_yaml = """
+        name : test-snap,
+        components:
+        """
+        branch = self.factory.makeBranch()
+        snap = self.factory.makeSnap(store_name="test-snap", branch=branch)
+        snapbuild = self.factory.makeSnapBuild(
+            snap=snap, builder=self.factory.makeBuilder()
+        )
+        snapbuild.updateStatus(BuildStatus.FULLYBUILT)
+        snap_lfa = self.factory.makeLibraryFileAlias(
+            filename="test-snap_0_all.snap", content=b"dummy snap content"
+        )
+        for i in range(num_components):
+            self.factory.makeSnapFile(
+                snapbuild=snapbuild, libraryfile=snap_lfa
+            )
+            component_lfa = self.factory.makeLibraryFileAlias(
+                filename="test-snap+somecomponent%s_0.comp" % i,
+                content=b"component",
+            )
+            self.factory.makeSnapFile(
+                snapbuild=snapbuild, libraryfile=component_lfa
+            )
+            snapcraft_yaml += (
+                """
+                somecomponent%s:
+                    description: test
+            """
+                % i
+            )
+        self.useFixture(
+            BranchHostingFixture(
+                blob=bytes(snapcraft_yaml, "utf-8"),
+            )
+        )
+        self.factory.makeWebhook(
+            target=snapbuild.snap, event_types=["snap:build:0.1"]
+        )
+        return snapbuild
+
     def assertWebhookDeliveries(
         self, snapbuild, expected_store_upload_statuses, logger
     ):
@@ -207,7 +271,101 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
+        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual(1, snapbuild.store_upload_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
+
+    def test_run_with_component(self):
+        # The job uploads the build to the storage with its component
+        # and then pushes it to the store and records the store URL
+        # and revision.
+        logger = self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuildWithComponents(1)
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+        client = FakeSnapStoreClient()
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.result = (self.store_url, 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # Check if uploadFile is called for snap and its component.
+        self.assertThat(
+            [client.uploadFile.calls[0]], FileUploaded("test-snap_0_all.snap")
+        )
+        self.assertThat(
+            [client.uploadFile.calls[1]],
+            FileUploaded("test-snap+somecomponent0_0.comp"),
+        )
+        self.assertEqual(
+            [((snapbuild, 1, {"somecomponent0": 1}), {})],
+            client.push.calls,
+        )
+        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual(1, snapbuild.store_upload_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
+
+    def test_run_with_multiple_components(self):
+        # The job uploads the build to the storage with its components
+        # and then pushes it to the store and records the store URL
+        # and revision.
+        logger = self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuildWithComponents(2)
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+        client = FakeSnapStoreClient()
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.result = (self.store_url, 1)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # Check if uploadFile is called for snap and its components.
+        self.assertThat(
+            [client.uploadFile.calls[0]], FileUploaded("test-snap_0_all.snap")
+        )
+        self.assertThat(
+            [client.uploadFile.calls[1]],
+            FileUploaded("test-snap+somecomponent0_0.comp"),
+        )
+        self.assertThat(
+            [client.uploadFile.calls[2]],
+            FileUploaded("test-snap+somecomponent1_0.comp"),
+        )
+        self.assertEqual(
+            [
+                (
+                    (
+                        snapbuild,
+                        1,
+                        {
+                            "somecomponent0": 1,
+                            "somecomponent1": 1,
+                        },
+                    ),
+                    {},
+                )
+            ],
+            client.push.calls,
+        )
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -268,7 +426,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -313,6 +471,106 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             snapbuild, ["Pending", "Failed to upload"], logger
         )
 
+    def test_run_502_retries_with_components(self):
+        # A run that gets a 502 error from the store schedules itself to be
+        # retried.
+        logger = self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuildWithComponents(2)
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+
+        # The error raises on the third uploadFile call.
+        client = FakeSnapStoreClient(2)
+        client.uploadFile.result = 1
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertThat(
+            [client.uploadFile.calls[0]], FileUploaded("test-snap_0_all.snap")
+        )
+        self.assertThat(
+            [client.uploadFile.calls[1]],
+            FileUploaded("test-snap+somecomponent0_0.comp"),
+        )
+        self.assertThat(
+            [client.uploadFile.calls[2]],
+            FileUploaded("test-snap+somecomponent1_0.comp"),
+        )
+        self.assertEqual([], client.push.calls)
+        self.assertEqual([], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+
+        # Component upload is incomplete.
+        self.assertEqual(
+            {
+                "somecomponent0": 1,
+                "somecomponent1": None,
+            },
+            job.components_ids,
+        )
+        self.assertIsNone(job.store_url)
+        self.assertIsNone(job.store_revision)
+        self.assertIsNone(snapbuild.store_upload_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertEqual(JobStatus.WAITING, job.job.status)
+        self.assertWebhookDeliveries(snapbuild, ["Pending"], logger)
+
+        # Try again.  The upload part of the job is retried, and this time
+        # it succeeds.
+        job.scheduled_start = None
+        client.uploadFile.max_calls = -1
+        client.uploadFile.failure = None
+        client.uploadFile.result = 1
+        client.push.result = self.status_url
+        client.checkStatus.result = (self.store_url, 1)
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+
+        # The last call should contains just the component that failed.
+        self.assertEqual(len(client.uploadFile.calls), 4)
+        self.assertThat(
+            [client.uploadFile.calls[3]],
+            FileUploaded("test-snap+somecomponent1_0.comp"),
+        )
+
+        self.assertEqual(
+            {
+                "somecomponent0": 1,
+                "somecomponent1": 1,
+            },
+            job.components_ids,
+        )
+
+        # After that the snap is uploaded to the store.
+        self.assertEqual(
+            [
+                (
+                    (
+                        snapbuild,
+                        1,
+                        {
+                            "somecomponent0": 1,
+                            "somecomponent1": 1,
+                        },
+                    ),
+                    {},
+                )
+            ],
+            client.push.calls,
+        )
+        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+        self.assertEqual(self.store_url, job.store_url)
+        self.assertEqual(1, job.store_revision)
+        self.assertEqual(1, snapbuild.store_upload_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertEqual(JobStatus.COMPLETED, job.job.status)
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger
+        )
+
     def test_run_502_retries(self):
         # A run that gets a 502 error from the store schedules itself to be
         # retried.
@@ -353,7 +611,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
@@ -388,7 +646,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
         self.assertEqual([], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -524,7 +782,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 2), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 2, {}), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -586,7 +844,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 2), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 2, {}), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -655,7 +913,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
@@ -684,7 +942,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertThat(
             client.uploadFile.calls, FileUploaded("test-snap.snap")
         )
-        self.assertEqual([((snapbuild, 1), {})], client.push.calls)
+        self.assertEqual([((snapbuild, 1, {}), {})], client.push.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)

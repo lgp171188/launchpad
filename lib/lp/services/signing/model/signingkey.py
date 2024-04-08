@@ -11,10 +11,12 @@ __all__ = [
 
 from datetime import timezone
 
+from storm.expr import Join
 from storm.locals import Bytes, DateTime, Int, Reference, Unicode
 from zope.component import getUtility
 from zope.interface import implementer, provider
 
+from lp.registry.model.gpgkey import GPGKey
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
@@ -244,6 +246,50 @@ class ArchiveSigningKeySet:
             if archive_signing_key is None
             else archive_signing_key.signing_key
         )
+
+    @classmethod
+    def getByArchiveAndFingerprint(cls, archive, fingerprint):
+        join = (
+            ArchiveSigningKey,
+            Join(
+                SigningKey,
+                SigningKey.id == ArchiveSigningKey.signing_key_id,
+            ),
+        )
+        results = (
+            IStore(ArchiveSigningKey)
+            .using(*join)
+            .find(
+                ArchiveSigningKey,
+                ArchiveSigningKey.archive == archive,
+                SigningKey.fingerprint == fingerprint,
+            )
+        )
+        return results.one()
+
+    @classmethod
+    def get4096BitRSASigningKey(cls, archive):
+        join = (
+            ArchiveSigningKey,
+            Join(
+                SigningKey,
+                SigningKey.id == ArchiveSigningKey.signing_key_id,
+            ),
+            Join(
+                GPGKey,
+                GPGKey.fingerprint == SigningKey.fingerprint,
+            ),
+        )
+        results = (
+            IStore(ArchiveSigningKey)
+            .using(*join)
+            .find(
+                SigningKey,
+                ArchiveSigningKey.archive == archive,
+                GPGKey.keysize == 4096,
+            )
+        )
+        return results.one()
 
     @classmethod
     def generate(

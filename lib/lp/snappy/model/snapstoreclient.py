@@ -293,7 +293,7 @@ class SnapStoreClient:
             lfa.close()
 
     @classmethod
-    def _push(cls, snapbuild, upload_id):
+    def _push(cls, snapbuild, upload_id, components=None):
         """Create a new store upload based on the uploaded file."""
         snap = snapbuild.snap
         assert snap.can_upload_to_store
@@ -305,6 +305,10 @@ class SnapStoreClient:
             "series": snap.store_series.name,
             "built_at": snapbuild.date_started.isoformat(),
         }
+
+        if components:
+            data["components"] = components
+
         # The security proxy is useless and breaks JSON serialisation.
         channels = removeSecurityProxy(snap.store_channels)
         if channels:
@@ -343,10 +347,10 @@ class SnapStoreClient:
             raise cls._makeSnapStoreError(UploadFailedResponse, e)
 
     @classmethod
-    def push(cls, snapbuild, upload_id):
+    def push(cls, snapbuild, upload_id, components=None):
         """See `ISnapStoreClient`."""
         return cls.refreshIfNecessary(
-            snapbuild.snap, cls._push, snapbuild, upload_id
+            snapbuild.snap, cls._push, snapbuild, upload_id, components
         )
 
     @classmethod

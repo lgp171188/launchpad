@@ -244,6 +244,18 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         self.snapbuild.store_upload_metadata["upload_id"] = upload_id
 
     @property
+    def components_ids(self):
+        """See `ISnapStoreUploadJob`."""
+        return self.store_metadata.get("components_ids")
+
+    @components_ids.setter
+    def components_ids(self, components_ids):
+        """See `ISnapStoreUploadJob`."""
+        if self.snapbuild.store_upload_metadata is None:
+            self.snapbuild.store_upload_metadata = {}
+        self.snapbuild.store_upload_metadata["components_ids"] = components_ids
+
+    @property
     def status_url(self):
         """See `ISnapStoreUploadJob`."""
         return self.store_metadata.get("status_url")
@@ -333,6 +345,22 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                 pass
         return timedelta(minutes=1)
 
+    @staticmethod
+    def _extract_component_name(filename):
+        """Extract component name from built component filename
+
+        The built filename has the following pattern:
+        <snap_name>+<component_name>_<component_revision>.comp.
+        <snap_name> and <component_name> cannot contain `+` nor `_`
+        by desing.
+        """
+        start = filename.find("+")
+        end = filename.find("_")
+        if start == -1 or end == -1:
+            return filename
+        else:
+            return filename[start + 1 : end]
+
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(ISnapStoreClient)
@@ -350,16 +378,43 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     # Nothing to do.
                     self.error_message = None
                     return
+
+                # Get components if any
+                components = []
+                components_ids = {}
+                for _, lfa, _ in self.snapbuild.getFiles():
+                    if lfa.filename.endswith(".comp"):
+                        comp_name = self._extract_component_name(lfa.filename)
+                        components_ids[comp_name] = None
+                        components.append(lfa)
+
+                if "components_ids" not in self.store_metadata:
+                    self.components_ids = components_ids
                 if "upload_id" not in self.store_metadata:
                     self.upload_id = client.uploadFile(snap_lfa)
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
+
+                # Process components
+                for component in components:
+                    # if the id is None, we need to upload the component
+                    # because it means that that component was never uploaded.
+                    # Note that the id is returned directly from SnapStore API.
+                    comp_name = self._extract_component_name(
+                        component.filename
+                    )
+                    if self.components_ids.get(comp_name) is None:
+                        self.components_ids[comp_name] = client.uploadFile(
+                            component
+                        )
+                        self.attempt_count = 1
                 if "status_url" not in self.store_metadata:
                     self.status_url = client.push(
-                        self.snapbuild, self.upload_id
+                        self.snapbuild, self.upload_id, self.components_ids
                     )
                     # We made progress, so reset attempt_count.
                     self.attempt_count = 1
+
                 if self.store_url is None:
                     # This is no longer strictly necessary as the store is
                     # handling releases via the release intent, but we

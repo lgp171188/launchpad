@@ -78,6 +78,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import IHasOwner, IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.registry.model.gpgkey import GPGKey
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
@@ -95,6 +96,7 @@ from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.interfaces.signingkey import ISigningKeySet
+from lp.services.signing.model.signingkey import ArchiveSigningKey, SigningKey
 from lp.services.tokens import create_token
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
@@ -3652,6 +3654,51 @@ class ArchiveSet:
         )
         results.order_by(Archive.date_created)
         return results.config(distinct=True)
+
+    def getArchivesWith1024BitRSASigningKey(self, limit):
+        """See `IArchiveSet`."""
+        join = (
+            Archive,
+            Join(
+                GPGKey,
+                GPGKey.fingerprint == Archive.signing_key_fingerprint,
+            ),
+            Join(
+                SigningKey,
+                SigningKey.fingerprint == Archive.signing_key_fingerprint,
+            ),
+        )
+        subquery_join = (
+            ArchiveSigningKey,
+            Join(
+                SigningKey,
+                SigningKey.id == ArchiveSigningKey.signing_key_id,
+            ),
+            Join(
+                GPGKey,
+                GPGKey.fingerprint == SigningKey.fingerprint,
+            ),
+        )
+        subquery_results = (
+            IStore(ArchiveSigningKey)
+            .using(*subquery_join)
+            .find(
+                ArchiveSigningKey.archive_id,
+                GPGKey.keysize == 4096,
+            )
+        )
+        results = (
+            IStore(Archive)
+            .using(*join)
+            .find(
+                Archive,
+                Archive.purpose == ArchivePurpose.PPA,
+                GPGKey.keysize == 1024,
+                Not(Archive.id.is_in(subquery_results)),
+            )
+        )
+        results.order_by(Archive.id)
+        return results.config(distinct=True, limit=limit)
 
     def getLatestPPASourcePublicationsForDistribution(self, distribution):
         """See `IArchiveSet`."""

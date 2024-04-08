@@ -30,7 +30,7 @@ from lp.archivepublisher.run_parts import find_run_parts_dir, run_parts
 from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
-from lp.services.gpg.interfaces import IGPGHandler, IPymeKey
+from lp.services.gpg.interfaces import GPGKeyAlgorithm, IGPGHandler, IPymeKey
 from lp.services.osutils import remove_if_exists
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.signing.enums import (
@@ -39,6 +39,7 @@ from lp.services.signing.enums import (
     SigningMode,
 )
 from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
     ISigningKey,
     ISigningKeySet,
 )
@@ -329,6 +330,90 @@ class ArchiveGPGSigningKey(SignableArchive):
         return self._setupSigningKey(
             signing_key, async_keyserver=async_keyserver
         )
+
+    def generate4096BitRSASigningKey(self, log=None):
+        """See `IArchiveGPGSigningKey`."""
+        assert getFeatureFlag(
+            PUBLISHER_GPG_USES_SIGNING_SERVICE
+        ), "Signing service should be enabled to use this feature."
+        assert (
+            self.archive.signing_key_fingerprint is not None
+        ), "Archive doesn't have an existing signing key to update."
+        current_gpg_key = getUtility(IGPGKeySet).getByFingerprint(
+            self.archive.signing_key_fingerprint
+        )
+        assert (
+            current_gpg_key.keysize == 1024
+        ), "Archive already has a 4096-bit RSA signing key."
+        default_ppa = self.archive.owner.archive
+
+        # If the current signing key is not in the 'archivesigningkey' table,
+        # add it.
+
+        current_archive_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).getByArchiveAndFingerprint(
+            self.archive, self.archive.signing_key_fingerprint
+        )
+        if not current_archive_signing_key:
+            current_signing_key = getUtility(ISigningKeySet).get(
+                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint
+            )
+            getUtility(IArchiveSigningKeySet).create(
+                self.archive, None, current_signing_key
+            )
+
+        if self.archive != default_ppa:
+
+            default_ppa_new_signing_key = getUtility(
+                IArchiveSigningKeySet
+            ).get4096BitRSASigningKey(default_ppa)
+            if default_ppa_new_signing_key is None:
+                # Recursively update default_ppa key
+                IArchiveGPGSigningKey(
+                    default_ppa
+                ).generate4096BitRSASigningKey(log=log)
+                # Refresh the default_ppa_new_signing_key with
+                # the newly created one.
+                default_ppa_new_signing_key = getUtility(
+                    IArchiveSigningKeySet
+                ).get4096BitRSASigningKey(default_ppa)
+            # Propagate the default PPA 4096-bit RSA signing key
+            # to non-default PPAs and return.
+            getUtility(IArchiveSigningKeySet).create(
+                self.archive, None, default_ppa_new_signing_key
+            )
+            return
+
+        key_displayname = (
+            "Launchpad PPA for %s" % self.archive.owner.displayname
+        )
+        key_owner = getUtility(ILaunchpadCelebrities).ppa_key_guard
+        try:
+            signing_key = getUtility(ISigningKeySet).generate(
+                SigningKeyType.OPENPGP,
+                key_displayname,
+                openpgp_key_algorithm=OpenPGPKeyAlgorithm.RSA,
+                length=4096,
+            )
+        except Exception as e:
+            if log is not None:
+                log.exception(
+                    "Error generating signing key for %s: %s %s"
+                    % (self.archive.reference, e.__class__.__name__, e)
+                )
+            raise
+        getUtility(IArchiveSigningKeySet).create(
+            self.archive, None, signing_key
+        )
+        getUtility(IGPGKeySet).new(
+            key_owner,
+            signing_key.fingerprint[-8:],
+            signing_key.fingerprint,
+            4096,
+            GPGKeyAlgorithm.R,
+        )
+        self._uploadPublicSigningKey(signing_key)
 
     def setSigningKey(self, key_path, async_keyserver=False):
         """See `IArchiveGPGSigningKey`."""

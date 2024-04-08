@@ -363,6 +363,123 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         )
 
     @responses.activate
+    def test_getByArchiveAndFingerprint(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+        distro_series = archive.distribution.series[0]
+
+        arch_key = getUtility(IArchiveSigningKeySet).generate(
+            SigningKeyType.UEFI,
+            "some description",
+            archive,
+            earliest_distro_series=distro_series,
+        )
+
+        store = Store.of(arch_key)
+        store.invalidate()
+
+        archive_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).getByArchiveAndFingerprint(archive, arch_key.signing_key.fingerprint)
+        self.assertIsNot(None, archive_signing_key)
+
+        self.assertThat(
+            archive_signing_key,
+            MatchesStructure.byEquality(
+                key_type=SigningKeyType.UEFI,
+                archive=archive,
+                earliest_distro_series=distro_series,
+            ),
+        )
+
+        self.assertThat(
+            archive_signing_key.signing_key,
+            MatchesStructure.byEquality(
+                key_type=SigningKeyType.UEFI,
+                fingerprint=self.signing_service.generated_fingerprint,
+                public_key=bytes(self.signing_service.generated_public_key),
+            ),
+        )
+
+    @responses.activate
+    def test_getByArchiveAndFingerprint_wrong_fingerprint(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+        distro_series = archive.distribution.series[0]
+
+        arch_key = getUtility(IArchiveSigningKeySet).generate(
+            SigningKeyType.UEFI,
+            "some description",
+            archive,
+            earliest_distro_series=distro_series,
+        )
+
+        store = Store.of(arch_key)
+        store.invalidate()
+
+        archive_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).getByArchiveAndFingerprint(archive, "wrong_fingerprint")
+        self.assertEqual(None, archive_signing_key)
+
+    @responses.activate
+    def test_get4096BitRSASigningKey(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+
+        gpg_key = self.factory.makeGPGKey(
+            archive.owner,
+            keysize=4096,
+        )
+        expected_signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=gpg_key.fingerprint
+        )
+
+        archive_signing_key = getUtility(IArchiveSigningKeySet).create(
+            archive, None, expected_signing_key
+        )
+
+        store = Store.of(archive_signing_key)
+        store.invalidate()
+
+        actual_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(archive)
+
+        self.assertIsNot(None, actual_signing_key)
+        self.assertEqual(expected_signing_key, actual_signing_key)
+
+    @responses.activate
+    def test_get4096BitRSASigningKey_none(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+
+        gpg_key = self.factory.makeGPGKey(
+            archive.owner,
+            keysize=1024,
+        )
+        signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=gpg_key.fingerprint
+        )
+
+        archive_signing_key = getUtility(IArchiveSigningKeySet).create(
+            archive, None, signing_key
+        )
+
+        store = Store.of(archive_signing_key)
+        store.invalidate()
+
+        actual_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(archive)
+
+        self.assertEqual(None, actual_signing_key)
+
+    @responses.activate
     def test_inject_saves_correctly(self):
         self.signing_service.addResponses(self)
 

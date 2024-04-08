@@ -45,7 +45,7 @@ class SigningServiceResponseFactory:
     response.get(url) and response.post(url). See `patch` method.
     """
 
-    def __init__(self):
+    def __init__(self, fingerprint_generator=None):
         self.service_private_key = PrivateKey.generate()
         self.service_public_key = self.service_private_key.public_key
         self.b64_service_public_key = self.service_public_key.encode(
@@ -70,6 +70,7 @@ class SigningServiceResponseFactory:
             bytes(self.generated_public_key)
         ).decode("UTF-8")
         self.generated_fingerprint = "338D218488DFD597D8FCB9C328C3E9D9ADA16CEE"
+        self.fingerprint_generator = fingerprint_generator
 
         self.signed_msg_template = b"%d::signed!"
 
@@ -150,29 +151,34 @@ class SigningServiceResponseFactory:
             status=201,
         )
 
-        responses.add(
+        def generate_callback(request):
+            fingerprint = self.generated_fingerprint
+            if self.fingerprint_generator:
+                fingerprint = self.fingerprint_generator()
+            data = {
+                "fingerprint": fingerprint,
+                "public-key": self.b64_generated_public_key,
+            }
+            return 201, {}, self._encryptPayload(data, self.response_nonce)
+
+        responses.add_callback(
             responses.POST,
             self.getUrl("/generate"),
-            body=self._encryptPayload(
-                {
-                    "fingerprint": self.generated_fingerprint,
-                    "public-key": self.b64_generated_public_key,
-                },
-                nonce=self.response_nonce,
-            ),
-            status=201,
+            callback=generate_callback,
         )
 
-        responses.add(
-            responses.POST,
-            self.getUrl("/inject"),
-            body=self._encryptPayload(
-                {
-                    "fingerprint": self.generated_fingerprint,
-                },
-                nonce=self.response_nonce,
-            ),
-            status=200,
+        def inject_callback(request):
+            fingerprint = self.generated_fingerprint
+            if self.fingerprint_generator:
+                fingerprint = self.fingerprint_generator()
+            data = {
+                "fingerprint": fingerprint,
+                "public-key": self.b64_generated_public_key,
+            }
+            return 200, {}, self._encryptPayload(data, self.response_nonce)
+
+        responses.add_callback(
+            responses.POST, self.getUrl("/inject"), callback=inject_callback
         )
 
         responses.add(
