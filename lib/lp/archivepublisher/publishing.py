@@ -1214,6 +1214,18 @@ class Publisher:
             return self.distro.displayname
         return "LP-PPA-%s" % get_ppa_reference(self.archive)
 
+    def _getMetadataOverrides(self):
+        """Return the contents of the Release file Metadata overrides field.
+
+        :return: a dictionnary that should be used as the value for various
+            keys of the Release file.
+        """
+        return (
+            (self.archive.metadata_overrides or {})
+            if self.archive.purpose == ArchivePurpose.PPA
+            else {}
+        )
+
     def _getCurrentFiles(self, suite, release_file_name, extra_files):
         # Gather information on entries in the current Release file.
         release_path = os.path.join(
@@ -1496,10 +1508,19 @@ class Publisher:
             drsummary += pocket.name.capitalize()
 
         self.log.debug("Writing Release file for %s" % suite)
+        metadata_overrides = self._getMetadataOverrides()
         release_file = Release()
-        release_file["Origin"] = self._getOrigin()
-        release_file["Label"] = self._getLabel()
-        release_file["Suite"] = suite
+        release_file["Origin"] = metadata_overrides.get(
+            "Origin", self._getOrigin()
+        )
+        release_file["Label"] = metadata_overrides.get(
+            "Label", self._getLabel()
+        )
+        release_file["Suite"] = metadata_overrides.get("Suite", suite).replace(
+            "{series}", distroseries.name
+        )
+        if "Snapshots" in metadata_overrides:
+            release_file["Snapshots"] = metadata_overrides["Snapshots"]
         release_file["Version"] = distroseries.version
         release_file["Codename"] = distroseries.name
         release_file["Date"] = datetime.utcnow().strftime(
@@ -1592,12 +1613,19 @@ class Publisher:
                 all_series_files.add(path)
         all_series_files.add(os.path.join(component, arch_path, "Release"))
 
+        metadata_overrides = self._getMetadataOverrides()
         release_file = Release()
-        release_file["Archive"] = suite
+        release_file["Archive"] = metadata_overrides.get(
+            "Suite", suite
+        ).replace("{series}", distroseries.name)
         release_file["Version"] = distroseries.version
         release_file["Component"] = component
-        release_file["Origin"] = self._getOrigin()
-        release_file["Label"] = self._getLabel()
+        release_file["Origin"] = metadata_overrides.get(
+            "Origin", self._getOrigin()
+        )
+        release_file["Label"] = metadata_overrides.get(
+            "Label", self._getLabel()
+        )
         release_file["Architecture"] = arch_name
 
         release_path = os.path.join(suite_dir, component, arch_path, "Release")

@@ -1030,10 +1030,10 @@ class IArchiveView(IHasBuildRecords):
                 "A JSON object containing metadata overrides for this archive."
             ),
             description=_(
-                "Accepted keys are ... The values for all these keys should "
-                "be a string and can use a '{series}' placeholder that will "
-                "get substituted the name of the series that is currently "
-                "being published."
+                "Accepted keys are `Origin`, `Label`, `Suite` and `Snapshots`."
+                "The values for all these keys should be a string and can use "
+                "a `{series}` placeholder, which will get substituted by the "
+                "name of the series that is currently being published."
             ),
             key_type=TextLine(),
             required=False,
