@@ -182,7 +182,7 @@ class BingSearchService:
         """The URL to the Bing Custom Search service.
 
         The URL is probably
-        https://api.cognitive.microsoft.com/bingcustomsearch/v7.0/search.
+        https://api.bing.microsoft.com/v7.0/custom/search.
         """
         return config.bing.site
 
