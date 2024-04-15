@@ -75,19 +75,18 @@ class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
         self.addCleanup(site.stopFactory)
         port = yield endpoint.listen(site)
         self.addCleanup(port.stopListening)
-        config.push(
-            "in-process-fetch-service-api-fixture",
-            dedent(
-                """
-                [builddmaster]
-                fetch_service_control_admin_secret: admin-secret
-                fetch_service_control_admin_username: admin-launchpad.test
-                fetch_service_control_endpoint: http://{host}:{port}/session
-                fetch_service_host: {host}
-                fetch_service_port: {port}
-                """
-            ).format(host=port.getHost().host, port=port.getHost().port),
-        )
+        configs = dedent(
+            """
+            [builddmaster]
+            fetch_service_control_admin_secret: admin-secret
+            fetch_service_control_admin_username: admin-launchpad.test
+            fetch_service_control_endpoint: http://{host}:{port}/session
+            fetch_service_host: {host}
+            fetch_service_port: {port}
+            fetch_service_mitm_certificate: fake-cert
+            """
+        ).format(host=port.getHost().host, port=port.getHost().port)
+        config.push("in-process-fetch-service-api-fixture", configs)
         self.addCleanup(config.pop, "in-process-fetch-service-api-fixture")
 
 
