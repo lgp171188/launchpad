@@ -13,7 +13,7 @@
     "totalEstimatedMatches": 25,
     "value": [
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
         "name": "Launchpad Bugs",
         "url": "https://launchpad.net/~ubuntu-bugs",
         "urlPingSuffix": "DevEx,5080.1",
@@ -24,7 +24,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1",
         "name": "Bugs in Ubuntu Linux",
         "url": "https://launchpad.net/gcleaner",
         "urlPingSuffix": "DevEx,5095.1",
@@ -35,7 +35,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2",
         "name": "Bugs related to Sample Person",
         "url": "https://help.launchpad.net/BugExpiry",
         "urlPingSuffix": "DevEx,5110.1",
@@ -46,7 +46,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.3",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3",
         "name": "Bug #1 in Mozilla Firefox: Firefox does not support SVG",
         "url": "https://launchpad.net/longomatch",
         "urlPingSuffix": "DevEx,5125.1",
@@ -57,7 +57,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.4",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4",
         "name": "Bugs in Source Package \"thunderbird\" in Ubuntu Linux",
         "url": "https://answers.launchpad.net/heat/+question/232632",
         "urlPingSuffix": "DevEx,5140.1",
@@ -69,7 +69,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.5",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.5",
         "name": "Sandpad in Launchpad",
         "url": "https://launchpad.net/sandpad",
         "urlPingSuffix": "DevEx,5154.1",
@@ -80,7 +80,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.6",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.6",
         "name": "Eventum in Launchpad",
         "url": "https://launchpad.net/eventum",
         "urlPingSuffix": "DevEx,5169.1",
@@ -91,7 +91,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.7",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.7",
         "name": "Inkscape 0.48.2 \"0.48.2\" - Launchpad",
         "url": "https://launchpad.net/inkscape/+milestone/0.48.2",
         "urlPingSuffix": "DevEx,5182.1",
@@ -102,7 +102,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.8",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.8",
         "name": "Code Hosting - Launchpad tour",
         "url": "https://launchpad.net/+tour/branch-hosting-tracking",
         "urlPingSuffix": "DevEx,5195.1",
@@ -113,7 +113,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.9",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.9",
         "name": "gdiskdump project files : gdiskdump",
         "url": "https://launchpad.net/gdiskdump/+download",
         "urlPingSuffix": "DevEx,5208.1",
@@ -124,7 +124,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.10",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.10",
         "name": "Bug #1747091 “epicsTimeGetEvent() / generalTime bug ...",
         "url": "https://code.launchpad.net/bugs/1747091",
         "urlPingSuffix": "DevEx,5220.1",
@@ -135,7 +135,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.11",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.11",
         "name": "Bug #96441 “timer updates use too much CPU” : Bugs : Jokosher",
         "url": "https://launchpad.net/jokosher/+bug/96441",
         "urlPingSuffix": "DevEx,5232.1",
@@ -146,7 +146,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.12",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.12",
         "name": "Series 17.10 : Mahara",
         "url": "https://launchpad.net/mahara/17.10",
         "urlPingSuffix": "DevEx,5247.1",
@@ -157,7 +157,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.13",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.13",
         "name": "sap in Launchpad",
         "url": "https://launchpad.net/sap+",
         "urlPingSuffix": "DevEx,5260.1",
@@ -168,7 +168,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.14",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.14",
         "name": "Code/BugAndBlueprintLinks - Launchpad Help",
         "url": "https://help.launchpad.net/Code/BugAndBlueprintLinks",
         "urlPingSuffix": "DevEx,5275.1",
@@ -179,7 +179,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.15",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.15",
         "name": "One Hundred Papercuts in Launchpad",
         "url": "https://launchpad.net/hundredpapercuts",
         "urlPingSuffix": "DevEx,5289.1",
@@ -190,7 +190,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.16",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.16",
         "name": "Little Software Stats in Launchpad",
         "url": "https://launchpad.net/lilsoftstats/",
         "urlPingSuffix": "DevEx,5304.1",
@@ -201,7 +201,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.17",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.17",
         "name": "Take the tour - Launchpad tour",
         "url": "https://launchpad.net/+tour",
         "urlPingSuffix": "DevEx,5317.1",
@@ -212,7 +212,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.18",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.18",
         "name": "EOEC in Launchpad",
         "url": "https://launchpad.net/eoec",
         "urlPingSuffix": "DevEx,5332.1",
@@ -223,7 +223,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.19",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.19",
         "name": "Bug #1210747 “taskdef name not specified” : Bugs : Radkarte",
         "url": "https://launchpad.net/radkarte/+bug/1210747",
         "urlPingSuffix": "DevEx,5345.1",
@@ -242,140 +242,140 @@
           "answerType": "WebPages",
           "resultIndex": 0,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 1,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 2,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 3,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.3"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 4,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.4"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 5,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.5"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.5"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 6,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.6"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.6"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 7,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.7"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.7"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 8,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.8"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.8"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 9,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.9"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.9"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 10,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.10"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.10"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 11,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.11"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.11"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 12,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.12"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.12"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 13,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.13"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.13"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 14,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.14"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.14"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 15,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.15"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.15"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 16,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.16"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.16"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 17,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.17"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.17"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 18,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.18"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.18"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 19,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.19"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.19"
           }
         }
       ]

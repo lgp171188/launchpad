@@ -4,7 +4,7 @@
     "totalEstimatedMatches": -25,
     "value": [
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
         "name": "Ubuntu Bugs in Launchpad",
         "url": "https://launchpad.net/~ubuntu-bugs",
         "urlPingSuffix": "DevEx,5080.1",
@@ -14,7 +14,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2",
         "name": "BugExpiry - Launchpad Help",
         "url": "https://help.launchpad.net/BugExpiry",
         "urlPingSuffix": "DevEx,5110.1",

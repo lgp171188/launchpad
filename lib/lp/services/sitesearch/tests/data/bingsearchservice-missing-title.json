@@ -4,7 +4,7 @@
     "totalEstimatedMatches": -25,
     "value": [
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
         "url": "https://launchpad.net/~ubuntu-bugs",
         "urlPingSuffix": "DevEx,5080.1",
         "isFamilyFriendly": true,
@@ -14,7 +14,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1",
         "name": "GCleaner in Launchpad",
         "url": "https://launchpad.net/gcleaner",
         "urlPingSuffix": "DevEx,5095.1",

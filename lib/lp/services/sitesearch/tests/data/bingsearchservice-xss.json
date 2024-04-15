@@ -4,7 +4,7 @@
     "totalEstimatedMatches": -25,
     "value": [
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
         "name": "Bug #1349491 “[OSSA 2014-027] Persistent <XSS> in the Host Aggrega...” : Bugs ...",
         "url": "https://bugs.launchpad.net/horizon/+bug/1349491",
         "urlPingSuffix": "DevEx,5154.1",

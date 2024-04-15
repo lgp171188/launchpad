@@ -13,7 +13,7 @@
     "totalEstimatedMatches": 25,
     "value": [
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0",
         "name": "Bug #2 in Ubuntu Hoary: “Blackhole Trash folder”",
         "url": "http://bugs.launchpad.test/ubuntu/hoary/+bug/2",
         "urlPingSuffix": "DevEx,5103.1",
@@ -56,7 +56,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1",
         "name": "Bug #2 in mozilla-firefox (Debian): “Blackhole Trash folder”",
         "url": "http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/2",
         "urlPingSuffix": "DevEx,5149.1",
@@ -67,7 +67,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2",
         "name": "Bug #3 in mozilla-firefox (Debian): “Bug Title Test”",
         "url": "http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3",
         "urlPingSuffix": "DevEx,5178.1",
@@ -78,7 +78,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.3",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3",
         "name": "Bug trackers registered in Launchpad",
         "url": "http://bugs.launchpad.test/bugs/bugtrackers",
         "urlPingSuffix": "DevEx,5193.1",
@@ -89,7 +89,7 @@
         "fixedPosition": false
       },
       {
-        "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.4",
+        "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4",
         "name": "Bug tracker “Debian Bug tracker”",
         "url": "http://bugs.launchpad.test/bugs/bugtrackers/debbugs",
         "urlPingSuffix": "DevEx,5208.1",
@@ -113,35 +113,35 @@
           "answerType": "WebPages",
           "resultIndex": 0,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.0"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 1,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.1"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 2,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.2"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 3,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.3"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.3"
           }
         },
         {
           "answerType": "WebPages",
           "resultIndex": 4,
           "value": {
-            "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.4"
+            "id": "https://api.bing.microsoft.com/api/v7/#WebPages.4"
           }
         }
       ]
