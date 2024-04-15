@@ -3,6 +3,10 @@ options:
     type: string
     description: Identifier for the Bing Custom Search instance.
     default:
+  bing_custom_search_endpoint:
+    type: string
+    description: The endpoint to send the Bing custom search requests to.
+    default: "https://api.bing.microsoft.com/v7.0/custom/search"
   bing_subscription_key:
     type: string
     description: >
