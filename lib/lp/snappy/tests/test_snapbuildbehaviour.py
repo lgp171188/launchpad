@@ -303,6 +303,28 @@ class TestAsyncSnapBuildBehaviourFetchService(
         self.assertNotIn("revocation_endpoint", args)
 
     @defer.inlineCallbacks
+    def test_requestFetchServiceSession_no_certificate(self):
+        """Create a snap build request with an incomplete fetch service
+        configuration.
+
+        If `fetch_service_mitm_certificate` is not provided
+        the function raises a `CannotBuild` error.
+        """
+        self.pushConfig("builddmaster", fetch_service_mitm_certificate=None)
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        expected_exception_msg = (
+            "fetch_service_mitm_certificate is not configured."
+        )
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
     def test_requestFetchServiceSession_no_secret(self):
         """Create a snap build request with an incomplete fetch service
         configuration.
@@ -379,6 +401,11 @@ class TestAsyncSnapBuildBehaviourFetchService(
         )
         self.assertIn("proxy_url", args)
         self.assertIn("revocation_endpoint", args)
+        self.assertIn("secrets", args)
+        self.assertIn("fetch_service_mitm_certificate", args["secrets"])
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
 
     @defer.inlineCallbacks
     def test_requestFetchServiceSession_flag_off(self):
