@@ -8,21 +8,21 @@
 
 * bingsearchservice-no-results.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=bug bingsearchservice-bugs-1.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=bug bingsearchservice-bugs-1.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=20&q=bug bingsearchservice-bugs-2.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=20&q=bug bingsearchservice-bugs-2.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=launchpad bingsearchservice-bugs-1.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=launchpad bingsearchservice-bugs-1.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=20&q=launchpad bingsearchservice-bugs-2.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=20&q=launchpad bingsearchservice-bugs-2.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=gnomebaker bingsearchservice-incomplete-response.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=gnomebaker bingsearchservice-incomplete-response.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=no-meaningful bingsearchservice-no-meaningful-results.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=no-meaningful bingsearchservice-no-meaningful-results.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=errors-please bingsearchservice-error.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=errors-please bingsearchservice-error.json
 
-/bingcustomsearch/v7.0/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=xss bingsearchservice-xss.json
+/v7.0/custom/search?count=20&customConfig=1234567890&mkt=en-US&offset=0&q=xss bingsearchservice-xss.json
 
 # This stub service is also used to impersonate the Blog feed
 /blog-feed blog.launchpad.net-feed.xml
