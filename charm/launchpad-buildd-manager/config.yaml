@@ -71,6 +71,10 @@ options:
       Fetch service host, it could be either a single instance 
       or a load balancer in front.
     default: ""
+  fetch_service_mitm_certificate:
+    type: string
+    description: Fetch service certificate.
+    default: ""
   fetch_service_port:
     type: int
     description: Fetch service port.

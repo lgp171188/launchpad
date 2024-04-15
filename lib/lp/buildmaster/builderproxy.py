@@ -82,6 +82,13 @@ class BuilderProxyMixin:
                 session_id=session["id"],
             )
 
+            # Append the fetch-service certificate to BuildArgs secrets.
+            if "secrets" not in args:
+                args["secrets"] = {}
+            args["secrets"]["fetch_service_mitm_certificate"] = (
+                _get_value_from_config("fetch_service_mitm_certificate")
+            )
+
     @defer.inlineCallbacks
     def _requestProxyToken(self):
         admin_username = _get_value_from_config(
