@@ -77,12 +77,24 @@ class SignableArchive:
         if not getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
             return []
 
-        if self.archive.signing_key_fingerprint is not None:
-            signing_key = getUtility(ISigningKeySet).get(
-                SigningKeyType.OPENPGP, self.archive.signing_key_fingerprint
+        signing_keys = []
+        signing_keys.extend(
+            getUtility(IArchiveSigningKeySet).getOpenPGPSigningKeysForArchive(
+                self.archive,
             )
-            return [signing_key] if signing_key else []
-        return []
+        )
+        if self.archive.signing_key_fingerprint is not None:
+            if not any(
+                key.fingerprint == self.archive.signing_key_fingerprint
+                for key in signing_keys
+            ):
+                signing_key = getUtility(ISigningKeySet).get(
+                    SigningKeyType.OPENPGP,
+                    self.archive.signing_key_fingerprint,
+                )
+                if signing_key:
+                    signing_keys.append(signing_key)
+        return signing_keys
 
     @cachedproperty
     def _secret_key(self):

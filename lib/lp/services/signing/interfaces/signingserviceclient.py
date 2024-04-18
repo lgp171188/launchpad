@@ -35,7 +35,7 @@ class ISigningServiceClient(Interface):
 
     def sign(key_type, fingerprints, message_name, message, mode):
         """Sign the given message using the specified key_type and the
-        given pre-generated fingerprints (see `generate` method).
+        given pre-generated fingerprints (see`generate` method).
 
         :param key_type: One of the key types from SigningKeyType enum
         :param fingerprints: A list of the fingerprints of one or more

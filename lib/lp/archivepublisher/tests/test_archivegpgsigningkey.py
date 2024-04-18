@@ -38,7 +38,10 @@ from lp.services.gpg.tests.test_gpghandler import FakeGenerateKey
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.services.signing.enums import SigningKeyType, SigningMode
-from lp.services.signing.interfaces.signingkey import ISigningKeySet
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
+    ISigningKeySet,
+)
 from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.twistedsupport.testing import TReqFixture
 from lp.services.twistedsupport.treq import check_status
@@ -167,6 +170,60 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         self.assertThat(
             os.path.join(suite_dir, "InRelease"),
             FileContains("signed with key_type=OPENPGP mode=CLEAR"),
+        )
+
+    def test_signRepository_uses_all_OpenPGPG_keys_of_an_archive(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
+        current_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=self.archive.signing_key_fingerprint,
+        )
+        new_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            # The fingerprint has to be 30 characters long to pass validation.
+            fingerprint="ABCDEFGHIJKLMNOPQRSTUVWXYZ1234",
+        )
+        self.archive.signing_key_fingerprint = current_key.fingerprint
+        getUtility(IArchiveSigningKeySet).create(
+            self.archive, None, current_key
+        )
+        getUtility(IArchiveSigningKeySet).create(self.archive, None, new_key)
+        signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory)
+        )
+        suite_dir = os.path.join(
+            self.archive_root,
+            "dists",
+            self.suite,
+        )
+        release_path = os.path.join(suite_dir, "Release")
+        write_file(release_path, b"Release contents")
+        logger = BufferLogger()
+        signer = ISignableArchive(self.archive)
+        self.assertTrue(signer.can_sign)
+        self.assertContentEqual(
+            ["Release.gpg", "InRelease"],
+            signer.signRepository(self.suite, log=logger),
+        )
+        signing_service_client.sign.assert_has_calls(
+            [
+                mock.call(
+                    SigningKeyType.OPENPGP,
+                    [current_key.fingerprint, new_key.fingerprint],
+                    "Release",
+                    b"Release contents",
+                    SigningMode.DETACHED,
+                ),
+                mock.call(
+                    SigningKeyType.OPENPGP,
+                    [current_key.fingerprint, new_key.fingerprint],
+                    "Release",
+                    b"Release contents",
+                    SigningMode.CLEAR,
+                ),
+            ]
         )
 
     def test_signRepository_falls_back_from_signing_service(self):

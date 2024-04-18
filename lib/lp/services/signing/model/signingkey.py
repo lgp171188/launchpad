@@ -257,6 +257,27 @@ class ArchiveSigningKeySet:
         )
 
     @classmethod
+    def getOpenPGPSigningKeysForArchive(cls, archive):
+        join = (
+            ArchiveSigningKey,
+            Join(
+                SigningKey,
+                SigningKey.id == ArchiveSigningKey.signing_key_id,
+            ),
+        )
+
+        results = list(
+            IStore(ArchiveSigningKey)
+            .using(*join)
+            .find(
+                SigningKey,
+                ArchiveSigningKey.archive == archive,
+                ArchiveSigningKey.key_type == SigningKeyType.OPENPGP,
+            )
+        )
+        return results
+
+    @classmethod
     def getByArchiveAndFingerprint(cls, archive, fingerprint):
         join = (
             ArchiveSigningKey,

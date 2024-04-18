@@ -165,6 +165,13 @@ class IArchiveSigningKeySet(Interface):
         :return: The most suitable key, or None.
         """
 
+    def getOpenPGPSigningKeysForArchive(archive):
+        """Find and return the OpenPGP signing keys for the given archive.
+
+        :param archive: The archive to get the OpenPGP signing keys for.
+        :return: A list of matching signing keys or an empty list.
+        """
+
     def getByArchiveAndFingerprint(archive, fingerprint):
         """Get ArchiveSigningKey by archive and fingerprint.
 
