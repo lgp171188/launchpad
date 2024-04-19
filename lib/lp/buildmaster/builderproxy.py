@@ -181,7 +181,7 @@ class FetchService(IProxyService):
     """
 
     PROXY_URL = "http://{session_id}:{token}@{proxy_endpoint}"
-    START_SESSION_ENDPOINT = "{control_endpoint}"
+    START_SESSION_ENDPOINT = "{control_endpoint}/session"
     TOKEN_REVOCATION = "{control_endpoint}/session/{session_id}/token"
     RETRIEVE_METADATA_ENDPOINT = "{control_endpoint}/session/{session_id}"
     END_SESSION_ENDPOINT = "{control_endpoint}/session/{session_id}"

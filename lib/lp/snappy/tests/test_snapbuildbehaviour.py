@@ -361,13 +361,10 @@ class TestAsyncSnapBuildBehaviourFetchService(
         request = self.factory.makeSnapBuildRequest(snap=snap)
         job = self.makeJob(snap=snap, build_request=request)
         args = yield job.extraBuildArgs()
-        expected_uri = urlsplit(
-            config.builddmaster.fetch_service_control_endpoint
-        ).path.encode("UTF-8")
         request_matcher = MatchesDict(
             {
                 "method": Equals(b"POST"),
-                "uri": Equals(expected_uri),
+                "uri": Equals(b"/session"),
                 "headers": ContainsDict(
                     {
                         b"Authorization": MatchesListwise(

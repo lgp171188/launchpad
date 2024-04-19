@@ -80,7 +80,7 @@ class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
             [builddmaster]
             fetch_service_control_admin_secret: admin-secret
             fetch_service_control_admin_username: admin-launchpad.test
-            fetch_service_control_endpoint: http://{host}:{port}/session
+            fetch_service_control_endpoint: http://{host}:{port}
             fetch_service_host: {host}
             fetch_service_port: {port}
             fetch_service_mitm_certificate: fake-cert
@@ -116,7 +116,7 @@ class RevocationEndpointMatcher(Equals):
 
     def __init__(self, session_id):
         super().__init__(
-            "{endpoint}/{session_id}".format(
+            "{endpoint}/session/{session_id}/token".format(
                 endpoint=config.builddmaster.fetch_service_control_endpoint,
                 session_id=session_id,
             )
