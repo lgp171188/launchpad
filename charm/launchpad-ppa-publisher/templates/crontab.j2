@@ -19,6 +19,9 @@ P3AROOT={{ ppa_archive_private_root }}
 */20 * * * * nice -n 12 ionice -c 2 -n 7 {{ code_dir }}/cronscripts/ppa-generate-keys.py -q --log-file=INFO:{{ logs_dir }}/ppa-generate-keys.log
 {% endif %}
 
+# This cron job will generate new 4096-bit RSA signing keys for PPAs that only have a 1024-bit RSA signing key
+*/15 * * * * nice -n 12 ionice -c 2 -n 7 {{ code_dir  }}/cronscripts/ppa-update-keys.py -L {{ ppa_update_keys_script_archives_limit }} -q --log-file=INFO:{{ logs_dir }}/ppa-update-keys.log
+
 # OOPS amqp
 */15 * * * * {{ code_dir }}/bin/datedir2amqp --exchange oopses --host {{ rabbitmq_host }} --username {{ rabbitmq_username }} --password {{ rabbitmq_password }} --vhost {{ rabbitmq_vhost }} --repo {{ oopses_dir }} --key ""
 

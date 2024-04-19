@@ -50,6 +50,12 @@ options:
     type: string
     default:
     description: If set, use as rsync endpoint for synchronizing the OVAL data.
+  ppa_update_keys_script_archives_limit:
+    type: int
+    default: 1000
+    description: |
+      The number of affected PPAs that the ppa-update-keys.py cron script should
+      process in a single run.
   require_signing_keys:
     type: boolean
     description: > 
