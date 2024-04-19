@@ -25,6 +25,7 @@ class FetchServiceControlEndpoint(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
         self.requests = []
+        self.responses = []
         self.session_id = "2ea9c9f759044f9b9aff469fe90429a5"
 
     def render_POST(self, request):
@@ -38,12 +39,61 @@ class FetchServiceControlEndpoint(resource.Resource):
                 "json": content,
             }
         )
-        return json.dumps(
+        response = {
+            "id": self.session_id,
+            "token": uuid.uuid4().hex,
+        }
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
+
+    def render_GET(self, request):
+        """We make a GET request to get a fetch service session metadata"""
+        self.requests.append(
             {
-                "id": self.session_id,
-                "token": uuid.uuid4().hex,
+                "method": request.method,
+                "uri": request.uri,
+                "headers": dict(request.requestHeaders.getAllRawHeaders()),
             }
-        ).encode("UTF-8")
+        )
+
+        request.setHeader(b"Content-Type", b"application/json")
+        response = {
+            "session-id": self.session_id,
+            "start-time": "2024-04-17T16:25:02.631557582Z",
+            "end-time": "2024-04-17T16:26:23.505219343Z",
+            "inspectors": [
+                "pip.simple-index",
+                "pip.wheel",
+                "deb",
+                "apt.release",
+                "apt.packages",
+                "default",
+            ],
+            "spool-path": (
+                f"/var/snap/fetch-service/common/spool/{self.session_id}"
+            ),
+            "policy": "test",
+            "processed-requests": 0,
+            "processed-artefacts": 0,
+            "rejected-requests": 0,
+            "rejected-artefacts": 0,
+            "artefacts": [],
+        }
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
+
+    def render_DELETE(self, request):
+        """We make a DELETE request to end a fetch service session"""
+        self.requests.append(
+            {
+                "method": request.method,
+                "uri": request.uri,
+                "headers": dict(request.requestHeaders.getAllRawHeaders()),
+            }
+        )
+        response = {}
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
 
 
 class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
