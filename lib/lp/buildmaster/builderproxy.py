@@ -58,7 +58,7 @@ class BuilderProxyMixin:
         use_fetch_service: bool = False,
     ) -> Generator[None, Dict[str, str], None]:
 
-        self.proxy_service = None
+        self._proxy_service = None
 
         if not allow_internet:
             return
@@ -80,10 +80,10 @@ class BuilderProxyMixin:
             # non-production environments.
             return
 
-        self.proxy_service = proxy_service(
+        self._proxy_service = proxy_service(
             build_id=self.build.build_cookie, worker=self._worker
         )
-        new_session = yield self.proxy_service.startSession()
+        new_session = yield self._proxy_service.startSession()
         args["proxy_url"] = new_session["proxy_url"]
         args["revocation_endpoint"] = new_session["revocation_endpoint"]
 
@@ -181,7 +181,7 @@ class FetchService(IProxyService):
     """
 
     PROXY_URL = "http://{session_id}:{token}@{proxy_endpoint}"
-    START_SESSION_ENDPOINT = "{control_endpoint}"
+    START_SESSION_ENDPOINT = "{control_endpoint}/session"
     TOKEN_REVOCATION = "{control_endpoint}/session/{session_id}/token"
     RETRIEVE_METADATA_ENDPOINT = "{control_endpoint}/session/{session_id}"
     END_SESSION_ENDPOINT = "{control_endpoint}/session/{session_id}"
@@ -217,18 +217,12 @@ class FetchService(IProxyService):
 
         See IProxyService.
         """
-        timestamp = int(time.time())
-        proxy_username = "{build_id}-{timestamp}".format(
-            build_id=self.build_id, timestamp=timestamp
-        )
-
         session_data = yield self.worker.process_pool.doWork(
             RequestFetchServiceSessionCommand,
             url=self.START_SESSION_ENDPOINT.format(
                 control_endpoint=self.control_endpoint
             ),
             auth_header=self.auth_header,
-            proxy_username=proxy_username,
         )
 
         self.session_id = session_data["id"]
