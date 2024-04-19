@@ -51,7 +51,7 @@ class BuilderProxyMixin:
     _worker: BuilderWorker
 
     @defer.inlineCallbacks
-    def addProxyArgs(
+    def startProxySession(
         self,
         args: BuildArgs,
         allow_internet: bool = True,

@@ -176,7 +176,7 @@ class CIBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
             )
 
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.addProxyArgs(args)
+        yield self.startProxySession(args)
         (
             args["archives"],
             args["trusted_keys"],

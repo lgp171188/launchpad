@@ -116,7 +116,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build: ISnapBuild = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.addProxyArgs(
+        yield self.startProxySession(
             args, build.snap.allow_internet, build.snap.use_fetch_service
         )
         args["name"] = build.snap.store_name or build.snap.name
