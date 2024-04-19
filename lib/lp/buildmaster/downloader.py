@@ -49,7 +49,6 @@ class RequestFetchServiceSessionCommand(amp.Command):
     arguments = [
         (b"url", amp.Unicode()),
         (b"auth_header", amp.String()),
-        (b"proxy_username", amp.Unicode()),
     ]
     response = [
         (b"id", amp.Unicode()),
@@ -119,9 +118,7 @@ class RequestProcess(AMPChild):
             return response.json()
 
     @RequestFetchServiceSessionCommand.responder
-    def requestFetchServiceSessionCommand(
-        self, url, auth_header, proxy_username
-    ):
+    def requestFetchServiceSessionCommand(self, url, auth_header):
         with Session() as session:
             session.trust_env = False
             # XXX pelpsi: from ST108 and from what Claudio
@@ -134,7 +131,7 @@ class RequestProcess(AMPChild):
             response = session.post(
                 url,
                 headers={"Authorization": auth_header},
-                json={"username": proxy_username, "policy": "permissive"},
+                json={"policy": "permissive"},
             )
             response.raise_for_status()
             return response.json()

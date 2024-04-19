@@ -217,18 +217,12 @@ class FetchService(IProxyService):
 
         See IProxyService.
         """
-        timestamp = int(time.time())
-        proxy_username = "{build_id}-{timestamp}".format(
-            build_id=self.build_id, timestamp=timestamp
-        )
-
         session_data = yield self.worker.process_pool.doWork(
             RequestFetchServiceSessionCommand,
             url=self.START_SESSION_ENDPOINT.format(
                 control_endpoint=self.control_endpoint
             ),
             auth_header=self.auth_header,
-            proxy_username=proxy_username,
         )
 
         self.session_id = session_data["id"]

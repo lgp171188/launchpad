@@ -386,7 +386,6 @@ class TestAsyncSnapBuildBehaviourFetchService(
                 ),
                 "json": MatchesDict(
                     {
-                        "username": StartsWith(job.build.build_cookie + "-"),
                         "policy": Equals("permissive"),
                     }
                 ),
