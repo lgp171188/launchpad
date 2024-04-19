@@ -3,6 +3,7 @@
 
 __all__ = [
     "BuilderInteractor",
+    "BuilderWorker",
     "extract_vitals_from_db",
 ]
 

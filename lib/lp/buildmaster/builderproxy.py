@@ -58,7 +58,7 @@ class BuilderProxyMixin:
         use_fetch_service: bool = False,
     ) -> Generator[None, Dict[str, str], None]:
 
-        self.proxy_service = None
+        self._proxy_service = None
 
         if not allow_internet:
             return
@@ -80,10 +80,10 @@ class BuilderProxyMixin:
             # non-production environments.
             return
 
-        self.proxy_service = proxy_service(
+        self._proxy_service = proxy_service(
             build_id=self.build.build_cookie, worker=self._worker
         )
-        new_session = yield self.proxy_service.startSession()
+        new_session = yield self._proxy_service.startSession()
         args["proxy_url"] = new_session["proxy_url"]
         args["revocation_endpoint"] = new_session["revocation_endpoint"]
 
