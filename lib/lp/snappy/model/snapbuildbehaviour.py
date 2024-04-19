@@ -209,3 +209,7 @@ class SnapBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         # check does not make sense.  We do, however, refuse to build for
         # obsolete series.
         assert self.build.distro_series.status != SeriesStatus.OBSOLETE
+
+    @defer.inlineCallbacks
+    def _saveBuildSpecificFiles(self, upload_path):
+        yield self.endProxySession(upload_path)

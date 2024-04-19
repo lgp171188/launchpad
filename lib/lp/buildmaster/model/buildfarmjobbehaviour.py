@@ -405,6 +405,11 @@ class BuildFarmJobBehaviourBase:
         yield self._worker.getFiles(filenames_to_download, logger=logger)
 
     @defer.inlineCallbacks
+    def _saveBuildSpecificFiles(self, upload_path):
+        # Specific for each build type
+        yield
+
+    @defer.inlineCallbacks
     def handleSuccess(self, worker_status, logger):
         """Handle a package that built successfully.
 
@@ -446,6 +451,12 @@ class BuildFarmJobBehaviourBase:
         transaction.commit()
 
         yield self._downloadFiles(worker_status, upload_path, logger)
+
+        # Certain builds might require saving specific files. This is the case,
+        # for example, for snap builds that use the fetch service as their
+        # proxy, which require a metadata file to be retrieve in the end of the
+        # build.
+        yield self._saveBuildSpecificFiles(upload_path)
 
         transaction.commit()
 
