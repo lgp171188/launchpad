@@ -136,7 +136,7 @@ class OCIRecipeBuildBehaviour(BuilderProxyMixin, BuildFarmJobBehaviourBase):
         """
         build = self.build
         args: BuildArgs = yield super().extraBuildArgs(logger=logger)
-        yield self.addProxyArgs(args, build.recipe.allow_internet)
+        yield self.startProxySession(args, build.recipe.allow_internet)
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.
         args["name"] = build.recipe.name

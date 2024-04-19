@@ -15,20 +15,25 @@ __all__ = [
 ]
 
 import base64
+import os
 import time
 from typing import Dict, Generator, Type
 
 from twisted.internet import defer
 
 from lp.buildmaster.downloader import (
+    EndFetchServiceSessionCommand,
     RequestFetchServiceSessionCommand,
     RequestProxyTokenCommand,
+    RetrieveFetchServiceSessionCommand,
 )
 from lp.buildmaster.interactor import BuilderWorker
 from lp.buildmaster.interfaces.builder import CannotBuild
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import BuildArgs
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.services.config import config
+
+BUILD_METADATA_FILENAME_FORMAT = "{build_id}_metadata.json"
 
 
 def _get_proxy_config(name):
@@ -50,15 +55,20 @@ class BuilderProxyMixin:
     build: BuildFarmJob
     _worker: BuilderWorker
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._use_fetch_service = False
+        self._proxy_service = None
+
     @defer.inlineCallbacks
-    def addProxyArgs(
+    def startProxySession(
         self,
         args: BuildArgs,
         allow_internet: bool = True,
         use_fetch_service: bool = False,
     ) -> Generator[None, Dict[str, str], None]:
 
-        self._proxy_service = None
+        self._use_fetch_service = use_fetch_service
 
         if not allow_internet:
             return
@@ -83,9 +93,44 @@ class BuilderProxyMixin:
         self._proxy_service = proxy_service(
             build_id=self.build.build_cookie, worker=self._worker
         )
-        new_session = yield self._proxy_service.startSession()
-        args["proxy_url"] = new_session["proxy_url"]
-        args["revocation_endpoint"] = new_session["revocation_endpoint"]
+        session_data = yield self._proxy_service.startSession()
+
+        args["proxy_url"] = session_data["proxy_url"]
+        args["revocation_endpoint"] = session_data["revocation_endpoint"]
+
+    @defer.inlineCallbacks
+    def endProxySession(self, upload_path: str):
+        """Handles all the necessary cleanup to be done at the end of a build.
+
+        For the fetch service case, this means:
+         - Retrieving the metadata, and storing into a file in `upload_path`
+         - Closing the fetch service session (which deletes the session data
+         from the fetch service system)
+
+        Note that if retrieving or storing the metadata file fails, an
+        exception will be raised, and we won't close the session. This could be
+        useful for debbugging.
+        Sessions will be closed automatically within the Fetch Service after
+        a certain amount of time configured by its charm (default 6 hours).
+        """
+        if not self._use_fetch_service:
+            # No cleanup needed for the builder proxy
+            return
+
+        if self._proxy_service is None:
+            # A session was never started. This can happen if the proxy configs
+            # are not set (see `startProxySession`)
+            return
+
+        metadata_file_name = BUILD_METADATA_FILENAME_FORMAT.format(
+            build_id=self.build.build_cookie
+        )
+        file_path = os.path.join(upload_path, metadata_file_name)
+        yield self._proxy_service.retrieveMetadataFromSession(
+            save_content_to=file_path
+        )
+
+        yield self._proxy_service.endSession()
 
 
 class IProxyService:
@@ -242,3 +287,38 @@ class FetchService(IProxyService):
             "proxy_url": proxy_url,
             "revocation_endpoint": revocation_endpoint,
         }
+
+    @defer.inlineCallbacks
+    def retrieveMetadataFromSession(self, save_content_to: str):
+        """Make request to retrieve metadata from the current session.
+
+        Data is stored directly into a file whose path is `save_content_to`
+
+        :raises: RequestException if request to Fetch Service fails
+        """
+        url = self.RETRIEVE_METADATA_ENDPOINT.format(
+            control_endpoint=self.control_endpoint,
+            session_id=self.session_id,
+        )
+        yield self.worker.process_pool.doWork(
+            RetrieveFetchServiceSessionCommand,
+            url=url,
+            auth_header=self.auth_header,
+            save_content_to=save_content_to,
+        )
+
+    @defer.inlineCallbacks
+    def endSession(self):
+        """End the proxy session and do any cleanup needed.
+
+        :raises: RequestException if request to Fetch Service fails
+        """
+        url = self.END_SESSION_ENDPOINT.format(
+            control_endpoint=self.control_endpoint,
+            session_id=self.session_id,
+        )
+        yield self.worker.process_pool.doWork(
+            EndFetchServiceSessionCommand,
+            url=url,
+            auth_header=self.auth_header,
+        )

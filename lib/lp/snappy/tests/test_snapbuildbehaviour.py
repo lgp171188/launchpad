@@ -4,6 +4,7 @@
 """Test snap package build behaviour."""
 
 import base64
+import json
 import os.path
 import time
 import uuid
@@ -39,6 +40,7 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
+from lp.buildmaster.builderproxy import BuilderProxy
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -414,6 +416,91 @@ class TestAsyncSnapBuildBehaviourFetchService(
         job = self.makeJob(snap=snap, build_request=request)
         yield job.extraBuildArgs()
         self.assertEqual([], self.fetch_service_api.sessions.requests)
+
+    @defer.inlineCallbacks
+    def test_endProxySession(self):
+        """By ending a fetch service session, metadata is retrieved from the
+        fetch service and saved to a file; and call to end the session is made.
+        """
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        tem_upload_path = self.useFixture(fixtures.TempDir()).path
+
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        yield job.extraBuildArgs()
+
+        # End the session
+        yield job.endProxySession(upload_path=tem_upload_path)
+
+        # We expect 3 calls made to the fetch service API, in this order
+        self.assertEqual(3, len(self.fetch_service_api.sessions.requests))
+
+        # Request start a session
+        start_session_request = self.fetch_service_api.sessions.requests[0]
+        self.assertEqual(b"POST", start_session_request["method"])
+        self.assertEqual(b"/session", start_session_request["uri"])
+        session_id = self.fetch_service_api.sessions.responses[0]["id"]
+
+        # Request retrieve metadata
+        retrieve_metadata_request = self.fetch_service_api.sessions.requests[1]
+        self.assertEqual(b"GET", retrieve_metadata_request["method"])
+        self.assertEqual(
+            f"/session/{session_id}".encode(), retrieve_metadata_request["uri"]
+        )
+
+        # Request end session
+        end_session_request = self.fetch_service_api.sessions.requests[2]
+        self.assertEqual(b"DELETE", end_session_request["method"])
+        self.assertEqual(
+            f"/session/{session_id}".encode(), end_session_request["uri"]
+        )
+
+        # The expected file is created in the `tem_upload_path`
+        expected_filename = f"{job.build.build_cookie}_metadata.json"
+        expected_file_path = os.path.join(tem_upload_path, expected_filename)
+        with open(expected_file_path) as f:
+            self.assertEqual(
+                json.dumps(self.fetch_service_api.sessions.responses[1]),
+                f.read(),
+            )
+
+    @defer.inlineCallbacks
+    def test_endProxySession_fetch_Service_false(self):
+        """When `use_fetch_service` is False, we don't make any calls to the
+        fetch service API."""
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=False)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        yield job.extraBuildArgs()
+        yield job.endProxySession(upload_path="test_path")
+
+        # No calls go through to the fetch service
+        self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
+
+    @defer.inlineCallbacks
+    def test_endProxySession_no_proxy_service(self):
+        """When the `fetch_service_host` is not set, the calls to the fetch
+        service don't go through."""
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        self.useFixture(FeatureFixture({"fetch_service_host": None}))
+
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        yield job.extraBuildArgs()
+        yield job.endProxySession(upload_path="test_path")
+
+        # No calls go through to the fetch service
+        self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
+        self.assertEqual(None, job._proxy_service)
 
 
 class TestAsyncSnapBuildBehaviourBuilderProxy(
@@ -1362,6 +1449,16 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertTrue(args["private"])
+
+    def test_endProxySession(self):
+        branch = self.factory.makeBranch()
+        job = self.makeJob(branch=branch)
+        yield job.extraBuildArgs()
+
+        # End the session
+        yield job.endProxySession(upload_path="test_path")
+        self.assertFalse(job.use_fetch_service)
+        self.assertTrue(isinstance(job.proxy_service, BuilderProxy))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
