@@ -431,10 +431,10 @@ class SnapBuild(PackageBuildMixin, StormBase):
         metadata_filename = BUILD_METADATA_FILENAME_FORMAT.format(
             build_id=self.build_cookie
         )
-        for url in self.getFileUrls():
-            if url.endswith(metadata_filename):
-                return url
-        return None
+        try:
+            return self.lfaUrl(self.getFileByName(metadata_filename))
+        except NotFoundError:
+            return None
 
     @cachedproperty
     def eta(self):
