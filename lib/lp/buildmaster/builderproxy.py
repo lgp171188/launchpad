@@ -11,6 +11,7 @@ token if and only if they are allowed general internet access.
 """
 
 __all__ = [
+    "BUILD_METADATA_FILENAME_FORMAT",
     "BuilderProxyMixin",
 ]
 
