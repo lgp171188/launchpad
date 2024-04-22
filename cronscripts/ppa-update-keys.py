@@ -14,5 +14,5 @@ from lp.services.config import config
 from lp.soyuz.scripts.ppakeyupdater import PPAKeyUpdater
 
 if __name__ == "__main__":
-    script = PPAKeyUpdater("ppa-generate-keys", config.archivepublisher.dbuser)
+    script = PPAKeyUpdater("ppa-update-keys", config.archivepublisher.dbuser)
     script.lock_and_run()
