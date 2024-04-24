@@ -11,6 +11,7 @@ __all__ = [
     "validate_ppa",
 ]
 
+import http.client
 import logging
 import re
 import typing
@@ -20,6 +21,8 @@ from pathlib import PurePath
 
 import six
 from lazr.lifecycle.event import ObjectCreatedEvent
+from lazr.restful.declarations import error_status
+from storm.databases.postgres import JSON as PgJSON
 from storm.expr import (
     Alias,
     And,
@@ -196,6 +199,13 @@ ARCHIVE_REFERENCE_TEMPLATES = {
 }
 
 
+@error_status(http.client.BAD_REQUEST)
+class CannotSetMetadataOverrides(Exception):
+    """Raised when someone tries to set invalid metadata overrides keys or
+    non empty string values.
+    """
+
+
 def storm_validate_external_dependencies(archive, attr, value):
     assert attr == "external_dependencies"
     errors = validate_external_dependencies(value)
@@ -366,6 +376,8 @@ class Archive(StormBase):
 
     dirty_suites = JSON(name="dirty_suites", allow_none=True)
 
+    metadata_overrides = PgJSON(name="metadata_overrides", allow_none=True)
+
     _publishing_method = DBEnum(
         name="publishing_method", allow_none=True, enum=ArchivePublishingMethod
     )
@@ -390,6 +402,7 @@ class Archive(StormBase):
         signing_key_fingerprint=None,
         publishing_method=None,
         repository_format=None,
+        metadata_overrides=None,
     ):
         super().__init__()
         try:
@@ -406,6 +419,7 @@ class Archive(StormBase):
             self.signing_key_fingerprint = signing_key_fingerprint
             self.publishing_method = publishing_method
             self.repository_format = repository_format
+            self.metadata_overrides = metadata_overrides
         except Exception:
             # If validating references such as `owner` fails, then the new
             # object may have been added to the store first.  Remove it
@@ -2733,6 +2747,25 @@ class Archive(StormBase):
         token_set = getUtility(IArchiveAuthTokenSet)
         token_set.deactivateNamedTokensForArchive(self, names)
 
+    def setMetadataOverrides(self, metadata_overrides):
+        """See `IArchive`."""
+        allowed_keys = sorted(["Origin", "Label", "Suite", "Snapshots"])
+
+        if not all(key in allowed_keys for key in metadata_overrides.keys()):
+            allowed_keys_str = ", ".join(f"'{k}'" for k in allowed_keys)
+            raise CannotSetMetadataOverrides(
+                "Invalid metadata override key. Allowed keys are "
+                f"{{{allowed_keys_str}}}."
+            )
+
+        for key, value in metadata_overrides.items():
+            if not isinstance(value, str) or not value:
+                raise CannotSetMetadataOverrides(
+                    f"Value for '{key}' must be a non-empty string."
+                )
+
+        self.metadata_overrides = metadata_overrides
+
     def newSubscription(
         self, subscriber, registrant, date_expires=None, description=None
     ):
@@ -3430,6 +3463,7 @@ class ArchiveSet:
         processors=None,
         publishing_method=ArchivePublishingMethod.LOCAL,
         repository_format=ArchiveRepositoryFormat.DEBIAN,
+        metadata_overrides=None,
     ):
         """See `IArchiveSet`."""
         if distribution is None:
@@ -3516,6 +3550,7 @@ class ArchiveSet:
             require_virtualized=require_virtualized,
             publishing_method=publishing_method,
             repository_format=repository_format,
+            metadata_overrides=metadata_overrides,
         )
 
         # Upon creation archives are enabled by default.

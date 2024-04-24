@@ -56,6 +56,7 @@ For "devel" additional attributes are available.
     enabled_restricted_processors_collection_link:
       'http://.../~cprov/+archive/ubuntu/ppa/enabled_restricted_processors'
     external_dependencies: None
+    metadata_overrides: None
     name: 'ppa'
     owner_link: 'http://.../~cprov'
     permit_obsolete_series_uploads: False
