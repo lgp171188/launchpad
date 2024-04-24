@@ -543,7 +543,9 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         message = b"this is the message content"
 
         signing = getUtility(ISigningServiceClient)
-        data = signing.sign(key_type, fingerprint, message_name, message, mode)
+        data = signing.sign(
+            key_type, [fingerprint], message_name, message, mode
+        )
 
         self.assertEqual(3, len(responses.calls))
         # expected order of HTTP calls
