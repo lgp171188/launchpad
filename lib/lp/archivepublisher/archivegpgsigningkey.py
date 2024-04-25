@@ -357,7 +357,7 @@ class ArchiveGPGSigningKey(SignableArchive):
             self.archive.signing_key_fingerprint
         )
         assert (
-            current_gpg_key.keysize == 1024
+            current_gpg_key and current_gpg_key.keysize == 1024
         ), "Archive already has a 4096-bit RSA signing key."
         default_ppa = self.archive.owner.archive
 
@@ -383,10 +383,19 @@ class ArchiveGPGSigningKey(SignableArchive):
                 IArchiveSigningKeySet
             ).get4096BitRSASigningKey(default_ppa)
             if default_ppa_new_signing_key is None:
-                # Recursively update default_ppa key
-                IArchiveGPGSigningKey(
-                    default_ppa
-                ).generate4096BitRSASigningKey(log=log)
+                try:
+                    # Recursively update default_ppa key
+                    IArchiveGPGSigningKey(
+                        default_ppa
+                    ).generate4096BitRSASigningKey(log=log)
+                except Exception as e:
+                    log.error(
+                        "Error generating 4096-bit RSA signing key "
+                        "for %s - %s",
+                        default_ppa.reference,
+                        e,
+                    )
+                    return
                 # Refresh the default_ppa_new_signing_key with
                 # the newly created one.
                 default_ppa_new_signing_key = getUtility(
