@@ -315,6 +315,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
                     ),
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -356,6 +357,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
                     ),
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -468,6 +470,7 @@ class TestAsyncCharmRecipeBuildBehaviour(
         self.assertThat(
             build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now)
         )
+        self.assertFalse(build_request[4]["use_fetch_service"])
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_git_ref_deleted(self):

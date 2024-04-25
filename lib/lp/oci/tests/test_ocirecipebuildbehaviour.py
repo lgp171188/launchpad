@@ -227,6 +227,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
         self.assertEqual([], self.proxy_api.tokens.requests)
         self.assertNotIn("proxy_url", args)
         self.assertNotIn("revocation_endpoint", args)
+        self.assertNotIn("use_fetch_service", args)
 
     @defer.inlineCallbacks
     def test_requestProxyToken_no_secret(self):
@@ -520,6 +521,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
                             ),
                         }
                     ),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -623,6 +625,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
                             ),
                         }
                     ),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -683,6 +686,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
                             ),
                         }
                     ),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -867,6 +871,7 @@ class TestAsyncOCIRecipeBuildBehaviour(
             args = yield job.extraBuildArgs()
         self.assertNotIn("proxy_url", args)
         self.assertNotIn("revocation_endpoint", args)
+        self.assertNotIn("use_fetch_service", args)
 
 
 class TestHandleStatusForOCIRecipeBuild(

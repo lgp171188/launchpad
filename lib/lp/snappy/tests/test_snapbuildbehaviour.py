@@ -399,6 +399,7 @@ class TestAsyncSnapBuildBehaviourFetchService(
         )
         self.assertIn("proxy_url", args)
         self.assertIn("revocation_endpoint", args)
+        self.assertTrue(args["use_fetch_service"])
         self.assertIn("secrets", args)
         self.assertIn("fetch_service_mitm_certificate", args["secrets"])
         self.assertIn(
@@ -575,6 +576,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
         self.assertEqual([], self.proxy_api.tokens.requests)
         self.assertNotIn("proxy_url", args)
         self.assertNotIn("revocation_endpoint", args)
+        self.assertNotIn("use_fetch_service", args)
 
     @defer.inlineCallbacks
     def test_requestProxyToken_no_secret(self):
@@ -660,6 +662,11 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
             self.assertIn("universe", archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
+
+        # XXX ines-almeida 2024-04-26: use_fetch_service is `None` because we
+        # are not setting the fetch-service feature flag 'ON' for these tests
+        # (since that's not the point of these test). Once we remove the
+        # feature flag, this will either be True or False - not None.
         self.assertThat(
             args,
             MatchesDict(
@@ -681,6 +688,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
@@ -734,6 +742,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
@@ -776,6 +785,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
@@ -849,6 +859,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
@@ -894,6 +905,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
@@ -936,6 +948,7 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
                     "series": Equals("unstable"),
                     "trusted_keys": Equals(expected_trusted_keys),
                     "target_architectures": Equals(["i386"]),
+                    "use_fetch_service": Is(None),
                 }
             ),
         )
