@@ -5798,70 +5798,121 @@ class TestSnapWebservice(TestCaseWithFactory):
             self.webservice.get(url)
         self.assertThat(recorder, HasQueryCount(Equals(15)))
 
-    # XXX ines-almeida 2024-04-22: after adding the new API attribute
-    # `build_metadata_url` to the snap builds, we actually perform an extra
-    # query per build. We need to make a decision on whether we are OK with
-    # this (and in such case, this test should be reworked or eventually
-    # removed)
-    #
-    # def test_builds_query_count(self):
-    #     # The query count of Snap.builds is constant in the number of
-    #     # builds, even if they have store upload jobs.
-    #     self.pushConfig(
-    #         "snappy",
-    #         store_url="http://sca.example/",
-    #         store_upload_url="http://updown.example/",
-    #     )
-    #     with admin_logged_in():
-    #         snappyseries = self.factory.makeSnappySeries()
-    #     distroseries = self.factory.makeDistroSeries(
-    #         distribution=getUtility(IDistributionSet)["ubuntu"],
-    #         registrant=self.person,
-    #     )
-    #     processor = self.factory.makeProcessor(supports_virtualized=True)
-    #     distroarchseries = self.makeBuildableDistroArchSeries(
-    #         distroseries=distroseries, processor=processor, owner=self.person
-    #     )
-    #     with person_logged_in(self.person):
-    #         snap = self.factory.makeSnap(
-    #             registrant=self.person,
-    #             owner=self.person,
-    #             distroseries=distroseries,
-    #             processors=[processor],
-    #         )
-    #         snap.store_series = snappyseries
-    #         snap.store_name = self.factory.getUniqueUnicode()
-    #         snap.store_upload = True
-    #         snap.store_secrets = {"root": Macaroon().serialize()}
-    #     builds_url = "%s/builds" % api_url(snap)
-    #     logout()
-    #
-    #     def make_build():
-    #         with person_logged_in(self.person):
-    #             builder = self.factory.makeBuilder()
-    #             build = snap.requestBuild(
-    #                 self.person,
-    #                 distroseries.main_archive,
-    #                 distroarchseries,
-    #                 PackagePublishingPocket.PROPOSED,
-    #             )
-    #             with dbuser(config.builddmaster.dbuser):
-    #                 build.updateStatus(
-    #                     BuildStatus.BUILDING, date_started=snap.date_created
-    #                 )
-    #                 build.updateStatus(
-    #                     BuildStatus.FULLYBUILT,
-    #                     builder=builder,
-    #                     date_finished=(
-    #                         snap.date_created + timedelta(minutes=10)
-    #                     ),
-    #                 )
-    #             return build
-    #
-    #     def get_builds():
-    #         response = self.webservice.get(builds_url)
-    #         self.assertEqual(200, response.status)
-    #         return response
-    #
-    #     recorder1, recorder2 = record_two_runs(get_builds, make_build, 2)
-    #     self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+    def test_builds_query_count(self):
+        # The query count of Snap.builds is constant regardless of the number
+        # of builds, even if they have store upload jobs.
+        self.pushConfig(
+            "snappy",
+            store_url="http://sca.example/",
+            store_upload_url="http://updown.example/",
+        )
+        with admin_logged_in():
+            snappyseries = self.factory.makeSnappySeries()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(IDistributionSet)["ubuntu"],
+            registrant=self.person,
+        )
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        distroarchseries = self.makeBuildableDistroArchSeries(
+            distroseries=distroseries, processor=processor, owner=self.person
+        )
+        with person_logged_in(self.person):
+            snap = self.factory.makeSnap(
+                registrant=self.person,
+                owner=self.person,
+                distroseries=distroseries,
+                processors=[processor],
+            )
+            snap.store_series = snappyseries
+            snap.store_name = self.factory.getUniqueUnicode()
+            snap.store_upload = True
+            snap.store_secrets = {"root": Macaroon().serialize()}
+        builds_url = "%s/builds" % api_url(snap)
+        logout()
+
+        def make_build():
+            with person_logged_in(self.person):
+                builder = self.factory.makeBuilder()
+                build = snap.requestBuild(
+                    self.person,
+                    distroseries.main_archive,
+                    distroarchseries,
+                    PackagePublishingPocket.PROPOSED,
+                )
+                with dbuser(config.builddmaster.dbuser):
+                    build.updateStatus(
+                        BuildStatus.BUILDING, date_started=snap.date_created
+                    )
+                    build.updateStatus(
+                        BuildStatus.FULLYBUILT,
+                        builder=builder,
+                        date_finished=(
+                            snap.date_created + timedelta(minutes=10)
+                        ),
+                    )
+                return build
+
+        def get_builds():
+            response = self.webservice.get(builds_url)
+            self.assertEqual(200, response.status)
+            return response
+
+        recorder1, recorder2 = record_two_runs(get_builds, make_build, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_builds_metadata_url(self):
+        # The DB load for the `build_metadata_url` attribute of builds returns
+        # the expected value
+        with admin_logged_in():
+            snappyseries = self.factory.makeSnappySeries()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(IDistributionSet)["ubuntu"],
+            registrant=self.person,
+        )
+        processor = self.factory.makeProcessor(supports_virtualized=True)
+        distroarchseries = self.makeBuildableDistroArchSeries(
+            distroseries=distroseries, processor=processor, owner=self.person
+        )
+        with person_logged_in(self.person):
+            snap = self.factory.makeSnap(
+                registrant=self.person,
+                owner=self.person,
+                distroseries=distroseries,
+                processors=[processor],
+            )
+            snap.store_series = snappyseries
+            snap.store_name = self.factory.getUniqueUnicode()
+            snap.store_upload = True
+            snap.store_secrets = {"root": Macaroon().serialize()}
+        builds_url = "%s/builds" % api_url(snap)
+        logout()
+
+        with person_logged_in(self.person):
+            build = snap.requestBuild(
+                self.person,
+                distroseries.main_archive,
+                distroarchseries,
+                PackagePublishingPocket.PROPOSED,
+            )
+            snap1_lfa = self.factory.makeLibraryFileAlias(
+                filename="test.snap",
+                content=b"dummy snap content",
+                db_only=True,
+            )
+            metadata_filename = f"{build.build_cookie}_metadata.json"
+            snap2_lfa = self.factory.makeLibraryFileAlias(
+                filename=metadata_filename,
+                content=b"dummy snap content",
+                db_only=True,
+            )
+            self.factory.makeSnapFile(snapbuild=build, libraryfile=snap2_lfa)
+            self.factory.makeSnapFile(snapbuild=build, libraryfile=snap1_lfa)
+
+        response = self.webservice.get(builds_url)
+        self.assertEqual(200, response.status)
+        snap_builds = (response.jsonBody()["entries"],)
+        self.assertEqual(1, len(snap_builds))
+        self.assertIn(
+            metadata_filename,
+            snap_builds[0][0]["build_metadata_url"],
+        )
