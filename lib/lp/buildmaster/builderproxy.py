@@ -98,6 +98,7 @@ class BuilderProxyMixin:
 
         args["proxy_url"] = session_data["proxy_url"]
         args["revocation_endpoint"] = session_data["revocation_endpoint"]
+        args["use_fetch_service"] = use_fetch_service
 
     @defer.inlineCallbacks
     def endProxySession(self, upload_path: str):
