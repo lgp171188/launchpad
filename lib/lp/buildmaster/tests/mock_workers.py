@@ -151,6 +151,18 @@ class OkWorker:
         self.call_log.append("info")
         return defer.succeed(("1.0", self.arch_tag, "binarypackage"))
 
+    def proxy_info(self):
+        self.call_log.append("proxy_info")
+        return defer.succeed(
+            {
+                "revocation_endpoint": (
+                    "http://fetch-service.test:9999/session/"
+                    "9138904ce3be9ffd4d0/token"
+                ),
+                "use_fetch_service": False,
+            }
+        )
+
     def resume(self):
         self.call_log.append("resume")
         return defer.succeed(("", "", 0))
