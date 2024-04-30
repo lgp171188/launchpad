@@ -209,6 +209,10 @@ class BuilderWorker:
         """Echo the arguments back."""
         return self._with_timeout(self._server.callRemote("echo", *args))
 
+    def proxy_info(self):
+        """Return the details for the proxy used by the manager."""
+        return self._with_timeout(self._server.callRemote("proxy_info"))
+
     def info(self):
         """Return the protocol version and the builder methods supported."""
         return self._with_timeout(self._server.callRemote("info"))

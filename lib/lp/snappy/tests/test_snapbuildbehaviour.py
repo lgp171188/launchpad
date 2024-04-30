@@ -10,6 +10,7 @@ import time
 import uuid
 from datetime import datetime
 from textwrap import dedent
+from unittest.mock import MagicMock
 from urllib.parse import urlsplit
 
 import fixtures
@@ -40,7 +41,6 @@ from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
 )
-from lp.buildmaster.builderproxy import BuilderProxy
 from lp.buildmaster.enums import BuildBaseImageType, BuildStatus
 from lp.buildmaster.interactor import shut_down_default_process_pool
 from lp.buildmaster.interfaces.builder import CannotBuild
@@ -431,6 +431,20 @@ class TestAsyncSnapBuildBehaviourFetchService(
         snap = self.factory.makeSnap(use_fetch_service=True)
         request = self.factory.makeSnapBuildRequest(snap=snap)
         job = self.makeJob(snap=snap, build_request=request)
+
+        host = config.builddmaster.fetch_service_host
+        port = config.builddmaster.fetch_service_port
+        session_id = self.fetch_service_api.sessions.session_id
+        revocation_endpoint = (
+            f"http://{host}:{port}/session/{session_id}/token"
+        )
+
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "revocation_endpoint": revocation_endpoint,
+                "use_fetch_service": True,
+            }
+        )
         yield job.extraBuildArgs()
 
         # End the session
@@ -443,7 +457,6 @@ class TestAsyncSnapBuildBehaviourFetchService(
         start_session_request = self.fetch_service_api.sessions.requests[0]
         self.assertEqual(b"POST", start_session_request["method"])
         self.assertEqual(b"/session", start_session_request["uri"])
-        session_id = self.fetch_service_api.sessions.responses[0]["id"]
 
         # Request retrieve metadata
         retrieve_metadata_request = self.fetch_service_api.sessions.requests[1]
@@ -478,6 +491,14 @@ class TestAsyncSnapBuildBehaviourFetchService(
         snap = self.factory.makeSnap(use_fetch_service=False)
         request = self.factory.makeSnapBuildRequest(snap=snap)
         job = self.makeJob(snap=snap, build_request=request)
+
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "revocation_endpoint": "https://builder-proxy.test/revoke",
+                "use_fetch_service": False,
+            }
+        )
+
         yield job.extraBuildArgs()
         yield job.endProxySession(upload_path="test_path")
 
@@ -485,23 +506,33 @@ class TestAsyncSnapBuildBehaviourFetchService(
         self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
 
     @defer.inlineCallbacks
-    def test_endProxySession_no_proxy_service(self):
-        """When the `fetch_service_host` is not set, the calls to the fetch
-        service don't go through."""
+    def test_endProxySession_fetch_Service_allow_internet_false(self):
+        """When `allow_internet` is False, we don't send proxy variables to the
+        buildd, and ending the session does not make calls to the fetch
+        service."""
         self.useFixture(
             FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
         )
-        self.useFixture(FeatureFixture({"fetch_service_host": None}))
-
-        snap = self.factory.makeSnap(use_fetch_service=True)
+        snap = self.factory.makeSnap(allow_internet=False)
         request = self.factory.makeSnapBuildRequest(snap=snap)
         job = self.makeJob(snap=snap, build_request=request)
-        yield job.extraBuildArgs()
+        args = yield job.extraBuildArgs()
+
+        # Scenario when we don't allow internet
+        job._worker.proxy_info = MagicMock(
+            return_value={
+                "revocation_endpoint": None,
+                "use_fetch_service": None,
+            }
+        )
+
         yield job.endProxySession(upload_path="test_path")
 
+        # No proxy config sent to buildd
+        self.assertIsNone(args.get("use_fetch_service"))
+        self.assertIsNone(args.get("revocation_endpoint"))
         # No calls go through to the fetch service
         self.assertEqual(0, len(self.fetch_service_api.sessions.requests))
-        self.assertEqual(None, job._proxy_service)
 
 
 class TestAsyncSnapBuildBehaviourBuilderProxy(
@@ -1470,8 +1501,6 @@ class TestAsyncSnapBuildBehaviourBuilderProxy(
 
         # End the session
         yield job.endProxySession(upload_path="test_path")
-        self.assertFalse(job.use_fetch_service)
-        self.assertTrue(isinstance(job.proxy_service, BuilderProxy))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_proxy_url_set(self):
