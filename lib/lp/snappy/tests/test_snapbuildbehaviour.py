@@ -419,6 +419,45 @@ class TestAsyncSnapBuildBehaviourFetchService(
         self.assertEqual([], self.fetch_service_api.sessions.requests)
 
     @defer.inlineCallbacks
+    def test_requestFetchServiceSession_mitm_certficate_redacted(self):
+        """The `fetch_service_mitm_certificate` field in the build arguments
+        is redacted in the build logs."""
+
+        self.useFixture(
+            FeatureFixture({SNAP_USE_FETCH_SERVICE_FEATURE_FLAG: "on"})
+        )
+        snap = self.factory.makeSnap(use_fetch_service=True)
+        request = self.factory.makeSnapBuildRequest(snap=snap)
+        job = self.makeJob(snap=snap, build_request=request)
+        args = yield job.extraBuildArgs()
+
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT
+        )
+        lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            lxd_lfa, image_type=BuildBaseImageType.LXD
+        )
+        deferred = defer.Deferred()
+        deferred.callback(None)
+        job._worker.sendFileToWorker = MagicMock(return_value=deferred)
+        job._worker.build = MagicMock(return_value=(None, None))
+
+        logger = BufferLogger()
+        yield job.dispatchBuildToWorker(logger)
+
+        # Secrets exist within the arguments
+        self.assertIn(
+            "fake-cert", args["secrets"]["fetch_service_mitm_certificate"]
+        )
+        # But are redacted in the log output
+        self.assertIn(
+            "'fetch_service_mitm_certificate': '<redacted>'",
+            logger.getLogBuffer(),
+        )
+
+    @defer.inlineCallbacks
     def test_endProxySession(self):
         """By ending a fetch service session, metadata is retrieved from the
         fetch service and saved to a file; and call to end the session is made.
