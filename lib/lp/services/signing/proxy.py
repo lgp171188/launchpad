@@ -186,8 +186,13 @@ class SigningServiceClient:
             raise ValueError("%s is not a valid mode" % mode)
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
+        if not isinstance(fingerprints, list):
+            raise ValueError(
+                "Expected a list of fingerprints but got "
+                f"{type(fingerprints)} instead"
+            )
         if not fingerprints:
-            raise ValueError("Not even one fingerprint was provided")
+            raise ValueError("At least one fingerprint must be provided")
         if len(fingerprints) > 1 and key_type != SigningKeyType.OPENPGP:
             raise ValueError(
                 "Multi-signing is not supported for non-OpenPGP keys"
@@ -213,7 +218,7 @@ class SigningServiceClient:
             public_key = base64.b64decode(ret["public-key"].encode("UTF-8"))
         else:  # is a list of public key strings
             public_key = [
-                base64.b64decode(x).encode("UTF-8") for x in ret["public-key"]
+                base64.b64decode(x.encode("UTF-8")) for x in ret["public-key"]
             ]
         return {
             "public-key": public_key,
