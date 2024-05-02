@@ -12,6 +12,7 @@ import logging
 import os
 import tempfile
 from collections import OrderedDict
+from copy import deepcopy
 from datetime import datetime
 
 import transaction
@@ -126,6 +127,14 @@ class BuildFarmJobBehaviourBase:
 
     def redactXmlrpcArguments(self, args):
         # we do not want to have secrets in logs
+
+        # we need to copy the input in order to avoid mutating `args` which
+        # will be passed to the builders
+        args = deepcopy(args)
+        if args["args"].get("secrets"):
+            for key in args["args"]["secrets"].keys():
+                args["args"]["secrets"][key] = "<redacted>"
+
         return sanitise_urls(repr(args))
 
     @defer.inlineCallbacks
