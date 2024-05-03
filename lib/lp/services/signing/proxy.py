@@ -178,7 +178,7 @@ class SigningServiceClient:
             "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
         }
 
-    def sign(self, key_type, fingerprint, message_name, message, mode):
+    def sign(self, key_type, fingerprints, message_name, message, mode):
         valid_modes = {SigningMode.ATTACHED, SigningMode.DETACHED}
         if key_type == SigningKeyType.OPENPGP:
             valid_modes.add(SigningMode.CLEAR)
@@ -186,7 +186,25 @@ class SigningServiceClient:
             raise ValueError("%s is not a valid mode" % mode)
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
+        if not isinstance(fingerprints, list):
+            raise ValueError(
+                "Expected a list of fingerprints but got "
+                f"{type(fingerprints)} instead"
+            )
+        if not fingerprints:
+            raise ValueError("At least one fingerprint must be provided")
+        if len(fingerprints) > 1 and key_type != SigningKeyType.OPENPGP:
+            raise ValueError(
+                "Multi-signing is not supported for non-OpenPGP keys"
+            )
 
+        # The signing service accepts either a single fingerprint
+        # string (for all key types) or a list of two or more
+        # fingerprints (only for OpenPGP keys) for the 'fingerprint'
+        # property.
+        fingerprint = (
+            fingerprints[0] if len(fingerprints) == 1 else fingerprints
+        )
         payload = {
             "key-type": key_type.name,
             "fingerprint": fingerprint,
@@ -196,8 +214,14 @@ class SigningServiceClient:
         }
 
         ret = self._requestJson("/sign", "POST", encrypt=True, json=payload)
+        if isinstance(ret["public-key"], str):
+            public_key = base64.b64decode(ret["public-key"].encode("UTF-8"))
+        else:  # is a list of public key strings
+            public_key = [
+                base64.b64decode(x.encode("UTF-8")) for x in ret["public-key"]
+            ]
         return {
-            "public-key": base64.b64decode(ret["public-key"].encode("UTF-8")),
+            "public-key": public_key,
             "signed-message": base64.b64decode(
                 ret["signed-message"].encode("UTF-8")
             ),

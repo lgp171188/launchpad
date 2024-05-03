@@ -35,6 +35,7 @@ from lp.testing import (
     TestCaseWithFactory,
     admin_logged_in,
     api_url,
+    celebrity_logged_in,
     login,
     person_logged_in,
     record_two_runs,
@@ -1266,3 +1267,310 @@ class TestArchiveSet(TestCaseWithFactory):
             .jsonBody()
         )
         self.assertEqual(body["reference"], reference)
+
+
+class TestArchiveMetadataOverridesWebService(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.default_overrides = {
+            "Origin": "default_origin",
+            "Label": "default_label",
+            "Suite": "default_suite",
+            "Snapshots": "default_snapshots",
+        }
+
+    def create_archive(self, owner=None, private=False, primary=False):
+        if primary:
+            distribution = self.factory.makeDistribution(owner=owner)
+            archive = self.factory.makeArchive(
+                owner=owner,
+                distribution=distribution,
+                purpose=ArchivePurpose.PRIMARY,
+            )
+            with celebrity_logged_in("admin"):
+                archive.setMetadataOverrides(self.default_overrides)
+            return archive
+
+        return self.factory.makeArchive(
+            owner=owner,
+            private=private,
+            metadata_overrides=self.default_overrides,
+        )
+
+    def get_and_check_response(self, person, archive, expected_body=None):
+        archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        response = webservice.get(archive_url)
+        self.assertEqual(200, response.status)
+        if expected_body:
+            self.assertEqual(
+                expected_body,
+                response.jsonBody()["metadata_overrides"],
+            )
+
+    def patch_and_check_response(
+        self, person, archive, overrides, expected_status, expected_body=None
+    ):
+        archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            person,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        response = webservice.patch(
+            archive_url,
+            "application/json",
+            json.dumps({"metadata_overrides": overrides}),
+        )
+        self.assertEqual(expected_status, response.status)
+        if expected_body:
+            with person_logged_in(person):
+                self.assertEqual(expected_body, archive.metadata_overrides)
+
+    def patch_and_check_structure(
+        self, webservice, achive_url, data, expected_status, expected_body
+    ):
+        response = webservice.patch(
+            achive_url, "application/json", json.dumps(data)
+        )
+        self.assertThat(
+            response,
+            MatchesStructure.byEquality(
+                status=expected_status,
+                body=expected_body,
+            ),
+        )
+
+    def test_cannot_set_invalid_metadata_keys(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            owner,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        invalid_overrides = {"metadata_overrides": {"Invalid": "test_invalid"}}
+        self.patch_and_check_structure(
+            webservice,
+            archive_url,
+            invalid_overrides,
+            400,
+            (
+                b"Invalid metadata override key. Allowed keys are "
+                b"{'Label', 'Origin', 'Snapshots', 'Suite'}."
+            ),
+        )
+
+    def test_cannot_set_non_string_values_for_metadata(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            owner,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        invalid_values = ["", None, True, 1, [], {}]
+        for value in invalid_values:
+            data = {"metadata_overrides": {"Origin": value}}
+            self.patch_and_check_structure(
+                webservice,
+                archive_url,
+                data,
+                400,
+                b"Value for 'Origin' must be a non-empty string.",
+            )
+
+    def test_non_owner_can_view_public_archive_metadata_overrides(self):
+        user = self.factory.makePerson()
+        archive = self.create_archive()
+        self.get_and_check_response(user, archive, self.default_overrides)
+
+    def test_owner_can_view_own_public_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        self.get_and_check_response(owner, archive, self.default_overrides)
+
+    def test_admin_can_view_metadata_overrides_of_any_public_archive(self):
+        admin = self.factory.makeAdministrator()
+        archive = self.create_archive()
+        self.get_and_check_response(admin, archive, self.default_overrides)
+
+    def test_owner_can_view_own_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        self.get_and_check_response(
+            owner, private_archive, self.default_overrides
+        )
+
+    def test_admin_can_view_metadata_overrides_of_any_private_archive(self):
+        admin = self.factory.makeAdministrator()
+        private_archive = self.create_archive(private=True)
+        self.get_and_check_response(
+            admin, private_archive, self.default_overrides
+        )
+
+    def test_non_owner_cannot_view_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        self.get_and_check_response(
+            user,
+            private_archive,
+            "tag:launchpad.net:2008:redacted",
+        )
+
+    def test_subscriber_cannot_view_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        with person_logged_in(owner):
+            private_archive.newSubscription(user, owner)
+        self.get_and_check_response(
+            user,
+            private_archive,
+            "tag:launchpad.net:2008:redacted",
+        )
+
+    def test_owner_can_set_metadata_overrides_on_own_public_archive(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        with person_logged_in(owner):
+            self.assertEqual(
+                archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            owner, archive, overrides, 209, overrides
+        )
+
+    def test_admin_can_set_metadata_overrides_on_any_public_archive(self):
+        admin = self.factory.makeAdministrator()
+        archive = self.create_archive()
+        with celebrity_logged_in("admin"):
+            self.assertEqual(
+                archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            admin, archive, overrides, 209, overrides
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_public_archive(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        archive_url = api_url(archive)
+        webservice = webservice_for_person(
+            user,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        overrides = {"metadata_overrides": {"Origin": "test_origin"}}
+        self.patch_and_check_structure(
+            webservice,
+            archive_url,
+            overrides,
+            401,
+            b"(<Archive object>, 'setMetadataOverrides', 'launchpad.Edit')",
+        )
+
+    def test_owner_can_set_metadata_overrides_on_private_archive(self):
+        owner = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        with person_logged_in(owner):
+            self.assertEqual(
+                private_archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            owner, private_archive, overrides, 209, overrides
+        )
+
+    def test_admin_can_set_metadata_overrides_on_any_private_archive(self):
+        admin = self.factory.makeAdministrator()
+        private_archive = self.create_archive(private=True)
+        with celebrity_logged_in("admin"):
+            self.assertEqual(
+                private_archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            admin, private_archive, overrides, 209, overrides
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_private_archive(self):
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(primary=True)
+        archive_url = api_url(private_archive)
+        webservice = webservice_for_person(
+            user,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        overrides = {"metadata_overrides": {"Origin": "test_origin"}}
+        self.patch_and_check_structure(
+            webservice,
+            archive_url,
+            overrides,
+            401,
+            b"(<Archive object>, 'setMetadataOverrides', 'launchpad.Edit')",
+        )
+
+    def test_subscriber_cannot_set_metadata_overrides_on_private_archive(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        with person_logged_in(owner):
+            private_archive.newSubscription(user, owner)
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(user, private_archive, overrides, 401)
+
+    def test_owner_can_set_metadata_overrides_on_own_primary_archive(self):
+        owner = self.factory.makePerson()
+        primary_archive = self.create_archive(owner=owner, primary=True)
+        with person_logged_in(owner):
+            self.assertEqual(
+                primary_archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            owner, primary_archive, overrides, 209, overrides
+        )
+
+    def test_admin_can_set_metadata_overrides_on_any_primary_archive(self):
+        admin = self.factory.makeAdministrator()
+        primary_archive = self.create_archive(primary=True)
+        with celebrity_logged_in("admin"):
+            self.assertEqual(
+                primary_archive.metadata_overrides, self.default_overrides
+            )
+        overrides = {"Origin": "test_origin"}
+        self.patch_and_check_response(
+            admin, primary_archive, overrides, 209, overrides
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_primary_archive(self):
+        user = self.factory.makePerson()
+        primary_archive = self.create_archive(primary=True)
+        archive_url = api_url(primary_archive)
+        webservice = webservice_for_person(
+            user,
+            permission=OAuthPermission.WRITE_PRIVATE,
+            default_api_version="devel",
+        )
+        overrides = {"metadata_overrides": {"Origin": "test_origin"}}
+        self.patch_and_check_structure(
+            webservice,
+            archive_url,
+            overrides,
+            401,
+            b"(<Archive object>, 'setMetadataOverrides', 'launchpad.Edit')",
+        )

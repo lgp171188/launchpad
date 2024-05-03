@@ -165,7 +165,8 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
             bytes(self.signing_service.generated_public_key),
             description="This is my key!",
         )
-        signed = s.sign(b"secure message", "message_name")
+        signing_key_set = getUtility(ISigningKeySet)
+        signed = signing_key_set.sign([s], b"secure message", "message_name")
 
         # Checks if the returned value is actually the returning value from
         # HTTP POST /sign call to lp-signing service
@@ -204,8 +205,11 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
             bytes(self.signing_service.generated_public_key),
             description="This is my key!",
         )
-        s.sign(b"secure message", "message_name")
-        s.sign(b"another message", "another_name", mode=SigningMode.CLEAR)
+        signing_key_set = getUtility(ISigningKeySet)
+        signing_key_set.sign([s], b"secure message", "message_name")
+        signing_key_set.sign(
+            [s], b"another message", "another_name", mode=SigningMode.CLEAR
+        )
 
         self.assertEqual(5, len(responses.calls))
         self.assertThat(

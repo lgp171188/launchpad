@@ -142,6 +142,8 @@ class BuildArgs(TypedDict, total=False):
     # A list of base64-encoded public keys for apt archives used by this
     # build.
     trusted_keys: List[str]
+    # Is true, use the fetch service as the proxy within the builder.
+    use_fetch_service: bool
 
 
 class IBuildFarmJobBehaviour(Interface):

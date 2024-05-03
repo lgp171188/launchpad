@@ -87,6 +87,8 @@ def update_files_privacy(pub_record):
         package_files.append((package_upload, "changesfile"))
         # Unrestrict the buildlog file as necessary.
         package_files.append((build, "log"))
+        # Unrestrict the buildinfo file as necessary.
+        package_files.append((build, "buildinfo"))
     elif IPackageUploadCustom.providedBy(pub_record):
         # Unrestrict the custom files included
         package_files.append((pub_record, "libraryfilealias"))

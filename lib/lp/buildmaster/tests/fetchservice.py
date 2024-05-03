@@ -17,16 +17,19 @@ from twisted.web import resource, server
 from lp.services.config import config
 
 
-class FetchServiceAuthAPITokensResource(resource.Resource):
-    """A test session resource for the fetch service authentication API."""
+class FetchServiceControlEndpoint(resource.Resource):
+    """A fake fetch service control endpoints API."""
 
     isLeaf = True
 
     def __init__(self):
         resource.Resource.__init__(self)
         self.requests = []
+        self.responses = []
+        self.session_id = "2ea9c9f759044f9b9aff469fe90429a5"
 
     def render_POST(self, request):
+        """We make a POST request to start a fetch service session"""
         content = json.loads(request.content.read())
         self.requests.append(
             {
@@ -36,12 +39,61 @@ class FetchServiceAuthAPITokensResource(resource.Resource):
                 "json": content,
             }
         )
-        return json.dumps(
+        response = {
+            "id": self.session_id,
+            "token": uuid.uuid4().hex,
+        }
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
+
+    def render_GET(self, request):
+        """We make a GET request to get a fetch service session metadata"""
+        self.requests.append(
             {
-                "id": "1",
-                "token": uuid.uuid4().hex,
+                "method": request.method,
+                "uri": request.uri,
+                "headers": dict(request.requestHeaders.getAllRawHeaders()),
             }
-        ).encode("UTF-8")
+        )
+
+        request.setHeader(b"Content-Type", b"application/json")
+        response = {
+            "session-id": self.session_id,
+            "start-time": "2024-04-17T16:25:02.631557582Z",
+            "end-time": "2024-04-17T16:26:23.505219343Z",
+            "inspectors": [
+                "pip.simple-index",
+                "pip.wheel",
+                "deb",
+                "apt.release",
+                "apt.packages",
+                "default",
+            ],
+            "spool-path": (
+                f"/var/snap/fetch-service/common/spool/{self.session_id}"
+            ),
+            "policy": "test",
+            "processed-requests": 0,
+            "processed-artefacts": 0,
+            "rejected-requests": 0,
+            "rejected-artefacts": 0,
+            "artefacts": [],
+        }
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
+
+    def render_DELETE(self, request):
+        """We make a DELETE request to end a fetch service session"""
+        self.requests.append(
+            {
+                "method": request.method,
+                "uri": request.uri,
+                "headers": dict(request.requestHeaders.getAllRawHeaders()),
+            }
+        )
+        response = {}
+        self.responses.append(response)
+        return json.dumps(response).encode("UTF-8")
 
 
 class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
@@ -68,7 +120,7 @@ class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
     @defer.inlineCallbacks
     def start(self):
         root = resource.Resource()
-        self.sessions = FetchServiceAuthAPITokensResource()
+        self.sessions = FetchServiceControlEndpoint()
         root.putChild(b"sessions", self.sessions)
         endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
         site = server.Site(self.sessions)
@@ -80,7 +132,7 @@ class InProcessFetchServiceAuthAPIFixture(fixtures.Fixture):
             [builddmaster]
             fetch_service_control_admin_secret: admin-secret
             fetch_service_control_admin_username: admin-launchpad.test
-            fetch_service_control_endpoint: http://{host}:{port}/session
+            fetch_service_control_endpoint: http://{host}:{port}
             fetch_service_host: {host}
             fetch_service_port: {port}
             fetch_service_mitm_certificate: fake-cert
@@ -116,7 +168,7 @@ class RevocationEndpointMatcher(Equals):
 
     def __init__(self, session_id):
         super().__init__(
-            "{endpoint}/{session_id}".format(
+            "{endpoint}/session/{session_id}/token".format(
                 endpoint=config.builddmaster.fetch_service_control_endpoint,
                 session_id=session_id,
             )

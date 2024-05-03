@@ -72,6 +72,7 @@ from lazr.restful.declarations import (
     exported,
     exported_as_webservice_collection,
     exported_as_webservice_entry,
+    mutator_for,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -79,11 +80,13 @@ from lazr.restful.declarations import (
     rename_parameters_as,
 )
 from lazr.restful.fields import CollectionField, Reference
+from lazr.restful.interface import copy_field
 from zope.interface import Attribute, Interface
 from zope.schema import (
     Bool,
     Choice,
     Datetime,
+    Dict,
     Int,
     List,
     Object,
@@ -1019,6 +1022,24 @@ class IArchiveView(IHasBuildRecords):
     dirty_suites = Attribute(
         "Suites that the next publisher run should publish regardless of "
         "pending publications."
+    )
+
+    metadata_overrides = exported(
+        Dict(
+            title=_(
+                "A JSON object containing metadata overrides for this archive."
+            ),
+            description=_(
+                "Accepted keys are ... The values for all these keys should "
+                "be a string and can use a '{series}' placeholder that will "
+                "get substituted the name of the series that is currently "
+                "being published."
+            ),
+            key_type=TextLine(),
+            required=False,
+            readonly=True,
+        ),
+        as_of="devel",
     )
 
     processors = exported(
@@ -2664,6 +2685,19 @@ class IArchiveEdit(Interface):
         :param names: A list of token names.
         """
 
+    @mutator_for(IArchiveView["metadata_overrides"])
+    @operation_parameters(
+        metadata_overrides=copy_field(IArchiveView["metadata_overrides"]),
+    )
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setMetadataOverrides(metadata_overrides):
+        """Set the metadata overrides for this archive.
+
+        :param metadata_overrides: A JSON object containing metadata overrides
+            for this archive.
+        """
+
 
 class IArchiveDelete(Interface):
     """Archive interface for operations restricted by delete privilege."""
@@ -2772,6 +2806,7 @@ class IArchiveSet(Interface):
         processors=None,
         publishing_method=None,
         repository_format=None,
+        metadata_overrides=None,
     ):
         """Create a new archive.
 

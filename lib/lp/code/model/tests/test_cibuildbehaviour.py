@@ -311,6 +311,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     ),
                     "series": Equals(job.build.distro_series.name),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -467,6 +468,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                         }
                     ),
                     "secrets": Equals({"soss_read_auth": "user:pass"}),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )
@@ -648,6 +650,7 @@ class TestAsyncCIBuildBehaviour(StatsMixin, TestCIBuildBehaviourBase):
                     ),
                     "series": Equals(job.build.distro_series.name),
                     "trusted_keys": Equals(expected_trusted_keys),
+                    "use_fetch_service": Is(False),
                 }
             ),
         )

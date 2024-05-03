@@ -6,6 +6,7 @@ __all__ = [
     "SnapFile",
 ]
 
+from collections import defaultdict
 from datetime import timedelta, timezone
 from operator import attrgetter
 
@@ -34,6 +35,7 @@ from zope.interface.interfaces import ObjectEvent
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.builderproxy import BUILD_METADATA_FILENAME_FORMAT
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildQueueStatus,
@@ -50,7 +52,7 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.services.config import config
-from lp.services.database.bulk import load_related
+from lp.services.database.bulk import load_referencing, load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
@@ -425,6 +427,19 @@ class SnapBuild(PackageBuildMixin, StormBase):
     def getFileUrls(self):
         return [self.lfaUrl(lfa) for _, lfa, _ in self.getFiles()]
 
+    @property
+    def metadata_filename(self):
+        return BUILD_METADATA_FILENAME_FORMAT.format(
+            build_id=self.build_cookie
+        )
+
+    @cachedproperty
+    def build_metadata_url(self):
+        try:
+            return self.lfaUrl(self.getFileByName(self.metadata_filename))
+        except NotFoundError:
+            return None
+
     @cachedproperty
     def eta(self):
         """The datetime when the build job is estimated to complete.
@@ -651,6 +666,24 @@ class SnapBuildSet(SpecificBuildFarmJobSourceMixin):
                 build
             )
         load_related(Job, sbjs, ["job_id"])
+
+        # Prefetch all snaps metadata files
+        snap_files = load_referencing(SnapFile, builds, ["snapbuild_id"])
+        lfas = load_related(LibraryFileAlias, snap_files, ["libraryfile_id"])
+
+        metadata_files = defaultdict(list)
+        for snap_file in snap_files:
+            if (
+                snap_file.libraryfile.filename
+                == snap_file.snapbuild.metadata_filename
+            ):
+                metadata_files[snap_file.snapbuild_id] = snap_file.libraryfile
+
+        for build in builds:
+            cache = get_property_cache(build)
+            cache.build_metadata_url = build.lfaUrl(
+                metadata_files.get(build.id)
+            )
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""

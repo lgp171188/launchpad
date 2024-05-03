@@ -1757,6 +1757,12 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             distroseries=self.distroseries,
             status=PackagePublishingStatus.PUBLISHED,
         )
+        [build] = spph.getBuilds()
+        build.addBuildInfo(
+            self.factory.makeLibraryFileAlias(
+                filename="build_info.info", restricted=True
+            )
+        )
         spr = spph.sourcepackagerelease
         for source_file in spr.files:
             self.assertTrue(source_file.libraryfile.restricted)
@@ -1837,6 +1843,7 @@ class PlainPackageCopyJobTests(TestCaseWithFactory, LocalTestHelper):
             copied_build = copied_binary.binarypackagerelease.build
             self.assertFalse(copied_build.upload_changesfile.restricted)
             self.assertFalse(copied_build.log.restricted)
+            self.assertFalse(copied_build.buildinfo.restricted)
 
     def test_copy_custom_upload_files(self):
         # Copyable custom upload files are queued for republication when

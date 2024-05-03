@@ -416,3 +416,65 @@ class TestPPAKeyUpdater(TestCaseWithFactory, TestWithFixtures):
             "Signing service should be enabled to use this feature.",
         ):
             archive_signing_key.generate4096BitRSASigningKey()
+
+    def testMatchingArchiveButDefaultArchiveHasNoFingerprint(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
+        owner = self.factory.makePerson()
+        default_archive = self.factory.makeArchive(owner=owner)
+        another_archive = self.factory.makeArchive(owner=owner)
+        fingerprint = self.factory.getUniqueHexString(40).upper()
+        logger = BufferLogger()
+        self.factory.makeGPGKey(
+            owner=owner,
+            keyid=fingerprint[-8:],
+            fingerprint=fingerprint,
+            keysize=1024,
+        )
+        self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint
+        )
+        another_archive.signing_key_fingerprint = fingerprint
+        archive_signing_key = IArchiveGPGSigningKey(another_archive)
+        archive_signing_key.generate4096BitRSASigningKey(log=logger)
+        self.assertIn(
+            "Error generating 4096-bit RSA signing key for "
+            f"{default_archive.reference} - "
+            "Archive doesn't have an existing signing key to update.",
+            logger.getLogBuffer(),
+        )
+
+    def testPPAMatchingArchiveDefaultArchiveHasSecureExistingKey(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
+        owner = self.factory.makePerson()
+        default_archive = self.factory.makeArchive(owner=owner)
+        another_archive = self.factory.makeArchive(owner=owner)
+        default_archive.signing_key_fingerprint = (
+            self.factory.getUniqueHexString(40).upper()
+        )
+        another_archive_fingerprint = self.factory.getUniqueHexString(
+            40
+        ).upper()
+        logger = BufferLogger()
+        self.factory.makeGPGKey(
+            owner=owner,
+            keyid=another_archive_fingerprint[-8:],
+            fingerprint=another_archive_fingerprint,
+            keysize=1024,
+        )
+        self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=another_archive_fingerprint,
+        )
+        another_archive.signing_key_fingerprint = another_archive_fingerprint
+        archive_signing_key = IArchiveGPGSigningKey(another_archive)
+        archive_signing_key.generate4096BitRSASigningKey(log=logger)
+        self.assertIn(
+            "Error generating 4096-bit RSA signing key for "
+            f"{default_archive.reference} - "
+            "Archive already has a 4096-bit RSA signing key",
+            logger.getLogBuffer(),
+        )

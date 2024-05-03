@@ -3706,6 +3706,7 @@ class LaunchpadObjectFactory(ObjectFactory):
         processors=None,
         publishing_method=ArchivePublishingMethod.LOCAL,
         repository_format=ArchiveRepositoryFormat.DEBIAN,
+        metadata_overrides=None,
     ):
         """Create and return a new arbitrary archive.
 
@@ -3765,6 +3766,7 @@ class LaunchpadObjectFactory(ObjectFactory):
                 processors=processors,
                 publishing_method=publishing_method,
                 repository_format=repository_format,
+                metadata_overrides=metadata_overrides,
             )
 
         if private:

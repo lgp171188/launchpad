@@ -113,7 +113,11 @@ from lp.soyuz.interfaces.publishing import (
     active_publishing_status,
     inactive_publishing_status,
 )
-from lp.soyuz.model.archive import Archive, validate_ppa
+from lp.soyuz.model.archive import (
+    Archive,
+    CannotSetMetadataOverrides,
+    validate_ppa,
+)
 from lp.soyuz.model.archivepermission import (
     ArchivePermission,
     ArchivePermissionSet,
@@ -6975,3 +6979,265 @@ class TestArchivePermissions(TestCaseWithFactory):
         archive = self.factory.makeArchive(owner=owner)
         login_person(archive.owner)
         self.assertTrue(check_permission("launchpad.Admin", archive))
+
+
+class TestArchiveMetadataOverrides(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super().setUp()
+        self.default_metadata_overrides = {
+            "Origin": "default_origin",
+            "Label": "default_label",
+            "Suite": "default_suite",
+            "Snapshots": "default_snapshots",
+        }
+
+    def create_archive(self, owner=None, private=False, primary=False):
+        if primary:
+            distribution = self.factory.makeDistribution(owner=owner)
+            archive = self.factory.makeArchive(
+                owner=owner,
+                distribution=distribution,
+                purpose=ArchivePurpose.PRIMARY,
+            )
+            with celebrity_logged_in("admin"):
+                archive.setMetadataOverrides(self.default_metadata_overrides)
+            return archive
+
+        return self.factory.makeArchive(
+            owner=owner,
+            private=private,
+            metadata_overrides=self.default_metadata_overrides,
+        )
+
+    def test_cannot_set_invalid_metadata_keys(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        login_person(owner)
+        self.assertRaises(
+            CannotSetMetadataOverrides,
+            archive.setMetadataOverrides,
+            {"Invalid": "test_invalid"},
+        )
+
+    def test_cannot_set_non_string_values_for_metadata(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        login_person(owner)
+        invalid_values = ["", None, True, 1, [], {}]
+        for value in invalid_values:
+            self.assertRaises(
+                CannotSetMetadataOverrides,
+                archive.setMetadataOverrides,
+                {"Origin": value},
+            )
+
+    def test_anonymous_can_view_public_archive_metadata_overrides(self):
+        archive = self.create_archive()
+        login(ANONYMOUS)
+        self.assertEqual(
+            archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_non_owner_can_view_public_archive_metadata_overrides(self):
+        user = self.factory.makePerson()
+        archive = self.create_archive()
+        login_person(user)
+        self.assertEqual(
+            archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_owner_can_view_own_public_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        archive = self.create_archive(owner=owner)
+        login_person(owner)
+        self.assertEqual(
+            archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_admin_can_view_metadata_overrides_of_any_public_archive(self):
+        archive = self.create_archive()
+        login_celebrity("admin")
+        self.assertEqual(
+            archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_owner_can_view_own_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        login_person(owner)
+        self.assertEqual(
+            private_archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_admin_can_view_metadata_overrides_of_any_private_archive(self):
+        private_archive = self.create_archive(private=True)
+        login_celebrity("admin")
+        self.assertEqual(
+            private_archive.metadata_overrides,
+            self.default_metadata_overrides,
+        )
+
+    def test_anonymous_cannot_view_private_archive_metadata_overrides(self):
+        private_archive = self.create_archive(private=True)
+        login(ANONYMOUS)
+        self.assertRaises(
+            Unauthorized, getattr, private_archive, "metadata_overrides"
+        )
+
+    def test_non_owner_cannot_view_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        login_person(user)
+        self.assertRaises(
+            Unauthorized, getattr, private_archive, "metadata_overrides"
+        )
+
+    def test_subscriber_cannot_view_private_archive_metadata_overrides(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        with person_logged_in(owner):
+            private_archive.newSubscription(user, owner)
+        login_person(user)
+        self.assertRaises(
+            Unauthorized, getattr, private_archive, "metadata_overrides"
+        )
+
+    def test_owner_can_set_metadata_overrides_on_own_public_archive(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        archive = self.create_archive(owner=owner)
+        self.assertEqual(
+            archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        archive.setMetadataOverrides(overrides)
+        self.assertEqual(archive.metadata_overrides, overrides)
+
+    def test_admin_can_set_metadata_overrides_on_any_public_archive(self):
+        archive = self.create_archive()
+        login_celebrity("admin")
+        self.assertEqual(
+            archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        archive.setMetadataOverrides(overrides)
+        self.assertEqual(archive.metadata_overrides, overrides)
+
+    def test_anonymous_cannot_set_metadata_overrides_on_public_archive(self):
+        archive = self.create_archive()
+        login(ANONYMOUS)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized, lambda: archive.setMetadataOverrides(overrides)
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_public_archive(self):
+        user = self.factory.makePerson()
+        archive = self.create_archive()
+        login_person(user)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized, lambda: archive.setMetadataOverrides(overrides)
+        )
+
+    def test_owner_can_set_metadata_overrides_on_private_archive(self):
+        owner = self.factory.makePerson()
+        login_person(owner)
+        private_archive = self.create_archive(owner=owner, private=True)
+        self.assertEqual(
+            private_archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        private_archive.setMetadataOverrides(overrides)
+        self.assertEqual(private_archive.metadata_overrides, overrides)
+
+    def test_admin_can_set_metadata_overrides_on_any_private_archive(self):
+        private_archive = self.create_archive(private=True)
+        login_celebrity("admin")
+        self.assertEqual(
+            private_archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        private_archive.setMetadataOverrides(overrides)
+        self.assertEqual(private_archive.metadata_overrides, overrides)
+
+    def test_anonymous_cannot_set_metadata_overrides_on_private_archive(self):
+        private_archive = self.create_archive(private=True)
+        login(ANONYMOUS)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized,
+            lambda: private_archive.setMetadataOverrides(overrides),
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_private_archive(self):
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(private=True)
+        login_person(user)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized,
+            lambda: private_archive.setMetadataOverrides(overrides),
+        )
+
+    def test_subscriber_cannot_set_metadata_overrides_on_private_archive(self):
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        private_archive = self.create_archive(owner=owner, private=True)
+        with person_logged_in(owner):
+            private_archive.newSubscription(user, owner)
+        login_person(user)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized,
+            lambda: private_archive.setMetadataOverrides(overrides),
+        )
+
+    def test_owner_can_set_metadata_overrides_on_own_primary_archive(self):
+        owner = self.factory.makePerson()
+        primary_archive = self.create_archive(owner=owner, primary=True)
+        login_person(owner)
+        self.assertEqual(
+            primary_archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        primary_archive.setMetadataOverrides(overrides)
+        self.assertEqual(primary_archive.metadata_overrides, overrides)
+
+    def test_admin_can_set_metadata_overrides_on_any_primary_archive(self):
+        primary_archive = self.create_archive(primary=True)
+        login_celebrity("admin")
+        self.assertEqual(
+            primary_archive.metadata_overrides, self.default_metadata_overrides
+        )
+        overrides = {"Origin": "test_origin"}
+        primary_archive.setMetadataOverrides(overrides)
+        self.assertEqual(primary_archive.metadata_overrides, overrides)
+
+    def test_anonymous_cannot_set_metadata_overrides_on_primary_archive(self):
+        primary_archive = self.create_archive(primary=True)
+        login(ANONYMOUS)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized,
+            lambda: primary_archive.setMetadataOverrides(overrides),
+        )
+
+    def test_non_owner_cannot_set_metadata_overrides_on_primary_archive(self):
+        user = self.factory.makePerson()
+        primary_archive = self.create_archive(primary=True)
+        login_person(user)
+        overrides = {"Origin": "test_origin"}
+        self.assertRaises(
+            Unauthorized,
+            lambda: primary_archive.setMetadataOverrides(overrides),
+        )
