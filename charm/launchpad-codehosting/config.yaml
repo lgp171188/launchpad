@@ -56,7 +56,7 @@ options:
     default: |
       - mode http
       - option httplog
-      - option httpchk HEAD / HTTP/1.0
+      - option httpchk HEAD /favicon.ico HTTP/1.0
       - option forwardfor
       - balance leastconn
   haproxy_service_options_https:
@@ -66,7 +66,7 @@ options:
     default: |
       - mode http
       - option httplog
-      - option httpchk HEAD / HTTP/1.0
+      - option httpchk HEAD /favicon.ico HTTP/1.0
       - option forwardfor
       - balance leastconn
   haproxy_service_options_ssh:
