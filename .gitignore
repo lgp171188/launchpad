@@ -22,6 +22,7 @@ librarian.log
 .pydevproject
 .idea
 .emacs.desktop
+.vscode
 
 # build artifacts
 *.egg-info
