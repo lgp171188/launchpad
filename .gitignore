@@ -1,37 +1,29 @@
+# compiled python files
 *.pyc
+
+# tags
 .tags
+/tags
+TAGS
+tags.new
+
+# version files
 version-info.py
 version-info.txt
+
+# log files
 logs/*
-+*
-/botmaster
-/tags
-database/schema/diagrams/*.ps
-database/schema/diagrams/*.dot
-thread*.request
-TAGS
-cover.txt
-.shelf
-development-nohup.out
-opensource/launchpadlib/build
-opensource/launchpadlib/dist
-opensource/launchpadlib/*.egg*
-database/sampledata/newsampledata.sql
-database/sampledata/newsampledata-dev.sql
-database/sampledata/lintdata.sql
-database/sampledata/lintdata-dev.sql
-lib/canonical/launchpad/apidoc/*.html
-xxx-report.*
-lib/canonical/launchpad/apidoc/wadl-development-*.xml
-lib/canonical/launchpad/apidoc/wadl-test-playground.xml
-lib/canonical/launchpad/icing/build/*
-lib/canonical/launchpad/icing/base.css
-lib/canonical/launchpad/icing/base.css.map
-lib/canonical/launchpad/icing/combo.css
-lib/canonical/launchpad/icing/combo.css.map
-bin
-.installed.cfg
-parts
+!logs/README.txt
+/logs
+librarian.log
+
+# development tools configurations
+.project
+.pydevproject
+.idea
+.emacs.desktop
+
+# build artifacts
 *.egg-info
 build
 dist
@@ -39,40 +31,74 @@ dist
 /download-cache
 /env
 /production-configs
-bzr.dev
-_trial_temp
-.bazaar
+bin
+.installed.cfg
+parts
+
+# specific software or tools
+.tox/
+/geckodriver.log
 .cache
 .subversion
 .testrepository
+.bazaar
 .memcache.pid
+twistd.pid
+_trial_temp
+/celerybeat-schedule
+requirements/combined.txt
+
+# revision control systems
+bzr.dev
+
+# launchpad specific
+lib/canonical/launchpad/apidoc
+lib/canonical/launchpad/apidoc/*.html
 lib/canonical/launchpad/apidoc/wadl-development-*.xml
-tags.new
+lib/canonical/launchpad/apidoc/wadl-test-playground.xml
+lib/canonical/launchpad/icing/build/*
+lib/canonical/launchpad/icing/base.css
+lib/canonical/launchpad/icing/base.css.map
+lib/canonical/launchpad/icing/combo.css
+lib/canonical/launchpad/icing/combo.css.map
+lib/canonical/launchpad/icing/*-sprites-*.png
+lib/canonical/launchpad/icing/*.positioning
+lib/canonical/launchpad/icing/yui
+
+# database schemas and sample data
+database/schema/diagrams/*.ps
+database/schema/diagrams/*.dot
+database/sampledata/newsampledata.sql
+database/sampledata/newsampledata-dev.sql
+database/sampledata/lintdata.sql
+database/sampledata/lintdata-dev.sql
+
+# source and development files
+thread*.request
+cover.txt
+.shelf
+development-nohup.out
+opensource/launchpadlib/build
+opensource/launchpadlib/dist
+opensource/launchpadlib/*.egg*
+
+# profiling and debugging
+*.prof
+callgrind.out.*
+run.gdb
+
+# node and python packages
+yarn/node_modules
+/wheels
+
+# misc
++*
+/botmaster
+xxx-report.*
 lp-clustered.dot
 lp-clustered.sfood
 lp-clustered.svg
 lp.sfood
 apidocs
-twistd.pid
-lib/canonical/launchpad/apidoc
-*.prof
-.project
-.pydevproject
-librarian.log
 configs/testrunner_*
 configs/testrunner-appserver_*
-.idea
-run.gdb
-lib/canonical/launchpad/icing/*-sprites-*.png
-lib/canonical/launchpad/icing/*.positioning
-lib/canonical/launchpad/icing/yui
-.emacs.desktop
-callgrind.out.*
-/celerybeat-schedule
-!logs/README.txt
-/logs
-yarn/node_modules
-/wheels
-requirements/combined.txt
-.tox/
-/geckodriver.log
