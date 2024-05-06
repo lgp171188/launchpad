@@ -299,8 +299,8 @@ echo "
 Thank you for using this script.  You can improve it for everyone by
 committing changes to Launchpad in utilities/rocketfuel-setup.
 
-Please see http://dev.launchpad.net/ for more information on
-developing and testing Launchpad, and on submitting changes.
+Please see https://documentation.ubuntu.com/launchpad/en/latest/ for more
+information on developing and testing Launchpad, and on submitting changes.
 
 You can use the following commands to manage your Launchpad
 development environment:
