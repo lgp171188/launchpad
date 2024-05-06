@@ -33,6 +33,6 @@
   RewriteRule ^/robots.txt$ - [L]
   RewriteRule ^/favicon.ico$ {{ loggerhead_static_dir }}/images/favicon.ico [L]
   RewriteRule ^/static/(.*)$ /$1 [L]
-  RewriteRule ^/(.*)$ {{ internal_codebrowse_root }}/$1 [P,L]
+  RewriteRule ^/(.*)$ {{ internal_codebrowse_root }}$1 [P,L]
 </VirtualHost>
 
