@@ -1,8 +1,9 @@
 {{ logs_dir }}/launchpad.log
 {
-    rotate 21
-    daily
+    rotate 504
+    hourly
     dateext
+    dateformat -%Y%m%d-%H
     delaycompress
     compress
     notifempty
