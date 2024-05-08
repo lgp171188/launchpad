@@ -417,7 +417,9 @@ class TestPPAKeyUpdater(TestCaseWithFactory, TestWithFixtures):
         ):
             archive_signing_key.generate4096BitRSASigningKey()
 
+    @responses.activate
     def testMatchingArchiveButDefaultArchiveHasNoFingerprint(self):
+        self.response_factory.addResponses(self)
         self.useFixture(
             FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
         )
@@ -436,14 +438,53 @@ class TestPPAKeyUpdater(TestCaseWithFactory, TestWithFixtures):
             key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint
         )
         another_archive.signing_key_fingerprint = fingerprint
+        # The default archive does not a have a signing key fingerprint
+        self.assertIsNone(default_archive.signing_key_fingerprint)
+
         archive_signing_key = IArchiveGPGSigningKey(another_archive)
         archive_signing_key.generate4096BitRSASigningKey(log=logger)
-        self.assertIn(
-            "Error generating 4096-bit RSA signing key for "
-            f"{default_archive.reference} - "
-            "Archive doesn't have an existing signing key to update.",
-            logger.getLogBuffer(),
+
+        # The default archive should now have a signing key fingerprint
+        self.assertIsNotNone(default_archive.signing_key_fingerprint)
+        # The default archive's current signing key must be present
+        # in the archivesigningkey table.
+        default_archive_new_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(default_archive)
+        self.assertIsNotNone(default_archive_new_signing_key)
+        # The default archive's current signing key must be present in
+        # the gpgkey table.
+        default_archive_new_gpg_key = getUtility(IGPGKeySet).getByFingerprint(
+            default_archive.signing_key_fingerprint
         )
+        self.assertIsNotNone(default_archive_new_gpg_key)
+        # 'another_archive' must have a new 4096-bit signing key in the
+        # archivesigningkey table and its fingerprint must be the same as
+        # that of the default archive's current/new signing key.
+        another_archive_new_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(another_archive)
+        self.assertIsNotNone(another_archive_new_signing_key)
+        self.assertEqual(
+            another_archive_new_signing_key.fingerprint,
+            default_archive.signing_key_fingerprint,
+        )
+        # 'another_archive' must also have a row in the archivesigningkey
+        # table for its current signing key.
+        another_archive_current_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).getByArchiveAndFingerprint(
+            another_archive, another_archive.signing_key_fingerprint
+        )
+        self.assertIsNotNone(another_archive_current_signing_key)
+        # Both the default archive and the 'another_archive' archive
+        # no longer require the generation of a new 4096-bit RSA signing key.
+        txn = FakeTransaction()
+        key_generator = self._getKeyUpdater(txn=txn)
+        key_generator.main()
+
+        self.assertIn("Archives to update: 0", self.logger.getLogBuffer())
+        self.assertEqual(txn.commit_count, 0)
 
     def testPPAMatchingArchiveDefaultArchiveHasSecureExistingKey(self):
         self.useFixture(
@@ -452,8 +493,13 @@ class TestPPAKeyUpdater(TestCaseWithFactory, TestWithFixtures):
         owner = self.factory.makePerson()
         default_archive = self.factory.makeArchive(owner=owner)
         another_archive = self.factory.makeArchive(owner=owner)
-        default_archive.signing_key_fingerprint = (
-            self.factory.getUniqueHexString(40).upper()
+        default_archive_fingerprint = self.factory.getUniqueHexString(
+            40
+        ).upper()
+        default_archive.signing_key_fingerprint = default_archive_fingerprint
+        self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=default_archive_fingerprint,
         )
         another_archive_fingerprint = self.factory.getUniqueHexString(
             40
@@ -472,9 +518,43 @@ class TestPPAKeyUpdater(TestCaseWithFactory, TestWithFixtures):
         another_archive.signing_key_fingerprint = another_archive_fingerprint
         archive_signing_key = IArchiveGPGSigningKey(another_archive)
         archive_signing_key.generate4096BitRSASigningKey(log=logger)
-        self.assertIn(
-            "Error generating 4096-bit RSA signing key for "
-            f"{default_archive.reference} - "
-            "Archive already has a 4096-bit RSA signing key",
-            logger.getLogBuffer(),
+
+        # The default archive's current signing key must be present
+        # in the archivesigningkey table.
+        default_archive_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(default_archive)
+        self.assertIsNotNone(default_archive_signing_key)
+        # The default archive's current signing key must be present in
+        # the gpgkey table.
+        default_archive_gpg_key = getUtility(IGPGKeySet).getByFingerprint(
+            default_archive.signing_key_fingerprint
         )
+        self.assertIsNotNone(default_archive_gpg_key)
+        # 'another_archive' must have a new 4096-bit signing key in the
+        # archivesigningkey table and its fingerprint must be the same as
+        # that of the default archive's current/new signing key.
+        another_archive_new_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).get4096BitRSASigningKey(another_archive)
+        self.assertIsNotNone(another_archive_new_signing_key)
+        self.assertEqual(
+            another_archive_new_signing_key.fingerprint,
+            default_archive.signing_key_fingerprint,
+        )
+        # 'another_archive' must also have a row in the archivesigningkey
+        # table for its current signing key.
+        another_archive_current_signing_key = getUtility(
+            IArchiveSigningKeySet
+        ).getByArchiveAndFingerprint(
+            another_archive, another_archive.signing_key_fingerprint
+        )
+        self.assertIsNotNone(another_archive_current_signing_key)
+        # Both the default archive and the 'another_archive' archive
+        # no longer require the generation of a new 4096-bit RSA signing key.
+        txn = FakeTransaction()
+        key_generator = self._getKeyUpdater(txn=txn)
+        key_generator.main()
+
+        self.assertIn("Archives to update: 0", self.logger.getLogBuffer())
+        self.assertEqual(txn.commit_count, 0)
