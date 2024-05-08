@@ -356,9 +356,11 @@ class ArchiveGPGSigningKey(SignableArchive):
         current_gpg_key = getUtility(IGPGKeySet).getByFingerprint(
             self.archive.signing_key_fingerprint
         )
-        assert (
-            current_gpg_key and current_gpg_key.keysize == 1024
-        ), "Archive already has a 4096-bit RSA signing key."
+        if current_gpg_key:
+            assert (
+                current_gpg_key.keysize == 1024
+            ), "Archive already has a 4096-bit RSA signing key."
+
         default_ppa = self.archive.owner.archive
 
         # If the current signing key is not in the 'archivesigningkey' table,
@@ -376,8 +378,21 @@ class ArchiveGPGSigningKey(SignableArchive):
             getUtility(IArchiveSigningKeySet).create(
                 self.archive, None, current_signing_key
             )
+            if not current_gpg_key:
+                # The archive already has a 4096-bit RSA key which is missing
+                # an entry in the `gpgkey` table. Add it and return.
+                getUtility(IGPGKeySet).new(
+                    getUtility(ILaunchpadCelebrities).ppa_key_guard,
+                    current_signing_key.fingerprint[-8:],
+                    current_signing_key.fingerprint,
+                    4096,
+                    GPGKeyAlgorithm.R,
+                )
+                return
 
         if self.archive != default_ppa:
+            if default_ppa.signing_key_fingerprint is None:
+                IArchiveGPGSigningKey(default_ppa).generateSigningKey(log=log)
 
             default_ppa_new_signing_key = getUtility(
                 IArchiveSigningKeySet
