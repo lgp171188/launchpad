@@ -60,7 +60,6 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.code.model.diff import Diff
 from lp.code.model.gitjob import GitJob, GitRefScanJob
 from lp.code.model.gitrepository import GitRepository
-from lp.code.tests.helpers import GitHostingFixture
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import BranchSharingPolicy, BugSharingPolicy, VCSType
@@ -2584,47 +2583,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         rs = populator.findArchiveFiles()
         self.assertEqual(1, rs.count())
         self.assertEqual(archive_files[1], rs.one())
-
-    def test_SnapProEnablePopulator(self):
-        switch_dbuser("testadmin")
-        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
-        blobs = {
-            ref.repository.getInternalPath(): blob
-            for ref, blob in (
-                (refs[0], b"name: test-snap\n"),
-                (refs[1], b"name: test-snap\nbase: core\n"),
-                (refs[2], b"name: test-snap\nbase: core18\n"),
-            )
-        }
-        self.useFixture(GitHostingFixture()).getBlob = (
-            lambda path, *args, **kwargs: blobs.get(path)
-        )
-        old_snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
-        for snap in old_snaps:
-            removeSecurityProxy(snap)._pro_enable = None
-        try:
-            Store.of(old_snaps[0]).flush()
-        except IntegrityError:
-            # Now enforced by DB NOT NULL constraint; backfilling is no
-            # longer necessary.
-            return
-
-        new_snaps = [
-            self.factory.makeSnap(pro_enable=False),
-            self.factory.makeSnap(pro_enable=True),
-        ]
-        transaction.commit()
-
-        self.runDaily()
-
-        # Old snap recipes are backfilled.
-        self.assertIs(True, removeSecurityProxy(old_snaps[0])._pro_enable)
-        self.assertIs(True, removeSecurityProxy(old_snaps[1])._pro_enable)
-        self.assertIs(False, removeSecurityProxy(old_snaps[2])._pro_enable)
-        self.assertIs(False, removeSecurityProxy(old_snaps[3])._pro_enable)
-        # Other snap recipes are left alone.
-        self.assertIs(False, removeSecurityProxy(new_snaps[0])._pro_enable)
-        self.assertIs(True, removeSecurityProxy(new_snaps[1])._pro_enable)
 
 
 class TestGarboTasks(TestCaseWithFactory):
