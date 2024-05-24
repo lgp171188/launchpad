@@ -289,17 +289,33 @@ class ArchiveGPGSigningKey(SignableArchive):
 
             def propagate_key(_):
                 self.archive.signing_key_owner = default_ppa.signing_key_owner
-                default_ppa_new_signing_key = getUtility(
-                    IArchiveSigningKeySet
-                ).get4096BitRSASigningKey(default_ppa)
-                if default_ppa_new_signing_key:
-                    fingerprint = default_ppa_new_signing_key.fingerprint
-                else:
-                    fingerprint = default_ppa.signing_key_fingerprint
-                self.archive.signing_key_fingerprint = fingerprint
-                getUtility(IArchiveSigningKeySet).create(
-                    self.archive, None, default_ppa_new_signing_key
+                default_ppa_signing_key = (
+                    # The signing key table is used only when a key was
+                    # generated using the signing service.
+                    # Has a replacement key generated using the signing
+                    # service.
+                    getUtility(IArchiveSigningKeySet).get4096BitRSASigningKey(
+                        default_ppa
+                    )
+                    or
+                    # Has a single 4096-bit RSA signing key generated using
+                    # the signing service.
+                    getUtility(ISigningKeySet).get(
+                        SigningKeyType.OPENPGP,
+                        default_ppa.signing_key_fingerprint,
+                    )
+                    or
+                    # Has a key generated using local key generation.
+                    default_ppa.signing_key
                 )
+                self.archive.signing_key_fingerprint = (
+                    default_ppa_signing_key.fingerprint
+                )
+                if getFeatureFlag(PUBLISHER_GPG_USES_SIGNING_SERVICE):
+                    assert ISigningKey.providedBy(default_ppa_signing_key)
+                    getUtility(IArchiveSigningKeySet).create(
+                        self.archive, None, default_ppa_signing_key
+                    )
                 del get_property_cache(self.archive).signing_key
                 del get_property_cache(self.archive).signing_key_display_name
 

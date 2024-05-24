@@ -626,6 +626,9 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         )
 
     def test_generateSigningKey_ppa_default_ppa_has_1024R_and_4096R_keys(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         default_ppa = self.factory.makeArchive()
         owner = default_ppa.owner
         another_ppa = self.factory.makeArchive(owner=owner)
