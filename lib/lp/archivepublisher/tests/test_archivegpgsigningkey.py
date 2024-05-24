@@ -643,7 +643,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
             key_type=SigningKeyType.OPENPGP,
             fingerprint=fingerprint_1024R,
         )
-        gpg_key_1024R = self.factory.makeGPGKey(
+        self.factory.makeGPGKey(
             owner=owner,
             keyid=fingerprint_1024R[-8:],
             fingerprint=fingerprint_1024R,
@@ -654,7 +654,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         signing_key_4096R = self.factory.makeSigningKey(
             key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint_4096R
         )
-        gpg_key_4096R = self.factory.makeGPGKey(
+        self.factory.makeGPGKey(
             owner=owner,
             keyid=fingerprint_4096R[-8:],
             fingerprint=fingerprint_4096R,
