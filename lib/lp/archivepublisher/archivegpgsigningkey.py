@@ -289,8 +289,16 @@ class ArchiveGPGSigningKey(SignableArchive):
 
             def propagate_key(_):
                 self.archive.signing_key_owner = default_ppa.signing_key_owner
-                self.archive.signing_key_fingerprint = (
-                    default_ppa.signing_key_fingerprint
+                default_ppa_new_signing_key = getUtility(
+                    IArchiveSigningKeySet
+                ).get4096BitRSASigningKey(default_ppa)
+                if default_ppa_new_signing_key:
+                    fingerprint = default_ppa_new_signing_key.fingerprint
+                else:
+                    fingerprint = default_ppa.signing_key_fingerprint
+                self.archive.signing_key_fingerprint = fingerprint
+                getUtility(IArchiveSigningKeySet).create(
+                    self.archive, None, default_ppa_new_signing_key
                 )
                 del get_property_cache(self.archive).signing_key
                 del get_property_cache(self.archive).signing_key_display_name
