@@ -624,3 +624,66 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
                 ),
             ),
         )
+
+    def test_generateSigningKey_ppa_default_ppa_has_1024R_and_4096R_keys(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
+        default_ppa = self.factory.makeArchive()
+        owner = default_ppa.owner
+        another_ppa = self.factory.makeArchive(owner=owner)
+        self.assertIsNone(default_ppa.signing_key_fingerprint)
+        self.assertIsNone(another_ppa.signing_key_fingerprint)
+        # The follow steps simulate the steps taken by the PPA key
+        # updater script when it encounters a default PPA with a
+        # 1024-bit RSA signing key. We are doing them manually to
+        # avoid a dependency on that function which will go away
+        # after the key migration is completed. But this logic
+        # of propagating the appropriate key from the default PPA
+        # has to be present forever.
+        fingerprint_1024R = self.factory.getUniqueHexString(digits=40).upper()
+        signing_key_1024R = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=fingerprint_1024R,
+        )
+        self.factory.makeGPGKey(
+            owner=owner,
+            keyid=fingerprint_1024R[-8:],
+            fingerprint=fingerprint_1024R,
+            keysize=1024,
+        )
+        default_ppa.signing_key_fingerprint = fingerprint_1024R
+        fingerprint_4096R = self.factory.getUniqueHexString(digits=40).upper()
+        signing_key_4096R = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint_4096R
+        )
+        self.factory.makeGPGKey(
+            owner=owner,
+            keyid=fingerprint_4096R[-8:],
+            fingerprint=fingerprint_4096R,
+            keysize=4096,
+        )
+        getUtility(IArchiveSigningKeySet).create(
+            default_ppa,
+            None,
+            signing_key_1024R,
+        )
+        getUtility(IArchiveSigningKeySet).create(
+            default_ppa,
+            None,
+            signing_key_4096R,
+        )
+        logger = BufferLogger()
+        IArchiveGPGSigningKey(another_ppa).generateSigningKey(log=logger)
+        # The 'another_ppa' PPA should now have the fingerprint of the
+        # default PPA's 4096-bit RSA signing key as its signing key fingerprint
+        self.assertEqual(
+            fingerprint_4096R, another_ppa.signing_key_fingerprint
+        )
+        # `another_ppa` should also have a row in the `archivesigningkey` table
+        # with its new signing key propagated from the default PPA.
+        self.assertIsNotNone(
+            getUtility(IArchiveSigningKeySet).get4096BitRSASigningKey(
+                another_ppa
+            )
+        )
