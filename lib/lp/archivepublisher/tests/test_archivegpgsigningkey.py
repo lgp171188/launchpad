@@ -626,6 +626,9 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         )
 
     def test_generateSigningKey_ppa_default_ppa_has_1024R_and_4096R_keys(self):
+        self.useFixture(
+            FeatureFixture({PUBLISHER_GPG_USES_SIGNING_SERVICE: "on"})
+        )
         default_ppa = self.factory.makeArchive()
         owner = default_ppa.owner
         another_ppa = self.factory.makeArchive(owner=owner)
@@ -643,7 +646,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
             key_type=SigningKeyType.OPENPGP,
             fingerprint=fingerprint_1024R,
         )
-        gpg_key_1024R = self.factory.makeGPGKey(
+        self.factory.makeGPGKey(
             owner=owner,
             keyid=fingerprint_1024R[-8:],
             fingerprint=fingerprint_1024R,
@@ -654,7 +657,7 @@ class TestArchiveGPGSigningKey(TestCaseWithFactory):
         signing_key_4096R = self.factory.makeSigningKey(
             key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint_4096R
         )
-        gpg_key_4096R = self.factory.makeGPGKey(
+        self.factory.makeGPGKey(
             owner=owner,
             keyid=fingerprint_4096R[-8:],
             fingerprint=fingerprint_4096R,
