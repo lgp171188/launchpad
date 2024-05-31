@@ -67,7 +67,6 @@ from lp.code.errors import (
 )
 from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.branchcollection import IAllBranches, IBranchCollection
-from lp.code.interfaces.branchhosting import InvalidRevisionException
 from lp.code.interfaces.gitcollection import (
     IAllGitRepositories,
     IGitCollection,
@@ -130,7 +129,6 @@ from lp.services.job.model.job import Job
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.openid.adapters.openid import CurrentOpenIDEndPoint
 from lp.services.propertycache import cachedproperty, get_property_cache
-from lp.services.timeout import default_timeout
 from lp.services.webapp.authorization import precache_permission_for_objects
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
@@ -394,7 +392,7 @@ class Snap(StormBase, WebhookTargetMixin):
 
     _store_channels = JSON("store_channels", allow_none=True)
 
-    _pro_enable = Bool(name="pro_enable", allow_none=True)
+    pro_enable = Bool(name="pro_enable", allow_none=False)
 
     _use_fetch_service = Bool(name="use_fetch_service", allow_none=False)
 
@@ -458,7 +456,7 @@ class Snap(StormBase, WebhookTargetMixin):
         self.store_name = store_name
         self.store_secrets = store_secrets
         self.store_channels = store_channels
-        self._pro_enable = pro_enable
+        self.pro_enable = pro_enable
         self.use_fetch_service = use_fetch_service
 
     def __repr__(self):
@@ -686,18 +684,6 @@ class Snap(StormBase, WebhookTargetMixin):
     @store_channels.setter
     def store_channels(self, value):
         self._store_channels = value or None
-
-    # XXX ines-almeida 2023-10-18: Simplify this once the database column has
-    # been backfilled.
-    @property
-    def pro_enable(self):
-        if self._pro_enable is None:
-            return getUtility(ISnapSet).inferProEnable(self.source)
-        return self._pro_enable
-
-    @pro_enable.setter
-    def pro_enable(self, value):
-        self._pro_enable = value
 
     @property
     def use_fetch_service(self):
@@ -1550,7 +1536,7 @@ class SnapSet:
         store_secrets=None,
         store_channels=None,
         project=None,
-        pro_enable=None,
+        pro_enable=False,
         use_fetch_service=False,
     ):
         """See `ISnapSet`."""
@@ -1607,9 +1593,6 @@ class SnapSet:
             information_type, owner, branch, git_ref
         ):
             raise SnapPrivacyMismatch
-
-        if pro_enable is None:
-            pro_enable = self.inferProEnable(branch or git_ref)
 
         store = IPrimaryStore(Snap)
         snap = Snap(
@@ -1673,44 +1656,6 @@ class SnapSet:
             return False
 
         return True
-
-    # XXX ines-almeida 2023-10-18: Remove this once we have self-service Pro
-    # enablement for snap recipes.
-    def inferProEnable(self, context):
-        """See `ISnapSet`."""
-        if context is None:
-            # Recipe has been detached from its source.
-            return False
-
-        try:
-            # Ensure there is a reasonable timeout set. Without this, the
-            # default in snap builds would be 'None', which we don't want.
-            with default_timeout(300.0):
-                snapcraft_data = self.getSnapcraftYaml(context)
-        except (
-            MissingSnapcraftYaml,
-            CannotFetchSnapcraftYaml,
-            CannotParseSnapcraftYaml,
-            InvalidRevisionException,
-        ):
-            pass
-        else:
-            base = snapcraft_data.get("base")
-            build_base = snapcraft_data.get("build-base")
-            name = snapcraft_data.get("name")
-            snap_type = snapcraft_data.get("type")
-
-            if build_base is not None:
-                snap_base_name = build_base
-            elif name is not None and snap_type == "base":
-                snap_base_name = name
-            else:
-                snap_base_name = base
-
-            if snap_base_name is None or snap_base_name == "core":
-                return True
-
-        return False
 
     def _getByName(self, owner, name):
         return (

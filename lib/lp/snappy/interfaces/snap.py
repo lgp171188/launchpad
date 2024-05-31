@@ -1301,17 +1301,6 @@ class ISnapSet(Interface):
     ):
         """Whether or not the information type context is valid."""
 
-    def inferProEnable(context):
-        """Infer a backward-compatible setting of pro_enable.
-
-        New snap recipes only build using dependencies from Ubuntu Pro if
-        explicitly configured to do so, but historically we enabled this by
-        default for snap recipes based on "core" (i.e. Ubuntu Core 16).  For
-        backward compatibility, we continue doing this until we have
-        self-service Pro enablement for snap recipes; see
-        https://docs.google.com/document/d/19juEP2pOsww4t9Z-jtVZbJdUHgZqkmE9mRukGBQ8DHk.
-        """
-
     @operation_parameters(
         owner=Reference(IPerson, title=_("Owner"), required=True),
         name=TextLine(title=_("Snap name"), required=True),
