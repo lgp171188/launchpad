@@ -24,7 +24,7 @@ librarian.log
 .emacs.desktop
 .vscode
 
-# build artifacts
+# local run artifacts
 *.egg-info
 build
 dist
