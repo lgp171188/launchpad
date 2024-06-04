@@ -15,7 +15,6 @@ import responses
 import transaction
 from fixtures import FakeLogger, MockPatch
 from nacl.public import PrivateKey
-from psycopg2 import IntegrityError
 from pymacaroons import Macaroon
 from storm.exceptions import LostObjectError
 from storm.locals import Store
@@ -277,42 +276,6 @@ class TestSnap(TestCaseWithFactory):
         with notify_modified(removeSecurityProxy(snap), ["name"]):
             pass
         self.assertSqlAttributeEqualsDate(snap, "date_last_modified", UTC_NOW)
-
-    def test_pro_enable_value_for_existing_snaps(self):
-        """For existing snaps without pro-enable values, the value is set as
-        expected once called:
-         - If snap has snapcraft.yaml file, and no base - True
-         - If snap has snapcraft.yaml file, and is 'core'-based snap - True
-         - Else, default to False
-        """
-
-        refs = [self.factory.makeGitRefs()[0] for _ in range(4)]
-        blobs = {
-            ref.repository.getInternalPath(): blob
-            for ref, blob in (
-                (refs[0], b"name: test-snap\n"),
-                (refs[1], b"name: test-snap\nbase: core\n"),
-                (refs[2], b"name: test-snap\nbase: core18\n"),
-            )
-        }
-        self.useFixture(GitHostingFixture()).getBlob = (
-            lambda path, *args, **kwargs: blobs.get(path)
-        )
-        snaps = [self.factory.makeSnap(git_ref=ref) for ref in refs]
-        for snap in snaps:
-            removeSecurityProxy(snap)._pro_enable = None
-
-        try:
-            Store.of(snaps[0]).flush()
-        except IntegrityError:
-            # Now enforced by DB NOT NULL constraint; inferring a value is
-            # no longer necessary.
-            return
-
-        self.assertTrue(snaps[0].pro_enable)  # Snap with no base
-        self.assertTrue(snaps[1].pro_enable)  # Snap with 'core' base
-        self.assertFalse(snaps[2].pro_enable)  # Snap with 'core18' base
-        self.assertFalse(snaps[3].pro_enable)  # Snap without snapcraft.yaml
 
     def makeBuildableDistroArchSeries(self, **kwargs):
         das = self.factory.makeDistroArchSeries(**kwargs)
@@ -3725,85 +3688,10 @@ class TestSnapProcessors(TestCaseWithFactory):
             distro_series=self.factory.makeDistroSeries(),
             name=self.factory.getUniqueUnicode("snap-name"),
             git_ref=git_ref,
-            pro_enable=None,
         )
 
         snap = getUtility(ISnapSet).new(**components)
         self.assertFalse(snap.pro_enable)
-
-    def test_inferProEnable(self):
-        """inferProEnable returns expected bool value depending on context:
-        - Context and snapcraft.yaml file exist, and no base - True
-        - Context and snapcraft.yaml file exist, and base is 'core' - True
-        - Else, default to False
-        """
-
-        refs = [self.factory.makeGitRefs()[0] for _ in range(7)]
-        blobs = {
-            ref.repository.getInternalPath(): blob
-            for ref, blob in (
-                (refs[0], b"name: test-snap\n"),
-                (refs[1], b"name: test-snap\nbase: core\n"),
-                (refs[2], b"name: test-snap\nbase: core18\n"),
-                (refs[3], b"name: test-snap\nbuild-base: devel\n"),
-                (refs[4], b"name: core\ntype: base\n"),
-                (refs[5], b"name: core18\ntype: base\n"),
-            )
-        }
-        self.useFixture(GitHostingFixture()).getBlob = (
-            lambda path, *args, **kwargs: blobs.get(path)
-        )
-
-        inferProEnable = getUtility(ISnapSet).inferProEnable
-        self.assertTrue(inferProEnable(refs[0]))  # Snap with no base
-        self.assertTrue(inferProEnable(refs[1]))  # Snap with 'core' base
-        self.assertFalse(inferProEnable(refs[2]))  # Snap with 'core18' base
-        self.assertFalse(inferProEnable(refs[3]))  # Snap with only build-base
-        self.assertTrue(inferProEnable(refs[4]))  # 'core' snap itself
-        self.assertFalse(inferProEnable(refs[5]))  # 'core18' snap itself
-        self.assertFalse(inferProEnable(refs[6]))  # Snap w/out snapcraft.yaml
-        self.assertFalse(inferProEnable(None))  # Snap w/out ref or branch
-
-    def test_inferProEnable_branches(self):
-        """With a branch as a context, inferProEnable returns the inferred
-        values for pro-enable as expected (see test description above)
-        """
-        branches = [
-            removeSecurityProxy(self.factory.makeBranch()) for _ in range(7)
-        ]
-        blobs = {
-            branch.id: blob
-            for branch, blob in (
-                (branches[0], b"name: test-snap\n"),
-                (branches[1], b"name: test-snap\nbase: core\n"),
-                (branches[2], b"name: test-snap\nbase: core18\n"),
-                (branches[3], b"name: test-snap\nbuild-base: devel\n"),
-                (branches[4], b"name: core\ntype: base\n"),
-                (branches[5], b"name: core18\ntype: base\n"),
-            )
-        }
-        self.useFixture(BranchHostingFixture()).getBlob = (
-            lambda branch_id, *args, **kwargs: blobs.get(branch_id)
-        )
-
-        inferProEnable = getUtility(ISnapSet).inferProEnable
-        self.assertTrue(inferProEnable(branches[0]))  # Snap w no base
-        self.assertTrue(inferProEnable(branches[1]))  # Snap w 'core' base
-        self.assertFalse(inferProEnable(branches[2]))  # Snap w 'core18' base
-        self.assertFalse(inferProEnable(branches[3]))  # Snap w only build-base
-        self.assertTrue(inferProEnable(branches[4]))  # 'core' snap itself
-        self.assertFalse(inferProEnable(branches[5]))  # 'core18' snap itself
-        self.assertFalse(inferProEnable(branches[6]))  # w/out snapcraft.yaml
-        self.assertFalse(inferProEnable(None))  # w/out ref or branch
-
-    def test_inferProEnable_bad_revision(self):
-        """A branch with an invalid revision ID (or an invalid last_scanned_id)
-        will have its pro-enable value set to False.
-        """
-        branch = self.factory.makeBranch()
-        branch.last_scanned_id = "bad/revision"
-        inferProEnable = getUtility(ISnapSet).inferProEnable
-        self.assertFalse(inferProEnable(removeSecurityProxy(branch)))
 
 
 class TestSnapWebservice(TestCaseWithFactory):
