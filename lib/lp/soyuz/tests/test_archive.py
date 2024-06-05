@@ -65,6 +65,7 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.macaroons.testing import MacaroonVerifies
 from lp.services.propertycache import clear_property_cache, get_property_cache
 from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.services.timeout import default_timeout
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
@@ -6148,6 +6149,58 @@ class TestSigningKeyPropagation(TestCaseWithFactory):
             owner=person, purpose=ArchivePurpose.PPA
         )
         self.assertEqual(person.gpg_keys[0], ppa_with_key.signing_key)
+
+    def test_secure_default_signing_key_propagated_to_new_ppa(self):
+        # When a default PPA has more than one signing key, for example during
+        # the 1024-bit RSA signing key to 4096-bit RSA signing key migration,
+        # only the secure key is propagated to the new PPAs of the same
+        # person.
+        person = self.factory.makePerson()
+        default_ppa = self.factory.makeArchive(
+            owner=person, purpose=ArchivePurpose.PPA, name="ppa"
+        )
+        self.assertEqual(default_ppa, person.archive)
+        fingerprint_1024R = self.factory.getUniqueHexString(digits=40).upper()
+        signing_key_1024R = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint_1024R
+        )
+        self.factory.makeGPGKey(
+            owner=person,
+            keyid=fingerprint_1024R[-8:],
+            fingerprint=fingerprint_1024R,
+            keysize=1024,
+        )
+        removeSecurityProxy(person.archive).signing_key_owner = person
+        removeSecurityProxy(person.archive).signing_key_fingerprint = (
+            fingerprint_1024R
+        )
+        del get_property_cache(person.archive).signing_key
+        getUtility(IArchiveSigningKeySet).create(
+            default_ppa,
+            None,
+            signing_key_1024R,
+        )
+        fingerprint_4096R = self.factory.getUniqueHexString(digits=40).upper()
+        signing_key_4096R = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP, fingerprint=fingerprint_4096R
+        )
+        self.factory.makeGPGKey(
+            owner=person,
+            keyid=fingerprint_4096R[-8:],
+            fingerprint=fingerprint_4096R,
+            keysize=4096,
+        )
+        getUtility(IArchiveSigningKeySet).create(
+            default_ppa,
+            None,
+            signing_key_4096R,
+        )
+        another_ppa = self.factory.makeArchive(
+            owner=person, purpose=ArchivePurpose.PPA
+        )
+        self.assertEqual(
+            another_ppa.signing_key_fingerprint, fingerprint_4096R
+        )
 
 
 class TestGetSigningKeyData(TestCaseWithFactory):
