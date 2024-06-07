@@ -4,6 +4,7 @@
 SET client_min_messages=ERROR;
 
 ALTER TABLE Snap
+    ALTER COLUMN pro_enable SET DEFAULT false,
     ALTER COLUMN pro_enable SET NOT NULL;
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2211, 24, 0);
