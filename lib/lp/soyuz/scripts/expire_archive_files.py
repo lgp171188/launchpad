@@ -30,6 +30,8 @@ canonical-foundations/uc20-build-ppa
 canonical-foundations/uc20-staging-ppa
 canonical-kernel-team/uc20-release
 canonical-kernel-dgx/release
+checkbox-dev/beta
+checkbox-dev/stable
 chelsea-team
 ci-train-ppa-service/stable-phone-overlay
 dennis-team
