@@ -55,9 +55,6 @@ class EmailAddress(StormBase, HasOwnerMixin):
         self.status = status
         self.person = person
 
-    def __repr__(self):
-        return "<EmailAddress <%s> [%s]>" % (self.email, self.status)
-
     def destroySelf(self):
         """See `IEmailAddress`."""
         # Import this here to avoid circular references.
