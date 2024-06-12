@@ -6,6 +6,7 @@
 __all__ = [
     "CharmRecipe",
     "get_charm_recipe_privacy_filter",
+    "is_unified_format",
 ]
 
 import base64
@@ -122,6 +123,29 @@ from lp.services.webapp.candid import extract_candid_caveat
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
+
+
+def is_unified_format(configuration_as_dict):
+    """CharmCraft's configuration file exits in two versions.
+
+    The new version, referred to as `unified`, was introduced to unify the
+    syntax across the various craft tools, see the corresponding spec:
+    https://docs.google.com/document/d/1HrGw_MpfJoMpoGRw74Qk3eP7cl7viwcmoPe9nICag2U/edit
+    (access restricted to Canonical employees)
+
+    The unified format is not backwards compatible.
+
+    Relevant for the detection are the following differences compared to the
+    old version:
+    - `bases` was renamed to `base`
+    - a `build-base` key was introduced
+    - a `platforms` key was introduced
+    """
+    new_keys = ["base", "build-base", "platforms"]
+    for key in new_keys:
+        if key in configuration_as_dict.keys():
+            return True
+    return False
 
 
 def charm_recipe_modified(recipe, event):

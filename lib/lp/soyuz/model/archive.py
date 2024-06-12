@@ -98,7 +98,10 @@ from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import ISigningKeySet
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKeySet,
+    ISigningKeySet,
+)
 from lp.services.signing.model.signingkey import ArchiveSigningKey, SigningKey
 from lp.services.tokens import create_token
 from lp.services.webapp.authorization import check_permission
@@ -3532,7 +3535,21 @@ class ArchiveSet:
         if purpose == ArchivePurpose.PPA:
             if owner.archive is not None:
                 signing_key_owner = owner.archive.signing_key_owner
-                signing_key_fingerprint = owner.archive.signing_key_fingerprint
+                # Check if the archive has a replacement 4096-bit RSA key
+                # generated and propagate that, if it exists. There is no
+                # need to populate the 'archivesigningkey' table here because
+                # the new archive will only have a single secure signing key
+                # and all such archives can be migrated en masse to the
+                # 'archivesigningkey' table later.
+                signing_key = getUtility(
+                    IArchiveSigningKeySet
+                ).get4096BitRSASigningKey(owner.archive)
+                if signing_key:
+                    signing_key_fingerprint = signing_key.fingerprint
+                else:
+                    signing_key_fingerprint = (
+                        owner.archive.signing_key_fingerprint
+                    )
             else:
                 # owner.archive is a cached property and we've just cached it.
                 del get_property_cache(owner).archive

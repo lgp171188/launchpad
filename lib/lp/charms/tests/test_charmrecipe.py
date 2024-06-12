@@ -7,6 +7,7 @@ import base64
 import json
 from datetime import datetime, timedelta, timezone
 from textwrap import dedent
+from unittest import TestCase
 
 import iso8601
 import responses
@@ -30,6 +31,7 @@ from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
 )
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -48,6 +50,7 @@ from lp.buildmaster.interfaces.processor import (
 )
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.charms.adapters.buildarch import BadPropertyError, MissingPropertyError
 from lp.charms.interfaces.charmrecipe import (
     CHARM_RECIPE_ALLOW_CREATE,
     CHARM_RECIPE_BUILD_DISTRIBUTION,
@@ -73,7 +76,7 @@ from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
 )
-from lp.charms.model.charmrecipe import CharmRecipeSet
+from lp.charms.model.charmrecipe import CharmRecipeSet, is_unified_format
 from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipebuildjob import CharmRecipeBuildJob
 from lp.charms.model.charmrecipejob import CharmRecipeJob
@@ -116,6 +119,38 @@ from lp.testing.layers import (
 )
 from lp.testing.matchers import DoesNotSnapshot, HasQueryCount
 from lp.testing.pages import webservice_for_person
+
+
+class TestCharmRecipeFormatDetector(TestCase):
+    """Detect whether a configuration file uses the unified format.
+
+    For more information refer to the docstring of `is_unified_format`.
+    """
+
+    def test_is_unified_format_with_old_format(self):
+        # 'bases' is only used with the old configuration format
+        d = {
+            "bases": {
+                "build-on": [
+                    {
+                        "name": "ubuntu",
+                        "channel": "20.04",
+                        "architectures": ["sparc"],
+                    }
+                ]
+            },
+        }
+        self.assertFalse(is_unified_format(d))
+
+    def test_is_unified_format_with_new_syntax(self):
+        # 'base', 'build-base', and 'platforms' were introduced with the
+        # 'unified' configuration
+        d = {
+            "base": "ubuntu@24.04",
+            "build-base": "ubuntu@24.04",
+            "platforms": {"amd64": [{"build-on": "riscv64"}]},
+        }
+        self.assertTrue(is_unified_format(d))
 
 
 class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
@@ -720,6 +755,276 @@ class TestCharmRecipe(TestCaseWithFactory):
             )
         self.assertRequestedBuildsMatch(
             builds, job, "20.04", ["mips64el", "riscv64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_invalid_short_base(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu-24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                BadPropertyError,
+                "Invalid value for base 'ubuntu-24.04'. "
+                "Expected value should be like 'ubuntu@24.04'",
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_platforms_missing(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu@24.04
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                MissingPropertyError, "The 'platforms' property is required"
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_fully_expanded(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_multi_platforms(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                        ubuntu-arm64:
+                            build-on: [arm64]
+                            build-for: [arm64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64", "arm64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_arch_as_str(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: amd64
+                            build-for: amd64
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_base_short_form(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base: ubuntu@24.04
+                    platforms:
+                        ubuntu-amd64:
+                            build-on: [amd64]
+                            build-for: [amd64]
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_unknown_arch(self):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        foobar:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            with ExpectedException(
+                BadPropertyError,
+                "'foobar' is not a supported architecture for "
+                "'ubuntu@24.04'",
+            ):
+                job.recipe.requestBuildsFromJob(
+                    job.build_request,
+                    channels=removeSecurityProxy(job.channels),
+                )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_platforms_short_form(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        amd64:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64"], job.channels
+        )
+
+    def test_requestBuildsFromJob_unified_charmcraft_yaml_2_platforms_short(
+        self,
+    ):
+        self.useFixture(
+            GitHostingFixture(
+                blob=dedent(
+                    """\
+                    base:
+                        name: ubuntu
+                        channel: 24.04
+                    platforms:
+                        amd64:
+                        arm64:
+                    """
+                )
+            )
+        )
+        job = self.makeRequestBuildsJob("24.04", ["amd64", "riscv64", "arm64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.recipe)), job.date_created
+        )
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.recipe.requestBuildsFromJob(
+                job.build_request, channels=removeSecurityProxy(job.channels)
+            )
+        self.assertRequestedBuildsMatch(
+            builds, job, "24.04", ["amd64", "arm64"], job.channels
         )
 
     def test_requestBuildsFromJob_no_charmcraft_yaml(self):

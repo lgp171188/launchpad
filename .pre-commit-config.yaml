@@ -57,7 +57,6 @@ repos:
         exclude: ^lib/contrib/
         additional_dependencies:
           - flake8-absolute-import==1.0.0.1
-          - flake8-alfred==1.1.1
           - flake8-bugbear==23.3.12
 -   repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.53.0

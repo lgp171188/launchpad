@@ -90,7 +90,7 @@ from lp.soyuz.enums import (
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archivefile import IArchiveFileSet
 from lp.soyuz.tests.test_publishing import TestNativePublishingBase
-from lp.testing import TestCaseWithFactory
+from lp.testing import TestCaseWithFactory, login_person
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
@@ -2691,6 +2691,275 @@ class TestPublisher(TestPublisherBase):
             "Release",
         )
         self.assertTrue(file_exists(source_release))
+
+    def testReleaseFilePPAArchiveMetadataOverridesApplied(self):
+        cprov = getUtility(IPersonSet).getByName("cprov")
+        cprov.archive.displayname = "PPA for Celso Provid\xe8lo"
+        login_person(cprov)
+        cprov.archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+                "Label": "test_label",
+                "Snapshots": "test_snapshots",
+            }
+        )
+        publisher = getPublisher(cprov.archive, [], self.logger)
+
+        self.getPubSource(filecontent=b"Hello world", archive=cprov.archive)
+
+        publisher.A_publish(False)
+        publisher.C_writeIndexes(False)
+        publisher.D_writeReleaseFiles(False)
+
+        release = self.parseRelease(
+            os.path.join(
+                publisher._config.distsroot,
+                "breezy-autotest",
+                "Release",
+            )
+        )
+        self.assertEqual("test_origin", release["origin"])
+        self.assertEqual("test_label", release["label"])
+        self.assertEqual("test_snapshots", release["snapshots"])
+
+        arch_release_path = os.path.join(
+            publisher._config.distsroot,
+            "breezy-autotest",
+            "main",
+            "source",
+            "Release",
+        )
+        arch_release = self.parseRelease(arch_release_path)
+        self.assertEqual("test_origin", arch_release["origin"])
+        self.assertEqual("test_label", arch_release["label"])
+
+    def testPPAArchiveGetMetadataOverridesPopulated(self):
+        cprov = getUtility(IPersonSet).getByName("cprov")
+        cprov.archive.displayname = "PPA for Celso Provid\xe8lo"
+        login_person(cprov)
+        cprov.archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+            }
+        )
+        publisher = getPublisher(cprov.archive, [], self.logger)
+        metadata_overrides = publisher._getMetadataOverrides()
+        self.assertEqual(
+            {
+                "Origin": "test_origin",
+            },
+            metadata_overrides,
+        )
+
+    def testPPAArchiveGetMetadataOverridesEmpty(self):
+        cprov = getUtility(IPersonSet).getByName("cprov")
+        cprov.archive.displayname = "PPA for Celso Provid\xe8lo"
+        publisher = getPublisher(cprov.archive, [], self.logger)
+        metadata_overrides = publisher._getMetadataOverrides()
+        self.assertEqual({}, metadata_overrides)
+
+    def testReleaseFilePPAArchiveMetadataOverridesAppliedWithPlaceholder(self):
+        cprov = getUtility(IPersonSet).getByName("cprov")
+        cprov.archive.displayname = "PPA for Celso Provid\xe8lo"
+        login_person(cprov)
+        cprov.archive.setMetadataOverrides(
+            {
+                "Suite": "test_{series}",
+            }
+        )
+        publisher = getPublisher(cprov.archive, [], self.logger)
+
+        self.getPubSource(filecontent=b"Hello world", archive=cprov.archive)
+
+        publisher.A_publish(False)
+        publisher.C_writeIndexes(False)
+        publisher.D_writeReleaseFiles(False)
+
+        release = self.parseRelease(
+            os.path.join(
+                publisher._config.distsroot,
+                "breezy-autotest",
+                "Release",
+            )
+        )
+        self.assertEqual("test_breezy-autotest", release["suite"])
+
+        arch_release_path = os.path.join(
+            publisher._config.distsroot,
+            "breezy-autotest",
+            "main",
+            "source",
+            "Release",
+        )
+        arch_release = self.parseRelease(arch_release_path)
+        self.assertEqual("test_breezy-autotest", arch_release["archive"])
+
+    def testReleaseFilePrimaryArchiveMetadataOverridesNotApplied(self):
+        publisher = Publisher(
+            self.logger,
+            self.config,
+            self.disk_pool,
+            self.ubuntutest.main_archive,
+        )
+
+        self.ubuntutest.main_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+                "Label": "test_label",
+            }
+        )
+
+        self.getPubSource(filecontent=b"Hello world")
+
+        publisher.A_publish(False)
+        publisher.C_doFTPArchive(False)
+        publisher.D_writeReleaseFiles(False)
+
+        release = self.parseRelease(
+            os.path.join(self.config.distsroot, "breezy-autotest", "Release")
+        )
+        self.assertEqual("ubuntutest", release["origin"])
+        self.assertNotEqual("test_origin", release["origin"])
+        self.assertEqual("ubuntutest", release["label"])
+        self.assertNotEqual("test_label", release["label"])
+
+        arch_release_path = os.path.join(
+            self.config.distsroot,
+            "breezy-autotest",
+            "main",
+            "source",
+            "Release",
+        )
+        arch_release = self.parseRelease(arch_release_path)
+        self.assertEqual("ubuntutest", arch_release["origin"])
+        self.assertNotEqual("test_origin", arch_release["origin"])
+        self.assertEqual("ubuntutest", arch_release["label"])
+        self.assertNotEqual("test_label", arch_release["label"])
+
+    def testPrimaryArchiveGetMetadataOverridesEmpty(self):
+        publisher = Publisher(
+            self.logger,
+            self.config,
+            self.disk_pool,
+            self.ubuntutest.main_archive,
+        )
+        self.ubuntutest.main_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+            }
+        )
+        metadata_overrides = publisher._getMetadataOverrides()
+        self.assertEqual({}, metadata_overrides)
+
+    def testReleaseFilePatnerArchiveMetadataOverridesNotApplied(self):
+        partner_archive = self.ubuntutest.getArchiveByComponent("partner")
+        publisher = getPublisher(partner_archive, [], self.logger)
+
+        partner_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+                "Label": "test_label",
+            }
+        )
+
+        self.getPubSource(filecontent=b"Hello world", archive=partner_archive)
+
+        publisher.A_publish(False)
+        publisher.C_writeIndexes(False)
+        publisher.D_writeReleaseFiles(False)
+
+        release = self.parseRelease(
+            os.path.join(
+                publisher._config.distsroot, "breezy-autotest", "Release"
+            )
+        )
+        self.assertEqual("Canonical", release["origin"])
+        self.assertNotEqual("test_origin", release["origin"])
+        self.assertEqual("Partner archive", release["label"])
+        self.assertNotEqual("test_label", release["label"])
+
+        arch_release = self.parseRelease(
+            os.path.join(
+                publisher._config.distsroot,
+                "breezy-autotest",
+                "partner/source/Release",
+            )
+        )
+        self.assertEqual("Canonical", arch_release["origin"])
+        self.assertNotEqual("test_origin", arch_release["origin"])
+        self.assertEqual("Partner archive", release["label"])
+        self.assertNotEqual("test_label", release["label"])
+
+    def testPartnerArchiveGetMetadataOverridesEmpty(self):
+        partner_archive = self.ubuntutest.getArchiveByComponent("partner")
+        publisher = getPublisher(partner_archive, [], self.logger)
+        partner_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+            }
+        )
+        metadata_overrides = publisher._getMetadataOverrides()
+        self.assertEqual({}, metadata_overrides)
+
+    def testReleaseFileCopyArchiveMetadataOverridesNotApplied(self):
+        copy_archive = self.factory.makeArchive(
+            distribution=self.ubuntu, purpose=ArchivePurpose.COPY
+        )
+        publisher = getPublisher(copy_archive, [], self.logger)
+        # We need a temproot to write indexes
+        publisher._config.temproot = self.config.temproot
+
+        copy_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+                "Label": "test_label",
+            }
+        )
+
+        self.getPubSource(filecontent=b"Hello world", archive=copy_archive)
+
+        # Careful publishing has to be used for copy archives to be considered
+        publisher.A_publish(True)
+        publisher.C_writeIndexes(True)
+        publisher.D_writeReleaseFiles(True)
+
+        release = self.parseRelease(
+            os.path.join(
+                publisher._config.distsroot,
+                "breezy-autotest",
+                "Release",
+            )
+        )
+        self.assertEqual("Ubuntu", release["origin"])
+        self.assertNotEqual("test_origin", release["origin"])
+        self.assertEqual("Ubuntu", release["label"])
+        self.assertNotEqual("test_label", release["label"])
+
+        arch_release_path = os.path.join(
+            publisher._config.distsroot,
+            "breezy-autotest",
+            "main",
+            "source",
+            "Release",
+        )
+        arch_release = self.parseRelease(arch_release_path)
+        self.assertEqual("Ubuntu", arch_release["origin"])
+        self.assertNotEqual("test_origin", arch_release["origin"])
+        self.assertEqual("Ubuntu", arch_release["label"])
+        self.assertNotEqual("test_label", arch_release["label"])
+
+    def testCopyArchiveGetMetadataOverridesEmpty(self):
+        copy_archive = self.factory.makeArchive(
+            distribution=self.ubuntu, purpose=ArchivePurpose.COPY
+        )
+        publisher = getPublisher(copy_archive, [], self.logger)
+        copy_archive.setMetadataOverrides(
+            {
+                "Origin": "test_origin",
+            }
+        )
+        metadata_overrides = publisher._getMetadataOverrides()
+        self.assertEqual({}, metadata_overrides)
 
     def testCreateSeriesAliasesNoAlias(self):
         """createSeriesAliases has nothing to do by default."""
