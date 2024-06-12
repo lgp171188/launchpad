@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 import json
+import re
 from collections import Counter, OrderedDict
 
 from lp.services.helpers import english_list
@@ -18,10 +19,10 @@ class CharmBasesParserError(Exception):
 class MissingPropertyError(CharmBasesParserError):
     """Error for when an expected property is not present in the YAML."""
 
-    def __init__(self, prop):
-        super().__init__(
-            f"Base specification is missing the {prop!r} property"
-        )
+    def __init__(self, prop, msg=None):
+        if msg is None:
+            msg = f"Base specification is missing the {prop!r} property"
+        super().__init__(msg)
         self.property = prop
 
 
@@ -125,6 +126,86 @@ class CharmBaseConfiguration:
         return cls(build_on, run_on=run_on)
 
 
+class UnifiedCharmBaseConfiguration:
+    """A unified base configuration in charmcraft.yaml"""
+
+    def __init__(self, build_on, run_on=None):
+        self.build_on = build_on
+        self.run_on = list(build_on) if run_on is None else run_on
+
+    @classmethod
+    def from_dict(cls, charmcraft_data, supported_arches):
+        base = charmcraft_data["base"]
+        if isinstance(base, str):
+            # Expected short-form value looks like 'ubuntu@24.04'
+            match = re.match(r"(.+)@(.+)", base)
+            if not match:
+                raise BadPropertyError(
+                    f"Invalid value for base '{base}'. Expected value should "
+                    "be like 'ubuntu@24.04'"
+                )
+            base_name, base_channel = match.groups()
+        else:
+            # Expected value looks like {"name": "ubuntu", "channel": "24.04"}
+            base_name = base["name"]
+            # If a value like 24.04 is unquoted in yaml, it will be
+            # interpreted as a float. So we convert it to a string.
+            base_channel = str(base["channel"])
+
+        # XXX lgp171188 2024-06-11: Find out if we need 'build-base' or not.
+        # There is no existing code that is using that.
+
+        platforms = charmcraft_data.get("platforms")
+        if not platforms:
+            raise MissingPropertyError(
+                "platforms", "The 'platforms' property is required"
+            )
+        configs = []
+        for platform, configuration in platforms.items():
+            # The 'platforms' property and its values look like
+            # platforms:
+            #   ubuntu-amd64:
+            #     build-on: [amd64]
+            #     build-for: [amd64]
+            # 'ubuntu-amd64' will be the value of 'platform' and its value dict
+            # containing the keys 'build-on', 'build-for' will be the value of
+            # 'configuration'.
+            name = base_name
+            channel = base_channel
+            if configuration:
+                build_on = configuration["build-on"]
+                if isinstance(build_on, str):
+                    build_on = [build_on]
+
+                build_on = [
+                    CharmBase(name, channel, architecture)
+                    for architecture in build_on
+                ]
+
+                build_for = configuration["build-for"]
+                if isinstance(build_for, str):
+                    build_for = [build_for]
+
+                build_for = [
+                    CharmBase(name, channel, architecture)
+                    for architecture in build_for
+                ]
+            else:
+                supported_arch_names = (
+                    das.architecturetag for das in supported_arches
+                )
+                if platform in supported_arch_names:
+                    build_on = [CharmBase(name, channel, platform)]
+                    build_for = [CharmBase(name, channel, platform)]
+                else:
+                    raise BadPropertyError(
+                        f"'{platform}' is not a supported architecture "
+                        f"for '{base_name}@{base_channel}'."
+                    )
+            configs.append(cls(build_on, build_for))
+        return configs
+
+
 def determine_instances_to_build(
     charmcraft_data, supported_arches, default_distro_series
 ):
@@ -138,12 +219,18 @@ def determine_instances_to_build(
         charmcraft.yaml does not explicitly declare any bases.
     :return: A list of `DistroArchSeries`.
     """
+    from lp.charms.model.charmrecipe import is_unified_format
+
     bases_list = charmcraft_data.get("bases")
 
     if bases_list:
         configs = [
             CharmBaseConfiguration.from_dict(item) for item in bases_list
         ]
+    elif is_unified_format(charmcraft_data):
+        configs = UnifiedCharmBaseConfiguration.from_dict(
+            charmcraft_data, supported_arches
+        )
     else:
         # If no bases are specified, build one for each supported
         # architecture for the default series.
