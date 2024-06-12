@@ -7,6 +7,7 @@ import base64
 import json
 from datetime import datetime, timedelta, timezone
 from textwrap import dedent
+from unittest import TestCase
 
 import iso8601
 import responses
@@ -73,7 +74,7 @@ from lp.charms.interfaces.charmrecipebuildjob import ICharmhubUploadJobSource
 from lp.charms.interfaces.charmrecipejob import (
     ICharmRecipeRequestBuildsJobSource,
 )
-from lp.charms.model.charmrecipe import CharmRecipeSet
+from lp.charms.model.charmrecipe import CharmRecipeSet, is_unified_format
 from lp.charms.model.charmrecipebuild import CharmFile
 from lp.charms.model.charmrecipebuildjob import CharmRecipeBuildJob
 from lp.charms.model.charmrecipejob import CharmRecipeJob
@@ -116,6 +117,38 @@ from lp.testing.layers import (
 )
 from lp.testing.matchers import DoesNotSnapshot, HasQueryCount
 from lp.testing.pages import webservice_for_person
+
+
+class TestCharmRecipeFormatDetector(TestCase):
+    """Detect whether a configuration file uses the unified format.
+
+    For more information refer to the docstring of `is_unified_format`.
+    """
+
+    def test_is_unified_format_with_old_format(self):
+        # 'bases' is only used with the old configuration format
+        d = {
+            "bases": {
+                "build-on": [
+                    {
+                        "name": "ubuntu",
+                        "channel": "20.04",
+                        "architectures": ["sparc"],
+                    }
+                ]
+            },
+        }
+        self.assertFalse(is_unified_format(d))
+
+    def test_is_unified_format_with_new_syntax(self):
+        # 'base', 'build-base', and 'platforms' were introduced with the
+        # 'unified' configuration
+        d = {
+            "base": "ubuntu@24.04",
+            "build-base": "ubuntu@24.04",
+            "platforms": {"amd64": [{"build-on": "riscv64"}]},
+        }
+        self.assertTrue(is_unified_format(d))
 
 
 class TestCharmRecipeFeatureFlags(TestCaseWithFactory):
