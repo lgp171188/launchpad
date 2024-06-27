@@ -13,6 +13,7 @@ from lp.snappy.adapters.buildarch import (
     UnsupportedBuildOnError,
     determine_architectures_to_build,
 )
+from lp.snappy.adapters.buildarch import BadPropertyError
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -473,6 +474,209 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 ],
                 "supported_architectures": ["amd64", "i386", "armhf"],
                 "expected_exception": DuplicateBuildOnError,
+            },
+        ),
+        (
+            "platforms with configuration",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-i386": {
+                        "build-on": ["i386"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            }
+        ),
+        (
+            "platforms with shorthand configuration",
+            {
+                "platforms": {
+                    "amd64": {},
+                    "i386": {},
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with unsupported architecture",
+            {
+                "platforms": {
+                    "ubuntu-unsupported": {},
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": BadPropertyError,
+            },
+        ),
+        (
+            "platforms with multiple architectures",
+            {
+                "platforms": {
+                    "ubuntu-amd64-i386": {
+                        "build-on": ["amd64", "i386"],
+                        "build-for": ["amd64", "i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64", "i386"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["amd64", "i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with all keyword",
+            {
+                "platforms": {
+                    "ubuntu-all": {
+                        "build-on": ["all"],
+                        "build-for": ["all"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["all"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["all"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "armhf",
+                        "target_architectures": ["all"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with conflict in build-on",
+            {
+                "platforms": {
+                    "ubuntu-conflict": {
+                        "build-on": ["all", "amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": AllConflictInBuildOnError,
+            },
+        ),
+        (
+            "platforms with conflict in build-for",
+            {
+                "platforms": {
+                    "ubuntu-conflict": {
+                        "build-on": ["amd64"],
+                        "build-for": ["all", "amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": AllConflictInBuildForError,
+            },
+        ),
+        (
+            "platforms with unsupported architecture and base",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["unsupported"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "base": "unsupported-base",
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": BadPropertyError,
+            },
+        ),
+        (
+            "platforms with duplicate build-on",
+            {
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: False
+                },
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-amd64-duplicate": {
+                        "build-on": ["amd64"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": DuplicateBuildOnError,
+            },
+        ),
+        (
+            "platforms with multiple build-for for the same build-on",
+            {
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True
+                },
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-amd64-i386": {
+                        "build-on": ["amd64"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
             },
         ),
     ]

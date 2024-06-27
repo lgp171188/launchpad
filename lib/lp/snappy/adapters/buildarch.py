@@ -9,6 +9,7 @@ from collections import Counter
 from typing import Any, Dict, List, Optional, Union
 
 from lp.services.helpers import english_list
+from lp.snappy.adapters.buildarch import BadPropertyError
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.snappy.model.snapbase import SnapBase
 
@@ -188,20 +189,9 @@ def determine_architectures_to_build(
     architectures_list: Optional[List] = snapcraft_data.get("architectures")
 
     if architectures_list:
-        # First, determine what style we're parsing.  Is it a list of
-        # strings or a list of dicts?
-        if all(isinstance(a, str) for a in architectures_list):
-            # If a list of strings (old style), then that's only a single
-            # item.
-            architectures = [SnapArchitecture(build_on=architectures_list)]
-        elif all(isinstance(arch, dict) for arch in architectures_list):
-            # If a list of dicts (new style), then that's multiple items.
-            architectures = [
-                SnapArchitecture.from_dict(a) for a in architectures_list
-            ]
-        else:
-            # If a mix of both, bail.  We can't reasonably handle it.
-            raise IncompatibleArchitecturesStyleError()
+        architectures = parse_architectures_list(architectures_list)
+    elif "platforms" in snapcraft_data:
+        architectures = parse_platforms(snapcraft_data, supported_arches)
     else:
         # If no architectures are specified, build one for each supported
         # architecture.
@@ -209,28 +199,94 @@ def determine_architectures_to_build(
             SnapArchitecture(build_on=a) for a in supported_arches
         ]
 
-    for arch in architectures:
-        if "all" in arch.build_on and len(arch.build_on) > 1:
-            raise AllConflictInBuildOnError()
-        if "all" in arch.build_for and len(arch.build_for) > 1:
-            raise AllConflictInBuildForError()
+    validate_architectures(architectures)
 
     allow_duplicate_build_on = (
         snap_base
         and snap_base.features.get(SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON)
     ) or False
-    if not allow_duplicate_build_on:
-        # Ensure that multiple `build-on` items don't include the same
-        # architecture; this is ambiguous and forbidden by snapcraft prior
-        # to core22. Checking this here means that we don't get duplicate
-        # supported_arch results below.
-        build_ons = Counter()
-        for arch in architectures:
-            build_ons.update(arch.build_on)
-        duplicates = {arch for arch, count in build_ons.items() if count > 1}
-        if duplicates:
-            raise DuplicateBuildOnError(duplicates)
 
+    if not allow_duplicate_build_on:
+        check_for_duplicate_build_on(architectures)
+
+    return build_architectures_list(architectures, supported_arches)
+
+
+def parse_architectures_list(architectures_list: List) -> List[SnapArchitecture]:
+    # First, determine what style we're parsing.  Is it a list of
+    # strings or a list of dicts?
+    if all(isinstance(a, str) for a in architectures_list):
+        # If a list of strings (old style), then that's only a single
+        # item.
+        return [SnapArchitecture(build_on=architectures_list)]
+    elif all(isinstance(arch, dict) for arch in architectures_list):
+        # If a list of dicts (new style), then that's multiple items.
+        return [
+            SnapArchitecture.from_dict(a) for a in architectures_list
+        ]
+    else:
+        # If a mix of both, bail.  We can't reasonably handle it.
+        raise IncompatibleArchitecturesStyleError()
+
+
+def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str]) -> List[SnapArchitecture]:
+    architectures = []
+    supported_arch_names = (das.architecturetag for das in supported_arches)
+
+    for platform, configuration in snapcraft_data["platforms"].items():
+        # The 'platforms' property and its values look like
+        # platforms:
+        #   ubuntu-amd64:
+        #     build-on: [amd64]
+        #     build-for: [amd64]
+        # 'ubuntu-amd64' will be the value of 'platform' and its value dict
+        # containing the keys 'build-on', 'build-for' will be the value of
+        # 'configuration'.
+        if configuration:
+            architectures.append(
+                SnapArchitecture(
+                    build_on=configuration["build-on"],
+                    build_for=configuration["build-for"],
+                )
+            )
+        elif platform in supported_arch_names:
+            architectures.append(
+                SnapArchitecture(
+                    build_on=[platform], build_for=[platform]
+                )
+            )
+        else:
+            base = snapcraft_data["base"]
+            raise BadPropertyError(
+                f"'{platform}' is not a supported platform "
+                f"for '{base}'."
+            )
+
+    return architectures
+
+
+def validate_architectures(architectures: List[SnapArchitecture]):
+    for arch in architectures:
+        if "all" in arch.build_on and len(arch.build_on) > 1:
+            raise AllConflictInBuildOnError()
+        if "all" in arch.build_for and len(arch.build_for) > 1:
+            raise AllConflictInBuildForError()
+        
+
+def check_for_duplicate_build_on(architectures: List[SnapArchitecture]):
+    # Ensure that multiple `build-on` items don't include the same
+    # architecture; this is ambiguous and forbidden by snapcraft prior
+    # to core22. Checking this here means that we don't get duplicate
+    # supported_arch results below.
+    build_ons = Counter()
+    for arch in architectures:
+        build_ons.update(arch.build_on)
+    duplicates = {arch for arch, count in build_ons.items() if count > 1}
+    if duplicates:
+        raise DuplicateBuildOnError(duplicates)
+    
+
+def build_architectures_list(architectures: List[SnapArchitecture], supported_arches: List[str]) -> List[SnapBuildInstance]:
     architectures_to_build = []
     for arch in architectures:
         try:
