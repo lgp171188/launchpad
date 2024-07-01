@@ -243,10 +243,12 @@ def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str])
         # containing the keys 'build-on', 'build-for' will be the value of
         # 'configuration'.
         if configuration:
+            build_on = configuration.get("build-on", [platform])
+            build_for = configuration.get("build-for", build_on)
             architectures.append(
                 SnapArchitecture(
-                    build_on=configuration["build-on"],
-                    build_for=configuration["build-for"],
+                    build_on=build_on,
+                    build_for=build_for,
                 )
             )
         elif platform in supported_arch_names:
