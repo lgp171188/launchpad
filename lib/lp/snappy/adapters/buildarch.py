@@ -258,7 +258,7 @@ def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str])
                 )
             )
         else:
-            base = snapcraft_data["base"]
+            base = snapcraft_data.get("base", "unknown")
             raise BadPropertyError(
                 f"'{platform}' is not a supported platform "
                 f"for '{base}'."
