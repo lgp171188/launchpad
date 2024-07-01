@@ -231,7 +231,7 @@ def parse_architectures_list(architectures_list: List) -> List[SnapArchitecture]
 
 def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str]) -> List[SnapArchitecture]:
     architectures = []
-    supported_arch_names = (das.architecturetag for das in supported_arches)
+    supported_arch_names = supported_arches
 
     for platform, configuration in snapcraft_data["platforms"].items():
         # The 'platforms' property and its values look like
