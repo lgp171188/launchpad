@@ -4,6 +4,7 @@
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import HasLength
 
+from lp.charms.adapters.buildarch import BadPropertyError
 from lp.snappy.adapters.buildarch import (
     AllConflictInBuildForError,
     AllConflictInBuildOnError,
@@ -13,7 +14,6 @@ from lp.snappy.adapters.buildarch import (
     UnsupportedBuildOnError,
     determine_architectures_to_build,
 )
-from lp.snappy.adapters.buildarch import BadPropertyError
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.testing import TestCase, TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
@@ -682,7 +682,11 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
     ]
 
     def test_parser(self):
-        snapcraft_data = {"architectures": self.architectures}
+        snapcraft_data = {}
+        if hasattr(self, "architectures"):
+            snapcraft_data["architectures"] = self.architectures
+        if hasattr(self, "platforms"):
+            snapcraft_data["platforms"] = self.platforms
         snap_base_features = getattr(self, "snap_base_features", {})
         snap_base = self.factory.makeSnapBase(features=snap_base_features)
         if hasattr(self, "expected_exception"):

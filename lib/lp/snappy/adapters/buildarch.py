@@ -8,8 +8,8 @@ __all__ = [
 from collections import Counter
 from typing import Any, Dict, List, Optional, Union
 
+from lp.charms.adapters.buildarch import BadPropertyError
 from lp.services.helpers import english_list
-from lp.snappy.adapters.buildarch import BadPropertyError
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.snappy.model.snapbase import SnapBase
 
