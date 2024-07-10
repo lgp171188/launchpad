@@ -49,6 +49,8 @@ transyl
 ubuntu-cloud-archive
 ubuntu-esm/esm-apps-security
 ubuntu-esm/esm-apps-updates
+ubuntu-esm/esm-infra-legacy-security
+ubuntu-esm/esm-infra-legacy-updates
 ubuntu-esm/esm-infra-security
 ubuntu-esm/esm-infra-updates
 ubuntu-mobile
