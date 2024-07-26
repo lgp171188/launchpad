@@ -82,6 +82,7 @@ from lp.scripts.garbo import (
     ProductVCSPopulator,
     UnusedPOTMsgSetPruner,
     UnusedSessionPruner,
+    UpdatePPASigningKeyFingerprintToRSA4096Key,
     load_garbo_job_state,
     save_garbo_job_state,
 )
@@ -106,6 +107,7 @@ from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.session.model import SessionData, SessionPkgData
+from lp.services.signing.enums import SigningKeyType
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.worlddata.interfaces.language import ILanguageSet
@@ -2583,6 +2585,41 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         rs = populator.findArchiveFiles()
         self.assertEqual(1, rs.count())
         self.assertEqual(archive_files[1], rs.one())
+
+    def test_UpdatePPASigningKeyFingerprintToRSA4096Key(self):
+        switch_dbuser("testadmin")
+        person = self.factory.makePerson()
+        archive = self.factory.makeArchive(owner=person)
+        rsa1024_gpg_key = self.factory.makeGPGKey(owner=person, keysize=1024)
+        archive.signing_key_fingerprint = rsa1024_gpg_key.fingerprint
+        rsa4096_gpg_key = self.factory.makeGPGKey(owner=person, keysize=4096)
+        rsa4096_signing_key = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=rsa4096_gpg_key.fingerprint,
+        )
+        self.factory.makeArchiveSigningKey(archive, None, rsa4096_signing_key)
+
+        archive_2 = self.factory.makeArchive()
+        rsa1024_gpg_key_2 = self.factory.makeGPGKey(owner=person, keysize=1024)
+        archive_2.signing_key_fingerprint = rsa1024_gpg_key_2.fingerprint
+        rsa4096_gpg_key_2 = self.factory.makeGPGKey(owner=person, keysize=4096)
+        rsa4096_signing_key_2 = self.factory.makeSigningKey(
+            key_type=SigningKeyType.OPENPGP,
+            fingerprint=rsa4096_gpg_key_2.fingerprint,
+        )
+        self.factory.makeArchiveSigningKey(
+            archive_2, None, rsa4096_signing_key_2
+        )
+        updater = UpdatePPASigningKeyFingerprintToRSA4096Key(log=None)
+        self.assertEqual(2, updater.findAffectedArchives().count())
+        self.runHourly()
+        self.assertTrue(updater.findAffectedArchives().is_empty())
+        self.assertEqual(
+            rsa4096_gpg_key.fingerprint, archive.signing_key_fingerprint
+        )
+        self.assertEqual(
+            rsa4096_gpg_key_2.fingerprint, archive_2.signing_key_fingerprint
+        )
 
 
 class TestGarboTasks(TestCaseWithFactory):
