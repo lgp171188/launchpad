@@ -2299,12 +2299,20 @@ class UpdatePPASigningKeyFingerprintToRSA4096Key(TunableLoop):
         rsa4096_key = archive_signing_key_set.get4096BitRSASigningKey(archive)
         if rsa4096_key:
             archive.signing_key_fingerprint = rsa4096_key.fingerprint
+        else:
+            self.log.debug(
+                "Did not find an 4096-bit RSA signing key for '%s'.",
+                archive.reference,
+            )
 
     def isDone(self):
         return self.findAffectedArchives().is_empty()
 
     def __call__(self, chunk_size):
         for archive in self.findAffectedArchives()[:chunk_size]:
+            self.log.debug(
+                "Updating the signing key of '%s'.", archive.reference
+            )
             self.updateSigningKeyFingerprint(archive)
         transaction.commit()
 
