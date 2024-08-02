@@ -7,6 +7,7 @@ from testtools.matchers import HasLength
 from lp.snappy.adapters.buildarch import (
     AllConflictInBuildForError,
     AllConflictInBuildOnError,
+    BadPropertyError,
     DuplicateBuildOnError,
     SnapArchitecture,
     SnapBuildInstance,
@@ -475,10 +476,221 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                 "expected_exception": DuplicateBuildOnError,
             },
         ),
+        (
+            "platforms with configuration",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-i386": {
+                        "build-on": ["i386"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with shorthand configuration",
+            {
+                "platforms": {
+                    "amd64": {},
+                    "i386": {},
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "i386",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with unsupported architecture",
+            {
+                "platforms": {
+                    "ubuntu-unsupported": {},
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": BadPropertyError,
+            },
+        ),
+        (
+            "platforms with multiple architectures",
+            {
+                "platforms": {
+                    "ubuntu-amd64-i386": {
+                        "build-on": ["amd64", "i386"],
+                        "build-for": ["amd64", "i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64", "i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with conflict in build-on",
+            {
+                "platforms": {
+                    "ubuntu-conflict": {
+                        "build-on": ["all", "amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": AllConflictInBuildOnError,
+            },
+        ),
+        (
+            "platforms with conflict in build-for",
+            {
+                "platforms": {
+                    "ubuntu-conflict": {
+                        "build-on": ["amd64"],
+                        "build-for": ["all", "amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": AllConflictInBuildForError,
+            },
+        ),
+        (
+            "platforms with unsupported architecture in build-on",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["unsupported"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                # Launchpad ignores architectures that it does not know about
+                "expected": [],
+            },
+        ),
+        (
+            "platforms with 1/2 unsupported architectures in build-on",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["unsupported", "amd64"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with duplicate build-on",
+            {
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: False
+                },
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-amd64-duplicate": {
+                        "build-on": ["amd64"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected_exception": DuplicateBuildOnError,
+            },
+        ),
+        (
+            "platforms with multiple build-for for the same build-on",
+            {
+                "snap_base_features": {
+                    SnapBaseFeature.ALLOW_DUPLICATE_BUILD_ON: True
+                },
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["amd64"],
+                        "build-for": ["amd64"],
+                    },
+                    "ubuntu-amd64-i386": {
+                        "build-on": ["amd64"],
+                        "build-for": ["i386"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with all keyword",
+            {
+                "platforms": {
+                    "ubuntu-all": {
+                        "build-on": ["all"],
+                        "build-for": ["all"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["all"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
     ]
 
     def test_parser(self):
-        snapcraft_data = {"architectures": self.architectures}
+        snapcraft_data = {}
+        if hasattr(self, "architectures"):
+            snapcraft_data["architectures"] = self.architectures
+        if hasattr(self, "platforms"):
+            snapcraft_data["platforms"] = self.platforms
         snap_base_features = getattr(self, "snap_base_features", {})
         snap_base = self.factory.makeSnapBase(features=snap_base_features)
         if hasattr(self, "expected_exception"):
