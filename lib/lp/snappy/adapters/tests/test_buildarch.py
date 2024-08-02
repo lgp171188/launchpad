@@ -4,10 +4,10 @@
 from testscenarios import WithScenarios, load_tests_apply_scenarios
 from testtools.matchers import HasLength
 
-from lp.charms.adapters.buildarch import BadPropertyError
 from lp.snappy.adapters.buildarch import (
     AllConflictInBuildForError,
     AllConflictInBuildOnError,
+    BadPropertyError,
     DuplicateBuildOnError,
     SnapArchitecture,
     SnapBuildInstance,
@@ -502,7 +502,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "required": True,
                     },
                 ],
-            }
+            },
         ),
         (
             "platforms with shorthand configuration",
@@ -552,40 +552,6 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "target_architectures": ["amd64", "i386"],
                         "required": True,
                     },
-                    {
-                        "architecture": "i386",
-                        "target_architectures": ["amd64", "i386"],
-                        "required": True,
-                    },
-                ],
-            },
-        ),
-        (
-            "platforms with all keyword",
-            {
-                "platforms": {
-                    "ubuntu-all": {
-                        "build-on": ["all"],
-                        "build-for": ["all"],
-                    },
-                },
-                "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected": [
-                    {
-                        "architecture": "amd64",
-                        "target_architectures": ["all"],
-                        "required": True,
-                    },
-                    {
-                        "architecture": "i386",
-                        "target_architectures": ["all"],
-                        "required": True,
-                    },
-                    {
-                        "architecture": "armhf",
-                        "target_architectures": ["all"],
-                        "required": True,
-                    },
                 ],
             },
         ),
@@ -615,7 +581,7 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
             },
         ),
         (
-            "platforms with unsupported architecture and base",
+            "platforms with unsupported architecture in build-on",
             {
                 "platforms": {
                     "ubuntu-amd64": {
@@ -623,9 +589,28 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                         "build-for": ["amd64"],
                     },
                 },
-                "base": "unsupported-base",
                 "supported_architectures": ["amd64", "i386", "armhf"],
-                "expected_exception": BadPropertyError,
+                # Launchpad ignores architectures that it does not know about
+                "expected": [],
+            },
+        ),
+        (
+            "platforms with 1/2 unsupported architectures in build-on",
+            {
+                "platforms": {
+                    "ubuntu-amd64": {
+                        "build-on": ["unsupported", "amd64"],
+                        "build-for": ["amd64"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["amd64"],
+                        "required": True,
+                    },
+                ],
             },
         ),
         (
@@ -674,6 +659,25 @@ class TestDetermineArchitecturesToBuild(WithScenarios, TestCaseWithFactory):
                     {
                         "architecture": "amd64",
                         "target_architectures": ["i386"],
+                        "required": True,
+                    },
+                ],
+            },
+        ),
+        (
+            "platforms with all keyword",
+            {
+                "platforms": {
+                    "ubuntu-all": {
+                        "build-on": ["all"],
+                        "build-for": ["all"],
+                    },
+                },
+                "supported_architectures": ["amd64", "i386", "armhf"],
+                "expected": [
+                    {
+                        "architecture": "amd64",
+                        "target_architectures": ["all"],
                         "required": True,
                     },
                 ],

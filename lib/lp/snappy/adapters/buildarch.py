@@ -1,14 +1,11 @@
 # Copyright 2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-__all__ = [
-    "determine_architectures_to_build",
-]
+__all__ = ["determine_architectures_to_build", "BadPropertyError"]
 
 from collections import Counter
 from typing import Any, Dict, List, Optional, Union
 
-from lp.charms.adapters.buildarch import BadPropertyError
 from lp.services.helpers import english_list
 from lp.snappy.interfaces.snapbase import SnapBaseFeature
 from lp.snappy.model.snapbase import SnapBase
@@ -28,6 +25,10 @@ class MissingPropertyError(SnapArchitecturesParserError):
             )
         )
         self.property = prop
+
+
+class BadPropertyError(Exception):
+    """Error for when a YAML property is malformed in some way."""
 
 
 class IncompatibleArchitecturesStyleError(SnapArchitecturesParserError):
@@ -212,7 +213,9 @@ def determine_architectures_to_build(
     return build_architectures_list(architectures, supported_arches)
 
 
-def parse_architectures_list(architectures_list: List) -> List[SnapArchitecture]:
+def parse_architectures_list(
+    architectures_list: List,
+) -> List[SnapArchitecture]:
     # First, determine what style we're parsing.  Is it a list of
     # strings or a list of dicts?
     if all(isinstance(a, str) for a in architectures_list):
@@ -221,15 +224,15 @@ def parse_architectures_list(architectures_list: List) -> List[SnapArchitecture]
         return [SnapArchitecture(build_on=architectures_list)]
     elif all(isinstance(arch, dict) for arch in architectures_list):
         # If a list of dicts (new style), then that's multiple items.
-        return [
-            SnapArchitecture.from_dict(a) for a in architectures_list
-        ]
+        return [SnapArchitecture.from_dict(a) for a in architectures_list]
     else:
         # If a mix of both, bail.  We can't reasonably handle it.
         raise IncompatibleArchitecturesStyleError()
 
 
-def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str]) -> List[SnapArchitecture]:
+def parse_platforms(
+    snapcraft_data: Dict[str, Any], supported_arches: List[str]
+) -> List[SnapArchitecture]:
     architectures = []
     supported_arch_names = supported_arches
 
@@ -253,15 +256,12 @@ def parse_platforms(snapcraft_data: Dict[str, Any], supported_arches: List[str])
             )
         elif platform in supported_arch_names:
             architectures.append(
-                SnapArchitecture(
-                    build_on=[platform], build_for=[platform]
-                )
+                SnapArchitecture(build_on=[platform], build_for=[platform])
             )
         else:
             base = snapcraft_data.get("base", "unknown")
             raise BadPropertyError(
-                f"'{platform}' is not a supported platform "
-                f"for '{base}'."
+                f"'{platform}' is not a supported platform " f"for '{base}'."
             )
 
     return architectures
@@ -273,7 +273,7 @@ def validate_architectures(architectures: List[SnapArchitecture]):
             raise AllConflictInBuildOnError()
         if "all" in arch.build_for and len(arch.build_for) > 1:
             raise AllConflictInBuildForError()
-        
+
 
 def check_for_duplicate_build_on(architectures: List[SnapArchitecture]):
     # Ensure that multiple `build-on` items don't include the same
@@ -286,9 +286,11 @@ def check_for_duplicate_build_on(architectures: List[SnapArchitecture]):
     duplicates = {arch for arch, count in build_ons.items() if count > 1}
     if duplicates:
         raise DuplicateBuildOnError(duplicates)
-    
 
-def build_architectures_list(architectures: List[SnapArchitecture], supported_arches: List[str]) -> List[SnapBuildInstance]:
+
+def build_architectures_list(
+    architectures: List[SnapArchitecture], supported_arches: List[str]
+) -> List[SnapBuildInstance]:
     architectures_to_build = []
     for arch in architectures:
         try:
