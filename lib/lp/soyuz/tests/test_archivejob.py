@@ -337,6 +337,48 @@ class TestCIBuildUploadJob(TestCaseWithFactory):
             ),
         )
 
+    def test__scanFiles_wheel_no_description(self):
+        """Ensure scanning a wheel without a description produces metadata with
+        empty string instead of None"""
+        archive = self.factory.makeArchive()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=archive.distribution
+        )
+        build = self.makeCIBuild(archive.distribution)
+        report = self.factory.makeRevisionStatusReport(ci_build=build)
+        job = CIBuildUploadJob.create(
+            build,
+            build.git_repository.owner,
+            archive,
+            distroseries,
+            PackagePublishingPocket.RELEASE,
+            target_channel="edge",
+        )
+        path = Path(
+            "wheel-no-description/dist/"
+            "wheel_no_description-0.0.1-py3-none-any.whl"
+        )
+        tmpdir = Path(self.useFixture(TempDir()).path)
+        shutil.copy2(datadir(str(path)), str(tmpdir))
+        all_metadata = job._scanFiles(report, tmpdir)
+
+        self.assertThat(
+            all_metadata,
+            MatchesDict(
+                {
+                    path.name: MatchesStructure(
+                        format=Equals(BinaryPackageFormat.WHL),
+                        name=Equals("wheel-no-description"),
+                        version=Equals("0.0.1"),
+                        summary=Equals(""),
+                        description=Equals(""),
+                        architecturespecific=Is(False),
+                        homepage=Equals(""),
+                    ),
+                }
+            ),
+        )
+
     def test__scanFiles_sdist(self):
         archive = self.factory.makeArchive()
         distroseries = self.factory.makeDistroSeries(
