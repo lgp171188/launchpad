@@ -38,10 +38,10 @@
 
     RewriteEngine on
 
-{% if blocked_user_agents %}
+{%- if blocked_user_agents %}
     # Block certain user agents
     RewriteCond %{HTTP_USER_AGENT} ^.*({{ blocked_user_agents }}).*$ [NC]
-    RewriteRule .* – [F,L]
+    RewriteRule .* - [F,L]
 {%- endif %}
 
 {% if google_site_verification %}
