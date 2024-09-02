@@ -19,6 +19,7 @@ from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.code.interfaces.branchnamespace import get_branch_namespace
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProduct
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.services.webapp import (
     Navigation,
     StandardLaunchpadFacets,
@@ -64,6 +65,12 @@ class PersonProductNavigation(
     @stepthrough("+charm")
     def traverse_charm(self, name):
         return getUtility(ICharmRecipeSet).getByName(
+            owner=self.context.person, project=self.context.product, name=name
+        )
+
+    @stepthrough("+rock")
+    def traverse_rock(self, name):
+        return getUtility(IRockRecipeSet).getByName(
             owner=self.context.person, project=self.context.product, name=name
         )
 

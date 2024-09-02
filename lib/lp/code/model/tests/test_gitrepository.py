@@ -148,6 +148,7 @@ from lp.registry.interfaces.persondistributionsourcepackage import (
 from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
+from lp.rocks.interfaces.rockrecipe import ROCK_RECIPE_ALLOW_CREATE
 from lp.services.auth.enums import AccessTokenScope
 from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
@@ -1699,6 +1700,39 @@ class TestGitRepositoryDeletionConsequences(TestCaseWithFactory):
         )
         recipe1 = self.factory.makeCharmRecipe(git_ref=ref1)
         recipe2 = self.factory.makeCharmRecipe(git_ref=ref2)
+        repository.destroySelf(break_references=True)
+        transaction.commit()
+        self.assertIsNone(recipe1.git_repository)
+        self.assertIsNone(recipe1.git_path)
+        self.assertIsNone(recipe2.git_repository)
+        self.assertIsNone(recipe2.git_path)
+
+    def test_rock_recipe_requirements(self):
+        # If a repository is used by a rock recipe, the deletion
+        # requirements indicate this.
+        self.useFixture(FeatureFixture({ROCK_RECIPE_ALLOW_CREATE: "on"}))
+        [ref] = self.factory.makeGitRefs()
+        self.factory.makeRockRecipe(git_ref=ref)
+        self.assertEqual(
+            {
+                None: (
+                    "alter",
+                    _("Some rock recipes build from this repository."),
+                )
+            },
+            ref.repository.getDeletionRequirements(),
+        )
+
+    def test_rock_recipe_deletion(self):
+        # break_references allows deleting a repository used by a rock
+        # recipe.
+        self.useFixture(FeatureFixture({ROCK_RECIPE_ALLOW_CREATE: "on"}))
+        repository = self.factory.makeGitRepository()
+        [ref1, ref2] = self.factory.makeGitRefs(
+            repository=repository, paths=["refs/heads/1", "refs/heads/2"]
+        )
+        recipe1 = self.factory.makeRockRecipe(git_ref=ref1)
+        recipe2 = self.factory.makeRockRecipe(git_ref=ref2)
         repository.destroySelf(break_references=True)
         transaction.commit()
         self.assertIsNone(recipe1.git_repository)

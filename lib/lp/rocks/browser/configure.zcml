@@ -1,0 +1,16 @@
+<!-- Copyright 2024 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:lp="http://namespaces.canonical.com/lp"
+    i18n_domain="launchpad">
+    <lp:facet facet="overview">
+        <lp:url
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            urldata="lp.rocks.browser.rockrecipe.RockRecipeURL" />
+    </lp:facet>
+</configure>

@@ -126,6 +126,7 @@ from lp.registry.model.accesspolicy import (
 )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.services.auth.model import AccessTokenTargetMixin
 from lp.services.config import config
 from lp.services.database import bulk
@@ -1973,6 +1974,13 @@ class GitRepository(
             )
             for recipe in recipes
         )
+        # XXX 2024-09-12 jugmac00: there is potential to refactor the following
+        # parts with a for loop
+        # Additionally, instead of manually creating a mapping of
+        # `ISomethingSet`s and the names for the message, we could and probably
+        # should have a registering decorator, so whenever a new `IRecipeSet`
+        # gets created this mapping will be updated automatically
+
         if not getUtility(ISnapSet).findByGitRepository(self).is_empty():
             alteration_operations.append(
                 DeletionCallable(
@@ -2001,6 +2009,15 @@ class GitRepository(
                     None,
                     msg("Some charm recipes build from this repository."),
                     getUtility(ICharmRecipeSet).detachFromGitRepository,
+                    self,
+                )
+            )
+        if not getUtility(IRockRecipeSet).findByGitRepository(self).is_empty():
+            alteration_operations.append(
+                DeletionCallable(
+                    None,
+                    msg("Some rock recipes build from this repository."),
+                    getUtility(IRockRecipeSet).detachFromGitRepository,
                     self,
                 )
             )
