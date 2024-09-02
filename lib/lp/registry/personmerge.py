@@ -1041,6 +1041,12 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         ("latestpersonsourcepackagereleasecache", "maintainer"),
         # Obsolete table.
         ("branchmergequeue", "owner"),
+        # XXX jugmac00 2024-08-26: This needs handling before we deploy the
+        # rock recipe code, but can be ignored for the purpose of deploying
+        # the database tables.
+        # see commit a98e2a935646ff7496c76c607d355815027c35a4 for similar
+        # required changes in the past for the charm build type.
+        ("rockrecipe", "owner"),
     ]
 
     references = list(postgresql.listReferences(cur, "person", "id"))
