@@ -197,7 +197,7 @@ ALTER TABLE Webhook DROP CONSTRAINT one_target;
 ALTER TABLE Webhook
     ADD CONSTRAINT one_target CHECK (
         null_count(ARRAY[git_repository, branch, snap, livefs, oci_recipe,
-                         rock_recipe]) = 5);
+                         charm_recipe, rock_recipe]) = 6);
 
 CREATE INDEX webhook__rock_recipe__id__idx
     ON Webhook (rock_recipe, id) WHERE rock_recipe IS NOT NULL;
