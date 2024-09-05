@@ -442,7 +442,7 @@ class CIBuildUploadJob(ArchiveJobDerived):
                 name=wheel.name,
                 version=wheel.version,
                 summary=wheel.summary or "",
-                description=wheel.description,
+                description=wheel.description or "",
                 architecturespecific="any" not in parsed_path.platform_tags,
                 homepage=wheel.home_page or "",
             )

@@ -331,6 +331,12 @@ def deconfigure_vhost():
     remove_state("launchpad.vhost.configured")
 
 
+@when("config.changed.blocked_user_agents")
+def reconfigure_blocked_user_agents():
+    remove_state("launchpad.vhost.configured")
+    remove_state("launchpad.api-vhost.configured")
+
+
 @when("api-vhost-config.available", "service.configured")
 @when_not("launchpad.api-vhost.configured")
 def configure_api_vhost():

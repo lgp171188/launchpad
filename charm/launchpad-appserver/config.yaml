@@ -12,6 +12,11 @@ options:
     description: >
       Cognitive Services subscription key for the Bing Custom Search API.
     default:
+  blocked_user_agents:
+    type: string
+    description: >
+      User agents that should be blocked from Launchpad, separated by '|'.
+    default:
   csrf_secret:
     type: string
     description: >

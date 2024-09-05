@@ -43,6 +43,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     CannotModifyOCIRecipeProcessor,
     IOCIRecipeSet,
+    IOCIRecipeView,
 )
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
@@ -70,7 +71,11 @@ from lp.testing import (
 )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer, LaunchpadFunctionalLayer
-from lp.testing.matchers import MatchesPickerText, MatchesTagText
+from lp.testing.matchers import (
+    DoesNotSnapshot,
+    MatchesPickerText,
+    MatchesTagText,
+)
 from lp.testing.pages import (
     extract_text,
     find_main_content,
@@ -1472,6 +1477,21 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             name="recipe-name",
             oci_project=oci_project,
             **kwargs,
+        )
+
+    def test_avoids_problematic_snapshots(self):
+        """Do not snapshot fields with too many items."""
+        self.assertThat(
+            self.factory.makeOCIRecipe(),
+            DoesNotSnapshot(
+                [
+                    "builds",
+                    "completed_builds",
+                    "completed_builds_without_build_request",
+                    "pending_builds",
+                ],
+                IOCIRecipeView,
+            ),
         )
 
     def makeBuild(self, recipe=None, date_created=None, **kwargs):

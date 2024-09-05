@@ -328,50 +328,58 @@ class IOCIRecipeView(Interface):
         :return: Sequence of `IDistroArchSeries` instances.
         """
 
-    builds = CollectionField(
-        title=_("Completed builds of this OCI recipe."),
-        description=_(
-            "Completed builds of this OCI recipe, sorted in descending "
-            "order of finishing."
-        ),
-        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface),
-        required=True,
-        readonly=True,
+    builds = doNotSnapshot(
+        CollectionField(
+            title=_("Completed builds of this OCI recipe."),
+            description=_(
+                "Completed builds of this OCI recipe, sorted in descending "
+                "order of finishing."
+            ),
+            # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+            value_type=Reference(schema=Interface),
+            required=True,
+            readonly=True,
+        )
     )
 
-    completed_builds = CollectionField(
-        title=_("Completed builds of this OCI recipe."),
-        description=_(
-            "Completed builds of this OCI recipe, sorted in descending "
-            "order of finishing."
-        ),
-        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    completed_builds = doNotSnapshot(
+        CollectionField(
+            title=_("Completed builds of this OCI recipe."),
+            description=_(
+                "Completed builds of this OCI recipe, sorted in descending "
+                "order of finishing."
+            ),
+            # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+            value_type=Reference(schema=Interface),
+            readonly=True,
+        )
     )
 
-    completed_builds_without_build_request = CollectionField(
-        title=_("Completed builds of this OCI recipe."),
-        description=_(
-            "Completed builds of this OCI recipe, sorted in descending "
-            "order of finishing that do no have a corresponding "
-            "build request"
-        ),
-        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    completed_builds_without_build_request = doNotSnapshot(
+        CollectionField(
+            title=_("Completed builds of this OCI recipe."),
+            description=_(
+                "Completed builds of this OCI recipe, sorted in descending "
+                "order of finishing that do no have a corresponding "
+                "build request"
+            ),
+            # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+            value_type=Reference(schema=Interface),
+            readonly=True,
+        )
     )
 
-    pending_builds = CollectionField(
-        title=_("Pending builds of this OCI recipe."),
-        description=_(
-            "Pending builds of this OCI recipe, sorted in descending "
-            "order of creation."
-        ),
-        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface),
-        readonly=True,
+    pending_builds = doNotSnapshot(
+        CollectionField(
+            title=_("Pending builds of this OCI recipe."),
+            description=_(
+                "Pending builds of this OCI recipe, sorted in descending "
+                "order of creation."
+            ),
+            # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+            value_type=Reference(schema=Interface),
+            readonly=True,
+        )
     )
 
     push_rules = exported(

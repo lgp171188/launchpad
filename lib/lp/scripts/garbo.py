@@ -67,6 +67,7 @@ from lp.code.model.revisionstatus import RevisionStatusArtifact
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.gpgkey import GPGKey
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -112,6 +113,7 @@ from lp.services.scripts.base import (
     SilentLaunchpadScriptFailure,
 )
 from lp.services.session.model import SessionData
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.services.verification.model.logintoken import LoginToken
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookJobSource
@@ -120,6 +122,7 @@ from lp.snappy.model.snapbuild import SnapFile
 from lp.snappy.model.snapbuildjob import SnapBuildJobType
 from lp.soyuz.enums import (
     ArchivePublishingMethod,
+    ArchivePurpose,
     ArchiveRepositoryFormat,
     ArchiveSubscriberStatus,
 )
@@ -2259,6 +2262,61 @@ class ArchiveFileDatePopulator(TunableLoop):
         transaction.commit()
 
 
+class UpdatePPASigningKeyFingerprintToRSA4096Key(TunableLoop):
+    """
+    Update the signing key fingerprint of archives with an rsa1024
+    signing key and an rsa4096 signing key to be the fingerprint of
+    the rsa4096 signing key.
+    """
+
+    maximum_chunk_size = 1000
+
+    def __init__(self, log, abort_time=None):
+        super().__init__(log, abort_time)
+        self.store = IPrimaryStore(Archive)
+        self.start_at = 1
+
+    def findAffectedArchives(self):
+        join = (
+            Archive,
+            Join(
+                GPGKey,
+                GPGKey.fingerprint == Archive.signing_key_fingerprint,
+            ),
+        )
+        return (
+            self.store.using(*join)
+            .find(
+                Archive,
+                Archive.purpose == ArchivePurpose.PPA,
+                GPGKey.keysize == 1024,
+            )
+            .order_by(Archive.id)
+        )
+
+    def updateSigningKeyFingerprint(self, archive):
+        archive_signing_key_set = getUtility(IArchiveSigningKeySet)
+        rsa4096_key = archive_signing_key_set.get4096BitRSASigningKey(archive)
+        if rsa4096_key:
+            archive.signing_key_fingerprint = rsa4096_key.fingerprint
+        else:
+            self.log.debug(
+                "Did not find an 4096-bit RSA signing key for '%s'.",
+                archive.reference,
+            )
+
+    def isDone(self):
+        return self.findAffectedArchives().is_empty()
+
+    def __call__(self, chunk_size):
+        for archive in self.findAffectedArchives()[:chunk_size]:
+            self.log.debug(
+                "Updating the signing key of '%s'.", archive.reference
+            )
+            self.updateSigningKeyFingerprint(archive)
+        transaction.commit()
+
+
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
     """Abstract base class to run a collection of TunableLoops."""
 
@@ -2550,6 +2608,7 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         GitRepositoryPruner,
         RevisionCachePruner,
         UnusedSessionPruner,
+        UpdatePPASigningKeyFingerprintToRSA4096Key,
     ]
     experimental_tunable_loops = []
 
