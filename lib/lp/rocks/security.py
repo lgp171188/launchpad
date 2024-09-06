@@ -5,8 +5,8 @@
 
 __all__ = []
 
-from lp.app.security import AuthorizationBase
-from lp.rocks.interfaces.rockrecipe import IRockRecipe
+from lp.app.security import AuthorizationBase, DelegatedAuthorization
+from lp.rocks.interfaces.rockrecipe import IRockRecipe, IRockRecipeBuildRequest
 
 
 class ViewRockRecipe(AuthorizationBase):
@@ -49,3 +49,11 @@ class AdminRockRecipe(AuthorizationBase):
         return user.in_ppa_self_admins and EditRockRecipe(
             self.obj
         ).checkAuthenticated(user)
+
+
+class ViewCharmRecipeBuildRequest(DelegatedAuthorization):
+    permission = "launchpad.View"
+    usedfor = IRockRecipeBuildRequest
+
+    def __init__(self, obj):
+        super().__init__(obj, obj.recipe, "launchpad.View")

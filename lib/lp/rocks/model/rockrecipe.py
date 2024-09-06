@@ -28,18 +28,23 @@ from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
     DuplicateRockRecipeName,
     IRockRecipe,
+    IRockRecipeBuildRequest,
     IRockRecipeSet,
     NoSourceForRockRecipe,
+    RockRecipeBuildRequestStatus,
     RockRecipeFeatureDisabled,
     RockRecipeNotOwner,
     RockRecipePrivacyMismatch,
     RockRecipePrivateFeatureDisabled,
 )
+from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
 from lp.services.database.constants import DEFAULT, UTC_NOW
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.propertycache import cachedproperty, get_property_cache
 
 
 def rock_recipe_modified(recipe, event):
@@ -49,6 +54,68 @@ def rock_recipe_modified(recipe, event):
     events on rock recipes.
     """
     removeSecurityProxy(recipe).date_last_modified = UTC_NOW
+
+
+@implementer(IRockRecipeBuildRequest)
+class RockRecipeBuildRequest:
+    """See `IRockRecipeBuildRequest`.
+
+    This is not directly backed by a database table; instead, it is a
+    webservice-friendly view of an asynchronous build request.
+    """
+
+    def __init__(self, recipe, id):
+        self.recipe = recipe
+        self.id = id
+
+    @classmethod
+    def fromJob(cls, job):
+        """See `IRockRecipeBuildRequest`."""
+        request = cls(job.recipe, job.job_id)
+        get_property_cache(request)._job = job
+        return request
+
+    @cachedproperty
+    def _job(self):
+        job_source = getUtility(IRockRecipeRequestBuildsJobSource)
+        return job_source.getByRecipeAndID(self.recipe, self.id)
+
+    @property
+    def date_requested(self):
+        """See `IRockRecipeBuildRequest`."""
+        return self._job.date_created
+
+    @property
+    def date_finished(self):
+        """See `IRockRecipeBuildRequest`."""
+        return self._job.date_finished
+
+    @property
+    def status(self):
+        """See `IRockRecipeBuildRequest`."""
+        status_map = {
+            JobStatus.WAITING: RockRecipeBuildRequestStatus.PENDING,
+            JobStatus.RUNNING: RockRecipeBuildRequestStatus.PENDING,
+            JobStatus.COMPLETED: RockRecipeBuildRequestStatus.COMPLETED,
+            JobStatus.FAILED: RockRecipeBuildRequestStatus.FAILED,
+            JobStatus.SUSPENDED: RockRecipeBuildRequestStatus.PENDING,
+        }
+        return status_map[self._job.job.status]
+
+    @property
+    def error_message(self):
+        """See `IRockRecipeBuildRequest`."""
+        return self._job.error_message
+
+    @property
+    def channels(self):
+        """See `IRockRecipeBuildRequest`."""
+        return self._job.channels
+
+    @property
+    def architectures(self):
+        """See `IRockRecipeBuildRequest`."""
+        return self._job.architectures
 
 
 @implementer(IRockRecipe)
@@ -236,6 +303,26 @@ class RockRecipe(StormBase):
         # XXX jugmac00 2024-08-29: Finish implementing this once we have
         # more privacy infrastructure.
         return False
+
+    def _checkRequestBuild(self, requester):
+        """May `requester` request builds of this rock recipe?"""
+        if not requester.inTeam(self.owner):
+            raise RockRecipeNotOwner(
+                "%s cannot create rock recipe builds owned by %s."
+                % (requester.display_name, self.owner.display_name)
+            )
+
+    def requestBuilds(self, requester, channels=None, architectures=None):
+        """See `IRockRecipe`."""
+        self._checkRequestBuild(requester)
+        job = getUtility(IRockRecipeRequestBuildsJobSource).create(
+            self, requester, channels=channels, architectures=architectures
+        )
+        return self.getBuildRequest(job.job_id)
+
+    def getBuildRequest(self, job_id):
+        """See `IRockRecipe`."""
+        return RockRecipeBuildRequest(self, job_id)
 
     def destroySelf(self):
         """See `IRockRecipe`."""
