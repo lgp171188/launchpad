@@ -4,6 +4,7 @@
 """Rock recipe views."""
 
 __all__ = [
+    "RockRecipeNavigation",
     "RockRecipeURL",
 ]
 
@@ -11,7 +12,11 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.registry.interfaces.personproduct import IPersonProductFactory
+from lp.rocks.interfaces.rockrecipe import IRockRecipe
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
+from lp.services.webapp import Navigation, stepthrough
 from lp.services.webapp.interfaces import ICanonicalUrlData
+from lp.soyuz.browser.build import get_build_by_id_str
 
 
 @implementer(ICanonicalUrlData)
@@ -32,3 +37,22 @@ class RockRecipeURL:
     @property
     def path(self):
         return "+rock/%s" % self.recipe.name
+
+
+class RockRecipeNavigation(Navigation):
+    usedfor = IRockRecipe
+
+    @stepthrough("+build-request")
+    def traverse_build_request(self, name):
+        try:
+            job_id = int(name)
+        except ValueError:
+            return None
+        return self.context.getBuildRequest(job_id)
+
+    @stepthrough("+build")
+    def traverse_build(self, name):
+        build = get_build_by_id_str(IRockRecipeBuildSet, name)
+        if build is None or build.recipe != self.context:
+            return None
+        return build

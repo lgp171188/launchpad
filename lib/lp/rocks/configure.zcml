@@ -47,6 +47,37 @@
             interface="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest" />
     </class>
 
+    <!-- RockRecipeBuild -->
+    <class class="lp.rocks.model.rockrecipebuild.RockRecipeBuild">
+        <require
+            permission="launchpad.View"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildView" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildEdit" />
+        <require
+            permission="launchpad.Admin"
+            interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildAdmin" />
+    </class>
+
+    <!-- RockRecipeBuildSet -->
+    <lp:securedutility
+        class="lp.rocks.model.rockrecipebuild.RockRecipeBuildSet"
+        provides="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildSet">
+        <allow interface="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuildSet" />
+    </lp:securedutility>
+    <lp:securedutility
+        class="lp.rocks.model.rockrecipebuild.RockRecipeBuildSet"
+        provides="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource"
+        name="ROCKRECIPEBUILD">
+        <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
+    </lp:securedutility>
+
+    <!-- RockFile -->
+    <class class="lp.rocks.model.rockrecipebuild.RockFile">
+        <allow interface="lp.rocks.interfaces.rockrecipebuild.IRockFile" />
+    </class>
+
     <!-- rock-related jobs -->
     <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
