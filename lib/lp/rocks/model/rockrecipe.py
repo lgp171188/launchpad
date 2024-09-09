@@ -8,10 +8,22 @@ __all__ = [
 ]
 
 from datetime import timezone
+from operator import itemgetter
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
-from storm.locals import Bool, DateTime, Int, Reference, Unicode
+from storm.locals import (
+    Bool,
+    DateTime,
+    Int,
+    Join,
+    Or,
+    Reference,
+    Store,
+    Unicode,
+)
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -20,10 +32,14 @@ from lp.app.enums import (
     PUBLIC_INFORMATION_TYPES,
     InformationType,
 )
+from lp.buildmaster.enums import BuildStatus
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
 from lp.registry.interfaces.person import IPersonSet, validate_public_person
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.series import ACTIVE_STATUSES
 from lp.rocks.interfaces.rockrecipe import (
     ROCK_RECIPE_ALLOW_CREATE,
     ROCK_RECIPE_PRIVATE_FEATURE_FLAG,
@@ -32,21 +48,28 @@ from lp.rocks.interfaces.rockrecipe import (
     IRockRecipeBuildRequest,
     IRockRecipeSet,
     NoSourceForRockRecipe,
+    RockRecipeBuildAlreadyPending,
+    RockRecipeBuildDisallowedArchitecture,
     RockRecipeBuildRequestStatus,
     RockRecipeFeatureDisabled,
     RockRecipeNotOwner,
     RockRecipePrivacyMismatch,
     RockRecipePrivateFeatureDisabled,
 )
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuildSet
 from lp.rocks.interfaces.rockrecipejob import IRockRecipeRequestBuildsJobSource
+from lp.rocks.model.rockrecipebuild import RockRecipeBuild
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT, UTC_NOW
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IPrimaryStore, IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.propertycache import cachedproperty, get_property_cache
+from lp.soyuz.model.distroarchseries import DistroArchSeries, PocketChroot
 
 
 def rock_recipe_modified(recipe, event):
@@ -316,6 +339,52 @@ class RockRecipe(StormBase):
         # more privacy infrastructure.
         return False
 
+    def _isBuildableArchitectureAllowed(self, das):
+        """Check whether we may build for a buildable `DistroArchSeries`.
+
+        The caller is assumed to have already checked that a suitable chroot
+        is available (either directly or via
+        `DistroSeries.buildable_architectures`).
+        """
+        return das.enabled and (
+            das.processor.supports_virtualized or not self.require_virtualized
+        )
+
+    def _isArchitectureAllowed(self, das):
+        """Check whether we may build for a `DistroArchSeries`."""
+        return (
+            das.getChroot() is not None
+            and self._isBuildableArchitectureAllowed(das)
+        )
+
+    def getAllowedArchitectures(self):
+        """See `ICharmRecipe`."""
+        store = Store.of(self)
+        origin = [
+            DistroArchSeries,
+            Join(
+                DistroSeries, DistroArchSeries.distroseries == DistroSeries.id
+            ),
+            Join(Distribution, DistroSeries.distribution == Distribution.id),
+            Join(
+                PocketChroot,
+                PocketChroot.distroarchseries == DistroArchSeries.id,
+            ),
+            Join(LibraryFileAlias, PocketChroot.chroot == LibraryFileAlias.id),
+        ]
+        # Preload DistroSeries and Distribution, since we'll need those in
+        # determine_architectures_to_build.
+        results = store.using(*origin).find(
+            (DistroArchSeries, DistroSeries, Distribution),
+            DistroSeries.status.is_in(ACTIVE_STATUSES),
+        )
+        all_buildable_dases = DecoratedResultSet(results, itemgetter(0))
+        return [
+            das
+            for das in all_buildable_dases
+            if self._isBuildableArchitectureAllowed(das)
+        ]
+
     def _checkRequestBuild(self, requester):
         """May `requester` request builds of this rock recipe?"""
         if not requester.inTeam(self.owner):
@@ -323,6 +392,47 @@ class RockRecipe(StormBase):
                 "%s cannot create rock recipe builds owned by %s."
                 % (requester.display_name, self.owner.display_name)
             )
+
+    def requestBuild(self, build_request, distro_arch_series, channels=None):
+        """Request a single build of this rock recipe.
+
+        This method is for internal use; external callers should use
+        `requestBuilds` instead.
+
+        :param build_request: The `IRockRecipeBuildRequest` job being
+            processed.
+        :param distro_arch_series: The architecture to build for.
+        :param channels: A dictionary mapping snap names to channels to use
+            for this build.
+        :return: `IRockRecipeBuild`.
+        """
+        self._checkRequestBuild(build_request.requester)
+        if not self._isArchitectureAllowed(distro_arch_series):
+            raise RockRecipeBuildDisallowedArchitecture(distro_arch_series)
+
+        if not channels:
+            channels_clause = Or(
+                RockRecipeBuild.channels == None,
+                RockRecipeBuild.channels == {},
+            )
+        else:
+            channels_clause = RockRecipeBuild.channels == channels
+        pending = IStore(self).find(
+            RockRecipeBuild,
+            RockRecipeBuild.recipe == self,
+            RockRecipeBuild.processor == distro_arch_series.processor,
+            channels_clause,
+            RockRecipeBuild.status == BuildStatus.NEEDSBUILD,
+        )
+        if pending.any() is not None:
+            raise RockRecipeBuildAlreadyPending
+
+        build = getUtility(IRockRecipeBuildSet).new(
+            build_request, self, distro_arch_series, channels=channels
+        )
+        build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=build_request.requester))
+        return build
 
     def requestBuilds(self, requester, channels=None, architectures=None):
         """See `IRockRecipe`."""
