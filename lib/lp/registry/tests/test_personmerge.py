@@ -41,6 +41,10 @@ from lp.registry.personmerge import (
     merge_people,
 )
 from lp.registry.tests.test_person import KarmaTestMixin
+from lp.rocks.interfaces.rockrecipe import (
+    ROCK_RECIPE_ALLOW_CREATE,
+    IRockRecipeSet,
+)
 from lp.services.config import config
 from lp.services.database.sqlbase import cursor
 from lp.services.features.testing import FeatureFixture
@@ -893,6 +897,60 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         duplicate, mergee = self._do_merge(duplicate, mergee)
         recipes = sorted(
             getUtility(ICharmRecipeSet).findByOwner(mergee),
+            key=attrgetter("name"),
+        )
+        self.assertEqual(2, len(recipes))
+        self.assertThat(
+            recipes,
+            MatchesListwise(
+                [
+                    MatchesStructure.byEquality(
+                        git_repository=ref2.repository,
+                        git_path=ref2.path,
+                        name="foo",
+                    ),
+                    MatchesStructure.byEquality(
+                        git_repository=ref.repository,
+                        git_path=ref.path,
+                        name="foo-1",
+                    ),
+                ]
+            ),
+        )
+
+    def test_merge_moves_rock_recipes(self):
+        # When person/teams are merged, rock recipes owned by the from
+        # person are moved.
+        self.useFixture(FeatureFixture({ROCK_RECIPE_ALLOW_CREATE: "on"}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        self.factory.makeRockRecipe(registrant=duplicate, owner=duplicate)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertEqual(
+            1, getUtility(IRockRecipeSet).findByOwner(mergee).count()
+        )
+
+    def test_merge_with_duplicated_rock_recipes(self):
+        # If both the from and to people have rock recipes with the same
+        # name, merging renames the duplicate from the from person's side.
+        self.useFixture(FeatureFixture({ROCK_RECIPE_ALLOW_CREATE: "on"}))
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        [ref] = self.factory.makeGitRefs()
+        [ref2] = self.factory.makeGitRefs()
+        self.factory.makeRockRecipe(
+            registrant=duplicate, owner=duplicate, name="foo", git_ref=ref
+        )
+        self.factory.makeRockRecipe(
+            registrant=mergee, owner=mergee, name="foo", git_ref=ref2
+        )
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        recipes = sorted(
+            getUtility(IRockRecipeSet).findByOwner(mergee),
             key=attrgetter("name"),
         )
         self.assertEqual(2, len(recipes))

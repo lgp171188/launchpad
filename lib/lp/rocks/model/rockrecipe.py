@@ -474,6 +474,10 @@ class RockRecipeSet:
         # privacy infrastructure.
         return IStore(RockRecipe).find(RockRecipe, *clauses)
 
+    def findByOwner(self, owner):
+        """See `ICharmRecipeSet`."""
+        return IStore(RockRecipe).find(RockRecipe, owner=owner)
+
     def detachFromGitRepository(self, repository):
         """See `IRockRecipeSet`."""
         self.findByGitRepository(repository).set(

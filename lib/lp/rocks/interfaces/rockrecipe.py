@@ -511,6 +511,9 @@ class IRockRecipeSet(Interface):
             these Git reference paths.
         """
 
+    def findByOwner(owner):
+        """Return all rock recipes with the given `owner`."""
+
     def detachFromGitRepository(repository):
         """Detach all rock recipes from the given Git repository.
 

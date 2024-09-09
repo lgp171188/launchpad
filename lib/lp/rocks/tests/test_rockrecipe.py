@@ -336,6 +336,20 @@ class TestRockRecipeSet(TestCaseWithFactory):
             ),
         )
 
+    def test_findByOwner(self):
+        # IRockRecipeSet.findByOwner returns all rock recipes with the
+        # given owner.
+        owners = [self.factory.makePerson() for i in range(2)]
+        recipes = []
+        for owner in owners:
+            for _ in range(2):
+                recipes.append(
+                    self.factory.makeRockRecipe(registrant=owner, owner=owner)
+                )
+        recipe_set = getUtility(IRockRecipeSet)
+        self.assertContentEqual(recipes[:2], recipe_set.findByOwner(owners[0]))
+        self.assertContentEqual(recipes[2:], recipe_set.findByOwner(owners[1]))
+
     def test_detachFromGitRepository(self):
         # IRockRecipeSet.detachFromGitRepository clears the given Git
         # repository from all rock recipes.
