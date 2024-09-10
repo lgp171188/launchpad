@@ -170,10 +170,12 @@ def db_options(parser):
         ]
         config_data = ["[database]"]
         for con_str_key in connection_string_keys:
-            con_str = ConnectionString(getattr(config.database, con_str_key))
-            for kwarg, kwval in kw.items():
-                setattr(con_str, kwarg, kwval)
-            config_data.append("%s: %s" % (con_str_key, str(con_str)))
+            con_str_val = getattr(config.database, con_str_key)
+            if con_str_val:
+                con_str = ConnectionString(con_str_val)
+                for kwarg, kwval in kw.items():
+                    setattr(con_str, kwarg, kwval)
+                config_data.append("%s: %s" % (con_str_key, str(con_str)))
         config.push("update_db_config", "\n".join(config_data))
 
     def dbname_callback(option, opt_str, value, parser):
