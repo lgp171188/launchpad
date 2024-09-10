@@ -35,6 +35,7 @@ from lp.rocks.interfaces.rockrecipebuild import (
     IRockRecipeBuild,
     IRockRecipeBuildSet,
 )
+from lp.rocks.mail.rockrecipebuild import RockRecipeBuildMailer
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
@@ -347,7 +348,8 @@ class RockRecipeBuild(PackageBuildMixin, StormBase):
             return
         if self.status == BuildStatus.FULLYBUILT:
             return
-        # XXX jugmac00 2024-09-03: Send email notifications.
+        mailer = RockRecipeBuildMailer.forStatus(self)
+        mailer.sendAll()
 
 
 @implementer(IRockRecipeBuildSet)
