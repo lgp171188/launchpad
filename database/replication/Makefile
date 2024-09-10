@@ -120,7 +120,7 @@ stagingswitch:
 	done
 	# Kill the existing staging database if it exists.
 	-LPCONFIG=${STAGING_CONFIG} LP_DESTROY_REMOTE_DATABASE=yes \
-		${PGMASSACRE} lpmain_staging
+		${PGMASSACRE} ${STAGING_DBNAME_MAIN}
 	# Rename the newly-built staging databases.
 	psql ${STAGING_DBOPTS} -d template1 -c \
 	    "ALTER DATABASE ${STAGING_DBNAME_MAIN}_new RENAME TO ${STAGING_DBNAME_MAIN};"
