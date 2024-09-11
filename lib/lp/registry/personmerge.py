@@ -1047,6 +1047,12 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         # see commit a98e2a935646ff7496c76c607d355815027c35a4 for similar
         # required changes in the past for the charm build type.
         ("rockrecipe", "owner"),
+        # XXX ruinedyourlife 2024-09-18: This needs handling before we deploy
+        # the craft recipe code, but can be ignored for the purpose of
+        # deploying the database tables.
+        # see commit a98e2a935646ff7496c76c607d355815027c35a4 for similar
+        # required changes in the past for the charm build type.
+        ("craftrecipe", "owner"),
     ]
 
     references = list(postgresql.listReferences(cur, "person", "id"))
