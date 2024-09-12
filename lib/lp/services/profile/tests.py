@@ -716,8 +716,8 @@ class TestBeforeTraverseHandler(TestCleanupProfiler):
 
     def test_can_enable_profiling_over_config(self):
         # The flag profiling.enabled wins over a config that has
-        # disabled profiling. This permits the use of profiling on qastaging
-        # and similar systems.
+        # disabled profiling. This permits the use of profiling on our staging
+        # environments.
         self.pushProfilingConfig(
             profiling_allowed="False",
             profile_all_requests="True",
