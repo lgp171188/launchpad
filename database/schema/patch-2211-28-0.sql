@@ -65,6 +65,8 @@ CREATE INDEX rockrecipe__git_repository__idx
     ON RockRecipe (git_repository);
 CREATE INDEX rockrecipe__store_name__idx
     ON RockRecipe (store_name);
+CREATE INDEX rockrecipe__is_stale__auto_build__idx
+    ON RockRecipe(is_stale, auto_build);
 
 CREATE TABLE RockRecipeBuild (
     id serial PRIMARY KEY,
