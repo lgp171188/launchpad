@@ -76,7 +76,7 @@ a.clicktext {font-weight: normal;}
     <code>++profile++show&pstats</code> or others, with each action separated
     with ampersands).</tal:block></p>
     <p>The <code>++profile++sqltrace</code> can take too much time to let a
-    page practically render, especially on qastaging and staging.  You can
+    page practically render, especially on our staging environments.  You can
     filter to only get the stacktraces you want in this case; see information
     in the &quot;SQL trace&quot; section below on how to do this.</p>
     <p>The "++profile++" path segment can usually go anywhere in the URL
