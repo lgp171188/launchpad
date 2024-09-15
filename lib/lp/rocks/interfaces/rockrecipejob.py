@@ -11,11 +11,12 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Attribute, Interface
-from zope.schema import Datetime, Dict, Set, TextLine
+from zope.schema import Datetime, Dict, List, Set, TextLine
 
 from lp import _
 from lp.registry.interfaces.person import IPerson
 from lp.rocks.interfaces.rockrecipe import IRockRecipe, IRockRecipeBuildRequest
+from lp.rocks.interfaces.rockrecipebuild import IRockRecipeBuild
 from lp.services.job.interfaces.job import IJob, IJobSource, IRunnableJob
 
 
@@ -87,6 +88,13 @@ class IRockRecipeRequestBuildsJob(IRunnableJob):
     build_request = Reference(
         title=_("The build request corresponding to this job."),
         schema=IRockRecipeBuildRequest,
+        required=True,
+        readonly=True,
+    )
+
+    builds = List(
+        title=_("The builds created by this request."),
+        value_type=Reference(schema=IRockRecipeBuild),
         required=True,
         readonly=True,
     )

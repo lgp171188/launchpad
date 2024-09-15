@@ -14,6 +14,7 @@ from lazr.delegates import delegate_to
 from lazr.enum import DBEnumeratedType, DBItem
 from storm.databases.postgres import JSON
 from storm.locals import Desc, Int, Reference
+from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer, provider
 
@@ -24,6 +25,7 @@ from lp.rocks.interfaces.rockrecipejob import (
     IRockRecipeRequestBuildsJob,
     IRockRecipeRequestBuildsJobSource,
 )
+from lp.rocks.model.rockrecipebuild import RockRecipeBuild
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -276,6 +278,22 @@ class RockRecipeRequestBuildsJob(RockRecipeJobDerived):
     def build_request(self):
         """See `IRockRecipeRequestBuildsJob`."""
         return self.recipe.getBuildRequest(self.job.id)
+
+    @property
+    def builds(self):
+        """See `IRockRecipeRequestBuildsJob`."""
+        build_ids = self.metadata.get("builds")
+        if build_ids:
+            return IStore(RockRecipeBuild).find(
+                RockRecipeBuild, RockRecipeBuild.id.is_in(build_ids)
+            )
+        else:
+            return EmptyResultSet()
+
+    @builds.setter
+    def builds(self, builds):
+        """See `IRockRecipeRequestBuildsJob`."""
+        self.metadata["builds"] = [build.id for build in builds]
 
     def run(self):
         """See `IRunnableJob`."""

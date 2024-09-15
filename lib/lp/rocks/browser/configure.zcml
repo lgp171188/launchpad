@@ -12,5 +12,16 @@
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
             urldata="lp.rocks.browser.rockrecipe.RockRecipeURL" />
+        <lp:navigation
+            module="lp.rocks.browser.rockrecipe"
+            classes="RockRecipeNavigation" />
+        <lp:url
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest"
+            path_expression="string:+build-request/${id}"
+            attribute_to_parent="recipe" />
+        <lp:url
+            for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="recipe" />
     </lp:facet>
 </configure>
