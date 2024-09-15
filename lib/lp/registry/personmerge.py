@@ -24,6 +24,7 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
 )
+from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.services.database import postgresql
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import cursor, sqlvalues
@@ -936,6 +937,25 @@ def _mergeCharmRecipe(cur, from_person, to_person):
         IStore(recipes[0]).flush()
 
 
+def _mergeRockRecipe(cur, from_person, to_person):
+    # This shouldn't use removeSecurityProxy.
+    recipes = getUtility(IRockRecipeSet).findByOwner(from_person)
+    existing_names = [
+        r.name for r in getUtility(IRockRecipeSet).findByOwner(to_person)
+    ]
+    for recipe in recipes:
+        naked_recipe = removeSecurityProxy(recipe)
+        new_name = naked_recipe.name
+        count = 1
+        while new_name in existing_names:
+            new_name = "%s-%s" % (recipe.name, count)
+            count += 1
+        naked_recipe.owner = to_person
+        naked_recipe.name = new_name
+    if not recipes.is_empty():
+        IStore(recipes[0]).flush()
+
+
 def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     """Purge team artifacts that cannot be merged, but can be removed."""
     # A team cannot have more than one mailing list.
@@ -1191,6 +1211,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeCharmRecipe(cur, from_id, to_id)
     skip.append(("charmrecipe", "owner"))
+
+    _mergeRockRecipe(cur, from_id, to_id)
+    skip.append(("rockrecipe", "owner"))
 
     _mergeVulnerabilitySubscription(cur, from_id, to_id)
     skip.append(("vulnerabilitysubscription", "person"))
