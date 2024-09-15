@@ -40,4 +40,25 @@
         <allow interface="lp.rocks.interfaces.rockrecipe.IRockRecipeSet" />
     </lp:securedutility>
 
+    <!-- RockRecipeBuildRequest -->
+    <class class="lp.rocks.model.rockrecipe.RockRecipeBuildRequest">
+        <require
+            permission="launchpad.View"
+            interface="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest" />
+    </class>
+
+    <!-- rock-related jobs -->
+    <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
+    </class>
+    <lp:securedutility
+        component="lp.rocks.model.rockrecipejob.RockRecipeRequestBuildsJob"
+        provides="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJobSource">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJobSource" />
+    </lp:securedutility>
+    <class class="lp.rocks.model.rockrecipejob.RockRecipeRequestBuildsJob">
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
+        <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeRequestBuildsJob" />
+    </class>
+
 </configure>

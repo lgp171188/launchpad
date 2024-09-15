@@ -6961,6 +6961,18 @@ class LaunchpadObjectFactory(ObjectFactory):
         IStore(recipe).flush()
         return recipe
 
+    def makeRockRecipeBuildRequest(
+        self, recipe=None, requester=None, channels=None, architectures=None
+    ):
+        """Make a new RockRecipeBuildRequest."""
+        if recipe is None:
+            recipe = self.makeRockRecipe()
+        if requester is None:
+            requester = recipe.owner.teamowner
+        return recipe.requestBuilds(
+            requester, channels=channels, architectures=architectures
+        )
+
     def makeCIBuild(
         self,
         git_repository=None,
