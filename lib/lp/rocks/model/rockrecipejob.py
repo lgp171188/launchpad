@@ -20,6 +20,11 @@ from zope.interface import implementer, provider
 
 from lp.app.errors import NotFoundError
 from lp.registry.interfaces.person import IPersonSet
+from lp.rocks.interfaces.rockrecipe import (
+    CannotFetchRockcraftYaml,
+    CannotParseRockcraftYaml,
+    MissingRockcraftYaml,
+)
 from lp.rocks.interfaces.rockrecipejob import (
     IRockRecipeJob,
     IRockRecipeRequestBuildsJob,
@@ -155,6 +160,12 @@ class RockRecipeRequestBuildsJob(RockRecipeJobDerived):
     """A Job that processes a request for builds of a rock recipe."""
 
     class_job_type = RockRecipeJobType.REQUEST_BUILDS
+
+    user_error_types = (
+        CannotParseRockcraftYaml,
+        MissingRockcraftYaml,
+    )
+    retry_error_types = (CannotFetchRockcraftYaml,)
 
     max_retries = 5
 
@@ -304,9 +315,13 @@ class RockRecipeRequestBuildsJob(RockRecipeJobDerived):
             )
             return
         try:
-            # XXX jugmac00 2024-09-06: Implement this once we have a
-            # RockRecipeBuild model.
-            raise NotImplementedError
+            self.builds = self.recipe.requestBuildsFromJob(
+                self.build_request,
+                channels=self.channels,
+                architectures=self.architectures,
+                logger=log,
+            )
+            self.error_message = None
         except Exception as e:
             self.error_message = str(e)
             # The normal job infrastructure will abort the transaction, but
