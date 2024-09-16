@@ -75,5 +75,35 @@
             for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
+        <browser:page
+            for="*"
+            class="lp.app.browser.launchpad.Macro"
+            permission="zope.Public"
+            name="+rock-recipe-macros"
+            template="../templates/rockrecipe-macros.pt" />
+        <browser:page
+            for="lp.code.interfaces.gitrepository.IGitRepository"
+            class="lp.rocks.browser.rockrecipelisting.GitRockRecipeListingView"
+            permission="launchpad.View"
+            name="+rock-recipes"
+            template="../templates/rockrecipe-listing.pt" />
+        <browser:page
+            for="lp.code.interfaces.gitref.IGitRef"
+            class="lp.rocks.browser.rockrecipelisting.GitRockRecipeListingView"
+            permission="launchpad.View"
+            name="+rock-recipes"
+            template="../templates/rockrecipe-listing.pt" />
+        <browser:page
+            for="lp.registry.interfaces.person.IPerson"
+            class="lp.rocks.browser.rockrecipelisting.PersonRockRecipeListingView"
+            permission="launchpad.View"
+            name="+rock-recipes"
+            template="../templates/rockrecipe-listing.pt" />
+        <browser:page
+            for="lp.registry.interfaces.product.IProduct"
+            class="lp.rocks.browser.rockrecipelisting.ProjectRockRecipeListingView"
+            permission="launchpad.View"
+            name="+rock-recipes"
+            template="../templates/rockrecipe-listing.pt" />
     </lp:facet>
 </configure>

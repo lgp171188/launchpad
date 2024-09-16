@@ -28,6 +28,8 @@ from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.model.distribution import Distribution
+from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.rocks.interfaces.rockrecipe import IRockRecipeSet
 from lp.rocks.interfaces.rockrecipebuild import (
@@ -46,6 +48,7 @@ from lp.services.database.stormbase import StormBase
 from lp.services.librarian.model import LibraryFileAlias, LibraryFileContent
 from lp.services.propertycache import cachedproperty, get_property_cache
 from lp.services.webapp.snapshot import notify_modified
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
 @implementer(IRockRecipeBuild)
@@ -408,6 +411,13 @@ class RockRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
+        distroarchserieses = load_related(
+            DistroArchSeries, builds, ["distro_arch_series_id"]
+        )
+        distroserieses = load_related(
+            DistroSeries, distroarchserieses, ["distroseries_id"]
+        )
+        load_related(Distribution, distroserieses, ["distribution_id"])
         recipes = load_related(RockRecipe, builds, ["recipe_id"])
         getUtility(IRockRecipeSet).preloadDataForRecipes(recipes)
 

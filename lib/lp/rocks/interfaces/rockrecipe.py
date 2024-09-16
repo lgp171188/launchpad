@@ -471,7 +471,7 @@ class IRockRecipeEditableAttributes(Interface):
     git_path = TextLine(
         title=_("Git branch path"),
         required=False,
-        readonly=False,
+        readonly=True,
         description=_(
             "The path of the Git branch containing a rockcraft.yaml recipe."
         ),
@@ -626,6 +626,49 @@ class IRockRecipeSet(Interface):
     def getByName(owner, project, name):
         """Returns the appropriate `IRockRecipe` for the given objects."""
 
+    def findByPerson(person, visible_by_user=None):
+        """Return all rock recipes relevant to `person`.
+
+        This returns rock recipes for Git branches owned by `person`, or
+        where `person` is the owner of the rock recipe.
+
+        :param person: An `IPerson`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByProject(project, visible_by_user=None):
+        """Return all rock recipes for the given project.
+
+        :param project: An `IProduct`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        """
+
+    def findByGitRepository(repository, paths=None, check_permissions=True):
+        """Return all rock recipes for the given Git repository.
+
+        :param repository: An `IGitRepository`.
+        :param paths: If not None, only return rock recipes for one of
+            these Git reference paths.
+        """
+
+    def findByGitRef(ref):
+        """Return all rock recipes for the given Git reference."""
+
+    def findByContext(context, visible_by_user=None, order_by_date=True):
+        """Return all rock recipes for the given context.
+
+        :param context: An `IPerson`, `IProduct`, `IGitRepository`, or
+            `IGitRef`.
+        :param visible_by_user: If not None, only return recipes visible by
+            this user; otherwise, only return publicly-visible recipes.
+        :param order_by_date: If True, order recipes by descending
+            modification date.
+        :raises BadRockRecipeSearchContext: if the context is not
+            understood.
+        """
+
     def exists(owner, project, name):
         """Check to see if a matching rock recipe exists."""
 
@@ -650,14 +693,6 @@ class IRockRecipeSet(Interface):
             reason.
         :raises CannotParseRockcraftYaml: if the fetched rockcraft.yaml
             cannot be parsed.
-        """
-
-    def findByGitRepository(repository, paths=None):
-        """Return all rock recipes for the given Git repository.
-
-        :param repository: An `IGitRepository`.
-        :param paths: If not None, only return rock recipes for one of
-            these Git reference paths.
         """
 
     def findByOwner(owner):

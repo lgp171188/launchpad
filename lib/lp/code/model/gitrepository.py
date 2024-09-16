@@ -922,7 +922,13 @@ class GitRepository(
         # Clear cached references to the removed refs.
         # XXX cjwatson 2021-06-08: We should probably do something similar
         # for OCIRecipe, and for Snap if we start caching git_ref there.
+        # XXX jugmac00 2024-09-16: once we also include OCI and snaps, we
+        # should refactor this to a for loop in a for loop
         for recipe in getUtility(ICharmRecipeSet).findByGitRepository(
+            self, paths=paths
+        ):
+            get_property_cache(recipe)._git_ref = None
+        for recipe in getUtility(IRockRecipeSet).findByGitRepository(
             self, paths=paths
         ):
             get_property_cache(recipe)._git_ref = None

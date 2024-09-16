@@ -202,6 +202,11 @@
                   tal:condition="link/enabled">
                 <a tal:replace="structure link/fmt:link" />
               </li>
+              <li class="nowrap"
+                  tal:define="link context/menu:overview/view_rock_recipes"
+                  tal:condition="link/enabled">
+                <a tal:replace="structure link/fmt:link" />
+              </li>
             </ul>
           </div>
         </div>

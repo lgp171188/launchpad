@@ -1,0 +1,46 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_only"
+  i18n:domain="launchpad">
+
+<body>
+
+  <div metal:fill-slot="main">
+
+    <tal:navigation
+        condition="view/batchnav/has_multiple_pages"
+        replace="structure view/batchnav/@@+navigation-links-upper" />
+    <table id="rock-recipe-table" class="listing sortable">
+      <thead>
+        <tr>
+          <th colspan="2">Name</th>
+          <th tal:condition="view/owner_enabled">Owner</th>
+          <th tal:condition="view/source_enabled">Source</th>
+          <th>Registered</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tal:recipes repeat="recipe view/batchnav/currentBatch">
+          <tr>
+            <td colspan="2">
+              <a tal:attributes="href recipe/fmt:url" tal:content="recipe/name" />
+            </td>
+            <td tal:condition="view/owner_enabled"
+                tal:content="structure recipe/owner/fmt:link" />
+            <td tal:condition="view/source_enabled"
+                tal:content="structure recipe/source/fmt:link" />
+            <td tal:content="recipe/date_created/fmt:datetime" />
+          </tr>
+        </tal:recipes>
+      </tbody>
+    </table>
+    <tal:navigation
+        condition="view/batchnav/has_multiple_pages"
+        replace="structure view/batchnav/@@+navigation-links-lower" />
+
+  </div>
+</body>
+</html>
