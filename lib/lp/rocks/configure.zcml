@@ -78,6 +78,13 @@
         <allow interface="lp.rocks.interfaces.rockrecipebuild.IRockFile" />
     </class>
 
+    <!-- RockRecipeBuildBehaviour -->
+    <adapter
+        for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.rocks.model.rockrecipebuildbehaviour.RockRecipeBuildBehaviour"
+        permission="zope.Public" />
+
     <!-- rock-related jobs -->
     <class class="lp.rocks.model.rockrecipejob.RockRecipeJob">
         <allow interface="lp.rocks.interfaces.rockrecipejob.IRockRecipeJob" />
