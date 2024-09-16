@@ -12,9 +12,23 @@
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
             urldata="lp.rocks.browser.rockrecipe.RockRecipeURL" />
+        <browser:defaultView
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            name="+index" />
+        <browser:page
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            class="lp.rocks.browser.rockrecipe.RockRecipeView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/rockrecipe-index.pt" />
         <lp:navigation
             module="lp.rocks.browser.rockrecipe"
             classes="RockRecipeNavigation" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.rocks.interfaces.rockrecipe.IRockRecipe"
+            factory="lp.rocks.browser.rockrecipe.RockRecipeBreadcrumb"
+            permission="zope.Public" />
         <lp:url
             for="lp.rocks.interfaces.rockrecipe.IRockRecipeBuildRequest"
             path_expression="string:+build-request/${id}"

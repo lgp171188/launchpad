@@ -596,6 +596,13 @@
       />
 
   <adapter
+      for="lp.rocks.interfaces.rockrecipebuild.IRockRecipeBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
+
+  <adapter
       for="lp.soyuz.interfaces.archive.IArchive"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.ArchiveImageDisplayAPI"

@@ -1,0 +1,166 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<body>
+  <metal:registering fill-slot="registering">
+    Created by
+      <tal:registrant replace="structure context/registrant/fmt:link"/>
+    on
+      <tal:created-on replace="structure context/date_created/fmt:date"/>
+    and last modified on
+      <tal:last-modified replace="structure context/date_last_modified/fmt:date"/>
+  </metal:registering>
+
+  <metal:side fill-slot="side">
+    <div tal:replace="structure context/@@+global-actions"/>
+  </metal:side>
+
+  <metal:heading fill-slot="heading">
+    <h1 tal:content="context/name"/>
+  </metal:heading>
+
+  <div metal:fill-slot="main">
+    <h2>Rock recipe information</h2>
+    <div class="two-column-list">
+      <dl id="owner">
+        <dt>Owner:</dt>
+        <dd tal:content="structure context/owner/fmt:link"/>
+      </dl>
+      <dl id="project" tal:define="project context/project">
+        <dt>Project:</dt>
+        <dd>
+          <a tal:attributes="href context/project/fmt:url"
+             tal:content="context/project/display_name"/>
+        </dd>
+      </dl>
+      <dl id="source"
+          tal:define="source context/source" tal:condition="source">
+        <dt>Source:</dt>
+        <dd tal:condition="view/user_can_see_source">
+          <a tal:replace="structure source/fmt:link"/>
+        </dd>
+        <dd tal:condition="not: view/user_can_see_source">
+          <span class="sprite private">&lt;redacted&gt;</span>
+        </dd>
+      </dl>
+
+      <dl id="auto_build">
+        <dt>Build schedule:
+          <a href="/+help-rocks/rock-recipe-build-frequency.html"
+             target="help" class="sprite maybe action-icon">(?)</a>
+        </dt>
+        <dd>
+          <span tal:replace="view/build_frequency"/>
+        </dd>
+      </dl>
+      <dl id="auto_build_channels" tal:condition="context/auto_build_channels">
+        <dt>
+          Source snap channels for automatic builds:
+        </dt>
+        <dd>
+          <table class="listing compressed">
+            <tbody>
+              <tr tal:repeat="pair view/sorted_auto_build_channels_items">
+                <td tal:repeat="value pair" tal:content="value"/>
+              </tr>
+            </tbody>
+          </table>
+        </dd>
+      </dl>
+    </div>
+
+    <div id="store_upload" class="two-column-list"
+         tal:condition="context/store_upload">
+      <dl id="store_name">
+        <dt>Registered store package name:</dt>
+        <dd>
+          <span tal:content="context/store_name"/>
+        </dd>
+      </dl>
+      <dl id="store_channels" tal:condition="view/store_channels">
+        <dt>Store channels:</dt>
+        <dd>
+          <span tal:content="view/store_channels"/>
+        </dd>
+      </dl>
+      <p id="store_channels" tal:condition="not: view/store_channels">
+        This rock recipe will not be released to any channels on the store.
+      </p>
+    </div>
+    <p id="store_upload" tal:condition="not: context/store_upload">
+      Builds of this rock recipe are not automatically uploaded to the store.
+    </p>
+
+    <h2>Latest builds</h2>
+    <table id="latest-builds-listing" class="listing"
+           style="margin-bottom: 1em;">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>When complete</th>
+          <th>Architecture</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tal:rock-recipe-builds-and-requests repeat="item view/builds_and_requests">
+          <tal:rock-recipe-build-request condition="item/date_requested|nothing">
+            <tr tal:define="request item"
+                tal:attributes="id string:request-${request/id}">
+              <td tal:attributes="class string:request_status ${request/status/name}">
+                <span tal:replace="structure request/image:icon"/>
+                <tal:title replace="request/status/title"/> build request
+              </td>
+              <td>
+                <tal:date condition="request/date_finished"
+                          replace="structure request/date_finished/fmt:displaydatetitle"/>
+                <tal:error-message condition="request/error_message">
+                  (<span tal:replace="request/error_message"/>)
+                </tal:error-message>
+              </td>
+              <td/>
+            </tr>
+          </tal:rock-recipe-build-request>
+          <tal:rock-recipe-build condition="not: item/date_requested|nothing">
+            <tr tal:define="build item"
+                tal:attributes="id string:build-${build/id}">
+              <td tal:attributes="class string:build_status ${build/status/name}">
+                <span tal:replace="structure build/image:icon"/>
+                <a tal:content="build/status/title"
+                   tal:attributes="href build/fmt:url"/>
+              </td>
+              <td class="datebuilt">
+                <tal:date replace="structure build/date/fmt:displaydatetitle"/>
+                <tal:estimate condition="build/estimate">
+                  (estimated)
+                </tal:estimate>
+
+                <tal:build-log define="file build/log" tal:condition="file">
+                  <a class="sprite download"
+                     tal:attributes="href build/log_url">buildlog</a>
+                  (<span tal:replace="file/content/filesize/fmt:bytes"/>)
+                </tal:build-log>
+              </td>
+              <td>
+                <a class="sprite distribution"
+                   tal:define="archseries build/distro_arch_series"
+                   tal:attributes="href archseries/fmt:url"
+                   tal:content="archseries/architecturetag"/>
+              </td>
+            </tr>
+          </tal:rock-recipe-build>
+        </tal:rock-recipe-builds-and-requests>
+      </tbody>
+    </table>
+    <p tal:condition="not: view/builds_and_requests">
+      This rock recipe has not been built yet.
+    </p>
+  </div>
+
+</body>
+</html>
